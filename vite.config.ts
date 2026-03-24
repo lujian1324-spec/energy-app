@@ -15,8 +15,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'PowerFlow App',
-        short_name: 'PowerFlow',
+        name: 'Sierro App',
+        short_name: 'Sierro',
         description: '智能储能设备管理应用',
         theme_color: '#080E1A',
         background_color: '#080E1A',

@@ -451,8 +451,8 @@ export default function SettingsPage() {
 
         {/* 版本信息 */}
         <div className="text-center py-4 text-[11px] text-[#3D5A78] leading-relaxed">
-          <div>PowerFlow APP · v3.2.1 (Build 2411)</div>
-          <div>© 2026 PowerFlow Technology Co., Ltd.</div>
+          <div>Sierro App · v3.2.1 (Build 2411)</div>
+          <div>© 2026 Sierro Technology Co., Ltd.</div>
           <div className="mt-2 flex justify-center gap-4">
             <span className="text-[#00D4FF] cursor-pointer hover:underline">Privacy Policy</span>
             <span className="text-[#00D4FF] cursor-pointer hover:underline">Terms of Use</span>
