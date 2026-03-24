@@ -6,48 +6,50 @@
    设计令牌系统 Design Tokens
 ============================================================ */
 :root {
-  /* 主色调 - 科技蓝绿渐变系 */
-  --clr-primary: #00D4FF;
-  --clr-primary-dim: #00AACC;
-  --clr-primary-glow: rgba(0, 212, 255, 0.25);
-  --clr-accent: #00FF9C;
-  --clr-accent-dim: #00CC7A;
-  --clr-accent-glow: rgba(0, 255, 156, 0.2);
-  --clr-warning: #FFB800;
-  --clr-warning-glow: rgba(255, 184, 0, 0.2);
-  --clr-danger: #FF4757;
-  --clr-danger-glow: rgba(255, 71, 87, 0.2);
+  /* 主色调 - 青绿科技色系（参考图片配色） */
+  --clr-primary: #1AD9C0;
+  --clr-primary-dim: #12A896;
+  --clr-primary-glow: rgba(26, 217, 192, 0.25);
+  --clr-accent: #1AD9C0;
+  --clr-accent-dim: #12A896;
+  --clr-accent-glow: rgba(26, 217, 192, 0.2);
+  --clr-warning: #FF9500;
+  --clr-warning-glow: rgba(255, 149, 0, 0.2);
+  --clr-danger: #FF3B30;
+  --clr-danger-glow: rgba(255, 59, 48, 0.2);
+  --clr-success: #34C759;
+  --clr-success-glow: rgba(52, 199, 89, 0.2);
 
   /* 深色背景层次 */
-  --bg-base: #080E1A;
-  --bg-surface: #0D1625;
-  --bg-card: #111E33;
-  --bg-card-hover: #162540;
-  --bg-overlay: #0A1220;
-  --bg-input: #0E1929;
+  --bg-base: #000000;
+  --bg-surface: #0A0A0A;
+  --bg-card: #1C1C1E;
+  --bg-card-hover: #2C2C2E;
+  --bg-overlay: #111111;
+  --bg-input: #1C1C1E;
 
   /* 文字系统 */
-  --txt-primary: #E8F4FF;
-  --txt-secondary: #7A9AB8;
-  --txt-muted: #3D5A78;
-  --txt-label: #9BB8D4;
+  --txt-primary: #FFFFFF;
+  --txt-secondary: #8E8E93;
+  --txt-muted: #48484A;
+  --txt-label: #AEAEB2;
 
   /* 边框 */
-  --border-subtle: rgba(0, 212, 255, 0.08);
-  --border-normal: rgba(0, 212, 255, 0.18);
-  --border-bright: rgba(0, 212, 255, 0.4);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-normal: rgba(26, 217, 192, 0.2);
+  --border-bright: rgba(26, 217, 192, 0.45);
 
   /* 圆角 */
   --r-sm: 8px;
   --r-md: 14px;
-  --r-lg: 20px;
-  --r-xl: 28px;
+  --r-lg: 18px;
+  --r-xl: 24px;
   --r-full: 9999px;
 
   /* 阴影 */
-  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
-  --shadow-glow-primary: 0 0 20px rgba(0, 212, 255, 0.3);
-  --shadow-glow-accent: 0 0 20px rgba(0, 255, 156, 0.3);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.6);
+  --shadow-glow-primary: 0 0 20px rgba(26, 217, 192, 0.3);
+  --shadow-glow-accent: 0 0 20px rgba(26, 217, 192, 0.3);
 }
 
 /* ============================================================
@@ -135,7 +137,7 @@ body {
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0,212,255,0.3), transparent);
+  background: linear-gradient(90deg, transparent, rgba(26,217,192,0.3), transparent);
 }
 
 .badge {
@@ -150,33 +152,33 @@ body {
 }
 
 .badge-success { 
-  background: rgba(0,255,156,0.12); 
-  color: var(--clr-accent); 
-  border: 1px solid rgba(0,255,156,0.25); 
+  background: rgba(52,199,89,0.12); 
+  color: var(--clr-success); 
+  border: 1px solid rgba(52,199,89,0.25); 
 }
 
 .badge-warning { 
-  background: rgba(255,184,0,0.12); 
+  background: rgba(255,149,0,0.12); 
   color: var(--clr-warning); 
-  border: 1px solid rgba(255,184,0,0.25); 
+  border: 1px solid rgba(255,149,0,0.25); 
 }
 
 .badge-danger { 
-  background: rgba(255,71,87,0.12); 
+  background: rgba(255,59,48,0.12); 
   color: var(--clr-danger); 
-  border: 1px solid rgba(255,71,87,0.25); 
+  border: 1px solid rgba(255,59,48,0.25); 
 }
 
 .badge-primary { 
-  background: rgba(0,212,255,0.12); 
+  background: rgba(26,217,192,0.12); 
   color: var(--clr-primary); 
-  border: 1px solid rgba(0,212,255,0.25); 
+  border: 1px solid rgba(26,217,192,0.25); 
 }
 
 /* 进度条 */
 .progress-track {
   height: 6px;
-  background: rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.08);
   border-radius: var(--r-full);
   overflow: hidden;
 }
@@ -189,23 +191,23 @@ body {
 }
 
 .progress-fill.green { 
-  background: linear-gradient(90deg, #00CC7A, #00FF9C); 
-  box-shadow: 0 0 8px rgba(0,255,156,0.4); 
+  background: linear-gradient(90deg, #12A896, #1AD9C0); 
+  box-shadow: 0 0 8px rgba(26,217,192,0.4); 
 }
 
 .progress-fill.blue { 
-  background: linear-gradient(90deg, #0090FF, #00D4FF); 
-  box-shadow: 0 0 8px rgba(0,212,255,0.4); 
+  background: linear-gradient(90deg, #12A896, #1AD9C0); 
+  box-shadow: 0 0 8px rgba(26,217,192,0.4); 
 }
 
 .progress-fill.orange { 
-  background: linear-gradient(90deg, #FF8C00, #FFB800); 
-  box-shadow: 0 0 8px rgba(255,184,0,0.4); 
+  background: linear-gradient(90deg, #CC7700, #FF9500); 
+  box-shadow: 0 0 8px rgba(255,149,0,0.4); 
 }
 
 .progress-fill.red { 
-  background: linear-gradient(90deg, #CC2233, #FF4757); 
-  box-shadow: 0 0 8px rgba(255,71,87,0.4); 
+  background: linear-gradient(90deg, #CC2222, #FF3B30); 
+  box-shadow: 0 0 8px rgba(255,59,48,0.4); 
 }
 
 /* 分隔线 */

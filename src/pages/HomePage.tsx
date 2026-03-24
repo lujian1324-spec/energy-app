@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Bell,
@@ -121,22 +121,22 @@ export default function HomePage() {
   ] as const
 
   return (
-    <div className="h-full flex flex-col bg-[#080E1A] overflow-hidden relative">
+    <div className="h-full flex flex-col bg-[#000000] overflow-hidden relative">
       {/* 状态栏 */}
       <div className="flex justify-between items-center px-6 pt-3 pb-2 safe-area-top">
-        <span className="text-[15px] font-semibold text-[#E8F4FF] tracking-wide">{currentTime}</span>
+        <span className="text-[15px] font-semibold text-[#FFFFFF] tracking-wide">{currentTime}</span>
         <div className="flex items-center gap-1.5">
-          <svg width="16" height="11" viewBox="0 0 16 11" className="fill-[#E8F4FF]">
+          <svg width="16" height="11" viewBox="0 0 16 11" className="fill-[#FFFFFF]">
             <rect x="0" y="3" width="3" height="8" rx="0.5" opacity="0.3"/>
             <rect x="4" y="2" width="3" height="9" rx="0.5" opacity="0.5"/>
             <rect x="8" y="0.5" width="3" height="10.5" rx="0.5" opacity="0.8"/>
             <rect x="12" y="0" width="3" height="11" rx="0.5"/>
           </svg>
-          <div className="flex items-center gap-1 text-[11px] text-[#E8F4FF] font-medium">
+          <div className="flex items-center gap-1 text-[11px] text-[#FFFFFF] font-medium">
             <svg width="22" height="11" viewBox="0 0 22 11">
-              <rect x="0" y="1" width="19" height="9" rx="2" stroke="#E8F4FF" strokeWidth="1" fill="none"/>
-              <rect x="19.5" y="3.5" width="2.5" height="4" rx="1" fill="#E8F4FF" opacity="0.6"/>
-              <rect x="1" y="2" width={Math.round(17 * powerStation.batteryLevel / 100)} height="7" rx="1.5" fill="#00D4FF"/>
+              <rect x="0" y="1" width="19" height="9" rx="2" stroke="#FFFFFF" strokeWidth="1" fill="none"/>
+              <rect x="19.5" y="3.5" width="2.5" height="4" rx="1" fill="#FFFFFF" opacity="0.6"/>
+              <rect x="1" y="2" width={Math.round(17 * powerStation.batteryLevel / 100)} height="7" rx="1.5" fill="#1AD9C0"/>
             </svg>
             {powerStation.batteryLevel}%
           </div>
@@ -156,31 +156,31 @@ export default function HomePage() {
         {/* Header */}
         <div className="flex justify-between items-center px-5 py-2">
           <div>
-            <h2 className="text-xl font-bold text-[#E8F4FF] tracking-wide">Power Overview</h2>
-            <p className="text-xs text-[#7A9AB8] mt-0.5">{powerStation.name} · Connected</p>
+            <h2 className="text-xl font-bold text-[#FFFFFF] tracking-wide">Power Overview</h2>
+            <p className="text-xs text-[#8E8E93] mt-0.5">{powerStation.name} · Connected</p>
           </div>
           <div className="flex gap-2.5">
             {/* 铃铛 - 点击弹出通知 */}
             <button
               onClick={() => { setShowNotifications(true); setShowDisplaySettings(false) }}
-              className="w-9 h-9 rounded-[14px] bg-[#111E33] border border-[rgba(0,212,255,0.08)] 
+              className="w-9 h-9 rounded-[14px] bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] 
                        flex items-center justify-center relative
-                       hover:border-[rgba(0,212,255,0.4)] transition-all duration-250"
+                       hover:border-[rgba(26,217,192,0.4)] transition-all duration-250"
             >
-              <Bell size={18} className="text-[#E8F4FF]" />
+              <Bell size={18} className="text-[#FFFFFF]" />
               {unreadCount > 0 && (
-                <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-[#FF4757] 
-                              border-2 border-[#080E1A] shadow-[0_0_6px_#FF4757]" />
+                <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-[#FF3B30] 
+                              border-2 border-[#000000] shadow-[0_0_6px_#FF3B30]" />
               )}
             </button>
             {/* 齿轮 - 点击弹出显示设置 */}
             <button
               onClick={() => { setShowDisplaySettings(true); setShowNotifications(false) }}
-              className="w-9 h-9 rounded-[14px] bg-[#111E33] border border-[rgba(0,212,255,0.08)] 
+              className="w-9 h-9 rounded-[14px] bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] 
                        flex items-center justify-center
-                       hover:border-[rgba(0,212,255,0.4)] transition-all duration-250"
+                       hover:border-[rgba(26,217,192,0.4)] transition-all duration-250"
             >
-              <Settings size={18} className="text-[#E8F4FF]" />
+              <Settings size={18} className="text-[#FFFFFF]" />
             </button>
           </div>
         </div>
@@ -189,20 +189,20 @@ export default function HomePage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mx-5 mb-5 bg-[#111E33] border border-[rgba(0,212,255,0.08)] 
+          className="mx-5 mb-5 bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] 
                      rounded-[28px] p-5 relative overflow-hidden"
         >
           <div className="absolute w-[200px] h-[200px] rounded-full 
-                        bg-[radial-gradient(circle,rgba(0,212,255,0.08),transparent_70%)] 
+                        bg-[radial-gradient(circle,rgba(26,217,192,0.08),transparent_70%)] 
                         -top-10 -right-10 pointer-events-none" />
 
           <div className="flex justify-between items-start mb-5">
             <div>
-              <div className="text-sm font-semibold text-[#E8F4FF]">{powerStation.name}</div>
-              <div className="text-[11px] text-[#7A9AB8] mt-0.5">S/N: {powerStation.serialNumber}</div>
+              <div className="text-sm font-semibold text-[#FFFFFF]">{powerStation.name}</div>
+              <div className="text-[11px] text-[#8E8E93] mt-0.5">S/N: {powerStation.serialNumber}</div>
             </div>
             <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full 
-                          bg-[rgba(0,255,156,0.12)] text-[#00FF9C] border border-[rgba(0,255,156,0.25)]
+                          bg-[rgba(52,199,89,0.12)] text-[#34C759] border border-[rgba(52,199,89,0.25)]
                           text-[11px] font-semibold tracking-wide">
               <span className="animate-blink">●</span>
               {powerStation.isCharging ? 'Charging' : 'Discharging'}
@@ -218,22 +218,22 @@ export default function HomePage() {
             )}
             <div className="flex-1 flex flex-col gap-3">
               <div>
-                <div className="text-[10px] text-[#7A9AB8] tracking-wide uppercase">Remaining</div>
-                <div className="text-base font-bold text-[#00D4FF]">
-                  {powerStation.remainingWh}<span className="text-[11px] font-normal text-[#7A9AB8] ml-0.5">Wh</span>
+                <div className="text-[10px] text-[#8E8E93] tracking-wide uppercase">Remaining</div>
+                <div className="text-base font-bold text-[#1AD9C0]">
+                  {powerStation.remainingWh}<span className="text-[11px] font-normal text-[#8E8E93] ml-0.5">Wh</span>
                 </div>
               </div>
               {displayConfig.showTimeToFull && (
                 <div>
-                  <div className="text-[10px] text-[#7A9AB8] tracking-wide uppercase">Full In</div>
-                  <div className="text-base font-bold text-[#FFB800]">{powerStation.timeToFull}</div>
+                  <div className="text-[10px] text-[#8E8E93] tracking-wide uppercase">Full In</div>
+                  <div className="text-base font-bold text-[#FF9500]">{powerStation.timeToFull}</div>
                 </div>
               )}
               {displayConfig.showSolarInput && (
                 <div>
-                  <div className="text-[10px] text-[#7A9AB8] tracking-wide uppercase">Solar In</div>
-                  <div className="text-base font-bold text-[#00FF9C]">
-                    +{powerStation.inputPower}<span className="text-[11px] font-normal text-[#7A9AB8] ml-0.5">W</span>
+                  <div className="text-[10px] text-[#8E8E93] tracking-wide uppercase">Solar In</div>
+                  <div className="text-base font-bold text-[#34C759]">
+                    +{powerStation.inputPower}<span className="text-[11px] font-normal text-[#8E8E93] ml-0.5">W</span>
                   </div>
                 </div>
               )}
@@ -241,30 +241,30 @@ export default function HomePage() {
           </div>
 
           <div className="mt-4">
-            <div className="flex justify-between text-[11px] text-[#7A9AB8] mb-1.5">
+            <div className="flex justify-between text-[11px] text-[#8E8E93] mb-1.5">
               <span>0%</span>
-              <span className="text-[#9BB8D4]">CURRENT</span>
-              <span className="text-[#00FF9C] font-semibold">{powerStation.batteryLevel}% · {powerStation.remainingWh}Wh</span>
+              <span className="text-[#AEAEB2]">CURRENT</span>
+              <span className="text-[#34C759] font-semibold">{powerStation.batteryLevel}% · {powerStation.remainingWh}Wh</span>
             </div>
             <div className="h-1.5 bg-[rgba(255,255,255,0.06)] rounded-full overflow-visible relative">
               <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-[#0090FF] to-[#00D4FF] 
-                         shadow-[0_0_8px_rgba(0,212,255,0.4)]"
+                className="h-full rounded-full bg-gradient-to-r from-[#0090FF] to-[#1AD9C0] 
+                         shadow-[0_0_8px_rgba(26,217,192,0.4)]"
                 initial={{ width: 0 }}
                 animate={{ width: `${powerStation.batteryLevel}%` }}
                 transition={{ duration: 0.8, ease: 'easeOut' }}
               />
               <div
-                className="absolute top-1/2 -translate-y-1/2 w-0.5 h-3.5 rounded-full bg-[#FFB800]
-                           shadow-[0_0_5px_rgba(255,184,0,0.7)] pointer-events-none"
+                className="absolute top-1/2 -translate-y-1/2 w-0.5 h-3.5 rounded-full bg-[#FF9500]
+                           shadow-[0_0_5px_rgba(255,149,0,0.7)] pointer-events-none"
                 style={{ left: `${settings.chargeLimit}%` }}
               />
             </div>
-            <div className="flex justify-between text-[10px] text-[#7A9AB8] mt-1.5">
+            <div className="flex justify-between text-[10px] text-[#8E8E93] mt-1.5">
               <span>EMPTY</span>
               <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-[#FFB800]" />
-                <span className="text-[#FFB800]">{settings.chargeLimit}% LIMIT</span>
+                <span className="w-2 h-2 rounded-full bg-[#FF9500]" />
+                <span className="text-[#FF9500]">{settings.chargeLimit}% LIMIT</span>
               </span>
               <span>FULL</span>
             </div>
@@ -274,7 +274,7 @@ export default function HomePage() {
         {/* 运行模式 */}
         {displayConfig.showOperatingModes && (
           <div className="px-5 mb-3">
-            <div className="text-[13px] font-bold text-[#7A9AB8] tracking-wider uppercase mb-2.5">
+            <div className="text-[13px] font-bold text-[#8E8E93] tracking-wider uppercase mb-2.5">
               Operating Modes
             </div>
             <div className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1">
@@ -287,24 +287,24 @@ export default function HomePage() {
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setMode(mode.id)}
                     className={`
-                      flex-1 min-w-[80px] bg-[#111E33] border rounded-[20px] p-3.5
+                      flex-1 min-w-[80px] bg-[#1C1C1E] border rounded-[20px] p-3.5
                       relative overflow-hidden transition-all duration-250
                       ${isActive
-                        ? 'border-[rgba(0,212,255,0.4)] bg-[rgba(0,212,255,0.05)] shadow-[0_0_20px_rgba(0,212,255,0.1)]'
-                        : 'border-[rgba(0,212,255,0.08)]'
+                        ? 'border-[rgba(26,217,192,0.4)] bg-[rgba(26,217,192,0.05)] shadow-[0_0_20px_rgba(26,217,192,0.1)]'
+                        : 'border-[rgba(26,217,192,0.08)]'
                       }
                     `}
                   >
                     {isActive && (
                       <div className="absolute top-0 left-0 right-0 h-px 
-                                    bg-gradient-to-r from-transparent via-[rgba(0,212,255,0.5)] to-transparent" />
+                                    bg-gradient-to-r from-transparent via-[rgba(26,217,192,0.5)] to-transparent" />
                     )}
-                    <Icon size={20} className={`mb-1.5 ${isActive ? 'text-[#00D4FF]' : 'text-[#7A9AB8]'}`} />
+                    <Icon size={20} className={`mb-1.5 ${isActive ? 'text-[#1AD9C0]' : 'text-[#8E8E93]'}`} />
                     <div className={`text-[11px] font-bold tracking-wide uppercase mb-0.5
-                                   ${isActive ? 'text-[#00D4FF]' : 'text-[#9BB8D4]'}`}>
+                                   ${isActive ? 'text-[#1AD9C0]' : 'text-[#AEAEB2]'}`}>
                       {mode.name}
                     </div>
-                    <div className="text-[10px] text-[#3D5A78] leading-tight whitespace-pre-line">
+                    <div className="text-[10px] text-[#48484A] leading-tight whitespace-pre-line">
                       {mode.description}
                     </div>
                   </motion.button>
@@ -317,7 +317,7 @@ export default function HomePage() {
         {/* 端口状态 - 过滤掉 usb-out 类型端口 */}
         {displayConfig.showPortStatus && (
           <div className="px-5 mb-3">
-            <div className="text-[13px] font-bold text-[#7A9AB8] tracking-wider uppercase mb-2.5">
+            <div className="text-[13px] font-bold text-[#8E8E93] tracking-wider uppercase mb-2.5">
               Port Status
             </div>
             <div className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1">
@@ -326,14 +326,14 @@ export default function HomePage() {
                 .map((port) => (
                 <div
                   key={port.id}
-                  className="bg-[#111E33] border border-[rgba(0,212,255,0.08)] 
+                  className="bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] 
                            rounded-[14px] p-3.5 flex items-start gap-2.5 min-w-[140px] flex-shrink-0"
                 >
                   <div className={`
                     w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0
-                    ${port.type === 'ac-out' ? 'bg-[rgba(0,255,156,0.12)] text-[#00FF9C]' : ''}
-                    ${port.type === 'ac-in' ? 'bg-[rgba(0,212,255,0.12)] text-[#00D4FF]' : ''}
-                    ${port.type === 'dc-in' ? 'bg-[rgba(255,184,0,0.12)] text-[#FFB800]' : ''}
+                    ${port.type === 'ac-out' ? 'bg-[rgba(52,199,89,0.12)] text-[#34C759]' : ''}
+                    ${port.type === 'ac-in' ? 'bg-[rgba(26,217,192,0.12)] text-[#1AD9C0]' : ''}
+                    ${port.type === 'dc-in' ? 'bg-[rgba(255,149,0,0.12)] text-[#FF9500]' : ''}
                   `}>
                     {port.type.includes('out') ? (
                       <ArrowRight size={16} />
@@ -342,17 +342,17 @@ export default function HomePage() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs font-semibold text-[#E8F4FF] truncate">{port.name}</div>
-                    <div className="text-[10px] text-[#7A9AB8] mt-0.5">{port.deviceName || 'Idle'}</div>
+                    <div className="text-xs font-semibold text-[#FFFFFF] truncate">{port.name}</div>
+                    <div className="text-[10px] text-[#8E8E93] mt-0.5">{port.deviceName || 'Idle'}</div>
                   </div>
                   <div className="text-right">
                     <div className={`
                       text-[13px] font-bold
-                      ${port.type === 'ac-out' ? 'text-[#00FF9C]' : 'text-[#00D4FF]'}
+                      ${port.type === 'ac-out' ? 'text-[#34C759]' : 'text-[#1AD9C0]'}
                     `}>
                       {port.power > 0 ? `${port.type.includes('out') ? '' : '+'}${port.power}W` : '—'}
                     </div>
-                    <div className="text-[9px] text-[#3D5A78]">
+                    <div className="text-[9px] text-[#48484A]">
                       {port.power > 0 ? (port.type.includes('out') ? 'In Use' : 'Charging') : 'Unused'}
                     </div>
                   </div>
@@ -365,7 +365,7 @@ export default function HomePage() {
         {/* 快捷操作 */}
         {displayConfig.showQuickActions && (
           <div className="px-5 pb-6">
-            <div className="text-[13px] font-bold text-[#7A9AB8] tracking-wider uppercase mb-2.5">
+            <div className="text-[13px] font-bold text-[#8E8E93] tracking-wider uppercase mb-2.5">
               Quick Actions
             </div>
             <div className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1">
@@ -382,12 +382,12 @@ export default function HomePage() {
                                   flex items-center justify-center
                                   transition-all duration-250
                                   ${action.active
-                                    ? 'bg-[rgba(0,212,255,0.15)] border border-[rgba(0,212,255,0.5)] shadow-[0_0_12px_rgba(0,212,255,0.2)]'
-                                    : 'bg-[#111E33] border border-[rgba(0,212,255,0.08)] hover:border-[rgba(0,212,255,0.4)] hover:bg-[rgba(0,212,255,0.06)]'
+                                    ? 'bg-[rgba(26,217,192,0.15)] border border-[rgba(26,217,192,0.5)] shadow-[0_0_12px_rgba(26,217,192,0.2)]'
+                                    : 'bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] hover:border-[rgba(26,217,192,0.4)] hover:bg-[rgba(26,217,192,0.06)]'
                                   }`}>
-                      <Icon size={22} className={action.active ? 'text-[#00D4FF]' : 'text-[#E8F4FF]'} />
+                      <Icon size={22} className={action.active ? 'text-[#1AD9C0]' : 'text-[#FFFFFF]'} />
                     </div>
-                    <span className={`text-[10px] whitespace-nowrap ${action.active ? 'text-[#00D4FF]' : 'text-[#7A9AB8]'}`}>
+                    <span className={`text-[10px] whitespace-nowrap ${action.active ? 'text-[#1AD9C0]' : 'text-[#8E8E93]'}`}>
                       {action.label}
                     </span>
                   </motion.button>
@@ -414,22 +414,22 @@ export default function HomePage() {
               exit={{ y: -20, opacity: 0 }}
               transition={{ type: 'spring', damping: 28, stiffness: 350 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full bg-[#111E33] border-b border-[rgba(0,212,255,0.15)] rounded-b-[28px] p-5 pt-4"
+              className="w-full bg-[#1C1C1E] border-b border-[rgba(26,217,192,0.15)] rounded-b-[28px] p-5 pt-4"
             >
               {/* 标题栏 */}
               <div className="flex justify-between items-center mb-4">
                 <div>
-                  <h3 className="text-base font-bold text-[#E8F4FF]">Notifications</h3>
+                  <h3 className="text-base font-bold text-[#FFFFFF]">Notifications</h3>
                   {unreadCount > 0 && (
-                    <span className="text-[11px] text-[#FF4757]">{unreadCount} unread</span>
+                    <span className="text-[11px] text-[#FF3B30]">{unreadCount} unread</span>
                   )}
                 </div>
                 <div className="flex gap-2">
                   {unreadCount > 0 && (
                     <button
                       onClick={markAllRead}
-                      className="text-[11px] text-[#00D4FF] px-3 py-1 rounded-full
-                                 bg-[rgba(0,212,255,0.1)] border border-[rgba(0,212,255,0.2)]"
+                      className="text-[11px] text-[#1AD9C0] px-3 py-1 rounded-full
+                                 bg-[rgba(26,217,192,0.1)] border border-[rgba(26,217,192,0.2)]"
                     >
                       Mark all read
                     </button>
@@ -438,7 +438,7 @@ export default function HomePage() {
                     onClick={() => setShowNotifications(false)}
                     className="w-7 h-7 rounded-full bg-[rgba(255,255,255,0.08)] flex items-center justify-center"
                   >
-                    <X size={14} className="text-[#7A9AB8]" />
+                    <X size={14} className="text-[#8E8E93]" />
                   </button>
                 </div>
               </div>
@@ -447,10 +447,10 @@ export default function HomePage() {
               <div className="flex flex-col gap-2.5 max-h-[320px] overflow-y-auto scrollbar-hide">
                 {notifList.map((n) => {
                   const typeColors: Record<string, string> = {
-                    info: '#00D4FF',
-                    success: '#00FF9C',
-                    warning: '#FFB800',
-                    error: '#FF4757',
+                    info: '#1AD9C0',
+                    success: '#34C759',
+                    warning: '#FF9500',
+                    error: '#FF3B30',
                   }
                   return (
                     <div
@@ -459,7 +459,7 @@ export default function HomePage() {
                       className={`flex items-start gap-3 p-3.5 rounded-[16px] cursor-pointer transition-all
                                  ${n.read
                                    ? 'bg-[rgba(255,255,255,0.03)]'
-                                   : 'bg-[rgba(0,212,255,0.05)] border border-[rgba(0,212,255,0.12)]'
+                                   : 'bg-[rgba(26,217,192,0.05)] border border-[rgba(26,217,192,0.12)]'
                                  }`}
                     >
                       <div
@@ -467,13 +467,13 @@ export default function HomePage() {
                         style={{ backgroundColor: n.read ? 'transparent' : typeColors[n.type] }}
                       />
                       <div className="flex-1 min-w-0">
-                        <div className={`text-[13px] font-semibold ${n.read ? 'text-[#7A9AB8]' : 'text-[#E8F4FF]'}`}>
+                        <div className={`text-[13px] font-semibold ${n.read ? 'text-[#8E8E93]' : 'text-[#FFFFFF]'}`}>
                           {n.title}
                         </div>
-                        <div className="text-[11px] text-[#3D5A78] mt-0.5">{n.desc}</div>
+                        <div className="text-[11px] text-[#48484A] mt-0.5">{n.desc}</div>
                       </div>
-                      <div className="text-[10px] text-[#3D5A78] whitespace-nowrap mt-0.5">{n.time}</div>
-                      {n.read && <Check size={12} className="text-[#3D5A78] mt-1 flex-shrink-0" />}
+                      <div className="text-[10px] text-[#48484A] whitespace-nowrap mt-0.5">{n.time}</div>
+                      {n.read && <Check size={12} className="text-[#48484A] mt-1 flex-shrink-0" />}
                     </div>
                   )
                 })}
@@ -499,35 +499,35 @@ export default function HomePage() {
               exit={{ y: 300, opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full bg-[#111E33] border-t border-[rgba(0,212,255,0.15)] rounded-t-[28px] p-6 pb-10"
+              className="w-full bg-[#1C1C1E] border-t border-[rgba(26,217,192,0.15)] rounded-t-[28px] p-6 pb-10"
             >
               <div className="w-10 h-1 bg-[rgba(255,255,255,0.15)] rounded-full mx-auto mb-5" />
               <div className="flex justify-between items-center mb-5">
-                <h3 className="text-base font-bold text-[#E8F4FF]">Display Settings</h3>
+                <h3 className="text-base font-bold text-[#FFFFFF]">Display Settings</h3>
                 <button
                   onClick={() => setShowDisplaySettings(false)}
                   className="w-7 h-7 rounded-full bg-[rgba(255,255,255,0.08)] flex items-center justify-center"
                 >
-                  <X size={14} className="text-[#7A9AB8]" />
+                  <X size={14} className="text-[#8E8E93]" />
                 </button>
               </div>
-              <p className="text-[11px] text-[#3D5A78] mb-4">Choose which sections to show on the home screen</p>
+              <p className="text-[11px] text-[#48484A] mb-4">Choose which sections to show on the home screen</p>
               <div className="flex flex-col gap-2">
                 {displayItems.map(({ key, label, desc }) => (
                   <div
                     key={key}
-                    className="flex items-center justify-between py-3 border-b border-[rgba(0,212,255,0.06)]"
+                    className="flex items-center justify-between py-3 border-b border-[rgba(26,217,192,0.06)]"
                   >
                     <div className="flex items-center gap-3">
                       {displayConfig[key]
-                        ? <Eye size={15} className="text-[#00D4FF]" />
-                        : <EyeOff size={15} className="text-[#3D5A78]" />
+                        ? <Eye size={15} className="text-[#1AD9C0]" />
+                        : <EyeOff size={15} className="text-[#48484A]" />
                       }
                       <div>
-                        <div className={`text-[13px] font-medium ${displayConfig[key] ? 'text-[#E8F4FF]' : 'text-[#3D5A78]'}`}>
+                        <div className={`text-[13px] font-medium ${displayConfig[key] ? 'text-[#FFFFFF]' : 'text-[#48484A]'}`}>
                           {label}
                         </div>
-                        <div className="text-[10px] text-[#3D5A78]">{desc}</div>
+                        <div className="text-[10px] text-[#48484A]">{desc}</div>
                       </div>
                     </div>
                     <ToggleSwitch

@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from 'framer-motion'
+﻿import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import { 
   Battery, 
@@ -110,12 +110,12 @@ export default function SettingsPage() {
   ]
 
   const colorClasses: Record<string, { bg: string; text: string }> = {
-    blue: { bg: 'bg-[rgba(0,212,255,0.1)]', text: 'text-[#00D4FF]' },
-    green: { bg: 'bg-[rgba(0,255,156,0.1)]', text: 'text-[#00FF9C]' },
-    orange: { bg: 'bg-[rgba(255,184,0,0.1)]', text: 'text-[#FFB800]' },
+    blue: { bg: 'bg-[rgba(26,217,192,0.1)]', text: 'text-[#1AD9C0]' },
+    green: { bg: 'bg-[rgba(52,199,89,0.1)]', text: 'text-[#34C759]' },
+    orange: { bg: 'bg-[rgba(255,149,0,0.1)]', text: 'text-[#FF9500]' },
     purple: { bg: 'bg-[rgba(168,85,247,0.1)]', text: 'text-[#A855F7]' },
-    red: { bg: 'bg-[rgba(255,71,87,0.1)]', text: 'text-[#FF4757]' },
-    gray: { bg: 'bg-[rgba(255,255,255,0.06)]', text: 'text-[#7A9AB8]' },
+    red: { bg: 'bg-[rgba(255,59,48,0.1)]', text: 'text-[#FF3B30]' },
+    gray: { bg: 'bg-[rgba(255,255,255,0.06)]', text: 'text-[#8E8E93]' },
   }
   
   // Privacy Policy 内容
@@ -138,11 +138,11 @@ export default function SettingsPage() {
   ]
 
   return (
-    <div className="h-full flex flex-col bg-[#080E1A] overflow-hidden">
+    <div className="h-full flex flex-col bg-[#000000] overflow-hidden">
       {/* Header */}
       <div className="px-5 pt-4 pb-4 safe-area-top">
-        <h2 className="text-xl font-bold text-[#E8F4FF]">Device & Settings</h2>
-        <p className="text-xs text-[#7A9AB8] mt-1">Manage Connections & System Config</p>
+        <h2 className="text-xl font-bold text-[#FFFFFF]">Device & Settings</h2>
+        <p className="text-xs text-[#8E8E93] mt-1">Manage Connections & System Config</p>
       </div>
 
       {/* 可滚动内容 */}
@@ -151,37 +151,37 @@ export default function SettingsPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-[rgba(0,212,255,0.08)] to-[rgba(0,255,156,0.04)]
-                     border border-[rgba(0,212,255,0.2)] rounded-[28px] p-4 mb-4
+          className="bg-gradient-to-br from-[rgba(26,217,192,0.08)] to-[rgba(52,199,89,0.04)]
+                     border border-[rgba(26,217,192,0.2)] rounded-[28px] p-4 mb-4
                      flex items-center gap-4 relative overflow-hidden"
         >
           <div className="absolute top-0 left-0 right-0 h-px 
-                        bg-gradient-to-r from-transparent via-[rgba(0,212,255,0.5)] to-transparent" />
+                        bg-gradient-to-r from-transparent via-[rgba(26,217,192,0.5)] to-transparent" />
           
           <div className="w-[60px] h-[60px] rounded-[20px] 
-                        bg-gradient-to-br from-[rgba(0,212,255,0.15)] to-[rgba(0,255,156,0.1)]
-                        border border-[rgba(0,212,255,0.3)]
-                        flex items-center justify-center shadow-[0_0_20px_rgba(0,212,255,0.15)]
+                        bg-gradient-to-br from-[rgba(26,217,192,0.15)] to-[rgba(52,199,89,0.1)]
+                        border border-[rgba(26,217,192,0.3)]
+                        flex items-center justify-center shadow-[0_0_20px_rgba(26,217,192,0.15)]
                         flex-shrink-0">
-            <BatteryCharging size={28} className="text-[#00D4FF]" />
+            <BatteryCharging size={28} className="text-[#1AD9C0]" />
           </div>
           
           <div className="flex-1">
-            <h3 className="text-base font-bold text-[#E8F4FF]">{powerStation.name}</h3>
-            <p className="text-[11px] text-[#7A9AB8] mt-0.5">Model · {powerStation.model} · S/N:{powerStation.serialNumber.slice(-5)}</p>
+            <h3 className="text-base font-bold text-[#FFFFFF]">{powerStation.name}</h3>
+            <p className="text-[11px] text-[#8E8E93] mt-0.5">Model · {powerStation.model} · S/N:{powerStation.serialNumber.slice(-5)}</p>
             <div className="flex gap-2 mt-2">
               <span className="text-[10px] px-2 py-0.5 rounded-full 
-                             bg-[rgba(0,212,255,0.1)] text-[#00D4FF] border border-[rgba(0,212,255,0.2)]
+                             bg-[rgba(26,217,192,0.1)] text-[#1AD9C0] border border-[rgba(26,217,192,0.2)]
                              font-semibold">
                 FW v2.4.1
               </span>
               <span className="text-[10px] px-2 py-0.5 rounded-full 
-                             bg-[rgba(0,212,255,0.1)] text-[#00D4FF] border border-[rgba(0,212,255,0.2)]
+                             bg-[rgba(26,217,192,0.1)] text-[#1AD9C0] border border-[rgba(26,217,192,0.2)]
                              font-semibold">
                 BT 5.0
               </span>
               <span className="text-[10px] px-2 py-0.5 rounded-full 
-                             bg-[rgba(0,212,255,0.1)] text-[#00D4FF] border border-[rgba(0,212,255,0.2)]
+                             bg-[rgba(26,217,192,0.1)] text-[#1AD9C0] border border-[rgba(26,217,192,0.2)]
                              font-semibold">
                 Wi-Fi
               </span>
@@ -193,21 +193,21 @@ export default function SettingsPage() {
               {[5, 9, 13, 17].map((h, i) => (
                 <div 
                   key={i}
-                  className="w-1 rounded-sm bg-[#00FF9C] shadow-[0_0_4px_rgba(0,255,156,0.4)]"
+                  className="w-1 rounded-sm bg-[#34C759] shadow-[0_0_4px_rgba(52,199,89,0.4)]"
                   style={{ height: `${h}px` }}
                 />
               ))}
             </div>
-            <div className="text-[9px] text-[#00FF9C] font-semibold">STRONG</div>
+            <div className="text-[9px] text-[#34C759] font-semibold">STRONG</div>
           </div>
         </motion.div>
 
         {/* 设备信息 */}
         <div className="mb-4">
-          <div className="text-[11px] font-bold text-[#7A9AB8] tracking-widest uppercase mb-2 px-1">
+          <div className="text-[11px] font-bold text-[#8E8E93] tracking-widest uppercase mb-2 px-1">
             Device Info
           </div>
-          <div className="bg-[#111E33] border border-[rgba(0,212,255,0.08)] rounded-[20px] overflow-hidden">
+          <div className="bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] rounded-[20px] overflow-hidden">
             {deviceInfo.map((item, i) => {
               const Icon = item.icon
               const colors = colorClasses[item.color]
@@ -215,17 +215,17 @@ export default function SettingsPage() {
                 <div 
                   key={item.label}
                   className={`flex items-center gap-3 px-4 py-3.5 
-                            ${i !== deviceInfo.length - 1 ? 'border-b border-[rgba(0,212,255,0.08)]' : ''}`}
+                            ${i !== deviceInfo.length - 1 ? 'border-b border-[rgba(26,217,192,0.08)]' : ''}`}
                 >
                   <div className={`w-9 h-9 rounded-lg ${colors.bg} ${colors.text} 
                                  flex items-center justify-center flex-shrink-0`}>
                     <Icon size={16} />
                   </div>
                   <div className="flex-1">
-                    <div className="text-[13px] font-semibold text-[#E8F4FF]">{item.label}</div>
-                    <div className="text-[11px] text-[#7A9AB8] mt-0.5">{item.desc}</div>
+                    <div className="text-[13px] font-semibold text-[#FFFFFF]">{item.label}</div>
+                    <div className="text-[11px] text-[#8E8E93] mt-0.5">{item.desc}</div>
                   </div>
-                  <div className={`text-[13px] font-semibold ${item.color === 'orange' ? 'text-[#00FF9C]' : colors.text}`}>
+                  <div className={`text-[13px] font-semibold ${item.color === 'orange' ? 'text-[#34C759]' : colors.text}`}>
                     {item.value}
                   </div>
                 </div>
@@ -236,23 +236,23 @@ export default function SettingsPage() {
 
         {/* 硬件连接管理 */}
         <div className="mb-4">
-          <div className="text-[11px] font-bold text-[#7A9AB8] tracking-widest uppercase mb-2 px-1">
+          <div className="text-[11px] font-bold text-[#8E8E93] tracking-widest uppercase mb-2 px-1">
             Hardware Connection
           </div>
 
           {/* 数据源状态 */}
-          <div className="bg-[#111E33] border border-[rgba(0,212,255,0.08)] rounded-[20px] p-3 mb-3">
+          <div className="bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] rounded-[20px] p-3 mb-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Activity size={14} className="text-[#7A9AB8]" />
-                <span className="text-[12px] text-[#7A9AB8]">Data Source</span>
+                <Activity size={14} className="text-[#8E8E93]" />
+                <span className="text-[12px] text-[#8E8E93]">Data Source</span>
               </div>
               <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold border
                 ${activeDataSource === 'bluetooth'
-                  ? 'bg-[rgba(0,212,255,0.12)] text-[#00D4FF] border-[rgba(0,212,255,0.3)]'
+                  ? 'bg-[rgba(26,217,192,0.12)] text-[#1AD9C0] border-[rgba(26,217,192,0.3)]'
                   : activeDataSource === 'serial'
                   ? 'bg-[rgba(168,85,247,0.12)] text-[#A855F7] border-[rgba(168,85,247,0.3)]'
-                  : 'bg-[rgba(0,255,156,0.08)] text-[#00FF9C] border-[rgba(0,255,156,0.2)]'}`}>
+                  : 'bg-[rgba(52,199,89,0.08)] text-[#34C759] border-[rgba(52,199,89,0.2)]'}`}>
                 {activeDataSource === 'bluetooth' ? '● BLE Hardware'
                   : activeDataSource === 'serial' ? '● Serial Hardware'
                   : '◎ Simulator'}
@@ -261,17 +261,17 @@ export default function SettingsPage() {
           </div>
 
           {/* BLE 蓝牙连接 */}
-          <div className="bg-[#111E33] border border-[rgba(0,212,255,0.08)] rounded-[20px] overflow-hidden mb-3">
+          <div className="bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] rounded-[20px] overflow-hidden mb-3">
             <div className="flex items-center gap-3 px-4 py-3.5">
               <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0
                 ${bleConnection.status === 'connected'
-                  ? 'bg-[rgba(0,212,255,0.15)] text-[#00D4FF]'
-                  : 'bg-[rgba(255,255,255,0.06)] text-[#7A9AB8]'}`}>
+                  ? 'bg-[rgba(26,217,192,0.15)] text-[#1AD9C0]'
+                  : 'bg-[rgba(255,255,255,0.06)] text-[#8E8E93]'}`}>
                 <Bluetooth size={16} />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-semibold text-[#E8F4FF]">Bluetooth BLE</div>
-                <div className="text-[11px] text-[#7A9AB8] mt-0.5 truncate">
+                <div className="text-[13px] font-semibold text-[#FFFFFF]">Bluetooth BLE</div>
+                <div className="text-[11px] text-[#8E8E93] mt-0.5 truncate">
                   {bleConnection.status === 'connected'
                     ? `${bleConnection.deviceName ?? 'Device'} · ${bleConnection.rssi ? `${bleConnection.rssi} dBm` : 'Connected'}`
                     : bleConnection.status === 'scanning'  ? 'Scanning for devices...'
@@ -286,8 +286,8 @@ export default function SettingsPage() {
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold
                            transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed
                   ${bleConnection.status === 'connected'
-                    ? 'bg-[rgba(255,71,87,0.12)] text-[#FF4757] border border-[rgba(255,71,87,0.3)]'
-                    : 'bg-[rgba(0,212,255,0.12)] text-[#00D4FF] border border-[rgba(0,212,255,0.3)]'}`}
+                    ? 'bg-[rgba(255,59,48,0.12)] text-[#FF3B30] border border-[rgba(255,59,48,0.3)]'
+                    : 'bg-[rgba(26,217,192,0.12)] text-[#1AD9C0] border border-[rgba(26,217,192,0.3)]'}`}
               >
                 {(bleConnection.status === 'scanning' || bleConnection.status === 'connecting')
                   ? <Loader2 size={11} className="animate-spin" />
@@ -299,17 +299,17 @@ export default function SettingsPage() {
           </div>
 
           {/* Serial / Modbus 连接 */}
-          <div className="bg-[#111E33] border border-[rgba(0,212,255,0.08)] rounded-[20px] overflow-hidden mb-3">
+          <div className="bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] rounded-[20px] overflow-hidden mb-3">
             <div className="flex items-center gap-3 px-4 py-3.5">
               <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0
                 ${serialConnection.status === 'connected'
                   ? 'bg-[rgba(168,85,247,0.15)] text-[#A855F7]'
-                  : 'bg-[rgba(255,255,255,0.06)] text-[#7A9AB8]'}`}>
+                  : 'bg-[rgba(255,255,255,0.06)] text-[#8E8E93]'}`}>
                 <Usb size={16} />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-semibold text-[#E8F4FF]">Serial · Modbus RTU</div>
-                <div className="text-[11px] text-[#7A9AB8] mt-0.5 truncate">
+                <div className="text-[13px] font-semibold text-[#FFFFFF]">Serial · Modbus RTU</div>
+                <div className="text-[11px] text-[#8E8E93] mt-0.5 truncate">
                   {serialConnection.status === 'connected'
                     ? 'RS485 · 9600 bps · 8N1 · Polling 2s'
                     : serialConnection.status === 'scanning'   ? 'Selecting port...'
@@ -324,7 +324,7 @@ export default function SettingsPage() {
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold
                            transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed
                   ${serialConnection.status === 'connected'
-                    ? 'bg-[rgba(255,71,87,0.12)] text-[#FF4757] border border-[rgba(255,71,87,0.3)]'
+                    ? 'bg-[rgba(255,59,48,0.12)] text-[#FF3B30] border border-[rgba(255,59,48,0.3)]'
                     : 'bg-[rgba(168,85,247,0.12)] text-[#A855F7] border border-[rgba(168,85,247,0.3)]'}`}
               >
                 {(serialConnection.status === 'scanning' || serialConnection.status === 'connecting')
@@ -348,7 +348,7 @@ export default function SettingsPage() {
           </div>
 
           {/* 其他连接设置 */}
-          <div className="bg-[#111E33] border border-[rgba(0,212,255,0.08)] rounded-[20px] overflow-hidden">
+          <div className="bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] rounded-[20px] overflow-hidden">
             {[
               { icon: Wifi,  label: 'Wi-Fi',       desc: 'HomeNetwork · Connected', right: 'badge-connected', storeKey: null },
               { icon: Cloud, label: 'Cloud Sync',   desc: 'Real-time data · Remote', right: 'toggle', storeKey: 'cloudSync' as const },
@@ -357,18 +357,18 @@ export default function SettingsPage() {
               return (
                 <div key={item.label}
                   className={`flex items-center gap-3 px-4 py-3.5
-                    ${i !== arr.length - 1 ? 'border-b border-[rgba(0,212,255,0.08)]' : ''}`}>
-                  <div className="w-9 h-9 rounded-lg bg-[rgba(0,212,255,0.1)] text-[#00D4FF]
+                    ${i !== arr.length - 1 ? 'border-b border-[rgba(26,217,192,0.08)]' : ''}`}>
+                  <div className="w-9 h-9 rounded-lg bg-[rgba(26,217,192,0.1)] text-[#1AD9C0]
                                   flex items-center justify-center flex-shrink-0">
                     <Icon size={16} />
                   </div>
                   <div className="flex-1">
-                    <div className="text-[13px] font-semibold text-[#E8F4FF]">{item.label}</div>
-                    <div className="text-[11px] text-[#7A9AB8] mt-0.5">{item.desc}</div>
+                    <div className="text-[13px] font-semibold text-[#FFFFFF]">{item.label}</div>
+                    <div className="text-[11px] text-[#8E8E93] mt-0.5">{item.desc}</div>
                   </div>
                   {item.right === 'badge-connected' && (
                     <span className="text-[10px] px-2 py-0.5 rounded-full
-                      bg-[rgba(0,255,156,0.12)] text-[#00FF9C] border border-[rgba(0,255,156,0.25)] font-semibold">
+                      bg-[rgba(52,199,89,0.12)] text-[#34C759] border border-[rgba(52,199,89,0.25)] font-semibold">
                       Connected
                     </span>
                   )}
@@ -389,7 +389,7 @@ export default function SettingsPage() {
         <div className="mb-4">
           <button
             onClick={() => setShowDbPanel(v => !v)}
-            className="w-full text-[11px] font-bold text-[#7A9AB8] tracking-widest uppercase mb-2 px-1
+            className="w-full text-[11px] font-bold text-[#8E8E93] tracking-widest uppercase mb-2 px-1
                        flex items-center justify-between"
           >
             <span className="flex items-center gap-2">
@@ -407,7 +407,7 @@ export default function SettingsPage() {
                 exit={{ opacity: 0, height: 0 }}
                 className="overflow-hidden"
               >
-                <div className="bg-[#111E33] border border-[rgba(0,212,255,0.08)] rounded-[20px] p-4 mb-3">
+                <div className="bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] rounded-[20px] p-4 mb-3">
                   <div className="grid grid-cols-2 gap-2 mb-3">
                     {dbStats && Object.entries({
                       'Power History': dbStats.powerHistory,
@@ -415,25 +415,25 @@ export default function SettingsPage() {
                       'Connections':   dbStats.connectionLogs,
                       'Commands':      dbStats.commands,
                     }).map(([label, count]) => (
-                      <div key={label} className="bg-[rgba(0,212,255,0.05)] rounded-xl p-2.5">
-                        <div className="text-[18px] font-bold text-[#00D4FF]">{count}</div>
-                        <div className="text-[10px] text-[#7A9AB8] mt-0.5">{label}</div>
+                      <div key={label} className="bg-[rgba(26,217,192,0.05)] rounded-xl p-2.5">
+                        <div className="text-[18px] font-bold text-[#1AD9C0]">{count}</div>
+                        <div className="text-[10px] text-[#8E8E93] mt-0.5">{label}</div>
                       </div>
                     ))}
                     {!dbStats && (
-                      <div className="col-span-2 text-[12px] text-[#7A9AB8] text-center py-2">
+                      <div className="col-span-2 text-[12px] text-[#8E8E93] text-center py-2">
                         Loading...
                       </div>
                     )}
                   </div>
-                  <div className="text-[10px] text-[#3D5A78] mb-3">
+                  <div className="text-[10px] text-[#48484A] mb-3">
                     Power history: 10s interval · max 8640 records (~24h)<br />
                     Alerts: max 500 · Commands: max 200
                   </div>
                   <button
                     onClick={handleClearDB}
                     className="w-full py-2 rounded-xl text-[12px] font-semibold
-                               bg-[rgba(255,71,87,0.08)] text-[#FF4757] border border-[rgba(255,71,87,0.2)]
+                               bg-[rgba(255,59,48,0.08)] text-[#FF3B30] border border-[rgba(255,59,48,0.2)]
                                active:scale-95 transition-transform"
                   >
                     Clear All History
@@ -446,10 +446,10 @@ export default function SettingsPage() {
 
         {/* 系统设置 */}
         <div className="mb-4">
-          <div className="text-[11px] font-bold text-[#7A9AB8] tracking-widest uppercase mb-2 px-1">
+          <div className="text-[11px] font-bold text-[#8E8E93] tracking-widest uppercase mb-2 px-1">
             System
           </div>
-          <div className="bg-[#111E33] border border-[rgba(0,212,255,0.08)] rounded-[20px] overflow-hidden">
+          <div className="bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] rounded-[20px] overflow-hidden">
             {systemItems.map((item, i) => {
               const Icon = item.icon
               const colors = colorClasses[item.color]
@@ -457,15 +457,15 @@ export default function SettingsPage() {
                 <div 
                   key={item.label}
                   className={`flex items-center gap-3 px-4 py-3.5 
-                            ${i !== systemItems.length - 1 ? 'border-b border-[rgba(0,212,255,0.08)]' : ''}`}
+                            ${i !== systemItems.length - 1 ? 'border-b border-[rgba(26,217,192,0.08)]' : ''}`}
                 >
                   <div className={`w-9 h-9 rounded-lg ${colors.bg} ${colors.text} 
                                  flex items-center justify-center flex-shrink-0`}>
                     <Icon size={16} />
                   </div>
                   <div className="flex-1">
-                    <div className="text-[13px] font-semibold text-[#E8F4FF]">{item.label}</div>
-                    <div className="text-[11px] text-[#7A9AB8] mt-0.5">{item.desc}</div>
+                    <div className="text-[13px] font-semibold text-[#FFFFFF]">{item.label}</div>
+                    <div className="text-[11px] text-[#8E8E93] mt-0.5">{item.desc}</div>
                   </div>
                   <div className="flex items-center gap-2">
                     {item.type === 'toggle' && item.storeKey && (
@@ -477,18 +477,18 @@ export default function SettingsPage() {
                     )}
                     {item.type === 'nav' && (
                       <>
-                        <ChevronRight size={16} className="text-[#3D5A78]" />
+                        <ChevronRight size={16} className="text-[#48484A]" />
                       </>
                     )}
                     {item.type === 'badge' && (
                       <span className="text-[10px] px-2 py-0.5 rounded-full 
-                                     bg-[rgba(0,255,156,0.12)] text-[#00FF9C] border border-[rgba(0,255,156,0.25)]
+                                     bg-[rgba(52,199,89,0.12)] text-[#34C759] border border-[rgba(52,199,89,0.25)]
                                      font-semibold">
                         Latest
                       </span>
                     )}
                     {item.type === 'nav-danger' && (
-                      <ChevronRight size={16} className="text-[#FF4757]" />
+                      <ChevronRight size={16} className="text-[#FF3B30]" />
                     )}
                   </div>
                 </div>
@@ -498,13 +498,13 @@ export default function SettingsPage() {
         </div>
 
         {/* 版本信息 */}
-        <div className="text-center py-4 text-[11px] text-[#3D5A78] leading-relaxed">
+        <div className="text-center py-4 text-[11px] text-[#48484A] leading-relaxed">
           <div>Sierro App · v3.2.1 (Build 2411)</div>
           <div>© 2026 Sierro Technology Co., Ltd.</div>
           <div className="mt-2 flex justify-center gap-4">
-            <button onClick={() => setShowPrivacy(true)} className="text-[#00D4FF] hover:underline">Privacy Policy</button>
-            <button onClick={() => setShowTerms(true)} className="text-[#00D4FF] hover:underline">Terms of Use</button>
-            <button onClick={() => setShowSupport(true)} className="text-[#00D4FF] hover:underline">Support</button>
+            <button onClick={() => setShowPrivacy(true)} className="text-[#1AD9C0] hover:underline">Privacy Policy</button>
+            <button onClick={() => setShowTerms(true)} className="text-[#1AD9C0] hover:underline">Terms of Use</button>
+            <button onClick={() => setShowSupport(true)} className="text-[#1AD9C0] hover:underline">Support</button>
           </div>
         </div>
       </div>
@@ -524,22 +524,22 @@ export default function SettingsPage() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="w-full max-w-md bg-[#111E33] rounded-[28px] border border-[rgba(0,212,255,0.15)] overflow-hidden max-h-[85vh]"
+              className="w-full max-w-md bg-[#1C1C1E] rounded-[28px] border border-[rgba(26,217,192,0.15)] overflow-hidden max-h-[85vh]"
               onClick={e => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(0,212,255,0.1)]">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(26,217,192,0.1)]">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[rgba(0,212,255,0.1)] flex items-center justify-center">
-                    <Shield size={20} className="text-[#00D4FF]" />
+                  <div className="w-10 h-10 rounded-xl bg-[rgba(26,217,192,0.1)] flex items-center justify-center">
+                    <Shield size={20} className="text-[#1AD9C0]" />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-[#E8F4FF]">Privacy Policy</h3>
-                    <p className="text-[11px] text-[#7A9AB8]">Last updated: March 2026</p>
+                    <h3 className="text-base font-bold text-[#FFFFFF]">Privacy Policy</h3>
+                    <p className="text-[11px] text-[#8E8E93]">Last updated: March 2026</p>
                   </div>
                 </div>
                 <button onClick={() => setShowPrivacy(false)} className="p-2 rounded-full hover:bg-[rgba(255,255,255,0.05)]">
-                  <X size={20} className="text-[#7A9AB8]" />
+                  <X size={20} className="text-[#8E8E93]" />
                 </button>
               </div>
               
@@ -547,19 +547,19 @@ export default function SettingsPage() {
               <div className="p-5 overflow-y-auto max-h-[60vh]">
                 <div className="space-y-4">
                   {privacyContent.map((section, i) => (
-                    <div key={i} className="bg-[rgba(0,212,255,0.03)] rounded-xl p-4">
-                      <h4 className="text-[13px] font-semibold text-[#00D4FF] mb-2">{section.title}</h4>
-                      <p className="text-[12px] text-[#7A9AB8] leading-relaxed">{section.content}</p>
+                    <div key={i} className="bg-[rgba(26,217,192,0.03)] rounded-xl p-4">
+                      <h4 className="text-[13px] font-semibold text-[#1AD9C0] mb-2">{section.title}</h4>
+                      <p className="text-[12px] text-[#8E8E93] leading-relaxed">{section.content}</p>
                     </div>
                   ))}
                 </div>
               </div>
               
               {/* Footer */}
-              <div className="p-4 border-t border-[rgba(0,212,255,0.1)]">
+              <div className="p-4 border-t border-[rgba(26,217,192,0.1)]">
                 <button
                   onClick={() => setShowPrivacy(false)}
-                  className="w-full py-3 rounded-xl bg-[rgba(0,212,255,0.12)] text-[#00D4FF] font-semibold text-[13px] active:scale-95 transition-transform"
+                  className="w-full py-3 rounded-xl bg-[rgba(26,217,192,0.12)] text-[#1AD9C0] font-semibold text-[13px] active:scale-95 transition-transform"
                 >
                   I Understand
                 </button>
@@ -584,22 +584,22 @@ export default function SettingsPage() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="w-full max-w-md bg-[#111E33] rounded-[28px] border border-[rgba(0,255,156,0.15)] overflow-hidden max-h-[85vh]"
+              className="w-full max-w-md bg-[#1C1C1E] rounded-[28px] border border-[rgba(52,199,89,0.15)] overflow-hidden max-h-[85vh]"
               onClick={e => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(0,255,156,0.1)]">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(52,199,89,0.1)]">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[rgba(0,255,156,0.1)] flex items-center justify-center">
-                    <FileText size={20} className="text-[#00FF9C]" />
+                  <div className="w-10 h-10 rounded-xl bg-[rgba(52,199,89,0.1)] flex items-center justify-center">
+                    <FileText size={20} className="text-[#34C759]" />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-[#E8F4FF]">Terms of Use</h3>
-                    <p className="text-[11px] text-[#7A9AB8]">Version 3.2.1</p>
+                    <h3 className="text-base font-bold text-[#FFFFFF]">Terms of Use</h3>
+                    <p className="text-[11px] text-[#8E8E93]">Version 3.2.1</p>
                   </div>
                 </div>
                 <button onClick={() => setShowTerms(false)} className="p-2 rounded-full hover:bg-[rgba(255,255,255,0.05)]">
-                  <X size={20} className="text-[#7A9AB8]" />
+                  <X size={20} className="text-[#8E8E93]" />
                 </button>
               </div>
               
@@ -607,19 +607,19 @@ export default function SettingsPage() {
               <div className="p-5 overflow-y-auto max-h-[60vh]">
                 <div className="space-y-4">
                   {termsContent.map((section, i) => (
-                    <div key={i} className="bg-[rgba(0,255,156,0.03)] rounded-xl p-4">
-                      <h4 className="text-[13px] font-semibold text-[#00FF9C] mb-2">{section.title}</h4>
-                      <p className="text-[12px] text-[#7A9AB8] leading-relaxed">{section.content}</p>
+                    <div key={i} className="bg-[rgba(52,199,89,0.03)] rounded-xl p-4">
+                      <h4 className="text-[13px] font-semibold text-[#34C759] mb-2">{section.title}</h4>
+                      <p className="text-[12px] text-[#8E8E93] leading-relaxed">{section.content}</p>
                     </div>
                   ))}
                 </div>
               </div>
               
               {/* Footer */}
-              <div className="p-4 border-t border-[rgba(0,255,156,0.1)]">
+              <div className="p-4 border-t border-[rgba(52,199,89,0.1)]">
                 <button
                   onClick={() => setShowTerms(false)}
-                  className="w-full py-3 rounded-xl bg-[rgba(0,255,156,0.12)] text-[#00FF9C] font-semibold text-[13px] active:scale-95 transition-transform"
+                  className="w-full py-3 rounded-xl bg-[rgba(52,199,89,0.12)] text-[#34C759] font-semibold text-[13px] active:scale-95 transition-transform"
                 >
                   I Agree
                 </button>
@@ -644,22 +644,22 @@ export default function SettingsPage() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="w-full max-w-md bg-[#111E33] rounded-[28px] border border-[rgba(255,184,0,0.15)] overflow-hidden"
+              className="w-full max-w-md bg-[#1C1C1E] rounded-[28px] border border-[rgba(255,149,0,0.15)] overflow-hidden"
               onClick={e => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(255,184,0,0.1)]">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(255,149,0,0.1)]">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[rgba(255,184,0,0.1)] flex items-center justify-center">
-                    <Headphones size={20} className="text-[#FFB800]" />
+                  <div className="w-10 h-10 rounded-xl bg-[rgba(255,149,0,0.1)] flex items-center justify-center">
+                    <Headphones size={20} className="text-[#FF9500]" />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-[#E8F4FF]">Support</h3>
-                    <p className="text-[11px] text-[#7A9AB8]">We are here to help</p>
+                    <h3 className="text-base font-bold text-[#FFFFFF]">Support</h3>
+                    <p className="text-[11px] text-[#8E8E93]">We are here to help</p>
                   </div>
                 </div>
                 <button onClick={() => setShowSupport(false)} className="p-2 rounded-full hover:bg-[rgba(255,255,255,0.05)]">
-                  <X size={20} className="text-[#7A9AB8]" />
+                  <X size={20} className="text-[#8E8E93]" />
                 </button>
               </div>
               
@@ -671,17 +671,17 @@ export default function SettingsPage() {
                     animate={{ opacity: 1, scale: 1 }}
                     className="text-center py-8"
                   >
-                    <div className="w-16 h-16 rounded-full bg-[rgba(0,255,156,0.1)] flex items-center justify-center mx-auto mb-4">
-                      <CheckCircle size={32} className="text-[#00FF9C]" />
+                    <div className="w-16 h-16 rounded-full bg-[rgba(52,199,89,0.1)] flex items-center justify-center mx-auto mb-4">
+                      <CheckCircle size={32} className="text-[#34C759]" />
                     </div>
-                    <h4 className="text-[15px] font-bold text-[#E8F4FF] mb-2">Feedback Submitted!</h4>
-                    <p className="text-[12px] text-[#7A9AB8]">We will get back to you within 24 hours.</p>
+                    <h4 className="text-[15px] font-bold text-[#FFFFFF] mb-2">Feedback Submitted!</h4>
+                    <p className="text-[12px] text-[#8E8E93]">We will get back to you within 24 hours.</p>
                   </motion.div>
                 ) : (
                   <form onSubmit={handleSupportSubmit} className="space-y-4">
                     {/* Email Input */}
                     <div>
-                      <label className="text-[12px] font-semibold text-[#7A9AB8] mb-2 flex items-center gap-2">
+                      <label className="text-[12px] font-semibold text-[#8E8E93] mb-2 flex items-center gap-2">
                         <Mail size={14} />
                         Your Email
                       </label>
@@ -691,15 +691,15 @@ export default function SettingsPage() {
                         value={supportEmail}
                         onChange={e => setSupportEmail(e.target.value)}
                         placeholder="you@example.com"
-                        className="w-full px-4 py-3 rounded-xl bg-[#080E1A] border border-[rgba(0,212,255,0.15)]
-                                   text-[#E8F4FF] text-[13px] placeholder:text-[#3D5A78]
-                                   focus:outline-none focus:border-[rgba(0,212,255,0.4)] transition-colors"
+                        className="w-full px-4 py-3 rounded-xl bg-[#000000] border border-[rgba(26,217,192,0.15)]
+                                   text-[#FFFFFF] text-[13px] placeholder:text-[#48484A]
+                                   focus:outline-none focus:border-[rgba(26,217,192,0.4)] transition-colors"
                       />
                     </div>
                     
                     {/* Message Input */}
                     <div>
-                      <label className="text-[12px] font-semibold text-[#7A9AB8] mb-2 flex items-center gap-2">
+                      <label className="text-[12px] font-semibold text-[#8E8E93] mb-2 flex items-center gap-2">
                         <FileText size={14} />
                         Your Feedback
                       </label>
@@ -709,24 +709,24 @@ export default function SettingsPage() {
                         onChange={e => setSupportMessage(e.target.value)}
                         placeholder="Describe your issue or suggestion..."
                         rows={4}
-                        className="w-full px-4 py-3 rounded-xl bg-[#080E1A] border border-[rgba(0,212,255,0.15)]
-                                   text-[#E8F4FF] text-[13px] placeholder:text-[#3D5A78] resize-none
-                                   focus:outline-none focus:border-[rgba(0,212,255,0.4)] transition-colors"
+                        className="w-full px-4 py-3 rounded-xl bg-[#000000] border border-[rgba(26,217,192,0.15)]
+                                   text-[#FFFFFF] text-[13px] placeholder:text-[#48484A] resize-none
+                                   focus:outline-none focus:border-[rgba(26,217,192,0.4)] transition-colors"
                       />
                     </div>
                     
                     {/* Submit Button */}
                     <button
                       type="submit"
-                      className="w-full py-3.5 rounded-xl bg-[rgba(255,184,0,0.12)] text-[#FFB800] font-semibold text-[13px]
+                      className="w-full py-3.5 rounded-xl bg-[rgba(255,149,0,0.12)] text-[#FF9500] font-semibold text-[13px]
                                  flex items-center justify-center gap-2 active:scale-95 transition-transform
-                                 border border-[rgba(255,184,0,0.2)]"
+                                 border border-[rgba(255,149,0,0.2)]"
                     >
                       <Send size={16} />
                       Submit Feedback
                     </button>
                     
-                    <p className="text-[10px] text-[#3D5A78] text-center">
+                    <p className="text-[10px] text-[#48484A] text-center">
                       By submitting, you agree to our Privacy Policy
                     </p>
                   </form>

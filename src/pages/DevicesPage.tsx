@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { Menu, User, Search, Zap, Battery, AlertTriangle, X, Plus, QrCode } from 'lucide-react'
@@ -32,34 +32,34 @@ export default function DevicesPage() {
   const alertCount = devices.filter(hasAlert).length
 
   const getBatteryColor = (level: number) => {
-    if (level >= 70) return 'text-[#00FF9C]'
-    if (level >= 30) return 'text-[#FFB800]'
-    return 'text-[#FF4757]'
+    if (level >= 70) return 'text-[#34C759]'
+    if (level >= 30) return 'text-[#FF9500]'
+    return 'text-[#FF3B30]'
   }
 
   const getIconColor = (type: string) => {
     switch (type) {
-      case 'cpap': return 'bg-[rgba(0,212,255,0.15)] text-[#00D4FF]'
-      case 'fridge': return 'bg-[rgba(255,184,0,0.15)] text-[#FFB800]'
-      case 'powerstation': return 'bg-[rgba(0,255,156,0.15)] text-[#00FF9C]'
-      default: return 'bg-[rgba(0,212,255,0.15)] text-[#00D4FF]'
+      case 'cpap': return 'bg-[rgba(26,217,192,0.15)] text-[#1AD9C0]'
+      case 'fridge': return 'bg-[rgba(255,149,0,0.15)] text-[#FF9500]'
+      case 'powerstation': return 'bg-[rgba(52,199,89,0.15)] text-[#34C759]'
+      default: return 'bg-[rgba(26,217,192,0.15)] text-[#1AD9C0]'
     }
   }
 
   return (
-    <div className="h-full flex flex-col bg-[#080E1A] overflow-hidden">
+    <div className="h-full flex flex-col bg-[#000000] overflow-hidden">
       {/* Header */}
       <div className="px-5 pt-4 pb-3 safe-area-top flex justify-between items-center">
-        <button className="w-9 h-9 rounded-[14px] bg-[#111E33] border border-[rgba(0,212,255,0.08)] 
-                         flex items-center justify-center text-[#E8F4FF]">
+        <button className="w-9 h-9 rounded-[14px] bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] 
+                         flex items-center justify-center text-[#FFFFFF]">
           <Menu size={20} />
         </button>
-        <h2 className="text-xl font-bold text-[#E8F4FF]">Devices</h2>
+        <h2 className="text-xl font-bold text-[#FFFFFF]">Devices</h2>
         <button
           onClick={() => navigate('/settings')}
-          className="w-9 h-9 rounded-[14px] bg-[#111E33] border border-[rgba(0,212,255,0.08)] 
-                   flex items-center justify-center text-[#E8F4FF]
-                   hover:border-[rgba(0,212,255,0.4)] hover:bg-[rgba(0,212,255,0.06)] transition-all duration-250"
+          className="w-9 h-9 rounded-[14px] bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] 
+                   flex items-center justify-center text-[#FFFFFF]
+                   hover:border-[rgba(26,217,192,0.4)] hover:bg-[rgba(26,217,192,0.06)] transition-all duration-250"
         >
           <User size={20} />
         </button>
@@ -69,7 +69,7 @@ export default function DevicesPage() {
       <div className="flex-1 overflow-y-auto scrollbar-hide px-5 pb-4">
         {/* 搜索栏 */}
         <div className="relative mb-4">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#7A9AB8]">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#8E8E93]">
             <Search size={18} />
           </div>
           <input
@@ -77,9 +77,9 @@ export default function DevicesPage() {
             placeholder="Search devices..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-11 bg-[#111E33] border border-[rgba(0,212,255,0.08)] rounded-[28px]
-                     pl-11 pr-10 text-sm text-[#E8F4FF] placeholder-[#7A9AB8]
-                     focus:border-[rgba(0,212,255,0.4)] focus:outline-none focus:shadow-[0_0_0_3px_rgba(0,212,255,0.1)]
+            className="w-full h-11 bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] rounded-[28px]
+                     pl-11 pr-10 text-sm text-[#FFFFFF] placeholder-[#8E8E93]
+                     focus:border-[rgba(26,217,192,0.4)] focus:outline-none focus:shadow-[0_0_0_3px_rgba(26,217,192,0.1)]
                      transition-all duration-250"
           />
           <AnimatePresence>
@@ -91,7 +91,7 @@ export default function DevicesPage() {
                 transition={{ duration: 0.15 }}
                 onClick={() => setSearchQuery('')}
                 className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full
-                           bg-[rgba(255,255,255,0.1)] text-[#7A9AB8] hover:text-[#E8F4FF]
+                           bg-[rgba(255,255,255,0.1)] text-[#8E8E93] hover:text-[#FFFFFF]
                            flex items-center justify-center transition-colors"
               >
                 <X size={13} />
@@ -111,9 +111,9 @@ export default function DevicesPage() {
                 whitespace-nowrap transition-all duration-250
                 ${activeFilter === filter
                   ? filter === 'Alerts'
-                    ? 'bg-[#FF4757] text-white'
-                    : 'bg-[#00D4FF] text-[#080E1A]'
-                  : 'bg-[#111E33] border border-[rgba(0,212,255,0.08)] text-[#7A9AB8]'
+                    ? 'bg-[#FF3B30] text-white'
+                    : 'bg-[#1AD9C0] text-[#000000]'
+                  : 'bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] text-[#8E8E93]'
                 }
               `}
             >
@@ -121,7 +121,7 @@ export default function DevicesPage() {
               {filter === 'Alerts' && alertCount > 0 && (
                 <span className={`
                   w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center
-                  ${activeFilter === 'Alerts' ? 'bg-white text-[#FF4757]' : 'bg-[#FF4757] text-white'}
+                  ${activeFilter === 'Alerts' ? 'bg-white text-[#FF3B30]' : 'bg-[#FF3B30] text-white'}
                 `}>
                   {alertCount}
                 </span>
@@ -139,11 +139,11 @@ export default function DevicesPage() {
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={() => setShowAddModal(true)}
-            className="flex-1 h-12 bg-[#111E33] border border-[rgba(0,212,255,0.25)] rounded-[20px]
-                     text-[#00D4FF] font-semibold text-[14px]
+            className="flex-1 h-12 bg-[#1C1C1E] border border-[rgba(26,217,192,0.25)] rounded-[20px]
+                     text-[#1AD9C0] font-semibold text-[14px]
                      flex items-center justify-center gap-2
-                     hover:bg-[rgba(0,212,255,0.08)] hover:border-[rgba(0,212,255,0.5)]
-                     hover:shadow-[0_0_16px_rgba(0,212,255,0.15)] transition-all duration-250"
+                     hover:bg-[rgba(26,217,192,0.08)] hover:border-[rgba(26,217,192,0.5)]
+                     hover:shadow-[0_0_16px_rgba(26,217,192,0.15)] transition-all duration-250"
           >
             <Plus size={18} />
             Add Device
@@ -151,11 +151,11 @@ export default function DevicesPage() {
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={() => setShowQrModal(true)}
-            className="flex-1 h-12 bg-[#111E33] border border-[rgba(0,255,156,0.25)] rounded-[20px]
-                     text-[#00FF9C] font-semibold text-[14px]
+            className="flex-1 h-12 bg-[#1C1C1E] border border-[rgba(52,199,89,0.25)] rounded-[20px]
+                     text-[#34C759] font-semibold text-[14px]
                      flex items-center justify-center gap-2
-                     hover:bg-[rgba(0,255,156,0.08)] hover:border-[rgba(0,255,156,0.5)]
-                     hover:shadow-[0_0_16px_rgba(0,255,156,0.15)] transition-all duration-250"
+                     hover:bg-[rgba(52,199,89,0.08)] hover:border-[rgba(52,199,89,0.5)]
+                     hover:shadow-[0_0_16px_rgba(52,199,89,0.15)] transition-all duration-250"
           >
             <QrCode size={18} />
             Scan QR
@@ -164,9 +164,9 @@ export default function DevicesPage() {
 
         {/* 设备列表标题 */}
         <div className="flex justify-between items-center mb-3">
-          <h3 className="text-base font-semibold text-[#E8F4FF]">Connected Devices</h3>
+          <h3 className="text-base font-semibold text-[#FFFFFF]">Connected Devices</h3>
           <span className="text-[11px] px-2.5 py-1 rounded-full 
-                         bg-[rgba(0,212,255,0.12)] text-[#00D4FF] border border-[rgba(0,212,255,0.25)]
+                         bg-[rgba(26,217,192,0.12)] text-[#1AD9C0] border border-[rgba(26,217,192,0.25)]
                          font-semibold">
             {activeCount} Active
           </span>
@@ -179,11 +179,11 @@ export default function DevicesPage() {
               key={device.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`flex items-center gap-3.5 p-4 bg-[#111E33] border rounded-[20px]
-                       hover:bg-[#162540] transition-all duration-250
+              className={`flex items-center gap-3.5 p-4 bg-[#1C1C1E] border rounded-[20px]
+                       hover:bg-[#2C2C2E] transition-all duration-250
                        ${hasAlert(device)
-                         ? 'border-[rgba(255,71,87,0.3)] bg-[rgba(255,71,87,0.03)]'
-                         : 'border-[rgba(0,212,255,0.08)] hover:border-[rgba(0,212,255,0.18)]'
+                         ? 'border-[rgba(255,59,48,0.3)] bg-[rgba(255,59,48,0.03)]'
+                         : 'border-[rgba(26,217,192,0.08)] hover:border-[rgba(26,217,192,0.18)]'
                        }`}
             >
               <div className={`w-12 h-12 rounded-[14px] flex items-center justify-center flex-shrink-0
@@ -193,13 +193,13 @@ export default function DevicesPage() {
 
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <div className="text-[15px] font-semibold text-[#E8F4FF]">{device.name}</div>
+                  <div className="text-[15px] font-semibold text-[#FFFFFF]">{device.name}</div>
                   {hasAlert(device) && (
-                    <AlertTriangle size={13} className="text-[#FF4757] flex-shrink-0" />
+                    <AlertTriangle size={13} className="text-[#FF3B30] flex-shrink-0" />
                   )}
                 </div>
                 <div className="flex items-center gap-3 mt-1">
-                  <span className={`text-xs ${device.status === 'online' ? 'text-[#7A9AB8]' : 'text-[#FF4757]'}`}>
+                  <span className={`text-xs ${device.status === 'online' ? 'text-[#8E8E93]' : 'text-[#FF3B30]'}`}>
                     {device.status === 'online' ? 'Online' : 'Offline'}
                   </span>
                   <span className={`flex items-center gap-1 text-xs font-semibold ${getBatteryColor(device.batteryLevel)}`}>
@@ -221,10 +221,10 @@ export default function DevicesPage() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-center py-12 text-[#3D5A78]"
+            className="text-center py-12 text-[#48484A]"
           >
             <Battery size={48} className="mx-auto mb-3 opacity-30" />
-            <p className="text-sm font-medium text-[#7A9AB8]">
+            <p className="text-sm font-medium text-[#8E8E93]">
               {searchQuery
                 ? `No results for "${searchQuery}"`
                 : activeFilter === 'Alerts'
@@ -234,7 +234,7 @@ export default function DevicesPage() {
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="mt-3 text-[12px] text-[#00D4FF] underline"
+                className="mt-3 text-[12px] text-[#1AD9C0] underline"
               >
                 Clear search
               </button>
@@ -259,33 +259,33 @@ export default function DevicesPage() {
               exit={{ y: 300, opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full bg-[#111E33] border-t border-[rgba(0,212,255,0.15)] rounded-t-[28px] p-6 pb-10"
+              className="w-full bg-[#1C1C1E] border-t border-[rgba(26,217,192,0.15)] rounded-t-[28px] p-6 pb-10"
             >
               <div className="w-10 h-1 bg-[rgba(255,255,255,0.15)] rounded-full mx-auto mb-5" />
-              <h3 className="text-base font-bold text-[#E8F4FF] mb-5">Add New Device</h3>
+              <h3 className="text-base font-bold text-[#FFFFFF] mb-5">Add New Device</h3>
               <div className="flex flex-col gap-3">
                 {[
-                  { label: 'Bluetooth Scan', desc: 'Find nearby BLE devices', color: '#00D4FF', icon: '📡' },
-                  { label: 'Wi-Fi Setup', desc: 'Connect via local network', color: '#00FF9C', icon: '📶' },
-                  { label: 'Manual Entry', desc: 'Enter device code manually', color: '#FFB800', icon: '⌨️' },
+                  { label: 'Bluetooth Scan', desc: 'Find nearby BLE devices', color: '#1AD9C0', icon: '📡' },
+                  { label: 'Wi-Fi Setup', desc: 'Connect via local network', color: '#34C759', icon: '📶' },
+                  { label: 'Manual Entry', desc: 'Enter device code manually', color: '#FF9500', icon: '⌨️' },
                 ].map((opt) => (
                   <button
                     key={opt.label}
                     onClick={() => setShowAddModal(false)}
                     className="flex items-center gap-4 p-4 bg-[#0D1826] border border-[rgba(255,255,255,0.06)]
-                               rounded-[16px] text-left hover:border-[rgba(0,212,255,0.25)] transition-all"
+                               rounded-[16px] text-left hover:border-[rgba(26,217,192,0.25)] transition-all"
                   >
                     <span className="text-2xl">{opt.icon}</span>
                     <div>
                       <div className="text-[14px] font-semibold" style={{ color: opt.color }}>{opt.label}</div>
-                      <div className="text-[11px] text-[#7A9AB8] mt-0.5">{opt.desc}</div>
+                      <div className="text-[11px] text-[#8E8E93] mt-0.5">{opt.desc}</div>
                     </div>
                   </button>
                 ))}
               </div>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="w-full mt-4 h-11 rounded-[14px] bg-[rgba(255,255,255,0.06)] text-[#7A9AB8] text-sm font-medium"
+                className="w-full mt-4 h-11 rounded-[14px] bg-[rgba(255,255,255,0.06)] text-[#8E8E93] text-sm font-medium"
               >
                 Cancel
               </button>
@@ -310,18 +310,18 @@ export default function DevicesPage() {
               exit={{ scale: 0.85, opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className="mx-6 bg-[#111E33] border border-[rgba(0,212,255,0.2)] rounded-[28px] p-6 text-center"
+              className="mx-6 bg-[#1C1C1E] border border-[rgba(26,217,192,0.2)] rounded-[28px] p-6 text-center"
             >
               {/* 模拟摄像头取景框 */}
               <div className="w-52 h-52 mx-auto mb-4 relative">
-                <div className="absolute inset-0 bg-[#0D1826] rounded-[16px] border border-[rgba(0,212,255,0.15)] 
+                <div className="absolute inset-0 bg-[#0D1826] rounded-[16px] border border-[rgba(26,217,192,0.15)] 
                                flex items-center justify-center">
-                  <QrCode size={64} className="text-[rgba(0,212,255,0.3)]" />
+                  <QrCode size={64} className="text-[rgba(26,217,192,0.3)]" />
                 </div>
                 {/* 扫描线动画 */}
                 <motion.div
-                  className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-[#00D4FF] to-transparent
-                             shadow-[0_0_8px_rgba(0,212,255,0.6)]"
+                  className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-[#1AD9C0] to-transparent
+                             shadow-[0_0_8px_rgba(26,217,192,0.6)]"
                   animate={{ top: ['10%', '85%', '10%'] }}
                   transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
                 />
@@ -329,14 +329,14 @@ export default function DevicesPage() {
                 {[['top-0 left-0','border-t-2 border-l-2'],['top-0 right-0','border-t-2 border-r-2'],
                   ['bottom-0 left-0','border-b-2 border-l-2'],['bottom-0 right-0','border-b-2 border-r-2']
                 ].map(([pos, border], i) => (
-                  <div key={i} className={`absolute w-5 h-5 ${pos} ${border} border-[#00D4FF] rounded-sm`} />
+                  <div key={i} className={`absolute w-5 h-5 ${pos} ${border} border-[#1AD9C0] rounded-sm`} />
                 ))}
               </div>
-              <div className="text-[15px] font-semibold text-[#E8F4FF] mb-1">Scan Device QR Code</div>
-              <div className="text-[12px] text-[#7A9AB8] mb-5">Point camera at the QR code on your device</div>
+              <div className="text-[15px] font-semibold text-[#FFFFFF] mb-1">Scan Device QR Code</div>
+              <div className="text-[12px] text-[#8E8E93] mb-5">Point camera at the QR code on your device</div>
               <button
                 onClick={() => setShowQrModal(false)}
-                className="w-full h-11 rounded-[14px] bg-[rgba(255,255,255,0.06)] text-[#7A9AB8] text-sm font-medium"
+                className="w-full h-11 rounded-[14px] bg-[rgba(255,255,255,0.06)] text-[#8E8E93] text-sm font-medium"
               >
                 Cancel
               </button>

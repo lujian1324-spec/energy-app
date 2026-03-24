@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+﻿import { motion } from 'framer-motion'
 
 interface BatteryRingProps {
   percentage: number
@@ -40,7 +40,7 @@ export default function BatteryRing({
         <defs>
           <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="#0090FF" />
-            <stop offset="100%" stopColor="#00D4FF" />
+            <stop offset="100%" stopColor="#1AD9C0" />
           </linearGradient>
           <filter id={glowId}>
             <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
@@ -57,7 +57,7 @@ export default function BatteryRing({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="rgba(0,212,255,0.08)"
+          stroke="rgba(26,217,192,0.08)"
           strokeWidth={strokeWidth}
         />
         
@@ -76,17 +76,17 @@ export default function BatteryRing({
           transition={{ duration: 0.8, ease: 'easeOut' }}
           filter={`url(#${glowId})`}
           style={{
-            filter: 'drop-shadow(0 0 6px rgba(0,212,255,0.6))'
+            filter: 'drop-shadow(0 0 6px rgba(26,217,192,0.6))'
           }}
         />
       </svg>
       
       {/* 中心内容 */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <div className="text-[32px] font-extrabold text-[#E8F4FF] leading-none tracking-tight">
-          {safePercent}<span className="text-sm font-medium text-[#7A9AB8]">%</span>
+        <div className="text-[32px] font-extrabold text-[#FFFFFF] leading-none tracking-tight">
+          {safePercent}<span className="text-sm font-medium text-[#8E8E93]">%</span>
         </div>
-        <div className="text-[10px] text-[#7A9AB8] mt-1 tracking-wide">CHARGE</div>
+        <div className="text-[10px] text-[#8E8E93] mt-1 tracking-wide">CHARGE</div>
       </div>
     </div>
   )

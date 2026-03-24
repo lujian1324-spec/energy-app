@@ -17,8 +17,8 @@ export default function ToggleSwitch({ isOn, onToggle, size = 'md' }: ToggleSwit
       className={`
         relative rounded-full transition-all duration-300 ease-out
         ${isOn 
-          ? 'bg-gradient-to-br from-[#00CC7A] to-[#00FF9C] shadow-[0_0_12px_rgba(0,255,156,0.35)]' 
-          : 'bg-[rgba(255,255,255,0.08)]'
+          ? 'bg-[#1AD9C0] shadow-[0_0_12px_rgba(26,217,192,0.45)]' 
+          : 'bg-[#39393D]'
         }
       `}
       style={{
