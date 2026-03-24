@@ -38,8 +38,6 @@ const initialPowerStation: PowerStation = {
     { id: 'ac-out-2', name: 'AC Out 2', type: 'ac-out', status: 'inactive', power: 0 },
     { id: 'ac-in', name: 'AC Input', type: 'ac-in', status: 'active', deviceName: 'Wall Charger', power: 450 },
     { id: 'dc-in', name: 'DC Input', type: 'dc-in', status: 'active', deviceName: 'Solar Panel', power: 280 },
-    { id: 'usb-out-1', name: 'USB-C 1', type: 'usb-out', status: 'active', deviceName: 'Phone', power: 18 },
-    { id: 'usb-out-2', name: 'USB-A 1', type: 'usb-out', status: 'inactive', power: 0 },
   ]
 }
 

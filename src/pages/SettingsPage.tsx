@@ -69,7 +69,7 @@ export default function SettingsPage() {
     { icon: Battery, label: 'Battery Capacity', value: '1000Wh', desc: 'LiFePO₄ · LFP Cells', color: 'blue' },
     { icon: Zap, label: 'Max Charge Power', value: '500W', desc: 'AC + Solar Simultaneous', color: 'green' },
     { icon: Thermometer, label: 'Current Temp', value: `${powerStation.temperature}°C`, desc: 'Ambient: 26°C', color: 'orange' },
-    { icon: RefreshCw, label: 'Charge Cycles', value: `${powerStation.cycleCount}`, desc: '~2,714 cycles remaining', color: 'purple' },
+    { icon: RefreshCw, label: 'Charge Cycles', value: `${powerStation.cycleCount}`, desc: '~7,714 cycles remaining', color: 'purple' },
   ]
 
   const systemItems = [
