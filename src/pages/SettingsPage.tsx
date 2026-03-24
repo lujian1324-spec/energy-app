@@ -22,6 +22,13 @@ import {
   Signal,
   Database,
   Activity,
+  X,
+  Send,
+  CheckCircle,
+  Shield,
+  FileText,
+  Headphones,
+  Mail,
 } from 'lucide-react'
 import ToggleSwitch from '../components/ToggleSwitch'
 import { usePowerStationStore } from '../stores/powerStationStore'
@@ -35,6 +42,16 @@ export default function SettingsPage() {
   const { connectBle, disconnectBle, connectSerial, disconnectSerial } = useProtocol()
   const [dbStats, setDbStats] = useState<Record<string, number> | null>(null)
   const [showDbPanel, setShowDbPanel] = useState(false)
+  
+  // 弹窗状态
+  const [showPrivacy, setShowPrivacy] = useState(false)
+  const [showTerms, setShowTerms] = useState(false)
+  const [showSupport, setShowSupport] = useState(false)
+  
+  // Support 表单
+  const [supportEmail, setSupportEmail] = useState('')
+  const [supportMessage, setSupportMessage] = useState('')
+  const [supportSubmitted, setSupportSubmitted] = useState(false)
 
   // 加载 DB 统计
   useEffect(() => {
@@ -64,6 +81,18 @@ export default function SettingsPage() {
     const stats = await getDBStats()
     setDbStats(stats)
   }
+  
+  const handleSupportSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    // 模拟提交
+    setSupportSubmitted(true)
+    setTimeout(() => {
+      setShowSupport(false)
+      setSupportEmail('')
+      setSupportMessage('')
+      setSupportSubmitted(false)
+    }, 1500)
+  }
 
   const deviceInfo = [
     { icon: Battery, label: 'Battery Capacity', value: '1000Wh', desc: 'LiFePO₄ · LFP Cells', color: 'blue' },
@@ -88,6 +117,25 @@ export default function SettingsPage() {
     red: { bg: 'bg-[rgba(255,71,87,0.1)]', text: 'text-[#FF4757]' },
     gray: { bg: 'bg-[rgba(255,255,255,0.06)]', text: 'text-[#7A9AB8]' },
   }
+  
+  // Privacy Policy 内容
+  const privacyContent = [
+    { title: '1. Information We Collect', content: 'We collect device usage data, battery statistics, and connection logs to provide better service. Personal information is only collected when you voluntarily provide it through support requests.' },
+    { title: '2. How We Use Your Data', content: 'Your data is used to improve app performance, provide personalized recommendations, and troubleshoot technical issues. We never sell your personal information to third parties.' },
+    { title: '3. Data Storage & Security', content: 'All data is stored locally on your device using encrypted IndexedDB. Cloud sync is optional and uses industry-standard encryption (TLS 1.3) for data transmission.' },
+    { title: '4. Bluetooth & Location', content: 'Bluetooth permissions are required to connect to your power station. Location permission is not collected or stored.' },
+    { title: '5. Your Rights', content: 'You can export or delete all your data at any time through the Factory Reset option. Contact support for data portability requests.' },
+  ]
+  
+  // Terms of Use 内容
+  const termsContent = [
+    { title: '1. Acceptance of Terms', content: 'By using Sierro App, you agree to these Terms of Use. If you do not agree, please do not use the application.' },
+    { title: '2. License Grant', content: 'We grant you a limited, non-exclusive, non-transferable license to use the app for personal, non-commercial purposes on devices you own or control.' },
+    { title: '3. Prohibited Activities', content: 'You may not: reverse engineer the app, use it for illegal purposes, interfere with other users, or attempt to gain unauthorized access to our systems.' },
+    { title: '4. Disclaimer of Warranties', content: 'The app is provided "as is" without warranties of any kind. We do not guarantee uninterrupted service or that the app will meet your specific requirements.' },
+    { title: '5. Limitation of Liability', content: 'To the maximum extent permitted by law, Sierro Technology shall not be liable for any indirect, incidental, or consequential damages arising from app usage.' },
+    { title: '6. Changes to Terms', content: 'We may update these terms from time to time. Continued use of the app after changes constitutes acceptance of the new terms.' },
+  ]
 
   return (
     <div className="h-full flex flex-col bg-[#080E1A] overflow-hidden">
@@ -454,12 +502,240 @@ export default function SettingsPage() {
           <div>Sierro App · v3.2.1 (Build 2411)</div>
           <div>© 2026 Sierro Technology Co., Ltd.</div>
           <div className="mt-2 flex justify-center gap-4">
-            <span className="text-[#00D4FF] cursor-pointer hover:underline">Privacy Policy</span>
-            <span className="text-[#00D4FF] cursor-pointer hover:underline">Terms of Use</span>
-            <span className="text-[#00D4FF] cursor-pointer hover:underline">Support</span>
+            <button onClick={() => setShowPrivacy(true)} className="text-[#00D4FF] hover:underline">Privacy Policy</button>
+            <button onClick={() => setShowTerms(true)} className="text-[#00D4FF] hover:underline">Terms of Use</button>
+            <button onClick={() => setShowSupport(true)} className="text-[#00D4FF] hover:underline">Support</button>
           </div>
         </div>
       </div>
+      
+      {/* ==================== Privacy Policy Modal ==================== */}
+      <AnimatePresence>
+        {showPrivacy && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            onClick={() => setShowPrivacy(false)}
+          >
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="w-full max-w-md bg-[#111E33] rounded-[28px] border border-[rgba(0,212,255,0.15)] overflow-hidden max-h-[85vh]"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(0,212,255,0.1)]">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[rgba(0,212,255,0.1)] flex items-center justify-center">
+                    <Shield size={20} className="text-[#00D4FF]" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-[#E8F4FF]">Privacy Policy</h3>
+                    <p className="text-[11px] text-[#7A9AB8]">Last updated: March 2026</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowPrivacy(false)} className="p-2 rounded-full hover:bg-[rgba(255,255,255,0.05)]">
+                  <X size={20} className="text-[#7A9AB8]" />
+                </button>
+              </div>
+              
+              {/* Content */}
+              <div className="p-5 overflow-y-auto max-h-[60vh]">
+                <div className="space-y-4">
+                  {privacyContent.map((section, i) => (
+                    <div key={i} className="bg-[rgba(0,212,255,0.03)] rounded-xl p-4">
+                      <h4 className="text-[13px] font-semibold text-[#00D4FF] mb-2">{section.title}</h4>
+                      <p className="text-[12px] text-[#7A9AB8] leading-relaxed">{section.content}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Footer */}
+              <div className="p-4 border-t border-[rgba(0,212,255,0.1)]">
+                <button
+                  onClick={() => setShowPrivacy(false)}
+                  className="w-full py-3 rounded-xl bg-[rgba(0,212,255,0.12)] text-[#00D4FF] font-semibold text-[13px] active:scale-95 transition-transform"
+                >
+                  I Understand
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* ==================== Terms of Use Modal ==================== */}
+      <AnimatePresence>
+        {showTerms && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            onClick={() => setShowTerms(false)}
+          >
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="w-full max-w-md bg-[#111E33] rounded-[28px] border border-[rgba(0,255,156,0.15)] overflow-hidden max-h-[85vh]"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(0,255,156,0.1)]">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[rgba(0,255,156,0.1)] flex items-center justify-center">
+                    <FileText size={20} className="text-[#00FF9C]" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-[#E8F4FF]">Terms of Use</h3>
+                    <p className="text-[11px] text-[#7A9AB8]">Version 3.2.1</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowTerms(false)} className="p-2 rounded-full hover:bg-[rgba(255,255,255,0.05)]">
+                  <X size={20} className="text-[#7A9AB8]" />
+                </button>
+              </div>
+              
+              {/* Content */}
+              <div className="p-5 overflow-y-auto max-h-[60vh]">
+                <div className="space-y-4">
+                  {termsContent.map((section, i) => (
+                    <div key={i} className="bg-[rgba(0,255,156,0.03)] rounded-xl p-4">
+                      <h4 className="text-[13px] font-semibold text-[#00FF9C] mb-2">{section.title}</h4>
+                      <p className="text-[12px] text-[#7A9AB8] leading-relaxed">{section.content}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Footer */}
+              <div className="p-4 border-t border-[rgba(0,255,156,0.1)]">
+                <button
+                  onClick={() => setShowTerms(false)}
+                  className="w-full py-3 rounded-xl bg-[rgba(0,255,156,0.12)] text-[#00FF9C] font-semibold text-[13px] active:scale-95 transition-transform"
+                >
+                  I Agree
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* ==================== Support Modal ==================== */}
+      <AnimatePresence>
+        {showSupport && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            onClick={() => setShowSupport(false)}
+          >
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="w-full max-w-md bg-[#111E33] rounded-[28px] border border-[rgba(255,184,0,0.15)] overflow-hidden"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(255,184,0,0.1)]">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[rgba(255,184,0,0.1)] flex items-center justify-center">
+                    <Headphones size={20} className="text-[#FFB800]" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-[#E8F4FF]">Support</h3>
+                    <p className="text-[11px] text-[#7A9AB8]">We are here to help</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowSupport(false)} className="p-2 rounded-full hover:bg-[rgba(255,255,255,0.05)]">
+                  <X size={20} className="text-[#7A9AB8]" />
+                </button>
+              </div>
+              
+              {/* Content */}
+              <div className="p-5">
+                {supportSubmitted ? (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="text-center py-8"
+                  >
+                    <div className="w-16 h-16 rounded-full bg-[rgba(0,255,156,0.1)] flex items-center justify-center mx-auto mb-4">
+                      <CheckCircle size={32} className="text-[#00FF9C]" />
+                    </div>
+                    <h4 className="text-[15px] font-bold text-[#E8F4FF] mb-2">Feedback Submitted!</h4>
+                    <p className="text-[12px] text-[#7A9AB8]">We will get back to you within 24 hours.</p>
+                  </motion.div>
+                ) : (
+                  <form onSubmit={handleSupportSubmit} className="space-y-4">
+                    {/* Email Input */}
+                    <div>
+                      <label className="text-[12px] font-semibold text-[#7A9AB8] mb-2 flex items-center gap-2">
+                        <Mail size={14} />
+                        Your Email
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={supportEmail}
+                        onChange={e => setSupportEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        className="w-full px-4 py-3 rounded-xl bg-[#080E1A] border border-[rgba(0,212,255,0.15)]
+                                   text-[#E8F4FF] text-[13px] placeholder:text-[#3D5A78]
+                                   focus:outline-none focus:border-[rgba(0,212,255,0.4)] transition-colors"
+                      />
+                    </div>
+                    
+                    {/* Message Input */}
+                    <div>
+                      <label className="text-[12px] font-semibold text-[#7A9AB8] mb-2 flex items-center gap-2">
+                        <FileText size={14} />
+                        Your Feedback
+                      </label>
+                      <textarea
+                        required
+                        value={supportMessage}
+                        onChange={e => setSupportMessage(e.target.value)}
+                        placeholder="Describe your issue or suggestion..."
+                        rows={4}
+                        className="w-full px-4 py-3 rounded-xl bg-[#080E1A] border border-[rgba(0,212,255,0.15)]
+                                   text-[#E8F4FF] text-[13px] placeholder:text-[#3D5A78] resize-none
+                                   focus:outline-none focus:border-[rgba(0,212,255,0.4)] transition-colors"
+                      />
+                    </div>
+                    
+                    {/* Submit Button */}
+                    <button
+                      type="submit"
+                      className="w-full py-3.5 rounded-xl bg-[rgba(255,184,0,0.12)] text-[#FFB800] font-semibold text-[13px]
+                                 flex items-center justify-center gap-2 active:scale-95 transition-transform
+                                 border border-[rgba(255,184,0,0.2)]"
+                    >
+                      <Send size={16} />
+                      Submit Feedback
+                    </button>
+                    
+                    <p className="text-[10px] text-[#3D5A78] text-center">
+                      By submitting, you agree to our Privacy Policy
+                    </p>
+                  </form>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
