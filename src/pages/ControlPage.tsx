@@ -22,8 +22,8 @@ export default function ControlPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-[rgba(26,217,192,0.06)] to-[rgba(52,199,89,0.04)]
-                     border border-[rgba(26,217,192,0.2)] rounded-[28px] p-5 mb-4 relative overflow-hidden"
+          className="bg-gradient-to-br from-[rgba(1,214,190,0.06)] to-[rgba(52,199,89,0.04)]
+                     border border-[rgba(1,214,190,0.2)] rounded-[28px] p-5 mb-4 relative overflow-hidden"
         >
           {/* 背景光晕 */}
           <div className="absolute -bottom-8 -right-8 w-[120px] h-[120px] rounded-full 
@@ -40,17 +40,17 @@ export default function ControlPage() {
               </div>
               <div className="text-[10px] text-[#8E8E93] mt-1 tracking-wide uppercase">Solar In</div>
             </div>
-            <div className="w-px bg-[rgba(26,217,192,0.08)] my-1" />
+            <div className="w-px bg-[rgba(1,214,190,0.08)] my-1" />
             <div className="text-center flex-1">
               <div className="flex items-center justify-center gap-1.5">
-                <Zap size={18} className="text-[#1AD9C0]" />
-                <span className="text-[22px] font-extrabold text-[#1AD9C0] tracking-tight">
-                  -{powerStation.outputPower}<small className="text-[13px] font-normal text-[#12A896]">W</small>
+                <Zap size={18} className="text-[#01D6BE]" />
+                <span className="text-[22px] font-extrabold text-[#01D6BE] tracking-tight">
+                  -{powerStation.outputPower}<small className="text-[13px] font-normal text-[#01A88F]">W</small>
                 </span>
               </div>
               <div className="text-[10px] text-[#8E8E93] mt-1 tracking-wide uppercase">Output</div>
             </div>
-            <div className="w-px bg-[rgba(26,217,192,0.08)] my-1" />
+            <div className="w-px bg-[rgba(1,214,190,0.08)] my-1" />
             <div className="text-center flex-1">
               <div className="flex items-center justify-center gap-1.5">
                 <Battery size={18} className={powerStation.inputPower >= powerStation.outputPower ? 'text-[#FF9500]' : 'text-[#FF3B30]'} />
@@ -78,8 +78,8 @@ export default function ControlPage() {
                   <stop offset="100%" stopColor="#34C759" stopOpacity="0"/>
                 </linearGradient>
                 <linearGradient id="waveGrad2" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#1AD9C0" stopOpacity="0.3"/>
-                  <stop offset="100%" stopColor="#1AD9C0" stopOpacity="0"/>
+                  <stop offset="0%" stopColor="#01D6BE" stopOpacity="0.3"/>
+                  <stop offset="100%" stopColor="#01D6BE" stopOpacity="0"/>
                 </linearGradient>
               </defs>
               {/* 输入波形 */}
@@ -92,7 +92,7 @@ export default function ControlPage() {
               {/* 输出波形 */}
               <g className="animate-wave" style={{ animationDelay: '-2s' }}>
                 <path d="M0,34 C25,26 50,40 75,32 C100,24 125,38 150,30 C175,22 200,36 225,28 C250,20 275,34 300,26 C325,18 350,32 375,24" 
-                      fill="none" stroke="#1AD9C0" strokeWidth="1" opacity="0.5"/>
+                      fill="none" stroke="#01D6BE" strokeWidth="1" opacity="0.5"/>
               </g>
             </svg>
           </div>
@@ -107,12 +107,12 @@ export default function ControlPage() {
             {outputPorts.map((port) => (
               <div 
                 key={port.id}
-                className="bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] 
+                className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] 
                          rounded-[20px] p-4 flex items-center gap-3.5"
               >
                 <div className={`
                   w-11 h-11 rounded-[14px] flex items-center justify-center flex-shrink-0
-                  ${port.type === 'ac-out' ? 'bg-[rgba(26,217,192,0.1)] text-[#1AD9C0]' : ''}
+                  ${port.type === 'ac-out' ? 'bg-[rgba(1,214,190,0.1)] text-[#01D6BE]' : ''}
                   ${port.type === 'usb-out' ? 'bg-[rgba(255,149,0,0.1)] text-[#FF9500]' : ''}
                 `}>
                   {port.type === 'ac-out' ? <Zap size={20} /> : <Battery size={20} />}
@@ -127,7 +127,7 @@ export default function ControlPage() {
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-1.5">
-                  <div className={`text-[15px] font-bold ${port.status === 'active' ? 'text-[#1AD9C0]' : 'text-[#48484A]'}`}>
+                  <div className={`text-[15px] font-bold ${port.status === 'active' ? 'text-[#01D6BE]' : 'text-[#48484A]'}`}>
                     {port.status === 'active' ? `${port.power}W` : '—'}
                   </div>
                   <ToggleSwitch 
@@ -141,22 +141,22 @@ export default function ControlPage() {
         </div>
 
         {/* 充电设置 */}
-        <div className="bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] rounded-[20px] p-4 mb-4">
+        <div className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] p-4 mb-4">
           <div className="flex items-center gap-2 text-sm font-bold text-[#FFFFFF] mb-3.5">
             <Settings size={14} className="flex-shrink-0" />
             CHARGE PROTECTION
           </div>
           
           <div className="space-y-3">
-            <div className="flex justify-between items-center py-2 border-b border-[rgba(26,217,192,0.08)]">
+            <div className="flex justify-between items-center py-2 border-b border-[rgba(1,214,190,0.08)]">
               <div>
                 <div className="text-[13px] text-[#AEAEB2]">Charge Mode</div>
                 <div className="text-[10px] text-[#48484A] mt-0.5">Current: Standard</div>
               </div>
-              <div className="text-[13px] font-semibold text-[#1AD9C0]">Standard ▾</div>
+              <div className="text-[13px] font-semibold text-[#01D6BE]">Standard ▾</div>
             </div>
             
-            <div className="flex justify-between items-center py-2 border-b border-[rgba(26,217,192,0.08)]">
+            <div className="flex justify-between items-center py-2 border-b border-[rgba(1,214,190,0.08)]">
               <div>
                 <div className="text-[13px] text-[#AEAEB2]">Over-temp Protection</div>
                 <div className="text-[10px] text-[#48484A] mt-0.5">Auto cut-off above 45°C</div>
@@ -168,7 +168,7 @@ export default function ControlPage() {
               />
             </div>
             
-            <div className="flex justify-between items-center py-2 border-b border-[rgba(26,217,192,0.08)]">
+            <div className="flex justify-between items-center py-2 border-b border-[rgba(1,214,190,0.08)]">
               <div>
                 <div className="text-[13px] text-[#AEAEB2]">Over-discharge Protection</div>
                 <div className="text-[10px] text-[#48484A] mt-0.5">Keep minimum 5% reserve</div>

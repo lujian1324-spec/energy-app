@@ -40,7 +40,7 @@ export default function StatsPage() {
           <h2 className="text-xl font-bold text-[#FFFFFF]">Energy Stats</h2>
           <p className="text-xs text-[#8E8E93] mt-1">This Week · March 2026</p>
         </div>
-        <div className="flex bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] rounded-full p-1">
+        <div className="flex bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-full p-1">
           {periods.map((p) => (
             <button
               key={p}
@@ -48,7 +48,7 @@ export default function StatsPage() {
               className={`
                 text-[11px] font-semibold px-3 py-1 rounded-full transition-all duration-200
                 ${period === p 
-                  ? 'bg-[#1AD9C0] text-[#000000] shadow-[0_0_8px_rgba(26,217,192,0.4)]' 
+                  ? 'bg-[#01D6BE] text-[#000000] shadow-[0_0_8px_rgba(1,214,190,0.4)]' 
                   : 'text-[#8E8E93] hover:text-[#FFFFFF]'
                 }
               `}
@@ -69,7 +69,7 @@ export default function StatsPage() {
         >
           {[
             { icon: Sun, value: '12.8', unit: 'kWh', label: 'Solar Charged', trend: '↑ 18%', trendUp: true, color: '#34C759' },
-            { icon: Zap, value: '9.4', unit: 'kWh', label: 'Total Output', trend: '↓ 5%', trendUp: false, color: '#1AD9C0' },
+            { icon: Zap, value: '9.4', unit: 'kWh', label: 'Total Output', trend: '↓ 5%', trendUp: false, color: '#01D6BE' },
             { icon: DollarSign, value: '$2.1', unit: '', label: 'Cost Saved', trend: '↑ 12%', trendUp: true, color: '#FF9500' },
             { icon: Globe, value: '6.4', unit: 'kg', label: 'CO₂ Reduced', trend: '↑ 18%', trendUp: true, color: '#A855F7' },
           ].map((stat, i) => {
@@ -77,7 +77,7 @@ export default function StatsPage() {
             return (
               <div 
                 key={i}
-                className="bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] rounded-[20px] p-4 relative overflow-hidden"
+                className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] p-4 relative overflow-hidden"
               >
                 <div 
                   className="absolute top-0 left-0 right-0 h-0.5"
@@ -97,7 +97,7 @@ export default function StatsPage() {
         </motion.div>
 
         {/* 柱状图 */}
-        <div className="bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] rounded-[20px] p-4 mb-4">
+        <div className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] p-4 mb-4">
           <div className="flex justify-between items-center mb-4">
             <div className="text-sm font-bold text-[#FFFFFF]">Weekly Charge / Discharge</div>
             <div className="flex gap-3">
@@ -106,7 +106,7 @@ export default function StatsPage() {
                 <span>Charge</span>
               </div>
               <div className="flex items-center gap-1.5 text-[10px] text-[#8E8E93]">
-                <div className="w-2 h-2 rounded-full bg-[#1AD9C0]" />
+                <div className="w-2 h-2 rounded-full bg-[#01D6BE]" />
                 <span>Usage</span>
               </div>
             </div>
@@ -121,14 +121,14 @@ export default function StatsPage() {
                   style={{ height: `${charge}%` }}
                 />
                 <div 
-                  className="flex-1 rounded-t bg-gradient-to-t from-[rgba(26,217,192,0.4)] to-[#1AD9C0] min-h-[4px]"
+                  className="flex-1 rounded-t bg-gradient-to-t from-[rgba(1,214,190,0.4)] to-[#01D6BE] min-h-[4px]"
                   style={{ height: `${currentData.discharge[i]}%` }}
                 />
               </div>
             ))}
           </div>
           {/* 分隔线 */}
-          <div className="h-px bg-[rgba(26,217,192,0.08)] my-1.5" />
+          <div className="h-px bg-[rgba(1,214,190,0.08)] my-1.5" />
           {/* X 轴标签 */}
           <div className="flex gap-1.5">
             {days.map((day) => (
@@ -138,7 +138,7 @@ export default function StatsPage() {
         </div>
 
         {/* 电池健康图表 */}
-        <div className="bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] rounded-[20px] p-4 mb-4">
+        <div className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] p-4 mb-4">
           <div className="flex justify-between items-center mb-4">
             <div className="text-sm font-bold text-[#FFFFFF]">Battery Health · Temp</div>
             <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full 
@@ -152,8 +152,8 @@ export default function StatsPage() {
             <svg className="w-full h-full" viewBox="0 0 335 80" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#1AD9C0" stopOpacity="0.25"/>
-                  <stop offset="100%" stopColor="#1AD9C0" stopOpacity="0"/>
+                  <stop offset="0%" stopColor="#01D6BE" stopOpacity="0.25"/>
+                  <stop offset="100%" stopColor="#01D6BE" stopOpacity="0"/>
                 </linearGradient>
               </defs>
               <line x1="0" y1="20" x2="335" y2="20" stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>
@@ -162,12 +162,12 @@ export default function StatsPage() {
               <path d="M0,55 C40,50 80,45 120,42 C160,39 200,35 240,38 C280,41 310,36 335,30 L335,80 L0,80 Z"
                     fill="url(#lineGrad)"/>
               <path d="M0,55 C40,50 80,45 120,42 C160,39 200,35 240,38 C280,41 310,36 335,30"
-                    fill="none" stroke="#1AD9C0" strokeWidth="2" strokeLinecap="round"
-                    filter="drop-shadow(0 0 4px rgba(26,217,192,0.6))"/>
-              <circle cx="0" cy="55" r="3.5" fill="#1AD9C0" filter="drop-shadow(0 0 4px #1AD9C0)"/>
-              <circle cx="120" cy="42" r="3.5" fill="#1AD9C0" filter="drop-shadow(0 0 4px #1AD9C0)"/>
-              <circle cx="240" cy="38" r="3.5" fill="#1AD9C0" filter="drop-shadow(0 0 4px #1AD9C0)"/>
-              <circle cx="335" cy="30" r="4.5" fill="#1AD9C0" filter="drop-shadow(0 0 6px #1AD9C0)"/>
+                    fill="none" stroke="#01D6BE" strokeWidth="2" strokeLinecap="round"
+                    filter="drop-shadow(0 0 4px rgba(1,214,190,0.6))"/>
+              <circle cx="0" cy="55" r="3.5" fill="#01D6BE" filter="drop-shadow(0 0 4px #01D6BE)"/>
+              <circle cx="120" cy="42" r="3.5" fill="#01D6BE" filter="drop-shadow(0 0 4px #01D6BE)"/>
+              <circle cx="240" cy="38" r="3.5" fill="#01D6BE" filter="drop-shadow(0 0 4px #01D6BE)"/>
+              <circle cx="335" cy="30" r="4.5" fill="#01D6BE" filter="drop-shadow(0 0 6px #01D6BE)"/>
               <text x="310" y="24" fontSize="9" fill="#8E8E93">33°C</text>
               <text x="4" y="18" fontSize="9" fill="#48484A">40°C</text>
               <text x="4" y="58" fontSize="9" fill="#48484A">20°C</text>
@@ -175,23 +175,23 @@ export default function StatsPage() {
           </div>
           
           {/* 健康统计 */}
-          <div className="flex gap-0 mt-2 pt-3 border-t border-[rgba(26,217,192,0.08)]">
+          <div className="flex gap-0 mt-2 pt-3 border-t border-[rgba(1,214,190,0.08)]">
             <div className="flex-1 text-center">
               <div className="text-[15px] font-bold text-[#FFFFFF]">
                 {powerStation.batteryHealth}<span className="text-[10px] text-[#8E8E93]">%</span>
               </div>
               <div className="text-[10px] text-[#8E8E93] mt-0.5">Battery Health</div>
             </div>
-            <div className="w-px bg-[rgba(26,217,192,0.08)]" />
+            <div className="w-px bg-[rgba(1,214,190,0.08)]" />
             <div className="flex-1 text-center">
               <div className="text-[15px] font-bold text-[#34C759]">
                 {powerStation.temperature}<span className="text-[10px] text-[#8E8E93]">°C</span>
               </div>
               <div className="text-[10px] text-[#8E8E93] mt-0.5">Temperature</div>
             </div>
-            <div className="w-px bg-[rgba(26,217,192,0.08)]" />
+            <div className="w-px bg-[rgba(1,214,190,0.08)]" />
             <div className="flex-1 text-center">
-              <div className="text-[15px] font-bold text-[#1AD9C0]">
+              <div className="text-[15px] font-bold text-[#01D6BE]">
                 {powerStation.cycleCount}<span className="text-[10px] text-[#8E8E93]">×</span>
               </div>
               <div className="text-[10px] text-[#8E8E93] mt-0.5">Cycles</div>
@@ -208,7 +208,7 @@ export default function StatsPage() {
             {deviceUsage.map((device) => {
               const Icon = device.icon
               const colorMap: Record<string, string> = {
-                blue:   '#1AD9C0',
+                blue:   '#01D6BE',
                 green:  '#34C759',
                 orange: '#FF9500',
                 purple: '#A855F7'   // 统一与全局 purple 色一致
@@ -218,7 +218,7 @@ export default function StatsPage() {
               return (
                 <div 
                   key={device.name}
-                  className="bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] rounded-[14px] p-3.5 
+                  className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[14px] p-3.5 
                            flex items-center gap-3"
                 >
                   <Icon size={20} style={{ color }} />

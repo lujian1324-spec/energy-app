@@ -1,4 +1,4 @@
-@tailwind base;
+﻿@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -7,12 +7,12 @@
 ============================================================ */
 :root {
   /* 主色调 - 青绿科技色系（参考图片配色） */
-  --clr-primary: #1AD9C0;
-  --clr-primary-dim: #12A896;
-  --clr-primary-glow: rgba(26, 217, 192, 0.25);
-  --clr-accent: #1AD9C0;
-  --clr-accent-dim: #12A896;
-  --clr-accent-glow: rgba(26, 217, 192, 0.2);
+  --clr-primary: #01D6BE;
+  --clr-primary-dim: #01A88F;
+  --clr-primary-glow: rgba(1, 214, 190, 0.25);
+  --clr-accent: #01D6BE;
+  --clr-accent-dim: #01A88F;
+  --clr-accent-glow: rgba(1, 214, 190, 0.2);
   --clr-warning: #FF9500;
   --clr-warning-glow: rgba(255, 149, 0, 0.2);
   --clr-danger: #FF3B30;
@@ -36,8 +36,8 @@
 
   /* 边框 */
   --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-normal: rgba(26, 217, 192, 0.2);
-  --border-bright: rgba(26, 217, 192, 0.45);
+  --border-normal: rgba(1, 214, 190, 0.2);
+  --border-bright: rgba(1, 214, 190, 0.45);
 
   /* 圆角 */
   --r-sm: 8px;
@@ -48,8 +48,8 @@
 
   /* 阴影 */
   --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.6);
-  --shadow-glow-primary: 0 0 20px rgba(26, 217, 192, 0.3);
-  --shadow-glow-accent: 0 0 20px rgba(26, 217, 192, 0.3);
+  --shadow-glow-primary: 0 0 20px rgba(1, 214, 190, 0.3);
+  --shadow-glow-accent: 0 0 20px rgba(1, 214, 190, 0.3);
 }
 
 /* ============================================================
@@ -137,7 +137,7 @@ body {
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(26,217,192,0.3), transparent);
+  background: linear-gradient(90deg, transparent, rgba(1,214,190,0.3), transparent);
 }
 
 .badge {
@@ -170,9 +170,9 @@ body {
 }
 
 .badge-primary { 
-  background: rgba(26,217,192,0.12); 
+  background: rgba(1,214,190,0.12); 
   color: var(--clr-primary); 
-  border: 1px solid rgba(26,217,192,0.25); 
+  border: 1px solid rgba(1,214,190,0.25); 
 }
 
 /* 进度条 */
@@ -191,13 +191,13 @@ body {
 }
 
 .progress-fill.green { 
-  background: linear-gradient(90deg, #12A896, #1AD9C0); 
-  box-shadow: 0 0 8px rgba(26,217,192,0.4); 
+  background: linear-gradient(90deg, #01A88F, #01D6BE); 
+  box-shadow: 0 0 8px rgba(1,214,190,0.4); 
 }
 
 .progress-fill.blue { 
-  background: linear-gradient(90deg, #12A896, #1AD9C0); 
-  box-shadow: 0 0 8px rgba(26,217,192,0.4); 
+  background: linear-gradient(90deg, #01A88F, #01D6BE); 
+  box-shadow: 0 0 8px rgba(1,214,190,0.4); 
 }
 
 .progress-fill.orange { 

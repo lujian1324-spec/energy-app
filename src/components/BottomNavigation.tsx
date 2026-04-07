@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+﻿import { NavLink } from 'react-router-dom'
 import { 
   Monitor, 
   Home, 
@@ -35,7 +35,7 @@ export default function BottomNavigation() {
               transition-all duration-250 ease-out
               relative
               ${isActive 
-                ? 'bg-[rgba(26,217,192,0.1)]' 
+                ? 'bg-[rgba(1,214,190,0.1)]' 
                 : 'hover:bg-[rgba(255,255,255,0.03)]'
               }
             `}
@@ -44,17 +44,17 @@ export default function BottomNavigation() {
               <>
                 <Icon 
                   size={20} 
-                  className={`transition-colors duration-250 ${isActive ? 'text-[#1AD9C0]' : 'text-[#48484A]'}`}
+                  className={`transition-colors duration-250 ${isActive ? 'text-[#01D6BE]' : 'text-[#48484A]'}`}
                 />
                 <span 
-                  className={`text-[10px] font-medium tracking-wide transition-colors duration-250 ${isActive ? 'text-[#1AD9C0]' : 'text-[#48484A]'}`}
+                  className={`text-[10px] font-medium tracking-wide transition-colors duration-250 ${isActive ? 'text-[#01D6BE]' : 'text-[#48484A]'}`}
                 >
                   {item.label}
                 </span>
                 {isActive && (
                   <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 
-                                w-1 h-1 rounded-full bg-[#1AD9C0] 
-                                shadow-[0_0_8px_#1AD9C0]" />
+                                w-1 h-1 rounded-full bg-[#01D6BE] 
+                                shadow-[0_0_8px_#01D6BE]" />
                 )}
               </>
             )}

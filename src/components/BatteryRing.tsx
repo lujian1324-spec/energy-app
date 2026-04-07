@@ -40,7 +40,7 @@ export default function BatteryRing({
         <defs>
           <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="0%">
             <stop offset="0%" stopColor="#0090FF" />
-            <stop offset="100%" stopColor="#1AD9C0" />
+            <stop offset="100%" stopColor="#01D6BE" />
           </linearGradient>
           <filter id={glowId}>
             <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
@@ -57,7 +57,7 @@ export default function BatteryRing({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="rgba(26,217,192,0.08)"
+          stroke="rgba(1,214,190,0.08)"
           strokeWidth={strokeWidth}
         />
         
@@ -76,7 +76,7 @@ export default function BatteryRing({
           transition={{ duration: 0.8, ease: 'easeOut' }}
           filter={`url(#${glowId})`}
           style={{
-            filter: 'drop-shadow(0 0 6px rgba(26,217,192,0.6))'
+            filter: 'drop-shadow(0 0 6px rgba(1,214,190,0.6))'
           }}
         />
       </svg>

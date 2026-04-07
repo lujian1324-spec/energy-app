@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+﻿import { motion } from 'framer-motion'
 
 interface ToggleSwitchProps {
   isOn: boolean
@@ -17,7 +17,7 @@ export default function ToggleSwitch({ isOn, onToggle, size = 'md' }: ToggleSwit
       className={`
         relative rounded-full transition-all duration-300 ease-out
         ${isOn 
-          ? 'bg-[#1AD9C0] shadow-[0_0_12px_rgba(26,217,192,0.45)]' 
+          ? 'bg-[#01D6BE] shadow-[0_0_12px_rgba(1,214,190,0.45)]' 
           : 'bg-[#39393D]'
         }
       `}

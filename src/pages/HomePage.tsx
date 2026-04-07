@@ -136,7 +136,7 @@ export default function HomePage() {
             <svg width="22" height="11" viewBox="0 0 22 11">
               <rect x="0" y="1" width="19" height="9" rx="2" stroke="#FFFFFF" strokeWidth="1" fill="none"/>
               <rect x="19.5" y="3.5" width="2.5" height="4" rx="1" fill="#FFFFFF" opacity="0.6"/>
-              <rect x="1" y="2" width={Math.round(17 * powerStation.batteryLevel / 100)} height="7" rx="1.5" fill="#1AD9C0"/>
+              <rect x="1" y="2" width={Math.round(17 * powerStation.batteryLevel / 100)} height="7" rx="1.5" fill="#01D6BE"/>
             </svg>
             {powerStation.batteryLevel}%
           </div>
@@ -163,9 +163,9 @@ export default function HomePage() {
             {/* 铃铛 - 点击弹出通知 */}
             <button
               onClick={() => { setShowNotifications(true); setShowDisplaySettings(false) }}
-              className="w-9 h-9 rounded-[14px] bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] 
+              className="w-9 h-9 rounded-[14px] bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] 
                        flex items-center justify-center relative
-                       hover:border-[rgba(26,217,192,0.4)] transition-all duration-250"
+                       hover:border-[rgba(1,214,190,0.4)] transition-all duration-250"
             >
               <Bell size={18} className="text-[#FFFFFF]" />
               {unreadCount > 0 && (
@@ -176,9 +176,9 @@ export default function HomePage() {
             {/* 齿轮 - 点击弹出显示设置 */}
             <button
               onClick={() => { setShowDisplaySettings(true); setShowNotifications(false) }}
-              className="w-9 h-9 rounded-[14px] bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] 
+              className="w-9 h-9 rounded-[14px] bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] 
                        flex items-center justify-center
-                       hover:border-[rgba(26,217,192,0.4)] transition-all duration-250"
+                       hover:border-[rgba(1,214,190,0.4)] transition-all duration-250"
             >
               <Settings size={18} className="text-[#FFFFFF]" />
             </button>
@@ -189,11 +189,11 @@ export default function HomePage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mx-5 mb-5 bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] 
+          className="mx-5 mb-5 bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] 
                      rounded-[28px] p-5 relative overflow-hidden"
         >
           <div className="absolute w-[200px] h-[200px] rounded-full 
-                        bg-[radial-gradient(circle,rgba(26,217,192,0.08),transparent_70%)] 
+                        bg-[radial-gradient(circle,rgba(1,214,190,0.08),transparent_70%)] 
                         -top-10 -right-10 pointer-events-none" />
 
           <div className="flex justify-between items-start mb-5">
@@ -219,7 +219,7 @@ export default function HomePage() {
             <div className="flex-1 flex flex-col gap-3">
               <div>
                 <div className="text-[10px] text-[#8E8E93] tracking-wide uppercase">Remaining</div>
-                <div className="text-base font-bold text-[#1AD9C0]">
+                <div className="text-base font-bold text-[#01D6BE]">
                   {powerStation.remainingWh}<span className="text-[11px] font-normal text-[#8E8E93] ml-0.5">Wh</span>
                 </div>
               </div>
@@ -248,8 +248,8 @@ export default function HomePage() {
             </div>
             <div className="h-1.5 bg-[rgba(255,255,255,0.06)] rounded-full overflow-visible relative">
               <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-[#0090FF] to-[#1AD9C0] 
-                         shadow-[0_0_8px_rgba(26,217,192,0.4)]"
+                className="h-full rounded-full bg-gradient-to-r from-[#0090FF] to-[#01D6BE] 
+                         shadow-[0_0_8px_rgba(1,214,190,0.4)]"
                 initial={{ width: 0 }}
                 animate={{ width: `${powerStation.batteryLevel}%` }}
                 transition={{ duration: 0.8, ease: 'easeOut' }}
@@ -290,18 +290,18 @@ export default function HomePage() {
                       flex-1 min-w-[80px] bg-[#1C1C1E] border rounded-[20px] p-3.5
                       relative overflow-hidden transition-all duration-250
                       ${isActive
-                        ? 'border-[rgba(26,217,192,0.4)] bg-[rgba(26,217,192,0.05)] shadow-[0_0_20px_rgba(26,217,192,0.1)]'
-                        : 'border-[rgba(26,217,192,0.08)]'
+                        ? 'border-[rgba(1,214,190,0.4)] bg-[rgba(1,214,190,0.05)] shadow-[0_0_20px_rgba(1,214,190,0.1)]'
+                        : 'border-[rgba(1,214,190,0.08)]'
                       }
                     `}
                   >
                     {isActive && (
                       <div className="absolute top-0 left-0 right-0 h-px 
-                                    bg-gradient-to-r from-transparent via-[rgba(26,217,192,0.5)] to-transparent" />
+                                    bg-gradient-to-r from-transparent via-[rgba(1,214,190,0.5)] to-transparent" />
                     )}
-                    <Icon size={20} className={`mb-1.5 ${isActive ? 'text-[#1AD9C0]' : 'text-[#8E8E93]'}`} />
+                    <Icon size={20} className={`mb-1.5 ${isActive ? 'text-[#01D6BE]' : 'text-[#8E8E93]'}`} />
                     <div className={`text-[11px] font-bold tracking-wide uppercase mb-0.5
-                                   ${isActive ? 'text-[#1AD9C0]' : 'text-[#AEAEB2]'}`}>
+                                   ${isActive ? 'text-[#01D6BE]' : 'text-[#AEAEB2]'}`}>
                       {mode.name}
                     </div>
                     <div className="text-[10px] text-[#48484A] leading-tight whitespace-pre-line">
@@ -326,13 +326,13 @@ export default function HomePage() {
                 .map((port) => (
                 <div
                   key={port.id}
-                  className="bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] 
+                  className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] 
                            rounded-[14px] p-3.5 flex items-start gap-2.5 min-w-[140px] flex-shrink-0"
                 >
                   <div className={`
                     w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0
                     ${port.type === 'ac-out' ? 'bg-[rgba(52,199,89,0.12)] text-[#34C759]' : ''}
-                    ${port.type === 'ac-in' ? 'bg-[rgba(26,217,192,0.12)] text-[#1AD9C0]' : ''}
+                    ${port.type === 'ac-in' ? 'bg-[rgba(1,214,190,0.12)] text-[#01D6BE]' : ''}
                     ${port.type === 'dc-in' ? 'bg-[rgba(255,149,0,0.12)] text-[#FF9500]' : ''}
                   `}>
                     {port.type.includes('out') ? (
@@ -348,7 +348,7 @@ export default function HomePage() {
                   <div className="text-right">
                     <div className={`
                       text-[13px] font-bold
-                      ${port.type === 'ac-out' ? 'text-[#34C759]' : 'text-[#1AD9C0]'}
+                      ${port.type === 'ac-out' ? 'text-[#34C759]' : 'text-[#01D6BE]'}
                     `}>
                       {port.power > 0 ? `${port.type.includes('out') ? '' : '+'}${port.power}W` : '—'}
                     </div>
@@ -382,12 +382,12 @@ export default function HomePage() {
                                   flex items-center justify-center
                                   transition-all duration-250
                                   ${action.active
-                                    ? 'bg-[rgba(26,217,192,0.15)] border border-[rgba(26,217,192,0.5)] shadow-[0_0_12px_rgba(26,217,192,0.2)]'
-                                    : 'bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] hover:border-[rgba(26,217,192,0.4)] hover:bg-[rgba(26,217,192,0.06)]'
+                                    ? 'bg-[rgba(1,214,190,0.15)] border border-[rgba(1,214,190,0.5)] shadow-[0_0_12px_rgba(1,214,190,0.2)]'
+                                    : 'bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] hover:border-[rgba(1,214,190,0.4)] hover:bg-[rgba(1,214,190,0.06)]'
                                   }`}>
-                      <Icon size={22} className={action.active ? 'text-[#1AD9C0]' : 'text-[#FFFFFF]'} />
+                      <Icon size={22} className={action.active ? 'text-[#01D6BE]' : 'text-[#FFFFFF]'} />
                     </div>
-                    <span className={`text-[10px] whitespace-nowrap ${action.active ? 'text-[#1AD9C0]' : 'text-[#8E8E93]'}`}>
+                    <span className={`text-[10px] whitespace-nowrap ${action.active ? 'text-[#01D6BE]' : 'text-[#8E8E93]'}`}>
                       {action.label}
                     </span>
                   </motion.button>
@@ -414,7 +414,7 @@ export default function HomePage() {
               exit={{ y: -20, opacity: 0 }}
               transition={{ type: 'spring', damping: 28, stiffness: 350 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full bg-[#1C1C1E] border-b border-[rgba(26,217,192,0.15)] rounded-b-[28px] p-5 pt-4"
+              className="w-full bg-[#1C1C1E] border-b border-[rgba(1,214,190,0.15)] rounded-b-[28px] p-5 pt-4"
             >
               {/* 标题栏 */}
               <div className="flex justify-between items-center mb-4">
@@ -428,8 +428,8 @@ export default function HomePage() {
                   {unreadCount > 0 && (
                     <button
                       onClick={markAllRead}
-                      className="text-[11px] text-[#1AD9C0] px-3 py-1 rounded-full
-                                 bg-[rgba(26,217,192,0.1)] border border-[rgba(26,217,192,0.2)]"
+                      className="text-[11px] text-[#01D6BE] px-3 py-1 rounded-full
+                                 bg-[rgba(1,214,190,0.1)] border border-[rgba(1,214,190,0.2)]"
                     >
                       Mark all read
                     </button>
@@ -447,7 +447,7 @@ export default function HomePage() {
               <div className="flex flex-col gap-2.5 max-h-[320px] overflow-y-auto scrollbar-hide">
                 {notifList.map((n) => {
                   const typeColors: Record<string, string> = {
-                    info: '#1AD9C0',
+                    info: '#01D6BE',
                     success: '#34C759',
                     warning: '#FF9500',
                     error: '#FF3B30',
@@ -459,7 +459,7 @@ export default function HomePage() {
                       className={`flex items-start gap-3 p-3.5 rounded-[16px] cursor-pointer transition-all
                                  ${n.read
                                    ? 'bg-[rgba(255,255,255,0.03)]'
-                                   : 'bg-[rgba(26,217,192,0.05)] border border-[rgba(26,217,192,0.12)]'
+                                   : 'bg-[rgba(1,214,190,0.05)] border border-[rgba(1,214,190,0.12)]'
                                  }`}
                     >
                       <div
@@ -499,7 +499,7 @@ export default function HomePage() {
               exit={{ y: 300, opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full bg-[#1C1C1E] border-t border-[rgba(26,217,192,0.15)] rounded-t-[28px] p-6 pb-10"
+              className="w-full bg-[#1C1C1E] border-t border-[rgba(1,214,190,0.15)] rounded-t-[28px] p-6 pb-10"
             >
               <div className="w-10 h-1 bg-[rgba(255,255,255,0.15)] rounded-full mx-auto mb-5" />
               <div className="flex justify-between items-center mb-5">
@@ -516,11 +516,11 @@ export default function HomePage() {
                 {displayItems.map(({ key, label, desc }) => (
                   <div
                     key={key}
-                    className="flex items-center justify-between py-3 border-b border-[rgba(26,217,192,0.06)]"
+                    className="flex items-center justify-between py-3 border-b border-[rgba(1,214,190,0.06)]"
                   >
                     <div className="flex items-center gap-3">
                       {displayConfig[key]
-                        ? <Eye size={15} className="text-[#1AD9C0]" />
+                        ? <Eye size={15} className="text-[#01D6BE]" />
                         : <EyeOff size={15} className="text-[#48484A]" />
                       }
                       <div>

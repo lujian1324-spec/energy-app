@@ -39,10 +39,10 @@ export default function DevicesPage() {
 
   const getIconColor = (type: string) => {
     switch (type) {
-      case 'cpap': return 'bg-[rgba(26,217,192,0.15)] text-[#1AD9C0]'
+      case 'cpap': return 'bg-[rgba(1,214,190,0.15)] text-[#01D6BE]'
       case 'fridge': return 'bg-[rgba(255,149,0,0.15)] text-[#FF9500]'
       case 'powerstation': return 'bg-[rgba(52,199,89,0.15)] text-[#34C759]'
-      default: return 'bg-[rgba(26,217,192,0.15)] text-[#1AD9C0]'
+      default: return 'bg-[rgba(1,214,190,0.15)] text-[#01D6BE]'
     }
   }
 
@@ -50,16 +50,16 @@ export default function DevicesPage() {
     <div className="h-full flex flex-col bg-[#000000] overflow-hidden">
       {/* Header */}
       <div className="px-5 pt-4 pb-3 safe-area-top flex justify-between items-center">
-        <button className="w-9 h-9 rounded-[14px] bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] 
+        <button className="w-9 h-9 rounded-[14px] bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] 
                          flex items-center justify-center text-[#FFFFFF]">
           <Menu size={20} />
         </button>
         <h2 className="text-xl font-bold text-[#FFFFFF]">Devices</h2>
         <button
           onClick={() => navigate('/settings')}
-          className="w-9 h-9 rounded-[14px] bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] 
+          className="w-9 h-9 rounded-[14px] bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] 
                    flex items-center justify-center text-[#FFFFFF]
-                   hover:border-[rgba(26,217,192,0.4)] hover:bg-[rgba(26,217,192,0.06)] transition-all duration-250"
+                   hover:border-[rgba(1,214,190,0.4)] hover:bg-[rgba(1,214,190,0.06)] transition-all duration-250"
         >
           <User size={20} />
         </button>
@@ -77,9 +77,9 @@ export default function DevicesPage() {
             placeholder="Search devices..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-11 bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] rounded-[28px]
+            className="w-full h-11 bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[28px]
                      pl-11 pr-10 text-sm text-[#FFFFFF] placeholder-[#8E8E93]
-                     focus:border-[rgba(26,217,192,0.4)] focus:outline-none focus:shadow-[0_0_0_3px_rgba(26,217,192,0.1)]
+                     focus:border-[rgba(1,214,190,0.4)] focus:outline-none focus:shadow-[0_0_0_3px_rgba(1,214,190,0.1)]
                      transition-all duration-250"
           />
           <AnimatePresence>
@@ -112,8 +112,8 @@ export default function DevicesPage() {
                 ${activeFilter === filter
                   ? filter === 'Alerts'
                     ? 'bg-[#FF3B30] text-white'
-                    : 'bg-[#1AD9C0] text-[#000000]'
-                  : 'bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] text-[#8E8E93]'
+                    : 'bg-[#01D6BE] text-[#000000]'
+                  : 'bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] text-[#8E8E93]'
                 }
               `}
             >
@@ -139,11 +139,11 @@ export default function DevicesPage() {
           <motion.button
             whileTap={{ scale: 0.97 }}
             onClick={() => setShowAddModal(true)}
-            className="flex-1 h-12 bg-[#1C1C1E] border border-[rgba(26,217,192,0.25)] rounded-[20px]
-                     text-[#1AD9C0] font-semibold text-[14px]
+            className="flex-1 h-12 bg-[#1C1C1E] border border-[rgba(1,214,190,0.25)] rounded-[20px]
+                     text-[#01D6BE] font-semibold text-[14px]
                      flex items-center justify-center gap-2
-                     hover:bg-[rgba(26,217,192,0.08)] hover:border-[rgba(26,217,192,0.5)]
-                     hover:shadow-[0_0_16px_rgba(26,217,192,0.15)] transition-all duration-250"
+                     hover:bg-[rgba(1,214,190,0.08)] hover:border-[rgba(1,214,190,0.5)]
+                     hover:shadow-[0_0_16px_rgba(1,214,190,0.15)] transition-all duration-250"
           >
             <Plus size={18} />
             Add Device
@@ -166,7 +166,7 @@ export default function DevicesPage() {
         <div className="flex justify-between items-center mb-3">
           <h3 className="text-base font-semibold text-[#FFFFFF]">Connected Devices</h3>
           <span className="text-[11px] px-2.5 py-1 rounded-full 
-                         bg-[rgba(26,217,192,0.12)] text-[#1AD9C0] border border-[rgba(26,217,192,0.25)]
+                         bg-[rgba(1,214,190,0.12)] text-[#01D6BE] border border-[rgba(1,214,190,0.25)]
                          font-semibold">
             {activeCount} Active
           </span>
@@ -183,7 +183,7 @@ export default function DevicesPage() {
                        hover:bg-[#2C2C2E] transition-all duration-250
                        ${hasAlert(device)
                          ? 'border-[rgba(255,59,48,0.3)] bg-[rgba(255,59,48,0.03)]'
-                         : 'border-[rgba(26,217,192,0.08)] hover:border-[rgba(26,217,192,0.18)]'
+                         : 'border-[rgba(1,214,190,0.08)] hover:border-[rgba(1,214,190,0.18)]'
                        }`}
             >
               <div className={`w-12 h-12 rounded-[14px] flex items-center justify-center flex-shrink-0
@@ -234,7 +234,7 @@ export default function DevicesPage() {
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="mt-3 text-[12px] text-[#1AD9C0] underline"
+                className="mt-3 text-[12px] text-[#01D6BE] underline"
               >
                 Clear search
               </button>
@@ -259,13 +259,13 @@ export default function DevicesPage() {
               exit={{ y: 300, opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full bg-[#1C1C1E] border-t border-[rgba(26,217,192,0.15)] rounded-t-[28px] p-6 pb-10"
+              className="w-full bg-[#1C1C1E] border-t border-[rgba(1,214,190,0.15)] rounded-t-[28px] p-6 pb-10"
             >
               <div className="w-10 h-1 bg-[rgba(255,255,255,0.15)] rounded-full mx-auto mb-5" />
               <h3 className="text-base font-bold text-[#FFFFFF] mb-5">Add New Device</h3>
               <div className="flex flex-col gap-3">
                 {[
-                  { label: 'Bluetooth Scan', desc: 'Find nearby BLE devices', color: '#1AD9C0', icon: '📡' },
+                  { label: 'Bluetooth Scan', desc: 'Find nearby BLE devices', color: '#01D6BE', icon: '📡' },
                   { label: 'Wi-Fi Setup', desc: 'Connect via local network', color: '#34C759', icon: '📶' },
                   { label: 'Manual Entry', desc: 'Enter device code manually', color: '#FF9500', icon: '⌨️' },
                 ].map((opt) => (
@@ -273,7 +273,7 @@ export default function DevicesPage() {
                     key={opt.label}
                     onClick={() => setShowAddModal(false)}
                     className="flex items-center gap-4 p-4 bg-[#0D1826] border border-[rgba(255,255,255,0.06)]
-                               rounded-[16px] text-left hover:border-[rgba(26,217,192,0.25)] transition-all"
+                               rounded-[16px] text-left hover:border-[rgba(1,214,190,0.25)] transition-all"
                   >
                     <span className="text-2xl">{opt.icon}</span>
                     <div>
@@ -310,18 +310,18 @@ export default function DevicesPage() {
               exit={{ scale: 0.85, opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className="mx-6 bg-[#1C1C1E] border border-[rgba(26,217,192,0.2)] rounded-[28px] p-6 text-center"
+              className="mx-6 bg-[#1C1C1E] border border-[rgba(1,214,190,0.2)] rounded-[28px] p-6 text-center"
             >
               {/* 模拟摄像头取景框 */}
               <div className="w-52 h-52 mx-auto mb-4 relative">
-                <div className="absolute inset-0 bg-[#0D1826] rounded-[16px] border border-[rgba(26,217,192,0.15)] 
+                <div className="absolute inset-0 bg-[#0D1826] rounded-[16px] border border-[rgba(1,214,190,0.15)] 
                                flex items-center justify-center">
-                  <QrCode size={64} className="text-[rgba(26,217,192,0.3)]" />
+                  <QrCode size={64} className="text-[rgba(1,214,190,0.3)]" />
                 </div>
                 {/* 扫描线动画 */}
                 <motion.div
-                  className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-[#1AD9C0] to-transparent
-                             shadow-[0_0_8px_rgba(26,217,192,0.6)]"
+                  className="absolute left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-[#01D6BE] to-transparent
+                             shadow-[0_0_8px_rgba(1,214,190,0.6)]"
                   animate={{ top: ['10%', '85%', '10%'] }}
                   transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
                 />
@@ -329,7 +329,7 @@ export default function DevicesPage() {
                 {[['top-0 left-0','border-t-2 border-l-2'],['top-0 right-0','border-t-2 border-r-2'],
                   ['bottom-0 left-0','border-b-2 border-l-2'],['bottom-0 right-0','border-b-2 border-r-2']
                 ].map(([pos, border], i) => (
-                  <div key={i} className={`absolute w-5 h-5 ${pos} ${border} border-[#1AD9C0] rounded-sm`} />
+                  <div key={i} className={`absolute w-5 h-5 ${pos} ${border} border-[#01D6BE] rounded-sm`} />
                 ))}
               </div>
               <div className="text-[15px] font-semibold text-[#FFFFFF] mb-1">Scan Device QR Code</div>

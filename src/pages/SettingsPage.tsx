@@ -110,7 +110,7 @@ export default function SettingsPage() {
   ]
 
   const colorClasses: Record<string, { bg: string; text: string }> = {
-    blue: { bg: 'bg-[rgba(26,217,192,0.1)]', text: 'text-[#1AD9C0]' },
+    blue: { bg: 'bg-[rgba(1,214,190,0.1)]', text: 'text-[#01D6BE]' },
     green: { bg: 'bg-[rgba(52,199,89,0.1)]', text: 'text-[#34C759]' },
     orange: { bg: 'bg-[rgba(255,149,0,0.1)]', text: 'text-[#FF9500]' },
     purple: { bg: 'bg-[rgba(168,85,247,0.1)]', text: 'text-[#A855F7]' },
@@ -151,19 +151,19 @@ export default function SettingsPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-[rgba(26,217,192,0.08)] to-[rgba(52,199,89,0.04)]
-                     border border-[rgba(26,217,192,0.2)] rounded-[28px] p-4 mb-4
+          className="bg-gradient-to-br from-[rgba(1,214,190,0.08)] to-[rgba(52,199,89,0.04)]
+                     border border-[rgba(1,214,190,0.2)] rounded-[28px] p-4 mb-4
                      flex items-center gap-4 relative overflow-hidden"
         >
           <div className="absolute top-0 left-0 right-0 h-px 
-                        bg-gradient-to-r from-transparent via-[rgba(26,217,192,0.5)] to-transparent" />
+                        bg-gradient-to-r from-transparent via-[rgba(1,214,190,0.5)] to-transparent" />
           
           <div className="w-[60px] h-[60px] rounded-[20px] 
-                        bg-gradient-to-br from-[rgba(26,217,192,0.15)] to-[rgba(52,199,89,0.1)]
-                        border border-[rgba(26,217,192,0.3)]
-                        flex items-center justify-center shadow-[0_0_20px_rgba(26,217,192,0.15)]
+                        bg-gradient-to-br from-[rgba(1,214,190,0.15)] to-[rgba(52,199,89,0.1)]
+                        border border-[rgba(1,214,190,0.3)]
+                        flex items-center justify-center shadow-[0_0_20px_rgba(1,214,190,0.15)]
                         flex-shrink-0">
-            <BatteryCharging size={28} className="text-[#1AD9C0]" />
+            <BatteryCharging size={28} className="text-[#01D6BE]" />
           </div>
           
           <div className="flex-1">
@@ -171,17 +171,17 @@ export default function SettingsPage() {
             <p className="text-[11px] text-[#8E8E93] mt-0.5">Model · {powerStation.model} · S/N:{powerStation.serialNumber.slice(-5)}</p>
             <div className="flex gap-2 mt-2">
               <span className="text-[10px] px-2 py-0.5 rounded-full 
-                             bg-[rgba(26,217,192,0.1)] text-[#1AD9C0] border border-[rgba(26,217,192,0.2)]
+                             bg-[rgba(1,214,190,0.1)] text-[#01D6BE] border border-[rgba(1,214,190,0.2)]
                              font-semibold">
                 FW v2.4.1
               </span>
               <span className="text-[10px] px-2 py-0.5 rounded-full 
-                             bg-[rgba(26,217,192,0.1)] text-[#1AD9C0] border border-[rgba(26,217,192,0.2)]
+                             bg-[rgba(1,214,190,0.1)] text-[#01D6BE] border border-[rgba(1,214,190,0.2)]
                              font-semibold">
                 BT 5.0
               </span>
               <span className="text-[10px] px-2 py-0.5 rounded-full 
-                             bg-[rgba(26,217,192,0.1)] text-[#1AD9C0] border border-[rgba(26,217,192,0.2)]
+                             bg-[rgba(1,214,190,0.1)] text-[#01D6BE] border border-[rgba(1,214,190,0.2)]
                              font-semibold">
                 Wi-Fi
               </span>
@@ -207,7 +207,7 @@ export default function SettingsPage() {
           <div className="text-[11px] font-bold text-[#8E8E93] tracking-widest uppercase mb-2 px-1">
             Device Info
           </div>
-          <div className="bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] rounded-[20px] overflow-hidden">
+          <div className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden">
             {deviceInfo.map((item, i) => {
               const Icon = item.icon
               const colors = colorClasses[item.color]
@@ -215,7 +215,7 @@ export default function SettingsPage() {
                 <div 
                   key={item.label}
                   className={`flex items-center gap-3 px-4 py-3.5 
-                            ${i !== deviceInfo.length - 1 ? 'border-b border-[rgba(26,217,192,0.08)]' : ''}`}
+                            ${i !== deviceInfo.length - 1 ? 'border-b border-[rgba(1,214,190,0.08)]' : ''}`}
                 >
                   <div className={`w-9 h-9 rounded-lg ${colors.bg} ${colors.text} 
                                  flex items-center justify-center flex-shrink-0`}>
@@ -241,7 +241,7 @@ export default function SettingsPage() {
           </div>
 
           {/* 数据源状态 */}
-          <div className="bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] rounded-[20px] p-3 mb-3">
+          <div className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] p-3 mb-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Activity size={14} className="text-[#8E8E93]" />
@@ -249,7 +249,7 @@ export default function SettingsPage() {
               </div>
               <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold border
                 ${activeDataSource === 'bluetooth'
-                  ? 'bg-[rgba(26,217,192,0.12)] text-[#1AD9C0] border-[rgba(26,217,192,0.3)]'
+                  ? 'bg-[rgba(1,214,190,0.12)] text-[#01D6BE] border-[rgba(1,214,190,0.3)]'
                   : activeDataSource === 'serial'
                   ? 'bg-[rgba(168,85,247,0.12)] text-[#A855F7] border-[rgba(168,85,247,0.3)]'
                   : 'bg-[rgba(52,199,89,0.08)] text-[#34C759] border-[rgba(52,199,89,0.2)]'}`}>
@@ -261,11 +261,11 @@ export default function SettingsPage() {
           </div>
 
           {/* BLE 蓝牙连接 */}
-          <div className="bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] rounded-[20px] overflow-hidden mb-3">
+          <div className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden mb-3">
             <div className="flex items-center gap-3 px-4 py-3.5">
               <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0
                 ${bleConnection.status === 'connected'
-                  ? 'bg-[rgba(26,217,192,0.15)] text-[#1AD9C0]'
+                  ? 'bg-[rgba(1,214,190,0.15)] text-[#01D6BE]'
                   : 'bg-[rgba(255,255,255,0.06)] text-[#8E8E93]'}`}>
                 <Bluetooth size={16} />
               </div>
@@ -287,7 +287,7 @@ export default function SettingsPage() {
                            transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed
                   ${bleConnection.status === 'connected'
                     ? 'bg-[rgba(255,59,48,0.12)] text-[#FF3B30] border border-[rgba(255,59,48,0.3)]'
-                    : 'bg-[rgba(26,217,192,0.12)] text-[#1AD9C0] border border-[rgba(26,217,192,0.3)]'}`}
+                    : 'bg-[rgba(1,214,190,0.12)] text-[#01D6BE] border border-[rgba(1,214,190,0.3)]'}`}
               >
                 {(bleConnection.status === 'scanning' || bleConnection.status === 'connecting')
                   ? <Loader2 size={11} className="animate-spin" />
@@ -299,7 +299,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Serial / Modbus 连接 */}
-          <div className="bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] rounded-[20px] overflow-hidden mb-3">
+          <div className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden mb-3">
             <div className="flex items-center gap-3 px-4 py-3.5">
               <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0
                 ${serialConnection.status === 'connected'
@@ -348,7 +348,7 @@ export default function SettingsPage() {
           </div>
 
           {/* 其他连接设置 */}
-          <div className="bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] rounded-[20px] overflow-hidden">
+          <div className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden">
             {[
               { icon: Wifi,  label: 'Wi-Fi',       desc: 'HomeNetwork · Connected', right: 'badge-connected', storeKey: null },
               { icon: Cloud, label: 'Cloud Sync',   desc: 'Real-time data · Remote', right: 'toggle', storeKey: 'cloudSync' as const },
@@ -357,8 +357,8 @@ export default function SettingsPage() {
               return (
                 <div key={item.label}
                   className={`flex items-center gap-3 px-4 py-3.5
-                    ${i !== arr.length - 1 ? 'border-b border-[rgba(26,217,192,0.08)]' : ''}`}>
-                  <div className="w-9 h-9 rounded-lg bg-[rgba(26,217,192,0.1)] text-[#1AD9C0]
+                    ${i !== arr.length - 1 ? 'border-b border-[rgba(1,214,190,0.08)]' : ''}`}>
+                  <div className="w-9 h-9 rounded-lg bg-[rgba(1,214,190,0.1)] text-[#01D6BE]
                                   flex items-center justify-center flex-shrink-0">
                     <Icon size={16} />
                   </div>
@@ -407,7 +407,7 @@ export default function SettingsPage() {
                 exit={{ opacity: 0, height: 0 }}
                 className="overflow-hidden"
               >
-                <div className="bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] rounded-[20px] p-4 mb-3">
+                <div className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] p-4 mb-3">
                   <div className="grid grid-cols-2 gap-2 mb-3">
                     {dbStats && Object.entries({
                       'Power History': dbStats.powerHistory,
@@ -415,8 +415,8 @@ export default function SettingsPage() {
                       'Connections':   dbStats.connectionLogs,
                       'Commands':      dbStats.commands,
                     }).map(([label, count]) => (
-                      <div key={label} className="bg-[rgba(26,217,192,0.05)] rounded-xl p-2.5">
-                        <div className="text-[18px] font-bold text-[#1AD9C0]">{count}</div>
+                      <div key={label} className="bg-[rgba(1,214,190,0.05)] rounded-xl p-2.5">
+                        <div className="text-[18px] font-bold text-[#01D6BE]">{count}</div>
                         <div className="text-[10px] text-[#8E8E93] mt-0.5">{label}</div>
                       </div>
                     ))}
@@ -449,7 +449,7 @@ export default function SettingsPage() {
           <div className="text-[11px] font-bold text-[#8E8E93] tracking-widest uppercase mb-2 px-1">
             System
           </div>
-          <div className="bg-[#1C1C1E] border border-[rgba(26,217,192,0.08)] rounded-[20px] overflow-hidden">
+          <div className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden">
             {systemItems.map((item, i) => {
               const Icon = item.icon
               const colors = colorClasses[item.color]
@@ -457,7 +457,7 @@ export default function SettingsPage() {
                 <div 
                   key={item.label}
                   className={`flex items-center gap-3 px-4 py-3.5 
-                            ${i !== systemItems.length - 1 ? 'border-b border-[rgba(26,217,192,0.08)]' : ''}`}
+                            ${i !== systemItems.length - 1 ? 'border-b border-[rgba(1,214,190,0.08)]' : ''}`}
                 >
                   <div className={`w-9 h-9 rounded-lg ${colors.bg} ${colors.text} 
                                  flex items-center justify-center flex-shrink-0`}>
@@ -502,9 +502,9 @@ export default function SettingsPage() {
           <div>Sierro App · v3.2.1 (Build 2411)</div>
           <div>© 2026 Sierro Technology Co., Ltd.</div>
           <div className="mt-2 flex justify-center gap-4">
-            <button onClick={() => setShowPrivacy(true)} className="text-[#1AD9C0] hover:underline">Privacy Policy</button>
-            <button onClick={() => setShowTerms(true)} className="text-[#1AD9C0] hover:underline">Terms of Use</button>
-            <button onClick={() => setShowSupport(true)} className="text-[#1AD9C0] hover:underline">Support</button>
+            <button onClick={() => setShowPrivacy(true)} className="text-[#01D6BE] hover:underline">Privacy Policy</button>
+            <button onClick={() => setShowTerms(true)} className="text-[#01D6BE] hover:underline">Terms of Use</button>
+            <button onClick={() => setShowSupport(true)} className="text-[#01D6BE] hover:underline">Support</button>
           </div>
         </div>
       </div>
@@ -524,14 +524,14 @@ export default function SettingsPage() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="w-full max-w-md bg-[#1C1C1E] rounded-[28px] border border-[rgba(26,217,192,0.15)] overflow-hidden max-h-[85vh]"
+              className="w-full max-w-md bg-[#1C1C1E] rounded-[28px] border border-[rgba(1,214,190,0.15)] overflow-hidden max-h-[85vh]"
               onClick={e => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(26,217,192,0.1)]">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(1,214,190,0.1)]">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[rgba(26,217,192,0.1)] flex items-center justify-center">
-                    <Shield size={20} className="text-[#1AD9C0]" />
+                  <div className="w-10 h-10 rounded-xl bg-[rgba(1,214,190,0.1)] flex items-center justify-center">
+                    <Shield size={20} className="text-[#01D6BE]" />
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-[#FFFFFF]">Privacy Policy</h3>
@@ -547,8 +547,8 @@ export default function SettingsPage() {
               <div className="p-5 overflow-y-auto max-h-[60vh]">
                 <div className="space-y-4">
                   {privacyContent.map((section, i) => (
-                    <div key={i} className="bg-[rgba(26,217,192,0.03)] rounded-xl p-4">
-                      <h4 className="text-[13px] font-semibold text-[#1AD9C0] mb-2">{section.title}</h4>
+                    <div key={i} className="bg-[rgba(1,214,190,0.03)] rounded-xl p-4">
+                      <h4 className="text-[13px] font-semibold text-[#01D6BE] mb-2">{section.title}</h4>
                       <p className="text-[12px] text-[#8E8E93] leading-relaxed">{section.content}</p>
                     </div>
                   ))}
@@ -556,10 +556,10 @@ export default function SettingsPage() {
               </div>
               
               {/* Footer */}
-              <div className="p-4 border-t border-[rgba(26,217,192,0.1)]">
+              <div className="p-4 border-t border-[rgba(1,214,190,0.1)]">
                 <button
                   onClick={() => setShowPrivacy(false)}
-                  className="w-full py-3 rounded-xl bg-[rgba(26,217,192,0.12)] text-[#1AD9C0] font-semibold text-[13px] active:scale-95 transition-transform"
+                  className="w-full py-3 rounded-xl bg-[rgba(1,214,190,0.12)] text-[#01D6BE] font-semibold text-[13px] active:scale-95 transition-transform"
                 >
                   I Understand
                 </button>
@@ -691,9 +691,9 @@ export default function SettingsPage() {
                         value={supportEmail}
                         onChange={e => setSupportEmail(e.target.value)}
                         placeholder="you@example.com"
-                        className="w-full px-4 py-3 rounded-xl bg-[#000000] border border-[rgba(26,217,192,0.15)]
+                        className="w-full px-4 py-3 rounded-xl bg-[#000000] border border-[rgba(1,214,190,0.15)]
                                    text-[#FFFFFF] text-[13px] placeholder:text-[#48484A]
-                                   focus:outline-none focus:border-[rgba(26,217,192,0.4)] transition-colors"
+                                   focus:outline-none focus:border-[rgba(1,214,190,0.4)] transition-colors"
                       />
                     </div>
                     
@@ -709,9 +709,9 @@ export default function SettingsPage() {
                         onChange={e => setSupportMessage(e.target.value)}
                         placeholder="Describe your issue or suggestion..."
                         rows={4}
-                        className="w-full px-4 py-3 rounded-xl bg-[#000000] border border-[rgba(26,217,192,0.15)]
+                        className="w-full px-4 py-3 rounded-xl bg-[#000000] border border-[rgba(1,214,190,0.15)]
                                    text-[#FFFFFF] text-[13px] placeholder:text-[#48484A] resize-none
-                                   focus:outline-none focus:border-[rgba(26,217,192,0.4)] transition-colors"
+                                   focus:outline-none focus:border-[rgba(1,214,190,0.4)] transition-colors"
                       />
                     </div>
                     
