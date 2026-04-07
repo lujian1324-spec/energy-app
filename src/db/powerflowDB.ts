@@ -1,13 +1,13 @@
-/**
+﻿/**
  * PowerFlow IndexedDB 数据库
  * 使用 idb 库封装，提供类型安全的 CRUD 操作
  *
- * 数据库名称: powerflow-db   版本: 1
+ * 数据库名称: powerflow-db 版本: 1
  * ObjectStore 列表:
- *   - power_history    功率历史 (自增 id, timestamp 索引)
- *   - alerts           告警日志 (自增 id, timestamp/resolved 索引)
- *   - connection_logs  连接历史 (自增 id)
- *   - commands         命令审计 (自增 id)
+ * - power_history 功率历史 (自增 id, timestamp 索引)
+ * - alerts 告警日志 (自增 id, timestamp/resolved 索引)
+ * - connection_logs  连接历史 (自增 id)
+ * - commands 命令审计 (自增 id)
  */
 
 import { openDB, type IDBPDatabase } from 'idb'
@@ -24,30 +24,30 @@ const DB_NAME = 'powerflow-db'
 const DB_VERSION = 1
 
 /** 最大保留条数（避免无限增长） */
-const MAX_POWER_HISTORY = 8640    // ~24h @ 10s interval
-const MAX_ALERTS        = 500
-const MAX_COMMANDS      = 200
+const MAX_POWER_HISTORY = 8640 // ~24h @ 10s interval
+const MAX_ALERTS = 500
+const MAX_COMMANDS = 200
 
 type PowerFlowDB = IDBPDatabase<{
   power_history: {
-    key: number
-    value: PowerHistoryRecord
-    indexes: { timestamp: number }
+ key: number
+ value: PowerHistoryRecord
+ indexes: { timestamp: number }
   }
   alerts: {
-    key: number
-    value: AlertRecord
-    indexes: { timestamp: number; resolved: number }
+ key: number
+ value: AlertRecord
+ indexes: { timestamp: number; resolved: number }
   }
   connection_logs: {
-    key: number
-    value: ConnectionRecord
-    indexes: { timestamp: number }
+ key: number
+ value: ConnectionRecord
+ indexes: { timestamp: number }
   }
   commands: {
-    key: number
-    value: CommandRecord
-    indexes: { timestamp: number }
+ key: number
+ value: CommandRecord
+ indexes: { timestamp: number }
   }
 }>
 
@@ -57,65 +57,65 @@ async function getDB(): Promise<PowerFlowDB> {
   if (_db) return _db
 
   _db = await openDB<{
-    power_history: {
-      key: number
-      value: PowerHistoryRecord
-      indexes: { timestamp: number }
-    }
-    alerts: {
-      key: number
-      value: AlertRecord
-      indexes: { timestamp: number; resolved: number }
-    }
-    connection_logs: {
-      key: number
-      value: ConnectionRecord
-      indexes: { timestamp: number }
-    }
-    commands: {
-      key: number
-      value: CommandRecord
-      indexes: { timestamp: number }
-    }
+ power_history: {
+ key: number
+ value: PowerHistoryRecord
+ indexes: { timestamp: number }
+ }
+ alerts: {
+ key: number
+ value: AlertRecord
+ indexes: { timestamp: number; resolved: number }
+ }
+ connection_logs: {
+ key: number
+ value: ConnectionRecord
+ indexes: { timestamp: number }
+ }
+ commands: {
+ key: number
+ value: CommandRecord
+ indexes: { timestamp: number }
+ }
   }>(DB_NAME, DB_VERSION, {
-    upgrade(db) {
-      // ---- power_history ----
-      if (!db.objectStoreNames.contains('power_history')) {
-        const store = db.createObjectStore('power_history', {
-          keyPath: 'id',
-          autoIncrement: true,
-        })
-        store.createIndex('timestamp', 'timestamp')
-      }
+ upgrade(db) {
+ // ---- power_history ----
+ if (!db.objectStoreNames.contains('power_history')) {
+ const store = db.createObjectStore('power_history', {
+ keyPath: 'id',
+ autoIncrement: true,
+ })
+ store.createIndex('timestamp', 'timestamp')
+ }
 
-      // ---- alerts ----
-      if (!db.objectStoreNames.contains('alerts')) {
-        const store = db.createObjectStore('alerts', {
-          keyPath: 'id',
-          autoIncrement: true,
-        })
-        store.createIndex('timestamp', 'timestamp')
-        store.createIndex('resolved', 'resolved')
-      }
+ // ---- alerts ----
+ if (!db.objectStoreNames.contains('alerts')) {
+ const store = db.createObjectStore('alerts', {
+ keyPath: 'id',
+ autoIncrement: true,
+ })
+ store.createIndex('timestamp', 'timestamp')
+ store.createIndex('resolved', 'resolved')
+ }
 
-      // ---- connection_logs ----
-      if (!db.objectStoreNames.contains('connection_logs')) {
-        const store = db.createObjectStore('connection_logs', {
-          keyPath: 'id',
-          autoIncrement: true,
-        })
-        store.createIndex('timestamp', 'timestamp')
-      }
+ // ---- connection_logs ----
+ if (!db.objectStoreNames.contains('connection_logs')) {
+ const store = db.createObjectStore('connection_logs', {
+ keyPath: 'id',
+ autoIncrement: true,
+ })
+ store.createIndex('timestamp', 'timestamp')
+ }
 
-      // ---- commands ----
-      if (!db.objectStoreNames.contains('commands')) {
-        const store = db.createObjectStore('commands', {
-          keyPath: 'id',
-          autoIncrement: true,
-        })
-        store.createIndex('timestamp', 'timestamp')
-      }
-    },
+ // ---- commands ----
+ if (!db.objectStoreNames.contains('commands')) {
+ const store = db.createObjectStore('commands', {
+ keyPath: 'id',
+ autoIncrement: true,
+ })
+ store.createIndex('timestamp', 'timestamp')
+ }
+ },
   })
 
   return _db
@@ -132,10 +132,10 @@ export async function savePowerHistory(record: Omit<PowerHistoryRecord, 'id'>): 
   // 裁剪旧数据
   const count = await db.count('power_history')
   if (count > MAX_POWER_HISTORY) {
-    const tx = db.transaction('power_history', 'readwrite')
-    const cursor = await tx.store.openCursor()
-    if (cursor) await cursor.delete()
-    await tx.done
+ const tx = db.transaction('power_history', 'readwrite')
+ const cursor = await tx.store.openCursor()
+ if (cursor) await cursor.delete()
+ await tx.done
   }
 }
 
@@ -148,14 +148,14 @@ export async function getPowerHistory(query: PowerHistoryQuery = {}): Promise<Po
   let range: IDBKeyRange | undefined
   if (from && to) range = IDBKeyRange.bound(from, to)
   else if (from)  range = IDBKeyRange.lowerBound(from)
-  else if (to)    range = IDBKeyRange.upperBound(to)
+  else if (to) range = IDBKeyRange.upperBound(to)
 
   const results: PowerHistoryRecord[] = []
   let cursor = await index.openCursor(range, 'prev')  // 最新的在前
 
   while (cursor && results.length < limit) {
-    results.push(cursor.value)
-    cursor = await cursor.continue()
+ results.push(cursor.value)
+ cursor = await cursor.continue()
   }
 
   return results
@@ -175,7 +175,7 @@ export async function getPowerSummary(minutesAgo: number = 60): Promise<{
   const records = await getPowerHistory({ from, limit: 1000 })
 
   if (records.length === 0) {
-    return { avgInput: 0, avgOutput: 0, peakInput: 0, peakOutput: 0, totalInputWh: 0, totalOutputWh: 0, count: 0 }
+ return { avgInput: 0, avgOutput: 0, peakInput: 0, peakOutput: 0, totalInputWh: 0, totalOutputWh: 0, count: 0 }
   }
 
   const avgInput  = records.reduce((s, r) => s + r.inputPower, 0)  / records.length
@@ -189,13 +189,13 @@ export async function getPowerSummary(minutesAgo: number = 60): Promise<{
   const totalOutputWh = records.reduce((s, r) => s + r.outputPower * intervalH, 0)
 
   return {
-    avgInput:  Math.round(avgInput),
-    avgOutput: Math.round(avgOutput),
-    peakInput,
-    peakOutput,
-    totalInputWh:  Math.round(totalInputWh  * 10) / 10,
-    totalOutputWh: Math.round(totalOutputWh * 10) / 10,
-    count: records.length,
+ avgInput:  Math.round(avgInput),
+ avgOutput: Math.round(avgOutput),
+ peakInput,
+ peakOutput,
+ totalInputWh:  Math.round(totalInputWh  * 10) / 10,
+ totalOutputWh: Math.round(totalOutputWh * 10) / 10,
+ count: records.length,
   }
 }
 
@@ -210,10 +210,10 @@ export async function addAlert(alert: Omit<AlertRecord, 'id'>): Promise<number> 
   // 裁剪
   const count = await db.count('alerts')
   if (count > MAX_ALERTS) {
-    const tx = db.transaction('alerts', 'readwrite')
-    const cursor = await tx.store.openCursor()
-    if (cursor) await cursor.delete()
-    await tx.done
+ const tx = db.transaction('alerts', 'readwrite')
+ const cursor = await tx.store.openCursor()
+ if (cursor) await cursor.delete()
+ await tx.done
   }
 
   return id as number
@@ -227,10 +227,10 @@ export async function getAlerts(query: AlertQuery = {}): Promise<AlertRecord[]> 
   let filtered = allAlerts.reverse()  // 最新在前
 
   if (resolved !== undefined) {
-    filtered = filtered.filter(a => a.resolved === resolved)
+ filtered = filtered.filter(a => a.resolved === resolved)
   }
   if (query.severity) {
-    filtered = filtered.filter(a => a.severity === query.severity)
+ filtered = filtered.filter(a => a.severity === query.severity)
   }
 
   return filtered.slice(0, limit)
@@ -240,7 +240,7 @@ export async function resolveAlert(id: number): Promise<void> {
   const db = await getDB()
   const alert = await db.get('alerts', id)
   if (alert) {
-    await db.put('alerts', { ...alert, resolved: true, resolvedAt: Date.now() })
+ await db.put('alerts', { ...alert, resolved: true, resolvedAt: Date.now() })
   }
 }
 
@@ -276,10 +276,10 @@ export async function logCommand(record: Omit<CommandRecord, 'id'>): Promise<voi
 
   const count = await db.count('commands')
   if (count > MAX_COMMANDS) {
-    const tx = db.transaction('commands', 'readwrite')
-    const cursor = await tx.store.openCursor()
-    if (cursor) await cursor.delete()
-    await tx.done
+ const tx = db.transaction('commands', 'readwrite')
+ const cursor = await tx.store.openCursor()
+ if (cursor) await cursor.delete()
+ await tx.done
   }
 }
 
@@ -306,9 +306,9 @@ export async function clearAllHistory(): Promise<void> {
 export async function getDBStats(): Promise<Record<string, number>> {
   const db = await getDB()
   return {
-    powerHistory:   await db.count('power_history'),
-    alerts:         await db.count('alerts'),
-    connectionLogs: await db.count('connection_logs'),
-    commands:       await db.count('commands'),
+ powerHistory: await db.count('power_history'),
+ alerts: await db.count('alerts'),
+ connectionLogs: await db.count('connection_logs'),
+ commands: await db.count('commands'),
   }
 }

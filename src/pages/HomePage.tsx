@@ -20,6 +20,9 @@ import {
   VolumeX,
   Eye,
   EyeOff,
+  Pencil,
+  TrendingUp,
+  TrendingDown,
 } from 'lucide-react'
 import BatteryRing from '../components/BatteryRing'
 import ToggleSwitch from '../components/ToggleSwitch'
@@ -33,7 +36,6 @@ const modes: { id: OperatingMode; name: string; description: string; icon: React
   { id: 'outdoor', name: 'OUTDOOR', description: 'Quiet\nMode', icon: Mountain },
 ]
 
-// 通知数据
 const notifications = [
   { id: 1, type: 'info', title: 'Battery at 76%', desc: 'Estimated full charge in 1h 24m', time: '2 min ago', read: false },
   { id: 2, type: 'success', title: 'Solar Input Active', desc: 'Solar panel connected · +280W', time: '15 min ago', read: false },
@@ -44,7 +46,7 @@ const notifications = [
 export default function HomePage() {
   const { powerStation, settings, setMode, updateSettings } = usePowerStationStore()
   const [currentTime, setCurrentTime] = useState(() =>
-    new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+ new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
   )
   const [showNotifications, setShowNotifications] = useState(false)
   const [showDisplaySettings, setShowDisplaySettings] = useState(false)
@@ -52,496 +54,452 @@ export default function HomePage() {
   const [ledOn, setLedOn] = useState(false)
   const [quietMode, setQuietMode] = useState(false)
 
-  // 显示设置项
   const [displayConfig, setDisplayConfig] = useState({
-    showBatteryRing: true,
-    showSolarInput: true,
-    showTimeToFull: true,
-    showOperatingModes: true,
-    showPortStatus: true,
-    showQuickActions: true,
+ showBatteryRing: true,
+ showSolarInput: true,
+ showTimeToFull: true,
+ showOperatingModes: true,
+ showPortStatus: true,
+ showQuickActions: true,
   })
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
-    const tick = () => {
-      setCurrentTime(
-        new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
-      )
-    }
-    const now = new Date()
-    const msToNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds()
-    const timeout = setTimeout(() => {
-      tick()
-      intervalRef.current = setInterval(tick, 60000)
-    }, msToNextMinute)
-    return () => {
-      clearTimeout(timeout)
-      if (intervalRef.current) clearInterval(intervalRef.current)
-    }
+ const tick = () => {
+ setCurrentTime(
+ new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+ )
+ }
+ const now = new Date()
+ const msToNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds()
+ const timeout = setTimeout(() => {
+ tick()
+ intervalRef.current = setInterval(tick, 60000)
+ }, msToNextMinute)
+ return () => {
+ clearTimeout(timeout)
+ if (intervalRef.current) clearInterval(intervalRef.current)
+ }
   }, [])
 
   const unreadCount = notifList.filter(n => !n.read).length
-
   const markAllRead = () => setNotifList(prev => prev.map(n => ({ ...n, read: true })))
 
   const handleQuickAction = (label: string) => {
-    if (label === 'LED Light') setLedOn(v => !v)
-    if (label === 'Quiet Mode') {
-      setQuietMode(v => !v)
-      updateSettings({ ecoMode: !settings.ecoMode })
-    }
-    if (label === 'Usage Report') setShowDisplaySettings(true)
-    if (label === 'Cycle Mode') {
-      const modeOrder: OperatingMode[] = ['solar', 'backup', 'car', 'outdoor']
-      const idx = modeOrder.indexOf(powerStation.mode)
-      setMode(modeOrder[(idx + 1) % modeOrder.length])
-    }
-    if (label === 'Remote') updateSettings({ bluetooth: !settings.bluetooth })
-    if (label === 'Data Share') updateSettings({ cloudSync: !settings.cloudSync })
+ if (label === 'LED Light') setLedOn(v => !v)
+ if (label === 'Quiet Mode') {
+ setQuietMode(v => !v)
+ updateSettings({ ecoMode: !settings.ecoMode })
+ }
+ if (label === 'Usage Report') setShowDisplaySettings(true)
+ if (label === 'Cycle Mode') {
+ const modeOrder: OperatingMode[] = ['solar', 'backup', 'car', 'outdoor']
+ const idx = modeOrder.indexOf(powerStation.mode)
+ setMode(modeOrder[(idx + 1) % modeOrder.length])
+ }
+ if (label === 'Remote') updateSettings({ bluetooth: !settings.bluetooth })
+ if (label === 'Data Share') updateSettings({ cloudSync: !settings.cloudSync })
   }
 
   const quickActions = [
-    { icon: Lightbulb, label: 'LED Light', active: ledOn },
-    { icon: quietMode ? VolumeX : Volume2, label: 'Quiet Mode', active: quietMode },
-    { icon: FileText, label: 'Usage Report', active: false },
-    { icon: RefreshCw, label: 'Cycle Mode', active: false },
-    { icon: Wifi, label: 'Remote', active: settings.bluetooth },
-    { icon: Share2, label: 'Data Share', active: settings.cloudSync },
+ { icon: Lightbulb, label: 'LED Light', active: ledOn },
+ { icon: quietMode ? VolumeX : Volume2, label: 'Quiet Mode', active: quietMode },
+ { icon: FileText, label: 'Usage Report', active: false },
+ { icon: RefreshCw, label: 'Cycle Mode', active: false },
+ { icon: Wifi, label: 'Remote', active: settings.bluetooth },
+ { icon: Share2, label: 'Data Share', active: settings.cloudSync },
   ]
 
   const displayItems = [
-    { key: 'showBatteryRing', label: 'Battery Ring', desc: 'Main power ring gauge' },
-    { key: 'showSolarInput', label: 'Solar Input', desc: 'Solar charging info' },
-    { key: 'showTimeToFull', label: 'Time to Full', desc: 'Estimated full charge time' },
-    { key: 'showOperatingModes', label: 'Operating Modes', desc: 'Mode selector cards' },
-    { key: 'showPortStatus', label: 'Port Status', desc: 'Active port display' },
-    { key: 'showQuickActions', label: 'Quick Actions', desc: 'Action shortcuts bar' },
+ { key: 'showBatteryRing', label: 'Battery Ring', desc: 'Main power ring gauge' },
+ { key: 'showSolarInput', label: 'Solar Input', desc: 'Solar charging info' },
+ { key: 'showTimeToFull', label: 'Time to Full', desc: 'Estimated full charge time' },
+ { key: 'showOperatingModes', label: 'Operating Modes', desc: 'Mode selector cards' },
+ { key: 'showPortStatus', label: 'Port Status', desc: 'Active port display' },
+ { key: 'showQuickActions', label: 'Quick Actions', desc: 'Action shortcuts bar' },
   ] as const
 
   return (
-    <div className="h-full flex flex-col bg-[#000000] overflow-hidden relative">
-      {/* 状态栏 */}
-      <div className="flex justify-between items-center px-6 pt-3 pb-2 safe-area-top">
-        <span className="text-[15px] font-semibold text-[#FFFFFF] tracking-wide">{currentTime}</span>
-        <div className="flex items-center gap-1.5">
-          <svg width="16" height="11" viewBox="0 0 16 11" className="fill-[#FFFFFF]">
-            <rect x="0" y="3" width="3" height="8" rx="0.5" opacity="0.3"/>
-            <rect x="4" y="2" width="3" height="9" rx="0.5" opacity="0.5"/>
-            <rect x="8" y="0.5" width="3" height="10.5" rx="0.5" opacity="0.8"/>
-            <rect x="12" y="0" width="3" height="11" rx="0.5"/>
-          </svg>
-          <div className="flex items-center gap-1 text-[11px] text-[#FFFFFF] font-medium">
-            <svg width="22" height="11" viewBox="0 0 22 11">
-              <rect x="0" y="1" width="19" height="9" rx="2" stroke="#FFFFFF" strokeWidth="1" fill="none"/>
-              <rect x="19.5" y="3.5" width="2.5" height="4" rx="1" fill="#FFFFFF" opacity="0.6"/>
-              <rect x="1" y="2" width={Math.round(17 * powerStation.batteryLevel / 100)} height="7" rx="1.5" fill="#01D6BE"/>
-            </svg>
-            {powerStation.batteryLevel}%
-          </div>
-        </div>
-      </div>
+ <div className="h-full flex flex-col bg-[#000000] overflow-hidden relative">
+ {/* 状态栏 */}
+ <div className="flex justify-between items-center px-6 pt-3 pb-2 safe-area-top">
+ <span className="text-[15px] font-semibold text-[#FFFFFF] tracking-wide">{currentTime}</span>
+ <div className="flex items-center gap-1.5">
+ <svg width="16" height="11" viewBox="0 0 16 11" className="fill-[#FFFFFF]">
+ <rect x="0" y="3" width="3" height="8" rx="0.5" opacity="0.3"/>
+ <rect x="4" y="2" width="3" height="9" rx="0.5" opacity="0.5"/>
+ <rect x="8" y="0.5" width="3" height="10.5" rx="0.5" opacity="0.8"/>
+ <rect x="12" y="0" width="3" height="11" rx="0.5"/>
+ </svg>
+ <div className="flex items-center gap-1 text-[11px] text-[#FFFFFF] font-medium">
+ <svg width="22" height="11" viewBox="0 0 22 11">
+ <rect x="0" y="1" width="19" height="9" rx="2" stroke="#FFFFFF" strokeWidth="1" fill="none"/>
+ <rect x="19.5" y="3.5" width="2.5" height="4" rx="1" fill="#FFFFFF" opacity="0.6"/>
+ <rect x="1" y="2" width={Math.round(17 * powerStation.batteryLevel / 100)} height="7" rx="1.5" fill="#01D6BE"/>
+ </svg>
+ {powerStation.batteryLevel}%
+ </div>
+ </div>
+ </div>
 
-      {/* 动态岛 */}
-      <div className="flex justify-center mb-1">
-        <div className="w-[120px] h-[34px] bg-black rounded-[20px] flex items-center justify-center gap-1.5">
-          <div className="w-1.5 h-1.5 rounded-full bg-[#1a1a1a]" />
-          <div className="w-2.5 h-2.5 rounded-full bg-[#1a1a1a] border border-[#333]" />
-        </div>
-      </div>
+ {/* 可滚动内容 */}
+ <div className="flex-1 overflow-y-auto scrollbar-hide">
+ {/* Header - 扁平化：设备名 + 编辑图标 + 设置图标 */}
+ <div className="flex justify-between items-center px-5 py-3">
+ <div>
+ <div className="flex items-center gap-2">
+ <h2 className="text-xl font-bold text-[#FFFFFF] tracking-wide">Sierro 1000</h2>
+ <button className="w-6 h-6 rounded-full bg-[#1C1C1E] flex items-center justify-center">
+ <Pencil size={12} className="text-[#8E8E93]" />
+ </button>
+ </div>
+ <p className="text-xs text-[#8E8E93] mt-0.5">Connected</p>
+ </div>
+ <button
+ onClick={() => { setShowNotifications(true); setShowDisplaySettings(false) }}
+ className="w-9 h-9 rounded-full bg-[#1C1C1E] flex items-center justify-center relative"
+ >
+ <Bell size={18} className="text-[#FFFFFF]" />
+ {unreadCount > 0 && (
+ <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#FF3B30]" />
+ )}
+ </button>
+ </div>
 
-      {/* 可滚动内容 */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide">
-        {/* Header */}
-        <div className="flex justify-between items-center px-5 py-2">
-          <div>
-            <h2 className="text-xl font-bold text-[#FFFFFF] tracking-wide">Power Overview</h2>
-            <p className="text-xs text-[#8E8E93] mt-0.5">{powerStation.name} · Connected</p>
-          </div>
-          <div className="flex gap-2.5">
-            {/* 铃铛 - 点击弹出通知 */}
-            <button
-              onClick={() => { setShowNotifications(true); setShowDisplaySettings(false) }}
-              className="w-9 h-9 rounded-[14px] bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] 
-                       flex items-center justify-center relative
-                       hover:border-[rgba(1,214,190,0.4)] transition-all duration-250"
-            >
-              <Bell size={18} className="text-[#FFFFFF]" />
-              {unreadCount > 0 && (
-                <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-[#FF3B30] 
-                              border-2 border-[#000000] shadow-[0_0_6px_#FF3B30]" />
-              )}
-            </button>
-            {/* 齿轮 - 点击弹出显示设置 */}
-            <button
-              onClick={() => { setShowDisplaySettings(true); setShowNotifications(false) }}
-              className="w-9 h-9 rounded-[14px] bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] 
-                       flex items-center justify-center
-                       hover:border-[rgba(1,214,190,0.4)] transition-all duration-250"
-            >
-              <Settings size={18} className="text-[#FFFFFF]" />
-            </button>
-          </div>
-        </div>
+ {/* 电量英雄区 - 扁平化 */}
+ <motion.div
+ initial={{ opacity: 0, y: 20 }}
+ animate={{ opacity: 1, y: 0 }}
+ className="mx-5 mb-5 bg-[#1C1C1E] rounded-[24px] p-5"
+ >
+ <div className="flex justify-center mb-4">
+ <BatteryRing
+ percentage={powerStation.batteryLevel}
+ isCharging={powerStation.isCharging}
+ />
+ </div>
 
-        {/* 电量英雄区 */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mx-5 mb-5 bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] 
-                     rounded-[28px] p-5 relative overflow-hidden"
-        >
-          <div className="absolute w-[200px] h-[200px] rounded-full 
-                        bg-[radial-gradient(circle,rgba(1,214,190,0.08),transparent_70%)] 
-                        -top-10 -right-10 pointer-events-none" />
+ {/* 输入/输出功率标签 */}
+ <div className="flex justify-center gap-4 mb-4">
+ <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#2C2C2E]">
+ <TrendingDown size={13} className="text-[#01D6BE]" />
+ <span className="text-[11px] text-[#8E8E93]">Input</span>
+ <span className="text-[12px] font-semibold text-[#01D6BE]">
+ {powerStation.inputPower}W
+ </span>
+ </div>
+ <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#2C2C2E]">
+ <TrendingUp size={13} className="text-[#FF9500]" />
+ <span className="text-[11px] text-[#8E8E93]">Output</span>
+ <span className="text-[12px] font-semibold text-[#FF9500]">
+ {powerStation.outputPower}W
+ </span>
+ </div>
+ </div>
 
-          <div className="flex justify-between items-start mb-5">
-            <div>
-              <div className="text-sm font-semibold text-[#FFFFFF]">{powerStation.name}</div>
-              <div className="text-[11px] text-[#8E8E93] mt-0.5">S/N: {powerStation.serialNumber}</div>
-            </div>
-            <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full 
-                          bg-[rgba(52,199,89,0.12)] text-[#34C759] border border-[rgba(52,199,89,0.25)]
-                          text-[11px] font-semibold tracking-wide">
-              <span className="animate-blink">●</span>
-              {powerStation.isCharging ? 'Charging' : 'Discharging'}
-            </div>
-          </div>
+ {/* 实时功率图表 - 简洁折线 */}
+ <div className="h-16 bg-[#2C2C2E] rounded-[16px] p-3 relative overflow-hidden">
+ <svg width="100%" height="100%" viewBox="0 0 280 40" preserveAspectRatio="none">
+ <polyline
+ points="0,30 35,22 70,25 105,15 140,20 175,8 210,18 245,12 280,16"
+ fill="none"
+ stroke="#01D6BE"
+ strokeWidth="1.5"
+ strokeLinecap="round"
+ strokeLinejoin="round"
+ />
+ </svg>
+ <div className="absolute bottom-1 right-3 text-[9px] text-[#48484A]">Real-time Power</div>
+ </div>
+ </motion.div>
 
-          <div className="flex items-center gap-5">
-            {displayConfig.showBatteryRing && (
-              <BatteryRing
-                percentage={powerStation.batteryLevel}
-                isCharging={powerStation.isCharging}
-              />
-            )}
-            <div className="flex-1 flex flex-col gap-3">
-              <div>
-                <div className="text-[10px] text-[#8E8E93] tracking-wide uppercase">Remaining</div>
-                <div className="text-base font-bold text-[#01D6BE]">
-                  {powerStation.remainingWh}<span className="text-[11px] font-normal text-[#8E8E93] ml-0.5">Wh</span>
-                </div>
-              </div>
-              {displayConfig.showTimeToFull && (
-                <div>
-                  <div className="text-[10px] text-[#8E8E93] tracking-wide uppercase">Full In</div>
-                  <div className="text-base font-bold text-[#FF9500]">{powerStation.timeToFull}</div>
-                </div>
-              )}
-              {displayConfig.showSolarInput && (
-                <div>
-                  <div className="text-[10px] text-[#8E8E93] tracking-wide uppercase">Solar In</div>
-                  <div className="text-base font-bold text-[#34C759]">
-                    +{powerStation.inputPower}<span className="text-[11px] font-normal text-[#8E8E93] ml-0.5">W</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+ {/* 三个功能卡片 - AC / SOLAR / OUTPUT */}
+ <div className="px-5 mb-5">
+ <div className="grid grid-cols-3 gap-2.5">
+ {[
+ { label: 'AC Output', value: `${powerStation.outputPower}W`, color: '#01D6BE', icon: Zap },
+ { label: 'Solar', value: `${powerStation.inputPower}W`, color: '#FF9500', icon: Sun },
+ { label: 'Total Out', value: '1.2 kWh', color: '#34C759', icon: TrendingUp },
+ ].map((item) => {
+ const Icon = item.icon
+ return (
+ <div key={item.label} className="bg-[#1C1C1E] rounded-[18px] p-3.5">
+ <div className="w-8 h-8 rounded-[12px] bg-[#2C2C2E] flex items-center justify-center mb-2.5">
+ <Icon size={16} style={{ color: item.color }} />
+ </div>
+ <div className="text-[11px] text-[#8E8E93] mb-1">{item.label}</div>
+ <div className="text-[16px] font-bold text-[#FFFFFF]">{item.value}</div>
+ </div>
+ )
+ })}
+ </div>
+ </div>
 
-          <div className="mt-4">
-            <div className="flex justify-between text-[11px] text-[#8E8E93] mb-1.5">
-              <span>0%</span>
-              <span className="text-[#AEAEB2]">CURRENT</span>
-              <span className="text-[#34C759] font-semibold">{powerStation.batteryLevel}% · {powerStation.remainingWh}Wh</span>
-            </div>
-            <div className="h-1.5 bg-[rgba(255,255,255,0.06)] rounded-full overflow-visible relative">
-              <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-[#0090FF] to-[#01D6BE] 
-                         shadow-[0_0_8px_rgba(1,214,190,0.4)]"
-                initial={{ width: 0 }}
-                animate={{ width: `${powerStation.batteryLevel}%` }}
-                transition={{ duration: 0.8, ease: 'easeOut' }}
-              />
-              <div
-                className="absolute top-1/2 -translate-y-1/2 w-0.5 h-3.5 rounded-full bg-[#FF9500]
-                           shadow-[0_0_5px_rgba(255,149,0,0.7)] pointer-events-none"
-                style={{ left: `${settings.chargeLimit}%` }}
-              />
-            </div>
-            <div className="flex justify-between text-[10px] text-[#8E8E93] mt-1.5">
-              <span>EMPTY</span>
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-[#FF9500]" />
-                <span className="text-[#FF9500]">{settings.chargeLimit}% LIMIT</span>
-              </span>
-              <span>FULL</span>
-            </div>
-          </div>
-        </motion.div>
+ {/* 运行模式 */}
+ {displayConfig.showOperatingModes && (
+ <div className="px-5 mb-4">
+ <div className="text-[13px] font-bold text-[#8E8E93] tracking-wider uppercase mb-2.5">
+ Operating Modes
+ </div>
+ <div className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1">
+ {modes.map((mode) => {
+ const Icon = mode.icon
+ const isActive = powerStation.mode === mode.id
+ return (
+ <motion.button
+ key={mode.id}
+ whileTap={{ scale: 0.95 }}
+ onClick={() => setMode(mode.id)}
+ className={`
+ flex-1 min-w-[80px] bg-[#1C1C1E] border rounded-[20px] p-3.5
+ transition-all duration-200
+ ${isActive
+ ? 'border-[#01D6BE] bg-[rgba(1,214,190,0.08)]'
+ : 'border-[#2C2C2E]'
+ }
+ `}
+ >
+ <Icon size={20} className={`mb-1.5 ${isActive ? 'text-[#01D6BE]' : 'text-[#8E8E93]'}`} />
+ <div className={`text-[11px] font-bold tracking-wide uppercase mb-0.5
+ ${isActive ? 'text-[#01D6BE]' : 'text-[#AEAEB2]'}`}>
+ {mode.name}
+ </div>
+ <div className="text-[10px] text-[#48484A] leading-tight whitespace-pre-line">
+ {mode.description}
+ </div>
+ </motion.button>
+ )
+ })}
+ </div>
+ </div>
+ )}
 
-        {/* 运行模式 */}
-        {displayConfig.showOperatingModes && (
-          <div className="px-5 mb-3">
-            <div className="text-[13px] font-bold text-[#8E8E93] tracking-wider uppercase mb-2.5">
-              Operating Modes
-            </div>
-            <div className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1">
-              {modes.map((mode) => {
-                const Icon = mode.icon
-                const isActive = powerStation.mode === mode.id
-                return (
-                  <motion.button
-                    key={mode.id}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setMode(mode.id)}
-                    className={`
-                      flex-1 min-w-[80px] bg-[#1C1C1E] border rounded-[20px] p-3.5
-                      relative overflow-hidden transition-all duration-250
-                      ${isActive
-                        ? 'border-[rgba(1,214,190,0.4)] bg-[rgba(1,214,190,0.05)] shadow-[0_0_20px_rgba(1,214,190,0.1)]'
-                        : 'border-[rgba(1,214,190,0.08)]'
-                      }
-                    `}
-                  >
-                    {isActive && (
-                      <div className="absolute top-0 left-0 right-0 h-px 
-                                    bg-gradient-to-r from-transparent via-[rgba(1,214,190,0.5)] to-transparent" />
-                    )}
-                    <Icon size={20} className={`mb-1.5 ${isActive ? 'text-[#01D6BE]' : 'text-[#8E8E93]'}`} />
-                    <div className={`text-[11px] font-bold tracking-wide uppercase mb-0.5
-                                   ${isActive ? 'text-[#01D6BE]' : 'text-[#AEAEB2]'}`}>
-                      {mode.name}
-                    </div>
-                    <div className="text-[10px] text-[#48484A] leading-tight whitespace-pre-line">
-                      {mode.description}
-                    </div>
-                  </motion.button>
-                )
-              })}
-            </div>
-          </div>
-        )}
+ {/* 端口状态 */}
+ {displayConfig.showPortStatus && (
+ <div className="px-5 mb-4">
+ <div className="text-[13px] font-bold text-[#8E8E93] tracking-wider uppercase mb-2.5">
+ Port Status
+ </div>
+ <div className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1">
+ {powerStation.ports
+ .filter(p => p.status === 'active' && p.type !== 'usb-out')
+ .map((port) => (
+ <div
+ key={port.id}
+ className="bg-[#1C1C1E] rounded-[16px] p-3.5 flex items-start gap-2.5 min-w-[140px] flex-shrink-0"
+ >
+ <div className={`
+ w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0
+ ${port.type === 'ac-out' ? 'bg-[rgba(52,199,89,0.12)] text-[#34C759]' : ''}
+ ${port.type === 'ac-in' ? 'bg-[rgba(1,214,190,0.12)] text-[#01D6BE]' : ''}
+ ${port.type === 'dc-in' ? 'bg-[rgba(255,149,0,0.12)] text-[#FF9500]' : ''}
+ `}>
+ {port.type.includes('out') ? (
+ <ArrowRight size={16} />
+ ) : (
+ <Zap size={16} />
+ )}
+ </div>
+ <div className="flex-1 min-w-0">
+ <div className="text-xs font-semibold text-[#FFFFFF] truncate">{port.name}</div>
+ <div className="text-[10px] text-[#8E8E93] mt-0.5">{port.deviceName || 'Idle'}</div>
+ </div>
+ <div className="text-right">
+ <div className={`
+ text-[13px] font-bold
+ ${port.type === 'ac-out' ? 'text-[#34C759]' : 'text-[#01D6BE]'}
+ `}>
+ {port.power > 0 ? `${port.type.includes('out') ? '' : '+'}${port.power}W` : '—'}
+ </div>
+ <div className="text-[9px] text-[#48484A]">
+ {port.power > 0 ? (port.type.includes('out') ? 'In Use' : 'Charging') : 'Unused'}
+ </div>
+ </div>
+ </div>
+ ))}
+ </div>
+ </div>
+ )}
 
-        {/* 端口状态 - 过滤掉 usb-out 类型端口 */}
-        {displayConfig.showPortStatus && (
-          <div className="px-5 mb-3">
-            <div className="text-[13px] font-bold text-[#8E8E93] tracking-wider uppercase mb-2.5">
-              Port Status
-            </div>
-            <div className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1">
-              {powerStation.ports
-                .filter(p => p.status === 'active' && p.type !== 'usb-out')
-                .map((port) => (
-                <div
-                  key={port.id}
-                  className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] 
-                           rounded-[14px] p-3.5 flex items-start gap-2.5 min-w-[140px] flex-shrink-0"
-                >
-                  <div className={`
-                    w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0
-                    ${port.type === 'ac-out' ? 'bg-[rgba(52,199,89,0.12)] text-[#34C759]' : ''}
-                    ${port.type === 'ac-in' ? 'bg-[rgba(1,214,190,0.12)] text-[#01D6BE]' : ''}
-                    ${port.type === 'dc-in' ? 'bg-[rgba(255,149,0,0.12)] text-[#FF9500]' : ''}
-                  `}>
-                    {port.type.includes('out') ? (
-                      <ArrowRight size={16} />
-                    ) : (
-                      <Zap size={16} />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-semibold text-[#FFFFFF] truncate">{port.name}</div>
-                    <div className="text-[10px] text-[#8E8E93] mt-0.5">{port.deviceName || 'Idle'}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className={`
-                      text-[13px] font-bold
-                      ${port.type === 'ac-out' ? 'text-[#34C759]' : 'text-[#01D6BE]'}
-                    `}>
-                      {port.power > 0 ? `${port.type.includes('out') ? '' : '+'}${port.power}W` : '—'}
-                    </div>
-                    <div className="text-[9px] text-[#48484A]">
-                      {port.power > 0 ? (port.type.includes('out') ? 'In Use' : 'Charging') : 'Unused'}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+ {/* 快捷操作 */}
+ {displayConfig.showQuickActions && (
+ <div className="px-5 pb-6">
+ <div className="text-[13px] font-bold text-[#8E8E93] tracking-wider uppercase mb-2.5">
+ Quick Actions
+ </div>
+ <div className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1">
+ {quickActions.map((action) => {
+ const Icon = action.icon
+ return (
+ <motion.button
+ key={action.label}
+ whileTap={{ scale: 0.92 }}
+ onClick={() => handleQuickAction(action.label)}
+ className="flex flex-col items-center gap-1.5 flex-shrink-0"
+ >
+ <div className={`w-[54px] h-[54px] rounded-[20px] 
+ flex items-center justify-center
+ transition-all duration-200
+ ${action.active
+ ? 'bg-[rgba(1,214,190,0.15)]'
+ : 'bg-[#1C1C1E]'
+ }`}>
+ <Icon size={22} className={action.active ? 'text-[#01D6BE]' : 'text-[#FFFFFF]'} />
+ </div>
+ <span className={`text-[10px] whitespace-nowrap ${action.active ? 'text-[#01D6BE]' : 'text-[#8E8E93]'}`}>
+ {action.label}
+ </span>
+ </motion.button>
+ )
+ })}
+ </div>
+ </div>
+ )}
+ </div>
 
-        {/* 快捷操作 */}
-        {displayConfig.showQuickActions && (
-          <div className="px-5 pb-6">
-            <div className="text-[13px] font-bold text-[#8E8E93] tracking-wider uppercase mb-2.5">
-              Quick Actions
-            </div>
-            <div className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1">
-              {quickActions.map((action) => {
-                const Icon = action.icon
-                return (
-                  <motion.button
-                    key={action.label}
-                    whileTap={{ scale: 0.92 }}
-                    onClick={() => handleQuickAction(action.label)}
-                    className="flex flex-col items-center gap-1.5 flex-shrink-0"
-                  >
-                    <div className={`w-[54px] h-[54px] rounded-[20px] 
-                                  flex items-center justify-center
-                                  transition-all duration-250
-                                  ${action.active
-                                    ? 'bg-[rgba(1,214,190,0.15)] border border-[rgba(1,214,190,0.5)] shadow-[0_0_12px_rgba(1,214,190,0.2)]'
-                                    : 'bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] hover:border-[rgba(1,214,190,0.4)] hover:bg-[rgba(1,214,190,0.06)]'
-                                  }`}>
-                      <Icon size={22} className={action.active ? 'text-[#01D6BE]' : 'text-[#FFFFFF]'} />
-                    </div>
-                    <span className={`text-[10px] whitespace-nowrap ${action.active ? 'text-[#01D6BE]' : 'text-[#8E8E93]'}`}>
-                      {action.label}
-                    </span>
-                  </motion.button>
-                )
-              })}
-            </div>
-          </div>
-        )}
-      </div>
+ {/* ===== 通知面板 ===== */}
+ <AnimatePresence>
+ {showNotifications && (
+ <motion.div
+ initial={{ opacity: 0 }}
+ animate={{ opacity: 1 }}
+ exit={{ opacity: 0 }}
+ className="absolute inset-0 bg-[rgba(0,0,0,0.6)] z-50 flex items-start"
+ onClick={() => setShowNotifications(false)}
+ >
+ <motion.div
+ initial={{ y: -20, opacity: 0 }}
+ animate={{ y: 0, opacity: 1 }}
+ exit={{ y: -20, opacity: 0 }}
+ transition={{ type: 'spring', damping: 28, stiffness: 350 }}
+ onClick={(e) => e.stopPropagation()}
+ className="w-full bg-[#1C1C1E] rounded-b-[28px] p-5 pt-4"
+ >
+ <div className="flex justify-between items-center mb-4">
+ <div>
+ <h3 className="text-base font-bold text-[#FFFFFF]">Notifications</h3>
+ {unreadCount > 0 && (
+ <span className="text-[11px] text-[#FF3B30]">{unreadCount} unread</span>
+ )}
+ </div>
+ <div className="flex gap-2">
+ {unreadCount > 0 && (
+ <button
+ onClick={markAllRead}
+ className="text-[11px] text-[#01D6BE] px-3 py-1 rounded-full
+ bg-[rgba(1,214,190,0.1)]"
+ >
+ Mark all read
+ </button>
+ )}
+ <button
+ onClick={() => setShowNotifications(false)}
+ className="w-7 h-7 rounded-full bg-[rgba(255,255,255,0.08)] flex items-center justify-center"
+ >
+ <X size={14} className="text-[#8E8E93]" />
+ </button>
+ </div>
+ </div>
 
-      {/* ===== 通知面板 ===== */}
-      <AnimatePresence>
-        {showNotifications && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-[rgba(0,0,0,0.6)] backdrop-blur-sm z-50 flex items-start"
-            onClick={() => setShowNotifications(false)}
-          >
-            <motion.div
-              initial={{ y: -20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -20, opacity: 0 }}
-              transition={{ type: 'spring', damping: 28, stiffness: 350 }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full bg-[#1C1C1E] border-b border-[rgba(1,214,190,0.15)] rounded-b-[28px] p-5 pt-4"
-            >
-              {/* 标题栏 */}
-              <div className="flex justify-between items-center mb-4">
-                <div>
-                  <h3 className="text-base font-bold text-[#FFFFFF]">Notifications</h3>
-                  {unreadCount > 0 && (
-                    <span className="text-[11px] text-[#FF3B30]">{unreadCount} unread</span>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  {unreadCount > 0 && (
-                    <button
-                      onClick={markAllRead}
-                      className="text-[11px] text-[#01D6BE] px-3 py-1 rounded-full
-                                 bg-[rgba(1,214,190,0.1)] border border-[rgba(1,214,190,0.2)]"
-                    >
-                      Mark all read
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setShowNotifications(false)}
-                    className="w-7 h-7 rounded-full bg-[rgba(255,255,255,0.08)] flex items-center justify-center"
-                  >
-                    <X size={14} className="text-[#8E8E93]" />
-                  </button>
-                </div>
-              </div>
+ <div className="flex flex-col gap-2.5 max-h-[320px] overflow-y-auto scrollbar-hide">
+ {notifList.map((n) => {
+ const typeColors: Record<string, string> = {
+ info: '#01D6BE',
+ success: '#34C759',
+ warning: '#FF9500',
+ error: '#FF3B30',
+ }
+ return (
+ <div
+ key={n.id}
+ onClick={() => setNotifList(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x))}
+ className={`flex items-start gap-3 p-3.5 rounded-[16px] cursor-pointer
+ ${n.read
+ ? 'bg-[rgba(255,255,255,0.03)]'
+ : 'bg-[rgba(1,214,190,0.05)]'
+ }`}
+ >
+ <div
+ className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0"
+ style={{ backgroundColor: n.read ? 'transparent' : typeColors[n.type] }}
+ />
+ <div className="flex-1 min-w-0">
+ <div className={`text-[13px] font-semibold ${n.read ? 'text-[#8E8E93]' : 'text-[#FFFFFF]'}`}>
+ {n.title}
+ </div>
+ <div className="text-[11px] text-[#48484A] mt-0.5">{n.desc}</div>
+ </div>
+ <div className="text-[10px] text-[#48484A] whitespace-nowrap mt-0.5">{n.time}</div>
+ {n.read && <Check size={12} className="text-[#48484A] mt-1 flex-shrink-0" />}
+ </div>
+ )
+ })}
+ </div>
+ </motion.div>
+ </motion.div>
+ )}
+ </AnimatePresence>
 
-              {/* 通知列表 */}
-              <div className="flex flex-col gap-2.5 max-h-[320px] overflow-y-auto scrollbar-hide">
-                {notifList.map((n) => {
-                  const typeColors: Record<string, string> = {
-                    info: '#01D6BE',
-                    success: '#34C759',
-                    warning: '#FF9500',
-                    error: '#FF3B30',
-                  }
-                  return (
-                    <div
-                      key={n.id}
-                      onClick={() => setNotifList(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x))}
-                      className={`flex items-start gap-3 p-3.5 rounded-[16px] cursor-pointer transition-all
-                                 ${n.read
-                                   ? 'bg-[rgba(255,255,255,0.03)]'
-                                   : 'bg-[rgba(1,214,190,0.05)] border border-[rgba(1,214,190,0.12)]'
-                                 }`}
-                    >
-                      <div
-                        className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0"
-                        style={{ backgroundColor: n.read ? 'transparent' : typeColors[n.type] }}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className={`text-[13px] font-semibold ${n.read ? 'text-[#8E8E93]' : 'text-[#FFFFFF]'}`}>
-                          {n.title}
-                        </div>
-                        <div className="text-[11px] text-[#48484A] mt-0.5">{n.desc}</div>
-                      </div>
-                      <div className="text-[10px] text-[#48484A] whitespace-nowrap mt-0.5">{n.time}</div>
-                      {n.read && <Check size={12} className="text-[#48484A] mt-1 flex-shrink-0" />}
-                    </div>
-                  )
-                })}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ===== 显示设置面板 ===== */}
-      <AnimatePresence>
-        {showDisplaySettings && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-[rgba(0,0,0,0.6)] backdrop-blur-sm z-50 flex items-end"
-            onClick={() => setShowDisplaySettings(false)}
-          >
-            <motion.div
-              initial={{ y: 300, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 300, opacity: 0 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full bg-[#1C1C1E] border-t border-[rgba(1,214,190,0.15)] rounded-t-[28px] p-6 pb-10"
-            >
-              <div className="w-10 h-1 bg-[rgba(255,255,255,0.15)] rounded-full mx-auto mb-5" />
-              <div className="flex justify-between items-center mb-5">
-                <h3 className="text-base font-bold text-[#FFFFFF]">Display Settings</h3>
-                <button
-                  onClick={() => setShowDisplaySettings(false)}
-                  className="w-7 h-7 rounded-full bg-[rgba(255,255,255,0.08)] flex items-center justify-center"
-                >
-                  <X size={14} className="text-[#8E8E93]" />
-                </button>
-              </div>
-              <p className="text-[11px] text-[#48484A] mb-4">Choose which sections to show on the home screen</p>
-              <div className="flex flex-col gap-2">
-                {displayItems.map(({ key, label, desc }) => (
-                  <div
-                    key={key}
-                    className="flex items-center justify-between py-3 border-b border-[rgba(1,214,190,0.06)]"
-                  >
-                    <div className="flex items-center gap-3">
-                      {displayConfig[key]
-                        ? <Eye size={15} className="text-[#01D6BE]" />
-                        : <EyeOff size={15} className="text-[#48484A]" />
-                      }
-                      <div>
-                        <div className={`text-[13px] font-medium ${displayConfig[key] ? 'text-[#FFFFFF]' : 'text-[#48484A]'}`}>
-                          {label}
-                        </div>
-                        <div className="text-[10px] text-[#48484A]">{desc}</div>
-                      </div>
-                    </div>
-                    <ToggleSwitch
-                      isOn={displayConfig[key]}
-                      onToggle={() => setDisplayConfig(prev => ({ ...prev, [key]: !prev[key] }))}
-                      size="sm"
-                    />
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+ {/* ===== 显示设置面板 ===== */}
+ <AnimatePresence>
+ {showDisplaySettings && (
+ <motion.div
+ initial={{ opacity: 0 }}
+ animate={{ opacity: 1 }}
+ exit={{ opacity: 0 }}
+ className="absolute inset-0 bg-[rgba(0,0,0,0.6)] z-50 flex items-end"
+ onClick={() => setShowDisplaySettings(false)}
+ >
+ <motion.div
+ initial={{ y: 300, opacity: 0 }}
+ animate={{ y: 0, opacity: 1 }}
+ exit={{ y: 300, opacity: 0 }}
+ transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+ onClick={(e) => e.stopPropagation()}
+ className="w-full bg-[#1C1C1E] rounded-t-[28px] p-6 pb-10"
+ >
+ <div className="w-10 h-1 bg-[rgba(255,255,255,0.15)] rounded-full mx-auto mb-5" />
+ <div className="flex justify-between items-center mb-5">
+ <h3 className="text-base font-bold text-[#FFFFFF]">Display Settings</h3>
+ <button
+ onClick={() => setShowDisplaySettings(false)}
+ className="w-7 h-7 rounded-full bg-[rgba(255,255,255,0.08)] flex items-center justify-center"
+ >
+ <X size={14} className="text-[#8E8E93]" />
+ </button>
+ </div>
+ <p className="text-[11px] text-[#48484A] mb-4">Choose which sections to show on the home screen</p>
+ <div className="flex flex-col gap-2">
+ {displayItems.map(({ key, label, desc }) => (
+ <div
+ key={key}
+ className="flex items-center justify-between py-3 border-b border-[rgba(255,255,255,0.06)]"
+ >
+ <div className="flex items-center gap-3">
+ {displayConfig[key]
+ ? <Eye size={15} className="text-[#01D6BE]" />
+ : <EyeOff size={15} className="text-[#48484A]" />
+ }
+ <div>
+ <div className={`text-[13px] font-medium ${displayConfig[key] ? 'text-[#FFFFFF]' : 'text-[#48484A]'}`}>
+ {label}
+ </div>
+ <div className="text-[10px] text-[#48484A]">{desc}</div>
+ </div>
+ </div>
+ <ToggleSwitch
+ isOn={displayConfig[key]}
+ onToggle={() => setDisplayConfig(prev => ({ ...prev, [key]: !prev[key] }))}
+ size="sm"
+ />
+ </div>
+ ))}
+ </div>
+ </motion.div>
+ </motion.div>
+ )}
+ </AnimatePresence>
+ </div>
   )
 }

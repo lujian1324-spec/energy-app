@@ -3,22 +3,17 @@
 @tailwind utilities;
 
 /* ============================================================
-   设计令牌系统 Design Tokens
+   设计令牌系统 Design Tokens - 扁平化
 ============================================================ */
 :root {
-  /* 主色调 - 青绿科技色系（参考图片配色） */
+  /* 主色调 - 青绿扁平色系 */
   --clr-primary: #01D6BE;
   --clr-primary-dim: #01A88F;
-  --clr-primary-glow: rgba(1, 214, 190, 0.25);
   --clr-accent: #01D6BE;
   --clr-accent-dim: #01A88F;
-  --clr-accent-glow: rgba(1, 214, 190, 0.2);
   --clr-warning: #FF9500;
-  --clr-warning-glow: rgba(255, 149, 0, 0.2);
   --clr-danger: #FF3B30;
-  --clr-danger-glow: rgba(255, 59, 48, 0.2);
   --clr-success: #34C759;
-  --clr-success-glow: rgba(52, 199, 89, 0.2);
 
   /* 深色背景层次 */
   --bg-base: #000000;
@@ -45,11 +40,6 @@
   --r-lg: 18px;
   --r-xl: 24px;
   --r-full: 9999px;
-
-  /* 阴影 */
-  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.6);
-  --shadow-glow-primary: 0 0 20px rgba(1, 214, 190, 0.3);
-  --shadow-glow-accent: 0 0 20px rgba(1, 214, 190, 0.3);
 }
 
 /* ============================================================
@@ -93,27 +83,17 @@ body {
    动画
 ============================================================ */
 @keyframes wave-move {
-  0%   { transform: translateX(0); }
+  0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
-}
-
-@keyframes pulse-ring {
-  0%   { transform: scale(1); opacity: 0.8; }
-  50%  { transform: scale(1.04); opacity: 1; }
-  100% { transform: scale(1); opacity: 0.8; }
 }
 
 @keyframes blink-dot {
   0%, 100% { opacity: 1; }
-  50%       { opacity: 0.3; }
+  50% { opacity: 0.3; }
 }
 
 .animate-wave {
   animation: wave-move 4s linear infinite;
-}
-
-.animate-pulse-ring {
-  animation: pulse-ring 3s ease-in-out infinite;
 }
 
 .animate-blink {
@@ -121,23 +101,13 @@ body {
 }
 
 /* ============================================================
-   通用组件类
+   通用组件类 - 扁平化
 ============================================================ */
 .card {
   background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
   border-radius: var(--r-lg);
   padding: 18px;
   position: relative;
-  overflow: hidden;
-}
-
-.card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(1,214,190,0.3), transparent);
 }
 
 .badge {
@@ -154,28 +124,24 @@ body {
 .badge-success { 
   background: rgba(52,199,89,0.12); 
   color: var(--clr-success); 
-  border: 1px solid rgba(52,199,89,0.25); 
 }
 
 .badge-warning { 
   background: rgba(255,149,0,0.12); 
   color: var(--clr-warning); 
-  border: 1px solid rgba(255,149,0,0.25); 
 }
 
 .badge-danger { 
   background: rgba(255,59,48,0.12); 
   color: var(--clr-danger); 
-  border: 1px solid rgba(255,59,48,0.25); 
 }
 
 .badge-primary { 
   background: rgba(1,214,190,0.12); 
   color: var(--clr-primary); 
-  border: 1px solid rgba(1,214,190,0.25); 
 }
 
-/* 进度条 */
+/* 进度条 - 扁平纯色 */
 .progress-track {
   height: 6px;
   background: rgba(255,255,255,0.08);
@@ -191,23 +157,19 @@ body {
 }
 
 .progress-fill.green { 
-  background: linear-gradient(90deg, #01A88F, #01D6BE); 
-  box-shadow: 0 0 8px rgba(1,214,190,0.4); 
+  background: #01D6BE; 
 }
 
 .progress-fill.blue { 
-  background: linear-gradient(90deg, #01A88F, #01D6BE); 
-  box-shadow: 0 0 8px rgba(1,214,190,0.4); 
+  background: #01D6BE; 
 }
 
 .progress-fill.orange { 
-  background: linear-gradient(90deg, #CC7700, #FF9500); 
-  box-shadow: 0 0 8px rgba(255,149,0,0.4); 
+  background: #FF9500; 
 }
 
 .progress-fill.red { 
-  background: linear-gradient(90deg, #CC2222, #FF3B30); 
-  box-shadow: 0 0 8px rgba(255,59,48,0.4); 
+  background: #FF3B30; 
 }
 
 /* 分隔线 */
