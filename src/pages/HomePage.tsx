@@ -2,28 +2,20 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Bell,
-  Settings,
   Sun,
-  Home,
-  Car,
-  Mountain,
   ArrowRight,
   Zap,
   Pencil,
   TrendingUp,
   TrendingDown,
+  X,
+  Check,
+  Eye,
+  EyeOff,
 } from 'lucide-react'
 import BatteryRing from '../components/BatteryRing'
 import ToggleSwitch from '../components/ToggleSwitch'
 import { usePowerStationStore } from '../stores/powerStationStore'
-import type { OperatingMode } from '../types'
-
-const modes: { id: OperatingMode; name: string; description: string; icon: React.ElementType }[] = [
-  { id: 'solar', name: 'SOLAR', description: 'Solar PV\nPriority', icon: Sun },
-  { id: 'backup', name: 'BACKUP', description: 'Auto switch\non outage', icon: Home },
-  { id: 'car', name: 'CAR', description: 'Vehicle\nCharging', icon: Car },
-  { id: 'outdoor', name: 'OUTDOOR', description: 'Quiet\nMode', icon: Mountain },
-]
 
 const notifications = [
   { id: 1, type: 'info', title: 'Battery at 76%', desc: 'Estimated full charge in 1h 24m', time: '2 min ago', read: false },
@@ -33,7 +25,7 @@ const notifications = [
 ]
 
 export default function HomePage() {
-  const { powerStation, settings, setMode, updateSettings } = usePowerStationStore()
+  const { powerStation, settings, updateSettings } = usePowerStationStore()
   const [currentTime, setCurrentTime] = useState(() =>
  new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
   )
@@ -45,7 +37,6 @@ export default function HomePage() {
  showBatteryRing: true,
  showSolarInput: true,
  showTimeToFull: true,
- showOperatingModes: true,
  showPortStatus: true,
   })
 
@@ -76,7 +67,6 @@ export default function HomePage() {
  { key: 'showBatteryRing', label: 'Battery Ring', desc: 'Main power ring gauge' },
  { key: 'showSolarInput', label: 'Solar Input', desc: 'Solar charging info' },
  { key: 'showTimeToFull', label: 'Time to Full', desc: 'Estimated full charge time' },
- { key: 'showOperatingModes', label: 'Operating Modes', desc: 'Mode selector cards' },
  { key: 'showPortStatus', label: 'Port Status', desc: 'Active port display' },
   ] as const
 
@@ -195,45 +185,6 @@ export default function HomePage() {
  })}
  </div>
  </div>
-
- {/* 运行模式 */}
- {displayConfig.showOperatingModes && (
- <div className="px-5 mb-4">
- <div className="text-[13px] font-bold text-[#8E8E93] tracking-wider uppercase mb-2.5">
- Operating Modes
- </div>
- <div className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1">
- {modes.map((mode) => {
- const Icon = mode.icon
- const isActive = powerStation.mode === mode.id
- return (
- <motion.button
- key={mode.id}
- whileTap={{ scale: 0.95 }}
- onClick={() => setMode(mode.id)}
- className={`
- flex-1 min-w-[80px] bg-[#1C1C1E] border rounded-[20px] p-3.5
- transition-all duration-200
- ${isActive
- ? 'border-[#01D6BE] bg-[rgba(1,214,190,0.08)]'
- : 'border-[#2C2C2E]'
- }
- `}
- >
- <Icon size={20} className={`mb-1.5 ${isActive ? 'text-[#01D6BE]' : 'text-[#8E8E93]'}`} />
- <div className={`text-[11px] font-bold tracking-wide uppercase mb-0.5
- ${isActive ? 'text-[#01D6BE]' : 'text-[#AEAEB2]'}`}>
- {mode.name}
- </div>
- <div className="text-[10px] text-[#48484A] leading-tight whitespace-pre-line">
- {mode.description}
- </div>
- </motion.button>
- )
- })}
- </div>
- </div>
- )}
 
  {/* 端口状态 */}
  {displayConfig.showPortStatus && (
