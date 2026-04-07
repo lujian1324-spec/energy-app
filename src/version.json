@@ -1,0 +1,12 @@
+{
+  "version": "3.2.2",
+  "build": 2412,
+  "date": "2026-04-07",
+  "changelog": [
+    "Flattened UI design - removed gradients, shadows, glows",
+    "Updated primary color to #01D6BE",
+    "Removed Quick Actions from home screen",
+    "Moved Scan QR into Add Device modal",
+    "Added firmware version tracking"
+  ]
+}

@@ -35,6 +35,7 @@ import { usePowerStationStore } from '../stores/powerStationStore'
 import { useConnectionStore } from '../stores/connectionStore'
 import { useProtocol } from '../hooks/useProtocol'
 import { getDBStats, clearAllHistory } from '../db/powerflowDB'
+import appVersion from '../version.json'
 
 export default function SettingsPage() {
   const { powerStation, settings, updateSettings } = usePowerStationStore()
@@ -105,7 +106,7 @@ export default function SettingsPage() {
  { icon: Bell, label: 'Push Notifications', desc: 'Low Battery, Full, Alert', type: 'toggle' as const, color: 'orange', storeKey: 'notifications' as const },
  { icon: Moon, label: 'Do Not Disturb', desc: `${settings.doNotDisturbStart} — ${settings.doNotDisturbEnd}`, type: 'toggle' as const, color: 'gray', storeKey: 'doNotDisturb' as const },
  { icon: Globe, label: 'Language / Units', desc: 'English · Metric', type: 'nav' as const, color: 'gray', storeKey: null },
- { icon: Download, label: 'Firmware Update', desc: 'Latest: v2.4.1 · Up to date', type: 'badge' as const, color: 'green', storeKey: null },
+ { icon: Download, label: 'Firmware Update', desc: `App v${appVersion.version} (Build ${appVersion.build}) · Up to date`, type: 'badge' as const, color: 'green', storeKey: null },
  { icon: AlertTriangle, label: 'Factory Reset', desc: 'Clear all data and settings', type: 'nav-danger' as const, color: 'red', storeKey: null },
   ]
 
@@ -171,7 +172,7 @@ flex items-center gap-4 relative overflow-hidden"
  <span className="text-[10px] px-2 py-0.5 rounded-full 
  bg-[rgba(1,214,190,0.1)] text-[#01D6BE] border border-[rgba(1,214,190,0.2)]
  font-semibold">
- FW v2.4.1
+ FW v{appVersion.version}
  </span>
  <span className="text-[10px] px-2 py-0.5 rounded-full 
  bg-[rgba(1,214,190,0.1)] text-[#01D6BE] border border-[rgba(1,214,190,0.2)]
@@ -497,7 +498,7 @@ flex items-center gap-4 relative overflow-hidden"
 
  {/* 版本信息 */}
  <div className="text-center py-4 text-[11px] text-[#48484A] leading-relaxed">
- <div>Sierro App · v3.2.1 (Build 2411)</div>
+ <div>Sierro App · v{appVersion.version} (Build {appVersion.build})</div>
  <div>© 2026 Sierro Technology Co., Ltd.</div>
  <div className="mt-2 flex justify-center gap-4">
  <button onClick={() => setShowPrivacy(true)} className="text-[#01D6BE] hover:underline">Privacy Policy</button>
@@ -593,7 +594,7 @@ flex items-center gap-4 relative overflow-hidden"
  </div>
  <div>
  <h3 className="text-base font-bold text-[#FFFFFF]">Terms of Use</h3>
- <p className="text-[11px] text-[#8E8E93]">Version 3.2.1</p>
+ <p className="text-[11px] text-[#8E8E93]">Version {appVersion.version}</p>
  </div>
  </div>
  <button onClick={() => setShowTerms(false)} className="p-2 rounded-full hover:bg-[rgba(255,255,255,0.05)]">

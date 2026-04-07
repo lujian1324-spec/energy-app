@@ -13,7 +13,7 @@ export default function DevicesPage() {
   const [activeFilter, setActiveFilter] = useState('All')
   const [searchQuery, setSearchQuery] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
-  const [showQrModal, setShowQrModal] = useState(false)
+  const [showQrScan, setShowQrScan] = useState(false)
 
   const hasAlert = (device: typeof devices[0]) =>
  device.batteryLevel < 30 || device.status === 'offline'
@@ -237,22 +237,37 @@ export default function DevicesPage() {
  >
  <div className="w-10 h-1 bg-[rgba(255,255,255,0.15)] rounded-full mx-auto mb-5" />
  <h3 className="text-base font-bold text-[#FFFFFF] mb-5">Add New Device</h3>
+
+ {!showQrScan ? (
+ <>
  <div className="flex flex-col gap-3">
  {[
  { label: 'Bluetooth Scan', desc: 'Find nearby BLE devices', color: '#01D6BE', icon: '📡' },
  { label: 'Wi-Fi Setup', desc: 'Connect via local network', color: '#34C759', icon: '📶' },
  { label: 'Manual Entry', desc: 'Enter device code manually', color: '#FF9500', icon: '⌨️' },
+ { label: 'Scan QR Code', desc: 'Scan device QR code with camera', color: '#01D6BE', icon: '📷', action: () => setShowQrScan(true) },
  ].map((opt) => (
  <button
  key={opt.label}
- onClick={() => setShowAddModal(false)}
+ onClick={() => {
+ if ('action' in opt && opt.action) {
+ opt.action()
+ } else {
+ setShowAddModal(false)
+ }
+ }}
  className="flex items-center gap-4 p-4 bg-[#2C2C2E] rounded-[16px] text-left transition-all"
  >
  <span className="text-2xl">{opt.icon}</span>
- <div>
+ <div className="flex-1">
  <div className="text-[14px] font-semibold" style={{ color: opt.color }}>{opt.label}</div>
  <div className="text-[11px] text-[#8E8E93] mt-0.5">{opt.desc}</div>
  </div>
+ {'action' in opt && opt.action && (
+ <div className="w-6 h-6 rounded-full bg-[rgba(1,214,190,0.15)] flex items-center justify-center">
+ <QrCode size={14} className="text-[#01D6BE]" />
+ </div>
+ )}
  </button>
  ))}
  </div>
@@ -262,54 +277,37 @@ export default function DevicesPage() {
  >
  Cancel
  </button>
- </motion.div>
- </motion.div>
- )}
- </AnimatePresence>
-
- {/* Scan QR Modal */}
- <AnimatePresence>
- {showQrModal && (
- <motion.div
- initial={{ opacity: 0 }}
- animate={{ opacity: 1 }}
- exit={{ opacity: 0 }}
- className="absolute inset-0 bg-[rgba(0,0,0,0.85)] z-50 flex items-center justify-center"
- onClick={() => setShowQrModal(false)}
- >
- <motion.div
- initial={{ scale: 0.85, opacity: 0 }}
- animate={{ scale: 1, opacity: 1 }}
- exit={{ scale: 0.85, opacity: 0 }}
- transition={{ type: 'spring', damping: 25, stiffness: 300 }}
- onClick={(e) => e.stopPropagation()}
- className="mx-6 bg-[#1C1C1E] rounded-[28px] p-6 text-center"
- >
- <div className="w-52 h-52 mx-auto mb-4 relative">
+ </>
+ ) : (
+ <>
+ {/* QR Scan View */}
+ <div className="w-48 h-48 mx-auto mb-4 relative">
  <div className="absolute inset-0 bg-[#2C2C2E] rounded-[16px] flex items-center justify-center">
- <QrCode size={64} className="text-[rgba(1,214,190,0.3)]" />
+ <QrCode size={56} className="text-[rgba(1,214,190,0.3)]" />
  </div>
- {/* 扫描线 */}
+ {/* Scan line */}
  <motion.div
  className="absolute left-2 right-2 h-0.5 bg-[#01D6BE]"
  animate={{ top: ['10%', '85%', '10%'] }}
  transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
  />
- {/* 四角标记 */}
+ {/* Corner markers */}
  {[['top-0 left-0','border-t-2 border-l-2'],['top-0 right-0','border-t-2 border-r-2'],
  ['bottom-0 left-0','border-b-2 border-l-2'],['bottom-0 right-0','border-b-2 border-r-2']
  ].map(([pos, border], i) => (
  <div key={i} className={`absolute w-5 h-5 ${pos} ${border} border-[#01D6BE] rounded-sm`} />
  ))}
  </div>
- <div className="text-[15px] font-semibold text-[#FFFFFF] mb-1">Scan Device QR Code</div>
- <div className="text-[12px] text-[#8E8E93] mb-5">Point camera at the QR code on your device</div>
+ <div className="text-[15px] font-semibold text-[#FFFFFF] mb-1 text-center">Scan Device QR Code</div>
+ <div className="text-[12px] text-[#8E8E93] mb-5 text-center">Point camera at the QR code on your device</div>
  <button
- onClick={() => setShowQrModal(false)}
+ onClick={() => setShowQrScan(false)}
  className="w-full h-11 rounded-[14px] bg-[rgba(255,255,255,0.06)] text-[#8E8E93] text-sm font-medium"
  >
- Cancel
+ Back
  </button>
+ </>
+ )}
  </motion.div>
  </motion.div>
  )}

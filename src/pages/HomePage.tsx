@@ -9,17 +9,6 @@ import {
   Mountain,
   ArrowRight,
   Zap,
-  Lightbulb,
-  FileText,
-  RefreshCw,
-  Wifi,
-  Share2,
-  X,
-  Check,
-  Volume2,
-  VolumeX,
-  Eye,
-  EyeOff,
   Pencil,
   TrendingUp,
   TrendingDown,
@@ -51,8 +40,6 @@ export default function HomePage() {
   const [showNotifications, setShowNotifications] = useState(false)
   const [showDisplaySettings, setShowDisplaySettings] = useState(false)
   const [notifList, setNotifList] = useState(notifications)
-  const [ledOn, setLedOn] = useState(false)
-  const [quietMode, setQuietMode] = useState(false)
 
   const [displayConfig, setDisplayConfig] = useState({
  showBatteryRing: true,
@@ -60,7 +47,6 @@ export default function HomePage() {
  showTimeToFull: true,
  showOperatingModes: true,
  showPortStatus: true,
- showQuickActions: true,
   })
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -86,38 +72,12 @@ export default function HomePage() {
   const unreadCount = notifList.filter(n => !n.read).length
   const markAllRead = () => setNotifList(prev => prev.map(n => ({ ...n, read: true })))
 
-  const handleQuickAction = (label: string) => {
- if (label === 'LED Light') setLedOn(v => !v)
- if (label === 'Quiet Mode') {
- setQuietMode(v => !v)
- updateSettings({ ecoMode: !settings.ecoMode })
- }
- if (label === 'Usage Report') setShowDisplaySettings(true)
- if (label === 'Cycle Mode') {
- const modeOrder: OperatingMode[] = ['solar', 'backup', 'car', 'outdoor']
- const idx = modeOrder.indexOf(powerStation.mode)
- setMode(modeOrder[(idx + 1) % modeOrder.length])
- }
- if (label === 'Remote') updateSettings({ bluetooth: !settings.bluetooth })
- if (label === 'Data Share') updateSettings({ cloudSync: !settings.cloudSync })
-  }
-
-  const quickActions = [
- { icon: Lightbulb, label: 'LED Light', active: ledOn },
- { icon: quietMode ? VolumeX : Volume2, label: 'Quiet Mode', active: quietMode },
- { icon: FileText, label: 'Usage Report', active: false },
- { icon: RefreshCw, label: 'Cycle Mode', active: false },
- { icon: Wifi, label: 'Remote', active: settings.bluetooth },
- { icon: Share2, label: 'Data Share', active: settings.cloudSync },
-  ]
-
   const displayItems = [
  { key: 'showBatteryRing', label: 'Battery Ring', desc: 'Main power ring gauge' },
  { key: 'showSolarInput', label: 'Solar Input', desc: 'Solar charging info' },
  { key: 'showTimeToFull', label: 'Time to Full', desc: 'Estimated full charge time' },
  { key: 'showOperatingModes', label: 'Operating Modes', desc: 'Mode selector cards' },
  { key: 'showPortStatus', label: 'Port Status', desc: 'Active port display' },
- { key: 'showQuickActions', label: 'Quick Actions', desc: 'Action shortcuts bar' },
   ] as const
 
   return (
@@ -318,41 +278,6 @@ export default function HomePage() {
  </div>
  </div>
  ))}
- </div>
- </div>
- )}
-
- {/* 快捷操作 */}
- {displayConfig.showQuickActions && (
- <div className="px-5 pb-6">
- <div className="text-[13px] font-bold text-[#8E8E93] tracking-wider uppercase mb-2.5">
- Quick Actions
- </div>
- <div className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1">
- {quickActions.map((action) => {
- const Icon = action.icon
- return (
- <motion.button
- key={action.label}
- whileTap={{ scale: 0.92 }}
- onClick={() => handleQuickAction(action.label)}
- className="flex flex-col items-center gap-1.5 flex-shrink-0"
- >
- <div className={`w-[54px] h-[54px] rounded-[20px] 
- flex items-center justify-center
- transition-all duration-200
- ${action.active
- ? 'bg-[rgba(1,214,190,0.15)]'
- : 'bg-[#1C1C1E]'
- }`}>
- <Icon size={22} className={action.active ? 'text-[#01D6BE]' : 'text-[#FFFFFF]'} />
- </div>
- <span className={`text-[10px] whitespace-nowrap ${action.active ? 'text-[#01D6BE]' : 'text-[#8E8E93]'}`}>
- {action.label}
- </span>
- </motion.button>
- )
- })}
  </div>
  </div>
  )}
