@@ -1,11 +1,9 @@
 {
-  "version": "3.2.6",
-  "build": 2416,
+  "version": "3.2.7",
+  "build": 2417,
   "date": "2026-04-09",
   "changelog": [
-    "AC Out 1 renamed to AC Out",
-    "Added share button to Stats page",
-    "Removed ~7,714 cycles remaining text from Settings",
-    "Removed Control page from navigation"
+    "Stats page: Added thick battery capacity ring (strokeWidth 14)",
+    "Stats page: Replaced temp chart with capacity ring + stats grid"
   ]
 }

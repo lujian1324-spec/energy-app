@@ -1,6 +1,7 @@
 ﻿import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Sun, Zap, DollarSign, Globe, Monitor, Smartphone, Lightbulb, Share2 } from 'lucide-react'
+import BatteryRing from '../components/BatteryRing'
 import { usePowerStationStore } from '../stores/powerStationStore'
 
 const periods = ['Day', 'Week', 'Month'] as const
@@ -155,62 +156,58 @@ export default function StatsPage() {
  </div>
  </div>
 
- {/* 电池健康图表 */}
- <div className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] p-4 mb-4">
- <div className="flex justify-between items-center mb-4">
- <div className="text-sm font-bold text-[#FFFFFF]">Battery Health · Temp</div>
- <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full 
- bg-[rgba(52,199,89,0.12)] text-[#34C759] border border-[rgba(52,199,89,0.25)]
- text-[10px] font-semibold">
- Good
- </div>
- </div>
- 
- <div className="h-20 relative mt-1">
- <svg className="w-full h-full" viewBox="0 0 335 80" preserveAspectRatio="none">
-<defs></defs>
- <line x1="0" y1="20" x2="335" y2="20" stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>
- <line x1="0" y1="40" x2="335" y2="40" stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>
- <line x1="0" y1="60" x2="335" y2="60" stroke="rgba(255,255,255,0.04)" strokeWidth="1"/>
- <path d="M0,55 C40,50 80,45 120,42 C160,39 200,35 240,38 C280,41 310,36 335,30 L335,80 L0,80 Z"
- fill="rgba(1,214,190,0.15)"/>
- <path d="M0,55 C40,50 80,45 120,42 C160,39 200,35 240,38 C280,41 310,36 335,30"
- fill="none" stroke="#01D6BE" strokeWidth="2" strokeLinecap="round"
-filter="none"/>
-<circle cx="0" cy="55" r="3.5" fill="#01D6BE"/>
- <circle cx="120" cy="42" r="3.5" fill="#01D6BE" filter="(0 0 4px #01D6BE)"/>
- <circle cx="240" cy="38" r="3.5" fill="#01D6BE" filter="(0 0 4px #01D6BE)"/>
- <circle cx="335" cy="30" r="4.5" fill="#01D6BE" filter="(0 0 6px #01D6BE)"/>
- <text x="310" y="24" fontSize="9" fill="#8E8E93">33°C</text>
- <text x="4" y="18" fontSize="9" fill="#48484A">40°C</text>
- <text x="4" y="58" fontSize="9" fill="#48484A">20°C</text>
- </svg>
- </div>
- 
- {/* 健康统计 */}
- <div className="flex gap-0 mt-2 pt-3 border-t border-[rgba(1,214,190,0.08)]">
- <div className="flex-1 text-center">
- <div className="text-[15px] font-bold text-[#FFFFFF]">
- {powerStation.batteryHealth}<span className="text-[10px] text-[#8E8E93]">%</span>
- </div>
- <div className="text-[10px] text-[#8E8E93] mt-0.5">Battery Health</div>
- </div>
- <div className="w-px bg-[rgba(1,214,190,0.08)]" />
- <div className="flex-1 text-center">
- <div className="text-[15px] font-bold text-[#34C759]">
- {powerStation.temperature}<span className="text-[10px] text-[#8E8E93]">°C</span>
- </div>
- <div className="text-[10px] text-[#8E8E93] mt-0.5">Temperature</div>
- </div>
- <div className="w-px bg-[rgba(1,214,190,0.08)]" />
- <div className="flex-1 text-center">
- <div className="text-[15px] font-bold text-[#01D6BE]">
- {powerStation.cycleCount}<span className="text-[10px] text-[#8E8E93]">×</span>
- </div>
- <div className="text-[10px] text-[#8E8E93] mt-0.5">Cycles</div>
- </div>
- </div>
- </div>
+{/* 电池容量环形图 */}
+<div className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] p-4 mb-4">
+<div className="flex justify-between items-center mb-3">
+<div className="text-sm font-bold text-[#FFFFFF]">Battery Capacity</div>
+<div className="inline-flex items-center gap-1 px-2 py-1 rounded-full 
+bg-[rgba(52,199,89,0.12)] text-[#34C759] border border-[rgba(52,199,89,0.25)]
+text-[10px] font-semibold">
+Good
+</div>
+</div>
+
+<div className="flex items-center gap-4">
+{/* 储能容量环形 - 加粗版 */}
+<div className="flex-shrink-0">
+<BatteryRing 
+percentage={powerStation.batteryLevel} 
+size={110} 
+strokeWidth={14}
+isCharging={powerStation.isCharging}
+uid="stats-page"
+/>
+</div>
+
+{/* 右侧统计 */}
+<div className="flex-1 grid grid-cols-2 gap-3">
+<div className="text-center bg-[rgba(255,255,255,0.03)] rounded-[12px] p-2.5">
+<div className="text-[14px] font-bold text-[#FFFFFF]">
+{powerStation.batteryHealth}%
+</div>
+<div className="text-[9px] text-[#8E8E93] mt-0.5">Health</div>
+</div>
+<div className="text-center bg-[rgba(255,255,255,0.03)] rounded-[12px] p-2.5">
+<div className="text-[14px] font-bold text-[#34C759]">
+{powerStation.temperature}°C
+</div>
+<div className="text-[9px] text-[#8E8E93] mt-0.5">Temp</div>
+</div>
+<div className="text-center bg-[rgba(255,255,255,0.03)] rounded-[12px] p-2.5">
+<div className="text-[14px] font-bold text-[#01D6BE]">
+{powerStation.cycleCount}
+</div>
+<div className="text-[9px] text-[#8E8E93] mt-0.5">Cycles</div>
+</div>
+<div className="text-center bg-[rgba(255,255,255,0.03)] rounded-[12px] p-2.5">
+<div className="text-[14px] font-bold text-[#FF9500]">
+1000Wh
+</div>
+<div className="text-[9px] text-[#8E8E93] mt-0.5">Capacity</div>
+</div>
+</div>
+</div>
+</div>
 
  {/* 用电分布 */}
  <div className="mb-4">
