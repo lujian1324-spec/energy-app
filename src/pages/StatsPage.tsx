@@ -36,7 +36,7 @@ export default function StatsPage() {
   return (
  <div className="h-full flex flex-col bg-[#000000] overflow-hidden">
       {/* Header */}
-      <div className="px-5 pt-2 pb-2 safe-area-top flex justify-between items-start">
+      <div className="px-5 pt-8 pb-2 safe-area-top flex justify-between items-start">
         <div>
           <h2 className="text-xl font-bold text-[#FFFFFF]">Energy Stats</h2>
           <p className="text-xs text-[#8E8E93] mt-1">This Week · March 2026</p>

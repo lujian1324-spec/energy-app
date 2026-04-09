@@ -1,9 +1,8 @@
 {
-  "version": "3.3.0",
-  "build": 2420,
+  "version": "3.3.1",
+  "build": 2421,
   "date": "2026-04-09",
   "changelog": [
-    "Home page: Added power outage alert notification with SIERRO logo card",
-    "Notification panel: New alert style with white background and logo"
+    "Stats page: Increased top padding (pt-2 → pt-8) to avoid status bar overlap"
   ]
 }
