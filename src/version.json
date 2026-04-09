@@ -1,10 +1,8 @@
 {
-  "version": "3.2.3",
-  "build": 2413,
-  "date": "2026-04-08",
+  "version": "3.2.4",
+  "build": 2414,
+  "date": "2026-04-09",
   "changelog": [
-    "Removed Operating Modes section from home screen",
-    "Removed all Quick Actions functionality",
-    "Streamlined home page layout"
+    "Removed status bar (time, signal, battery indicator) from home screen"
   ]
 }

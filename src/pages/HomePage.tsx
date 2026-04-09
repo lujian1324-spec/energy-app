@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react'
+﻿import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Bell,
@@ -26,9 +26,6 @@ const notifications = [
 
 export default function HomePage() {
   const { powerStation, settings, updateSettings } = usePowerStationStore()
-  const [currentTime, setCurrentTime] = useState(() =>
- new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
-  )
   const [showNotifications, setShowNotifications] = useState(false)
   const [showDisplaySettings, setShowDisplaySettings] = useState(false)
   const [notifList, setNotifList] = useState(notifications)
@@ -39,26 +36,6 @@ export default function HomePage() {
  showTimeToFull: true,
  showPortStatus: true,
   })
-
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
-  useEffect(() => {
- const tick = () => {
- setCurrentTime(
- new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
- )
- }
- const now = new Date()
- const msToNextMinute = (60 - now.getSeconds()) * 1000 - now.getMilliseconds()
- const timeout = setTimeout(() => {
- tick()
- intervalRef.current = setInterval(tick, 60000)
- }, msToNextMinute)
- return () => {
- clearTimeout(timeout)
- if (intervalRef.current) clearInterval(intervalRef.current)
- }
-  }, [])
 
   const unreadCount = notifList.filter(n => !n.read).length
   const markAllRead = () => setNotifList(prev => prev.map(n => ({ ...n, read: true })))
@@ -72,27 +49,6 @@ export default function HomePage() {
 
   return (
  <div className="h-full flex flex-col bg-[#000000] overflow-hidden relative">
- {/* 状态栏 */}
- <div className="flex justify-between items-center px-6 pt-3 pb-2 safe-area-top">
- <span className="text-[15px] font-semibold text-[#FFFFFF] tracking-wide">{currentTime}</span>
- <div className="flex items-center gap-1.5">
- <svg width="16" height="11" viewBox="0 0 16 11" className="fill-[#FFFFFF]">
- <rect x="0" y="3" width="3" height="8" rx="0.5" opacity="0.3"/>
- <rect x="4" y="2" width="3" height="9" rx="0.5" opacity="0.5"/>
- <rect x="8" y="0.5" width="3" height="10.5" rx="0.5" opacity="0.8"/>
- <rect x="12" y="0" width="3" height="11" rx="0.5"/>
- </svg>
- <div className="flex items-center gap-1 text-[11px] text-[#FFFFFF] font-medium">
- <svg width="22" height="11" viewBox="0 0 22 11">
- <rect x="0" y="1" width="19" height="9" rx="2" stroke="#FFFFFF" strokeWidth="1" fill="none"/>
- <rect x="19.5" y="3.5" width="2.5" height="4" rx="1" fill="#FFFFFF" opacity="0.6"/>
- <rect x="1" y="2" width={Math.round(17 * powerStation.batteryLevel / 100)} height="7" rx="1.5" fill="#01D6BE"/>
- </svg>
- {powerStation.batteryLevel}%
- </div>
- </div>
- </div>
-
  {/* 可滚动内容 */}
  <div className="flex-1 overflow-y-auto scrollbar-hide">
  {/* Header - 扁平化：设备名 + 编辑图标 + 设置图标 */}
