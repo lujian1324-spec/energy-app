@@ -1,8 +1,11 @@
 {
-  "version": "3.2.5",
-  "build": 2415,
+  "version": "3.2.6",
+  "build": 2416,
   "date": "2026-04-09",
   "changelog": [
-    "Removed text labels from bottom navigation icons"
+    "AC Out 1 renamed to AC Out",
+    "Added share button to Stats page",
+    "Removed ~7,714 cycles remaining text from Settings",
+    "Removed Control page from navigation"
   ]
 }

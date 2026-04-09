@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useLocation } from 'react-router-dom'
 import BottomNavigation from './components/BottomNavigation'
 import HomePage from './pages/HomePage'
-import ControlPage from './pages/ControlPage'
+
 import StatsPage from './pages/StatsPage'
 import SettingsPage from './pages/SettingsPage'
 import DevicesPage from './pages/DevicesPage'
@@ -29,7 +29,7 @@ function App() {
  <Routes location={location}>
  <Route path="/" element={<HomePage />} />
  <Route path="/devices" element={<DevicesPage />} />
- <Route path="/control" element={<ControlPage />} />
+ 
  <Route path="/stats" element={<StatsPage />} />
  <Route path="/settings" element={<SettingsPage />} />
  </Routes>

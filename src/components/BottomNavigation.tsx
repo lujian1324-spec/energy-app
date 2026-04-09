@@ -2,7 +2,6 @@
 import { 
   Monitor, 
   Home, 
-  Zap, 
   BarChart3, 
   User 
 } from 'lucide-react'
@@ -10,7 +9,6 @@ import {
 const navItems = [
   { path: '/devices', label: 'DEVICES', icon: Monitor },
   { path: '/', label: 'HOME', icon: Home },
-  { path: '/control', label: 'CONTROL', icon: Zap },
   { path: '/stats', label: 'STATS', icon: BarChart3 },
   { path: '/settings', label: 'SETTINGS', icon: User },
 ]

@@ -34,7 +34,7 @@ const initialPowerStation: PowerStation = {
   timeToFull: '1h 24m',
   mode: 'solar',
   ports: [
- { id: 'ac-out-1', name: 'AC Out 1', type: 'ac-out', status: 'active', deviceName: 'Laptop', power: 65 },
+ { id: 'ac-out-1', name: 'AC Out', type: 'ac-out', status: 'active', deviceName: 'Laptop', power: 65 },
  { id: 'ac-out-2', name: 'AC Out 2', type: 'ac-out', status: 'inactive', power: 0 },
  { id: 'ac-in', name: 'AC Input', type: 'ac-in', status: 'active', deviceName: 'Wall Charger', power: 450 },
  { id: 'dc-in', name: 'DC Input', type: 'dc-in', status: 'active', deviceName: 'Solar Panel', power: 280 },

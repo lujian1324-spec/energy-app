@@ -1,6 +1,6 @@
 ﻿import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Sun, Zap, DollarSign, Globe, Monitor, Smartphone, Lightbulb } from 'lucide-react'
+import { Sun, Zap, DollarSign, Globe, Monitor, Smartphone, Lightbulb, Share2 } from 'lucide-react'
 import { usePowerStationStore } from '../stores/powerStationStore'
 
 const periods = ['Day', 'Week', 'Month'] as const
@@ -34,13 +34,30 @@ export default function StatsPage() {
 
   return (
  <div className="h-full flex flex-col bg-[#000000] overflow-hidden">
- {/* Header */}
- <div className="px-5 pt-4 pb-4 safe-area-top flex justify-between items-start">
- <div>
- <h2 className="text-xl font-bold text-[#FFFFFF]">Energy Stats</h2>
- <p className="text-xs text-[#8E8E93] mt-1">This Week · March 2026</p>
- </div>
- <div className="flex bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-full p-1">
+      {/* Header */}
+      <div className="px-5 pt-4 pb-4 safe-area-top flex justify-between items-start">
+        <div>
+          <h2 className="text-xl font-bold text-[#FFFFFF]">Energy Stats</h2>
+          <p className="text-xs text-[#8E8E93] mt-1">This Week · March 2026</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button 
+            className="w-9 h-9 flex items-center justify-center rounded-full bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] text-[#8E8E93] hover:text-[#01D6BE] transition-colors"
+            onClick={() => {
+              if (navigator.share) {
+                navigator.share({
+                  title: 'PowerFlow Energy Stats',
+                  text: `Solar Charged: 12.8 kWh · Total Output: 9.4 kWh · Cost Saved: $2.1`,
+                  url: window.location.href,
+                })
+              } else {
+                alert('Share feature not available')
+              }
+            }}
+          >
+            <Share2 size={18} />
+          </button>
+          <div className="flex bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-full p-1">
  {periods.map((p) => (
  <button
  key={p}
@@ -56,10 +73,11 @@ export default function StatsPage() {
  {p}
  </button>
  ))}
- </div>
- </div>
+          </div>
+        </div>
+      </div>
 
- {/* 可滚动内容 */}
+{/* 可滚动内容 */}
  <div className="flex-1 overflow-y-auto scrollbar-hide px-5 pb-4">
  {/* 概览卡片 */}
  <motion.div
