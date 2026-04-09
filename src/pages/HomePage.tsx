@@ -18,10 +18,19 @@ import ToggleSwitch from '../components/ToggleSwitch'
 import { usePowerStationStore } from '../stores/powerStationStore'
 
 const notifications = [
-  { id: 1, type: 'info', title: 'Battery at 76%', desc: 'Estimated full charge in 1h 24m', time: '2 min ago', read: false },
-  { id: 2, type: 'success', title: 'Solar Input Active', desc: 'Solar panel connected · +280W', time: '15 min ago', read: false },
-  { id: 3, type: 'warning', title: 'AC Out 2 Idle', desc: 'Port has no load for 2 hours', time: '1h ago', read: true },
-  { id: 4, type: 'info', title: 'ECO Mode Available', desc: 'Output load below 10W threshold', time: '2h ago', read: true },
+  { 
+    id: 1, 
+    type: 'alert', 
+    title: 'Power outage. Backup activated.', 
+    desc: 'The remaining 90% battery will last up to 16 hours.', 
+    time: 'Just now', 
+    read: false,
+    showLogo: true
+  },
+  { id: 2, type: 'info', title: 'Battery at 76%', desc: 'Estimated full charge in 1h 24m', time: '2 min ago', read: false },
+  { id: 3, type: 'success', title: 'Solar Input Active', desc: 'Solar panel connected · +280W', time: '15 min ago', read: false },
+  { id: 4, type: 'warning', title: 'AC Out 2 Idle', desc: 'Port has no load for 2 hours', time: '1h ago', read: true },
+  { id: 5, type: 'info', title: 'ECO Mode Available', desc: 'Output load below 10W threshold', time: '2h ago', read: true },
 ]
 
 export default function HomePage() {
@@ -234,40 +243,64 @@ export default function HomePage() {
  </div>
  </div>
 
- <div className="flex flex-col gap-2.5 max-h-[320px] overflow-y-auto scrollbar-hide">
- {notifList.map((n) => {
- const typeColors: Record<string, string> = {
- info: '#01D6BE',
- success: '#34C759',
- warning: '#FF9500',
- error: '#FF3B30',
- }
- return (
- <div
- key={n.id}
- onClick={() => setNotifList(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x))}
- className={`flex items-start gap-3 p-3.5 rounded-[16px] cursor-pointer
- ${n.read
- ? 'bg-[rgba(255,255,255,0.03)]'
- : 'bg-[rgba(1,214,190,0.05)]'
- }`}
- >
- <div
- className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0"
- style={{ backgroundColor: n.read ? 'transparent' : typeColors[n.type] }}
- />
- <div className="flex-1 min-w-0">
- <div className={`text-[13px] font-semibold ${n.read ? 'text-[#8E8E93]' : 'text-[#FFFFFF]'}`}>
- {n.title}
- </div>
- <div className="text-[11px] text-[#48484A] mt-0.5">{n.desc}</div>
- </div>
- <div className="text-[10px] text-[#48484A] whitespace-nowrap mt-0.5">{n.time}</div>
- {n.read && <Check size={12} className="text-[#48484A] mt-1 flex-shrink-0" />}
- </div>
- )
- })}
- </div>
+<div className="flex flex-col gap-2.5 max-h-[320px] overflow-y-auto scrollbar-hide">
+              {notifList.map((n) => {
+                const typeColors: Record<string, string> = {
+                  info: '#01D6BE',
+                  success: '#34C759',
+                  warning: '#FF9500',
+                  error: '#FF3B30',
+                  alert: '#FF3B30',
+                }
+                
+                // Special alert card with logo (like power outage notification)
+                if (n.showLogo) {
+                  return (
+                    <div
+                      key={n.id}
+                      onClick={() => setNotifList(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x))}
+                      className="flex items-start gap-3 p-4 rounded-[20px] cursor-pointer bg-[#F5F5F5]"
+                    >
+                      {/* SIERRO Logo */}
+                      <div className="w-12 h-12 rounded-[14px] bg-[#FFFFFF] flex items-center justify-center flex-shrink-0 shadow-sm">
+                        <span className="text-[10px] font-bold text-[#1C1C1E] tracking-wider">SIERRO</span>
+                      </div>
+                      <div className="flex-1 min-w-0 pt-0.5">
+                        <div className="text-[14px] font-semibold text-[#1C1C1E] leading-tight">
+                          {n.title}
+                        </div>
+                        <div className="text-[12px] text-[#666666] mt-1 leading-relaxed">{n.desc}</div>
+                      </div>
+                    </div>
+                  )
+                }
+                
+                return (
+                  <div
+                    key={n.id}
+                    onClick={() => setNotifList(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x))}
+                    className={`flex items-start gap-3 p-3.5 rounded-[16px] cursor-pointer
+                      ${n.read
+                        ? 'bg-[rgba(255,255,255,0.03)]'
+                        : 'bg-[rgba(1,214,190,0.05)]'
+                      }`}
+                  >
+                    <div
+                      className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0"
+                      style={{ backgroundColor: n.read ? 'transparent' : typeColors[n.type] }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className={`text-[13px] font-semibold ${n.read ? 'text-[#8E8E93]' : 'text-[#FFFFFF]'}`}>
+                        {n.title}
+                      </div>
+                      <div className="text-[11px] text-[#48484A] mt-0.5">{n.desc}</div>
+                    </div>
+                    <div className="text-[10px] text-[#48484A] whitespace-nowrap mt-0.5">{n.time}</div>
+                    {n.read && <Check size={12} className="text-[#48484A] mt-1 flex-shrink-0" />}
+                  </div>
+                )
+              })}
+            </div>
  </motion.div>
  </motion.div>
  )}
