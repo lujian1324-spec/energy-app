@@ -36,7 +36,7 @@ export default function StatsPage() {
   return (
  <div className="h-full flex flex-col bg-[#000000] overflow-hidden">
       {/* Header */}
-      <div className="px-5 pt-4 pb-4 safe-area-top flex justify-between items-start">
+      <div className="px-5 pt-2 pb-2 safe-area-top flex justify-between items-start">
         <div>
           <h2 className="text-xl font-bold text-[#FFFFFF]">Energy Stats</h2>
           <p className="text-xs text-[#8E8E93] mt-1">This Week · March 2026</p>
@@ -131,8 +131,8 @@ export default function StatsPage() {
  </div>
  </div>
  
- {/* 柱子 */}
- <div className="flex items-end gap-1.5 h-[80px]">
+{/* 柱子 */}
+<div className="flex items-end gap-1.5 h-[140px]">
  {currentData.charge.map((charge, i) => (
  <div key={i} className="flex-1 flex items-end gap-0.5 h-full relative">
  <div 
@@ -167,13 +167,13 @@ Good
 </div>
 </div>
 
-<div className="flex items-center gap-4">
-{/* 储能容量环形 - 加粗版 */}
+<div className="flex items-center gap-6">
+{/* 储能容量环形 - 加大加粗版 */}
 <div className="flex-shrink-0">
 <BatteryRing 
 percentage={powerStation.batteryLevel} 
-size={110} 
-strokeWidth={14}
+size={180} 
+strokeWidth={20}
 isCharging={powerStation.isCharging}
 uid="stats-page"
 />

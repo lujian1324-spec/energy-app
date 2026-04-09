@@ -1,9 +1,10 @@
 {
-  "version": "3.2.7",
-  "build": 2417,
+  "version": "3.2.8",
+  "build": 2418,
   "date": "2026-04-09",
   "changelog": [
-    "Stats page: Added thick battery capacity ring (strokeWidth 14)",
-    "Stats page: Replaced temp chart with capacity ring + stats grid"
+    "Stats page: Enlarged battery ring (180px, strokeWidth 20)",
+    "Stats page: Doubled chart height (140px)",
+    "Stats page: Reduced header padding for more content space"
   ]
 }
