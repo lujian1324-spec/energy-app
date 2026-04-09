@@ -1,8 +1,8 @@
 {
-  "version": "3.2.4",
-  "build": 2414,
+  "version": "3.2.5",
+  "build": 2415,
   "date": "2026-04-09",
   "changelog": [
-    "Removed status bar (time, signal, battery indicator) from home screen"
+    "Removed text labels from bottom navigation icons"
   ]
 }

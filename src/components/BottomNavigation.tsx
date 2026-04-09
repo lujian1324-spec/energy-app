@@ -42,16 +42,11 @@ export default function BottomNavigation() {
  >
  {({ isActive }) => (
  <>
- <Icon 
- size={20} 
- className={`transition-colors duration-250 ${isActive ? 'text-[#01D6BE]' : 'text-[#48484A]'}`}
- />
- <span 
- className={`text-[10px] font-medium tracking-wide transition-colors duration-250 ${isActive ? 'text-[#01D6BE]' : 'text-[#48484A]'}`}
- >
- {item.label}
- </span>
- {isActive && (
+                <Icon 
+                  size={22} 
+                  className={`transition-colors duration-250 ${isActive ? 'text-[#01D6BE]' : 'text-[#48484A]'}`}
+                />
+                {isActive && (
  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 
  w-1 h-1 rounded-full bg-[#01D6BE] 
  #01D6BE]" />
