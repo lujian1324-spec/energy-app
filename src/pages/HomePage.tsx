@@ -309,10 +309,10 @@ showPortStatus: true,
  <Zap size={16} />
  )}
  </div>
- <div className="flex-1 min-w-0">
- <div className="text-xs font-semibold text-[#FFFFFF] truncate">{port.name}</div>
- <div className="text-[10px] text-[#8E8E93] mt-0.5">{port.deviceName || 'Idle'}</div>
- </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-semibold text-[#FFFFFF] truncate">{port.name}</div>
+              <div className="text-[10px] text-[#8E8E93] mt-0.5">{port.deviceName || ''}</div>
+            </div>
  <div className="text-right">
  <div className={`
  text-[13px] font-bold

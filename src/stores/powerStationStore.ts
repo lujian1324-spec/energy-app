@@ -39,6 +39,7 @@ const initialPowerStation: PowerStation = {
 { id: 'ac-out-2', name: 'AC Out 2', type: 'ac-out', status: 'inactive', power: 0 },
 { id: 'ac-in', name: 'AC Input', type: 'ac-in', status: 'active', power: 400 },
 { id: 'dc-in', name: 'DC Input', type: 'dc-in', status: 'inactive', deviceName: 'Solar Panel', power: 0 },
+{ id: 'pv-in', name: 'PV Input', type: 'dc-in', status: 'active', deviceName: 'Solar', power: 280 },
   ]
 }
 
