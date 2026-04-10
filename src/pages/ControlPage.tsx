@@ -6,8 +6,6 @@ import {
   Users, 
   Settings,
   Zap,
-  Sun,
-  Plug,
   LayoutGrid,
   SlidersHorizontal,
   Check,
@@ -264,40 +262,7 @@ export default function ControlPage() {
           </div>
         </motion.div>
 
-        {/* 底部三个卡片 */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="grid grid-cols-3 gap-3"
-        >
-          {/* AC */}
-          <div className="bg-[#1C1C1E] rounded-[16px] p-4 flex flex-col items-center">
-            <div className="w-8 h-8 rounded-full bg-[#2C2C2E] flex items-center justify-center mb-3">
-              <Plug size={16} className="text-[#8E8E93]" />
-            </div>
-            <span className="text-[#8E8E93] text-xs mb-1">AC</span>
-            <span className="text-[#FFFFFF] text-lg font-semibold">{powerStation.inputPower} w</span>
-          </div>
-          
-          {/* SOLAR */}
-          <div className="bg-[#1C1C1E] rounded-[16px] p-4 flex flex-col items-center">
-            <div className="w-8 h-8 rounded-full bg-[#2C2C2E] flex items-center justify-center mb-3">
-              <Sun size={16} className="text-[#8E8E93]" />
-            </div>
-            <span className="text-[#8E8E93] text-xs mb-1">SOLAR</span>
-            <span className="text-[#FFFFFF] text-lg font-semibold">0 w</span>
-          </div>
-          
-          {/* OUTPUT */}
-          <div className="bg-[#1C1C1E] rounded-[16px] p-4 flex flex-col items-center">
-            <div className="w-8 h-8 rounded-full bg-[#2C2C2E] flex items-center justify-center mb-3">
-              <Zap size={16} className="text-[#8E8E93]" />
-            </div>
-            <span className="text-[#8E8E93] text-xs mb-1">OUTPUT</span>
-            <span className="text-[#FFFFFF] text-lg font-semibold">{powerStation.outputPower} w</span>
-          </div>
-        </motion.div>
+
       </div>
     </div>
   )
