@@ -228,11 +228,10 @@ export default function ControlPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-[#1C1C1E] rounded-[20px] p-4 mb-4 flex flex-col"
-          style={{ minHeight: 'calc((32px + 16px + 16px) * 3)' }}
+          className="bg-[#1C1C1E] rounded-[20px] p-4 mb-4"
         >
           {/* 标签切换栏 */}
-          <div className="flex items-center justify-between mb-4 shrink-0">
+          <div className="flex items-center justify-between mb-4">
             <span className="text-[#8E8E93] text-xs tracking-wider">{currentPowerData.label}</span>
             <div className="flex items-center gap-1 bg-[#2C2C2E] rounded-lg p-1">
               <button
@@ -269,7 +268,7 @@ export default function ControlPage() {
           </div>
           
           {/* 图表区域 - 高度为元素高度的三倍 */}
-          <div className="relative flex-1 min-h-[384px]">
+          <div className="relative h-[384px]">
             {/* Y轴网格线 */}
             <div className="absolute inset-0 flex flex-col justify-between">
               {[0, 1, 2, 3].map((i) => (
@@ -310,7 +309,7 @@ export default function ControlPage() {
           </div>
           
           {/* 底部图标 */}
-          <div className="flex items-center justify-between mt-4 pt-3 border-t border-[#2C2C2E] shrink-0">
+          <div className="flex items-center justify-between mt-4 pt-3 border-t border-[#2C2C2E]">
             <LayoutGrid size={18} className="text-[#01D6BE]" />
             <Zap size={18} className="text-[#8E8E93]" />
             <SlidersHorizontal size={18} className="text-[#8E8E93]" />
