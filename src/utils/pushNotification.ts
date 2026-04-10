@@ -29,8 +29,12 @@ export const registerServiceWorker = async (): Promise<ServiceWorkerRegistration
       return swRegistration
     }
 
-    // 注册 Service Worker
-    swRegistration = await navigator.serviceWorker.register('/sw.js')
+    // 获取基础路径并注册 Service Worker
+    const basePath = getBasePath()
+    const swPath = `${basePath}sw.js`.replace(/\/+/g, '/')
+    
+    console.log('[Push] Registering Service Worker at:', swPath)
+    swRegistration = await navigator.serviceWorker.register(swPath)
     console.log('[Push] Service Worker registered:', swRegistration.scope)
     
     return swRegistration

@@ -2,6 +2,15 @@
 
 const CACHE_NAME = 'sierro-app-v1';
 
+// 获取基础路径（用于 GitHub Pages 子路径部署）
+const getBasePath = () => {
+  // 从 Service Worker 的 scope 推断基础路径
+  const scope = self.registration.scope;
+  const url = new URL(scope);
+  // 如果路径以 / 结尾，去掉末尾的 /
+  return url.pathname.replace(/\/$/, '') || '';
+};
+
 // 安装时缓存必要资源
 self.addEventListener('install', (event) => {
   console.log('[SW] Service Worker installing...');
@@ -25,11 +34,12 @@ self.addEventListener('push', (event) => {
     data = { title: 'SIERRO', body: 'New notification' };
   }
 
+  const basePath = getBasePath();
   const title = data.title || 'SIERRO';
   const options = {
     body: data.body || 'Power outage. Backup activated.',
-    icon: data.icon || '/icon-192x192.png',
-    badge: data.badge || '/icon-192x192.png',
+    icon: data.icon || `${basePath}/icon-192x192.png`,
+    badge: data.badge || `${basePath}/icon-192x192.png`,
     tag: data.tag || 'sierro-alert',
     requireInteraction: data.requireInteraction !== false,
     silent: false,
