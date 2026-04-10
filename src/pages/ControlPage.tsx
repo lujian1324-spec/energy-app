@@ -10,7 +10,9 @@ import {
   SlidersHorizontal,
   Check,
   Clock,
-  Plug
+  Plug,
+  Sun,
+  LogOut
 } from 'lucide-react'
 import { usePowerStationStore } from '../stores/powerStationStore'
 
@@ -189,11 +191,11 @@ export default function ControlPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-[#FFFFFF] text-lg font-medium">Input</span>
-              <span className="text-[#01D6BE] text-lg font-semibold">{powerStation.inputPower}W</span>
+              <span className="text-[#01D6BE] text-lg font-semibold">400W</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-[#8E8E93] text-lg font-medium">Output</span>
-              <span className="text-[#FFFFFF] text-lg font-semibold">{powerStation.outputPower}W</span>
+              <span className="text-[#8E8E93] text-lg font-semibold">200W</span>
             </div>
           </div>
         </motion.div>
@@ -263,6 +265,34 @@ export default function ControlPage() {
           </div>
         </motion.div>
 
+        {/* AC / SOLAR / OUTPUT 三个卡片 */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="grid grid-cols-3 gap-3"
+        >
+          {/* AC 卡片 */}
+          <div className="bg-[#1C1C1E] rounded-[20px] p-4 flex flex-col items-center">
+            <Plug size={20} className="text-[#8E8E93] mb-2" />
+            <span className="text-[#8E8E93] text-xs mb-1">AC</span>
+            <span className="text-[#FFFFFF] text-xl font-semibold">400 w</span>
+          </div>
+          
+          {/* SOLAR 卡片 */}
+          <div className="bg-[#1C1C1E] rounded-[20px] p-4 flex flex-col items-center">
+            <Sun size={20} className="text-[#8E8E93] mb-2" />
+            <span className="text-[#8E8E93] text-xs mb-1">SOLAR</span>
+            <span className="text-[#FFFFFF] text-xl font-semibold">0 w</span>
+          </div>
+          
+          {/* OUTPUT 卡片 */}
+          <div className="bg-[#1C1C1E] rounded-[20px] p-4 flex flex-col items-center">
+            <LogOut size={20} className="text-[#8E8E93] mb-2" />
+            <span className="text-[#8E8E93] text-xs mb-1">OUTPUT</span>
+            <span className="text-[#FFFFFF] text-xl font-semibold">200 w</span>
+          </div>
+        </motion.div>
 
       </div>
     </div>
