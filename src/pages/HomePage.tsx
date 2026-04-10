@@ -18,25 +18,24 @@ import ToggleSwitch from '../components/ToggleSwitch'
 import { usePowerStationStore } from '../stores/powerStationStore'
 
 const notifications = [
-  { 
-    id: 1, 
-    type: 'alert', 
-    title: 'Power outage. Backup activated.', 
-    desc: 'The remaining 90% battery will last up to 16 hours.', 
-    time: 'Just now', 
-    read: false,
-    showLogo: true
-  },
-  { id: 2, type: 'info', title: 'Battery at 76%', desc: 'Estimated full charge in 1h 24m', time: '2 min ago', read: false },
-  { id: 3, type: 'success', title: 'Solar Input Active', desc: 'Solar panel connected · +280W', time: '15 min ago', read: false },
-  { id: 4, type: 'warning', title: 'AC Out 2 Idle', desc: 'Port has no load for 2 hours', time: '1h ago', read: true },
-  { id: 5, type: 'info', title: 'ECO Mode Available', desc: 'Output load below 10W threshold', time: '2h ago', read: true },
+  { id: 1, type: 'info', title: 'Battery at 76%', desc: 'Estimated full charge in 1h 24m', time: '2 min ago', read: false },
+  { id: 2, type: 'success', title: 'Solar Input Active', desc: 'Solar panel connected · +280W', time: '15 min ago', read: false },
+  { id: 3, type: 'warning', title: 'AC Out 2 Idle', desc: 'Port has no load for 2 hours', time: '1h ago', read: true },
+  { id: 4, type: 'info', title: 'ECO Mode Available', desc: 'Output load below 10W threshold', time: '2h ago', read: true },
 ]
+
+// 锁屏断电警报弹窗数据
+const powerOutageAlert = {
+  title: 'Power outage. Backup activated.',
+  desc: 'The remaining 90% battery will last up to 16 hours.',
+  time: 'Now',
+}
 
 export default function HomePage() {
   const { powerStation, settings, updateSettings } = usePowerStationStore()
   const [showNotifications, setShowNotifications] = useState(false)
   const [showDisplaySettings, setShowDisplaySettings] = useState(false)
+  const [showLockScreenAlert, setShowLockScreenAlert] = useState(false)
   const [notifList, setNotifList] = useState(notifications)
 
   const [displayConfig, setDisplayConfig] = useState({
@@ -71,15 +70,15 @@ export default function HomePage() {
  </div>
  <p className="text-xs text-[#8E8E93] mt-0.5">Connected</p>
  </div>
- <button
- onClick={() => { setShowNotifications(true); setShowDisplaySettings(false) }}
- className="w-9 h-9 rounded-full bg-[#1C1C1E] flex items-center justify-center relative"
- >
- <Bell size={18} className="text-[#FFFFFF]" />
- {unreadCount > 0 && (
- <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#FF3B30]" />
- )}
- </button>
+<button
+onClick={() => { setShowLockScreenAlert(true); setShowDisplaySettings(false) }}
+className="w-9 h-9 rounded-full bg-[#1C1C1E] flex items-center justify-center relative"
+>
+<Bell size={18} className="text-[#FFFFFF]" />
+{unreadCount > 0 && (
+<div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#FF3B30]" />
+)}
+</button>
  </div>
 
  {/* 电量英雄区 - 扁平化 */}
@@ -250,29 +249,6 @@ export default function HomePage() {
                   success: '#34C759',
                   warning: '#FF9500',
                   error: '#FF3B30',
-                  alert: '#FF3B30',
-                }
-                
-                // Special alert card with logo (like power outage notification)
-                if (n.showLogo) {
-                  return (
-                    <div
-                      key={n.id}
-                      onClick={() => setNotifList(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x))}
-                      className="flex items-start gap-3 p-4 rounded-[20px] cursor-pointer bg-[#F5F5F5]"
-                    >
-                      {/* SIERRO Logo */}
-                      <div className="w-12 h-12 rounded-[14px] bg-[#FFFFFF] flex items-center justify-center flex-shrink-0 shadow-sm">
-                        <span className="text-[10px] font-bold text-[#1C1C1E] tracking-wider">SIERRO</span>
-                      </div>
-                      <div className="flex-1 min-w-0 pt-0.5">
-                        <div className="text-[14px] font-semibold text-[#1C1C1E] leading-tight">
-                          {n.title}
-                        </div>
-                        <div className="text-[12px] text-[#666666] mt-1 leading-relaxed">{n.desc}</div>
-                      </div>
-                    </div>
-                  )
                 }
                 
                 return (
@@ -364,7 +340,78 @@ export default function HomePage() {
  </motion.div>
  </motion.div>
  )}
- </AnimatePresence>
- </div>
+</AnimatePresence>
+
+{/* ===== 锁屏断电警报弹窗 ===== */}
+<AnimatePresence>
+{showLockScreenAlert && (
+<motion.div
+initial={{ opacity: 0 }}
+animate={{ opacity: 1 }}
+exit={{ opacity: 0 }}
+className="absolute inset-0 z-[60] flex items-start justify-center pt-16 px-4"
+onClick={() => setShowLockScreenAlert(false)}
+>
+{/* 锁屏背景模糊效果 */}
+<div className="absolute inset-0 bg-[rgba(0,0,0,0.4)] backdrop-blur-sm" />
+
+{/* 锁屏通知卡片 */}
+<motion.div
+initial={{ y: -40, opacity: 0, scale: 0.95 }}
+animate={{ y: 0, opacity: 1, scale: 1 }}
+exit={{ y: -20, opacity: 0, scale: 0.98 }}
+transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+onClick={(e) => e.stopPropagation()}
+className="relative w-full max-w-[340px] bg-[rgba(245,245,245,0.95)] rounded-[24px] p-4 shadow-2xl"
+>
+{/* 时间显示 */}
+<div className="flex justify-center mb-3">
+<span className="text-[11px] font-medium text-[#8E8E93] tracking-wide">
+{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
+</span>
+</div>
+
+{/* 通知内容 */}
+<div className="flex items-start gap-3">
+{/* App Icon */}
+<div className="w-11 h-11 rounded-[12px] bg-[#000000] flex items-center justify-center flex-shrink-0">
+<span className="text-[9px] font-bold text-[#01D6BE] tracking-wider">PF</span>
+</div>
+
+{/* 文字内容 */}
+<div className="flex-1 min-w-0">
+<div className="flex items-center justify-between mb-0.5">
+<span className="text-[12px] font-semibold text-[#1C1C1E]">PowerFlow</span>
+<span className="text-[10px] text-[#8E8E93]">{powerOutageAlert.time}</span>
+</div>
+<div className="text-[13px] font-bold text-[#1C1C1E] leading-snug mb-1">
+{powerOutageAlert.title}
+</div>
+<div className="text-[12px] text-[#666666] leading-relaxed">
+{powerOutageAlert.desc}
+</div>
+</div>
+</div>
+
+{/* 操作按钮 */}
+<div className="flex gap-2 mt-3 pt-3 border-t border-[rgba(0,0,0,0.08)]">
+<button
+onClick={() => setShowLockScreenAlert(false)}
+className="flex-1 py-2 rounded-[10px] bg-[rgba(0,0,0,0.06)] text-[12px] font-medium text-[#666666] hover:bg-[rgba(0,0,0,0.1)] transition-colors"
+>
+Dismiss
+</button>
+<button
+onClick={() => { setShowLockScreenAlert(false); setShowNotifications(true) }}
+className="flex-1 py-2 rounded-[10px] bg-[#01D6BE] text-[12px] font-semibold text-[#000000] hover:bg-[#01A88F] transition-colors"
+>
+View Details
+</button>
+</div>
+</motion.div>
+</motion.div>
+)}
+</AnimatePresence>
+</div>
   )
 }

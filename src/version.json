@@ -1,8 +1,9 @@
 {
-  "version": "3.3.2",
-  "build": 2422,
+  "version": "3.3.3",
+  "build": 2423,
   "date": "2026-04-10",
   "changelog": [
-    "Stats page: Added overall page top padding (pt-6) to shift content down"
+    "Home page: Changed power outage alert to lock screen style popup",
+    "Lock screen alert: iOS-style notification card with dismiss/view buttons"
   ]
 }
