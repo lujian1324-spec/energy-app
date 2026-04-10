@@ -34,7 +34,7 @@ export default function StatsPage() {
   const days = dayLabels[period]
 
   return (
- <div className="h-full flex flex-col bg-[#000000] overflow-hidden">
+ <div className="h-full flex flex-col bg-[#000000] overflow-hidden pt-6">
       {/* Header */}
       <div className="px-5 pt-8 pb-2 safe-area-top flex justify-between items-start">
         <div>

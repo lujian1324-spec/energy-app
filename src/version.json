@@ -1,8 +1,8 @@
 {
-  "version": "3.3.1",
-  "build": 2421,
-  "date": "2026-04-09",
+  "version": "3.3.2",
+  "build": 2422,
+  "date": "2026-04-10",
   "changelog": [
-    "Stats page: Increased top padding (pt-2 → pt-8) to avoid status bar overlap"
+    "Stats page: Added overall page top padding (pt-6) to shift content down"
   ]
 }
