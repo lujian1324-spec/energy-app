@@ -6,14 +6,9 @@ import {
   Users, 
   Settings,
   Zap,
-  LayoutGrid,
-  SlidersHorizontal,
   Check,
   Clock,
-  Sun,
-  BarChart3,
-  Battery,
-  Plug
+  Sun
 } from 'lucide-react'
 import { usePowerStationStore } from '../stores/powerStationStore'
 
@@ -51,35 +46,7 @@ export default function ControlPage() {
     }
   }
 
-  // 功率统计标签页状态
-  const [powerTab, setPowerTab] = useState<'input' | 'output' | 'solar'>('input')
-  
-  // 三种功率数据（模拟）
-  const powerDataMap = {
-    input: {
-      label: 'INPUT POWER',
-      data: [50, 50, 50, 50, 100, 200, 300, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400],
-      maxPower: 500,
-      currentPower: 400,
-      color: '#01D6BE'
-    },
-    output: {
-      label: 'OUTPUT POWER',
-      data: [100, 120, 150, 180, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200],
-      maxPower: 500,
-      currentPower: 200,
-      color: '#34C759'
-    },
-    solar: {
-      label: 'SOLAR POWER',
-      data: [0, 0, 50, 100, 150, 200, 250, 280, 280, 280, 280, 280, 280, 280, 280, 280, 280, 280, 280, 280],
-      maxPower: 500,
-      currentPower: 280,
-      color: '#FF9500'
-    }
-  }
-  
-  const currentPowerData = powerDataMap[powerTab]
+
 
   return (
     <div className="h-full flex flex-col bg-[#000000] overflow-hidden">
@@ -252,71 +219,6 @@ export default function ControlPage() {
             <Zap size={18} className="text-[#8E8E93] mb-2" />
             <span className="text-[#FFFFFF] text-xs mb-1">AC Output</span>
             <span className="text-[#FFFFFF] text-lg font-semibold">{powerStation.outputPower}W</span>
-          </div>
-        </motion.div>
-
-        {/* Real-Time Power 卡片 - 放在所有卡片最后 */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-[#1C1C1E] rounded-[20px] p-4 mb-4"
-        >
-          {/* 头部：标题 + 图表图标 */}
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-[#8E8E93] text-xs tracking-wider">REAL-TIME POWER</span>
-            <BarChart3 size={18} className="text-[#8E8E93]" />
-          </div>
-          
-          {/* 图表区域 */}
-          <div className="relative h-[200px]">
-            {/* Y轴网格线 - 水平虚线 */}
-            <div className="absolute inset-0 flex flex-col justify-between">
-              {[0, 1, 2, 3].map((i) => (
-                <div key={i} className="border-t border-[#2C2C2E] border-dashed w-full" />
-              ))}
-            </div>
-            
-            {/* 折线图 */}
-            <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100">
-              {/* 折线 - 绿色 */}
-              <path
-                d={`M0,${80} L20,${80} L40,${80} L55,${60} L70,${20} L100,${20}`}
-                fill="none"
-                stroke="#01D6BE"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="transition-all duration-500"
-              />
-            </svg>
-            
-            {/* 当前值标签 - 右上角黑色背景 */}
-            <div className="absolute top-0 right-0 bg-[#000000] rounded-lg px-3 py-1.5">
-              <span className="text-[#FFFFFF] text-lg font-semibold">400 w</span>
-            </div>
-          </div>
-          
-          {/* 底部图标 - 电池、插头、设置 */}
-          <div className="flex items-center justify-between mt-4 pt-4 border-t border-[#2C2C2E]">
-            <button
-              onClick={() => setPowerTab('input')}
-              className={`transition-all ${powerTab === 'input' ? 'text-[#01D6BE]' : 'text-[#8E8E93]'}`}
-            >
-              <Battery size={20} />
-            </button>
-            <button
-              onClick={() => setPowerTab('output')}
-              className={`transition-all ${powerTab === 'output' ? 'text-[#01D6BE]' : 'text-[#8E8E93]'}`}
-            >
-              <Plug size={20} />
-            </button>
-            <button
-              onClick={() => setPowerTab('solar')}
-              className={`transition-all ${powerTab === 'solar' ? 'text-[#01D6BE]' : 'text-[#8E8E93]'}`}
-            >
-              <SlidersHorizontal size={20} />
-            </button>
           </div>
         </motion.div>
 
