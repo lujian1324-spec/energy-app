@@ -1,6 +1,6 @@
 // Service Worker for Sierro App - Push Notifications
 
-const CACHE_NAME = 'sierro-app-v1';
+const CACHE_NAME = 'sierro-app-v2';
 
 // 获取基础路径（用于 GitHub Pages 子路径部署）
 const getBasePath = () => {
@@ -14,19 +14,46 @@ const getBasePath = () => {
 // 安装时缓存必要资源
 self.addEventListener('install', (event) => {
   console.log('[SW] Service Worker installing...');
-  self.skipWaiting();
+  // 强制激活，确保立即接管
+  event.waitUntil(self.skipWaiting());
 });
 
-// 激活时清理旧缓存
+// 激活时清理旧缓存并立即接管
 self.addEventListener('activate', (event) => {
   console.log('[SW] Service Worker activating...');
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    Promise.all([
+      // 清理旧缓存
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames
+            .filter((name) => name !== CACHE_NAME)
+            .map((name) => caches.delete(name))
+        );
+      }),
+      // 立即接管所有客户端
+      self.clients.claim()
+    ])
+  );
 });
 
 // 检测是否是 iOS 设备
 const isIOS = () => {
   const userAgent = self.navigator.userAgent.toLowerCase();
   return /iphone|ipad|ipod/.test(userAgent);
+};
+
+// 获取 iOS 版本
+const getIOSVersion = () => {
+  const userAgent = self.navigator.userAgent;
+  const match = userAgent.match(/OS (\d+)_(\d+)/);
+  if (match) {
+    return {
+      major: parseInt(match[1], 10),
+      minor: parseInt(match[2], 10)
+    };
+  }
+  return null;
 };
 
 // 处理推送事件 - 这是锁屏状态下接收通知的关键
@@ -43,29 +70,50 @@ self.addEventListener('push', (event) => {
   const basePath = getBasePath();
   const title = data.title || 'SIERRO';
   
-  // iOS 不支持某些通知选项
+  // iOS 特殊处理
   const isIOSDevice = isIOS();
+  const iosVersion = getIOSVersion();
+  // iOS 16.4+ 才支持 Web Push
+  const isModernIOS = isIOSDevice && iosVersion && (iosVersion.major > 16 || (iosVersion.major === 16 && iosVersion.minor >= 4));
+  
+  // 基础选项 - 所有平台通用
   const options = {
     body: data.body || 'Power outage. Backup activated.',
     icon: data.icon || `${basePath}/icon-192x192.png`,
+    // iOS badge 图标 - 使用 192x192 作为备用
     badge: data.badge || `${basePath}/icon-192x192.png`,
     tag: data.tag || 'sierro-alert',
-    // iOS 不支持 requireInteraction
+    // 重要：iOS 需要 renotify 才能在锁屏时重复提醒相同 tag 的通知
+    renotify: true,
+    // 重要：iOS 不支持 requireInteraction，设为 undefined
     requireInteraction: isIOSDevice ? undefined : (data.requireInteraction !== false),
+    // 重要：iOS 上 silent 必须为 false 才能显示在锁屏
     silent: false,
-    // iOS 不支持 vibrate
-    vibrate: isIOSDevice ? undefined : (data.vibrate || [200, 100, 200]),
+    // 通知优先级 - 帮助 iOS 决定是否显示在锁屏
+    urgency: 'high',
     data: data.data || { type: 'power-outage', timestamp: Date.now() },
-    // iOS 不支持 actions
-    actions: isIOSDevice ? undefined : (data.actions || [
+  };
+  
+  // 非 iOS 设备添加额外选项
+  if (!isIOSDevice) {
+    options.vibrate = data.vibrate || [200, 100, 200];
+    options.actions = data.actions || [
       { action: 'dismiss', title: 'Dismiss' },
       { action: 'view', title: 'View Details' }
-    ])
-  };
+    ];
+  }
+
+  console.log('[SW] Showing notification with options:', JSON.stringify(options));
 
   // 显示通知 - 即使在锁屏状态下也能显示
   event.waitUntil(
     self.registration.showNotification(title, options)
+      .then(() => {
+        console.log('[SW] Notification shown successfully');
+      })
+      .catch((err) => {
+        console.error('[SW] Failed to show notification:', err);
+      })
   );
 });
 

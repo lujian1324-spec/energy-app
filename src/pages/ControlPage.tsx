@@ -10,7 +10,10 @@ import {
   SlidersHorizontal,
   Check,
   Clock,
-  Sun
+  Sun,
+  BarChart3,
+  Battery,
+  Plug
 } from 'lucide-react'
 import { usePowerStationStore } from '../stores/powerStationStore'
 
@@ -223,96 +226,68 @@ export default function ControlPage() {
           </div>
         </motion.div>
 
-        {/* 实时功率图表 - 可切换标签页 */}
+        {/* 实时功率图表 - 按照参考图重新设计 */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           className="bg-[#1C1C1E] rounded-[20px] p-4 mb-4"
         >
-          {/* 标签切换栏 */}
+          {/* 头部：标题 + 图表图标 */}
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[#8E8E93] text-xs tracking-wider">{currentPowerData.label}</span>
-            <div className="flex items-center gap-1 bg-[#2C2C2E] rounded-lg p-1">
-              <button
-                onClick={() => setPowerTab('input')}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                  powerTab === 'input' 
-                    ? 'bg-[#01D6BE] text-[#000000]' 
-                    : 'text-[#8E8E93] hover:text-[#FFFFFF]'
-                }`}
-              >
-                Input
-              </button>
-              <button
-                onClick={() => setPowerTab('output')}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                  powerTab === 'output' 
-                    ? 'bg-[#34C759] text-[#000000]' 
-                    : 'text-[#8E8E93] hover:text-[#FFFFFF]'
-                }`}
-              >
-                Output
-              </button>
-              <button
-                onClick={() => setPowerTab('solar')}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                  powerTab === 'solar' 
-                    ? 'bg-[#FF9500] text-[#000000]' 
-                    : 'text-[#8E8E93] hover:text-[#FFFFFF]'
-                }`}
-              >
-                Solar
-              </button>
-            </div>
+            <span className="text-[#8E8E93] text-xs tracking-wider">REAL-TIME POWER</span>
+            <BarChart3 size={18} className="text-[#8E8E93]" />
           </div>
           
-          {/* 图表区域 - 高度为元素高度的三倍 */}
-          <div className="relative h-[384px]">
-            {/* Y轴网格线 */}
+          {/* 图表区域 */}
+          <div className="relative h-[200px]">
+            {/* Y轴网格线 - 水平虚线 */}
             <div className="absolute inset-0 flex flex-col justify-between">
               {[0, 1, 2, 3].map((i) => (
-                <div key={i} className="border-t border-[#2C2C2E] w-full" />
+                <div key={i} className="border-t border-[#2C2C2E] border-dashed w-full" />
               ))}
             </div>
             
             {/* 折线图 */}
-            <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id={`lineGradient-${powerTab}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor={currentPowerData.color} stopOpacity="0.3"/>
-                  <stop offset="100%" stopColor={currentPowerData.color} stopOpacity="0"/>
-                </linearGradient>
-              </defs>
-              {/* 填充区域 */}
+            <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100">
+              {/* 折线 - 绿色 */}
               <path
-                d={`M0,${100 - (currentPowerData.data[0] / currentPowerData.maxPower) * 80} ${currentPowerData.data.map((p, i) => `L${(i / (currentPowerData.data.length - 1)) * 100},${100 - (p / currentPowerData.maxPower) * 80}`).join(' ')} L100,100 L0,100Z`}
-                fill={`url(#lineGradient-${powerTab})`}
-                className="transition-all duration-500"
-              />
-              {/* 线条 */}
-              <path
-                d={`M0,${100 - (currentPowerData.data[0] / currentPowerData.maxPower) * 80} ${currentPowerData.data.map((p, i) => `L${(i / (currentPowerData.data.length - 1)) * 100},${100 - (p / currentPowerData.maxPower) * 80}`).join(' ')}`}
+                d={`M0,${80} L20,${80} L40,${80} L55,${60} L70,${20} L100,${20}`}
                 fill="none"
-                stroke={currentPowerData.color}
-                strokeWidth="2"
+                stroke="#01D6BE"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
                 className="transition-all duration-500"
               />
             </svg>
             
-            {/* 当前值标签 */}
-            <div className="absolute top-2 right-2 bg-[#000000] rounded-lg px-2 py-1">
-              <span className="text-[#FFFFFF] text-sm font-semibold" style={{ color: currentPowerData.color }}>
-                {currentPowerData.currentPower} w
-              </span>
+            {/* 当前值标签 - 右上角黑色背景 */}
+            <div className="absolute top-0 right-0 bg-[#000000] rounded-lg px-3 py-1.5">
+              <span className="text-[#FFFFFF] text-lg font-semibold">400 w</span>
             </div>
           </div>
           
-          {/* 底部图标 */}
-          <div className="flex items-center justify-between mt-4 pt-3 border-t border-[#2C2C2E]">
-            <LayoutGrid size={18} className="text-[#01D6BE]" />
-            <Zap size={18} className="text-[#8E8E93]" />
-            <SlidersHorizontal size={18} className="text-[#8E8E93]" />
+          {/* 底部图标 - 电池、插头、设置 */}
+          <div className="flex items-center justify-between mt-4 pt-4 border-t border-[#2C2C2E]">
+            <button
+              onClick={() => setPowerTab('input')}
+              className={`transition-all ${powerTab === 'input' ? 'text-[#01D6BE]' : 'text-[#8E8E93]'}`}
+            >
+              <Battery size={20} />
+            </button>
+            <button
+              onClick={() => setPowerTab('output')}
+              className={`transition-all ${powerTab === 'output' ? 'text-[#01D6BE]' : 'text-[#8E8E93]'}`}
+            >
+              <Plug size={20} />
+            </button>
+            <button
+              onClick={() => setPowerTab('solar')}
+              className={`transition-all ${powerTab === 'solar' ? 'text-[#01D6BE]' : 'text-[#8E8E93]'}`}
+            >
+              <SlidersHorizontal size={20} />
+            </button>
           </div>
         </motion.div>
 
