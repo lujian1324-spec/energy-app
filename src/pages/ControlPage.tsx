@@ -311,7 +311,7 @@ export default function ControlPage() {
           {/* 底部图标 */}
           <div className="flex items-center justify-between mt-4 pt-3 border-t border-[#2C2C2E]">
             <LayoutGrid size={18} className="text-[#01D6BE]" />
-            <Plug size={18} className="text-[#8E8E93]" />
+            <Zap size={18} className="text-[#8E8E93]" />
             <SlidersHorizontal size={18} className="text-[#8E8E93]" />
           </div>
         </motion.div>
