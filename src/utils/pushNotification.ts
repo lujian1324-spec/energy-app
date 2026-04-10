@@ -224,7 +224,7 @@ const waitForServiceWorkerActive = async (
 // 显示断电警报通知
 export const showPowerOutageNotification = async (): Promise<void> => {
   const basePath = getBasePath()
-  await showLocalNotification('Power outage. Backup activated.', {
+  const options: NotificationOptions & { vibrate?: number[] } = {
     body: 'The remaining 90% battery will last up to 16 hours.',
     icon: `${basePath}/icon-192x192.png`,
     badge: `${basePath}/icon-192x192.png`,
@@ -235,7 +235,8 @@ export const showPowerOutageNotification = async (): Promise<void> => {
       type: 'power-outage',
       timestamp: Date.now(),
     },
-  })
+  }
+  await showLocalNotification('Power outage. Backup activated.', options)
 }
 
 // 订阅 Push 服务（用于服务器推送）
