@@ -9,7 +9,11 @@ import {
   Check,
   Clock,
   Sun,
-  BarChart3
+  BarChart3,
+  LayoutGrid,
+  SlidersHorizontal,
+  Battery,
+  Plug
 } from 'lucide-react'
 import { usePowerStationStore } from '../stores/powerStationStore'
 
@@ -46,8 +50,6 @@ export default function ControlPage() {
       setIsEditingName(false)
     }
   }
-
-
 
   return (
     <div className="h-full flex flex-col bg-[#000000] overflow-hidden">
@@ -175,7 +177,7 @@ export default function ControlPage() {
           </div>
         </motion.div>
 
-        {/* Real-Time Power 小卡片 - 放在电池环形图下方 */}
+        {/* Input / Output 显示 - 按照参考图样式 */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -184,58 +186,98 @@ export default function ControlPage() {
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <BarChart3 size={18} className="text-[#01D6BE]" />
-              <span className="text-[#8E8E93] text-sm">Real-Time Power</span>
+              <span className="text-[#FFFFFF] text-base font-medium">Input</span>
+              <span className="text-[#01D6BE] text-base font-semibold">400W</span>
             </div>
-            <span className="text-[#FFFFFF] text-lg font-semibold">400W</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[#8E8E93] text-base font-medium">Output</span>
+              <span className="text-[#8E8E93] text-base font-semibold">200W</span>
+            </div>
           </div>
         </motion.div>
 
-        {/* Input / Output 显示 - 按照参考图样式 */}
+        {/* Real-Time Power 大卡片 - 按照参考图 */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
-          className="bg-[#1C1C1E] rounded-[20px] p-5 mb-4"
+          className="bg-[#1C1C1E] rounded-[20px] p-4 mb-4"
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-[#FFFFFF] text-lg font-medium">Input</span>
-              <span className="text-[#01D6BE] text-lg font-semibold">400W</span>
+          {/* 头部：标题 + 图表图标 */}
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-[#8E8E93] text-xs tracking-wider">REAL-TIME POWER</span>
+            <BarChart3 size={18} className="text-[#8E8E93]" />
+          </div>
+          
+          {/* 图表区域 */}
+          <div className="relative h-[160px]">
+            {/* Y轴网格线 - 水平虚线 */}
+            <div className="absolute inset-0 flex flex-col justify-between">
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className="border-t border-[#2C2C2E] border-dashed w-full" />
+              ))}
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[#8E8E93] text-lg font-medium">Output</span>
-              <span className="text-[#8E8E93] text-lg font-semibold">200W</span>
+            
+            {/* 折线图 */}
+            <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100">
+              {/* 折线 - 绿色 */}
+              <path
+                d={`M0,${80} L20,${80} L40,${80} L55,${60} L70,${20} L100,${20}`}
+                fill="none"
+                stroke="#01D6BE"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="transition-all duration-500"
+              />
+            </svg>
+            
+            {/* 当前值标签 - 右上角黑色背景 */}
+            <div className="absolute top-0 right-0 bg-[#000000] rounded-lg px-3 py-1.5">
+              <span className="text-[#FFFFFF] text-lg font-semibold">400 w</span>
             </div>
+          </div>
+          
+          {/* 底部图标 - 网格、插头、设置 */}
+          <div className="flex items-center justify-between mt-4 pt-4 border-t border-[#2C2C2E]">
+            <button className="text-[#01D6BE]">
+              <LayoutGrid size={20} />
+            </button>
+            <button className="text-[#8E8E93]">
+              <Plug size={20} />
+            </button>
+            <button className="text-[#8E8E93]">
+              <SlidersHorizontal size={20} />
+            </button>
           </div>
         </motion.div>
 
-        {/* Solar / AC Input / AC Output 三个卡片 - 统一样式 */}
+        {/* AC / Solar / Output 三个卡片 - 按照参考图 */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
           className="grid grid-cols-3 gap-3 mb-4"
         >
+          {/* AC 卡片 */}
+          <div className="bg-[#1C1C1E] rounded-[20px] p-4 flex flex-col items-center">
+            <Plug size={18} className="text-[#8E8E93] mb-2" />
+            <span className="text-[#8E8E93] text-xs mb-1">AC</span>
+            <span className="text-[#FFFFFF] text-lg font-semibold">400 w</span>
+          </div>
+          
           {/* Solar 卡片 */}
           <div className="bg-[#1C1C1E] rounded-[20px] p-4 flex flex-col items-center">
             <Sun size={18} className="text-[#8E8E93] mb-2" />
-            <span className="text-[#FFFFFF] text-xs mb-1">Solar</span>
-            <span className="text-[#FFFFFF] text-lg font-semibold">{powerStation.inputPower}W</span>
+            <span className="text-[#8E8E93] text-xs mb-1">SOLAR</span>
+            <span className="text-[#FFFFFF] text-lg font-semibold">0 w</span>
           </div>
           
-          {/* AC Input 卡片 */}
+          {/* Output 卡片 */}
           <div className="bg-[#1C1C1E] rounded-[20px] p-4 flex flex-col items-center">
             <Zap size={18} className="text-[#8E8E93] mb-2" />
-            <span className="text-[#FFFFFF] text-xs mb-1">AC Input</span>
-            <span className="text-[#FFFFFF] text-lg font-semibold">400W</span>
-          </div>
-          
-          {/* AC Output 卡片 */}
-          <div className="bg-[#1C1C1E] rounded-[20px] p-4 flex flex-col items-center">
-            <Zap size={18} className="text-[#8E8E93] mb-2" />
-            <span className="text-[#FFFFFF] text-xs mb-1">AC Output</span>
-            <span className="text-[#FFFFFF] text-lg font-semibold">{powerStation.outputPower}W</span>
+            <span className="text-[#8E8E93] text-xs mb-1">OUTPUT</span>
+            <span className="text-[#FFFFFF] text-lg font-semibold">200 w</span>
           </div>
         </motion.div>
 
