@@ -1,8 +1,9 @@
 {
-  "version": "3.4.6",
-  "build": 2436,
+  "version": "3.4.7",
+  "build": 2437,
   "date": "2026-04-10",
   "changelog": [
-    "Control page UI redesign: top nav with edit, battery ring, Input/Output bar, real-time power chart, bottom cards"
+    "Control page UI redesign: top nav with edit, battery ring, Input/Output bar, real-time power chart, bottom cards",
+    "Trigger fresh deploy"
   ]
 }
