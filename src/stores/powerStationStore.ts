@@ -44,7 +44,7 @@ const initialPowerStation: PowerStation = {
 const initialDevices: Device[] = [
   { id: '1', name: 'CPAP', type: 'cpap', status: 'online', batteryLevel: 92, isOn: true, power: 45 },
   { id: '2', name: 'Fridge', type: 'fridge', status: 'online', batteryLevel: 48, isOn: true, power: 120 },
-  { id: '3', name: 'Sierro 1000', type: 'powerstation', status: 'online', batteryLevel: 76, isOn: true, power: 0 },
+  { id: '3', name: 'Sierro 1000', type: 'powerstation', status: 'online', batteryLevel: 90, isOn: true, power: 0 },
 ]
 
 const initialSettings: AppSettings = {
