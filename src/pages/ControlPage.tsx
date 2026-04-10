@@ -50,10 +50,35 @@ export default function ControlPage() {
     }
   }
 
-  // 实时功率数据（模拟）- 与参考图一致
-  const powerData = [50, 50, 50, 50, 50, 50, 50, 50, 50, 200, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400]
-  const maxPower = 500
-  const currentPower = 400
+  // 功率统计标签页状态
+  const [powerTab, setPowerTab] = useState<'input' | 'output' | 'solar'>('input')
+  
+  // 三种功率数据（模拟）
+  const powerDataMap = {
+    input: {
+      label: 'INPUT POWER',
+      data: [50, 50, 50, 50, 100, 200, 300, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400],
+      maxPower: 500,
+      currentPower: 400,
+      color: '#01D6BE'
+    },
+    output: {
+      label: 'OUTPUT POWER',
+      data: [100, 120, 150, 180, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200],
+      maxPower: 500,
+      currentPower: 200,
+      color: '#34C759'
+    },
+    solar: {
+      label: 'SOLAR POWER',
+      data: [0, 0, 50, 100, 150, 200, 250, 280, 280, 280, 280, 280, 280, 280, 280, 280, 280, 280, 280, 280],
+      maxPower: 500,
+      currentPower: 280,
+      color: '#FF9500'
+    }
+  }
+  
+  const currentPowerData = powerDataMap[powerTab]
 
   return (
     <div className="h-full flex flex-col bg-[#000000] overflow-hidden">
@@ -200,21 +225,47 @@ export default function ControlPage() {
           </div>
         </motion.div>
 
-        {/* 实时功率图表 */}
+        {/* 实时功率图表 - 可切换标签页 */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           className="bg-[#1C1C1E] rounded-[20px] p-4 mb-4"
         >
-          {/* 标题栏 */}
+          {/* 标签切换栏 */}
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[#8E8E93] text-xs tracking-wider">REAL-TIME POWER</span>
-            <div className="w-6 h-6 rounded bg-[#2C2C2E] flex items-center justify-center">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#8E8E93]">
-                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                <path d="M8 12h8M12 8v8"/>
-              </svg>
+            <span className="text-[#8E8E93] text-xs tracking-wider">{currentPowerData.label}</span>
+            <div className="flex items-center gap-1 bg-[#2C2C2E] rounded-lg p-1">
+              <button
+                onClick={() => setPowerTab('input')}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                  powerTab === 'input' 
+                    ? 'bg-[#01D6BE] text-[#000000]' 
+                    : 'text-[#8E8E93] hover:text-[#FFFFFF]'
+                }`}
+              >
+                Input
+              </button>
+              <button
+                onClick={() => setPowerTab('output')}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                  powerTab === 'output' 
+                    ? 'bg-[#34C759] text-[#000000]' 
+                    : 'text-[#8E8E93] hover:text-[#FFFFFF]'
+                }`}
+              >
+                Output
+              </button>
+              <button
+                onClick={() => setPowerTab('solar')}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                  powerTab === 'solar' 
+                    ? 'bg-[#FF9500] text-[#000000]' 
+                    : 'text-[#8E8E93] hover:text-[#FFFFFF]'
+                }`}
+              >
+                Solar
+              </button>
             </div>
           </div>
           
@@ -230,22 +281,22 @@ export default function ControlPage() {
             {/* 折线图 */}
             <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
               <defs>
-                <linearGradient id="lineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#01D6BE" stopOpacity="0.3"/>
-                  <stop offset="100%" stopColor="#01D6BE" stopOpacity="0"/>
+                <linearGradient id={`lineGradient-${powerTab}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor={currentPowerData.color} stopOpacity="0.3"/>
+                  <stop offset="100%" stopColor={currentPowerData.color} stopOpacity="0"/>
                 </linearGradient>
               </defs>
               {/* 填充区域 */}
               <path
-                d={`M0,${100 - (powerData[0] / maxPower) * 80} ${powerData.map((p, i) => `L${(i / (powerData.length - 1)) * 100},${100 - (p / maxPower) * 80}`).join(' ')} L100,100 L0,100Z`}
-                fill="url(#lineGradient)"
+                d={`M0,${100 - (currentPowerData.data[0] / currentPowerData.maxPower) * 80} ${currentPowerData.data.map((p, i) => `L${(i / (currentPowerData.data.length - 1)) * 100},${100 - (p / currentPowerData.maxPower) * 80}`).join(' ')} L100,100 L0,100Z`}
+                fill={`url(#lineGradient-${powerTab})`}
                 className="transition-all duration-500"
               />
               {/* 线条 */}
               <path
-                d={`M0,${100 - (powerData[0] / maxPower) * 80} ${powerData.map((p, i) => `L${(i / (powerData.length - 1)) * 100},${100 - (p / maxPower) * 80}`).join(' ')}`}
+                d={`M0,${100 - (currentPowerData.data[0] / currentPowerData.maxPower) * 80} ${currentPowerData.data.map((p, i) => `L${(i / (currentPowerData.data.length - 1)) * 100},${100 - (p / currentPowerData.maxPower) * 80}`).join(' ')}`}
                 fill="none"
-                stroke="#01D6BE"
+                stroke={currentPowerData.color}
                 strokeWidth="2"
                 className="transition-all duration-500"
               />
@@ -253,7 +304,9 @@ export default function ControlPage() {
             
             {/* 当前值标签 */}
             <div className="absolute top-2 right-2 bg-[#000000] rounded-lg px-2 py-1">
-              <span className="text-[#FFFFFF] text-sm font-semibold">{currentPower} w</span>
+              <span className="text-[#FFFFFF] text-sm font-semibold" style={{ color: currentPowerData.color }}>
+                {currentPowerData.currentPower} w
+              </span>
             </div>
           </div>
           
