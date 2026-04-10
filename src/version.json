@@ -1,10 +1,10 @@
 {
-  "version": "3.4.9",
-  "build": 2439,
+  "version": "3.5.7",
+  "build": 2440,
   "date": "2026-04-10",
   "changelog": [
-    "Fix TypeScript build errors in pushNotification.ts",
-    "Control page UI redesign: top nav with edit, battery ring, Input/Output bar, real-time power chart, bottom cards",
-    "Local build verified"
+    "Real-Time Power card UI redesign with BarChart3 icon",
+    "PWA logo changed to white background with black SIERRO text",
+    "Force refresh to clear browser cache"
   ]
 }
