@@ -104,10 +104,12 @@ Enable Push
 )}
 <button
 onClick={async () => {
-// 请求推送权限并发送断电警报通知
+// 请求推送权限并延迟10秒后发送断电警报通知
 const permission = await requestNotificationPermission()
 if (permission === 'granted') {
+setTimeout(() => {
 showPowerOutageNotification()
+}, 10000) // 10秒延迟
 }
 setShowDisplaySettings(false)
 }}

@@ -1,10 +1,8 @@
 {
-  "version": "3.3.6",
-  "build": 2426,
+  "version": "3.3.7",
+  "build": 2427,
   "date": "2026-04-10",
   "changelog": [
-    "Added push notification support for power outage alerts",
-    "Added 'Enable Push' button to request notification permission",
-    "Clicking bell button triggers system notification"
+    "Push notification now triggers after 10-second delay when clicking bell button"
   ]
 }
