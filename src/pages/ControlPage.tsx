@@ -207,26 +207,7 @@ export default function ControlPage() {
           </div>
         </motion.div>
 
-        {/* Input / Output 显示 - 按照参考图样式 */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-[#1C1C1E] rounded-[20px] p-5 mb-4"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-[#FFFFFF] text-lg font-medium">Input</span>
-              <span className="text-[#01D6BE] text-lg font-semibold">400W</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[#8E8E93] text-lg font-medium">Output</span>
-              <span className="text-[#8E8E93] text-lg font-semibold">200W</span>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* 实时功率图表 - 按照参考图重新设计 */}
+        {/* 实时功率图表 - 按照参考图重新设计，放在电量卡片外面 */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -288,6 +269,25 @@ export default function ControlPage() {
             >
               <SlidersHorizontal size={20} />
             </button>
+          </div>
+        </motion.div>
+
+        {/* Input / Output 显示 - 按照参考图样式 */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="bg-[#1C1C1E] rounded-[20px] p-5 mb-4"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-[#FFFFFF] text-lg font-medium">Input</span>
+              <span className="text-[#01D6BE] text-lg font-semibold">400W</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[#8E8E93] text-lg font-medium">Output</span>
+              <span className="text-[#8E8E93] text-lg font-semibold">200W</span>
+            </div>
           </div>
         </motion.div>
 
