@@ -1,9 +1,10 @@
 {
-  "version": "3.3.3",
-  "build": 2423,
+  "version": "3.3.4",
+  "build": 2424,
   "date": "2026-04-10",
   "changelog": [
-    "Home page: Changed power outage alert to lock screen style popup",
-    "Lock screen alert: iOS-style notification card with dismiss/view buttons"
+    "Home page: Added top spacing (pt-6) and invisible status bar area for alignment",
+    "Removed device name labels from AC Out ports (Laptop, Wall Charger)",
+    "AC Input power changed from 450W to 400W"
   ]
 }

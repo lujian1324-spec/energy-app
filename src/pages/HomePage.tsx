@@ -56,20 +56,25 @@ export default function HomePage() {
   ] as const
 
   return (
- <div className="h-full flex flex-col bg-[#000000] overflow-hidden relative">
- {/* 可滚动内容 */}
- <div className="flex-1 overflow-y-auto scrollbar-hide">
- {/* Header - 扁平化：设备名 + 编辑图标 + 设置图标 */}
- <div className="flex justify-between items-center px-5 py-3">
- <div>
- <div className="flex items-center gap-2">
- <h2 className="text-xl font-bold text-[#FFFFFF] tracking-wide">Sierro 1000</h2>
- <button className="w-6 h-6 rounded-full bg-[#1C1C1E] flex items-center justify-center">
- <Pencil size={12} className="text-[#8E8E93]" />
- </button>
- </div>
- <p className="text-xs text-[#8E8E93] mt-0.5">Connected</p>
- </div>
+<div className="h-full flex flex-col bg-[#000000] overflow-hidden relative pt-6">
+{/* 顶部隐形状态栏区域 - 用于对齐手机状态栏 */}
+<div className="h-8 px-5 flex justify-between items-center opacity-0">
+<span className="text-[12px] text-[#FFFFFF]">{powerStation.batteryLevel}%</span>
+</div>
+
+{/* 可滚动内容 */}
+<div className="flex-1 overflow-y-auto scrollbar-hide">
+{/* Header - 扁平化：设备名 + 编辑图标 + 设置图标 */}
+<div className="flex justify-between items-center px-5 py-3">
+<div>
+<div className="flex items-center gap-2">
+<h2 className="text-xl font-bold text-[#FFFFFF] tracking-wide">Sierro 1000</h2>
+<button className="w-6 h-6 rounded-full bg-[#1C1C1E] flex items-center justify-center">
+<Pencil size={12} className="text-[#8E8E93]" />
+</button>
+</div>
+<p className="text-xs text-[#8E8E93] mt-0.5">Connected</p>
+</div>
 <button
 onClick={() => { setShowLockScreenAlert(true); setShowDisplaySettings(false) }}
 className="w-9 h-9 rounded-full bg-[#1C1C1E] flex items-center justify-center relative"
@@ -79,7 +84,7 @@ className="w-9 h-9 rounded-full bg-[#1C1C1E] flex items-center justify-center re
 <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#FF3B30]" />
 )}
 </button>
- </div>
+</div>
 
  {/* 电量英雄区 - 扁平化 */}
  <motion.div

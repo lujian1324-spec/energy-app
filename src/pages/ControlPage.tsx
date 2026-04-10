@@ -107,10 +107,9 @@ className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.2)] rounded-[28px] p-5 m
  <div className="text-sm font-semibold text-[#FFFFFF]">
  {port.name}
  </div>
- <div className="text-[11px] text-[#8E8E93] mt-0.5">
- {port.type === 'ac-out' ? '220V / 50Hz · Max 2000W' : '5V/9V/12V · Max 100W'}
- {port.deviceName ? ` · ${port.deviceName}` : ''}
- </div>
+<div className="text-[11px] text-[#8E8E93] mt-0.5">
+{port.type === 'ac-out' ? '220V / 50Hz · Max 2000W' : '5V/9V/12V · Max 100W'}
+</div>
  </div>
  <div className="flex flex-col items-end gap-1.5">
  <div className={`text-[15px] font-bold ${port.status === 'active' ? 'text-[#01D6BE]' : 'text-[#48484A]'}`}>
