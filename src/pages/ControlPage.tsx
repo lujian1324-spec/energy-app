@@ -107,14 +107,14 @@ export default function ControlPage() {
 
       {/* 可滚动内容 */}
       <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pb-4">
-        {/* 电池环形图区域 */}
+        {/* 电池环形图区域 - 按照参考图重构 */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="flex flex-col items-center py-2"
+          className="flex flex-col items-center py-4"
         >
           {/* 环形图 */}
-          <div className="relative w-[280px] h-[280px]">
+          <div className="relative w-[300px] h-[300px]">
             <svg viewBox="0 0 200 200" className="w-full h-full -rotate-90">
               {/* 背景圆环 */}
               <circle
@@ -123,7 +123,7 @@ export default function ControlPage() {
                 r="85"
                 fill="none"
                 stroke="#1C1C1E"
-                strokeWidth="24"
+                strokeWidth="28"
               />
               {/* 进度圆环 */}
               <circle
@@ -132,16 +132,16 @@ export default function ControlPage() {
                 r="85"
                 fill="none"
                 stroke="#01D6BE"
-                strokeWidth="24"
+                strokeWidth="28"
                 strokeLinecap="round"
                 strokeDasharray={`${2 * Math.PI * 85 * powerStation.batteryLevel / 100} ${2 * Math.PI * 85}`}
                 className="transition-all duration-1000"
               />
-              {/* 刻度线 */}
+              {/* 刻度线 - 外圈 */}
               {Array.from({ length: 60 }).map((_, i) => {
                 const angle = (i * 6 * Math.PI) / 180
-                const r1 = 102
-                const r2 = i % 5 === 0 ? 92 : 97
+                const r1 = 106
+                const r2 = i % 5 === 0 ? 96 : 101
                 return (
                   <line
                     key={i}
@@ -158,43 +158,43 @@ export default function ControlPage() {
             
             {/* 中心内容 */}
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              {/* 倒计时 */}
-              <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#2C2C2E] mb-2">
-                <Clock size={12} className="text-[#8E8E93]" />
-                <span className="text-xs text-[#8E8E93]">0h 15min</span>
-                <ChevronLeft size={12} className="text-[#8E8E93] rotate-180" />
+              {/* 倒计时按钮 */}
+              <div className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#2C2C2E] mb-3">
+                <Clock size={14} className="text-[#8E8E93]" />
+                <span className="text-sm text-[#FFFFFF]">0h 15min</span>
+                <ChevronLeft size={14} className="text-[#8E8E93] rotate-180" />
               </div>
               
               {/* Charging 状态 */}
-              <div className="flex items-center gap-1 text-[#8E8E93] text-sm mb-1">
+              <div className="flex items-center gap-1.5 text-[#8E8E93] text-sm mb-2">
                 <span>Charging</span>
-                <Zap size={14} className="text-[#01D6BE]" fill="#01D6BE" />
+                <Zap size={16} className="text-[#01D6BE]" fill="#01D6BE" />
               </div>
               
               {/* 电量百分比 */}
               <div className="flex items-baseline">
-                <span className="text-8xl font-bold text-[#FFFFFF]">{powerStation.batteryLevel}</span>
-                <span className="text-xl text-[#8E8E93] ml-1">%</span>
+                <span className="text-[90px] font-bold text-[#FFFFFF] leading-none">{powerStation.batteryLevel}</span>
+                <span className="text-2xl text-[#8E8E93] ml-1">%</span>
               </div>
             </div>
           </div>
         </motion.div>
 
-        {/* Input / Output 显示 */}
+        {/* Input / Output 显示 - 按照参考图样式 */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-[#1C1C1E] rounded-[20px] p-4 mb-4"
+          className="bg-[#1C1C1E] rounded-[20px] p-5 mb-4"
         >
-          <div className="flex items-center">
-            <div className="flex-1">
-              <span className="text-[#8E8E93] text-base">Input </span>
-              <span className="text-[#01D6BE] text-base font-semibold">{powerStation.inputPower}W</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-[#FFFFFF] text-lg font-medium">Input</span>
+              <span className="text-[#01D6BE] text-lg font-semibold">{powerStation.inputPower}W</span>
             </div>
-            <div className="flex-1 text-right">
-              <span className="text-[#8E8E93] text-base">Output </span>
-              <span className="text-[#FFFFFF] text-base">{powerStation.outputPower}W</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[#8E8E93] text-lg font-medium">Output</span>
+              <span className="text-[#FFFFFF] text-lg font-semibold">{powerStation.outputPower}W</span>
             </div>
           </div>
         </motion.div>
