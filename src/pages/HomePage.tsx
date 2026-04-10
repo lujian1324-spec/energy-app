@@ -386,7 +386,7 @@ className="relative w-full max-w-[340px] bg-[rgba(245,245,245,0.95)] rounded-[24
 {/* 文字内容 */}
 <div className="flex-1 min-w-0">
 <div className="flex items-center justify-between mb-0.5">
-<span className="text-[12px] font-semibold text-[#1C1C1E]">PowerFlow</span>
+<span className="text-[12px] font-semibold text-[#1C1C1E]">SIERRO</span>
 <span className="text-[10px] text-[#8E8E93]">{powerOutageAlert.time}</span>
 </div>
 <div className="text-[13px] font-bold text-[#1C1C1E] leading-snug mb-1">

@@ -1,10 +1,8 @@
 {
-  "version": "3.3.4",
-  "build": 2424,
+  "version": "3.3.5",
+  "build": 2425,
   "date": "2026-04-10",
   "changelog": [
-    "Home page: Added top spacing (pt-6) and invisible status bar area for alignment",
-    "Removed device name labels from AC Out ports (Laptop, Wall Charger)",
-    "AC Input power changed from 450W to 400W"
+    "Lock screen alert: Changed app name from PowerFlow to SIERRO"
   ]
 }
