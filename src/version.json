@@ -1,12 +1,8 @@
 {
-  "version": "3.4.5",
-  "build": 2435,
+  "version": "3.4.6",
+  "build": 2436,
   "date": "2026-04-10",
   "changelog": [
-    "Fix Service Worker path for GitHub Pages subpath deployment",
-    "Add iOS Web Push support detection and compatibility",
-    "Update battery level display from 76% to 90%",
-    "Add device name editing feature",
-    "Redesign Control page UI to match reference image"
+    "Control page UI redesign: top nav with edit, battery ring, Input/Output bar, real-time power chart, bottom cards"
   ]
 }
