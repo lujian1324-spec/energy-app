@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Bell,
@@ -16,6 +16,11 @@ import {
 import BatteryRing from '../components/BatteryRing'
 import ToggleSwitch from '../components/ToggleSwitch'
 import { usePowerStationStore } from '../stores/powerStationStore'
+import { 
+  requestNotificationPermission, 
+  showPowerOutageNotification,
+  getNotificationPermission 
+} from '../utils/pushNotification'
 
 const notifications = [
   { id: 1, type: 'info', title: 'Battery at 76%', desc: 'Estimated full charge in 1h 24m', time: '2 min ago', read: false },
@@ -37,13 +42,19 @@ export default function HomePage() {
   const [showDisplaySettings, setShowDisplaySettings] = useState(false)
   const [showLockScreenAlert, setShowLockScreenAlert] = useState(false)
   const [notifList, setNotifList] = useState(notifications)
+  const [pushPermission, setPushPermission] = useState<NotificationPermission>('default')
 
   const [displayConfig, setDisplayConfig] = useState({
- showBatteryRing: true,
- showSolarInput: true,
- showTimeToFull: true,
- showPortStatus: true,
+showBatteryRing: true,
+showSolarInput: true,
+showTimeToFull: true,
+showPortStatus: true,
   })
+
+  // 检查推送权限状态
+  useEffect(() => {
+    setPushPermission(getNotificationPermission())
+  }, [])
 
   const unreadCount = notifList.filter(n => !n.read).length
   const markAllRead = () => setNotifList(prev => prev.map(n => ({ ...n, read: true })))
@@ -75,8 +86,31 @@ export default function HomePage() {
 </div>
 <p className="text-xs text-[#8E8E93] mt-0.5">Connected</p>
 </div>
+<div className="flex items-center gap-2">
+{/* 推送权限状态指示器 */}
+{pushPermission !== 'granted' && (
 <button
-onClick={() => { setShowLockScreenAlert(true); setShowDisplaySettings(false) }}
+onClick={async () => {
+const permission = await requestNotificationPermission()
+setPushPermission(permission)
+if (permission === 'granted') {
+showPowerOutageNotification()
+}
+}}
+className="text-[10px] text-[#01D6BE] px-2 py-1 rounded-full bg-[rgba(1,214,190,0.1)]"
+>
+Enable Push
+</button>
+)}
+<button
+onClick={async () => {
+// 请求推送权限并发送断电警报通知
+const permission = await requestNotificationPermission()
+if (permission === 'granted') {
+showPowerOutageNotification()
+}
+setShowDisplaySettings(false)
+}}
 className="w-9 h-9 rounded-full bg-[#1C1C1E] flex items-center justify-center relative"
 >
 <Bell size={18} className="text-[#FFFFFF]" />
@@ -84,6 +118,7 @@ className="w-9 h-9 rounded-full bg-[#1C1C1E] flex items-center justify-center re
 <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#FF3B30]" />
 )}
 </button>
+</div>
 </div>
 
  {/* 电量英雄区 - 扁平化 */}

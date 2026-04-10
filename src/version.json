@@ -1,8 +1,10 @@
 {
-  "version": "3.3.5",
-  "build": 2425,
+  "version": "3.3.6",
+  "build": 2426,
   "date": "2026-04-10",
   "changelog": [
-    "Lock screen alert: Changed app name from PowerFlow to SIERRO"
+    "Added push notification support for power outage alerts",
+    "Added 'Enable Push' button to request notification permission",
+    "Clicking bell button triggers system notification"
   ]
 }
