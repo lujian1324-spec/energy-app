@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Bell,
   Sun,
-  ArrowRight,
   Zap,
   Pencil,
   TrendingUp,
@@ -281,49 +280,7 @@ return (
 </div>
 </div>
 
-{/* 端口状态 */}
-{displayConfig.showPortStatus && (
-<div className="px-5 mb-4">
-<div className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1">
-{powerStation.ports
-.filter(p => p.status === 'active' && p.type !== 'usb-out')
-.map((port) => (
-<div
-key={port.id}
-className="bg-[#1C1C1E] rounded-[16px] p-3.5 flex items-start gap-2.5 min-w-[140px] flex-shrink-0"
->
-<div className={`
-w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0
-${port.type === 'ac-out' ? 'bg-[rgba(52,199,89,0.12)] text-[#34C759]' : ''}
-${port.type === 'ac-in' ? 'bg-[rgba(1,214,190,0.12)] text-[#01D6BE]' : ''}
-${port.type === 'dc-in' ? 'bg-[rgba(255,149,0,0.12)] text-[#FF9500]' : ''}
-`}>
-{port.type.includes('out') ? (
-<ArrowRight size={16} />
-) : (
-<Zap size={16} />
-)}
-</div>
-            <div className="flex-1 min-w-0">
-              <div className="text-xs font-semibold text-[#FFFFFF] truncate">{port.name}</div>
-              <div className="text-[10px] text-[#8E8E93] mt-0.5">{port.deviceName || ''}</div>
-            </div>
-<div className="text-right">
-<div className={`
-text-[13px] font-bold
-${port.type === 'ac-out' ? 'text-[#34C759]' : 'text-[#01D6BE]'}
-`}>
-{port.power > 0 ? `${port.type.includes('out') ? '' : '+'}${port.power}W` : '—'}
-</div>
-<div className="text-[9px] text-[#48484A]">
-{port.power > 0 ? (port.type.includes('out') ? 'In Use' : 'Charging') : 'Unused'}
-</div>
-</div>
-</div>
-))}
-</div>
-</div>
-)}
+
  </div>
 
  {/* ===== 通知面板 ===== */}
