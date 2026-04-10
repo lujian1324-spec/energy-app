@@ -161,13 +161,17 @@ export const showLocalNotification = async (
       // 使用 Service Worker 显示通知 - 支持锁屏状态
       // iOS 不支持 vibrate 和 requireInteraction
       const isIOSDevice = isIOS()
-      const notificationOptions: NotificationOptions = {
+      const notificationOptions: NotificationOptions & { vibrate?: number[] } = {
         icon: `${getBasePath()}/icon-192x192.png`,
         badge: `${getBasePath()}/icon-192x192.png`,
         tag: 'sierro-alert',
         requireInteraction: !isIOSDevice, // iOS 不支持
-        vibrate: isIOSDevice ? undefined : [200, 100, 200], // iOS 不支持
         ...options,
+      }
+      
+      // 添加 vibrate（非 iOS）
+      if (!isIOSDevice) {
+        notificationOptions.vibrate = [200, 100, 200]
       }
       
       // 移除 iOS 不支持的属性
@@ -219,10 +223,11 @@ const waitForServiceWorkerActive = async (
 
 // 显示断电警报通知
 export const showPowerOutageNotification = async (): Promise<void> => {
+  const basePath = getBasePath()
   await showLocalNotification('Power outage. Backup activated.', {
     body: 'The remaining 90% battery will last up to 16 hours.',
-    icon: '/icon-192x192.png',
-    badge: '/icon-192x192.png',
+    icon: `${basePath}/icon-192x192.png`,
+    badge: `${basePath}/icon-192x192.png`,
     tag: 'power-outage-alert',
     requireInteraction: true,
     vibrate: [200, 100, 200],
@@ -254,7 +259,7 @@ export const subscribeToPush = async (
       const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey)
       subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey
+        applicationServerKey: applicationServerKey as BufferSource
       })
       console.log('[Push] Subscribed to push:', subscription)
     }
