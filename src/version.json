@@ -1,8 +1,9 @@
 {
-  "version": "3.4.8",
-  "build": 2438,
+  "version": "3.4.9",
+  "build": 2439,
   "date": "2026-04-10",
   "changelog": [
+    "Fix TypeScript build errors in pushNotification.ts",
     "Control page UI redesign: top nav with edit, battery ring, Input/Output bar, real-time power chart, bottom cards",
     "Local build verified"
   ]

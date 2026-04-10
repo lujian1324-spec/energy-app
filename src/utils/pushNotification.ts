@@ -70,7 +70,7 @@ export const getIOSPushStatus = (): { supported: boolean; isPWA: boolean; messag
 
 // 获取基础路径（用于 GitHub Pages 子路径部署）
 const getBasePath = () => {
-  const baseUrl = import.meta.env.BASE_URL || '/'
+  const baseUrl = (import.meta as any).env?.BASE_URL || '/'
   return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
 }
 
