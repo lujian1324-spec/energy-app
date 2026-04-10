@@ -3,9 +3,75 @@
 // Service Worker 注册实例
 let swRegistration: ServiceWorkerRegistration | null = null
 
+// 检查是否是 iOS 设备
+export const isIOS = (): boolean => {
+  const userAgent = window.navigator.userAgent.toLowerCase()
+  return /iphone|ipad|ipod/.test(userAgent)
+}
+
+// 检查是否是 iOS PWA 模式
+export const isIOSPWA = (): boolean => {
+  return isIOS() && (window.navigator as any).standalone === true
+}
+
 // 检查浏览器是否支持通知
 export const isNotificationSupported = (): boolean => {
+  // iOS 16.4+ 支持 Web Push，但必须在 PWA 模式下
+  if (isIOS()) {
+    const userAgent = window.navigator.userAgent
+    const match = userAgent.match(/OS (\d+)_(\d+)/)
+    if (match) {
+      const major = parseInt(match[1], 10)
+      const minor = parseInt(match[2], 10)
+      // iOS 16.4+ 才支持 Web Push
+      if (major > 16 || (major === 16 && minor >= 4)) {
+        return 'Notification' in window && 'serviceWorker' in navigator
+      }
+    }
+    return false
+  }
   return 'Notification' in window && 'serviceWorker' in navigator
+}
+
+// 获取 iOS 推送支持状态
+export const getIOSPushStatus = (): { supported: boolean; isPWA: boolean; message: string } => {
+  if (!isIOS()) {
+    return { supported: true, isPWA: false, message: 'Not iOS device' }
+  }
+  
+  const userAgent = window.navigator.userAgent
+  const match = userAgent.match(/OS (\d+)_(\d+)/)
+  if (!match) {
+    return { supported: false, isPWA: false, message: '无法检测 iOS 版本' }
+  }
+  
+  const major = parseInt(match[1], 10)
+  const minor = parseInt(match[2], 10)
+  
+  if (major < 16 || (major === 16 && minor < 4)) {
+    return { 
+      supported: false, 
+      isPWA: false, 
+      message: `iOS ${major}.${minor} 不支持 Web Push，请升级到 iOS 16.4+` 
+    }
+  }
+  
+  const pwa = isIOSPWA()
+  if (!pwa) {
+    return { 
+      supported: false, 
+      isPWA: false, 
+      message: 'iOS 推送需要将应用添加到主屏幕（PWA模式）' 
+    }
+  }
+  
+  return { supported: true, isPWA: true, message: 'iOS Web Push 已就绪' }
+}
+
+// 获取基础路径（用于 GitHub Pages 子路径部署）
+const getBasePath = () => {
+  const baseUrl = import.meta.env.BASE_URL || '/'
+  return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
 }
 
 // 获取通知权限状态
@@ -70,6 +136,10 @@ export const showLocalNotification = async (
 ): Promise<void> => {
   if (!isNotificationSupported()) {
     console.warn('Notifications not supported')
+    const iosStatus = getIOSPushStatus()
+    if (!iosStatus.supported) {
+      console.warn('[Push] iOS Status:', iosStatus.message)
+    }
     return
   }
 
@@ -83,21 +153,37 @@ export const showLocalNotification = async (
     const registration = await registerServiceWorker()
     
     if (registration) {
+      // iOS 特殊处理：等待 SW 激活
+      if (isIOS()) {
+        await waitForServiceWorkerActive(registration)
+      }
+      
       // 使用 Service Worker 显示通知 - 支持锁屏状态
-      await registration.showNotification(title, {
-        icon: '/icon-192x192.png',
-        badge: '/icon-192x192.png',
+      // iOS 不支持 vibrate 和 requireInteraction
+      const isIOSDevice = isIOS()
+      const notificationOptions: NotificationOptions = {
+        icon: `${getBasePath()}/icon-192x192.png`,
+        badge: `${getBasePath()}/icon-192x192.png`,
         tag: 'sierro-alert',
-        requireInteraction: true,
-        vibrate: [200, 100, 200],
+        requireInteraction: !isIOSDevice, // iOS 不支持
+        vibrate: isIOSDevice ? undefined : [200, 100, 200], // iOS 不支持
         ...options,
-      })
+      }
+      
+      // 移除 iOS 不支持的属性
+      if (isIOSDevice) {
+        delete (notificationOptions as any).vibrate
+        delete (notificationOptions as any).requireInteraction
+        delete (notificationOptions as any).actions
+      }
+      
+      await registration.showNotification(title, notificationOptions)
       console.log('[Push] Notification shown via Service Worker')
     } else {
       // 降级：使用传统 Notification API
       const notification = new Notification(title, {
-        icon: '/icon-192x192.png',
-        badge: '/icon-192x192.png',
+        icon: `${getBasePath()}/icon-192x192.png`,
+        badge: `${getBasePath()}/icon-192x192.png`,
         tag: 'sierro-alert',
         requireInteraction: true,
         ...options,
@@ -113,10 +199,28 @@ export const showLocalNotification = async (
   }
 }
 
+// 等待 Service Worker 激活（iOS 需要）
+const waitForServiceWorkerActive = async (
+  registration: ServiceWorkerRegistration
+): Promise<void> => {
+  if (registration.active) return
+  
+  return new Promise((resolve) => {
+    const checkState = () => {
+      if (registration.active) {
+        resolve()
+      } else {
+        setTimeout(checkState, 100)
+      }
+    }
+    checkState()
+  })
+}
+
 // 显示断电警报通知
 export const showPowerOutageNotification = async (): Promise<void> => {
   await showLocalNotification('Power outage. Backup activated.', {
-    body: 'The remaining 76% battery will last up to 16 hours.',
+    body: 'The remaining 90% battery will last up to 16 hours.',
     icon: '/icon-192x192.png',
     badge: '/icon-192x192.png',
     tag: 'power-outage-alert',

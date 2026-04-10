@@ -16,14 +16,15 @@ interface PowerStationState {
   toggleDevice: (deviceId: string) => void;
   updateSettings: (settings: Partial<AppSettings>) => void;
   setChargeLimit: (limit: number) => void;
+  updateDeviceName: (name: string) => void;
 }
 
 const initialPowerStation: PowerStation = {
   name: 'Sierro 1000',
   model: 'SR-1000',
   serialNumber: 'SR-2024-08842',
-  batteryLevel: 76,
-  remainingWh: 760,
+  batteryLevel: 90,
+  remainingWh: 900,
   totalWh: 1000,
   inputPower: 280,
   outputPower: 92,
@@ -125,15 +126,21 @@ export const usePowerStationStore = create<PowerStationState>()(
  }))
  },
 
- setChargeLimit: (limit) => {
- set((state) => ({
- settings: { ...state.settings, chargeLimit: limit }
- }))
- },
- }),
- {
- name: 'powerflow-storage',
- partialize: (state) => ({ settings: state.settings }),
- }
+setChargeLimit: (limit) => {
+set((state) => ({
+settings: { ...state.settings, chargeLimit: limit }
+}))
+},
+
+updateDeviceName: (name) => {
+set((state) => ({
+powerStation: { ...state.powerStation, name }
+}))
+},
+}),
+{
+name: 'powerflow-storage',
+partialize: (state) => ({ settings: state.settings }),
+}
   )
 )

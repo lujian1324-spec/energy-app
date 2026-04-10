@@ -23,6 +23,12 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
 
+// 检测是否是 iOS 设备
+const isIOS = () => {
+  const userAgent = self.navigator.userAgent.toLowerCase();
+  return /iphone|ipad|ipod/.test(userAgent);
+};
+
 // 处理推送事件 - 这是锁屏状态下接收通知的关键
 self.addEventListener('push', (event) => {
   console.log('[SW] Push event received:', event);
@@ -36,19 +42,25 @@ self.addEventListener('push', (event) => {
 
   const basePath = getBasePath();
   const title = data.title || 'SIERRO';
+  
+  // iOS 不支持某些通知选项
+  const isIOSDevice = isIOS();
   const options = {
     body: data.body || 'Power outage. Backup activated.',
     icon: data.icon || `${basePath}/icon-192x192.png`,
     badge: data.badge || `${basePath}/icon-192x192.png`,
     tag: data.tag || 'sierro-alert',
-    requireInteraction: data.requireInteraction !== false,
+    // iOS 不支持 requireInteraction
+    requireInteraction: isIOSDevice ? undefined : (data.requireInteraction !== false),
     silent: false,
-    vibrate: data.vibrate || [200, 100, 200],
+    // iOS 不支持 vibrate
+    vibrate: isIOSDevice ? undefined : (data.vibrate || [200, 100, 200]),
     data: data.data || { type: 'power-outage', timestamp: Date.now() },
-    actions: data.actions || [
+    // iOS 不支持 actions
+    actions: isIOSDevice ? undefined : (data.actions || [
       { action: 'dismiss', title: 'Dismiss' },
       { action: 'view', title: 'View Details' }
-    ]
+    ])
   };
 
   // 显示通知 - 即使在锁屏状态下也能显示

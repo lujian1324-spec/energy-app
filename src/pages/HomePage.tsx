@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Bell,
@@ -13,6 +13,7 @@ import {
   Eye,
   EyeOff,
   Loader2,
+  Save,
 } from 'lucide-react'
 import BatteryRing from '../components/BatteryRing'
 import ToggleSwitch from '../components/ToggleSwitch'
@@ -20,11 +21,13 @@ import { usePowerStationStore } from '../stores/powerStationStore'
 import { 
   showPowerOutageNotification,
   getNotificationPermission,
-  requestNotificationPermission 
+  requestNotificationPermission,
+  getIOSPushStatus,
+  isIOS
 } from '../utils/pushNotification'
 
 const notifications = [
-  { id: 1, type: 'info', title: 'Battery at 76%', desc: 'Estimated full charge in 1h 24m', time: '2 min ago', read: false },
+  { id: 1, type: 'info', title: 'Battery at 90%', desc: 'Estimated full charge in 1h 24m', time: '2 min ago', read: false },
   { id: 2, type: 'success', title: 'Solar Input Active', desc: 'Solar panel connected · +280W', time: '15 min ago', read: false },
   { id: 3, type: 'warning', title: 'AC Out 2 Idle', desc: 'Port has no load for 2 hours', time: '1h ago', read: true },
   { id: 4, type: 'info', title: 'ECO Mode Available', desc: 'Output load below 10W threshold', time: '2h ago', read: true },
@@ -33,18 +36,23 @@ const notifications = [
 // 锁屏断电警报弹窗数据
 const powerOutageAlert = {
   title: 'Power outage. Backup activated.',
-  desc: 'The remaining 76% battery will last up to 16 hours.',
+  desc: 'The remaining 90% battery will last up to 16 hours.',
   time: 'Now',
 }
 
 export default function HomePage() {
-  const { powerStation, settings, updateSettings } = usePowerStationStore()
+  const { powerStation, settings, updateSettings, updateDeviceName } = usePowerStationStore()
   const [showNotifications, setShowNotifications] = useState(false)
   const [showDisplaySettings, setShowDisplaySettings] = useState(false)
   const [showLockScreenAlert, setShowLockScreenAlert] = useState(false)
   const [notifList, setNotifList] = useState(notifications)
   const [pushPermission, setPushPermission] = useState<NotificationPermission>('default')
   const [isPushing, setIsPushing] = useState(false)
+  
+  // 设备名称编辑状态
+  const [isEditingName, setIsEditingName] = useState(false)
+  const [editName, setEditName] = useState(powerStation.name)
+  const nameInputRef = useRef<HTMLInputElement>(null)
 
   const [displayConfig, setDisplayConfig] = useState({
 showBatteryRing: true,
@@ -56,10 +64,28 @@ showPortStatus: true,
   // 检查推送权限状态
   useEffect(() => {
     setPushPermission(getNotificationPermission())
+    
+    // 检查 iOS 推送支持状态
+    if (isIOS()) {
+      const iosStatus = getIOSPushStatus()
+      console.log('[HomePage] iOS Push Status:', iosStatus)
+      if (!iosStatus.supported) {
+        console.warn('[HomePage] iOS Push not supported:', iosStatus.message)
+      }
+    }
   }, [])
 
   // 处理铃铛按钮点击 - 动态反馈 + 10秒后推送
   const handleBellClick = async () => {
+    // 检查 iOS 支持状态
+    if (isIOS()) {
+      const iosStatus = getIOSPushStatus()
+      if (!iosStatus.supported) {
+        alert(iosStatus.message)
+        return
+      }
+    }
+    
     // 视觉反馈：按钮缩放动画
     setIsPushing(true)
     
@@ -81,6 +107,38 @@ showPortStatus: true,
   const unreadCount = notifList.filter(n => !n.read).length
   const markAllRead = () => setNotifList(prev => prev.map(n => ({ ...n, read: true })))
 
+  // 处理开始编辑设备名称
+  const handleStartEditName = () => {
+    setEditName(powerStation.name)
+    setIsEditingName(true)
+    // 聚焦输入框
+    setTimeout(() => nameInputRef.current?.focus(), 100)
+  }
+
+  // 处理保存设备名称
+  const handleSaveName = () => {
+    const trimmedName = editName.trim()
+    if (trimmedName && trimmedName !== powerStation.name) {
+      updateDeviceName(trimmedName)
+    }
+    setIsEditingName(false)
+  }
+
+  // 处理取消编辑
+  const handleCancelEditName = () => {
+    setEditName(powerStation.name)
+    setIsEditingName(false)
+  }
+
+  // 处理输入框键盘事件
+  const handleNameKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSaveName()
+    } else if (e.key === 'Escape') {
+      handleCancelEditName()
+    }
+  }
+
   const displayItems = [
  { key: 'showBatteryRing', label: 'Battery Ring', desc: 'Main power ring gauge' },
  { key: 'showSolarInput', label: 'Solar Input', desc: 'Solar charging info' },
@@ -101,10 +159,36 @@ showPortStatus: true,
 <div className="flex justify-between items-center px-5 py-3">
 <div>
 <div className="flex items-center gap-2">
-<h2 className="text-xl font-bold text-[#FFFFFF] tracking-wide">Sierro 1000</h2>
-<button className="w-6 h-6 rounded-full bg-[#1C1C1E] flex items-center justify-center">
-<Pencil size={12} className="text-[#8E8E93]" />
-</button>
+{isEditingName ? (
+  <div className="flex items-center gap-2">
+    <input
+      ref={nameInputRef}
+      type="text"
+      value={editName}
+      onChange={(e) => setEditName(e.target.value)}
+      onKeyDown={handleNameKeyDown}
+      onBlur={handleSaveName}
+      className="text-xl font-bold text-[#FFFFFF] tracking-wide bg-transparent border-b-2 border-[#01D6BE] outline-none w-[160px]"
+      maxLength={20}
+    />
+    <button 
+      onClick={handleSaveName}
+      className="w-6 h-6 rounded-full bg-[#01D6BE] flex items-center justify-center"
+    >
+      <Check size={12} className="text-[#000000]" />
+    </button>
+  </div>
+) : (
+  <>
+    <h2 className="text-xl font-bold text-[#FFFFFF] tracking-wide">{powerStation.name}</h2>
+    <button 
+      onClick={handleStartEditName}
+      className="w-6 h-6 rounded-full bg-[#1C1C1E] flex items-center justify-center hover:bg-[#2C2C2E] transition-colors"
+    >
+      <Pencil size={12} className="text-[#8E8E93]" />
+    </button>
+  </>
+)}
 </div>
 <p className="text-xs text-[#8E8E93] mt-0.5">Connected</p>
 </div>
