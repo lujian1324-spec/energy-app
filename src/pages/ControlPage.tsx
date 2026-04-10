@@ -9,7 +9,8 @@ import {
   LayoutGrid,
   SlidersHorizontal,
   Check,
-  Clock
+  Clock,
+  Plug
 } from 'lucide-react'
 import { usePowerStationStore } from '../stores/powerStationStore'
 
