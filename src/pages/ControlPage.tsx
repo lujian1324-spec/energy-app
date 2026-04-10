@@ -10,9 +10,7 @@ import {
   SlidersHorizontal,
   Check,
   Clock,
-  Plug,
-  Sun,
-  LogOut
+  Sun
 } from 'lucide-react'
 import { usePowerStationStore } from '../stores/powerStationStore'
 
@@ -318,32 +316,32 @@ export default function ControlPage() {
           </div>
         </motion.div>
 
-        {/* AC / SOLAR / OUTPUT 三个卡片 */}
+        {/* Solar / AC Input / AC Output 三个卡片 - 统一样式 */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
           className="grid grid-cols-3 gap-3"
         >
-          {/* AC 卡片 */}
+          {/* Solar 卡片 */}
           <div className="bg-[#1C1C1E] rounded-[20px] p-4 flex flex-col items-center">
-            <Plug size={20} className="text-[#8E8E93] mb-2" />
-            <span className="text-[#8E8E93] text-xs mb-1">AC</span>
-            <span className="text-[#FFFFFF] text-xl font-semibold">400 w</span>
+            <Sun size={18} className="text-[#8E8E93] mb-2" />
+            <span className="text-[#FFFFFF] text-xs mb-1">Solar</span>
+            <span className="text-[#FFFFFF] text-lg font-semibold">{powerStation.inputPower}W</span>
           </div>
           
-          {/* SOLAR 卡片 */}
+          {/* AC Input 卡片 */}
           <div className="bg-[#1C1C1E] rounded-[20px] p-4 flex flex-col items-center">
-            <Sun size={20} className="text-[#8E8E93] mb-2" />
-            <span className="text-[#8E8E93] text-xs mb-1">SOLAR</span>
-            <span className="text-[#FFFFFF] text-xl font-semibold">0 w</span>
+            <Zap size={18} className="text-[#8E8E93] mb-2" />
+            <span className="text-[#FFFFFF] text-xs mb-1">AC Input</span>
+            <span className="text-[#FFFFFF] text-lg font-semibold">400W</span>
           </div>
           
-          {/* OUTPUT 卡片 */}
+          {/* AC Output 卡片 */}
           <div className="bg-[#1C1C1E] rounded-[20px] p-4 flex flex-col items-center">
-            <LogOut size={20} className="text-[#8E8E93] mb-2" />
-            <span className="text-[#8E8E93] text-xs mb-1">OUTPUT</span>
-            <span className="text-[#FFFFFF] text-xl font-semibold">200 w</span>
+            <Zap size={18} className="text-[#8E8E93] mb-2" />
+            <span className="text-[#FFFFFF] text-xs mb-1">AC Output</span>
+            <span className="text-[#FFFFFF] text-lg font-semibold">{powerStation.outputPower}W</span>
           </div>
         </motion.div>
 

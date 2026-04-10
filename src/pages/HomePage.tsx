@@ -261,20 +261,19 @@ showPortStatus: true,
  </div>
  </motion.div>
 
-{/* 两个功能卡片 - Solar / Total Out */}
+{/* 三个功能卡片 - Solar / AC Input / AC Output，统一样式 */}
 <div className="px-5 mb-5">
-<div className="grid grid-cols-2 gap-2.5">
+<div className="grid grid-cols-3 gap-2.5">
 {[
-{ label: 'Solar', value: `${powerStation.inputPower}W`, color: '#FF9500', icon: Sun },
-{ label: 'Total Out', value: '1.2 kWh', color: '#34C759', icon: TrendingUp },
+{ label: 'Solar', value: `${powerStation.inputPower}W`, icon: Sun },
+{ label: 'AC Input', value: '400W', icon: Zap },
+{ label: 'AC Output', value: `${powerStation.outputPower}W`, icon: Zap },
 ].map((item) => {
 const Icon = item.icon
 return (
-<div key={item.label} className="bg-[#1C1C1E] rounded-[18px] p-3.5">
-<div className="w-8 h-8 rounded-[12px] bg-[#2C2C2E] flex items-center justify-center mb-2.5">
-<Icon size={16} style={{ color: item.color }} />
-</div>
-<div className="text-[11px] text-[#8E8E93] mb-1">{item.label}</div>
+<div key={item.label} className="bg-[#1C1C1E] rounded-[18px] p-3.5 flex flex-col items-center">
+<Icon size={18} className="text-[#8E8E93] mb-2" />
+<div className="text-[11px] text-[#FFFFFF] mb-1">{item.label}</div>
 <div className="text-[16px] font-bold text-[#FFFFFF]">{item.value}</div>
 </div>
 )
