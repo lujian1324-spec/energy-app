@@ -174,11 +174,11 @@ flex items-center gap-4 relative overflow-hidden"
 >
 <div className="absolute top-0 left-0 right-0 h-px bg-[#2C2C2E]" />
  
- <div className="w-[60px] h-[60px] rounded-[20px] 
- bg-[rgba(1,214,190,0.08)]
- border border-[rgba(1,214,190,0.3)]
- flex items-center justify-center (1,214,190,0.15)]
- flex-shrink-0">
+<div className="w-[60px] h-[60px] rounded-[20px] 
+bg-[rgba(1,214,190,0.08)]
+border border-[rgba(1,214,190,0.3)]
+flex items-center justify-center
+flex-shrink-0">
  <BatteryCharging size={28} className="text-[#01D6BE]" />
  </div>
  
@@ -207,11 +207,11 @@ flex items-center gap-4 relative overflow-hidden"
  <div className="flex flex-col items-center gap-1">
  <div className="flex items-end gap-0.5 h-[18px]">
  {[5, 9, 13, 17].map((h, i) => (
- <div 
- key={i}
- className="w-1 rounded-sm bg-[#34C759] (52,199,89,0.4)]"
- style={{ height: `${h}px` }}
- />
+<div 
+key={i}
+className="w-1 rounded-sm bg-[#34C759]"
+style={{ height: `${h}px` }}
+/>
  ))}
  </div>
  <div className="text-[9px] text-[#34C759] font-semibold">STRONG</div>

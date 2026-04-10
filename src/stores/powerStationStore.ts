@@ -26,19 +26,19 @@ const initialPowerStation: PowerStation = {
   batteryLevel: 90,
   remainingWh: 900,
   totalWh: 1000,
-  inputPower: 280,
-  outputPower: 92,
+  inputPower: 400,
+  outputPower: 200,
   temperature: 28,
   cycleCount: 286,
   batteryHealth: 98,
   isCharging: true,
-  timeToFull: '1h 24m',
+  timeToFull: '0h 15min',
   mode: 'solar',
   ports: [
-{ id: 'ac-out-1', name: 'AC Out', type: 'ac-out', status: 'active', power: 65 },
+{ id: 'ac-out-1', name: 'AC Out', type: 'ac-out', status: 'active', power: 200 },
 { id: 'ac-out-2', name: 'AC Out 2', type: 'ac-out', status: 'inactive', power: 0 },
 { id: 'ac-in', name: 'AC Input', type: 'ac-in', status: 'active', power: 400 },
-{ id: 'dc-in', name: 'DC Input', type: 'dc-in', status: 'active', deviceName: 'Solar Panel', power: 280 },
+{ id: 'dc-in', name: 'DC Input', type: 'dc-in', status: 'inactive', deviceName: 'Solar Panel', power: 0 },
   ]
 }
 

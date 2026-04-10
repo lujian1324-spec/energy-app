@@ -45,10 +45,9 @@ export default function BottomNavigation() {
                   className={`transition-colors duration-250 ${isActive ? 'text-[#01D6BE]' : 'text-[#48484A]'}`}
                 />
                 {isActive && (
- <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 
- w-1 h-1 rounded-full bg-[#01D6BE] 
- #01D6BE]" />
- )}
+<div className="absolute -bottom-1 left-1/2 -translate-x-1/2 
+w-1 h-1 rounded-full bg-[#01D6BE]" />
+)}
  </>
  )}
  </NavLink>

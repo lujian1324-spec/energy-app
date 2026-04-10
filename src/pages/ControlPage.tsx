@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { 
   ChevronLeft, 
@@ -7,11 +7,11 @@ import {
   Settings,
   Zap,
   Sun,
-  Battery,
-  LayoutGrid,
   Plug,
+  LayoutGrid,
   SlidersHorizontal,
-  Check
+  Check,
+  Clock
 } from 'lucide-react'
 import { usePowerStationStore } from '../stores/powerStationStore'
 
@@ -49,10 +49,10 @@ export default function ControlPage() {
     }
   }
 
-  // 实时功率数据（模拟）
-  const powerData = [20, 22, 21, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 400]
-  const maxPower = Math.max(...powerData)
-  const currentPower = powerData[powerData.length - 1]
+  // 实时功率数据（模拟）- 与参考图一致
+  const powerData = [50, 50, 50, 50, 50, 50, 50, 50, 50, 200, 400, 400, 400, 400, 400, 400, 400, 400, 400, 400]
+  const maxPower = 500
+  const currentPower = 400
 
   return (
     <div className="h-full flex flex-col bg-[#000000] overflow-hidden">
@@ -111,10 +111,10 @@ export default function ControlPage() {
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="flex flex-col items-center py-4"
+          className="flex flex-col items-center py-2"
         >
           {/* 环形图 */}
-          <div className="relative w-[240px] h-[240px]">
+          <div className="relative w-[280px] h-[280px]">
             <svg viewBox="0 0 200 200" className="w-full h-full -rotate-90">
               {/* 背景圆环 */}
               <circle
@@ -123,7 +123,7 @@ export default function ControlPage() {
                 r="85"
                 fill="none"
                 stroke="#1C1C1E"
-                strokeWidth="18"
+                strokeWidth="24"
               />
               {/* 进度圆环 */}
               <circle
@@ -132,7 +132,7 @@ export default function ControlPage() {
                 r="85"
                 fill="none"
                 stroke="#01D6BE"
-                strokeWidth="18"
+                strokeWidth="24"
                 strokeLinecap="round"
                 strokeDasharray={`${2 * Math.PI * 85 * powerStation.batteryLevel / 100} ${2 * Math.PI * 85}`}
                 className="transition-all duration-1000"
@@ -140,8 +140,8 @@ export default function ControlPage() {
               {/* 刻度线 */}
               {Array.from({ length: 60 }).map((_, i) => {
                 const angle = (i * 6 * Math.PI) / 180
-                const r1 = 95
-                const r2 = i % 5 === 0 ? 88 : 92
+                const r1 = 102
+                const r2 = i % 5 === 0 ? 92 : 97
                 return (
                   <line
                     key={i}
@@ -159,11 +159,8 @@ export default function ControlPage() {
             {/* 中心内容 */}
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               {/* 倒计时 */}
-              <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-[#2C2C2E] mb-2">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="text-[#8E8E93]">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
-                  <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
+              <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#2C2C2E] mb-2">
+                <Clock size={12} className="text-[#8E8E93]" />
                 <span className="text-xs text-[#8E8E93]">0h 15min</span>
                 <ChevronLeft size={12} className="text-[#8E8E93] rotate-180" />
               </div>
@@ -176,7 +173,7 @@ export default function ControlPage() {
               
               {/* 电量百分比 */}
               <div className="flex items-baseline">
-                <span className="text-6xl font-bold text-[#FFFFFF]">{powerStation.batteryLevel}</span>
+                <span className="text-8xl font-bold text-[#FFFFFF]">{powerStation.batteryLevel}</span>
                 <span className="text-xl text-[#8E8E93] ml-1">%</span>
               </div>
             </div>
@@ -280,7 +277,7 @@ export default function ControlPage() {
               <Plug size={16} className="text-[#8E8E93]" />
             </div>
             <span className="text-[#8E8E93] text-xs mb-1">AC</span>
-            <span className="text-[#FFFFFF] text-lg font-semibold">400 w</span>
+            <span className="text-[#FFFFFF] text-lg font-semibold">{powerStation.inputPower} w</span>
           </div>
           
           {/* SOLAR */}
@@ -298,7 +295,7 @@ export default function ControlPage() {
               <Zap size={16} className="text-[#8E8E93]" />
             </div>
             <span className="text-[#8E8E93] text-xs mb-1">OUTPUT</span>
-            <span className="text-[#FFFFFF] text-lg font-semibold">200 w</span>
+            <span className="text-[#FFFFFF] text-lg font-semibold">{powerStation.outputPower} w</span>
           </div>
         </motion.div>
       </div>

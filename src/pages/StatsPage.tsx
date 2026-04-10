@@ -63,13 +63,13 @@ export default function StatsPage() {
  <button
  key={p}
  onClick={() => setPeriod(p)}
- className={`
- text-[11px] font-semibold px-3 py-1 rounded-full transition-all duration-200
- ${period === p 
- ? 'bg-[#01D6BE] text-[#000000] (1,214,190,0.4)]' 
- : 'text-[#8E8E93] hover:text-[#FFFFFF]'
- }
- `}
+className={`
+text-[11px] font-semibold px-3 py-1 rounded-full transition-all duration-200
+${period === p 
+? 'bg-[#01D6BE] text-[#000000]' 
+: 'text-[#8E8E93] hover:text-[#FFFFFF]'
+}
+`}
  >
  {p}
  </button>
