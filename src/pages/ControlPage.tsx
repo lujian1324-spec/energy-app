@@ -8,7 +8,8 @@ import {
   Zap,
   Check,
   Clock,
-  Sun
+  Sun,
+  BarChart3
 } from 'lucide-react'
 import { usePowerStationStore } from '../stores/powerStationStore'
 
@@ -174,11 +175,27 @@ export default function ControlPage() {
           </div>
         </motion.div>
 
+        {/* Real-Time Power 小卡片 - 放在电池环形图下方 */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="bg-[#1C1C1E] rounded-[20px] p-4 mb-4"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <BarChart3 size={18} className="text-[#01D6BE]" />
+              <span className="text-[#8E8E93] text-sm">Real-Time Power</span>
+            </div>
+            <span className="text-[#FFFFFF] text-lg font-semibold">400W</span>
+          </div>
+        </motion.div>
+
         {/* Input / Output 显示 - 按照参考图样式 */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.25 }}
           className="bg-[#1C1C1E] rounded-[20px] p-5 mb-4"
         >
           <div className="flex items-center justify-between">
@@ -197,7 +214,7 @@ export default function ControlPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.35 }}
           className="grid grid-cols-3 gap-3 mb-4"
         >
           {/* Solar 卡片 */}
