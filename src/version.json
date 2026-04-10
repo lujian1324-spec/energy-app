@@ -1,10 +1,9 @@
 {
-  "version": "3.5.7",
-  "build": 2440,
+  "version": "3.5.8",
+  "build": 2441,
   "date": "2026-04-10",
   "changelog": [
-    "Real-Time Power card UI redesign with BarChart3 icon",
-    "PWA logo changed to white background with black SIERRO text",
-    "Force refresh to clear browser cache"
+    "Real-Time Power card moved outside battery card",
+    "Page layout reordered"
   ]
 }
