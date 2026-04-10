@@ -12,14 +12,15 @@ import {
   Check,
   Eye,
   EyeOff,
+  Loader2,
 } from 'lucide-react'
 import BatteryRing from '../components/BatteryRing'
 import ToggleSwitch from '../components/ToggleSwitch'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { 
-  requestNotificationPermission, 
   showPowerOutageNotification,
-  getNotificationPermission 
+  getNotificationPermission,
+  requestNotificationPermission 
 } from '../utils/pushNotification'
 
 const notifications = [
@@ -32,7 +33,7 @@ const notifications = [
 // 锁屏断电警报弹窗数据
 const powerOutageAlert = {
   title: 'Power outage. Backup activated.',
-  desc: 'The remaining 90% battery will last up to 16 hours.',
+  desc: 'The remaining 76% battery will last up to 16 hours.',
   time: 'Now',
 }
 
@@ -43,6 +44,7 @@ export default function HomePage() {
   const [showLockScreenAlert, setShowLockScreenAlert] = useState(false)
   const [notifList, setNotifList] = useState(notifications)
   const [pushPermission, setPushPermission] = useState<NotificationPermission>('default')
+  const [isPushing, setIsPushing] = useState(false)
 
   const [displayConfig, setDisplayConfig] = useState({
 showBatteryRing: true,
@@ -55,6 +57,26 @@ showPortStatus: true,
   useEffect(() => {
     setPushPermission(getNotificationPermission())
   }, [])
+
+  // 处理铃铛按钮点击 - 动态反馈 + 10秒后推送
+  const handleBellClick = async () => {
+    // 视觉反馈：按钮缩放动画
+    setIsPushing(true)
+    
+    // 请求权限
+    const permission = await requestNotificationPermission()
+    setPushPermission(permission)
+    
+    if (permission === 'granted') {
+      // 10秒后发送推送通知
+      setTimeout(() => {
+        showPowerOutageNotification()
+        setIsPushing(false)
+      }, 10000)
+    } else {
+      setIsPushing(false)
+    }
+  }
 
   const unreadCount = notifList.filter(n => !n.read).length
   const markAllRead = () => setNotifList(prev => prev.map(n => ({ ...n, read: true })))
@@ -86,41 +108,26 @@ showPortStatus: true,
 </div>
 <p className="text-xs text-[#8E8E93] mt-0.5">Connected</p>
 </div>
-<div className="flex items-center gap-2">
-{/* 推送权限状态指示器 */}
-{pushPermission !== 'granted' && (
-<button
-onClick={async () => {
-const permission = await requestNotificationPermission()
-setPushPermission(permission)
-if (permission === 'granted') {
-showPowerOutageNotification()
-}
-}}
-className="text-[10px] text-[#01D6BE] px-2 py-1 rounded-full bg-[rgba(1,214,190,0.1)]"
->
-Enable Push
-</button>
-)}
-<button
-onClick={async () => {
-// 请求推送权限并延迟10秒后发送断电警报通知
-const permission = await requestNotificationPermission()
-if (permission === 'granted') {
-setTimeout(() => {
-showPowerOutageNotification()
-}, 10000) // 10秒延迟
-}
-setShowDisplaySettings(false)
-}}
-className="w-9 h-9 rounded-full bg-[#1C1C1E] flex items-center justify-center relative"
->
-<Bell size={18} className="text-[#FFFFFF]" />
-{unreadCount > 0 && (
-<div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#FF3B30]" />
-)}
-</button>
-</div>
+    <motion.button
+      onClick={handleBellClick}
+      disabled={isPushing}
+      whileTap={{ scale: 0.85 }}
+      animate={isPushing ? { 
+        scale: [1, 1.1, 1],
+        transition: { duration: 0.5, repeat: Infinity }
+      } : {}}
+      className="w-9 h-9 rounded-full bg-[#1C1C1E] flex items-center justify-center relative
+        disabled:opacity-70 transition-colors"
+    >
+      {isPushing ? (
+        <Loader2 size={16} className="text-[#01D6BE] animate-spin" />
+      ) : (
+        <Bell size={18} className="text-[#FFFFFF]" />
+      )}
+      {unreadCount > 0 && !isPushing && (
+        <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#FF3B30]" />
+      )}
+    </motion.button>
 </div>
 
  {/* 电量英雄区 - 扁平化 */}

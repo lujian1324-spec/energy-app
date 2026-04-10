@@ -1,8 +1,8 @@
 {
-  "version": "3.3.7",
-  "build": 2427,
+  "version": "3.4.0",
+  "build": 2430,
   "date": "2026-04-10",
   "changelog": [
-    "Push notification now triggers after 10-second delay when clicking bell button"
+    "Bell button with dynamic feedback and 10s delayed push notification"
   ]
 }

@@ -70,6 +70,7 @@ export interface DeviceUsage {
 // 设置项
 export interface AppSettings {
   notifications: boolean;
+  pushNotifications: boolean;
   doNotDisturb: boolean;
   doNotDisturbStart: string;
   doNotDisturbEnd: string;

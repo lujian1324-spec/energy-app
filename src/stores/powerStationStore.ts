@@ -49,6 +49,7 @@ const initialDevices: Device[] = [
 
 const initialSettings: AppSettings = {
   notifications: true,
+  pushNotifications: false,
   doNotDisturb: true,
   doNotDisturbStart: '22:00',
   doNotDisturbEnd: '08:00',

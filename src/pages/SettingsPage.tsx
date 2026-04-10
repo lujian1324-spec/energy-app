@@ -35,6 +35,7 @@ import { usePowerStationStore } from '../stores/powerStationStore'
 import { useConnectionStore } from '../stores/connectionStore'
 import { useProtocol } from '../hooks/useProtocol'
 import { getDBStats, clearAllHistory } from '../db/powerflowDB'
+import { requestNotificationPermission, getNotificationPermission } from '../utils/pushNotification'
 import appVersion from '../version.json'
 
 export default function SettingsPage() {
@@ -84,15 +85,31 @@ export default function SettingsPage() {
   }
   
   const handleSupportSubmit = (e: React.FormEvent) => {
- e.preventDefault()
- // 模拟提交
- setSupportSubmitted(true)
- setTimeout(() => {
- setShowSupport(false)
- setSupportEmail('')
- setSupportMessage('')
- setSupportSubmitted(false)
- }, 1500)
+    e.preventDefault()
+    // 模拟提交
+    setSupportSubmitted(true)
+    setTimeout(() => {
+      setShowSupport(false)
+      setSupportEmail('')
+      setSupportMessage('')
+      setSupportSubmitted(false)
+    }, 1500)
+  }
+
+  // 处理推送通知开关
+  const handlePushNotificationToggle = async () => {
+    const newValue = !settings.pushNotifications
+    
+    if (newValue) {
+      // 开启时请求权限
+      const permission = await requestNotificationPermission()
+      if (permission === 'granted') {
+        updateSettings({ pushNotifications: true })
+      }
+    } else {
+      // 关闭时直接更新设置
+      updateSettings({ pushNotifications: false })
+    }
   }
 
   const deviceInfo = [
@@ -103,11 +120,11 @@ export default function SettingsPage() {
   ]
 
   const systemItems = [
- { icon: Bell, label: 'Push Notifications', desc: 'Low Battery, Full, Alert', type: 'toggle' as const, color: 'orange', storeKey: 'notifications' as const },
- { icon: Moon, label: 'Do Not Disturb', desc: `${settings.doNotDisturbStart} — ${settings.doNotDisturbEnd}`, type: 'toggle' as const, color: 'gray', storeKey: 'doNotDisturb' as const },
- { icon: Globe, label: 'Language / Units', desc: 'English · Metric', type: 'nav' as const, color: 'gray', storeKey: null },
- { icon: Download, label: 'Firmware Update', desc: `App v${appVersion.version} (Build ${appVersion.build}) · Up to date`, type: 'badge' as const, color: 'green', storeKey: null },
- { icon: AlertTriangle, label: 'Factory Reset', desc: 'Clear all data and settings', type: 'nav-danger' as const, color: 'red', storeKey: null },
+    { icon: Bell, label: 'Push Notifications', desc: 'Power outage alerts via system notification', type: 'toggle' as const, color: 'orange', storeKey: 'pushNotifications' as const },
+    { icon: Moon, label: 'Do Not Disturb', desc: `${settings.doNotDisturbStart} — ${settings.doNotDisturbEnd}`, type: 'toggle' as const, color: 'gray', storeKey: 'doNotDisturb' as const },
+    { icon: Globe, label: 'Language / Units', desc: 'English · Metric', type: 'nav' as const, color: 'gray', storeKey: null },
+    { icon: Download, label: 'Firmware Update', desc: `App v${appVersion.version} (Build ${appVersion.build}) · Up to date`, type: 'badge' as const, color: 'green', storeKey: null },
+    { icon: AlertTriangle, label: 'Factory Reset', desc: 'Clear all data and settings', type: 'nav-danger' as const, color: 'red', storeKey: null },
   ]
 
   const colorClasses: Record<string, { bg: string; text: string }> = {
@@ -466,14 +483,20 @@ flex items-center gap-4 relative overflow-hidden"
  <div className="text-[13px] font-semibold text-[#FFFFFF]">{item.label}</div>
  <div className="text-[11px] text-[#8E8E93] mt-0.5">{item.desc}</div>
  </div>
- <div className="flex items-center gap-2">
- {item.type === 'toggle' && item.storeKey && (
- <ToggleSwitch 
- isOn={settings[item.storeKey] as boolean}
- onToggle={() => updateSettings({ [item.storeKey!]: !settings[item.storeKey!] })}
- size="sm"
- />
- )}
+              <div className="flex items-center gap-2">
+                {item.type === 'toggle' && item.storeKey && (
+                  <ToggleSwitch 
+                    isOn={settings[item.storeKey] as boolean}
+                    onToggle={() => {
+                      if (item.storeKey === 'pushNotifications') {
+                        handlePushNotificationToggle()
+                      } else {
+                        updateSettings({ [item.storeKey!]: !settings[item.storeKey!] })
+                      }
+                    }}
+                    size="sm"
+                  />
+                )}
  {item.type === 'nav' && (
  <>
  <ChevronRight size={16} className="text-[#48484A]" />
