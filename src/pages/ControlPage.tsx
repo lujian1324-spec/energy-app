@@ -207,11 +207,59 @@ export default function ControlPage() {
           </div>
         </motion.div>
 
-        {/* 实时功率图表 - 按照参考图重新设计，放在电量卡片外面 */}
+        {/* Input / Output 显示 - 按照参考图样式 */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
+          className="bg-[#1C1C1E] rounded-[20px] p-5 mb-4"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-[#FFFFFF] text-lg font-medium">Input</span>
+              <span className="text-[#01D6BE] text-lg font-semibold">400W</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[#8E8E93] text-lg font-medium">Output</span>
+              <span className="text-[#8E8E93] text-lg font-semibold">200W</span>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Solar / AC Input / AC Output 三个卡片 - 统一样式 */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="grid grid-cols-3 gap-3 mb-4"
+        >
+          {/* Solar 卡片 */}
+          <div className="bg-[#1C1C1E] rounded-[20px] p-4 flex flex-col items-center">
+            <Sun size={18} className="text-[#8E8E93] mb-2" />
+            <span className="text-[#FFFFFF] text-xs mb-1">Solar</span>
+            <span className="text-[#FFFFFF] text-lg font-semibold">{powerStation.inputPower}W</span>
+          </div>
+          
+          {/* AC Input 卡片 */}
+          <div className="bg-[#1C1C1E] rounded-[20px] p-4 flex flex-col items-center">
+            <Zap size={18} className="text-[#8E8E93] mb-2" />
+            <span className="text-[#FFFFFF] text-xs mb-1">AC Input</span>
+            <span className="text-[#FFFFFF] text-lg font-semibold">400W</span>
+          </div>
+          
+          {/* AC Output 卡片 */}
+          <div className="bg-[#1C1C1E] rounded-[20px] p-4 flex flex-col items-center">
+            <Zap size={18} className="text-[#8E8E93] mb-2" />
+            <span className="text-[#FFFFFF] text-xs mb-1">AC Output</span>
+            <span className="text-[#FFFFFF] text-lg font-semibold">{powerStation.outputPower}W</span>
+          </div>
+        </motion.div>
+
+        {/* Real-Time Power 卡片 - 放在所有卡片最后 */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
           className="bg-[#1C1C1E] rounded-[20px] p-4 mb-4"
         >
           {/* 头部：标题 + 图表图标 */}
@@ -269,54 +317,6 @@ export default function ControlPage() {
             >
               <SlidersHorizontal size={20} />
             </button>
-          </div>
-        </motion.div>
-
-        {/* Input / Output 显示 - 按照参考图样式 */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-[#1C1C1E] rounded-[20px] p-5 mb-4"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-[#FFFFFF] text-lg font-medium">Input</span>
-              <span className="text-[#01D6BE] text-lg font-semibold">400W</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[#8E8E93] text-lg font-medium">Output</span>
-              <span className="text-[#8E8E93] text-lg font-semibold">200W</span>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Solar / AC Input / AC Output 三个卡片 - 统一样式 */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="grid grid-cols-3 gap-3"
-        >
-          {/* Solar 卡片 */}
-          <div className="bg-[#1C1C1E] rounded-[20px] p-4 flex flex-col items-center">
-            <Sun size={18} className="text-[#8E8E93] mb-2" />
-            <span className="text-[#FFFFFF] text-xs mb-1">Solar</span>
-            <span className="text-[#FFFFFF] text-lg font-semibold">{powerStation.inputPower}W</span>
-          </div>
-          
-          {/* AC Input 卡片 */}
-          <div className="bg-[#1C1C1E] rounded-[20px] p-4 flex flex-col items-center">
-            <Zap size={18} className="text-[#8E8E93] mb-2" />
-            <span className="text-[#FFFFFF] text-xs mb-1">AC Input</span>
-            <span className="text-[#FFFFFF] text-lg font-semibold">400W</span>
-          </div>
-          
-          {/* AC Output 卡片 */}
-          <div className="bg-[#1C1C1E] rounded-[20px] p-4 flex flex-col items-center">
-            <Zap size={18} className="text-[#8E8E93] mb-2" />
-            <span className="text-[#FFFFFF] text-xs mb-1">AC Output</span>
-            <span className="text-[#FFFFFF] text-lg font-semibold">{powerStation.outputPower}W</span>
           </div>
         </motion.div>
 
