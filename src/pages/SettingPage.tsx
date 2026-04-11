@@ -34,6 +34,8 @@ import {
   Sparkles,
   Tag,
   Star,
+  User,
+  Edit3,
 } from 'lucide-react'
 import ToggleSwitch from '../components/ToggleSwitch'
 import { usePowerStationStore } from '../stores/powerStationStore'
@@ -65,6 +67,14 @@ export default function SettingPage() {
   const [founderCode, setFounderCode] = useState('')
   const [founderMessage, setFounderMessage] = useState('')
   const [founderSuccess, setFounderSuccess] = useState(false)
+
+  // 用户个人信息
+  const userProfile = {
+    name: 'Alex Chen',
+    email: 'alex.chen@example.com',
+    avatar: null, // 可以设置为头像URL
+    memberSince: '2024-03-15',
+  }
 
   // 加载 DB 统计
   useEffect(() => {
@@ -200,7 +210,7 @@ export default function SettingPage() {
 
       {/* 可滚动内容 */}
       <div className="flex-1 overflow-y-auto scrollbar-hide px-5 pb-4">
-        {/* 设备卡片 */}
+        {/* 用户个人信息卡片 */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -209,58 +219,51 @@ export default function SettingPage() {
         >
           <div className="absolute top-0 left-0 right-0 h-px bg-[#2C2C2E]" />
           
-          <div className="w-[60px] h-[60px] rounded-[20px] 
-            bg-[rgba(1,214,190,0.08)]
-            border border-[rgba(1,214,190,0.3)]
-            flex items-center justify-center
-            flex-shrink-0">
-            <BatteryCharging size={28} className="text-[#01D6BE]" />
+          {/* 头像区域 - 有Founder Badge时显示金边 */}
+          <div className={`relative flex-shrink-0 ${settings.founderBadge ? 'p-0.5' : ''}`}>
+            {settings.founderBadge && (
+              <div className="absolute inset-0 rounded-[22px] bg-gradient-to-br from-[#FFD700] via-[#FFA500] to-[#FFD700]" />
+            )}
+            <div className={`relative w-[60px] h-[60px] rounded-[20px] 
+              ${settings.founderBadge ? 'bg-[#1C1C1E]' : 'bg-[rgba(1,214,190,0.08)] border border-[rgba(1,214,190,0.3)]'}
+              flex items-center justify-center overflow-hidden`}>
+              {userProfile.avatar ? (
+                <img src={userProfile.avatar} alt={userProfile.name} className="w-full h-full object-cover" />
+              ) : (
+                <User size={28} className={settings.founderBadge ? 'text-[#FFD700]' : 'text-[#01D6BE]'} />
+              )}
+            </div>
+            {settings.founderBadge && (
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#1C1C1E] flex items-center justify-center">
+                <Crown size={14} className="text-[#FFD700]" />
+              </div>
+            )}
           </div>
           
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-[#FFFFFF]">{powerStation.name}</h3>
+              <h3 className="text-base font-bold text-[#FFFFFF] truncate">{userProfile.name}</h3>
               {settings.founderBadge && (
                 <span className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full 
                   bg-[rgba(255,215,0,0.15)] text-[#FFD700] border border-[rgba(255,215,0,0.3)]
-                  font-semibold">
+                  font-semibold flex-shrink-0">
                   <Crown size={10} />
-                  Founding Member
+                  Founding
                 </span>
               )}
             </div>
-            <p className="text-[11px] text-[#8E8E93] mt-0.5">Model · {powerStation.model} · S/N:{powerStation.serialNumber.slice(-5)}</p>
-            <div className="flex gap-2 mt-2">
-              <span className="text-[10px] px-2 py-0.5 rounded-full 
-                bg-[rgba(1,214,190,0.1)] text-[#01D6BE] border border-[rgba(1,214,190,0.2)]
-                font-semibold">
-                FW v{appVersion.version}
-              </span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full 
-                bg-[rgba(1,214,190,0.1)] text-[#01D6BE] border border-[rgba(1,214,190,0.2)]
-                font-semibold">
-                BT 5.0
-              </span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full 
-                bg-[rgba(1,214,190,0.1)] text-[#01D6BE] border border-[rgba(1,214,190,0.2)]
-                font-semibold">
-                Wi-Fi
-              </span>
-            </div>
+            <p className="text-[11px] text-[#8E8E93] mt-0.5 truncate">{userProfile.email}</p>
+            <p className="text-[10px] text-[#48484A] mt-0.5">
+              Member since {new Date(userProfile.memberSince).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+            </p>
           </div>
           
-          <div className="flex flex-col items-center gap-1">
-            <div className="flex items-end gap-0.5 h-[18px]">
-              {[5, 9, 13, 17].map((h, i) => (
-                <div 
-                  key={i}
-                  className="w-1 rounded-sm bg-[#34C759]"
-                  style={{ height: `${h}px` }}
-                />
-              ))}
-            </div>
-            <div className="text-[9px] text-[#34C759] font-semibold">STRONG</div>
-          </div>
+          <button 
+            className="flex-shrink-0 p-2 rounded-xl bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] transition-colors"
+            onClick={() => {/* 编辑个人信息 */}}
+          >
+            <Edit3 size={16} className="text-[#8E8E93]" />
+          </button>
         </motion.div>
 
         {/* 设备信息 */}

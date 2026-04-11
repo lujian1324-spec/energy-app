@@ -1,11 +1,11 @@
 {
-  "version": "3.7.0",
-  "build": 2447,
+  "version": "3.7.1",
+  "build": 2448,
   "date": "2026-04-11",
   "changelog": [
-    "Add Founder Badge feature in Settings page",
-    "Users can enter code to unlock Founding Member status",
-    "Founder benefits: Early Access, Exclusive Discounts, Product Updates, VIP Support",
-    "Founding Member badge shown next to device name"
+    "Replace device card with user profile card in Settings page",
+    "Add golden avatar border when user has Founder Badge",
+    "Show user name, email and member since date",
+    "Founding Member badge with crown icon on avatar"
   ]
 }
