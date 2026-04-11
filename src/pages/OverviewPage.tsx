@@ -13,8 +13,6 @@ import {
   EyeOff,
   Loader2,
   LayoutGrid,
-  Plug,
-  SlidersHorizontal,
 } from 'lucide-react'
 import BatteryRing from '../components/BatteryRing'
 import ToggleSwitch from '../components/ToggleSwitch'
@@ -61,6 +59,9 @@ export default function OverviewPage() {
     showTimeToFull: true,
     showPortStatus: true,
   })
+
+  // Real-Time Power 图表数据源切换
+  const [powerDataSource, setPowerDataSource] = useState<'ac' | 'solar' | 'output'>('ac')
 
   // 检查推送权限状态
   useEffect(() => {
@@ -287,20 +288,29 @@ export default function OverviewPage() {
             </svg>
           </div>
           
-          {/* 底部三个图标 */}
+          {/* 底部三个可切换选项 - AC / Solar / Output */}
           <div className="flex justify-around pt-3 border-t border-[rgba(255,255,255,0.06)]">
-            <div className="flex flex-col items-center gap-1">
-              <LayoutGrid size={18} className="text-[#8E8E93]" />
-              <span className="text-[9px] text-[#48484A]">Grid</span>
-            </div>
-            <div className="flex flex-col items-center gap-1">
-              <Plug size={18} className="text-[#8E8E93]" />
-              <span className="text-[9px] text-[#48484A]">Plug</span>
-            </div>
-            <div className="flex flex-col items-center gap-1">
-              <SlidersHorizontal size={18} className="text-[#8E8E93]" />
-              <span className="text-[9px] text-[#48484A]">Adjust</span>
-            </div>
+            {[
+              { key: 'ac' as const, label: 'AC', icon: LayoutGrid },
+              { key: 'solar' as const, label: 'Solar', icon: Sun },
+              { key: 'output' as const, label: 'Output', icon: TrendingUp },
+            ].map((item) => {
+              const Icon = item.icon
+              const isActive = powerDataSource === item.key
+              return (
+                <button
+                  key={item.key}
+                  onClick={() => setPowerDataSource(item.key)}
+                  className={`flex flex-col items-center gap-1 px-4 py-1 rounded-xl transition-all
+                    ${isActive ? 'bg-[rgba(1,214,190,0.15)]' : 'hover:bg-[rgba(255,255,255,0.03)]'}`}
+                >
+                  <Icon size={18} className={isActive ? 'text-[#01D6BE]' : 'text-[#8E8E93]'} />
+                  <span className={`text-[10px] font-medium ${isActive ? 'text-[#01D6BE]' : 'text-[#8E8E93]'}`}>
+                    {item.label}
+                  </span>
+                </button>
+              )
+            })}
           </div>
         </motion.div>
 

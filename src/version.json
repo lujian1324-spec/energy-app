@@ -1,11 +1,10 @@
 {
-  "version": "3.6.1",
-  "build": 2444,
+  "version": "3.6.2",
+  "build": 2445,
   "date": "2026-04-11",
   "changelog": [
-    "Overview page redesign: BatteryRing with Charging status and countdown",
-    "Real-Time Power large card with title, chart, and bottom icons",
-    "Input/Output badges with correct colors (green/gray)",
-    "Three small cards: AC 400W, Solar 0W, Output 200W"
+    "Real-Time Power card bottom buttons: AC/Solar/Output with toggle",
+    "Removed Grid/Plug/Adjust labels, replaced with AC/Solar/Output",
+    "Active button highlighted with green background and text"
   ]
 }
