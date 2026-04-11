@@ -19,6 +19,20 @@ export interface Port {
   power: number;
 }
 
+// 设备规格
+export interface DeviceSpecs {
+  batteryCapacity: string;
+  batteryType: string;
+  maxOutputPower: string;
+  maxOutputSurge: string;
+  outputType: string;
+  maxChargePower: string;
+  chargeMode: string;
+  chargeTime: string;
+  operatingTemp: string;
+  optimalTemp: string;
+}
+
 // 电源站状态
 export interface PowerStation {
   name: string;
@@ -36,6 +50,7 @@ export interface PowerStation {
   timeToFull: string;
   cycleCount: number;
   batteryHealth: number;
+  specs: DeviceSpecs;
 }
 
 // 运行模式

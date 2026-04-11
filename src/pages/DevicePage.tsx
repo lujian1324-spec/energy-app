@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { Menu, User, Search, Zap, Battery, AlertTriangle, X, Plus, QrCode } from 'lucide-react'
+import { Menu, User, Search, Zap, Battery, AlertTriangle, X, Plus, QrCode, Trash2, Power } from 'lucide-react'
 import ToggleSwitch from '../components/ToggleSwitch'
 import { usePowerStationStore } from '../stores/powerStationStore'
 
@@ -9,11 +9,15 @@ const filters = ['All', 'Online', 'Offline', 'Alerts']
 
 export default function DevicePage() {
   const navigate = useNavigate()
-  const { devices, toggleDevice } = usePowerStationStore()
+  const { devices, toggleDevice, selectDevice, toggleDevices } = usePowerStationStore()
   const [activeFilter, setActiveFilter] = useState('All')
   const [searchQuery, setSearchQuery] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
   const [showQrScan, setShowQrScan] = useState(false)
+  
+  // Batch Control 模式
+  const [isBatchMode, setIsBatchMode] = useState(false)
+  const [selectedDevices, setSelectedDevices] = useState<Set<string>>(new Set())
 
   const hasAlert = (device: typeof devices[0]) =>
     device.batteryLevel < 30 || device.status === 'offline'
@@ -45,19 +49,72 @@ export default function DevicePage() {
     }
   }
 
+  // 处理点击设备名称跳转到 Overview 页面
+  const handleDeviceClick = (deviceId: string) => {
+    if (isBatchMode) return
+    selectDevice(deviceId)
+    navigate('/')
+  }
+
+  // 切换 Batch Control 模式
+  const toggleBatchMode = () => {
+    setIsBatchMode(!isBatchMode)
+    setSelectedDevices(new Set())
+  }
+
+  // 切换设备选择
+  const toggleDeviceSelection = (deviceId: string) => {
+    const newSelected = new Set(selectedDevices)
+    if (newSelected.has(deviceId)) {
+      newSelected.delete(deviceId)
+    } else {
+      newSelected.add(deviceId)
+    }
+    setSelectedDevices(newSelected)
+  }
+
+  // 全选/取消全选
+  const toggleSelectAll = () => {
+    if (selectedDevices.size === filteredDevices.length) {
+      setSelectedDevices(new Set())
+    } else {
+      setSelectedDevices(new Set(filteredDevices.map(d => d.id)))
+    }
+  }
+
+  // 批量操作
+  const handleBatchTurnOn = () => {
+    toggleDevices(Array.from(selectedDevices), true)
+    setSelectedDevices(new Set())
+  }
+
+  const handleBatchTurnOff = () => {
+    toggleDevices(Array.from(selectedDevices), false)
+    setSelectedDevices(new Set())
+  }
+
+  const handleBatchDelete = () => {
+    deleteDevices(Array.from(selectedDevices))
+    setSelectedDevices(new Set())
+  }
+
   return (
     <div className="h-full flex flex-col bg-[#000000] overflow-hidden">
       {/* Header */}
       <div className="px-5 pt-4 pb-3 safe-area-top flex justify-between items-center">
-        <button className="w-9 h-9 rounded-full bg-[#1C1C1E] flex items-center justify-center text-[#FFFFFF]">
+        <button 
+          onClick={toggleBatchMode}
+          className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors
+            ${isBatchMode ? 'bg-[#01D6BE] text-[#000000]' : 'bg-[#1C1C1E] text-[#FFFFFF]'}`}
+        >
           <Menu size={20} />
         </button>
         <h2 className="text-xl font-bold text-[#FFFFFF]">Device</h2>
         <button
-          onClick={() => navigate('/setting')}
-          className="w-9 h-9 rounded-full bg-[#1C1C1E] flex items-center justify-center text-[#FFFFFF]"
+          onClick={() => setShowAddModal(true)}
+          className="w-9 h-9 rounded-full bg-[#1C1C1E] flex items-center justify-center text-[#FFFFFF] hover:bg-[#2C2C2E] transition-colors"
         >
-          <User size={20} />
+          <Plus size={20} />
         </button>
       </div>
 
@@ -123,18 +180,58 @@ export default function DevicePage() {
           ))}
         </div>
 
-        {/* Batch Control 按钮 */}
-        <motion.button
-          whileTap={{ scale: 0.97 }}
-          onClick={() => setShowAddModal(true)}
-          className="w-full h-12 bg-[#01D6BE] rounded-[16px]
-            text-[#000000] font-bold text-[14px]
-            flex items-center justify-center gap-2
-            mb-5"
-        >
-          <Plus size={18} />
-          Batch Control
-        </motion.button>
+        {/* Batch Control 操作栏 */}
+        <AnimatePresence>
+          {isBatchMode && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mb-4"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <button
+                  onClick={toggleSelectAll}
+                  className="text-[12px] text-[#01D6BE] font-medium"
+                >
+                  {selectedDevices.size === filteredDevices.length ? 'Deselect All' : 'Select All'}
+                </button>
+                <span className="text-[12px] text-[#8E8E93]">
+                  {selectedDevices.size} selected
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleBatchTurnOn}
+                  disabled={selectedDevices.size === 0}
+                  className="flex-1 h-10 bg-[#34C759] rounded-[12px] text-[#000000] font-semibold text-[13px]
+                    flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <Power size={16} />
+                  Turn On
+                </button>
+                <button
+                  onClick={handleBatchTurnOff}
+                  disabled={selectedDevices.size === 0}
+                  className="flex-1 h-10 bg-[#8E8E93] rounded-[12px] text-[#000000] font-semibold text-[13px]
+                    flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <Power size={16} />
+                  Turn Off
+                </button>
+                <button
+                  onClick={handleBatchDelete}
+                  disabled={selectedDevices.size === 0}
+                  className="flex-1 h-10 bg-[#FF3B30] rounded-[12px] text-[#FFFFFF] font-semibold text-[13px]
+                    flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <Trash2 size={16} />
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* 设备列表标题 */}
         <div className="flex justify-between items-center mb-3">
@@ -160,6 +257,24 @@ export default function DevicePage() {
                   : ''
                 }`}
             >
+              {/* Batch Mode 多选框 */}
+              {isBatchMode && (
+                <button
+                  onClick={() => toggleDeviceSelection(device.id)}
+                  className={`w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 border-2 transition-colors
+                    ${selectedDevices.has(device.id)
+                      ? 'bg-[#01D6BE] border-[#01D6BE]'
+                      : 'border-[#48484A] hover:border-[#8E8E93]'
+                    }`}
+                >
+                  {selectedDevices.has(device.id) && (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#000000" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  )}
+                </button>
+              )}
+
               <div className={`w-11 h-11 rounded-[14px] flex items-center justify-center flex-shrink-0
                 ${getIconColor(device.type)}`}>
                 {device.type === 'powerstation' ? <Battery size={22} /> : <Zap size={22} />}
@@ -167,7 +282,12 @@ export default function DevicePage() {
 
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <div className="text-[14px] font-semibold text-[#FFFFFF]">{device.name}</div>
+                  <button
+                    onClick={() => handleDeviceClick(device.id)}
+                    className="text-[14px] font-semibold text-[#FFFFFF] hover:text-[#01D6BE] transition-colors text-left"
+                  >
+                    {device.name}
+                  </button>
                   {hasAlert(device) && (
                     <AlertTriangle size={12} className="text-[#FF3B30] flex-shrink-0" />
                   )}
@@ -183,10 +303,12 @@ export default function DevicePage() {
                 </div>
               </div>
 
-              <ToggleSwitch
-                isOn={device.isOn}
-                onToggle={() => toggleDevice(device.id)}
-              />
+              {!isBatchMode && (
+                <ToggleSwitch
+                  isOn={device.isOn}
+                  onToggle={() => toggleDevice(device.id)}
+                />
+              )}
             </motion.div>
           ))}
         </div>

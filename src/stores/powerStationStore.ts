@@ -15,12 +15,15 @@ interface PowerStationState {
   updateBatteryLevel: (level: number) => void;
   updatePowerData: (input: number, output: number) => void;
   toggleDevice: (deviceId: string) => void;
+  toggleDevices: (deviceIds: string[], isOn: boolean) => void;
+  deleteDevices: (deviceIds: string[]) => void;
   updateSettings: (settings: Partial<AppSettings>) => void;
   setChargeLimit: (limit: number) => void;
   updateDeviceName: (name: string) => void;
   activateFounderBadge: (code: string) => { success: boolean; message: string };
   selectDevice: (deviceId: string) => void;
   updateDeviceNameById: (deviceId: string, name: string) => void;
+  updateDeviceSpecs: (specs: Partial<PowerStation['specs']>) => void;
 }
 
 const initialPowerStation: PowerStation = {
@@ -43,7 +46,19 @@ const initialPowerStation: PowerStation = {
 { id: 'ac-out-2', name: 'AC Out 2', type: 'ac-out', status: 'inactive', power: 0 },
 { id: 'ac-in', name: 'AC Input', type: 'ac-in', status: 'active', power: 400 },
 { id: 'dc-in', name: 'DC Input', type: 'dc-in', status: 'inactive', deviceName: 'Solar Panel', power: 0 },
-  ]
+  ],
+  specs: {
+    batteryCapacity: '1000Wh',
+    batteryType: 'LiFePO₄ Lithium Iron Phosphate',
+    maxOutputPower: '1000W',
+    maxOutputSurge: '2000W',
+    outputType: 'Pure Sine Wave AC Output',
+    maxChargePower: '500W',
+    chargeMode: 'AC + Solar Simultaneous',
+    chargeTime: '0-80% in 1.5 hours',
+    operatingTemp: '-10°C ~ 40°C',
+    optimalTemp: '20°C ~ 30°C',
+  }
 }
 
 const initialDevices: Device[] = [
@@ -69,6 +84,18 @@ const deviceProfiles: Record<string, Partial<PowerStation>> = {
     isCharging: false,
     timeToFull: '0h 0min',
     mode: 'backup',
+    specs: {
+      batteryCapacity: '500Wh',
+      batteryType: 'Li-ion Battery',
+      maxOutputPower: '100W',
+      maxOutputSurge: '150W',
+      outputType: 'DC Output',
+      maxChargePower: '60W',
+      chargeMode: 'AC Adapter',
+      chargeTime: '0-80% in 3 hours',
+      operatingTemp: '0°C ~ 35°C',
+      optimalTemp: '15°C ~ 25°C',
+    }
   },
   '2': {
     name: 'Fridge',
@@ -85,6 +112,18 @@ const deviceProfiles: Record<string, Partial<PowerStation>> = {
     isCharging: false,
     timeToFull: '0h 0min',
     mode: 'backup',
+    specs: {
+      batteryCapacity: '1200Wh',
+      batteryType: 'LiFePO₄ Battery',
+      maxOutputPower: '1500W',
+      maxOutputSurge: '3000W',
+      outputType: 'Pure Sine Wave AC Output',
+      maxChargePower: '800W',
+      chargeMode: 'AC + Solar Simultaneous',
+      chargeTime: '0-80% in 1 hour',
+      operatingTemp: '-10°C ~ 45°C',
+      optimalTemp: '20°C ~ 30°C',
+    }
   },
   '3': {
     name: 'Sierro 1000',
@@ -101,6 +140,18 @@ const deviceProfiles: Record<string, Partial<PowerStation>> = {
     isCharging: true,
     timeToFull: '0h 15min',
     mode: 'solar',
+    specs: {
+      batteryCapacity: '1000Wh',
+      batteryType: 'LiFePO₄ Lithium Iron Phosphate',
+      maxOutputPower: '1000W',
+      maxOutputSurge: '2000W',
+      outputType: 'Pure Sine Wave AC Output',
+      maxChargePower: '500W',
+      chargeMode: 'AC + Solar Simultaneous',
+      chargeTime: '0-80% in 1.5 hours',
+      operatingTemp: '-10°C ~ 40°C',
+      optimalTemp: '20°C ~ 30°C',
+    }
   },
 }
 
@@ -232,6 +283,29 @@ updateDeviceNameById: (deviceId: string, name: string) => {
     powerStation: state.selectedDeviceId === deviceId
       ? { ...state.powerStation, name }
       : state.powerStation,
+  }));
+},
+
+updateDeviceSpecs: (specs) => {
+  set((state) => ({
+    powerStation: {
+      ...state.powerStation,
+      specs: { ...state.powerStation.specs, ...specs }
+    }
+  }));
+},
+
+toggleDevices: (deviceIds: string[], isOn: boolean) => {
+  set((state) => ({
+    devices: state.devices.map(device =>
+      deviceIds.includes(device.id) ? { ...device, isOn } : device
+    )
+  }));
+},
+
+deleteDevices: (deviceIds: string[]) => {
+  set((state) => ({
+    devices: state.devices.filter(device => !deviceIds.includes(device.id))
   }));
 },
 }),

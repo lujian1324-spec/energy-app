@@ -25,8 +25,29 @@ interface DeviceDetailPageProps {
   onBack: () => void
 }
 
+// 规格字段配置
+interface SpecField {
+  key: keyof typeof initialSpecs;
+  icon: typeof Battery;
+  label: string;
+  color: string;
+}
+
+const initialSpecs = {
+  batteryCapacity: '',
+  batteryType: '',
+  maxOutputPower: '',
+  maxOutputSurge: '',
+  outputType: '',
+  maxChargePower: '',
+  chargeMode: '',
+  chargeTime: '',
+  operatingTemp: '',
+  optimalTemp: '',
+}
+
 export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
-  const { powerStation, settings, selectedDeviceId, updateDeviceNameById } = usePowerStationStore()
+  const { powerStation, settings, selectedDeviceId, updateDeviceNameById, updateDeviceSpecs } = usePowerStationStore()
   const { bleConnection, serialConnection, activeDataSource } = useConnectionStore()
   
   // 设备名称编辑状态
@@ -34,38 +55,56 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const [editName, setEditName] = useState(powerStation.name)
   const nameInputRef = useRef<HTMLInputElement>(null)
 
+  // 规格编辑状态
+  const [editingSpec, setEditingSpec] = useState<string | null>(null)
+  const [editSpecValues, setEditSpecValues] = useState({
+    batteryCapacity: powerStation.specs.batteryCapacity,
+    batteryType: powerStation.specs.batteryType,
+    maxOutputPower: powerStation.specs.maxOutputPower,
+    maxOutputSurge: powerStation.specs.maxOutputSurge,
+    outputType: powerStation.specs.outputType,
+    maxChargePower: powerStation.specs.maxChargePower,
+    chargeMode: powerStation.specs.chargeMode,
+    chargeTime: powerStation.specs.chargeTime,
+    operatingTemp: powerStation.specs.operatingTemp,
+    optimalTemp: powerStation.specs.optimalTemp,
+  })
+
   const deviceSpecs = [
     { 
       icon: Battery, 
       label: 'Battery Capacity', 
-      value: '1000Wh', 
-      desc: 'LiFePO₄ Lithium Iron Phosphate',
-      subDesc: '3000+ cycles to 80% capacity',
-      color: '#01D6BE' 
+      value: powerStation.specs.batteryCapacity, 
+      desc: powerStation.specs.batteryType,
+      color: '#01D6BE',
+      editKeys: ['batteryCapacity', 'batteryType']
     },
     { 
       icon: Zap, 
       label: 'Max Output Power', 
-      value: '1000W', 
-      desc: 'Surge 2000W',
-      subDesc: 'Pure Sine Wave AC Output',
-      color: '#34C759' 
+      value: powerStation.specs.maxOutputPower, 
+      desc: `Surge ${powerStation.specs.maxOutputSurge}`,
+      subDesc: powerStation.specs.outputType,
+      color: '#34C759',
+      editKeys: ['maxOutputPower', 'maxOutputSurge', 'outputType']
     },
     { 
       icon: Zap, 
       label: 'Max Charge Power', 
-      value: '500W', 
-      desc: 'AC + Solar Simultaneous',
-      subDesc: '0-80% in 1.5 hours',
-      color: '#FF9500' 
+      value: powerStation.specs.maxChargePower, 
+      desc: powerStation.specs.chargeMode,
+      subDesc: powerStation.specs.chargeTime,
+      color: '#FF9500',
+      editKeys: ['maxChargePower', 'chargeMode', 'chargeTime']
     },
     { 
       icon: Thermometer, 
       label: 'Operating Temp', 
-      value: '-10°C ~ 40°C', 
-      desc: 'Current: ' + powerStation.temperature + '°C',
-      subDesc: 'Optimal: 20°C ~ 30°C',
-      color: '#A855F7' 
+      value: powerStation.specs.operatingTemp, 
+      desc: `Current: ${powerStation.temperature}°C`,
+      subDesc: `Optimal: ${powerStation.specs.optimalTemp}`,
+      color: '#A855F7',
+      editKeys: ['operatingTemp', 'optimalTemp']
     },
   ]
 
@@ -150,6 +189,50 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     } else if (e.key === 'Escape') {
       handleCancelEditName()
     }
+  }
+
+  // 处理开始编辑规格
+  const handleStartEditSpec = (label: string) => {
+    setEditSpecValues({
+      batteryCapacity: powerStation.specs.batteryCapacity,
+      batteryType: powerStation.specs.batteryType,
+      maxOutputPower: powerStation.specs.maxOutputPower,
+      maxOutputSurge: powerStation.specs.maxOutputSurge,
+      outputType: powerStation.specs.outputType,
+      maxChargePower: powerStation.specs.maxChargePower,
+      chargeMode: powerStation.specs.chargeMode,
+      chargeTime: powerStation.specs.chargeTime,
+      operatingTemp: powerStation.specs.operatingTemp,
+      optimalTemp: powerStation.specs.optimalTemp,
+    })
+    setEditingSpec(label)
+  }
+
+  // 处理保存规格
+  const handleSaveSpec = () => {
+    updateDeviceSpecs({
+      batteryCapacity: editSpecValues.batteryCapacity,
+      batteryType: editSpecValues.batteryType,
+      maxOutputPower: editSpecValues.maxOutputPower,
+      maxOutputSurge: editSpecValues.maxOutputSurge,
+      outputType: editSpecValues.outputType,
+      maxChargePower: editSpecValues.maxChargePower,
+      chargeMode: editSpecValues.chargeMode,
+      chargeTime: editSpecValues.chargeTime,
+      operatingTemp: editSpecValues.operatingTemp,
+      optimalTemp: editSpecValues.optimalTemp,
+    })
+    setEditingSpec(null)
+  }
+
+  // 处理取消编辑规格
+  const handleCancelEditSpec = () => {
+    setEditingSpec(null)
+  }
+
+  // 处理规格输入变化
+  const handleSpecChange = (key: keyof typeof editSpecValues, value: string) => {
+    setEditSpecValues(prev => ({ ...prev, [key]: value }))
   }
 
   return (
@@ -260,16 +343,21 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           transition={{ delay: 0.2 }}
           className="mb-5"
         >
-          <div className="text-[11px] font-bold text-[#8E8E93] tracking-widest uppercase mb-3 px-1">
-            Specifications
+          <div className="flex items-center justify-between mb-3 px-1">
+            <div className="text-[11px] font-bold text-[#8E8E93] tracking-widest uppercase">
+              Specifications
+            </div>
+            <div className="text-[10px] text-[#48484A]">Tap to edit</div>
           </div>
           <div className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden">
             {deviceSpecs.map((item, i) => {
               const Icon = item.icon
+              const isEditing = editingSpec === item.label
               return (
                 <div 
                   key={item.label}
-                  className={`flex items-start gap-3 px-4 py-4 
+                  onClick={() => !isEditing && handleStartEditSpec(item.label)}
+                  className={`flex items-start gap-3 px-4 py-4 cursor-pointer hover:bg-[rgba(255,255,255,0.02)] transition-colors
                     ${i !== deviceSpecs.length - 1 ? 'border-b border-[rgba(1,214,190,0.08)]' : ''}`}
                 >
                   <div 
@@ -282,12 +370,49 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                     <Icon size={18} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-0.5">
-                      <div className="text-[12px] text-[#8E8E93]">{item.label}</div>
-                      <div className="text-[14px] font-bold text-[#FFFFFF]">{item.value}</div>
-                    </div>
-                    <div className="text-[11px] text-[#FFFFFF] font-medium">{item.desc}</div>
-                    <div className="text-[10px] text-[#48484A] mt-0.5">{item.subDesc}</div>
+                    {isEditing ? (
+                      // 编辑模式
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="text-[12px] text-[#8E8E93]">{item.label}</div>
+                          <div className="flex items-center gap-1">
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); handleSaveSpec(); }}
+                              className="w-6 h-6 rounded-full bg-[#01D6BE] flex items-center justify-center"
+                            >
+                              <Check size={12} className="text-[#000000]" />
+                            </button>
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); handleCancelEditSpec(); }}
+                              className="w-6 h-6 rounded-full bg-[#2C2C2E] flex items-center justify-center"
+                            >
+                              <X size={12} className="text-[#8E8E93]" />
+                            </button>
+                          </div>
+                        </div>
+                        {item.editKeys?.map((key) => (
+                          <input
+                            key={key}
+                            type="text"
+                            value={editSpecValues[key as keyof typeof editSpecValues]}
+                            onChange={(e) => handleSpecChange(key as keyof typeof editSpecValues, e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-full text-[12px] bg-[#2C2C2E] border border-[#3C3C3E] rounded-md px-2 py-1 text-[#FFFFFF] outline-none focus:border-[#01D6BE]"
+                            placeholder={key}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      // 显示模式
+                      <>
+                        <div className="flex items-center justify-between mb-0.5">
+                          <div className="text-[12px] text-[#8E8E93]">{item.label}</div>
+                          <div className="text-[14px] font-bold text-[#FFFFFF]">{item.value}</div>
+                        </div>
+                        <div className="text-[11px] text-[#FFFFFF] font-medium">{item.desc}</div>
+                        {item.subDesc && <div className="text-[10px] text-[#48484A] mt-0.5">{item.subDesc}</div>}
+                      </>
+                    )}
                   </div>
                 </div>
               )
