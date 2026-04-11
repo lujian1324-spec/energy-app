@@ -242,7 +242,7 @@ export default function SettingPage() {
           <div className="absolute top-0 left-0 right-0 h-px bg-[#2C2C2E]" />
           
           {/* 头像区域 - 有Founder Badge时显示金边 */}
-          <div className={`relative flex-shrink-0 ${settings.founderBadge ? 'p-0.5' : ''}`}>
+          <div className={`relative flex-shrink-0 ${settings.founderBadge ? 'p-[2px]' : ''}`}>
             {settings.founderBadge && (
               <div className="absolute inset-0 rounded-[22px] bg-gradient-to-br from-[#FFD700] via-[#FFA500] to-[#FFD700]" />
             )}
@@ -256,8 +256,8 @@ export default function SettingPage() {
               )}
             </div>
             {settings.founderBadge && (
-              <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#1C1C1E] flex items-center justify-center">
-                <Crown size={14} className="text-[#FFD700]" />
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#1C1C1E] border-2 border-[#FFD700] flex items-center justify-center z-10">
+                <Crown size={12} className="text-[#FFD700]" />
               </div>
             )}
           </div>

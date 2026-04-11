@@ -1,11 +1,10 @@
 {
-  "version": "3.7.3",
-  "build": 2450,
+  "version": "3.7.4",
+  "build": 2451,
   "date": "2026-04-11",
   "changelog": [
-    "Save user profile to IndexedDB for persistence",
-    "Avatar image saved locally and persists across sessions",
-    "Profile data (name, email, phone, avatar) loads from database",
-    "Database schema upgraded to v2 with user_profile store"
+    "Fix Founder Badge crown icon positioning",
+    "Add z-index to ensure crown appears above avatar",
+    "Adjust border and sizing for better visual balance"
   ]
 }
