@@ -1,11 +1,11 @@
 {
-  "version": "3.7.1",
-  "build": 2448,
+  "version": "3.7.2",
+  "build": 2449,
   "date": "2026-04-11",
   "changelog": [
-    "Replace device card with user profile card in Settings page",
-    "Add golden avatar border when user has Founder Badge",
-    "Show user name, email and member since date",
-    "Founding Member badge with crown icon on avatar"
+    "Add Profile Edit sub-page in Settings",
+    "Editable fields: name, email, phone number",
+    "Avatar upload from local photos",
+    "Golden avatar border preserved in edit page for Founder Badge holders"
   ]
 }

@@ -44,6 +44,7 @@ import { useProtocol } from '../hooks/useProtocol'
 import { getDBStats, clearAllHistory } from '../db/powerflowDB'
 import { requestNotificationPermission, getNotificationPermission } from '../utils/pushNotification'
 import appVersion from '../version.json'
+import ProfileEditPage from './ProfileEditPage'
 
 export default function SettingPage() {
   const { powerStation, settings, updateSettings, activateFounderBadge } = usePowerStationStore()
@@ -67,6 +68,9 @@ export default function SettingPage() {
   const [founderCode, setFounderCode] = useState('')
   const [founderMessage, setFounderMessage] = useState('')
   const [founderSuccess, setFounderSuccess] = useState(false)
+
+  // 个人信息编辑页面
+  const [showProfileEdit, setShowProfileEdit] = useState(false)
 
   // 用户个人信息
   const userProfile = {
@@ -214,8 +218,9 @@ export default function SettingPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          onClick={() => setShowProfileEdit(true)}
           className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.2)] rounded-[28px] p-4 mb-4
-            flex items-center gap-4 relative overflow-hidden"
+            flex items-center gap-4 relative overflow-hidden cursor-pointer active:scale-[0.98] transition-transform"
         >
           <div className="absolute top-0 left-0 right-0 h-px bg-[#2C2C2E]" />
           
@@ -258,12 +263,9 @@ export default function SettingPage() {
             </p>
           </div>
           
-          <button 
-            className="flex-shrink-0 p-2 rounded-xl bg-[rgba(255,255,255,0.05)] hover:bg-[rgba(255,255,255,0.1)] transition-colors"
-            onClick={() => {/* 编辑个人信息 */}}
-          >
+          <div className="flex-shrink-0 p-2 rounded-xl bg-[rgba(255,255,255,0.05)]">
             <Edit3 size={16} className="text-[#8E8E93]" />
-          </button>
+          </div>
         </motion.div>
 
         {/* 设备信息 */}
@@ -977,6 +979,13 @@ export default function SettingPage() {
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ==================== Profile Edit Page ==================== */}
+      <AnimatePresence>
+        {showProfileEdit && (
+          <ProfileEditPage onBack={() => setShowProfileEdit(false)} />
         )}
       </AnimatePresence>
     </div>
