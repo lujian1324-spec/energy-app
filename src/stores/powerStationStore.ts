@@ -7,6 +7,7 @@ interface PowerStationState {
   powerStation: PowerStation;
   devices: Device[];
   settings: AppSettings;
+  selectedDeviceId: string | null;
   
   // 动作
   setMode: (mode: OperatingMode) => void;
@@ -18,6 +19,8 @@ interface PowerStationState {
   setChargeLimit: (limit: number) => void;
   updateDeviceName: (name: string) => void;
   activateFounderBadge: (code: string) => { success: boolean; message: string };
+  selectDevice: (deviceId: string) => void;
+  updateDeviceNameById: (deviceId: string, name: string) => void;
 }
 
 const initialPowerStation: PowerStation = {
@@ -49,6 +52,58 @@ const initialDevices: Device[] = [
   { id: '3', name: 'Sierro 1000', type: 'powerstation', status: 'online', batteryLevel: 90, isOn: true, power: 0 },
 ]
 
+// 设备参数模板（用于不同设备的模拟数据）
+const deviceProfiles: Record<string, Partial<PowerStation>> = {
+  '1': {
+    name: 'CPAP',
+    model: 'CPAP-500',
+    serialNumber: 'CP-2024-001',
+    batteryLevel: 92,
+    remainingWh: 460,
+    totalWh: 500,
+    inputPower: 0,
+    outputPower: 45,
+    temperature: 25,
+    cycleCount: 120,
+    batteryHealth: 95,
+    isCharging: false,
+    timeToFull: '0h 0min',
+    mode: 'backup',
+  },
+  '2': {
+    name: 'Fridge',
+    model: 'FR-1200',
+    serialNumber: 'FR-2024-002',
+    batteryLevel: 48,
+    remainingWh: 576,
+    totalWh: 1200,
+    inputPower: 0,
+    outputPower: 120,
+    temperature: 32,
+    cycleCount: 45,
+    batteryHealth: 98,
+    isCharging: false,
+    timeToFull: '0h 0min',
+    mode: 'backup',
+  },
+  '3': {
+    name: 'Sierro 1000',
+    model: 'SR-1000',
+    serialNumber: 'SR-2024-08842',
+    batteryLevel: 90,
+    remainingWh: 900,
+    totalWh: 1000,
+    inputPower: 400,
+    outputPower: 200,
+    temperature: 28,
+    cycleCount: 286,
+    batteryHealth: 98,
+    isCharging: true,
+    timeToFull: '0h 15min',
+    mode: 'solar',
+  },
+}
+
 const initialSettings: AppSettings = {
   notifications: true,
   pushNotifications: false,
@@ -68,9 +123,10 @@ const initialSettings: AppSettings = {
 export const usePowerStationStore = create<PowerStationState>()(
   persist(
  (set) => ({
- powerStation: initialPowerStation,
- devices: initialDevices,
- settings: initialSettings,
+powerStation: initialPowerStation,
+devices: initialDevices,
+settings: initialSettings,
+selectedDeviceId: '3', // 默认选中 Sierro 1000
 
  setMode: (mode) => {
  set((state) => ({
@@ -156,10 +212,36 @@ activateFounderBadge: (code: string) => {
   
   return { success: false, message: 'Invalid code. Please try again.' };
 },
+
+selectDevice: (deviceId: string) => {
+  set((state) => {
+    const profile = deviceProfiles[deviceId] || deviceProfiles['3'];
+    return {
+      selectedDeviceId: deviceId,
+      powerStation: { ...state.powerStation, ...profile },
+    };
+  });
+},
+
+updateDeviceNameById: (deviceId: string, name: string) => {
+  set((state) => ({
+    devices: state.devices.map(device =>
+      device.id === deviceId ? { ...device, name } : device
+    ),
+    // 如果修改的是当前选中的设备，同时更新 powerStation 的名称
+    powerStation: state.selectedDeviceId === deviceId
+      ? { ...state.powerStation, name }
+      : state.powerStation,
+  }));
+},
 }),
 {
 name: 'powerflow-storage',
-partialize: (state) => ({ settings: state.settings }),
+partialize: (state) => ({ 
+  settings: state.settings, 
+  selectedDeviceId: state.selectedDeviceId,
+  devices: state.devices,
+}),
 }
   )
 )

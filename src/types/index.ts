@@ -31,7 +31,7 @@ export interface PowerStation {
   outputPower: number;
   temperature: number;
   ports: Port[];
-  mode: 'solar' | 'backup' | 'car' | 'outdoor';
+  mode: 'solar' | 'backup' | 'car' | 'outdoor' | 'home-backup';
   isCharging: boolean;
   timeToFull: string;
   cycleCount: number;

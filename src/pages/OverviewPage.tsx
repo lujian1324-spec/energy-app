@@ -4,7 +4,6 @@ import {
   Bell,
   Sun,
   Zap,
-  Pencil,
   TrendingUp,
   TrendingDown,
   X,
@@ -14,6 +13,8 @@ import {
   Loader2,
   LayoutGrid,
   Info,
+  ChevronDown,
+  Battery,
 } from 'lucide-react'
 import BatteryRing from '../components/BatteryRing'
 import ToggleSwitch from '../components/ToggleSwitch'
@@ -42,7 +43,7 @@ const powerOutageAlert = {
 }
 
 export default function OverviewPage() {
-  const { powerStation, settings, updateSettings, updateDeviceName } = usePowerStationStore()
+  const { powerStation, settings, devices, selectedDeviceId, selectDevice } = usePowerStationStore()
   const [showNotifications, setShowNotifications] = useState(false)
   const [showDisplaySettings, setShowDisplaySettings] = useState(false)
   const [showLockScreenAlert, setShowLockScreenAlert] = useState(false)
@@ -50,10 +51,9 @@ export default function OverviewPage() {
   const [pushPermission, setPushPermission] = useState<NotificationPermission>('default')
   const [isPushing, setIsPushing] = useState(false)
   
-  // 设备名称编辑状态
-  const [isEditingName, setIsEditingName] = useState(false)
-  const [editName, setEditName] = useState(powerStation.name)
-  const nameInputRef = useRef<HTMLInputElement>(null)
+  // 设备下拉菜单状态
+  const [showDeviceDropdown, setShowDeviceDropdown] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   const [displayConfig, setDisplayConfig] = useState({
     showBatteryRing: true,
@@ -106,6 +106,17 @@ export default function OverviewPage() {
     }
   }, [])
 
+  // 点击外部关闭下拉菜单
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDeviceDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
   // 处理铃铛按钮点击 - 动态反馈 + 10秒后推送
   const handleBellClick = async () => {
     // 检查 iOS 支持状态
@@ -138,36 +149,10 @@ export default function OverviewPage() {
   const unreadCount = notifList.filter(n => !n.read).length
   const markAllRead = () => setNotifList(prev => prev.map(n => ({ ...n, read: true })))
 
-  // 处理开始编辑设备名称
-  const handleStartEditName = () => {
-    setEditName(powerStation.name)
-    setIsEditingName(true)
-    // 聚焦输入框
-    setTimeout(() => nameInputRef.current?.focus(), 100)
-  }
-
-  // 处理保存设备名称
-  const handleSaveName = () => {
-    const trimmedName = editName.trim()
-    if (trimmedName && trimmedName !== powerStation.name) {
-      updateDeviceName(trimmedName)
-    }
-    setIsEditingName(false)
-  }
-
-  // 处理取消编辑
-  const handleCancelEditName = () => {
-    setEditName(powerStation.name)
-    setIsEditingName(false)
-  }
-
-  // 处理输入框键盘事件
-  const handleNameKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSaveName()
-    } else if (e.key === 'Escape') {
-      handleCancelEditName()
-    }
+  // 处理选择设备
+  const handleSelectDevice = (deviceId: string) => {
+    selectDevice(deviceId)
+    setShowDeviceDropdown(false)
   }
 
   const displayItems = [
@@ -186,70 +171,102 @@ export default function OverviewPage() {
 
       {/* 可滚动内容 */}
       <div className="flex-1 overflow-y-auto scrollbar-hide">
-        {/* Header - 扁平化：设备名 + 编辑图标 + 信息图标 + 铃铛图标 */}
+        {/* Header - 扁平化：设备下拉菜单 + 信息图标 + 铃铛图标 */}
         <div className="flex justify-between items-center px-5 py-3">
-          <div>
-            <div className="flex items-center gap-2">
-              {isEditingName ? (
-                <div className="flex items-center gap-2">
-                  <input
-                    ref={nameInputRef}
-                    type="text"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    onKeyDown={handleNameKeyDown}
-                    onBlur={handleSaveName}
-                    className="text-xl font-bold text-[#FFFFFF] tracking-wide bg-transparent border-b-2 border-[#01D6BE] outline-none w-[160px]"
-                    maxLength={20}
-                  />
-                  <button 
-                    onClick={handleSaveName}
-                    className="w-6 h-6 rounded-full bg-[#01D6BE] flex items-center justify-center"
-                  >
-                    <Check size={12} className="text-[#000000]" />
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <h2 className="text-xl font-bold text-[#FFFFFF] tracking-wide">{powerStation.name}</h2>
-                  <button 
-                    onClick={handleStartEditName}
-                    className="w-6 h-6 rounded-full bg-[#1C1C1E] flex items-center justify-center hover:bg-[#2C2C2E] transition-colors"
-                  >
-                    <Pencil size={12} className="text-[#8E8E93]" />
-                  </button>
-                  {/* 信息图标 - 点击进入设备详情 */}
-                  <button 
-                    onClick={() => setShowDeviceDetail(true)}
-                    className="w-6 h-6 rounded-full bg-[#1C1C1E] flex items-center justify-center hover:bg-[#2C2C2E] transition-colors"
-                  >
-                    <Info size={12} className="text-[#8E8E93]" />
-                  </button>
-                </>
-              )}
-            </div>
+          <div className="relative" ref={dropdownRef}>
+            {/* 设备选择下拉菜单 */}
+            <button
+              onClick={() => setShowDeviceDropdown(!showDeviceDropdown)}
+              className="flex items-center gap-2 group"
+            >
+              <h2 className="text-xl font-bold text-[#FFFFFF] tracking-wide">{powerStation.name}</h2>
+              <ChevronDown 
+                size={18} 
+                className={`text-[#8E8E93] transition-transform duration-200 ${showDeviceDropdown ? 'rotate-180' : ''}`}
+              />
+            </button>
             <p className="text-xs text-[#8E8E93] mt-0.5">Connected</p>
+
+            {/* 下拉菜单 */}
+            <AnimatePresence>
+              {showDeviceDropdown && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute top-full left-0 mt-2 w-[240px] bg-[#1C1C1E] rounded-[16px] border border-[rgba(1,214,190,0.15)] shadow-xl z-50 overflow-hidden"
+                >
+                  <div className="py-2">
+                    <div className="px-3 py-2 text-[10px] text-[#8E8E93] uppercase tracking-wider">
+                      Select Device
+                    </div>
+                    {devices.map((device) => (
+                      <button
+                        key={device.id}
+                        onClick={() => handleSelectDevice(device.id)}
+                        className={`w-full flex items-center gap-3 px-3 py-3 transition-colors
+                          ${selectedDeviceId === device.id 
+                            ? 'bg-[rgba(1,214,190,0.1)]' 
+                            : 'hover:bg-[rgba(255,255,255,0.05)]'
+                          }`}
+                      >
+                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center
+                          ${selectedDeviceId === device.id 
+                            ? 'bg-[rgba(1,214,190,0.15)] text-[#01D6BE]' 
+                            : 'bg-[rgba(255,255,255,0.06)] text-[#8E8E93]'
+                          }`}
+                        >
+                          {device.type === 'powerstation' ? <Battery size={18} /> : <Zap size={18} />}
+                        </div>
+                        <div className="flex-1 text-left">
+                          <div className={`text-[13px] font-semibold ${selectedDeviceId === device.id ? 'text-[#01D6BE]' : 'text-[#FFFFFF]'}`}>
+                            {device.name}
+                          </div>
+                          <div className="text-[10px] text-[#8E8E93]">
+                            {device.status === 'online' ? 'Online' : 'Offline'} · {device.batteryLevel}%
+                          </div>
+                        </div>
+                        {selectedDeviceId === device.id && (
+                          <div className="w-2 h-2 rounded-full bg-[#01D6BE]" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-          <motion.button
-            onClick={handleBellClick}
-            disabled={isPushing}
-            whileTap={{ scale: 0.85 }}
-            animate={isPushing ? { 
-              scale: [1, 1.1, 1],
-              transition: { duration: 0.5, repeat: Infinity }
-            } : {}}
-            className="w-9 h-9 rounded-full bg-[#1C1C1E] flex items-center justify-center relative
-              disabled:opacity-70 transition-colors"
-          >
-            {isPushing ? (
-              <Loader2 size={16} className="text-[#01D6BE] animate-spin" />
-            ) : (
-              <Bell size={18} className="text-[#FFFFFF]" />
-            )}
-            {unreadCount > 0 && !isPushing && (
-              <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#FF3B30]" />
-            )}
-          </motion.button>
+
+          <div className="flex items-center gap-2">
+            {/* 信息图标 - 点击进入设备详情 */}
+            <button 
+              onClick={() => setShowDeviceDetail(true)}
+              className="w-9 h-9 rounded-full bg-[#1C1C1E] flex items-center justify-center hover:bg-[#2C2C2E] transition-colors"
+            >
+              <Info size={18} className="text-[#8E8E93]" />
+            </button>
+            <motion.button
+              onClick={handleBellClick}
+              disabled={isPushing}
+              whileTap={{ scale: 0.85 }}
+              animate={isPushing ? { 
+                scale: [1, 1.1, 1],
+                transition: { duration: 0.5, repeat: Infinity }
+              } : {}}
+              className="w-9 h-9 rounded-full bg-[#1C1C1E] flex items-center justify-center relative
+                disabled:opacity-70 transition-colors"
+            >
+              {isPushing ? (
+                <Loader2 size={16} className="text-[#01D6BE] animate-spin" />
+              ) : (
+                <Bell size={18} className="text-[#FFFFFF]" />
+              )}
+              {unreadCount > 0 && !isPushing && (
+                <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#FF3B30]" />
+              )}
+            </motion.button>
+          </div>
         </div>
 
         {/* 电量英雄区 - 扁平化 */}

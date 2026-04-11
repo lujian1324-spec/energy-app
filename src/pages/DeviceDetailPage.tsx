@@ -1,3 +1,4 @@
+import { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { 
   Battery, 
@@ -5,7 +6,6 @@ import {
   Thermometer, 
   RefreshCw,
   ChevronLeft,
-  Cpu,
   Wifi,
   Bluetooth,
   Usb,
@@ -13,6 +13,9 @@ import {
   Hash,
   Shield,
   Award,
+  Pencil,
+  Check,
+  X,
 } from 'lucide-react'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useConnectionStore } from '../stores/connectionStore'
@@ -23,8 +26,13 @@ interface DeviceDetailPageProps {
 }
 
 export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
-  const { powerStation, settings } = usePowerStationStore()
+  const { powerStation, settings, selectedDeviceId, updateDeviceNameById } = usePowerStationStore()
   const { bleConnection, serialConnection, activeDataSource } = useConnectionStore()
+  
+  // 设备名称编辑状态
+  const [isEditingName, setIsEditingName] = useState(false)
+  const [editName, setEditName] = useState(powerStation.name)
+  const nameInputRef = useRef<HTMLInputElement>(null)
 
   const deviceSpecs = [
     { 
@@ -113,6 +121,37 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     },
   ]
 
+  // 处理开始编辑设备名称
+  const handleStartEditName = () => {
+    setEditName(powerStation.name)
+    setIsEditingName(true)
+    setTimeout(() => nameInputRef.current?.focus(), 100)
+  }
+
+  // 处理保存设备名称
+  const handleSaveName = () => {
+    const trimmedName = editName.trim()
+    if (trimmedName && trimmedName !== powerStation.name && selectedDeviceId) {
+      updateDeviceNameById(selectedDeviceId, trimmedName)
+    }
+    setIsEditingName(false)
+  }
+
+  // 处理取消编辑
+  const handleCancelEditName = () => {
+    setEditName(powerStation.name)
+    setIsEditingName(false)
+  }
+
+  // 处理输入框键盘事件
+  const handleNameKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSaveName()
+    } else if (e.key === 'Escape') {
+      handleCancelEditName()
+    }
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, x: '100%' }}
@@ -149,7 +188,46 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             flex items-center justify-center mb-4">
             <Battery size={36} className="text-[#01D6BE]" />
           </div>
-          <h3 className="text-xl font-bold text-[#FFFFFF]">{powerStation.name}</h3>
+          
+          {/* 可编辑的设备名称 */}
+          <div className="flex items-center gap-2">
+            {isEditingName ? (
+              <div className="flex items-center gap-2">
+                <input
+                  ref={nameInputRef}
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  onKeyDown={handleNameKeyDown}
+                  onBlur={handleSaveName}
+                  className="text-xl font-bold text-[#FFFFFF] tracking-wide bg-transparent border-b-2 border-[#01D6BE] outline-none w-[180px] text-center"
+                  maxLength={20}
+                />
+                <button 
+                  onClick={handleSaveName}
+                  className="w-7 h-7 rounded-full bg-[#01D6BE] flex items-center justify-center"
+                >
+                  <Check size={14} className="text-[#000000]" />
+                </button>
+                <button 
+                  onClick={handleCancelEditName}
+                  className="w-7 h-7 rounded-full bg-[#2C2C2E] flex items-center justify-center"
+                >
+                  <X size={14} className="text-[#8E8E93]" />
+                </button>
+              </div>
+            ) : (
+              <>
+                <h3 className="text-xl font-bold text-[#FFFFFF]">{powerStation.name}</h3>
+                <button 
+                  onClick={handleStartEditName}
+                  className="w-7 h-7 rounded-full bg-[#1C1C1E] flex items-center justify-center hover:bg-[#2C2C2E] transition-colors"
+                >
+                  <Pencil size={14} className="text-[#8E8E93]" />
+                </button>
+              </>
+            )}
+          </div>
           <p className="text-sm text-[#8E8E93] mt-1">Sierro 1000 Portable Power Station</p>
           
           {/* 状态标签 */}

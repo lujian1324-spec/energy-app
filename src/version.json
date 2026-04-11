@@ -1,11 +1,11 @@
 {
-  "version": "3.9.2",
-  "build": 2456,
+  "version": "3.10.0",
+  "build": 2457,
   "date": "2026-04-11",
   "changelog": [
-    "Rename Settings title to 'Setting'",
-    "Remove Hardware Connection section",
-    "Unify System icons to white",
-    "Unify Energy Stats theme color"
+    "Add device selector dropdown in Overview page",
+    "Move device name editing to Device Info page",
+    "Device list synced with Device page",
+    "Device parameters load on selection change"
   ]
 }
