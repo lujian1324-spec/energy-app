@@ -12,6 +12,9 @@ import {
   Eye,
   EyeOff,
   Loader2,
+  LayoutGrid,
+  Plug,
+  SlidersHorizontal,
 } from 'lucide-react'
 import BatteryRing from '../components/BatteryRing'
 import ToggleSwitch from '../components/ToggleSwitch'
@@ -222,56 +225,98 @@ export default function OverviewPage() {
             <BatteryRing
               percentage={powerStation.batteryLevel}
               isCharging={powerStation.isCharging}
+              timeToFull="1h 24m"
             />
           </div>
 
-          {/* 输入/输出功率标签 */}
+          {/* 输入/输出功率标签 - Input 绿色高亮，Output 灰色 */}
           <div className="flex justify-center gap-4 mb-4">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#2C2C2E]">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[rgba(1,214,190,0.15)] border border-[rgba(1,214,190,0.3)]">
               <TrendingDown size={13} className="text-[#01D6BE]" />
-              <span className="text-[11px] text-[#8E8E93]">Input</span>
+              <span className="text-[11px] text-[#01D6BE]">Input</span>
               <span className="text-[12px] font-semibold text-[#01D6BE]">
                 {powerStation.inputPower}W
               </span>
             </div>
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#2C2C2E]">
-              <TrendingUp size={13} className="text-[#FF9500]" />
+              <TrendingUp size={13} className="text-[#8E8E93]" />
               <span className="text-[11px] text-[#8E8E93]">Output</span>
-              <span className="text-[12px] font-semibold text-[#FF9500]">
+              <span className="text-[12px] font-semibold text-[#8E8E93]">
                 {powerStation.outputPower}W
               </span>
             </div>
           </div>
+        </motion.div>
 
-          {/* 实时功率图表 - 简洁折线 */}
-          <div className="h-16 bg-[#2C2C2E] rounded-[16px] p-3 relative overflow-hidden">
-            <svg width="100%" height="100%" viewBox="0 0 280 40" preserveAspectRatio="none">
+        {/* Real-Time Power 大卡片 */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mx-5 mb-5 bg-[#1C1C1E] rounded-[24px] p-4"
+        >
+          {/* 标题栏 */}
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[13px] font-semibold text-[#FFFFFF]">Real-Time Power</span>
+            <span className="text-[11px] px-2 py-0.5 rounded-full bg-[rgba(1,214,190,0.15)] text-[#01D6BE] font-semibold">
+              400w
+            </span>
+          </div>
+          
+          {/* 图表区域 */}
+          <div className="h-24 relative overflow-hidden mb-3">
+            <svg width="100%" height="100%" viewBox="0 0 300 80" preserveAspectRatio="none">
+              {/* 网格线 */}
+              <line x1="0" y1="20" x2="300" y2="20" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+              <line x1="0" y1="40" x2="300" y2="40" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+              <line x1="0" y1="60" x2="300" y2="60" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+              {/* 绿色折线 */}
               <polyline
-                points="0,30 35,22 70,25 105,15 140,20 175,8 210,18 245,12 280,16"
+                points="0,50 30,42 60,45 90,35 120,40 150,28 180,38 210,32 240,36 270,30 300,34"
                 fill="none"
                 stroke="#01D6BE"
-                strokeWidth="1.5"
+                strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
+              {/* 填充区域 */}
+              <polygon
+                points="0,50 30,42 60,45 90,35 120,40 150,28 180,38 210,32 240,36 270,30 300,34 300,80 0,80"
+                fill="rgba(1,214,190,0.1)"
+              />
             </svg>
-            <div className="absolute bottom-1 right-3 text-[9px] text-[#48484A]">Real-time Power</div>
+          </div>
+          
+          {/* 底部三个图标 */}
+          <div className="flex justify-around pt-3 border-t border-[rgba(255,255,255,0.06)]">
+            <div className="flex flex-col items-center gap-1">
+              <LayoutGrid size={18} className="text-[#8E8E93]" />
+              <span className="text-[9px] text-[#48484A]">Grid</span>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <Plug size={18} className="text-[#8E8E93]" />
+              <span className="text-[9px] text-[#48484A]">Plug</span>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <SlidersHorizontal size={18} className="text-[#8E8E93]" />
+              <span className="text-[9px] text-[#48484A]">Adjust</span>
+            </div>
           </div>
         </motion.div>
 
-        {/* 三个功能卡片 - Solar / AC Input / AC Output，统一样式 */}
+        {/* 三个小卡片 - AC / Solar / Output */}
         <div className="px-5 mb-5">
           <div className="grid grid-cols-3 gap-2.5">
             {[
-              { label: 'Solar', value: `${powerStation.inputPower}W`, icon: Sun },
-              { label: 'AC Input', value: '400W', icon: Zap },
-              { label: 'AC Output', value: `${powerStation.outputPower}W`, icon: Zap },
+              { label: 'AC', value: '400W', icon: Zap, color: '#01D6BE' },
+              { label: 'Solar', value: '0W', icon: Sun, color: '#8E8E93' },
+              { label: 'Output', value: '200W', icon: TrendingUp, color: '#8E8E93' },
             ].map((item) => {
               const Icon = item.icon
               return (
                 <div key={item.label} className="bg-[#1C1C1E] rounded-[18px] p-3.5 flex flex-col items-center">
-                  <Icon size={18} className="text-[#8E8E93] mb-2" />
-                  <div className="text-[11px] text-[#FFFFFF] mb-1">{item.label}</div>
+                  <Icon size={18} className="mb-2" style={{ color: item.color }} />
+                  <div className="text-[11px] text-[#8E8E93] mb-1">{item.label}</div>
                   <div className="text-[16px] font-bold text-[#FFFFFF]">{item.value}</div>
                 </div>
               )

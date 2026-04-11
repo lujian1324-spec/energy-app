@@ -1,10 +1,11 @@
 {
-  "version": "3.6.0",
-  "build": 2443,
+  "version": "3.6.1",
+  "build": 2444,
   "date": "2026-04-11",
   "changelog": [
-    "Renamed pages: HomePage→OverviewPage, DevicesPage→DevicePage, SettingsPage→SettingPage",
-    "Deleted unused ControlPage",
-    "Updated navigation labels to singular form"
+    "Overview page redesign: BatteryRing with Charging status and countdown",
+    "Real-Time Power large card with title, chart, and bottom icons",
+    "Input/Output badges with correct colors (green/gray)",
+    "Three small cards: AC 400W, Solar 0W, Output 200W"
   ]
 }
