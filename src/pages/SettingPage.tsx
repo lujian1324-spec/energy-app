@@ -5,9 +5,6 @@ import {
   Zap, 
   Thermometer, 
   RefreshCw,
-  Wifi,
-  Bluetooth,
-  Cloud,
   Bell,
   Moon,
   Globe,
@@ -15,13 +12,11 @@ import {
   AlertTriangle,
   ChevronRight,
   BatteryCharging,
-  Usb,
   Link2,
   Link2Off,
   Loader2,
   Signal,
   Database,
-  Activity,
   X,
   Send,
   CheckCircle,
@@ -173,11 +168,11 @@ export default function SettingPage() {
 
 
   const systemItems = [
-    { icon: Bell, label: 'Push Notifications', desc: 'Power outage alerts via system notification', type: 'toggle' as const, color: 'orange', storeKey: 'pushNotifications' as const },
-    { icon: Moon, label: 'Do Not Disturb', desc: `${settings.doNotDisturbStart} — ${settings.doNotDisturbEnd}`, type: 'toggle' as const, color: 'gray', storeKey: 'doNotDisturb' as const },
-    { icon: Globe, label: 'Language / Units', desc: 'English · Metric', type: 'nav' as const, color: 'gray', storeKey: null },
-    { icon: Download, label: 'Firmware Update', desc: `App v${appVersion.version} (Build ${appVersion.build}) · Up to date`, type: 'badge' as const, color: 'green', storeKey: null },
-    { icon: AlertTriangle, label: 'Factory Reset', desc: 'Clear all data and settings', type: 'nav-danger' as const, color: 'red', storeKey: null },
+    { icon: Bell, label: 'Push Notifications', desc: 'Power outage alerts via system notification', type: 'toggle' as const, storeKey: 'pushNotifications' as const },
+    { icon: Moon, label: 'Do Not Disturb', desc: `${settings.doNotDisturbStart} — ${settings.doNotDisturbEnd}`, type: 'toggle' as const, storeKey: 'doNotDisturb' as const },
+    { icon: Globe, label: 'Language / Units', desc: 'English · Metric', type: 'nav' as const, storeKey: null },
+    { icon: Download, label: 'Firmware Update', desc: `App v${appVersion.version} (Build ${appVersion.build}) · Up to date`, type: 'badge' as const, storeKey: null },
+    { icon: AlertTriangle, label: 'Factory Reset', desc: 'Clear all data and settings', type: 'nav-danger' as const, storeKey: null },
   ]
 
   // Founder Badge 权益列表
@@ -188,14 +183,8 @@ export default function SettingPage() {
     { icon: Star, label: 'VIP Support', desc: 'Priority customer service' },
   ]
 
-  const colorClasses: Record<string, { bg: string; text: string }> = {
-    blue: { bg: 'bg-[rgba(1,214,190,0.1)]', text: 'text-[#01D6BE]' },
-    green: { bg: 'bg-[rgba(52,199,89,0.1)]', text: 'text-[#34C759]' },
-    orange: { bg: 'bg-[rgba(255,149,0,0.1)]', text: 'text-[#FF9500]' },
-    purple: { bg: 'bg-[rgba(168,85,247,0.1)]', text: 'text-[#A855F7]' },
-    red: { bg: 'bg-[rgba(255,59,48,0.1)]', text: 'text-[#FF3B30]' },
-    gray: { bg: 'bg-[rgba(255,255,255,0.06)]', text: 'text-[#8E8E93]' },
-  }
+  // System 图标统一使用白色
+  const systemIconClass = { bg: 'bg-[rgba(255,255,255,0.08)]', text: 'text-[#FFFFFF]' }
   
   // Privacy Policy 内容
   const privacyContent = [
@@ -220,7 +209,7 @@ export default function SettingPage() {
     <div className="h-full flex flex-col bg-[#000000] overflow-hidden">
       {/* Header */}
       <div className="px-5 pt-4 pb-4 safe-area-top">
-        <h2 className="text-xl font-bold text-[#FFFFFF]">Device & Settings</h2>
+        <h2 className="text-xl font-bold text-[#FFFFFF]">Setting</h2>
         <p className="text-xs text-[#8E8E93] mt-1">Manage Connections & System Config</p>
       </div>
 
@@ -279,157 +268,6 @@ export default function SettingPage() {
             <Edit3 size={16} className="text-[#8E8E93]" />
           </div>
         </motion.div>
-
-        {/* 硬件连接管理 */}
-        <div className="mb-4">
-          <div className="text-[11px] font-bold text-[#8E8E93] tracking-widest uppercase mb-2 px-1">
-            Hardware Connection
-          </div>
-
-          {/* 数据源状态 */}
-          <div className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] p-3 mb-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Activity size={14} className="text-[#8E8E93]" />
-                <span className="text-[12px] text-[#8E8E93]">Data Source</span>
-              </div>
-              <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold border
-                ${activeDataSource === 'bluetooth'
-                  ? 'bg-[rgba(1,214,190,0.12)] text-[#01D6BE] border-[rgba(1,214,190,0.3)]'
-                  : activeDataSource === 'serial'
-                  ? 'bg-[rgba(168,85,247,0.12)] text-[#A855F7] border-[rgba(168,85,247,0.3)]'
-                  : 'bg-[rgba(52,199,89,0.08)] text-[#34C759] border-[rgba(52,199,89,0.2)]'}`}>
-                {activeDataSource === 'bluetooth' ? '● BLE Hardware'
-                  : activeDataSource === 'serial' ? '● Serial Hardware'
-                  : '◎ Simulator'}
-              </span>
-            </div>
-          </div>
-
-          {/* BLE 蓝牙连接 */}
-          <div className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden mb-3">
-            <div className="flex items-center gap-3 px-4 py-3.5">
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0
-                ${bleConnection.status === 'connected'
-                  ? 'bg-[rgba(1,214,190,0.15)] text-[#01D6BE]'
-                  : 'bg-[rgba(255,255,255,0.06)] text-[#8E8E93]'}`}>
-                <Bluetooth size={16} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-semibold text-[#FFFFFF]">Bluetooth BLE</div>
-                <div className="text-[11px] text-[#8E8E93] mt-0.5 truncate">
-                  {bleConnection.status === 'connected'
-                    ? `${bleConnection.deviceName ?? 'Device'} · ${bleConnection.rssi ? `${bleConnection.rssi} dBm` : 'Connected'}`
-                    : bleConnection.status === 'scanning'  ? 'Scanning for devices...'
-                    : bleConnection.status === 'connecting' ? 'Connecting...'
-                    : bleConnection.status === 'error' ? (bleConnection.errorMessage ?? 'Error')
-                    : bleSupported ? 'Tap to connect via BLE GATT' : 'Not supported in this browser'}
-                </div>
-              </div>
-              <button
-                onClick={handleBleToggle}
-                disabled={!bleSupported || bleConnection.status === 'scanning' || bleConnection.status === 'connecting'}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold
-                  transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed
-                  ${bleConnection.status === 'connected'
-                    ? 'bg-[rgba(255,59,48,0.12)] text-[#FF3B30] border border-[rgba(255,59,48,0.3)]'
-                    : 'bg-[rgba(1,214,190,0.12)] text-[#01D6BE] border border-[rgba(1,214,190,0.3)]'}`}
-              >
-                {(bleConnection.status === 'scanning' || bleConnection.status === 'connecting')
-                  ? <Loader2 size={11} className="animate-spin" />
-                  : bleConnection.status === 'connected'
-                  ? <><Link2Off size={11} /> Disconnect</>
-                  : <><Link2 size={11} /> Connect</>}
-              </button>
-            </div>
-          </div>
-
-          {/* Serial / Modbus 连接 */}
-          <div className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden mb-3">
-            <div className="flex items-center gap-3 px-4 py-3.5">
-              <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0
-                ${serialConnection.status === 'connected'
-                  ? 'bg-[rgba(168,85,247,0.15)] text-[#A855F7]'
-                  : 'bg-[rgba(255,255,255,0.06)] text-[#8E8E93]'}`}>
-                <Usb size={16} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-semibold text-[#FFFFFF]">Serial · Modbus RTU</div>
-                <div className="text-[11px] text-[#8E8E93] mt-0.5 truncate">
-                  {serialConnection.status === 'connected'
-                    ? 'RS485 · 9600 bps · 8N1 · Polling 2s'
-                    : serialConnection.status === 'scanning' ? 'Selecting port...'
-                    : serialConnection.status === 'connecting' ? 'Opening port...'
-                    : serialConnection.status === 'error' ? (serialConnection.errorMessage ?? 'Error')
-                    : serialSupported ? 'Tap to connect via RS485 / USB-Serial' : 'Not supported in this browser'}
-                </div>
-              </div>
-              <button
-                onClick={handleSerialToggle}
-                disabled={!serialSupported || serialConnection.status === 'scanning' || serialConnection.status === 'connecting'}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold
-                  transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed
-                  ${serialConnection.status === 'connected'
-                    ? 'bg-[rgba(255,59,48,0.12)] text-[#FF3B30] border border-[rgba(255,59,48,0.3)]'
-                    : 'bg-[rgba(168,85,247,0.12)] text-[#A855F7] border border-[rgba(168,85,247,0.3)]'}`}
-              >
-                {(serialConnection.status === 'scanning' || serialConnection.status === 'connecting')
-                  ? <Loader2 size={11} className="animate-spin" />
-                  : serialConnection.status === 'connected'
-                  ? <><Link2Off size={11} /> Disconnect</>
-                  : <><Link2 size={11} /> Connect</>}
-              </button>
-            </div>
-            {/* 协议信息展开条 */}
-            {serialConnection.status === 'connected' && (
-              <div className="px-4 pb-3 flex gap-2 flex-wrap">
-                {['Modbus RTU', 'FC03/04', 'FC06/10', 'CRC-16'].map(tag => (
-                  <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full
-                    bg-[rgba(168,85,247,0.08)] text-[#A855F7] border border-[rgba(168,85,247,0.2)]">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* 其他连接设置 */}
-          <div className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden">
-            {[
-              { icon: Wifi,  label: 'Wi-Fi', desc: 'HomeNetwork · Connected', right: 'badge-connected', storeKey: null },
-              { icon: Cloud, label: 'Cloud Sync', desc: 'Real-time data · Remote', right: 'toggle', storeKey: 'cloudSync' as const },
-            ].map((item, i, arr) => {
-              const Icon = item.icon
-              return (
-                <div key={item.label}
-                  className={`flex items-center gap-3 px-4 py-3.5
-                    ${i !== arr.length - 1 ? 'border-b border-[rgba(1,214,190,0.08)]' : ''}`}>
-                  <div className="w-9 h-9 rounded-lg bg-[rgba(1,214,190,0.1)] text-[#01D6BE]
-                    flex items-center justify-center flex-shrink-0">
-                    <Icon size={16} />
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-[13px] font-semibold text-[#FFFFFF]">{item.label}</div>
-                    <div className="text-[11px] text-[#8E8E93] mt-0.5">{item.desc}</div>
-                  </div>
-                  {item.right === 'badge-connected' && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full
-                      bg-[rgba(52,199,89,0.12)] text-[#34C759] border border-[rgba(52,199,89,0.25)] font-semibold">
-                      Connected
-                    </span>
-                  )}
-                  {item.right === 'toggle' && item.storeKey && (
-                    <ToggleSwitch
-                      isOn={settings[item.storeKey] as boolean}
-                      onToggle={() => updateSettings({ [item.storeKey!]: !settings[item.storeKey!] })}
-                      size="sm"
-                    />
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        </div>
 
         {/* IndexedDB 数据库面板 */}
         <div className="mb-4">
@@ -557,14 +395,13 @@ export default function SettingPage() {
           <div className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden">
             {systemItems.map((item, i) => {
               const Icon = item.icon
-              const colors = colorClasses[item.color]
               return (
                 <div 
                   key={item.label}
                   className={`flex items-center gap-3 px-4 py-3.5 
                     ${i !== systemItems.length - 1 ? 'border-b border-[rgba(1,214,190,0.08)]' : ''}`}
                 >
-                  <div className={`w-9 h-9 rounded-lg ${colors.bg} ${colors.text} 
+                  <div className={`w-9 h-9 rounded-lg ${systemIconClass.bg} ${systemIconClass.text} 
                     flex items-center justify-center flex-shrink-0`}>
                     <Icon size={16} />
                   </div>

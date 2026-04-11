@@ -20,11 +20,14 @@ const dayLabels = {
 }
 
 const deviceUsage = [
-  { name: 'Laptop', icon: Monitor, kwh: 3.8, percent: 40, color: 'blue' },
-  { name: 'Phone Charging', icon: Smartphone, kwh: 1.6, percent: 17, color: 'green' },
-  { name: 'LED Lighting', icon: Lightbulb, kwh: 1.1, percent: 12, color: 'orange' },
-  { name: 'Other Devices', icon: Zap, kwh: 2.9, percent: 31, color: 'purple' },
+  { name: 'Laptop', icon: Monitor, kwh: 3.8, percent: 40 },
+  { name: 'Phone Charging', icon: Smartphone, kwh: 1.6, percent: 17 },
+  { name: 'LED Lighting', icon: Lightbulb, kwh: 1.1, percent: 12 },
+  { name: 'Other Devices', icon: Zap, kwh: 2.9, percent: 31 },
 ]
+
+// 统一主题颜色
+const themeColor = '#01D6BE'
 
 export default function StatsPage() {
   const [period, setPeriod] = useState<Period>('Week')
@@ -80,81 +83,81 @@ ${period === p
 
 {/* 可滚动内容 */}
  <div className="flex-1 overflow-y-auto scrollbar-hide px-5 pb-4">
- {/* 概览卡片 */}
- <motion.div
- initial={{ opacity: 0, y: 20 }}
- animate={{ opacity: 1, y: 0 }}
- className="grid grid-cols-2 gap-2.5 mb-4"
- >
- {[
- { icon: Sun, value: '12.8', unit: 'kWh', label: 'Solar Charged', trend: '↑ 18%', trendUp: true, color: '#34C759' },
- { icon: Zap, value: '9.4', unit: 'kWh', label: 'Total Output', trend: '↓ 5%', trendUp: false, color: '#01D6BE' },
- { icon: DollarSign, value: '$2.1', unit: '', label: 'Cost Saved', trend: '↑ 12%', trendUp: true, color: '#FF9500' },
- { icon: Globe, value: '6.4', unit: 'kg', label: 'CO₂ Reduced', trend: '↑ 18%', trendUp: true, color: '#A855F7' },
- ].map((stat, i) => {
- const Icon = stat.icon
- return (
- <div 
- key={i}
- className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] p-4 relative overflow-hidden"
- >
- <div 
- className="absolute top-0 left-0 right-0 h-0.5"
- style={{ backgroundColor: stat.color }}
- />
- <Icon size={18} className="mb-2" style={{ color: stat.color }} />
- <div className="text-[22px] font-extrabold text-[#FFFFFF] tracking-tight">
- {stat.value}<small className="text-xs font-normal text-[#8E8E93]">{stat.unit}</small>
- </div>
- <div className="text-[11px] text-[#8E8E93] mt-1">{stat.label}</div>
- <div className={`text-[10px] mt-1 ${stat.trendUp ? 'text-[#34C759]' : 'text-[#FF3B30]'}`}>
- {stat.trend} vs Last Week
- </div>
- </div>
- )
- })}
- </motion.div>
+        {/* 概览卡片 */}
+        <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="grid grid-cols-2 gap-2.5 mb-4"
+        >
+        {[
+        { icon: Sun, value: '12.8', unit: 'kWh', label: 'Solar Charged', trend: '↑ 18%', trendUp: true },
+        { icon: Zap, value: '9.4', unit: 'kWh', label: 'Total Output', trend: '↓ 5%', trendUp: false },
+        { icon: DollarSign, value: '$2.1', unit: '', label: 'Cost Saved', trend: '↑ 12%', trendUp: true },
+        { icon: Globe, value: '6.4', unit: 'kg', label: 'CO₂ Reduced', trend: '↑ 18%', trendUp: true },
+        ].map((stat, i) => {
+        const Icon = stat.icon
+        return (
+        <div 
+        key={i}
+        className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] p-4 relative overflow-hidden"
+        >
+        <div 
+        className="absolute top-0 left-0 right-0 h-0.5"
+        style={{ backgroundColor: themeColor }}
+        />
+        <Icon size={18} className="mb-2" style={{ color: themeColor }} />
+        <div className="text-[22px] font-extrabold text-[#FFFFFF] tracking-tight">
+        {stat.value}<small className="text-xs font-normal text-[#8E8E93]">{stat.unit}</small>
+        </div>
+        <div className="text-[11px] text-[#8E8E93] mt-1">{stat.label}</div>
+        <div className={`text-[10px] mt-1 ${stat.trendUp ? 'text-[#34C759]' : 'text-[#FF3B30]'}`}>
+        {stat.trend} vs Last Week
+        </div>
+        </div>
+        )
+        })}
+        </motion.div>
 
- {/* 柱状图 */}
- <div className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] p-4 mb-4">
- <div className="flex justify-between items-center mb-4">
- <div className="text-sm font-bold text-[#FFFFFF]">Weekly Charge / Discharge</div>
- <div className="flex gap-3">
- <div className="flex items-center gap-1.5 text-[10px] text-[#8E8E93]">
- <div className="w-2 h-2 rounded-full bg-[#34C759]" />
- <span>Charge</span>
- </div>
- <div className="flex items-center gap-1.5 text-[10px] text-[#8E8E93]">
- <div className="w-2 h-2 rounded-full bg-[#01D6BE]" />
- <span>Usage</span>
- </div>
- </div>
- </div>
- 
-{/* 柱子 */}
-<div className="flex items-end gap-1.5 h-[140px]">
- {currentData.charge.map((charge, i) => (
- <div key={i} className="flex-1 flex items-end gap-0.5 h-full relative">
- <div 
- className="flex-1 rounded-t bg-[#34C759] min-h-[4px]"
- style={{ height: `${charge}%` }}
- />
- <div 
- className="flex-1 rounded-t bg-[#01D6BE] min-h-[4px]"
- style={{ height: `${currentData.discharge[i]}%` }}
- />
- </div>
- ))}
- </div>
- {/* 分隔线 */}
- <div className="h-px bg-[rgba(1,214,190,0.08)] my-1.5" />
- {/* X 轴标签 */}
- <div className="flex gap-1.5">
- {days.map((day) => (
- <div key={day} className="flex-1 text-center text-[9px] text-[#48484A]">{day}</div>
- ))}
- </div>
- </div>
+        {/* 柱状图 */}
+        <div className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] p-4 mb-4">
+        <div className="flex justify-between items-center mb-4">
+        <div className="text-sm font-bold text-[#FFFFFF]">Weekly Charge / Discharge</div>
+        <div className="flex gap-3">
+        <div className="flex items-center gap-1.5 text-[10px] text-[#8E8E93]">
+        <div className="w-2 h-2 rounded-full bg-[#01D6BE]" />
+        <span>Charge</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-[10px] text-[#8E8E93]">
+        <div className="w-2 h-2 rounded-full bg-[#01A88F]" />
+        <span>Usage</span>
+        </div>
+        </div>
+        </div>
+        
+        {/* 柱子 */}
+        <div className="flex items-end gap-1.5 h-[140px]">
+        {currentData.charge.map((charge, i) => (
+        <div key={i} className="flex-1 flex items-end gap-0.5 h-full relative">
+        <div 
+        className="flex-1 rounded-t bg-[#01D6BE] min-h-[4px]"
+        style={{ height: `${charge}%` }}
+        />
+        <div 
+        className="flex-1 rounded-t bg-[#01A88F] min-h-[4px]"
+        style={{ height: `${currentData.discharge[i]}%` }}
+        />
+        </div>
+        ))}
+        </div>
+        {/* 分隔线 */}
+        <div className="h-px bg-[rgba(1,214,190,0.08)] my-1.5" />
+        {/* X 轴标签 */}
+        <div className="flex gap-1.5">
+        {days.map((day) => (
+        <div key={day} className="flex-1 text-center text-[9px] text-[#48484A]">{day}</div>
+        ))}
+        </div>
+        </div>
 
 {/* 电池容量环形图 */}
 <div className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] p-4 mb-4">
@@ -209,53 +212,46 @@ uid="stats-page"
 </div>
 </div>
 
- {/* 用电分布 */}
- <div className="mb-4">
- <div className="text-[13px] font-bold text-[#8E8E93] tracking-wider uppercase mb-2.5">
- Power Distribution
- </div>
- <div className="flex flex-col gap-2.5">
- {deviceUsage.map((device) => {
- const Icon = device.icon
- const colorMap: Record<string, string> = {
- blue: '#01D6BE',
- green:  '#34C759',
- orange: '#FF9500',
- purple: '#A855F7' // 统一与全局 purple 色一致
- }
- const color = colorMap[device.color]
- 
- return (
- <div 
- key={device.name}
- className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[14px] p-3.5 
- flex items-center gap-3"
- >
- <Icon size={20} style={{ color }} />
- <div className="flex-1">
- <div className="text-[13px] font-semibold text-[#FFFFFF]">{device.name}</div>
- <div className="mt-1.5 h-1.5 bg-[rgba(255,255,255,0.06)] rounded-full overflow-hidden">
- <div 
- className="h-full rounded-full transition-all duration-500"
- style={{ 
- width: `${device.percent}%`,
- background: color,
- boxShadow: `0 0 8px ${color}66`
- }}
- />
- </div>
- </div>
- <div className="text-right">
- <div className="text-[15px] font-bold" style={{ color }}>
- {device.kwh}<span className="text-[11px] text-[#8E8E93]">kWh</span>
- </div>
- <div className="text-[11px] text-[#8E8E93] mt-0.5">{device.percent}%</div>
- </div>
- </div>
- )
- })}
- </div>
- </div>
+        {/* 用电分布 */}
+        <div className="mb-4">
+        <div className="text-[13px] font-bold text-[#8E8E93] tracking-wider uppercase mb-2.5">
+        Power Distribution
+        </div>
+        <div className="flex flex-col gap-2.5">
+        {deviceUsage.map((device) => {
+        const Icon = device.icon
+        
+        return (
+        <div 
+        key={device.name}
+        className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[14px] p-3.5 
+        flex items-center gap-3"
+        >
+        <Icon size={20} style={{ color: themeColor }} />
+        <div className="flex-1">
+        <div className="text-[13px] font-semibold text-[#FFFFFF]">{device.name}</div>
+        <div className="mt-1.5 h-1.5 bg-[rgba(255,255,255,0.06)] rounded-full overflow-hidden">
+        <div 
+        className="h-full rounded-full transition-all duration-500"
+        style={{ 
+        width: `${device.percent}%`,
+        background: themeColor,
+        boxShadow: `0 0 8px ${themeColor}66`
+        }}
+        />
+        </div>
+        </div>
+        <div className="text-right">
+        <div className="text-[15px] font-bold" style={{ color: themeColor }}>
+        {device.kwh}<span className="text-[11px] text-[#8E8E93]">kWh</span>
+        </div>
+        <div className="text-[11px] text-[#8E8E93] mt-0.5">{device.percent}%</div>
+        </div>
+        </div>
+        )
+        })}
+        </div>
+        </div>
  </div>
  </div>
   )

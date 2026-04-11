@@ -1,10 +1,11 @@
 {
-  "version": "3.9.1",
-  "build": 2455,
+  "version": "3.9.2",
+  "build": 2456,
   "date": "2026-04-11",
   "changelog": [
-    "Remove EmailJS service",
-    "Revert Support form to simulation mode",
-    "Clean up unused dependencies"
+    "Rename Settings title to 'Setting'",
+    "Remove Hardware Connection section",
+    "Unify System icons to white",
+    "Unify Energy Stats theme color"
   ]
 }
