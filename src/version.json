@@ -1,11 +1,10 @@
 {
-  "version": "3.9.0",
-  "build": 2454,
+  "version": "3.9.1",
+  "build": 2455,
   "date": "2026-04-11",
   "changelog": [
-    "Add EmailJS integration for support feedback",
-    "Support form now sends emails to jason@sierro.us",
-    "Add loading state and error handling for email submission",
-    "Configure GitHub Actions secrets for EmailJS credentials"
+    "Remove EmailJS service",
+    "Revert Support form to simulation mode",
+    "Clean up unused dependencies"
   ]
 }

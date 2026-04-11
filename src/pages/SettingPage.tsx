@@ -43,7 +43,6 @@ import { useConnectionStore } from '../stores/connectionStore'
 import { useProtocol } from '../hooks/useProtocol'
 import { getDBStats, clearAllHistory, getUserProfile } from '../db/powerflowDB'
 import { requestNotificationPermission, getNotificationPermission } from '../utils/pushNotification'
-import { sendSupportEmail } from '../utils/emailService'
 import appVersion from '../version.json'
 import ProfileEditPage from './ProfileEditPage'
 import type { UserProfile } from '../types/protocol'
@@ -64,8 +63,6 @@ export default function SettingPage() {
   const [supportEmail, setSupportEmail] = useState('')
   const [supportMessage, setSupportMessage] = useState('')
   const [supportSubmitted, setSupportSubmitted] = useState(false)
-  const [supportSubmitting, setSupportSubmitting] = useState(false)
-  const [supportResult, setSupportResult] = useState<{success: boolean; message: string} | null>(null)
 
   // Founder Badge 兑换
   const [showFounderModal, setShowFounderModal] = useState(false)
@@ -129,39 +126,16 @@ export default function SettingPage() {
     setDbStats(stats)
   }
   
-  const handleSupportSubmit = async (e: React.FormEvent) => {
+  const handleSupportSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    setSupportSubmitting(true)
-    setSupportResult(null)
-
-    try {
-      const result = await sendSupportEmail({
-        name: userProfile.name,
-        email: supportEmail,
-        message: supportMessage,
-        deviceName: powerStation.name,
-        appVersion: `${appVersion.version} (Build ${appVersion.build})`,
-      })
-
-      setSupportResult(result)
-      if (result.success) {
-        setSupportSubmitted(true)
-        setTimeout(() => {
-          setShowSupport(false)
-          setSupportEmail('')
-          setSupportMessage('')
-          setSupportSubmitted(false)
-          setSupportResult(null)
-        }, 2000)
-      }
-    } catch (error) {
-      setSupportResult({
-        success: false,
-        message: 'An unexpected error occurred. Please try again.'
-      })
-    } finally {
-      setSupportSubmitting(false)
-    }
+    // 模拟提交
+    setSupportSubmitted(true)
+    setTimeout(() => {
+      setShowSupport(false)
+      setSupportEmail('')
+      setSupportMessage('')
+      setSupportSubmitted(false)
+    }, 1500)
   }
 
   // 处理推送通知开关
@@ -812,7 +786,7 @@ export default function SettingPage() {
                       <CheckCircle size={32} className="text-[#34C759]" />
                     </div>
                     <h4 className="text-[15px] font-bold text-[#FFFFFF] mb-2">Feedback Submitted!</h4>
-                    <p className="text-[12px] text-[#8E8E93]">{supportResult?.message || 'We will get back to you within 24 hours.'}</p>
+                    <p className="text-[12px] text-[#8E8E93]">We will get back to you within 24 hours.</p>
                   </motion.div>
                 ) : (
                   <form onSubmit={handleSupportSubmit} className="space-y-4">
@@ -852,28 +826,15 @@ export default function SettingPage() {
                       />
                     </div>
                     
-                    {/* Error Message */}
-                    {supportResult && !supportResult.success && (
-                      <div className="text-[11px] text-[#FF3B30] text-center bg-[rgba(255,59,48,0.08)] 
-                        border border-[rgba(255,59,48,0.2)] rounded-lg py-2 px-3">
-                        {supportResult.message}
-                      </div>
-                    )}
-
                     {/* Submit Button */}
                     <button
                       type="submit"
-                      disabled={supportSubmitting}
                       className="w-full py-3.5 rounded-xl bg-[rgba(255,149,0,0.12)] text-[#FF9500] font-semibold text-[13px]
                         flex items-center justify-center gap-2 active:scale-95 transition-transform
-                        border border-[rgba(255,149,0,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"
+                        border border-[rgba(255,149,0,0.2)]"
                     >
-                      {supportSubmitting ? (
-                        <Loader2 size={16} className="animate-spin" />
-                      ) : (
-                        <Send size={16} />
-                      )}
-                      {supportSubmitting ? 'Sending...' : 'Submit Feedback'}
+                      <Send size={16} />
+                      Submit Feedback
                     </button>
                     
                     <p className="text-[10px] text-[#48484A] text-center">
