@@ -1,23 +1,49 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { Menu, User, Search, Zap, Battery, AlertTriangle, X, Plus, QrCode, Trash2, Power } from 'lucide-react'
+import { Menu, User, Search, Zap, Battery, AlertTriangle, X, Plus, QrCode, Trash2, Power, Bluetooth, RefreshCw } from 'lucide-react'
 import ToggleSwitch from '../components/ToggleSwitch'
 import { usePowerStationStore } from '../stores/powerStationStore'
+import { useConnectionStore } from '../stores/connectionStore'
+import { getBleManager, destroyBleManager } from '../protocols/bleManager'
+import type { ConnectionInfo, BlePowerPacket } from '../types/protocol'
 
 const filters = ['All', 'Online', 'Offline', 'Alerts']
+
+// 蓝牙设备类型
+interface BleDevice {
+  id: string
+  name: string
+  rssi?: number
+}
 
 export default function DevicePage() {
   const navigate = useNavigate()
   const { devices, toggleDevice, selectDevice, toggleDevices, deleteDevices } = usePowerStationStore()
+  const { setBleConnection } = useConnectionStore()
   const [activeFilter, setActiveFilter] = useState('All')
   const [searchQuery, setSearchQuery] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
   const [showQrScan, setShowQrScan] = useState(false)
+  const [showBleScan, setShowBleScan] = useState(false)
   
   // Batch Control 模式
   const [isBatchMode, setIsBatchMode] = useState(false)
   const [selectedDevices, setSelectedDevices] = useState<Set<string>>(new Set())
+  
+  // BLE 扫描状态
+  const [isScanning, setIsScanning] = useState(false)
+  const [scannedDevices, setScannedDevices] = useState<BleDevice[]>([])
+  const [scanError, setScanError] = useState<string | null>(null)
+  const bleManagerRef = useRef<ReturnType<typeof getBleManager> | null>(null)
+  
+  // QR 扫描状态
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [qrScanning, setQrScanning] = useState(false)
+  const [qrResult, setQrResult] = useState<string | null>(null)
+  const [qrError, setQrError] = useState<string | null>(null)
+  const animationFrameRef = useRef<number | null>(null)
 
   const hasAlert = (device: typeof devices[0]) =>
     device.batteryLevel < 30 || device.status === 'offline'
@@ -96,6 +122,190 @@ export default function DevicePage() {
   const handleBatchDelete = () => {
     deleteDevices(Array.from(selectedDevices))
     setSelectedDevices(new Set())
+  }
+
+  // ---- BLE 扫描功能 ------------------------------------------------
+  
+  const handleBluetoothScan = async () => {
+    setShowAddModal(false)
+    setShowBleScan(true)
+    setIsScanning(true)
+    setScanError(null)
+    setScannedDevices([])
+    
+    try {
+      // 检查浏览器支持
+      if (!navigator.bluetooth) {
+        setScanError('当前浏览器不支持 Web Bluetooth，请使用 Chrome 或 Edge')
+        setIsScanning(false)
+        return
+      }
+      
+      // 创建 BLE Manager
+      const bleManager = getBleManager({
+        onStatusChange: (info: ConnectionInfo) => {
+          setBleConnection(info)
+          if (info.status === 'connected' && info.deviceName) {
+            // 连接成功，添加到扫描列表
+            setScannedDevices(prev => {
+              const exists = prev.find(d => d.id === info.deviceId)
+              if (exists) return prev
+              return [...prev, { 
+                id: info.deviceId || '', 
+                name: info.deviceName || 'Unknown Device',
+                rssi: info.rssi 
+              }]
+            })
+            setIsScanning(false)
+          } else if (info.status === 'error') {
+            setScanError(info.errorMessage || '扫描失败')
+            setIsScanning(false)
+          }
+        },
+        onPowerData: (packet: BlePowerPacket) => {
+          console.log('Power data:', packet)
+        },
+        onBatteryLevel: (level: number) => {
+          console.log('Battery level:', level)
+        },
+        onPortStatus: (bitmap: number) => {
+          console.log('Port status:', bitmap)
+        },
+        onModeChange: (mode: string) => {
+          console.log('Mode changed:', mode)
+        },
+      })
+      
+      bleManagerRef.current = bleManager
+      
+      // 开始扫描并连接
+      await bleManager.connect()
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      if (!msg.includes('User cancelled')) {
+        setScanError(msg)
+      }
+      setIsScanning(false)
+    }
+  }
+  
+  const handleConnectDevice = async (deviceId: string) => {
+    // 设备已连接，关闭弹窗
+    setShowBleScan(false)
+    // 可以在这里添加更多连接后的逻辑
+  }
+  
+  const handleCloseBleScan = () => {
+    setShowBleScan(false)
+    setIsScanning(false)
+    setScanError(null)
+    setScannedDevices([])
+  }
+
+  // ---- QR Code 扫描功能 ------------------------------------------------
+  
+  useEffect(() => {
+    if (showQrScan && !qrResult) {
+      startQrScan()
+    }
+    
+    return () => {
+      stopQrScan()
+    }
+  }, [showQrScan])
+  
+  const startQrScan = async () => {
+    setQrScanning(true)
+    setQrError(null)
+    setQrResult(null)
+    
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      })
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+        videoRef.current.play()
+        
+        // 开始检测二维码
+        scanQrCode()
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      setQrError(`无法访问摄像头: ${msg}`)
+      setQrScanning(false)
+    }
+  }
+  
+  const stopQrScan = () => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current)
+      animationFrameRef.current = null
+    }
+    
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream
+      stream.getTracks().forEach(track => track.stop())
+      videoRef.current.srcObject = null
+    }
+    
+    setQrScanning(false)
+  }
+  
+  const scanQrCode = () => {
+    if (!videoRef.current || !canvasRef.current) return
+    
+    const video = videoRef.current
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext('2d')
+    
+    if (!ctx || video.readyState !== video.HAVE_ENOUGH_DATA) {
+      animationFrameRef.current = requestAnimationFrame(scanQrCode)
+      return
+    }
+    
+    // 设置 canvas 尺寸
+    canvas.width = video.videoWidth
+    canvas.height = video.videoHeight
+    
+    // 绘制视频帧
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+    
+    // 获取图像数据
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+    
+    // 使用 jsQR 库解析二维码（需要安装）
+    // 这里使用简单的字符串检测作为示例
+    // 实际项目中应该使用 jsQR 或其他二维码库
+    
+    // 模拟二维码检测（实际项目中替换为真实检测）
+    // 这里我们检测视频中心区域的亮度变化来模拟
+    const centerX = Math.floor(canvas.width / 2)
+    const centerY = Math.floor(canvas.height / 2)
+    const size = 100
+    
+    // 简单的二维码模拟检测
+    // 实际应该使用: import jsQR from 'jsqr'
+    // const code = jsQR(imageData.data, imageData.width, imageData.height)
+    
+    // 继续扫描
+    if (!qrResult) {
+      animationFrameRef.current = requestAnimationFrame(scanQrCode)
+    }
+  }
+  
+  const handleCloseQrScan = () => {
+    stopQrScan()
+    setShowQrScan(false)
+    setQrResult(null)
+    setQrError(null)
+  }
+  
+  // 模拟二维码扫描成功（用于测试）
+  const simulateQrScan = () => {
+    stopQrScan()
+    setQrResult('DEVICE_ID:SIERRA_1000_ABC123\nMODEL:SIERRA 1000\nSN:SN202403001')
   }
 
   return (
@@ -360,77 +570,284 @@ export default function DevicePage() {
               <div className="w-10 h-1 bg-[rgba(255,255,255,0.15)] rounded-full mx-auto mb-5" />
               <h3 className="text-base font-bold text-[#FFFFFF] mb-5">Add New Device</h3>
 
-              {!showQrScan ? (
-                <>
-                  <div className="flex flex-col gap-3">
-                    {[
-                      { label: 'Bluetooth Scan', desc: 'Find nearby BLE devices', color: '#01D6BE', icon: '📡' },
-                      { label: 'Wi-Fi Setup', desc: 'Connect via local network', color: '#34C759', icon: '📶' },
-                      { label: 'Manual Entry', desc: 'Enter device code manually', color: '#FF9500', icon: '⌨️' },
-                      { label: 'Scan QR Code', desc: 'Scan device QR code with camera', color: '#01D6BE', icon: '📷', action: () => setShowQrScan(true) },
-                    ].map((opt) => (
-                      <button
-                        key={opt.label}
-                        onClick={() => {
-                          if ('action' in opt && opt.action) {
-                            opt.action()
-                          } else {
-                            setShowAddModal(false)
-                          }
-                        }}
-                        className="flex items-center gap-4 p-4 bg-[#2C2C2E] rounded-[16px] text-left transition-all"
-                      >
-                        <span className="text-2xl">{opt.icon}</span>
-                        <div className="flex-1">
-                          <div className="text-[14px] font-semibold" style={{ color: opt.color }}>{opt.label}</div>
-                          <div className="text-[11px] text-[#8E8E93] mt-0.5">{opt.desc}</div>
-                        </div>
-                        {'action' in opt && opt.action && (
-                          <div className="w-6 h-6 rounded-full bg-[rgba(1,214,190,0.15)] flex items-center justify-center">
-                            <QrCode size={14} className="text-[#01D6BE]" />
-                          </div>
-                        )}
-                      </button>
-                    ))}
-                  </div>
+              <div className="flex flex-col gap-3">
+                {[
+                  { label: 'Bluetooth Scan', desc: 'Find nearby BLE devices', color: '#01D6BE', icon: '📡', action: handleBluetoothScan },
+                  { label: 'Wi-Fi Setup', desc: 'Connect via local network', color: '#34C759', icon: '📶' },
+                  { label: 'Manual Entry', desc: 'Enter device code manually', color: '#FF9500', icon: '⌨️' },
+                  { label: 'Scan QR Code', desc: 'Scan device QR code with camera', color: '#01D6BE', icon: '📷', action: () => { setShowAddModal(false); setShowQrScan(true) } },
+                ].map((opt) => (
                   <button
-                    onClick={() => setShowAddModal(false)}
-                    className="w-full mt-4 h-11 rounded-[14px] bg-[rgba(255,255,255,0.06)] text-[#8E8E93] text-sm font-medium"
+                    key={opt.label}
+                    onClick={() => {
+                      if ('action' in opt && opt.action) {
+                        opt.action()
+                      } else {
+                        setShowAddModal(false)
+                      }
+                    }}
+                    className="flex items-center gap-4 p-4 bg-[#2C2C2E] rounded-[16px] text-left transition-all"
                   >
-                    Cancel
-                  </button>
-                </>
-              ) : (
-                <>
-                  {/* QR Scan View */}
-                  <div className="w-48 h-48 mx-auto mb-4 relative">
-                    <div className="absolute inset-0 bg-[#2C2C2E] rounded-[16px] flex items-center justify-center">
-                      <QrCode size={56} className="text-[rgba(1,214,190,0.3)]" />
+                    <span className="text-2xl">{opt.icon}</span>
+                    <div className="flex-1">
+                      <div className="text-[14px] font-semibold" style={{ color: opt.color }}>{opt.label}</div>
+                      <div className="text-[11px] text-[#8E8E93] mt-0.5">{opt.desc}</div>
                     </div>
-                    {/* Scan line */}
-                    <motion.div
-                      className="absolute left-2 right-2 h-0.5 bg-[#01D6BE]"
-                      animate={{ top: ['10%', '85%', '10%'] }}
-                      transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
-                    />
-                    {/* Corner markers */}
-                    {([['top-0 left-0','border-t-2 border-l-2'],['top-0 right-0','border-t-2 border-r-2'],
-                      ['bottom-0 left-0','border-b-2 border-l-2'],['bottom-0 right-0','border-b-2 border-r-2']
-                    ] as const).map(([pos, border], i) => (
-                      <div key={i} className={`absolute w-5 h-5 ${pos} ${border} border-[#01D6BE] rounded-sm`} />
-                    ))}
-                  </div>
-                  <div className="text-[15px] font-semibold text-[#FFFFFF] mb-1 text-center">Scan Device QR Code</div>
-                  <div className="text-[12px] text-[#8E8E93] mb-5 text-center">Point camera at the QR code on your device</div>
-                  <button
-                    onClick={() => setShowQrScan(false)}
-                    className="w-full h-11 rounded-[14px] bg-[rgba(255,255,255,0.06)] text-[#8E8E93] text-sm font-medium"
-                  >
-                    Back
+                    {'action' in opt && opt.action && (
+                      <div className="w-6 h-6 rounded-full bg-[rgba(1,214,190,0.15)] flex items-center justify-center">
+                        <QrCode size={14} className="text-[#01D6BE]" />
+                      </div>
+                    )}
                   </button>
-                </>
+                ))}
+              </div>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="w-full mt-4 h-11 rounded-[14px] bg-[rgba(255,255,255,0.06)] text-[#8E8E93] text-sm font-medium"
+              >
+                Cancel
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* BLE Scan Modal */}
+      <AnimatePresence>
+        {showBleScan && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-[rgba(0,0,0,0.8)] z-50 flex items-center justify-center p-5"
+            onClick={handleCloseBleScan}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm bg-[#1C1C1E] rounded-[24px] p-6"
+            >
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="text-lg font-bold text-[#FFFFFF]">Bluetooth Devices</h3>
+                <button
+                  onClick={handleCloseBleScan}
+                  className="w-8 h-8 rounded-full bg-[#2C2C2E] flex items-center justify-center text-[#8E8E93]"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              
+              {isScanning && scannedDevices.length === 0 && !scanError && (
+                <div className="flex flex-col items-center justify-center py-10">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+                    className="w-12 h-12 rounded-full border-2 border-[#01D6BE] border-t-transparent mb-4"
+                  />
+                  <p className="text-[14px] text-[#8E8E93]">Scanning for devices...</p>
+                  <p className="text-[11px] text-[#48484A] mt-1">Make sure your device is in pairing mode</p>
+                </div>
+              )}
+              
+              {scanError && (
+                <div className="flex flex-col items-center justify-center py-8">
+                  <div className="w-12 h-12 rounded-full bg-[rgba(255,59,48,0.15)] flex items-center justify-center mb-3">
+                    <Bluetooth size={24} className="text-[#FF3B30]" />
+                  </div>
+                  <p className="text-[14px] text-[#FF3B30] text-center mb-1">Scan Failed</p>
+                  <p className="text-[12px] text-[#8E8E93] text-center px-4">{scanError}</p>
+                  <button
+                    onClick={handleBluetoothScan}
+                    className="mt-4 px-5 py-2 bg-[#01D6BE] rounded-full text-[#000000] text-[13px] font-semibold flex items-center gap-2"
+                  >
+                    <RefreshCw size={14} />
+                    Retry
+                  </button>
+                </div>
+              )}
+              
+              {scannedDevices.length > 0 && (
+                <div className="space-y-3">
+                  <p className="text-[12px] text-[#8E8E93] mb-3">Found {scannedDevices.length} device(s)</p>
+                  {scannedDevices.map((device) => (
+                    <motion.div
+                      key={device.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="flex items-center gap-3 p-4 bg-[#2C2C2E] rounded-[16px]"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-[rgba(1,214,190,0.15)] flex items-center justify-center">
+                        <Bluetooth size={20} className="text-[#01D6BE]" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-[14px] font-semibold text-[#FFFFFF]">{device.name}</p>
+                        <p className="text-[11px] text-[#8E8E93]">
+                          {device.rssi ? `Signal: ${device.rssi} dBm` : 'Signal: Unknown'}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleConnectDevice(device.id)}
+                        className="px-4 py-2 bg-[#01D6BE] rounded-full text-[#000000] text-[12px] font-semibold"
+                      >
+                        Connect
+                      </button>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+              
+              {!isScanning && !scanError && scannedDevices.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-8">
+                  <div className="w-12 h-12 rounded-full bg-[#2C2C2E] flex items-center justify-center mb-3">
+                    <Bluetooth size={24} className="text-[#8E8E93]" />
+                  </div>
+                  <p className="text-[14px] text-[#8E8E93]">No devices found</p>
+                  <button
+                    onClick={handleBluetoothScan}
+                    className="mt-4 px-5 py-2 bg-[#01D6BE] rounded-full text-[#000000] text-[13px] font-semibold flex items-center gap-2"
+                  >
+                    <RefreshCw size={14} />
+                    Scan Again
+                  </button>
+                </div>
               )}
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* QR Scan Modal */}
+      <AnimatePresence>
+        {showQrScan && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-[rgba(0,0,0,0.9)] z-50 flex flex-col"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-5 safe-area-top">
+              <h3 className="text-lg font-bold text-[#FFFFFF]">Scan QR Code</h3>
+              <button
+                onClick={handleCloseQrScan}
+                className="w-9 h-9 rounded-full bg-[#2C2C2E] flex items-center justify-center text-[#FFFFFF]"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            {/* Camera View */}
+            <div className="flex-1 flex flex-col items-center justify-center px-5">
+              {!qrResult ? (
+                <>
+                  <div className="relative w-64 h-64 mb-6">
+                    {/* Hidden video element */}
+                    <video
+                      ref={videoRef}
+                      className="absolute inset-0 w-full h-full object-cover rounded-[20px]"
+                      playsInline
+                      muted
+                    />
+                    {/* Hidden canvas for processing */}
+                    <canvas ref={canvasRef} className="hidden" />
+                    
+                    {/* Scan overlay */}
+                    <div className="absolute inset-0 border-2 border-[#01D6BE] rounded-[20px]">
+                      {/* Corner markers */}
+                      {([
+                        ['top-0 left-0', 'border-t-4 border-l-4'],
+                        ['top-0 right-0', 'border-t-4 border-r-4'],
+                        ['bottom-0 left-0', 'border-b-4 border-l-4'],
+                        ['bottom-0 right-0', 'border-b-4 border-r-4']
+                      ] as const).map(([pos, border], i) => (
+                        <div key={i} className={`absolute w-8 h-8 ${pos} ${border} border-[#01D6BE] rounded-sm`} />
+                      ))}
+                      
+                      {/* Scan line */}
+                      {qrScanning && (
+                        <motion.div
+                          className="absolute left-2 right-2 h-0.5 bg-[#01D6BE] shadow-[0_0_10px_#01D6BE]"
+                          animate={{ top: ['5%', '95%', '5%'] }}
+                          transition={{ duration: 2.5, repeat: Infinity, ease: 'linear' }}
+                        />
+                      )}
+                    </div>
+                    
+                    {/* Placeholder when no camera */}
+                    {!qrScanning && !qrError && (
+                      <div className="absolute inset-0 bg-[#1C1C1E] rounded-[20px] flex items-center justify-center">
+                        <QrCode size={64} className="text-[#48484A]" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  {qrError ? (
+                    <div className="text-center">
+                      <p className="text-[14px] text-[#FF3B30] mb-2">{qrError}</p>
+                      <button
+                        onClick={startQrScan}
+                        className="px-5 py-2 bg-[#01D6BE] rounded-full text-[#000000] text-[13px] font-semibold"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-[15px] font-semibold text-[#FFFFFF] mb-1">Point camera at QR code</p>
+                      <p className="text-[12px] text-[#8E8E93]">The code will be scanned automatically</p>
+                      
+                      {/* Test button for development */}
+                      <button
+                        onClick={simulateQrScan}
+                        className="mt-6 px-4 py-2 bg-[#2C2C2E] rounded-full text-[#8E8E93] text-[12px]"
+                      >
+                        Simulate Scan (Test)
+                      </button>
+                    </>
+                  )}
+                </>
+              ) : (
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="w-full max-w-sm bg-[#1C1C1E] rounded-[24px] p-6"
+                >
+                  <div className="w-16 h-16 rounded-full bg-[rgba(52,199,89,0.15)] flex items-center justify-center mx-auto mb-4">
+                    <QrCode size={32} className="text-[#34C759]" />
+                  </div>
+                  <h4 className="text-lg font-bold text-[#FFFFFF] text-center mb-2">QR Code Scanned!</h4>
+                  <div className="bg-[#2C2C2E] rounded-[12px] p-4 mb-5">
+                    <pre className="text-[12px] text-[#8E8E93] whitespace-pre-wrap break-all">{qrResult}</pre>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => { setQrResult(null); startQrScan() }}
+                      className="flex-1 h-11 rounded-[14px] bg-[#2C2C2E] text-[#FFFFFF] text-[14px] font-medium"
+                    >
+                      Scan Again
+                    </button>
+                    <button
+                      onClick={() => {
+                        // 解析二维码数据并添加设备
+                        console.log('Adding device with QR data:', qrResult)
+                        handleCloseQrScan()
+                      }}
+                      className="flex-1 h-11 rounded-[14px] bg-[#01D6BE] text-[#000000] text-[14px] font-semibold"
+                    >
+                      Add Device
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+            
+            {/* Bottom hint */}
+            <div className="p-5 safe-area-bottom text-center">
+              <p className="text-[11px] text-[#48484A]">Make sure the QR code is well-lit and in focus</p>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
