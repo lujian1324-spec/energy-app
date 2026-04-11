@@ -1,10 +1,10 @@
 {
-  "version": "3.6.2",
-  "build": 2445,
+  "version": "3.6.3",
+  "build": 2446,
   "date": "2026-04-11",
   "changelog": [
-    "Real-Time Power card bottom buttons: AC/Solar/Output with toggle",
-    "Removed Grid/Plug/Adjust labels, replaced with AC/Solar/Output",
-    "Active button highlighted with green background and text"
+    "Real-Time Power chart with 3 data sources: AC(400W)/Solar(280W)/Output(200W)",
+    "Each data source has unique chart data and color",
+    "Smooth animation when switching between data sources"
   ]
 }

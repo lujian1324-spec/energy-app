@@ -63,6 +63,30 @@ export default function OverviewPage() {
   // Real-Time Power 图表数据源切换
   const [powerDataSource, setPowerDataSource] = useState<'ac' | 'solar' | 'output'>('ac')
 
+  // 三组模拟数据
+  const powerData = {
+    ac: {
+      value: 400,
+      points: "0,50 30,42 60,45 90,35 120,40 150,28 180,38 210,32 240,36 270,30 300,34",
+      fillPoints: "0,50 30,42 60,45 90,35 120,40 150,28 180,38 210,32 240,36 270,30 300,34 300,80 0,80",
+      color: '#01D6BE',
+    },
+    solar: {
+      value: 280,
+      points: "0,55 30,50 60,52 90,45 120,48 150,40 180,42 210,38 240,40 270,35 300,38",
+      fillPoints: "0,55 30,50 60,52 90,45 120,48 150,40 180,42 210,38 240,40 270,35 300,38 300,80 0,80",
+      color: '#FF9500',
+    },
+    output: {
+      value: 200,
+      points: "0,60 30,58 60,55 90,52 120,54 150,50 180,52 210,48 240,50 270,46 300,48",
+      fillPoints: "0,60 30,58 60,55 90,52 120,54 150,50 180,52 210,48 240,50 270,46 300,48 300,80 0,80",
+      color: '#8E8E93',
+    },
+  }
+
+  const currentPowerData = powerData[powerDataSource]
+
   // 检查推送权限状态
   useEffect(() => {
     setPushPermission(getNotificationPermission())
@@ -259,9 +283,18 @@ export default function OverviewPage() {
           {/* 标题栏 */}
           <div className="flex items-center justify-between mb-3">
             <span className="text-[13px] font-semibold text-[#FFFFFF]">Real-Time Power</span>
-            <span className="text-[11px] px-2 py-0.5 rounded-full bg-[rgba(1,214,190,0.15)] text-[#01D6BE] font-semibold">
-              400w
-            </span>
+            <motion.span 
+              key={currentPowerData.value}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="text-[11px] px-2 py-0.5 rounded-full font-semibold"
+              style={{ 
+                backgroundColor: `${currentPowerData.color}26`,
+                color: currentPowerData.color 
+              }}
+            >
+              {currentPowerData.value}w
+            </motion.span>
           </div>
           
           {/* 图表区域 */}
@@ -271,19 +304,28 @@ export default function OverviewPage() {
               <line x1="0" y1="20" x2="300" y2="20" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
               <line x1="0" y1="40" x2="300" y2="40" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
               <line x1="0" y1="60" x2="300" y2="60" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-              {/* 绿色折线 */}
-              <polyline
-                points="0,50 30,42 60,45 90,35 120,40 150,28 180,38 210,32 240,36 270,30 300,34"
+              {/* 动态折线 */}
+              <motion.polyline
+                key={`line-${powerDataSource}`}
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 1 }}
+                transition={{ duration: 0.5 }}
+                points={currentPowerData.points}
                 fill="none"
-                stroke="#01D6BE"
+                stroke={currentPowerData.color}
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
-              {/* 填充区域 */}
-              <polygon
-                points="0,50 30,42 60,45 90,35 120,40 150,28 180,38 210,32 240,36 270,30 300,34 300,80 0,80"
-                fill="rgba(1,214,190,0.1)"
+              {/* 动态填充区域 */}
+              <motion.polygon
+                key={`fill-${powerDataSource}`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3 }}
+                points={currentPowerData.fillPoints}
+                fill={currentPowerData.color}
+                fillOpacity="0.1"
               />
             </svg>
           </div>
