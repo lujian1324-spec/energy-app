@@ -9,7 +9,7 @@ const filters = ['All', 'Online', 'Offline', 'Alerts']
 
 export default function DevicePage() {
   const navigate = useNavigate()
-  const { devices, toggleDevice, selectDevice, toggleDevices } = usePowerStationStore()
+  const { devices, toggleDevice, selectDevice, toggleDevices, deleteDevices } = usePowerStationStore()
   const [activeFilter, setActiveFilter] = useState('All')
   const [searchQuery, setSearchQuery] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
