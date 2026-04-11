@@ -1,9 +1,9 @@
 {
-  "version": "3.5.8",
-  "build": 2441,
-  "date": "2026-04-10",
+  "version": "3.5.9",
+  "build": 2442,
+  "date": "2026-04-11",
   "changelog": [
-    "Real-Time Power card moved outside battery card",
-    "Page layout reordered"
+    "Control page UI redesigned with Real-Time Power chart",
+    "Force refresh cache v4"
   ]
 }

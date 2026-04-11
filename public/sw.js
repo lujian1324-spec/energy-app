@@ -1,6 +1,6 @@
 // Service Worker for Sierro App - Push Notifications
 
-const CACHE_NAME = 'sierro-app-v3';
+const CACHE_NAME = 'sierro-app-v4';
 
 // 获取基础路径（用于 GitHub Pages 子路径部署）
 const getBasePath = () => {
