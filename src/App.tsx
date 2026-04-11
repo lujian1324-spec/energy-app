@@ -2,11 +2,10 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useLocation } from 'react-router-dom'
 import BottomNavigation from './components/BottomNavigation'
-import HomePage from './pages/HomePage'
-
+import OverviewPage from './pages/OverviewPage'
 import StatsPage from './pages/StatsPage'
-import SettingsPage from './pages/SettingsPage'
-import DevicesPage from './pages/DevicesPage'
+import SettingPage from './pages/SettingPage'
+import DevicePage from './pages/DevicePage'
 import { useRealtimeSimulator } from './hooks/useRealtimeSimulator'
 
 function App() {
@@ -26,13 +25,12 @@ function App() {
  transition={{ duration: 0.3, ease: 'easeOut' }}
  className="h-full w-full"
  >
- <Routes location={location}>
- <Route path="/" element={<HomePage />} />
- <Route path="/devices" element={<DevicesPage />} />
- 
- <Route path="/stats" element={<StatsPage />} />
- <Route path="/settings" element={<SettingsPage />} />
- </Routes>
+          <Routes location={location}>
+            <Route path="/" element={<OverviewPage />} />
+            <Route path="/devices" element={<DevicePage />} />
+            <Route path="/stats" element={<StatsPage />} />
+            <Route path="/settings" element={<SettingPage />} />
+          </Routes>
  </motion.div>
  </AnimatePresence>
  </div>

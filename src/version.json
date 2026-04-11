@@ -1,9 +1,10 @@
 {
-  "version": "3.5.9",
-  "build": 2442,
+  "version": "3.6.0",
+  "build": 2443,
   "date": "2026-04-11",
   "changelog": [
-    "Control page UI redesigned with Real-Time Power chart",
-    "Force refresh cache v4"
+    "Renamed pages: HomePage→OverviewPage, DevicesPage→DevicePage, SettingsPage→SettingPage",
+    "Deleted unused ControlPage",
+    "Updated navigation labels to singular form"
   ]
 }

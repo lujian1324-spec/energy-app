@@ -7,10 +7,10 @@ import {
 } from 'lucide-react'
 
 const navItems = [
-  { path: '/devices', label: 'DEVICES', icon: LayoutGrid },
-  { path: '/', label: 'HOME', icon: Layers },
+  { path: '/devices', label: 'DEVICE', icon: LayoutGrid },
+  { path: '/', label: 'OVERVIEW', icon: Layers },
   { path: '/stats', label: 'STATS', icon: PieChart },
-  { path: '/settings', label: 'SETTINGS', icon: User },
+  { path: '/settings', label: 'SETTING', icon: User },
 ]
 
 export default function BottomNavigation() {
