@@ -1,9 +1,11 @@
 {
-  "version": "3.7.5",
-  "build": 2452,
+  "version": "3.9.0",
+  "build": 2454,
   "date": "2026-04-11",
   "changelog": [
-    "Move Founder Badge crown icon to top-right corner of avatar",
-    "Apply to both Setting page and Profile Edit page"
+    "Add EmailJS integration for support feedback",
+    "Support form now sends emails to jason@sierro.us",
+    "Add loading state and error handling for email submission",
+    "Configure GitHub Actions secrets for EmailJS credentials"
   ]
 }

@@ -13,9 +13,11 @@ import {
   EyeOff,
   Loader2,
   LayoutGrid,
+  Info,
 } from 'lucide-react'
 import BatteryRing from '../components/BatteryRing'
 import ToggleSwitch from '../components/ToggleSwitch'
+import DeviceDetailPage from './DeviceDetailPage'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { 
   showPowerOutageNotification,
@@ -59,6 +61,9 @@ export default function OverviewPage() {
     showTimeToFull: true,
     showPortStatus: true,
   })
+
+  // 设备详情页面显示状态
+  const [showDeviceDetail, setShowDeviceDetail] = useState(false)
 
   // Real-Time Power 图表数据源切换
   const [powerDataSource, setPowerDataSource] = useState<'ac' | 'solar' | 'output'>('ac')
@@ -181,7 +186,7 @@ export default function OverviewPage() {
 
       {/* 可滚动内容 */}
       <div className="flex-1 overflow-y-auto scrollbar-hide">
-        {/* Header - 扁平化：设备名 + 编辑图标 + 设置图标 */}
+        {/* Header - 扁平化：设备名 + 编辑图标 + 信息图标 + 铃铛图标 */}
         <div className="flex justify-between items-center px-5 py-3">
           <div>
             <div className="flex items-center gap-2">
@@ -212,6 +217,13 @@ export default function OverviewPage() {
                     className="w-6 h-6 rounded-full bg-[#1C1C1E] flex items-center justify-center hover:bg-[#2C2C2E] transition-colors"
                   >
                     <Pencil size={12} className="text-[#8E8E93]" />
+                  </button>
+                  {/* 信息图标 - 点击进入设备详情 */}
+                  <button 
+                    onClick={() => setShowDeviceDetail(true)}
+                    className="w-6 h-6 rounded-full bg-[#1C1C1E] flex items-center justify-center hover:bg-[#2C2C2E] transition-colors"
+                  >
+                    <Info size={12} className="text-[#8E8E93]" />
                   </button>
                 </>
               )}
@@ -591,6 +603,13 @@ export default function OverviewPage() {
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ===== 设备详情页面 ===== */}
+      <AnimatePresence>
+        {showDeviceDetail && (
+          <DeviceDetailPage onBack={() => setShowDeviceDetail(false)} />
         )}
       </AnimatePresence>
     </div>

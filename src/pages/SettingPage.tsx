@@ -43,6 +43,7 @@ import { useConnectionStore } from '../stores/connectionStore'
 import { useProtocol } from '../hooks/useProtocol'
 import { getDBStats, clearAllHistory, getUserProfile } from '../db/powerflowDB'
 import { requestNotificationPermission, getNotificationPermission } from '../utils/pushNotification'
+import { sendSupportEmail } from '../utils/emailService'
 import appVersion from '../version.json'
 import ProfileEditPage from './ProfileEditPage'
 import type { UserProfile } from '../types/protocol'
@@ -63,6 +64,8 @@ export default function SettingPage() {
   const [supportEmail, setSupportEmail] = useState('')
   const [supportMessage, setSupportMessage] = useState('')
   const [supportSubmitted, setSupportSubmitted] = useState(false)
+  const [supportSubmitting, setSupportSubmitting] = useState(false)
+  const [supportResult, setSupportResult] = useState<{success: boolean; message: string} | null>(null)
 
   // Founder Badge 兑换
   const [showFounderModal, setShowFounderModal] = useState(false)
@@ -126,16 +129,39 @@ export default function SettingPage() {
     setDbStats(stats)
   }
   
-  const handleSupportSubmit = (e: React.FormEvent) => {
+  const handleSupportSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // 模拟提交
-    setSupportSubmitted(true)
-    setTimeout(() => {
-      setShowSupport(false)
-      setSupportEmail('')
-      setSupportMessage('')
-      setSupportSubmitted(false)
-    }, 1500)
+    setSupportSubmitting(true)
+    setSupportResult(null)
+
+    try {
+      const result = await sendSupportEmail({
+        name: userProfile.name,
+        email: supportEmail,
+        message: supportMessage,
+        deviceName: powerStation.name,
+        appVersion: `${appVersion.version} (Build ${appVersion.build})`,
+      })
+
+      setSupportResult(result)
+      if (result.success) {
+        setSupportSubmitted(true)
+        setTimeout(() => {
+          setShowSupport(false)
+          setSupportEmail('')
+          setSupportMessage('')
+          setSupportSubmitted(false)
+          setSupportResult(null)
+        }, 2000)
+      }
+    } catch (error) {
+      setSupportResult({
+        success: false,
+        message: 'An unexpected error occurred. Please try again.'
+      })
+    } finally {
+      setSupportSubmitting(false)
+    }
   }
 
   // 处理推送通知开关
@@ -170,12 +196,7 @@ export default function SettingPage() {
     }
   }
 
-  const deviceInfo = [
-    { icon: Battery, label: 'Battery Capacity', value: '1000Wh', desc: 'LiFePO₄ · LFP Cells', color: 'blue' },
-    { icon: Zap, label: 'Max Charge Power', value: '500W', desc: 'AC + Solar Simultaneous', color: 'green' },
-    { icon: Thermometer, label: 'Current Temp', value: `${powerStation.temperature}°C`, desc: 'Ambient: 26°C', color: 'orange' },
-    { icon: RefreshCw, label: 'Charge Cycles', value: `${powerStation.cycleCount}`, desc: 'Total charge cycles', color: 'purple' },
-  ]
+
 
   const systemItems = [
     { icon: Bell, label: 'Push Notifications', desc: 'Power outage alerts via system notification', type: 'toggle' as const, color: 'orange', storeKey: 'pushNotifications' as const },
@@ -284,38 +305,6 @@ export default function SettingPage() {
             <Edit3 size={16} className="text-[#8E8E93]" />
           </div>
         </motion.div>
-
-        {/* 设备信息 */}
-        <div className="mb-4">
-          <div className="text-[11px] font-bold text-[#8E8E93] tracking-widest uppercase mb-2 px-1">
-            Device Info
-          </div>
-          <div className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden">
-            {deviceInfo.map((item, i) => {
-              const Icon = item.icon
-              const colors = colorClasses[item.color]
-              return (
-                <div 
-                  key={item.label}
-                  className={`flex items-center gap-3 px-4 py-3.5 
-                    ${i !== deviceInfo.length - 1 ? 'border-b border-[rgba(1,214,190,0.08)]' : ''}`}
-                >
-                  <div className={`w-9 h-9 rounded-lg ${colors.bg} ${colors.text} 
-                    flex items-center justify-center flex-shrink-0`}>
-                    <Icon size={16} />
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-[13px] font-semibold text-[#FFFFFF]">{item.label}</div>
-                    <div className="text-[11px] text-[#8E8E93] mt-0.5">{item.desc}</div>
-                  </div>
-                  <div className={`text-[13px] font-semibold ${item.color === 'orange' ? 'text-[#34C759]' : colors.text}`}>
-                    {item.value}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
 
         {/* 硬件连接管理 */}
         <div className="mb-4">
@@ -823,7 +812,7 @@ export default function SettingPage() {
                       <CheckCircle size={32} className="text-[#34C759]" />
                     </div>
                     <h4 className="text-[15px] font-bold text-[#FFFFFF] mb-2">Feedback Submitted!</h4>
-                    <p className="text-[12px] text-[#8E8E93]">We will get back to you within 24 hours.</p>
+                    <p className="text-[12px] text-[#8E8E93]">{supportResult?.message || 'We will get back to you within 24 hours.'}</p>
                   </motion.div>
                 ) : (
                   <form onSubmit={handleSupportSubmit} className="space-y-4">
@@ -863,15 +852,28 @@ export default function SettingPage() {
                       />
                     </div>
                     
+                    {/* Error Message */}
+                    {supportResult && !supportResult.success && (
+                      <div className="text-[11px] text-[#FF3B30] text-center bg-[rgba(255,59,48,0.08)] 
+                        border border-[rgba(255,59,48,0.2)] rounded-lg py-2 px-3">
+                        {supportResult.message}
+                      </div>
+                    )}
+
                     {/* Submit Button */}
                     <button
                       type="submit"
+                      disabled={supportSubmitting}
                       className="w-full py-3.5 rounded-xl bg-[rgba(255,149,0,0.12)] text-[#FF9500] font-semibold text-[13px]
                         flex items-center justify-center gap-2 active:scale-95 transition-transform
-                        border border-[rgba(255,149,0,0.2)]"
+                        border border-[rgba(255,149,0,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <Send size={16} />
-                      Submit Feedback
+                      {supportSubmitting ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        <Send size={16} />
+                      )}
+                      {supportSubmitting ? 'Sending...' : 'Submit Feedback'}
                     </button>
                     
                     <p className="text-[10px] text-[#48484A] text-center">
