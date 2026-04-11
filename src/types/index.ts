@@ -99,4 +99,5 @@ export interface AppSettings {
   overDischargeProtection: boolean;
   founderBadge?: boolean;
   founderBadgeActivatedAt?: string;
+  founderBadgeNumber?: number; // 0-100 之间的唯一身份编码
 }

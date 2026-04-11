@@ -330,7 +330,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 bg-[rgba(255,215,0,0.12)] text-[#FFD700] border-[rgba(255,215,0,0.3)]
                 flex items-center gap-1">
                 <Award size={10} />
-                Founding Member
+                Founding Member {settings.founderBadgeNumber !== undefined ? `#${settings.founderBadgeNumber}` : ''}
               </span>
             )}
           </div>

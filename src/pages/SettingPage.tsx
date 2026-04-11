@@ -344,12 +344,18 @@ export default function SettingPage() {
                 <div className="w-12 h-12 rounded-xl bg-[rgba(255,215,0,0.15)] flex items-center justify-center">
                   <Crown size={24} className="text-[#FFD700]" />
                 </div>
-                <div>
+                <div className="flex-1">
                   <div className="text-[15px] font-bold text-[#FFD700]">Founding Member</div>
                   <div className="text-[11px] text-[#8E8E93]">
                     Activated {settings.founderBadgeActivatedAt ? new Date(settings.founderBadgeActivatedAt).toLocaleDateString() : 'Recently'}
                   </div>
                 </div>
+                {settings.founderBadgeNumber !== undefined && (
+                  <div className="text-right">
+                    <div className="text-[20px] font-bold text-[#FFD700]">#{settings.founderBadgeNumber}</div>
+                    <div className="text-[9px] text-[#8E8E93]">Member ID</div>
+                  </div>
+                )}
               </div>
               
               {/* 权益列表 */}

@@ -251,14 +251,26 @@ activateFounderBadge: (code: string) => {
   const validCodes = ['FOUNDER2024', 'SIERROVIP', 'EARLYBIRD', 'POWERFLOW'];
   
   if (validCodes.includes(code.toUpperCase())) {
+    // 生成 0-100 之间的唯一身份编码
+    const generateUniqueNumber = (): number => {
+      // 使用当前时间戳和随机数生成唯一编码
+      const timestamp = Date.now();
+      const random = Math.floor(Math.random() * 1000);
+      const combined = (timestamp + random) % 101; // 0-100
+      return combined;
+    };
+    
+    const badgeNumber = generateUniqueNumber();
+    
     set((state) => ({
       settings: {
         ...state.settings,
         founderBadge: true,
         founderBadgeActivatedAt: new Date().toISOString(),
+        founderBadgeNumber: badgeNumber,
       }
     }));
-    return { success: true, message: 'Founder Badge activated successfully!' };
+    return { success: true, message: `Founder Badge activated! Your member number is #${badgeNumber}` };
   }
   
   return { success: false, message: 'Invalid code. Please try again.' };
