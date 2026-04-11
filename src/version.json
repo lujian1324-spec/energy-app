@@ -1,11 +1,11 @@
 {
-  "version": "3.7.2",
-  "build": 2449,
+  "version": "3.7.3",
+  "build": 2450,
   "date": "2026-04-11",
   "changelog": [
-    "Add Profile Edit sub-page in Settings",
-    "Editable fields: name, email, phone number",
-    "Avatar upload from local photos",
-    "Golden avatar border preserved in edit page for Founder Badge holders"
+    "Save user profile to IndexedDB for persistence",
+    "Avatar image saved locally and persists across sessions",
+    "Profile data (name, email, phone, avatar) loads from database",
+    "Database schema upgraded to v2 with user_profile store"
   ]
 }

@@ -174,3 +174,14 @@ export interface AlertQuery {
   severity?: AlertRecord['severity']
   limit?: number
 }
+
+// -------------------- 用户资料 --------------------
+
+export interface UserProfile {
+  name: string
+  email: string
+  phone: string
+  avatar: string | null // base64 编码的图片数据
+  memberSince: string // ISO 8601 date string
+  updatedAt?: number // Unix ms
+}

@@ -2,12 +2,13 @@
  * PowerFlow IndexedDB 数据库
  * 使用 idb 库封装，提供类型安全的 CRUD 操作
  *
- * 数据库名称: powerflow-db 版本: 1
+ * 数据库名称: powerflow-db 版本: 2
  * ObjectStore 列表:
  * - power_history 功率历史 (自增 id, timestamp 索引)
  * - alerts 告警日志 (自增 id, timestamp/resolved 索引)
  * - connection_logs  连接历史 (自增 id)
  * - commands 命令审计 (自增 id)
+ * - user_profile 用户资料 (key: 'profile')
  */
 
 import { openDB, type IDBPDatabase } from 'idb'
@@ -18,10 +19,11 @@ import type {
   CommandRecord,
   PowerHistoryQuery,
   AlertQuery,
+  UserProfile,
 } from '../types/protocol'
 
 const DB_NAME = 'powerflow-db'
-const DB_VERSION = 1
+const DB_VERSION = 2
 
 /** 最大保留条数（避免无限增长） */
 const MAX_POWER_HISTORY = 8640 // ~24h @ 10s interval
@@ -30,24 +32,28 @@ const MAX_COMMANDS = 200
 
 type PowerFlowDB = IDBPDatabase<{
   power_history: {
- key: number
- value: PowerHistoryRecord
- indexes: { timestamp: number }
+    key: number
+    value: PowerHistoryRecord
+    indexes: { timestamp: number }
   }
   alerts: {
- key: number
- value: AlertRecord
- indexes: { timestamp: number; resolved: number }
+    key: number
+    value: AlertRecord
+    indexes: { timestamp: number; resolved: number }
   }
   connection_logs: {
- key: number
- value: ConnectionRecord
- indexes: { timestamp: number }
+    key: number
+    value: ConnectionRecord
+    indexes: { timestamp: number }
   }
   commands: {
- key: number
- value: CommandRecord
- indexes: { timestamp: number }
+    key: number
+    value: CommandRecord
+    indexes: { timestamp: number }
+  }
+  user_profile: {
+    key: string
+    value: UserProfile
   }
 }>
 
@@ -57,65 +63,74 @@ async function getDB(): Promise<PowerFlowDB> {
   if (_db) return _db
 
   _db = await openDB<{
- power_history: {
- key: number
- value: PowerHistoryRecord
- indexes: { timestamp: number }
- }
- alerts: {
- key: number
- value: AlertRecord
- indexes: { timestamp: number; resolved: number }
- }
- connection_logs: {
- key: number
- value: ConnectionRecord
- indexes: { timestamp: number }
- }
- commands: {
- key: number
- value: CommandRecord
- indexes: { timestamp: number }
- }
+    power_history: {
+      key: number
+      value: PowerHistoryRecord
+      indexes: { timestamp: number }
+    }
+    alerts: {
+      key: number
+      value: AlertRecord
+      indexes: { timestamp: number; resolved: number }
+    }
+    connection_logs: {
+      key: number
+      value: ConnectionRecord
+      indexes: { timestamp: number }
+    }
+    commands: {
+      key: number
+      value: CommandRecord
+      indexes: { timestamp: number }
+    }
+    user_profile: {
+      key: string
+      value: UserProfile
+    }
   }>(DB_NAME, DB_VERSION, {
- upgrade(db) {
- // ---- power_history ----
- if (!db.objectStoreNames.contains('power_history')) {
- const store = db.createObjectStore('power_history', {
- keyPath: 'id',
- autoIncrement: true,
- })
- store.createIndex('timestamp', 'timestamp')
- }
+    upgrade(db, oldVersion) {
+      // ---- power_history ----
+      if (!db.objectStoreNames.contains('power_history')) {
+        const store = db.createObjectStore('power_history', {
+          keyPath: 'id',
+          autoIncrement: true,
+        })
+        store.createIndex('timestamp', 'timestamp')
+      }
 
- // ---- alerts ----
- if (!db.objectStoreNames.contains('alerts')) {
- const store = db.createObjectStore('alerts', {
- keyPath: 'id',
- autoIncrement: true,
- })
- store.createIndex('timestamp', 'timestamp')
- store.createIndex('resolved', 'resolved')
- }
+      // ---- alerts ----
+      if (!db.objectStoreNames.contains('alerts')) {
+        const store = db.createObjectStore('alerts', {
+          keyPath: 'id',
+          autoIncrement: true,
+        })
+        store.createIndex('timestamp', 'timestamp')
+        store.createIndex('resolved', 'resolved')
+      }
 
- // ---- connection_logs ----
- if (!db.objectStoreNames.contains('connection_logs')) {
- const store = db.createObjectStore('connection_logs', {
- keyPath: 'id',
- autoIncrement: true,
- })
- store.createIndex('timestamp', 'timestamp')
- }
+      // ---- connection_logs ----
+      if (!db.objectStoreNames.contains('connection_logs')) {
+        const store = db.createObjectStore('connection_logs', {
+          keyPath: 'id',
+          autoIncrement: true,
+        })
+        store.createIndex('timestamp', 'timestamp')
+      }
 
- // ---- commands ----
- if (!db.objectStoreNames.contains('commands')) {
- const store = db.createObjectStore('commands', {
- keyPath: 'id',
- autoIncrement: true,
- })
- store.createIndex('timestamp', 'timestamp')
- }
- },
+      // ---- commands ----
+      if (!db.objectStoreNames.contains('commands')) {
+        const store = db.createObjectStore('commands', {
+          keyPath: 'id',
+          autoIncrement: true,
+        })
+        store.createIndex('timestamp', 'timestamp')
+      }
+
+      // ---- user_profile (added in v2) ----
+      if (!db.objectStoreNames.contains('user_profile')) {
+        db.createObjectStore('user_profile')
+      }
+    },
   })
 
   return _db
@@ -306,9 +321,30 @@ export async function clearAllHistory(): Promise<void> {
 export async function getDBStats(): Promise<Record<string, number>> {
   const db = await getDB()
   return {
- powerHistory: await db.count('power_history'),
- alerts: await db.count('alerts'),
- connectionLogs: await db.count('connection_logs'),
- commands: await db.count('commands'),
+    powerHistory: await db.count('power_history'),
+    alerts: await db.count('alerts'),
+    connectionLogs: await db.count('connection_logs'),
+    commands: await db.count('commands'),
   }
+}
+
+// ================================================================
+// 用户资料
+// ================================================================
+
+const USER_PROFILE_KEY = 'profile'
+
+export async function saveUserProfile(profile: UserProfile): Promise<void> {
+  const db = await getDB()
+  await db.put('user_profile', profile, USER_PROFILE_KEY)
+}
+
+export async function getUserProfile(): Promise<UserProfile | null> {
+  const db = await getDB()
+  return await db.get('user_profile', USER_PROFILE_KEY)
+}
+
+export async function clearUserProfile(): Promise<void> {
+  const db = await getDB()
+  await db.delete('user_profile', USER_PROFILE_KEY)
 }

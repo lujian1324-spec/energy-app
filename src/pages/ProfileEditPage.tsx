@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { 
   ArrowLeft, 
   User, 
@@ -11,6 +11,8 @@ import {
   Crown,
 } from 'lucide-react'
 import { usePowerStationStore } from '../stores/powerStationStore'
+import { saveUserProfile, getUserProfile } from '../db/powerflowDB'
+import type { UserProfile } from '../types/protocol'
 
 interface ProfileEditPageProps {
   onBack: () => void
@@ -20,12 +22,16 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
   const { settings } = usePowerStationStore()
   
   // 用户个人信息状态
-  const [profile, setProfile] = useState({
+  const [profile, setProfile] = useState<UserProfile>({
     name: 'Alex Chen',
     email: 'alex.chen@example.com',
     phone: '+1 234 567 8900',
-    avatar: null as string | null,
+    avatar: null,
+    memberSince: '2024-03-15',
   })
+  
+  // 加载状态
+  const [isLoading, setIsLoading] = useState(true)
   
   // 编辑状态
   const [editingField, setEditingField] = useState<string | null>(null)
@@ -34,14 +40,45 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
   // 头像上传
   const fileInputRef = useRef<HTMLInputElement>(null)
   
+  // 加载用户资料
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const savedProfile = await getUserProfile()
+        if (savedProfile) {
+          setProfile(savedProfile)
+        }
+      } catch (error) {
+        console.error('Failed to load user profile:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    loadProfile()
+  }, [])
+  
+  // 保存用户资料到 IndexedDB
+  const persistProfile = async (newProfile: UserProfile) => {
+    try {
+      await saveUserProfile({
+        ...newProfile,
+        updatedAt: Date.now(),
+      })
+    } catch (error) {
+      console.error('Failed to save user profile:', error)
+    }
+  }
+  
   const handleEdit = (field: string, currentValue: string) => {
     setEditingField(field)
     setTempValue(currentValue)
   }
   
-  const handleSave = () => {
+  const handleSave = async () => {
     if (editingField) {
-      setProfile(prev => ({ ...prev, [editingField]: tempValue }))
+      const newProfile = { ...profile, [editingField]: tempValue }
+      setProfile(newProfile)
+      await persistProfile(newProfile)
       setEditingField(null)
       setTempValue('')
     }
@@ -56,21 +93,24 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
     fileInputRef.current?.click()
   }
   
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       const reader = new FileReader()
-      reader.onload = (event) => {
-        setProfile(prev => ({ ...prev, avatar: event.target?.result as string }))
+      reader.onload = async (event) => {
+        const avatarData = event.target?.result as string
+        const newProfile = { ...profile, avatar: avatarData }
+        setProfile(newProfile)
+        await persistProfile(newProfile)
       }
       reader.readAsDataURL(file)
     }
   }
   
   const profileFields = [
-    { key: 'name', label: 'Full Name', icon: User, value: profile.name, placeholder: 'Enter your name' },
-    { key: 'email', label: 'Email Address', icon: Mail, value: profile.email, placeholder: 'Enter your email' },
-    { key: 'phone', label: 'Phone Number', icon: Phone, value: profile.phone, placeholder: 'Enter your phone number' },
+    { key: 'name' as const, label: 'Full Name', icon: User, value: profile.name, placeholder: 'Enter your name' },
+    { key: 'email' as const, label: 'Email Address', icon: Mail, value: profile.email, placeholder: 'Enter your email' },
+    { key: 'phone' as const, label: 'Phone Number', icon: Phone, value: profile.phone, placeholder: 'Enter your phone number' },
   ]
 
   return (

@@ -41,10 +41,11 @@ import ToggleSwitch from '../components/ToggleSwitch'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useConnectionStore } from '../stores/connectionStore'
 import { useProtocol } from '../hooks/useProtocol'
-import { getDBStats, clearAllHistory } from '../db/powerflowDB'
+import { getDBStats, clearAllHistory, getUserProfile } from '../db/powerflowDB'
 import { requestNotificationPermission, getNotificationPermission } from '../utils/pushNotification'
 import appVersion from '../version.json'
 import ProfileEditPage from './ProfileEditPage'
+import type { UserProfile } from '../types/protocol'
 
 export default function SettingPage() {
   const { powerStation, settings, updateSettings, activateFounderBadge } = usePowerStationStore()
@@ -73,12 +74,28 @@ export default function SettingPage() {
   const [showProfileEdit, setShowProfileEdit] = useState(false)
 
   // 用户个人信息
-  const userProfile = {
+  const [userProfile, setUserProfile] = useState<UserProfile>({
     name: 'Alex Chen',
     email: 'alex.chen@example.com',
-    avatar: null, // 可以设置为头像URL
+    phone: '+1 234 567 8900',
+    avatar: null,
     memberSince: '2024-03-15',
-  }
+  })
+
+  // 加载用户资料
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const savedProfile = await getUserProfile()
+        if (savedProfile) {
+          setUserProfile(savedProfile)
+        }
+      } catch (error) {
+        console.error('Failed to load user profile:', error)
+      }
+    }
+    loadProfile()
+  }, [])
 
   // 加载 DB 统计
   useEffect(() => {
