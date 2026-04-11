@@ -341,7 +341,8 @@ export async function saveUserProfile(profile: UserProfile): Promise<void> {
 
 export async function getUserProfile(): Promise<UserProfile | null> {
   const db = await getDB()
-  return await db.get('user_profile', USER_PROFILE_KEY)
+  const profile = await db.get('user_profile', USER_PROFILE_KEY)
+  return profile ?? null
 }
 
 export async function clearUserProfile(): Promise<void> {
