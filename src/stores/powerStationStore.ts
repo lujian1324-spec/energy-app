@@ -17,6 +17,7 @@ interface PowerStationState {
   updateSettings: (settings: Partial<AppSettings>) => void;
   setChargeLimit: (limit: number) => void;
   updateDeviceName: (name: string) => void;
+  activateFounderBadge: (code: string) => { success: boolean; message: string };
 }
 
 const initialPowerStation: PowerStation = {
@@ -136,6 +137,24 @@ updateDeviceName: (name) => {
 set((state) => ({
 powerStation: { ...state.powerStation, name }
 }))
+},
+
+activateFounderBadge: (code: string) => {
+  // 有效的兑换码列表（实际项目中应该从服务器验证）
+  const validCodes = ['FOUNDER2024', 'SIERROVIP', 'EARLYBIRD', 'POWERFLOW'];
+  
+  if (validCodes.includes(code.toUpperCase())) {
+    set((state) => ({
+      settings: {
+        ...state.settings,
+        founderBadge: true,
+        founderBadgeActivatedAt: new Date().toISOString(),
+      }
+    }));
+    return { success: true, message: 'Founder Badge activated successfully!' };
+  }
+  
+  return { success: false, message: 'Invalid code. Please try again.' };
 },
 }),
 {

@@ -29,6 +29,11 @@ import {
   FileText,
   Headphones,
   Mail,
+  Crown,
+  Gift,
+  Sparkles,
+  Tag,
+  Star,
 } from 'lucide-react'
 import ToggleSwitch from '../components/ToggleSwitch'
 import { usePowerStationStore } from '../stores/powerStationStore'
@@ -39,7 +44,7 @@ import { requestNotificationPermission, getNotificationPermission } from '../uti
 import appVersion from '../version.json'
 
 export default function SettingPage() {
-  const { powerStation, settings, updateSettings } = usePowerStationStore()
+  const { powerStation, settings, updateSettings, activateFounderBadge } = usePowerStationStore()
   const { bleConnection, serialConnection, activeDataSource, bleSupported, serialSupported } = useConnectionStore()
   const { connectBle, disconnectBle, connectSerial, disconnectSerial } = useProtocol()
   const [dbStats, setDbStats] = useState<Record<string, number> | null>(null)
@@ -54,6 +59,12 @@ export default function SettingPage() {
   const [supportEmail, setSupportEmail] = useState('')
   const [supportMessage, setSupportMessage] = useState('')
   const [supportSubmitted, setSupportSubmitted] = useState(false)
+
+  // Founder Badge 兑换
+  const [showFounderModal, setShowFounderModal] = useState(false)
+  const [founderCode, setFounderCode] = useState('')
+  const [founderMessage, setFounderMessage] = useState('')
+  const [founderSuccess, setFounderSuccess] = useState(false)
 
   // 加载 DB 统计
   useEffect(() => {
@@ -112,6 +123,22 @@ export default function SettingPage() {
     }
   }
 
+  // 处理 Founder Badge 兑换
+  const handleFounderSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    const result = activateFounderBadge(founderCode)
+    setFounderSuccess(result.success)
+    setFounderMessage(result.message)
+    
+    if (result.success) {
+      setTimeout(() => {
+        setShowFounderModal(false)
+        setFounderCode('')
+        setFounderMessage('')
+      }, 2000)
+    }
+  }
+
   const deviceInfo = [
     { icon: Battery, label: 'Battery Capacity', value: '1000Wh', desc: 'LiFePO₄ · LFP Cells', color: 'blue' },
     { icon: Zap, label: 'Max Charge Power', value: '500W', desc: 'AC + Solar Simultaneous', color: 'green' },
@@ -125,6 +152,14 @@ export default function SettingPage() {
     { icon: Globe, label: 'Language / Units', desc: 'English · Metric', type: 'nav' as const, color: 'gray', storeKey: null },
     { icon: Download, label: 'Firmware Update', desc: `App v${appVersion.version} (Build ${appVersion.build}) · Up to date`, type: 'badge' as const, color: 'green', storeKey: null },
     { icon: AlertTriangle, label: 'Factory Reset', desc: 'Clear all data and settings', type: 'nav-danger' as const, color: 'red', storeKey: null },
+  ]
+
+  // Founder Badge 权益列表
+  const founderBenefits = [
+    { icon: Sparkles, label: 'Early Access', desc: 'Priority access to new products' },
+    { icon: Tag, label: 'Exclusive Discounts', desc: 'Special pricing on new releases' },
+    { icon: Gift, label: 'Product Updates', desc: 'First to know about new features' },
+    { icon: Star, label: 'VIP Support', desc: 'Priority customer service' },
   ]
 
   const colorClasses: Record<string, { bg: string; text: string }> = {
@@ -183,7 +218,17 @@ export default function SettingPage() {
           </div>
           
           <div className="flex-1">
-            <h3 className="text-base font-bold text-[#FFFFFF]">{powerStation.name}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-bold text-[#FFFFFF]">{powerStation.name}</h3>
+              {settings.founderBadge && (
+                <span className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full 
+                  bg-[rgba(255,215,0,0.15)] text-[#FFD700] border border-[rgba(255,215,0,0.3)]
+                  font-semibold">
+                  <Crown size={10} />
+                  Founding Member
+                </span>
+              )}
+            </div>
             <p className="text-[11px] text-[#8E8E93] mt-0.5">Model · {powerStation.model} · S/N:{powerStation.serialNumber.slice(-5)}</p>
             <div className="flex gap-2 mt-2">
               <span className="text-[10px] px-2 py-0.5 rounded-full 
@@ -458,6 +503,65 @@ export default function SettingPage() {
               </motion.div>
             )}
           </AnimatePresence>
+        </div>
+
+        {/* Founder Badge 区域 */}
+        <div className="mb-4">
+          <div className="text-[11px] font-bold text-[#8E8E93] tracking-widest uppercase mb-2 px-1">
+            Membership
+          </div>
+          {settings.founderBadge ? (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-[#1C1C1E] border border-[rgba(255,215,0,0.2)] rounded-[20px] p-4"
+            >
+              {/* Founder Badge 头部 */}
+              <div className="flex items-center gap-3 mb-4 pb-3 border-b border-[rgba(255,215,0,0.1)]">
+                <div className="w-12 h-12 rounded-xl bg-[rgba(255,215,0,0.15)] flex items-center justify-center">
+                  <Crown size={24} className="text-[#FFD700]" />
+                </div>
+                <div>
+                  <div className="text-[15px] font-bold text-[#FFD700]">Founding Member</div>
+                  <div className="text-[11px] text-[#8E8E93]">
+                    Activated {settings.founderBadgeActivatedAt ? new Date(settings.founderBadgeActivatedAt).toLocaleDateString() : 'Recently'}
+                  </div>
+                </div>
+              </div>
+              
+              {/* 权益列表 */}
+              <div className="grid grid-cols-2 gap-3">
+                {founderBenefits.map((benefit) => {
+                  const Icon = benefit.icon
+                  return (
+                    <div key={benefit.label} className="flex items-start gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-[rgba(255,215,0,0.08)] flex items-center justify-center flex-shrink-0">
+                        <Icon size={14} className="text-[#FFD700]" />
+                      </div>
+                      <div>
+                        <div className="text-[11px] font-semibold text-[#FFFFFF]">{benefit.label}</div>
+                        <div className="text-[9px] text-[#8E8E93] leading-tight">{benefit.desc}</div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </motion.div>
+          ) : (
+            <div 
+              onClick={() => setShowFounderModal(true)}
+              className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] p-4 flex items-center gap-3 cursor-pointer active:scale-98 transition-transform"
+            >
+              <div className="w-10 h-10 rounded-xl bg-[rgba(255,215,0,0.08)] flex items-center justify-center">
+                <Crown size={20} className="text-[#FFD700]" />
+              </div>
+              <div className="flex-1">
+                <div className="text-[13px] font-semibold text-[#FFFFFF]">Founder Badge</div>
+                <div className="text-[11px] text-[#8E8E93]">Enter code to unlock exclusive benefits</div>
+              </div>
+              <ChevronRight size={16} className="text-[#48484A]" />
+            </div>
+          )}
         </div>
 
         {/* 系统设置 */}
@@ -752,6 +856,120 @@ export default function SettingPage() {
                       By submitting, you agree to our Privacy Policy
                     </p>
                   </form>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ==================== Founder Badge Modal ==================== */}
+      <AnimatePresence>
+        {showFounderModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-4"
+            onClick={() => setShowFounderModal(false)}
+          >
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="w-full max-w-md bg-[#1C1C1E] rounded-[28px] border border-[rgba(255,215,0,0.2)] overflow-hidden"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(255,215,0,0.1)]">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[rgba(255,215,0,0.1)] flex items-center justify-center">
+                    <Crown size={20} className="text-[#FFD700]" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-[#FFFFFF]">Founder Badge</h3>
+                    <p className="text-[11px] text-[#8E8E93]">Unlock exclusive benefits</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowFounderModal(false)} className="p-2 rounded-full hover:bg-[rgba(255,255,255,0.05)]">
+                  <X size={20} className="text-[#8E8E93]" />
+                </button>
+              </div>
+              
+              {/* Content */}
+              <div className="p-5">
+                {founderSuccess ? (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="text-center py-8"
+                  >
+                    <div className="w-16 h-16 rounded-full bg-[rgba(255,215,0,0.15)] flex items-center justify-center mx-auto mb-4">
+                      <Crown size={32} className="text-[#FFD700]" />
+                    </div>
+                    <h4 className="text-[15px] font-bold text-[#FFD700] mb-2">Welcome, Founding Member!</h4>
+                    <p className="text-[12px] text-[#8E8E93]">Your exclusive benefits are now active.</p>
+                  </motion.div>
+                ) : (
+                  <>
+                    {/* 权益预览 */}
+                    <div className="mb-5">
+                      <p className="text-[12px] text-[#8E8E93] mb-3">Founding Members enjoy:</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {founderBenefits.map((benefit) => {
+                          const Icon = benefit.icon
+                          return (
+                            <div key={benefit.label} className="flex items-center gap-2 bg-[rgba(255,215,0,0.05)] rounded-lg p-2">
+                              <Icon size={14} className="text-[#FFD700]" />
+                              <span className="text-[11px] text-[#FFFFFF]">{benefit.label}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                    
+                    <form onSubmit={handleFounderSubmit} className="space-y-4">
+                      {/* Code Input */}
+                      <div>
+                        <label className="text-[12px] font-semibold text-[#8E8E93] mb-2 flex items-center gap-2">
+                          <Sparkles size={14} />
+                          Enter Code
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={founderCode}
+                          onChange={e => setFounderCode(e.target.value)}
+                          placeholder="e.g., FOUNDER2024"
+                          className="w-full px-4 py-3 rounded-xl bg-[#000000] border border-[rgba(255,215,0,0.2)]
+                            text-[#FFFFFF] text-[13px] placeholder:text-[#48484A] uppercase
+                            focus:outline-none focus:border-[rgba(255,215,0,0.5)] transition-colors"
+                        />
+                      </div>
+                      
+                      {founderMessage && (
+                        <div className={`text-[11px] text-center ${founderSuccess ? 'text-[#34C759]' : 'text-[#FF3B30]'}`}>
+                          {founderMessage}
+                        </div>
+                      )}
+                      
+                      {/* Submit Button */}
+                      <button
+                        type="submit"
+                        className="w-full py-3.5 rounded-xl bg-[rgba(255,215,0,0.12)] text-[#FFD700] font-semibold text-[13px]
+                          flex items-center justify-center gap-2 active:scale-95 transition-transform
+                          border border-[rgba(255,215,0,0.25)]"
+                      >
+                        <Crown size={16} />
+                        Activate Badge
+                      </button>
+                      
+                      <p className="text-[10px] text-[#48484A] text-center">
+                        Valid codes: FOUNDER2024, SIERROVIP, EARLYBIRD, POWERFLOW
+                      </p>
+                    </form>
+                  </>
                 )}
               </div>
             </motion.div>

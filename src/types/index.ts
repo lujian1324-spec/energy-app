@@ -82,4 +82,6 @@ export interface AppSettings {
   ecoMode: boolean;
   overTempProtection: boolean;
   overDischargeProtection: boolean;
+  founderBadge?: boolean;
+  founderBadgeActivatedAt?: string;
 }
