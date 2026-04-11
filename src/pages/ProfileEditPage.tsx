@@ -172,7 +172,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
             
             {/* Founder Badge 皇冠图标 */}
             {settings.founderBadge && (
-              <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-[#1C1C1E] border-2 border-[#FFD700] flex items-center justify-center z-10">
+              <div className="absolute -top-1 -right-1 w-8 h-8 rounded-full bg-[#1C1C1E] border-2 border-[#FFD700] flex items-center justify-center z-10">
                 <Crown size={16} className="text-[#FFD700]" />
               </div>
             )}

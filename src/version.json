@@ -1,10 +1,9 @@
 {
-  "version": "3.7.4",
-  "build": 2451,
+  "version": "3.7.5",
+  "build": 2452,
   "date": "2026-04-11",
   "changelog": [
-    "Fix Founder Badge crown icon positioning",
-    "Add z-index to ensure crown appears above avatar",
-    "Adjust border and sizing for better visual balance"
+    "Move Founder Badge crown icon to top-right corner of avatar",
+    "Apply to both Setting page and Profile Edit page"
   ]
 }
