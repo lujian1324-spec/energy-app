@@ -3,12 +3,14 @@ import {
   LayoutGrid, 
   Layers, 
   PieChart, 
-  User 
+  User,
+  Zap
 } from 'lucide-react'
 
 const navItems = [
   { path: '/devices', label: 'DEVICE', icon: LayoutGrid },
   { path: '/', label: 'OVERVIEW', icon: Layers },
+  { path: '/peak-shaving', label: 'PEAK', icon: Zap },
   { path: '/stats', label: 'STATS', icon: PieChart },
   { path: '/settings', label: 'SETTING', icon: User },
 ]

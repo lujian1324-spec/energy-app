@@ -6,6 +6,7 @@ import OverviewPage from './pages/OverviewPage'
 import StatsPage from './pages/StatsPage'
 import SettingPage from './pages/SettingPage'
 import DevicePage from './pages/DevicePage'
+import PeakShavingPage from './pages/PeakShavingPage'
 import { useRealtimeSimulator } from './hooks/useRealtimeSimulator'
 
 function App() {
@@ -29,6 +30,7 @@ function App() {
             <Route path="/" element={<OverviewPage />} />
             <Route path="/devices" element={<DevicePage />} />
             <Route path="/stats" element={<StatsPage />} />
+            <Route path="/peak-shaving" element={<PeakShavingPage />} />
             <Route path="/settings" element={<SettingPage />} />
           </Routes>
  </motion.div>

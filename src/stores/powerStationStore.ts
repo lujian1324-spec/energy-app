@@ -1,6 +1,6 @@
 ﻿import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { PowerStation, OperatingMode, Device, AppSettings } from '../types'
+import type { PowerStation, OperatingMode, Device, AppSettings, PeakShavingSettings, PeakShavingStatus } from '../types'
 
 interface PowerStationState {
   // 电源站数据
@@ -8,6 +8,10 @@ interface PowerStationState {
   devices: Device[];
   settings: AppSettings;
   selectedDeviceId: string | null;
+  
+  // 削峰填谷
+  peakShavingSettings: PeakShavingSettings;
+  peakShavingStatus: PeakShavingStatus;
   
   // 动作
   setMode: (mode: OperatingMode) => void;
@@ -24,6 +28,13 @@ interface PowerStationState {
   selectDevice: (deviceId: string) => void;
   updateDeviceNameById: (deviceId: string, name: string) => void;
   updateDeviceSpecs: (specs: Partial<PowerStation['specs']>) => void;
+  
+  // 削峰填谷动作
+  updatePeakShavingSettings: (settings: Partial<PeakShavingSettings>) => void;
+  addPeakShavingSchedule: (schedule: Omit<PeakShavingSettings['schedules'][0], 'id'>) => void;
+  updatePeakShavingSchedule: (id: string, schedule: Partial<PeakShavingSettings['schedules'][0]>) => void;
+  deletePeakShavingSchedule: (id: string) => void;
+  togglePeakShaving: (enabled: boolean) => void;
 }
 
 const initialPowerStation: PowerStation = {
@@ -171,6 +182,46 @@ const initialSettings: AppSettings = {
   overDischargeProtection: true,
 }
 
+// 削峰填谷默认设置
+const initialPeakShavingSettings: PeakShavingSettings = {
+  enabled: false,
+  schedules: [
+    {
+      id: '1',
+      name: '谷电充电',
+      startTime: '23:00',
+      endTime: '07:00',
+      type: 'charge',
+      enabled: true,
+    },
+    {
+      id: '2',
+      name: '峰电放电',
+      startTime: '08:00',
+      endTime: '22:00',
+      type: 'discharge',
+      enabled: true,
+    },
+  ],
+  peakHours: { start: '08:00', end: '22:00' },
+  offPeakHours: { start: '23:00', end: '07:00' },
+  peakPrice: 0.8,
+  offPeakPrice: 0.3,
+  maxChargePower: 500,
+  maxDischargePower: 1000,
+  minBatteryLevel: 20,
+  maxBatteryLevel: 90,
+}
+
+const initialPeakShavingStatus: PeakShavingStatus = {
+  isActive: false,
+  currentMode: 'idle',
+  currentScheduleId: null,
+  estimatedSavings: 0,
+  todaySavings: 0,
+  monthlySavings: 0,
+}
+
 export const usePowerStationStore = create<PowerStationState>()(
   persist(
  (set) => ({
@@ -178,6 +229,8 @@ powerStation: initialPowerStation,
 devices: initialDevices,
 settings: initialSettings,
 selectedDeviceId: '3', // 默认选中 Sierro 1000
+peakShavingSettings: initialPeakShavingSettings,
+peakShavingStatus: initialPeakShavingStatus,
 
  setMode: (mode) => {
  set((state) => ({
@@ -320,6 +373,58 @@ deleteDevices: (deviceIds: string[]) => {
     devices: state.devices.filter(device => !deviceIds.includes(device.id))
   }));
 },
+
+// 削峰填谷动作
+updatePeakShavingSettings: (settings) => {
+  set((state) => ({
+    peakShavingSettings: { ...state.peakShavingSettings, ...settings }
+  }));
+},
+
+addPeakShavingSchedule: (schedule) => {
+  set((state) => ({
+    peakShavingSettings: {
+      ...state.peakShavingSettings,
+      schedules: [
+        ...state.peakShavingSettings.schedules,
+        { ...schedule, id: Date.now().toString() }
+      ]
+    }
+  }));
+},
+
+updatePeakShavingSchedule: (id, schedule) => {
+  set((state) => ({
+    peakShavingSettings: {
+      ...state.peakShavingSettings,
+      schedules: state.peakShavingSettings.schedules.map(s =>
+        s.id === id ? { ...s, ...schedule } : s
+      )
+    }
+  }));
+},
+
+deletePeakShavingSchedule: (id) => {
+  set((state) => ({
+    peakShavingSettings: {
+      ...state.peakShavingSettings,
+      schedules: state.peakShavingSettings.schedules.filter(s => s.id !== id)
+    }
+  }));
+},
+
+togglePeakShaving: (enabled) => {
+  set((state) => ({
+    peakShavingSettings: {
+      ...state.peakShavingSettings,
+      enabled
+    },
+    peakShavingStatus: {
+      ...state.peakShavingStatus,
+      isActive: enabled
+    }
+  }));
+},
 }),
 {
 name: 'powerflow-storage',
@@ -327,6 +432,7 @@ partialize: (state) => ({
   settings: state.settings, 
   selectedDeviceId: state.selectedDeviceId,
   devices: state.devices,
+  peakShavingSettings: state.peakShavingSettings,
 }),
 }
   )

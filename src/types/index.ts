@@ -101,3 +101,37 @@ export interface AppSettings {
   founderBadgeActivatedAt?: string;
   founderBadgeNumber?: number; // 0-100 之间的唯一身份编码
 }
+
+// 削峰填谷时间段配置
+export interface PeakShavingSchedule {
+  id: string;
+  name: string;
+  startTime: string; // HH:mm 格式
+  endTime: string;   // HH:mm 格式
+  type: 'charge' | 'discharge' | 'grid' | 'battery'; // 充电、放电、市电、电池
+  enabled: boolean;
+}
+
+// 削峰填谷设置
+export interface PeakShavingSettings {
+  enabled: boolean;
+  schedules: PeakShavingSchedule[];
+  peakHours: { start: string; end: string }; // 高峰电价时段
+  offPeakHours: { start: string; end: string }; // 低谷电价时段
+  peakPrice: number; // 高峰电价 (元/kWh)
+  offPeakPrice: number; // 低谷电价 (元/kWh)
+  maxChargePower: number; // 最大充电功率 (W)
+  maxDischargePower: number; // 最大放电功率 (W)
+  minBatteryLevel: number; // 最小电池电量 (%)
+  maxBatteryLevel: number; // 最大电池电量 (%)
+}
+
+// 削峰填谷实时状态
+export interface PeakShavingStatus {
+  isActive: boolean;
+  currentMode: 'idle' | 'charging' | 'discharging' | 'grid_power' | 'battery_power';
+  currentScheduleId: string | null;
+  estimatedSavings: number; // 预计节省金额
+  todaySavings: number; // 今日节省金额
+  monthlySavings: number; // 本月节省金额
+}
