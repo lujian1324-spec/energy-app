@@ -6,8 +6,6 @@ import {
   Thermometer, 
   RefreshCw,
   Bell,
-  Moon,
-  Globe,
   Download,
   AlertTriangle,
   ChevronRight,
@@ -43,7 +41,7 @@ import ProfileEditPage from './ProfileEditPage'
 import type { UserProfile } from '../types/protocol'
 
 export default function SettingPage() {
-  const { powerStation, settings, updateSettings, activateFounderBadge } = usePowerStationStore()
+  const { powerStation, settings, updateSettings, activateFounderBadge, resetAll } = usePowerStationStore()
   const { bleConnection, serialConnection, activeDataSource, bleSupported, serialSupported } = useConnectionStore()
   const { connectBle, disconnectBle, connectSerial, disconnectSerial } = useProtocol()
   const [dbStats, setDbStats] = useState<Record<string, number> | null>(null)
@@ -64,6 +62,9 @@ export default function SettingPage() {
   const [founderCode, setFounderCode] = useState('')
   const [founderMessage, setFounderMessage] = useState('')
   const [founderSuccess, setFounderSuccess] = useState(false)
+
+  // Reset 确认弹窗
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
 
   // 个人信息编辑页面
   const [showProfileEdit, setShowProfileEdit] = useState(false)
@@ -169,10 +170,8 @@ export default function SettingPage() {
 
   const systemItems = [
     { icon: Bell, label: 'Push Notifications', desc: 'Power outage alerts via system notification', type: 'toggle' as const, storeKey: 'pushNotifications' as const },
-    { icon: Moon, label: 'Do Not Disturb', desc: `${settings.doNotDisturbStart} — ${settings.doNotDisturbEnd}`, type: 'toggle' as const, storeKey: 'doNotDisturb' as const },
-    { icon: Globe, label: 'Language / Units', desc: 'English · Metric', type: 'nav' as const, storeKey: null },
     { icon: Download, label: 'Firmware Update', desc: `App v${appVersion.version} (Build ${appVersion.build}) · Up to date`, type: 'badge' as const, storeKey: null },
-    { icon: AlertTriangle, label: 'Factory Reset', desc: 'Clear all data and settings', type: 'nav-danger' as const, storeKey: null },
+    { icon: AlertTriangle, label: 'Reset', desc: 'Clear all data and settings', type: 'nav-danger' as const, storeKey: null },
   ]
 
   // Founder Badge 权益列表
@@ -404,8 +403,12 @@ export default function SettingPage() {
               return (
                 <div 
                   key={item.label}
+                  onClick={() => {
+                    if (item.label === 'Reset') setShowResetConfirm(true)
+                  }}
                   className={`flex items-center gap-3 px-4 py-3.5 
-                    ${i !== systemItems.length - 1 ? 'border-b border-[rgba(1,214,190,0.08)]' : ''}`}
+                    ${i !== systemItems.length - 1 ? 'border-b border-[rgba(1,214,190,0.08)]' : ''}
+                    ${item.label === 'Reset' ? 'cursor-pointer active:bg-[rgba(255,59,48,0.04)]' : ''}`}
                 >
                   <div className={`w-9 h-9 rounded-lg ${systemIconClass.bg} ${systemIconClass.text} 
                     flex items-center justify-center flex-shrink-0`}>
@@ -420,19 +423,15 @@ export default function SettingPage() {
                       <ToggleSwitch 
                         isOn={settings[item.storeKey] as boolean}
                         onToggle={() => {
-                          if (item.storeKey === 'pushNotifications') {
+                          const key = item.storeKey as keyof typeof settings
+                          if (key === 'pushNotifications') {
                             handlePushNotificationToggle()
                           } else {
-                            updateSettings({ [item.storeKey!]: !settings[item.storeKey!] })
+                            updateSettings({ [key]: !settings[key] })
                           }
                         }}
                         size="sm"
                       />
-                    )}
-                    {item.type === 'nav' && (
-                      <>
-                        <ChevronRight size={16} className="text-[#48484A]" />
-                      </>
                     )}
                     {item.type === 'badge' && (
                       <span className="text-[10px] px-2 py-0.5 rounded-full 
@@ -799,6 +798,79 @@ export default function SettingPage() {
                     </form>
                   </>
                 )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ==================== Reset Confirm Modal ==================== */}
+      <AnimatePresence>
+        {showResetConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 p-4"
+            onClick={() => setShowResetConfirm(false)}
+          >
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="w-full max-w-md bg-[#1C1C1E] rounded-[28px] border border-[rgba(255,59,48,0.2)] overflow-hidden"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(255,59,48,0.1)]">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[rgba(255,59,48,0.1)] flex items-center justify-center">
+                    <AlertTriangle size={20} className="text-[#FF3B30]" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-[#FFFFFF]">Reset All Settings</h3>
+                    <p className="text-[11px] text-[#8E8E93]">This action cannot be undone</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowResetConfirm(false)} className="p-2 rounded-full hover:bg-[rgba(255,255,255,0.05)]">
+                  <X size={20} className="text-[#8E8E93]" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-5 space-y-4">
+                <p className="text-[13px] text-[#8E8E93] leading-relaxed">
+                  All your settings, device configurations, peak shaving schedules, and membership data will be permanently deleted and reset to factory defaults.
+                </p>
+
+                <div className="bg-[rgba(255,59,48,0.06)] border border-[rgba(255,59,48,0.15)] rounded-xl p-3 space-y-1.5">
+                  {['Device settings & preferences', 'Peak shaving schedules', 'Founder Badge membership', 'User profile data'].map(item => (
+                    <div key={item} className="flex items-center gap-2 text-[12px] text-[#FF3B30]">
+                      <div className="w-1 h-1 rounded-full bg-[#FF3B30] flex-shrink-0" />
+                      {item}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex gap-3 pt-1">
+                  <button
+                    onClick={() => setShowResetConfirm(false)}
+                    className="flex-1 py-3 rounded-xl bg-[rgba(255,255,255,0.06)] text-[#FFFFFF] font-semibold text-[13px] active:scale-95 transition-transform"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      resetAll()
+                      setShowResetConfirm(false)
+                    }}
+                    className="flex-1 py-3 rounded-xl bg-[rgba(255,59,48,0.15)] text-[#FF3B30] font-semibold text-[13px]
+                      border border-[rgba(255,59,48,0.3)] active:scale-95 transition-transform"
+                  >
+                    Reset
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>

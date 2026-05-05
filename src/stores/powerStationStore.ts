@@ -35,6 +35,9 @@ interface PowerStationState {
   updatePeakShavingSchedule: (id: string, schedule: Partial<PeakShavingSettings['schedules'][0]>) => void;
   deletePeakShavingSchedule: (id: string) => void;
   togglePeakShaving: (enabled: boolean) => void;
+  
+  // 重置全部设置
+  resetAll: () => void;
 }
 
 const initialPowerStation: PowerStation = {
@@ -425,6 +428,18 @@ togglePeakShaving: (enabled) => {
     }
   }));
 },
+
+resetAll: () => {
+  set({
+    powerStation: initialPowerStation,
+    devices: initialDevices,
+    settings: initialSettings,
+    selectedDeviceId: '3',
+    peakShavingSettings: initialPeakShavingSettings,
+    peakShavingStatus: initialPeakShavingStatus,
+  });
+},
+
 }),
 {
 name: 'powerflow-storage',
