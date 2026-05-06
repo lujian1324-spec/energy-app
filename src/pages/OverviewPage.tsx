@@ -17,6 +17,7 @@ import {
   ChevronDown,
   ChevronLeft,
   Battery,
+  Settings,
 } from 'lucide-react'
 import BatteryRing from '../components/BatteryRing'
 import ToggleSwitch from '../components/ToggleSwitch'
@@ -254,27 +255,35 @@ export default function OverviewPage() {
             </AnimatePresence>
           </div>
 
-          {/* 右：铃铛（故障提示） */}
-          <motion.button
-            onClick={handleBellClick}
-            disabled={isPushing}
-            whileTap={{ scale: 0.85 }}
-            animate={isPushing ? { 
-              scale: [1, 1.1, 1],
-              transition: { duration: 0.5, repeat: Infinity }
-            } : {}}
-            className="w-9 h-9 rounded-full bg-[#1C1C1E] flex items-center justify-center relative
-              disabled:opacity-70 transition-colors flex-shrink-0"
-          >
-            {isPushing ? (
-              <Loader2 size={16} className="text-[#01D6BE] animate-spin" />
-            ) : (
-              <Bell size={18} className="text-[#FFFFFF]" />
-            )}
-            {unreadCount > 0 && !isPushing && (
-              <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#FF3B30]" />
-            )}
-          </motion.button>
+          {/* 右：设置 + 铃铛 */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={() => navigate('/smart-schedule')}
+              className="w-9 h-9 rounded-full bg-[#1C1C1E] flex items-center justify-center text-[#FFFFFF] hover:bg-[#2C2C2E] transition-colors"
+            >
+              <Settings size={18} />
+            </button>
+            <motion.button
+              onClick={handleBellClick}
+              disabled={isPushing}
+              whileTap={{ scale: 0.85 }}
+              animate={isPushing ? { 
+                scale: [1, 1.1, 1],
+                transition: { duration: 0.5, repeat: Infinity }
+              } : {}}
+              className="w-9 h-9 rounded-full bg-[#1C1C1E] flex items-center justify-center relative
+                disabled:opacity-70 transition-colors"
+            >
+              {isPushing ? (
+                <Loader2 size={16} className="text-[#01D6BE] animate-spin" />
+              ) : (
+                <Bell size={18} className="text-[#FFFFFF]" />
+              )}
+              {unreadCount > 0 && !isPushing && (
+                <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#FF3B30]" />
+              )}
+            </motion.button>
+          </div>
         </div>
 
         {/* 电量英雄区 - 扁平化 */}

@@ -7,6 +7,7 @@ import OverviewPage from './pages/OverviewPage'
 import StatsPage from './pages/StatsPage'
 import SettingPage from './pages/SettingPage'
 import LoginPage from './pages/LoginPage'
+import SmartSchedulePage from './pages/SmartSchedulePage'
 import { useRealtimeSimulator } from './hooks/useRealtimeSimulator'
 import { useAuthStore } from './stores/authStore'
 
@@ -46,8 +47,8 @@ function App() {
     )
   }
 
-  // 设备详情页单独渲染，不包含底部导航
-  if (location.pathname.startsWith('/device/')) {
+  // 设备详情页 & Smart Schedule 页单独渲染，不包含底部导航
+  if (location.pathname.startsWith('/device/') || location.pathname === '/smart-schedule') {
     return (
       <div className="h-full w-full bg-bg-base flex flex-col overflow-hidden">
         <div className="flex-1 overflow-hidden relative">
@@ -62,6 +63,7 @@ function App() {
             >
               <Routes location={location}>
                 <Route path="/device/:id" element={<RequireAuth><OverviewPage /></RequireAuth>} />
+                <Route path="/smart-schedule" element={<RequireAuth><SmartSchedulePage /></RequireAuth>} />
               </Routes>
             </motion.div>
           </AnimatePresence>

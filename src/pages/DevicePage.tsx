@@ -460,8 +460,10 @@ export default function DevicePage() {
               key={device.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
+              onClick={() => !isBatchMode && handleDeviceClick(device.id)}
               className={`flex items-center gap-3.5 p-4 bg-[#1C1C1E] rounded-[18px]
                 transition-all duration-200
+                ${!isBatchMode ? 'cursor-pointer active:bg-[#2C2C2E]' : ''}
                 ${hasAlert(device)
                   ? 'border-l-2 border-l-[#FF3B30]'
                   : ''
@@ -470,7 +472,7 @@ export default function DevicePage() {
               {/* Batch Mode 多选框 */}
               {isBatchMode && (
                 <button
-                  onClick={() => toggleDeviceSelection(device.id)}
+                  onClick={(e) => { e.stopPropagation(); toggleDeviceSelection(device.id) }}
                   className={`w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 border-2 transition-colors
                     ${selectedDevices.has(device.id)
                       ? 'bg-[#01D6BE] border-[#01D6BE]'
@@ -492,12 +494,9 @@ export default function DevicePage() {
 
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleDeviceClick(device.id)}
-                    className="text-[14px] font-semibold text-[#FFFFFF] hover:text-[#01D6BE] transition-colors text-left"
-                  >
+                  <span className="text-[14px] font-semibold text-[#FFFFFF]">
                     {device.name}
-                  </button>
+                  </span>
                   {hasAlert(device) && (
                     <AlertTriangle size={12} className="text-[#FF3B30] flex-shrink-0" />
                   )}
@@ -514,10 +513,12 @@ export default function DevicePage() {
               </div>
 
               {!isBatchMode && (
-                <ToggleSwitch
-                  isOn={device.isOn}
-                  onToggle={() => toggleDevice(device.id)}
-                />
+                <div onClick={(e) => e.stopPropagation()}>
+                  <ToggleSwitch
+                    isOn={device.isOn}
+                    onToggle={() => toggleDevice(device.id)}
+                  />
+                </div>
               )}
             </motion.div>
           ))}

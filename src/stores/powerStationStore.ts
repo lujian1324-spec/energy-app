@@ -1,6 +1,6 @@
 ﻿import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { PowerStation, OperatingMode, Device, AppSettings, PeakShavingSettings, PeakShavingStatus } from '../types'
+import type { PowerStation, OperatingMode, Device, AppSettings, PeakShavingSettings, PeakShavingStatus, TOURateInfo } from '../types'
 
 interface PowerStationState {
   // 电源站数据
@@ -35,6 +35,7 @@ interface PowerStationState {
   updatePeakShavingSchedule: (id: string, schedule: Partial<PeakShavingSettings['schedules'][0]>) => void;
   deletePeakShavingSchedule: (id: string) => void;
   togglePeakShaving: (enabled: boolean) => void;
+  lookupTOURate: (zipCode: string) => TOURateInfo | null;
   
   // 重置全部设置
   resetAll: () => void;
@@ -185,13 +186,22 @@ const initialSettings: AppSettings = {
   overDischargeProtection: true,
 }
 
-// 削峰填谷默认设置
+// 北美 TOU 费率数据库（模拟）
+const touRateDatabase: Record<string, TOURateInfo> = {
+  '94025': { provider: 'PG&E E-TOU-C', peakPrice: 0.42, offPeakPrice: 0.12, partPeakPrice: 0.28, peakHours: { start: '16:00', end: '21:00' }, offPeakHours: { start: '21:00', end: '16:00' }, partPeakHours: { start: '07:00', end: '16:00' } },
+  '90210': { provider: 'SCE TOU-D-PRIME', peakPrice: 0.38, offPeakPrice: 0.14, partPeakPrice: 0.25, peakHours: { start: '17:00', end: '20:00' }, offPeakHours: { start: '21:00', end: '08:00' }, partPeakHours: { start: '08:00', end: '17:00' } },
+  '10001': { provider: 'ConEdison TOU', peakPrice: 0.35, offPeakPrice: 0.10, peakHours: { start: '08:00', end: '22:00' }, offPeakHours: { start: '22:00', end: '08:00' } },
+  '77001': { provider: 'CenterPoint Energy TOU', peakPrice: 0.30, offPeakPrice: 0.09, peakHours: { start: '15:00', end: '19:00' }, offPeakHours: { start: '22:00', end: '06:00' } },
+  '60601': { provider: 'ComEd TOU', peakPrice: 0.28, offPeakPrice: 0.08, peakHours: { start: '11:00', end: '19:00' }, offPeakHours: { start: '21:00', end: '07:00' } },
+}
+
+// 削峰填谷默认设置（北美参数）
 const initialPeakShavingSettings: PeakShavingSettings = {
   enabled: false,
   schedules: [
     {
       id: '1',
-      name: '谷电充电',
+      name: 'Off-Peak Charging',
       startTime: '23:00',
       endTime: '07:00',
       type: 'charge',
@@ -199,21 +209,26 @@ const initialPeakShavingSettings: PeakShavingSettings = {
     },
     {
       id: '2',
-      name: '峰电放电',
+      name: 'Peak Discharging',
       startTime: '08:00',
       endTime: '22:00',
       type: 'discharge',
       enabled: true,
     },
   ],
-  peakHours: { start: '08:00', end: '22:00' },
-  offPeakHours: { start: '23:00', end: '07:00' },
-  peakPrice: 0.8,
-  offPeakPrice: 0.3,
+  peakHours: { start: '16:00', end: '21:00' },
+  offPeakHours: { start: '21:00', end: '16:00' },
+  peakPrice: 0.42,
+  offPeakPrice: 0.12,
+  partPeakPrice: 0.28,
   maxChargePower: 500,
   maxDischargePower: 1000,
-  minBatteryLevel: 20,
-  maxBatteryLevel: 90,
+  minBatteryLevel: 10,
+  maxBatteryLevel: 95,
+  zipCode: '',
+  chargingEfficiency: 0.95,
+  depthOfDischarge: 0.90,
+  executionRate: 0.85,
 }
 
 const initialPeakShavingStatus: PeakShavingStatus = {
@@ -427,6 +442,25 @@ togglePeakShaving: (enabled) => {
       isActive: enabled
     }
   }));
+},
+
+lookupTOURate: (zipCode) => {
+  const rateInfo = touRateDatabase[zipCode] || null;
+  if (rateInfo) {
+    set((state) => ({
+      peakShavingSettings: {
+        ...state.peakShavingSettings,
+        zipCode,
+        touRateInfo: rateInfo,
+        peakPrice: rateInfo.peakPrice,
+        offPeakPrice: rateInfo.offPeakPrice,
+        partPeakPrice: rateInfo.partPeakPrice,
+        peakHours: rateInfo.peakHours,
+        offPeakHours: rateInfo.offPeakHours,
+      }
+    }));
+  }
+  return rateInfo;
 },
 
 resetAll: () => {

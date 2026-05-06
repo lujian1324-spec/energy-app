@@ -108,22 +108,40 @@ export interface PeakShavingSchedule {
   name: string;
   startTime: string; // HH:mm 格式
   endTime: string;   // HH:mm 格式
-  type: 'charge' | 'discharge' | 'grid' | 'battery'; // 充电、放电、市电、电池
+  type: 'charge' | 'discharge' | 'grid' | 'battery';
   enabled: boolean;
+}
+
+// TOU 费率信息（北美电力公司）
+export interface TOURateInfo {
+  provider: string;       // 电力公司名称，e.g. "PG&E E-TOU-C"
+  peakPrice: number;      // $/kWh
+  offPeakPrice: number;   // $/kWh
+  partPeakPrice?: number; // $/kWh (部分电力公司有 part-peak)
+  peakHours: { start: string; end: string };
+  offPeakHours: { start: string; end: string };
+  partPeakHours?: { start: string; end: string };
 }
 
 // 削峰填谷设置
 export interface PeakShavingSettings {
   enabled: boolean;
   schedules: PeakShavingSchedule[];
-  peakHours: { start: string; end: string }; // 高峰电价时段
-  offPeakHours: { start: string; end: string }; // 低谷电价时段
-  peakPrice: number; // 高峰电价 (元/kWh)
-  offPeakPrice: number; // 低谷电价 (元/kWh)
-  maxChargePower: number; // 最大充电功率 (W)
-  maxDischargePower: number; // 最大放电功率 (W)
-  minBatteryLevel: number; // 最小电池电量 (%)
-  maxBatteryLevel: number; // 最大电池电量 (%)
+  peakHours: { start: string; end: string };
+  offPeakHours: { start: string; end: string };
+  peakPrice: number;       // $/kWh (北美默认)
+  offPeakPrice: number;    // $/kWh
+  maxChargePower: number;  // W
+  maxDischargePower: number; // W
+  minBatteryLevel: number; // %
+  maxBatteryLevel: number; // %
+  // v1.1 新增
+  partPeakPrice?: number;  // $/kWh
+  zipCode?: string;        // 邮编（北美 TOU 匹配）
+  touRateInfo?: TOURateInfo; // 自动匹配的费率信息
+  chargingEfficiency?: number; // 充电效率 (0.95)
+  depthOfDischarge?: number;   // 放电深度 (0.90)
+  executionRate?: number;      // 执行率 (0.85)
 }
 
 // 削峰填谷实时状态
