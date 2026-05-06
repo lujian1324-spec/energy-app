@@ -29,8 +29,8 @@ export async function loginByAccount(
   password: string
 ): Promise<ApiResponse<LoginData>> {
   const payload: LoginRequest = { username, password }
-  // 登录接口不需要携带 Authorization，但需要签名头
-  const result = await api.postSkipAuth<LoginData>('/login/account', payload)
+  // 登录接口不需要签名验证和 Authorization
+  const result = await api.postNoSign<LoginData>('/login/account', payload)
 
   // 自动保存 token
   const token = result.data?.token ?? result.data?.accessToken

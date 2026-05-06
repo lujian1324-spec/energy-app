@@ -33,6 +33,8 @@ export interface RequestOptions {
   body?: string
   /** 是否跳过自动添加 Authorization（登录接口） */
   skipAuth?: boolean
+  /** 是否跳过签名头注入（登录接口不验签） */
+  skipSign?: boolean
 }
 
 export async function request<T = unknown>(
@@ -45,12 +47,14 @@ export async function request<T = unknown>(
   // 解析 URL 参数（path 中可能含有 ? 查询串）
   const urlParams = parseUrlParams(path)
 
-  // 计算签名
-  const signHeaders = calcSign({
-    method,
-    urlParams,
-    body: method !== 'GET' ? bodyStr : undefined,
-  })
+  // 计算签名（skipSign 时跳过）
+  const signHeaders = options.skipSign
+    ? {}
+    : calcSign({
+        method,
+        urlParams,
+        body: method !== 'GET' ? bodyStr : undefined,
+      })
 
   // 构造请求头
   const headers: Record<string, string> = {
@@ -101,6 +105,16 @@ export const api = {
       method: 'POST',
       body: data !== undefined ? JSON.stringify(data) : '',
       skipAuth: true,
+    })
+  },
+
+  /** 不验签、不携带 Authorization（登录接口） */
+  postNoSign<T = unknown>(path: string, data?: unknown) {
+    return request<T>(path, {
+      method: 'POST',
+      body: data !== undefined ? JSON.stringify(data) : '',
+      skipAuth: true,
+      skipSign: true,
     })
   },
 }
