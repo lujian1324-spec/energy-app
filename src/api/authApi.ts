@@ -30,7 +30,7 @@ export async function loginByAccount(
 ): Promise<ApiResponse<LoginData>> {
   const payload: LoginRequest = { account: username, password }
   // 登录接口不需要签名验证和 Authorization
-  const result = await api.postNoSign<LoginData>('/login/account', payload)
+  const result = await api.postSkipAuth<LoginData>('/login/account', payload)
 
   // 自动保存 token
   const token = result.data?.token ?? result.data?.accessToken

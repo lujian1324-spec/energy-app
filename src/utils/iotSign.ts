@@ -15,9 +15,12 @@
 // ───────── 依赖：crypto-js ─────────
 import CryptoJS from 'crypto-js'
 
-// ───────── 应用凭据 ─────────
-export const APP_ID = 'rYGQpmYU5k'
-export const APP_SECRET = 'GhJXQYEHphHlyiqYnBGE'
+// ───────── 应用凭据（每次调用时从 localStorage 读取，fallback 到前端硬编码默认值） ─────────
+function getCredentials(): { appId: string; appSecret: string } {
+  const appId = localStorage.getItem('OPEN_APP_ID') ?? 'rBrTRfAPXz'
+  const appSecret = localStorage.getItem('OPEN_APP_SECRET') ?? 'I4D0KRr2339z3pQ/at91V9BpFAOe54DaTafwSm6suIQ='
+  return { appId, appSecret }
+}
 
 // ───────── 工具函数 ─────────
 
@@ -54,9 +57,9 @@ function md5Hex(data: CryptoJS.lib.WordArray): string {
 // ───────── 主签名函数 ─────────
 
 export interface SignHeaders {
-  'IOT-Open-AppID': string
-  'IOT-Open-Nonce': string
-  'IOT-Open-Sign': string
+ 'IOT-Open-AppID': string
+ 'IOT-Open-Nonce': string
+ 'IOT-Open-Sign': string
 }
 
 export interface SignOptions {
@@ -75,21 +78,22 @@ export interface SignOptions {
  */
 export function calcSign(options: SignOptions): SignHeaders {
   const { method, urlParams = {}, body = '', nonce = generateNonce() } = options
+  const { appId, appSecret } = getCredentials()
 
-  // Step 1: Body Hash
+  // Step1: Body Hash
   const isGet = method.toUpperCase() === 'GET'
   const bodyHash = isGet ? '' : sha256Hex(body)
 
-  // Step 2 & 3: 合并参数并排序
+  // Step2 & 3: 合并参数并排序
   const allParams: Record<string, string> = {
     ...urlParams,
-    'IOT-Open-AppID': APP_ID,
+    'IOT-Open-AppID': appId,
     'IOT-Open-Nonce': nonce,
     'IOT-Open-Body-Hash': bodyHash,
   }
 
   // 忽略 URL 参数中与公共参数同名的项（已被公共参数覆盖）
-  const sorted = Object.entries(allParams).sort(([a], [b]) => a.localeCompare(b))
+  const sorted = Object.entries(allParams).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0)
 
   // Step 4: 拼接
   const plainText = sorted.map(([k, v]) => `${k}=${v}`).join('&')
@@ -98,13 +102,13 @@ export function calcSign(options: SignOptions): SignHeaders {
   const base64Text = toBase64(plainText)
 
   // Step 6: HmacSHA256
-  const hmacResult = hmacSHA256(base64Text, APP_SECRET)
+  const hmacResult = hmacSHA256(base64Text, appSecret)
 
   // Step 7: MD5
   const sign = md5Hex(hmacResult)
 
   return {
-    'IOT-Open-AppID': APP_ID,
+    'IOT-Open-AppID': appId,
     'IOT-Open-Nonce': nonce,
     'IOT-Open-Sign': sign,
   }
@@ -114,13 +118,13 @@ export function calcSign(options: SignOptions): SignHeaders {
 export function parseUrlParams(url: string): Record<string, string> {
   const idx = url.indexOf('?')
   if (idx === -1) return {}
-  const query = url.slice(idx + 1)
+  const query = url.slice(idx +1)
   const result: Record<string, string> = {}
   for (const part of query.split('&')) {
     const eqIdx = part.indexOf('=')
     if (eqIdx === -1) continue
     const key = part.slice(0, eqIdx)
-    const val = decodeURIComponent(part.slice(eqIdx + 1))
+    const val = decodeURIComponent(part.slice(eqIdx +1))
     result[key] = val
   }
   return result

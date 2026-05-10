@@ -7,7 +7,7 @@
 import { calcSign, parseUrlParams } from './iotSign'
 
 // ─── 平台 Base URL ───
-export const BASE_URL = 'https://solar.siseli.com/openapis'
+export const BASE_URL = 'https://solar.siseli.com/apis'
 
 // ─── 响应结构 ───
 export interface ApiResponse<T = unknown> {
