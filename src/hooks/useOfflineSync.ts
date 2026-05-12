@@ -176,7 +176,7 @@ export function useOfflineSync(opts: UseOfflineSyncOptions = {}): UseOfflineSync
         // 2. 拉取离线期间错过的历史数据
         if (fetchHistoryOnReconnect && deviceId) {
           try {
-            await fetchRecentHistory(deviceId, ['soc', 'batteryPower', 'acPower', 'solarPower'])
+            await fetchRecentHistory(Number(deviceId), ['soc', 'batteryPower', 'acPower', 'solarPower'])
             console.log('[OfflineSync] 历史数据补全完成')
           } catch (err) {
             console.warn('[OfflineSync] 历史数据补全失败:', err)

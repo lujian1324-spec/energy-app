@@ -7,6 +7,7 @@ import OverviewPage from './pages/OverviewPage'
 import StatsPage from './pages/StatsPage'
 import SettingPage from './pages/SettingPage'
 import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
 import SmartSchedulePage from './pages/SmartSchedulePage'
 import { useRealtimeSimulator } from './hooks/useRealtimeSimulator'
 import { useAuthStore } from './stores/authStore'
@@ -27,21 +28,25 @@ function App() {
   const { toasts, dismiss } = useToast()
   useRealtimeSimulator()
 
-  // 登录页单独渲染，不包含底部导航
-  if (location.pathname === '/login') {
+  // 登录/注册页单独渲染，不包含底部导航
+  if (location.pathname === '/login' || location.pathname === '/register') {
     return (
       <AnimatePresence mode="wait">
         <motion.div
-          key="login"
+          key={location.pathname}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="h-full w-full"
         >
-          <Routes>
+          <Routes location={location}>
             <Route
               path="/login"
               element={isAuthenticated ? <Navigate to="/" replace /> : <LoginPage />}
+            />
+            <Route
+              path="/register"
+              element={isAuthenticated ? <Navigate to="/" replace /> : <RegisterPage />}
             />
           </Routes>
         </motion.div>

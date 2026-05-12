@@ -1,12 +1,14 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Zap, User, Lock, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 
 export default function LoginPage() {
   const { login, loading, error, clearError } = useAuthStore()
-  const [username, setUsername] = useState('admin')
-  const [password, setPassword] = useState('admin')
+  const navigate = useNavigate()
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
   const [showPwd, setShowPwd] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -135,6 +137,19 @@ export default function LoginPage() {
             Secured by IOT-Open-Sign
             <br />
             AppID: rYGQpmYU5k
+          </p>
+        </div>
+
+        {/* 注册链接 */}
+        <div className="mt-4 text-center">
+          <p className="text-[13px] text-[#8E8E93]">
+            Don't have an account?{' '}
+            <button
+              onClick={() => navigate('/register')}
+              className="text-[#01D6BE] font-semibold active:opacity-70"
+            >
+              Sign Up
+            </button>
           </p>
         </div>
       </motion.div>

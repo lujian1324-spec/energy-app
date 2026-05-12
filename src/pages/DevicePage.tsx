@@ -1,10 +1,12 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { User, Search, Zap, Battery, AlertTriangle, X, Plus, QrCode, Bluetooth, RefreshCw } from 'lucide-react'
 import ToggleSwitch from '../components/ToggleSwitch'
 import { DeviceListSkeleton } from '../components/SkeletonCard'
+import ManualAddDeviceModal from '../components/ManualAddDeviceModal'
 import { usePowerStationStore } from '../stores/powerStationStore'
+import { useDeviceStore } from '../stores/deviceStore'
 import { useConnectionStore } from '../stores/connectionStore'
 import { getBleManager, destroyBleManager } from '../protocols/bleManager'
 import type { ConnectionInfo, BlePowerPacket } from '../types/protocol'
@@ -21,13 +23,21 @@ interface BleDevice {
 export default function DevicePage() {
   const navigate = useNavigate()
   const { devices, toggleDevice, selectDevice } = usePowerStationStore()
+  const deviceStore = useDeviceStore()
   const { setBleConnection } = useConnectionStore()
   const [activeFilter, setActiveFilter] = useState('All')
   const [searchQuery, setSearchQuery] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
+  const [showManualAdd, setShowManualAdd] = useState(false)
   const [showQrScan, setShowQrScan] = useState(false)
   const [showBleScan, setShowBleScan] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+
+  // 首次加载：从 API 拉取设备列表
+  useEffect(() => {
+    deviceStore.loadDevices().finally(() => setIsLoading(false))
+    deviceStore.loadStations()
+  }, [])
   
   // BLE 扫描状态
   const [isScanning, setIsScanning] = useState(false)
@@ -482,7 +492,7 @@ export default function DevicePage() {
                 {[
                   { label: 'Bluetooth Scan', desc: 'Find nearby BLE devices', color: '#01D6BE', icon: '📡', action: handleBluetoothScan },
                   { label: 'Wi-Fi Setup', desc: 'Connect via local network', color: '#34C759', icon: '📶' },
-                  { label: 'Manual Entry', desc: 'Enter device code manually', color: '#FF9500', icon: '⌨️' },
+                  { label: 'Manual Entry', desc: 'Enter device code manually', color: '#FF9500', icon: '⌨️', action: () => { setShowAddModal(false); setShowManualAdd(true) } },
                   { label: 'Scan QR Code', desc: 'Scan device QR code with camera', color: '#01D6BE', icon: '📷', action: () => { setShowAddModal(false); setShowQrScan(true) } },
                 ].map((opt) => (
                   <button
@@ -757,6 +767,13 @@ export default function DevicePage() {
               <p className="text-[11px] text-[#48484A]">Make sure the QR code is well-lit and in focus</p>
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Manual Add Device Modal */}
+      <AnimatePresence>
+        {showManualAdd && (
+          <ManualAddDeviceModal onClose={() => setShowManualAdd(false)} />
         )}
       </AnimatePresence>
     </div>

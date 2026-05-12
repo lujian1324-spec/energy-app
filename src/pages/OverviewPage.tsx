@@ -23,11 +23,13 @@ import {
   Leaf,
   AlertTriangle,
   CircleDot,
+  Trash2,
 } from 'lucide-react'
 import BatteryRing from '../components/BatteryRing'
 import ToggleSwitch from '../components/ToggleSwitch'
 import DeviceDetailPage from './DeviceDetailPage'
 import { usePowerStationStore } from '../stores/powerStationStore'
+import { useDeviceStore } from '../stores/deviceStore'
 import { 
   showPowerOutageNotification,
   getNotificationPermission,
@@ -62,10 +64,13 @@ const powerOutageAlert = {
 export default function OverviewPage() {
   const navigate = useNavigate()
   const { powerStation, settings, devices, selectedDeviceId, selectDevice } = usePowerStationStore()
+  const deviceStore = useDeviceStore()
   const [showNotifications, setShowNotifications] = useState(false)
   const [showDisplaySettings, setShowDisplaySettings] = useState(false)
   const [showLockScreenAlert, setShowLockScreenAlert] = useState(false)
   const [showAlerts, setShowAlerts] = useState(false)
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
+  const [removingDevice, setRemovingDevice] = useState(false)
   const [notifList, setNotifList] = useState(notifications)
   const [alertList, setAlertList] = useState(deviceAlerts)
   const [pushPermission, setPushPermission] = useState<NotificationPermission>('default')
@@ -275,8 +280,15 @@ export default function OverviewPage() {
             </AnimatePresence>
           </div>
 
-          {/* 右：设置 + 铃铛 */}
+          {/* 右：设置 + 铃铛 + 移除设备 */}
           <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={() => setShowRemoveConfirm(true)}
+              className="w-9 h-9 rounded-full bg-[#1C1C1E] flex items-center justify-center text-[#FF3B30] hover:bg-[#2C2C2E] transition-colors"
+              title="Remove device"
+            >
+              <Trash2 size={16} />
+            </button>
             <button
               onClick={() => navigate('/smart-schedule')}
               className="w-9 h-9 rounded-full bg-[#1C1C1E] flex items-center justify-center text-[#FFFFFF] hover:bg-[#2C2C2E] transition-colors"
@@ -826,6 +838,71 @@ export default function OverviewPage() {
       <AnimatePresence>
         {showDeviceDetail && (
           <DeviceDetailPage onBack={() => setShowDeviceDetail(false)} />
+        )}
+      </AnimatePresence>
+
+      {/* ===== 移除设备确认弹窗 ===== */}
+      <AnimatePresence>
+        {showRemoveConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-[rgba(0,0,0,0.7)] z-50 flex items-center justify-center p-6"
+            onClick={() => setShowRemoveConfirm(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm bg-[#1C1C1E] rounded-[24px] p-6"
+            >
+              <div className="w-14 h-14 rounded-full bg-[rgba(255,59,48,0.12)] flex items-center justify-center mx-auto mb-4">
+                <Trash2 size={28} className="text-[#FF3B30]" />
+              </div>
+              <h3 className="text-lg font-bold text-[#FFFFFF] text-center mb-2">Remove Device</h3>
+              <p className="text-[13px] text-[#8E8E93] text-center mb-6">
+                Are you sure you want to remove this device from your account? This will unbind it and you will no longer see its data.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowRemoveConfirm(false)}
+                  className="flex-1 py-3 rounded-xl bg-[#2C2C2E] text-[#FFFFFF] text-[14px] font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    if (selectedDeviceId) {
+                      setRemovingDevice(true)
+                      try {
+                        await deviceStore.removeDevice([Number(selectedDeviceId)])
+                        navigate('/', { replace: true })
+                      } catch {
+                        // error already handled in store
+                      } finally {
+                        setRemovingDevice(false)
+                        setShowRemoveConfirm(false)
+                      }
+                    }
+                  }}
+                  disabled={removingDevice}
+                  className="flex-1 py-3 rounded-xl bg-[#FF3B30] text-[#FFFFFF] text-[14px] font-medium
+                    disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {removingDevice ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      Removing...
+                    </>
+                  ) : (
+                    'Remove'
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

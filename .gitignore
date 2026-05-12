@@ -34,3 +34,15 @@ lerna-debug.log*
 
 # OS files
 Thumbs.db
+
+# Test and debug files
+test-*.mjs
+test-*.js
+test-*.json
+capture-*.js
+capture-*.mjs
+verify-*.mjs
+api-test-*.json
+api-test-*.md
+browser-login.mjs
+dist-*/

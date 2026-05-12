@@ -1,10 +1,10 @@
 /**
  * 认证状态管理
- * T17: 真实 API 优先登录，失败时降级 admin/admin（Dev 模式）
+ * 真实 API 登录，userId 存入 localStorage 供退出接口使用
  */
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { loginByAccount, logout, isLoggedIn, LoginData } from '../api/authApi'
+import { loginByAccount, logout as apiLogout, isLoggedIn, LoginData } from '../api/authApi'
 
 interface AuthState {
   isAuthenticated: boolean
@@ -41,6 +41,10 @@ export const useAuthStore = create<AuthState>()(
           const result = await loginByAccount(username, password)
 
           if (isSuccess(result.code) && result.data) {
+            // 存储 userId 供退出接口使用
+            if (result.data.userId) {
+              localStorage.setItem('iot_user_id', String(result.data.userId))
+            }
             set({ isAuthenticated: true, user: result.data, loading: false, error: null })
             return true
           }
@@ -57,7 +61,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: async () => {
-        await logout()
+        await apiLogout()
         set({ isAuthenticated: false, user: null, error: null })
       },
 
