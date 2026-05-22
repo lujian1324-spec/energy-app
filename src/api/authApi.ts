@@ -128,8 +128,8 @@ export async function loginByAccount(
   }
   const result = await api.postSkipAuth<LoginData>('/login/account', payload)
 
-  // 自动保存 token
-  if (result.data) {
+  // 仅在业务成功时保存 token
+  if ((result.code === 0 || result.code === '0') && result.data) {
     const accessToken = result.data.accessToken
     if (accessToken) tokenStore.set(accessToken)
     const refreshToken = result.data.refreshToken
@@ -232,8 +232,11 @@ export async function logout(): Promise<void> {
 
 /** 刷新 Access Token */
 export async function refreshAccessToken(): Promise<ApiResponse<LoginData>> {
-  const accessToken = tokenStore.get() ?? ''
-  const refreshToken = tokenStore.getRefresh() ?? ''
+  const accessToken = tokenStore.get()
+  const refreshToken = tokenStore.getRefresh()
+  if (!accessToken || !refreshToken) {
+    return { code: -1, message: 'No token available for refresh', data: undefined }
+  }
   const result = await api.postSkipAuth<LoginData>('/login/refresh/access/token', {
     accessToken,
     refreshToken,

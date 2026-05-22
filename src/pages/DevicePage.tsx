@@ -179,8 +179,8 @@ export default function DevicePage() {
     setError(null)
     try {
       await loadDevices(1, 50)
-      // 依次刷新每个设备的实时状态
-      for (const d of devices) {
+      const latestDevices = useDeviceStore.getState().devices
+      for (const d of latestDevices) {
         await fetchDeviceRealtime(d.id)
       }
     } catch (err) {

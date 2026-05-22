@@ -234,7 +234,8 @@ export function mapFieldsToRealtime(
   const getInt = (key: string): 0 | 1 | 2 | undefined => {
     const v = getNum(key)
     if (v === undefined) return undefined
-    return (v as 0 | 1 | 2)
+    if (v === 0 || v === 1 || v === 2) return v
+    return undefined
   }
 
   return {
@@ -926,7 +927,7 @@ export interface EnergyFlowNode {
     valueDisplay: string
     isHidden: boolean
     nameDisplay: string
-  }
+  } | null
   extraValues: Array<unknown>
   isLight: boolean | null
   flowDirection: number | null   // 1=流入电池, -1=流出电池, null=无方向

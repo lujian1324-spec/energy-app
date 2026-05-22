@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
@@ -129,6 +129,17 @@ export default function OverviewPage() {
       }
     }
   }, [selectedDeviceId])
+
+  // ─── 能量流动分组折叠状态（组件级，避免在 .map() 中使用 useState）───
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
+  const toggleGroupCollapse = useCallback((key: string) => {
+    setCollapsedGroups(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }, [])
 
   // ─── 每 60 秒轮询能量流动数据 ───
   const energyFlowPollRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -471,7 +482,7 @@ export default function OverviewPage() {
                 <BatteryRing
                   percentage={soc}
                   isCharging={isCharging}
-                  timeToFull={isCharging ? '--' : '--'}
+                  timeToFull={isCharging ? '--' : ''}
                 />
               </div>
 
@@ -552,7 +563,7 @@ export default function OverviewPage() {
                 load_status: TrendingUp,
               }
               const Icon = groupIcons[group.key] || Info
-              const [collapsed, setCollapsed] = useState(true)
+              const isCollapsed = collapsedGroups.has(group.key)
               return (
                 <motion.div
                   key={group.key}
@@ -561,7 +572,7 @@ export default function OverviewPage() {
                   className="mx-5 mb-3 bg-[#1C1C1E] rounded-[20px] overflow-hidden"
                 >
                   <button
-                    onClick={() => setCollapsed(!collapsed)}
+                    onClick={() => toggleGroupCollapse(group.key)}
                     className="w-full flex items-center justify-between px-4 py-3"
                   >
                     <div className="flex items-center gap-2">
@@ -571,11 +582,11 @@ export default function OverviewPage() {
                     </div>
                     <ChevronDown
                       size={14}
-                      className={`text-[#8E8E93] transition-transform duration-200 ${collapsed ? '' : 'rotate-180'}`}
+                      className={`text-[#8E8E93] transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`}
                     />
                   </button>
                   <AnimatePresence>
-                    {!collapsed && (
+                    {!isCollapsed && (
                       <motion.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: 'auto', opacity: 1 }}
@@ -958,7 +969,7 @@ export default function OverviewPage() {
                 {alarms.length > 0 && alarms.length < alarmTotal && (
                   <button
                     onClick={() => {
-                      if (selectedDeviceId) loadAlarms(Number(selectedDeviceId), Math.ceil(alarms.length / 20) + 1, 20)
+                      if (selectedDeviceId) loadAlarms(Number(selectedDeviceId), Math.ceil(alarms.length / 20) + 1, 20, true)
                     }}
                     className="w-full py-2.5 text-[12px] text-[#01D6BE] font-medium"
                   >

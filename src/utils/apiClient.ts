@@ -47,11 +47,7 @@ export const tokenStore = {
 }
 
 /** 紧凑 JSON 序列化（无空格，与平台要求一致） */
-function compactStringify(data: unknown): string {
-  return JSON.stringify(data, (_, v) => v, 0)
-    // 紧凑：去除 key/value 间多余空格
-    // JSON.stringify 默认已无空格，但保险起见
-}
+const compactStringify = (data: unknown): string => JSON.stringify(data)
 
 // ─── 核心 request 函数 ───
 
@@ -147,8 +143,9 @@ export async function request<T = unknown>(
     } catch (err) {
       lastError = err as Error
 
-      // ApiError（HTTP 4xx/5xx）或 AbortError → 不重试
-      if (err instanceof ApiError || (err as Error).name === 'AbortError') {
+      // ApiError（HTTP 4xx/5xx）、AbortError 或 TimeoutError → 不重试
+      const errName = (err as Error).name
+      if (err instanceof ApiError || errName === 'AbortError' || errName === 'TimeoutError') {
         throw err
       }
 

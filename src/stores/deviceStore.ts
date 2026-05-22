@@ -83,7 +83,7 @@ interface DeviceStoreState {
   controlDevice: (deviceId: string | number, key: string, value: unknown) => Promise<ApiResponse<unknown>>
   startRealtimeReport: (deviceId: string | number, clientId: string) => Promise<void>
   stopRealtimeReport: (deviceId: string | number, clientId: string) => Promise<void>
-  loadAlarms: (deviceId?: number, page?: number, count?: number) => Promise<void>
+  loadAlarms: (deviceId?: number, page?: number, count?: number, append?: boolean) => Promise<void>
   dismissAlarm: (alarmId: number) => Promise<void>
   loadStations: (page?: number, count?: number) => Promise<void>
   createStation: (data: StationAddRequest) => Promise<ApiResponse<unknown>>
@@ -96,6 +96,11 @@ interface DeviceStoreState {
 // ═══════════════════════════════════════════════════════
 // Store
 // ═══════════════════════════════════════════════════════
+
+// 竞态保护：请求序号
+let stateRequestSeq = 0
+let alarmRequestSeq = 0
+let energyFlowRequestSeq = 0
 
 export const useDeviceStore = create<DeviceStoreState>()(
   persist(
@@ -159,15 +164,18 @@ export const useDeviceStore = create<DeviceStoreState>()(
       // ─── 设备实时状态 ───
 
       loadDeviceState: async (deviceId) => {
+        const seq = ++stateRequestSeq
         set({ stateLoading: true })
         try {
           const result = await fetchDeviceState(deviceId)
+          if (seq !== stateRequestSeq) return
           if ((result.code === 0 || result.code === '0') && result.data) {
             set({ selectedDeviceState: result.data, stateLoading: false })
           } else {
             set({ stateLoading: false })
           }
         } catch {
+          if (seq !== stateRequestSeq) return
           set({ stateLoading: false })
         }
       },
@@ -266,7 +274,8 @@ export const useDeviceStore = create<DeviceStoreState>()(
 
       // ─── 告警 ───
 
-      loadAlarms: async (deviceId, page = 1, count = 20) => {
+      loadAlarms: async (deviceId, page = 1, count = 20, append = false) => {
+        const seq = ++alarmRequestSeq
         set({ alarmLoading: true })
         try {
           const result = await fetchAlarms({
@@ -275,16 +284,20 @@ export const useDeviceStore = create<DeviceStoreState>()(
             deviceId,
             orderByCreatedTimeDesc: true,
           })
+          if (seq !== alarmRequestSeq) return
           if ((result.code === 0 || result.code === '0') && result.data) {
-            set({
-              alarms: result.data.list ?? [],
-              alarmTotal: result.data.total ?? 0,
+            set(state => ({
+              alarms: append
+                ? [...state.alarms, ...(result.data?.list ?? [])]
+                : (result.data?.list ?? []),
+              alarmTotal: result.data?.total ?? 0,
               alarmLoading: false,
-            })
+            }))
           } else {
             set({ alarmLoading: false })
           }
         } catch {
+          if (seq !== alarmRequestSeq) return
           set({ alarmLoading: false })
         }
       },
@@ -346,9 +359,11 @@ export const useDeviceStore = create<DeviceStoreState>()(
       // ─── 能量流动（每分钟轮询）───
       loadEnergyFlow: async (deviceId: string | number) => {
         if (!deviceId) return
+        const seq = ++energyFlowRequestSeq
         set({ energyFlowLoading: true, energyFlowError: null })
         try {
           const result = await fetchSimpleEnergyFlow(deviceId, 1)
+          if (seq !== energyFlowRequestSeq) return
           if ((result.code === 0 || result.code === '0') && result.data) {
             set({ energyFlow: result.data, energyFlowLoading: false })
           } else {
@@ -358,6 +373,7 @@ export const useDeviceStore = create<DeviceStoreState>()(
             })
           }
         } catch (e: unknown) {
+          if (seq !== energyFlowRequestSeq) return
           const msg = e instanceof Error ? e.message : String(e)
           set({ energyFlowLoading: false, energyFlowError: msg })
         }
