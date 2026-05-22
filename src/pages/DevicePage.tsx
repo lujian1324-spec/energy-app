@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
+import ProvisioningPage from './ProvisioningPage'
 import {
   Zap,
   AlertTriangle,
@@ -78,6 +79,7 @@ export default function DevicePage() {
   const [showManualAdd, setShowManualAdd] = useState(false)
   const [showQrScan, setShowQrScan] = useState(false)
   const [showBleScan, setShowBleScan] = useState(false)
+  const [showProvisioning, setShowProvisioning] = useState(false)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [error, setError] = useState<string | null>(null)
 
@@ -714,7 +716,7 @@ export default function DevicePage() {
               <h3 className="text-base font-bold text-[#FFFFFF] mb-5">Add New Device</h3>
               <div className="flex flex-col gap-3">
                 {[
-                  { label: 'Bluetooth Scan', desc: 'Find nearby BLE devices', color: '#01D6BE', icon: '📡' },
+                  { label: 'Bluetooth Scan', desc: 'Find nearby BLE devices', color: '#01D6BE', icon: '📡', action: () => { setShowAddModal(false); setShowProvisioning(true) } },
                   { label: 'Wi-Fi Setup', desc: 'Connect via local network', color: '#34C759', icon: '📶' },
                   { label: 'Manual Entry', desc: 'Enter device code manually', color: '#FF9500', icon: '⌨️', action: () => { setShowAddModal(false); setShowManualAdd(true) } },
                   { label: 'Scan QR Code', desc: 'Scan device QR code', color: '#01D6BE', icon: '📷', action: () => { setShowAddModal(false); setShowQrScan(true) } },
@@ -865,6 +867,15 @@ export default function DevicePage() {
               <p className="text-[13px] text-[#8E8E93] mb-6">Manual device entry is under development. Please use Bluetooth Scan or QR Code to add devices.</p>
               <button onClick={() => setShowManualAdd(false)} className="w-full py-3 rounded-xl bg-[rgba(1,214,190,0.12)] text-[#01D6BE] font-semibold text-[13px]">OK</button>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* BLE 配网页面（全屏覆盖） */}
+      <AnimatePresence>
+        {showProvisioning && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <ProvisioningPage onClose={() => setShowProvisioning(false)} />
           </motion.div>
         )}
       </AnimatePresence>

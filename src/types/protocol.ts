@@ -46,6 +46,84 @@ export const BLE_UUIDS = {
   CHAR_FIRMWARE_VERSION: '00002A26-0000-1000-8000-00805F9B34FB',
 } as const
 
+// -------------------- BLE 配网 GATT 服务定义 --------------------
+// 采集器蓝牙配网 UUID（文档: 蓝牙配网规程 v2.9）
+
+export const BLE_PROVISION_UUIDS = {
+  /** 配网服务 Service UUID */
+  SERVICE: '0000FEE7-0000-1000-8000-00805F9B34FB',
+  /** Indication 接收通道（设备→手机应答） */
+  INDICATE_RX: '0000FED6-0000-1000-8000-00805F9B34FB',
+  /** Indication 发送通道（手机→设备命令） */
+  WRITE_TX: '0000FED5-0000-1000-8000-00805F9B34FB',
+} as const
+
+/** BLE 配网 MTU */
+export const BLE_PROVISION_MTU = 240
+
+/** BLE 分包头长度: [seqNo(1)][seqNum(1)][dataLen(1)] = 3 bytes */
+export const BLE_PACKET_HEADER_SIZE = 3
+
+/** BLE 配网命令 CID 常量 */
+export const BLE_CID = {
+  GET_VER_REQ: 30001,
+  GET_VER_RESP: 30002,
+  GET_SCAN_REQ: 30003,
+  GET_SCAN_RESP: 30004,
+  SET_CONFIG_REQ: 30005,
+  SET_CONFIG_RESP: 30006,
+  RESTART_REQ: 30007,
+  RESTART_RESP: 30008,
+  GET_WIFI_CFG_REQ: 30009,
+  GET_WIFI_CFG_RESP: 30010,
+  GET_NET_CFG_REQ: 30011,
+  GET_NET_CFG_RESP: 30012,
+  GET_DIAG_REQ: 30013,
+  GET_DIAG_RESP: 30014,
+  GET_UART_CFG_REQ: 30015,
+  GET_UART_CFG_RESP: 30016,
+  GET_BLE_KEY_EN_REQ: 30017,
+  GET_BLE_KEY_EN_RESP: 30018,
+  GET_WIFI_ST_REQ: 30020,
+  GET_WIFI_ST_RESP: 30021,
+  GET_NET_ST_REQ: 30022,
+  GET_NET_ST_RESP: 30023,
+  GET_UART_ST_REQ: 30024,
+  GET_UART_ST_RESP: 30025,
+  CONFIRM_BLE_KEY_REQ: 30050,
+  CONFIRM_BLE_KEY_RESP: 30051,
+} as const
+
+/** BLE 配网设备应答基础类型 */
+export interface BleProvisionResponse<T = unknown> {
+  CID: number
+  RC: number // 0=成功, 9000=需蓝牙密码, 9001=密码错误, 1=执行失败
+  PL?: T
+}
+
+/** BLE 配网扫描到的 AP */
+export interface BleWifiAp {
+  SSID: string
+  Secu: number // 0=未加密, 1=加密
+}
+
+/** BLE 配网 WiFi 状态 */
+export interface BleWifiStatus {
+  WConn: number // 0=未连接, 1=已连接
+  R?: number // 错误码: 1=连接中, 2=AP不存在, 3=密码错误, 4=其他
+  SConn: number // 0=未连接MQTT, 1=已连接
+  HSConn: number // 0=未连接HTTP, 1=已连接
+  RSSI: string
+  SSID: string
+}
+
+/** 解析后的蓝牙名称 */
+export interface ParsedBleName {
+  prefix: string
+  status: number // 0=WiFi未连接, 1=WiFi已连接, 3=MQTT已连接
+  dtuid: string // 20位纯数字
+}
+
 /** BLE 解码后的原始功率数据包 */
 export interface BlePowerPacket {
   inputPower: number // W
