@@ -27,6 +27,7 @@ import {
 } from 'lucide-react'
 import ToggleSwitch from '../components/ToggleSwitch'
 import { usePowerStationStore } from '../stores/powerStationStore'
+import { useAuthStore } from '../stores/authStore'
 import { getUserProfile } from '../db/powerflowDB'
 import appVersion from '../version.json'
 import ProfileEditPage from './ProfileEditPage'
@@ -34,6 +35,7 @@ import type { UserProfile } from '../types/protocol'
 
 export default function SettingPage() {
   const { powerStation, settings, updateSettings, resetAll, activateFounderBadge } = usePowerStationStore()
+  const { user: authUser } = useAuthStore()
   const [showPrivacy, setShowPrivacy] = useState(false)
   const [showTerms, setShowTerms] = useState(false)
   const [showSupport, setShowSupport] = useState(false)
@@ -51,14 +53,13 @@ export default function SettingPage() {
   const [founderMessage, setFounderMessage] = useState('')
   const [founderSuccess, setFounderSuccess] = useState(false)
 
-  // Profile
+  // Profile - 从 authStore 获取登录账号信息
   const [showProfileEdit, setShowProfileEdit] = useState(false)
   const [userProfile, setUserProfile] = useState<UserProfile>({
-    name: 'Alex Chen',
-    email: 'alex.chen@example.com',
-    phone: '+1 234 567 8900',
+    name: authUser?.account ?? '',
+    email: authUser?.account ?? '',
     avatar: null,
-    memberSince: '2024-03-15',
+    memberSince: new Date().toISOString().slice(0, 10),
   })
 
   // Push notification settings
@@ -261,8 +262,8 @@ export default function SettingPage() {
                     <Mail size={16} className="text-[#FFFFFF]" />
                   </div>
                   <div className="flex-1">
-                    <div className="text-[13px] font-semibold text-[#FFFFFF]">Linked Email</div>
-                    <div className="text-[11px] text-[#8E8E93] mt-0.5">{userProfile.email}</div>
+                    <div className="text-[13px] font-semibold text-[#FFFFFF]">Account</div>
+                    <div className="text-[11px] text-[#8E8E93] mt-0.5">{authUser?.account || userProfile.email}</div>
                   </div>
                 </div>
                 <div className="px-4 py-3 border-b border-[rgba(1,214,190,0.06)]">

@@ -1,16 +1,16 @@
 import { motion } from 'framer-motion'
 import { useState, useRef, useEffect } from 'react'
-import { 
-  ArrowLeft, 
-  User, 
-  Mail, 
-  Phone, 
+import {
+  ArrowLeft,
+  User,
+  Mail,
   Camera,
   Check,
   X,
   Crown,
 } from 'lucide-react'
 import { usePowerStationStore } from '../stores/powerStationStore'
+import { useAuthStore } from '../stores/authStore'
 import { saveUserProfile, getUserProfile } from '../db/powerflowDB'
 import type { UserProfile } from '../types/protocol'
 
@@ -20,14 +20,14 @@ interface ProfileEditPageProps {
 
 export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
   const { settings } = usePowerStationStore()
-  
-  // 用户个人信息状态
+  const { user: authUser } = useAuthStore()
+
+  // 用户个人信息状态 - 从 authStore 获取登录账号
   const [profile, setProfile] = useState<UserProfile>({
-    name: 'Alex Chen',
-    email: 'alex.chen@example.com',
-    phone: '+1 234 567 8900',
+    name: authUser?.account ?? '',
+    email: authUser?.account ?? '',
     avatar: null,
-    memberSince: '2024-03-15',
+    memberSince: new Date().toISOString().slice(0, 10),
   })
   
   // 加载状态
@@ -110,7 +110,6 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
   const profileFields = [
     { key: 'name' as const, label: 'Full Name', icon: User, value: profile.name, placeholder: 'Enter your name' },
     { key: 'email' as const, label: 'Email Address', icon: Mail, value: profile.email, placeholder: 'Enter your email' },
-    { key: 'phone' as const, label: 'Phone Number', icon: Phone, value: profile.phone, placeholder: 'Enter your phone number' },
   ]
 
   return (
