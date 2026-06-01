@@ -176,6 +176,9 @@ export default function OverviewPage() {
   const solarPower = realtime?.solarPower ?? 0
   const outputPower = realtime?.outputPower ?? 0
   const batteryTemp = realtime?.batteryTemp ?? 0
+  const inputPower = Math.max(acPower, solarPower, 0)
+  const currentDeviceListItem = devices.find(d => String(d.id) === selectedDeviceId)
+  const deviceModel = selectedDeviceDetails?.gatherProtocolNameDisplay ?? selectedDeviceDetails?.model ?? ''
 
   // ─── 预估剩余时间 ───
   const remainingTimeDisplay = useMemo(() => {
@@ -216,10 +219,7 @@ export default function OverviewPage() {
   const sleepMode = realtime?.sleepMode ?? false
   const workMode = realtime?.workMode ?? 0
   const isCharging = batteryPower > 0
-  const inputPower = Math.max(acPower, solarPower, 0)
-  const currentDeviceListItem = devices.find(d => String(d.id) === selectedDeviceId)
   const deviceName = selectedDeviceDetails?.name ?? currentDeviceListItem?.name ?? 'Device'
-  const deviceModel = selectedDeviceDetails?.gatherProtocolNameDisplay ?? selectedDeviceDetails?.model ?? ''
   const isOnline = selectedDeviceDetails?.isOnline ?? false
 
   // Quick Controls local state (synced with real data)
