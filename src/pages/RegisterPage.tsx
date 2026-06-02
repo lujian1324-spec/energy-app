@@ -1,19 +1,16 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Zap, User, Lock, Mail, Eye, EyeOff, AlertCircle, Loader2, ArrowLeft, Phone } from 'lucide-react'
-import { registerByEmail, registerByCellphone, checkAccountExists, sendEmailCaptcha, md5Password } from '../api/authApi'
-
-type RegisterMode = 'email' | 'cellphone'
+import { Zap, User, Lock, Mail, Eye, EyeOff, AlertCircle, Loader2, ArrowLeft } from 'lucide-react'
+import { registerByEmail, sendEmailCaptcha } from '../api/authApi'
 
 export default function RegisterPage() {
-  const [mode, setMode] = useState<RegisterMode>('email')
   const [account, setAccount] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [email, setEmail] = useState('')
-  const [cellphone, setCellphone] = useState('')
-  const [countryCode, setCountryCode] = useState('+1')
   const [captcha, setCaptcha] = useState('')
+  const [captchaId, setCaptchaId] = useState<string | null>(null)
   const [showPwd, setShowPwd] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -23,24 +20,19 @@ export default function RegisterPage() {
 
   const clearError = () => setError(null)
 
-  // 发送验证码
+  // 发送验证码（仅邮箱）
   const handleSendCaptcha = async () => {
     if (captchaCooldown > 0) return
-    if (mode === 'email' && !email.trim()) {
+    if (!email.trim()) {
       setError('Please enter your email address')
-      return
-    }
-    if (mode === 'cellphone' && !cellphone.trim()) {
-      setError('Please enter your phone number')
       return
     }
 
     try {
-      if (mode === 'email') {
-        await sendEmailCaptcha(email.trim(), 'register')
-      } else {
-        const { sendSmsCaptcha } = await import('../api/authApi')
-        await sendSmsCaptcha(cellphone.trim(), countryCode, 'register')
+      const result = await sendEmailCaptcha(email.trim(), '1')
+      const cid = result.data?.iotCaptchaId
+      if (cid) {
+        setCaptchaId(cid)
       }
       setCaptchaSent(true)
       setCaptchaCooldown(60)
@@ -52,50 +44,35 @@ export default function RegisterPage() {
       }, 1000)
     } catch (err) {
       setError('Failed to send verification code. Please try again.')
+      console.error('[RegisterPage] sendCaptcha failed:', err)
     }
   }
 
-  // 注册提交
+  // 注册提交（仅邮箱）
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     clearError()
 
-    // 验证
     if (!account.trim()) { setError('Please enter an account name'); return }
     if (account.trim().length < 3) { setError('Account must be at least 3 characters'); return }
     if (!password.trim()) { setError('Please enter a password'); return }
     if (password.length < 6) { setError('Password must be at least 6 characters'); return }
     if (password !== confirmPassword) { setError('Passwords do not match'); return }
-    if (mode === 'email' && !email.trim()) { setError('Please enter your email'); return }
-    if (mode === 'cellphone' && !cellphone.trim()) { setError('Please enter your phone number'); return }
+    if (!email.trim()) { setError('Please enter your email'); return }
 
     setLoading(true)
     try {
-      if (mode === 'email') {
-        const result = await registerByEmail(
-          account.trim(),
-          password,
-          email.trim(),
-          captcha || undefined
-        )
-        if (result.code === 0 || result.code === '0') {
-          setSuccess(true)
-        } else {
-          setError(result.message ?? result.msg ?? 'Registration failed')
-        }
+      const result = await registerByEmail(
+        account.trim(),
+        password,
+        email.trim(),
+        captcha || undefined,
+        captchaId || undefined
+      )
+      if (result.code === 0 || result.code === '0') {
+        setSuccess(true)
       } else {
-        const result = await registerByCellphone(
-          account.trim(),
-          password,
-          cellphone.trim(),
-          countryCode,
-          captcha || undefined
-        )
-        if (result.code === 0 || result.code === '0') {
-          setSuccess(true)
-        } else {
-          setError(result.message ?? result.msg ?? 'Registration failed')
-        }
+        setError(result.message ?? result.msg ?? 'Registration failed')
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Network error')
@@ -124,7 +101,7 @@ export default function RegisterPage() {
           <button
             onClick={() => window.history.back()}
             className="mt-4 px-8 py-3 rounded-xl font-semibold text-[14px]
-              bg-[#01D6BE] text-[#000000] active:scale-[0.98] transition-all"
+              bg-[#0D9488] text-[#000000] active:scale-[0.98] transition-all"
           >
             Go to Sign In
           </button>
@@ -154,24 +131,6 @@ export default function RegisterPage() {
         <p className="text-[13px] text-[#8E8E93] mt-1">Sign up to start managing your devices</p>
       </motion.div>
 
-      {/* 注册模式切换 */}
-      <div className="flex gap-2 mb-6">
-        {(['email', 'cellphone'] as const).map(m => (
-          <button
-            key={m}
-            onClick={() => { setMode(m); clearError() }}
-            className={`flex-1 py-2.5 rounded-xl text-[13px] font-medium transition-all flex items-center justify-center gap-1.5
-              ${mode === m
-                ? 'bg-[rgba(1,214,190,0.12)] border border-[rgba(1,214,190,0.3)] text-[#01D6BE]'
-                : 'bg-[#1C1C1E] border border-transparent text-[#8E8E93]'
-              }`}
-          >
-            {m === 'email' ? <Mail size={14} /> : <Phone size={14} />}
-            {m === 'email' ? 'Email' : 'Phone'}
-          </button>
-        ))}
-      </div>
-
       {/* 表单 */}
       <motion.form
         initial={{ opacity: 0, y: 20 }}
@@ -192,65 +151,29 @@ export default function RegisterPage() {
             onChange={e => { setAccount(e.target.value); clearError() }}
             placeholder="Choose an account name"
             autoComplete="username"
-            className="w-full px-4 py-3 rounded-xl bg-[#1C1C1E] border border-[rgba(1,214,190,0.15)]
+            className="w-full px-4 py-3 rounded-xl bg-[#1C1C1E] border border-[rgba(13,148,136,0.15)]
               text-[#FFFFFF] text-[14px] placeholder:text-[#48484A]
-              focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
+              focus:outline-none focus:border-[rgba(13,148,136,0.5)] transition-colors"
           />
         </div>
 
-        {/* 邮箱/手机 */}
-        {mode === 'email' ? (
-          <div>
-            <label className="text-[11px] font-semibold text-[#8E8E93] mb-1.5 flex items-center gap-1.5">
-              <Mail size={12} />
-              Email Address
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => { setEmail(e.target.value); clearError() }}
-              placeholder="Enter your email"
-              autoComplete="email"
-              className="w-full px-4 py-3 rounded-xl bg-[#1C1C1E] border border-[rgba(1,214,190,0.15)]
-                text-[#FFFFFF] text-[14px] placeholder:text-[#48484A]
-                focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
-            />
-          </div>
-        ) : (
-          <div>
-            <label className="text-[11px] font-semibold text-[#8E8E93] mb-1.5 flex items-center gap-1.5">
-              <Phone size={12} />
-              Phone Number
-            </label>
-            <div className="flex gap-2">
-              <select
-                value={countryCode}
-                onChange={e => setCountryCode(e.target.value)}
-                className="px-3 py-3 rounded-xl bg-[#1C1C1E] border border-[rgba(1,214,190,0.15)]
-                  text-[#FFFFFF] text-[14px] focus:outline-none focus:border-[rgba(1,214,190,0.5)]"
-              >
-                <option value="+1">+1</option>
-                <option value="+86">+86</option>
-                <option value="+44">+44</option>
-                <option value="+81">+81</option>
-                <option value="+82">+82</option>
-                <option value="+61">+61</option>
-                <option value="+49">+49</option>
-                <option value="+33">+33</option>
-              </select>
-              <input
-                type="tel"
-                value={cellphone}
-                onChange={e => { setCellphone(e.target.value); clearError() }}
-                placeholder="Enter your phone number"
-                autoComplete="tel"
-                className="flex-1 px-4 py-3 rounded-xl bg-[#1C1C1E] border border-[rgba(1,214,190,0.15)]
-                  text-[#FFFFFF] text-[14px] placeholder:text-[#48484A]
-                  focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
-              />
-            </div>
-          </div>
-        )}
+        {/* 邮箱地址 */}
+        <div>
+          <label className="text-[11px] font-semibold text-[#8E8E93] mb-1.5 flex items-center gap-1.5">
+            <Mail size={12} />
+            Email Address
+          </label>
+          <input
+            type="email"
+            value={email}
+            onChange={e => { setEmail(e.target.value); clearError() }}
+            placeholder="Enter your email"
+            autoComplete="email"
+            className="w-full px-4 py-3 rounded-xl bg-[#1C1C1E] border border-[rgba(13,148,136,0.15)]
+              text-[#FFFFFF] text-[14px] placeholder:text-[#48484A]
+              focus:outline-none focus:border-[rgba(13,148,136,0.5)] transition-colors"
+          />
+        </div>
 
         {/* 验证码 */}
         <div>
@@ -264,16 +187,16 @@ export default function RegisterPage() {
               onChange={e => { setCaptcha(e.target.value); clearError() }}
               placeholder="Enter verification code"
               maxLength={6}
-              className="flex-1 px-4 py-3 rounded-xl bg-[#1C1C1E] border border-[rgba(1,214,190,0.15)]
+              className="flex-1 px-4 py-3 rounded-xl bg-[#1C1C1E] border border-[rgba(13,148,136,0.15)]
                 text-[#FFFFFF] text-[14px] placeholder:text-[#48484A]
-                focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
+                focus:outline-none focus:border-[rgba(13,148,136,0.5)] transition-colors"
             />
             <button
               type="button"
               onClick={handleSendCaptcha}
-              disabled={captchaCooldown > 0 || (mode === 'email' ? !email.trim() : !cellphone.trim())}
+              disabled={captchaCooldown > 0 || !email.trim()}
               className="px-4 py-3 rounded-xl text-[13px] font-medium whitespace-nowrap
-                bg-[rgba(1,214,190,0.12)] text-[#01D6BE] border border-[rgba(1,214,190,0.2)]
+                bg-[rgba(13,148,136,0.12)] text-[#0D9488] border border-[rgba(13,148,136,0.2)]
                 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {captchaCooldown > 0 ? `${captchaCooldown}s` : captchaSent ? 'Resend' : 'Send Code'}
@@ -294,9 +217,9 @@ export default function RegisterPage() {
               onChange={e => { setPassword(e.target.value); clearError() }}
               placeholder="At least 6 characters"
               autoComplete="new-password"
-              className="w-full px-4 py-3 pr-11 rounded-xl bg-[#1C1C1E] border border-[rgba(1,214,190,0.15)]
+              className="w-full px-4 py-3 pr-11 rounded-xl bg-[#1C1C1E] border border-[rgba(13,148,136,0.15)]
                 text-[#FFFFFF] text-[14px] placeholder:text-[#48484A]
-                focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
+                focus:outline-none focus:border-[rgba(13,148,136,0.5)] transition-colors"
             />
             <button
               type="button"
@@ -320,9 +243,9 @@ export default function RegisterPage() {
             onChange={e => { setConfirmPassword(e.target.value); clearError() }}
             placeholder="Confirm your password"
             autoComplete="new-password"
-            className="w-full px-4 py-3 rounded-xl bg-[#1C1C1E] border border-[rgba(1,214,190,0.15)]
+            className="w-full px-4 py-3 rounded-xl bg-[#1C1C1E] border border-[rgba(13,148,136,0.15)]
               text-[#FFFFFF] text-[14px] placeholder:text-[#48484A]
-              focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
+              focus:outline-none focus:border-[rgba(13,148,136,0.5)] transition-colors"
           />
         </div>
 
@@ -339,12 +262,30 @@ export default function RegisterPage() {
           </motion.div>
         )}
 
+        {/* Terms & Privacy */}
+        <p className="text-[11px] leading-relaxed text-center text-[#8E8E93] px-4">
+          By creating an account, you agree to our{' '}
+          <Link
+            to="/terms"
+            className="text-[#0D9488] underline underline-offset-2 hover:text-[#14B8A6] transition-colors"
+          >
+            Terms of Use
+          </Link>
+          {' '}and{' '}
+          <Link
+            to="/privacy"
+            className="text-[#0D9488] underline underline-offset-2 hover:text-[#14B8A6] transition-colors"
+          >
+            Privacy Policy
+          </Link>
+        </p>
+
         {/* 提交按钮 */}
         <button
           type="submit"
           disabled={loading || !account.trim() || !password.trim()}
           className="w-full py-3.5 rounded-xl font-semibold text-[14px]
-            bg-[#01D6BE] text-[#000000]
+            bg-[#0D9488] text-[#000000]
             disabled:opacity-40 disabled:cursor-not-allowed
             active:scale-[0.98] transition-all flex items-center justify-center gap-2"
         >
@@ -358,11 +299,6 @@ export default function RegisterPage() {
           )}
         </button>
       </motion.form>
-
-      {/* 底部说明 */}
-      <p className="mt-6 text-[11px] text-[#48484A] text-center leading-relaxed">
-        By creating an account, you agree to our Terms of Service and Privacy Policy.
-      </p>
     </div>
   )
 }

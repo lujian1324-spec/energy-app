@@ -7,9 +7,9 @@
 ============================================================ */
 :root {
   /* 主色调 - 青绿扁平色系 */
-  --clr-primary: #01D6BE;
+  --clr-primary: #0D9488;
   --clr-primary-dim: #01A88F;
-  --clr-accent: #01D6BE;
+  --clr-accent: #0D9488;
   --clr-accent-dim: #01A88F;
   --clr-warning: #FF9500;
   --clr-danger: #FF3B30;
@@ -31,8 +31,8 @@
 
   /* 边框 */
   --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-normal: rgba(1, 214, 190, 0.2);
-  --border-bright: rgba(1, 214, 190, 0.45);
+  --border-normal: rgba(13, 148, 136, 0.2);
+  --border-bright: rgba(13, 148, 136, 0.45);
 
   /* 圆角 */
   --r-sm: 8px;
@@ -137,7 +137,7 @@ body {
 }
 
 .badge-primary { 
-  background: rgba(1,214,190,0.12); 
+  background: rgba(13,148,136,0.12); 
   color: var(--clr-primary); 
 }
 
@@ -157,11 +157,11 @@ body {
 }
 
 .progress-fill.green { 
-  background: #01D6BE; 
+  background: #0D9488; 
 }
 
 .progress-fill.blue { 
-  background: #01D6BE; 
+  background: #0D9488; 
 }
 
 .progress-fill.orange { 

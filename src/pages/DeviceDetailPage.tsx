@@ -76,7 +76,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
       label: 'Battery Capacity', 
       value: powerStation.specs.batteryCapacity, 
       desc: powerStation.specs.batteryType,
-      color: '#01D6BE',
+      color: '#0D9488',
       editKeys: ['batteryCapacity', 'batteryType']
     },
     { 
@@ -114,7 +114,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
       label: 'Charge Cycles', 
       value: `${powerStation.cycleCount}`, 
       desc: 'Total charge cycles completed',
-      color: '#01D6BE' 
+      color: '#0D9488' 
     },
     { 
       icon: Calendar, 
@@ -140,7 +140,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
       detail: bleConnection.status === 'connected' 
         ? `${bleConnection.deviceName ?? 'Device'} · ${bleConnection.rssi ? `${bleConnection.rssi} dBm` : 'Active'}`
         : 'Tap to connect in Settings',
-      color: bleConnection.status === 'connected' ? '#01D6BE' : '#48484A',
+      color: bleConnection.status === 'connected' ? '#0D9488' : '#48484A',
     },
     {
       icon: Usb,
@@ -267,9 +267,9 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           transition={{ delay: 0.1 }}
           className="flex flex-col items-center py-6"
         >
-          <div className="w-20 h-20 rounded-[24px] bg-[#1C1C1E] border border-[rgba(1,214,190,0.2)]
+          <div className="w-20 h-20 rounded-[24px] bg-[#1C1C1E] border border-[rgba(13,148,136,0.2)]
             flex items-center justify-center mb-4">
-            <Battery size={36} className="text-[#01D6BE]" />
+            <Battery size={36} className="text-[#0D9488]" />
           </div>
           
           {/* 可编辑的设备名称 */}
@@ -283,12 +283,12 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                   onChange={(e) => setEditName(e.target.value)}
                   onKeyDown={handleNameKeyDown}
                   onBlur={handleSaveName}
-                  className="text-xl font-bold text-[#FFFFFF] tracking-wide bg-transparent border-b-2 border-[#01D6BE] outline-none w-[180px] text-center"
+                  className="text-xl font-bold text-[#FFFFFF] tracking-wide bg-transparent border-b-2 border-[#0D9488] outline-none w-[180px] text-center"
                   maxLength={20}
                 />
                 <button 
                   onClick={handleSaveName}
-                  className="w-7 h-7 rounded-full bg-[#01D6BE] flex items-center justify-center"
+                  className="w-7 h-7 rounded-full bg-[#0D9488] flex items-center justify-center"
                 >
                   <Check size={14} className="text-[#000000]" />
                 </button>
@@ -317,7 +317,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           <div className="flex gap-2 mt-3">
             <span className={`text-[10px] px-2.5 py-1 rounded-full font-medium border
               ${activeDataSource === 'bluetooth'
-                ? 'bg-[rgba(1,214,190,0.12)] text-[#01D6BE] border-[rgba(1,214,190,0.3)]'
+                ? 'bg-[rgba(13,148,136,0.12)] text-[#0D9488] border-[rgba(13,148,136,0.3)]'
                 : activeDataSource === 'serial'
                 ? 'bg-[rgba(168,85,247,0.12)] text-[#A855F7] border-[rgba(168,85,247,0.3)]'
                 : 'bg-[rgba(52,199,89,0.08)] text-[#34C759] border-[rgba(52,199,89,0.2)]'}`}>
@@ -349,7 +349,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             </div>
             <div className="text-[10px] text-[#48484A]">Tap to edit</div>
           </div>
-          <div className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden">
+          <div className="bg-[#1C1C1E] border border-[rgba(13,148,136,0.08)] rounded-[20px] overflow-hidden">
             {deviceSpecs.map((item, i) => {
               const Icon = item.icon
               const isEditing = editingSpec === item.label
@@ -358,7 +358,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                   key={item.label}
                   onClick={() => !isEditing && handleStartEditSpec(item.label)}
                   className={`flex items-start gap-3 px-4 py-4 cursor-pointer hover:bg-[rgba(255,255,255,0.02)] transition-colors
-                    ${i !== deviceSpecs.length - 1 ? 'border-b border-[rgba(1,214,190,0.08)]' : ''}`}
+                    ${i !== deviceSpecs.length - 1 ? 'border-b border-[rgba(13,148,136,0.08)]' : ''}`}
                 >
                   <div 
                     className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -378,7 +378,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                           <div className="flex items-center gap-1">
                             <button 
                               onClick={(e) => { e.stopPropagation(); handleSaveSpec(); }}
-                              className="w-6 h-6 rounded-full bg-[#01D6BE] flex items-center justify-center"
+                              className="w-6 h-6 rounded-full bg-[#0D9488] flex items-center justify-center"
                             >
                               <Check size={12} className="text-[#000000]" />
                             </button>
@@ -397,7 +397,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                             value={editSpecValues[key as keyof typeof editSpecValues]}
                             onChange={(e) => handleSpecChange(key as keyof typeof editSpecValues, e.target.value)}
                             onClick={(e) => e.stopPropagation()}
-                            className="w-full text-[12px] bg-[#2C2C2E] border border-[#3C3C3E] rounded-md px-2 py-1 text-[#FFFFFF] outline-none focus:border-[#01D6BE]"
+                            className="w-full text-[12px] bg-[#2C2C2E] border border-[#3C3C3E] rounded-md px-2 py-1 text-[#FFFFFF] outline-none focus:border-[#0D9488]"
                             placeholder={key}
                           />
                         ))}
@@ -430,14 +430,14 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           <div className="text-[11px] font-bold text-[#8E8E93] tracking-widest uppercase mb-3 px-1">
             Device Status
           </div>
-          <div className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden">
+          <div className="bg-[#1C1C1E] border border-[rgba(13,148,136,0.08)] rounded-[20px] overflow-hidden">
             {deviceStatus.map((item, i) => {
               const Icon = item.icon
               return (
                 <div 
                   key={item.label}
                   className={`flex items-center gap-3 px-4 py-3.5 
-                    ${i !== deviceStatus.length - 1 ? 'border-b border-[rgba(1,214,190,0.08)]' : ''}`}
+                    ${i !== deviceStatus.length - 1 ? 'border-b border-[rgba(13,148,136,0.08)]' : ''}`}
                 >
                   <div 
                     className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -471,14 +471,14 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           <div className="text-[11px] font-bold text-[#8E8E93] tracking-widest uppercase mb-3 px-1">
             Connection Status
           </div>
-          <div className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden">
+          <div className="bg-[#1C1C1E] border border-[rgba(13,148,136,0.08)] rounded-[20px] overflow-hidden">
             {connectionStatus.map((item, i) => {
               const Icon = item.icon
               return (
                 <div 
                   key={item.label}
                   className={`flex items-center gap-3 px-4 py-3.5 
-                    ${i !== connectionStatus.length - 1 ? 'border-b border-[rgba(1,214,190,0.08)]' : ''}`}
+                    ${i !== connectionStatus.length - 1 ? 'border-b border-[rgba(13,148,136,0.08)]' : ''}`}
                 >
                   <div 
                     className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -518,7 +518,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           <div className="text-[11px] font-bold text-[#8E8E93] tracking-widest uppercase mb-3 px-1">
             Safety & Certifications
           </div>
-          <div className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] p-4">
+          <div className="bg-[#1C1C1E] border border-[rgba(13,148,136,0.08)] rounded-[20px] p-4">
             <div className="flex items-start gap-3 mb-3">
               <div className="w-9 h-9 rounded-lg bg-[rgba(52,199,89,0.1)] flex items-center justify-center flex-shrink-0">
                 <Shield size={16} className="text-[#34C759]" />

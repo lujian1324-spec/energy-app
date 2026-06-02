@@ -1,19 +1,23 @@
 /**
  * Sierro Inc. - 认证与用户 API
  *
- * 登录接口: POST /login/account
- * 注册接口: POST /user/register/email | /user/register/cellphone
- * 退出接口: POST /login/logout
- * Token 刷新: POST /login/refresh/access/token
- * 用户信息: POST /user/select/iotUserInfo
- * 修改密码: POST /user/update/authPassword
- * 找回密码: POST /user/reset/password
- * 账号校验: GET  /user/account/check
- * 邮箱校验: GET  /user/email/check
- * 发送验证码: POST /user/send/sms/captcha | /user/send/email/captcha
+ * 账号登录:    POST /login/account
+ * 邮箱验证码登录: POST /login/email
+ * 短信验证码登录: POST /login/sms
+ * 注册:        POST /user/register/email | /user/register/cellphone
+ * 退出:        POST /login/logout
+ * Token 刷新:  POST /login/refresh/access/token
+ * 用户信息:    POST /user/select/iotUserInfo
+ * 修改密码:    POST /user/update/authPassword
+ * 找回密码:    POST /user/reset/password
+ * 账号校验:    GET  /user/account/check
+ * 邮箱校验:    GET  /user/email/check
+ * 发送验证码:  POST /user/send/sms/captcha | /user/send/email/captcha
  *
  * 重要：密码需 MD5 加密后传输（平台要求，明文密码会返回 code 7）
  * 登录接口受签名拦截，但不需 IOT-Token（使用 postSkipAuth）
+ * 验证码发送字段名为 address（非 email）
+ * 验证码响应字段为 iotCaptchaId（非 captchaId）
  */
 
 import CryptoJS from 'crypto-js'
@@ -58,8 +62,9 @@ export interface RegisterRequest {
   password: string       // MD5 加密后
   email?: string        // 邮箱注册时必填
   cellphone?: string    // 手机注册时必填
-  countryTelephoneCode?: string  // 手机区号，如 "+1"
-  captcha?: string      // 验证码
+  countryTelephoneCode?: string  // 手机区号，如 "1"（不带 +）
+  verifyCode?: string   // 验证码（API 字段名，非 captcha）
+  captchaId?: string    // 验证码会话ID
   nickname?: string     // 昵称
 }
 
@@ -101,7 +106,13 @@ export interface SendCaptchaRequest {
   email?: string
   cellphone?: string
   countryTelephoneCode?: string
-  intent?: string  // 用途：register / resetPassword / updateEmail 等
+  intent?: string  // 用途：数值字符串 "1"=注册 "2"=重置密码 "3"=登录
+}
+
+/** 发送验证码响应 */
+export interface SendCaptchaResponse {
+  iotCaptchaId?: string  // 验证码会话ID（API 返回字段名，非 captchaId）
+  [key: string]: unknown
 }
 
 // ═══════════════════════════════════════════════════════
@@ -139,6 +150,49 @@ export async function loginByAccount(
   return result
 }
 
+/** 邮箱验证码登录（无密码） */
+export async function loginByEmail(
+  email: string,
+  iotCaptchaId: string,
+  verifyCode: string
+): Promise<ApiResponse<LoginData>> {
+  const result = await api.postSkipAuth<LoginData>('/login/email', {
+    email,
+    captchaId: iotCaptchaId,
+    verifyCode,
+  })
+  if ((result.code === 0 || result.code === '0') && result.data) {
+    const accessToken = result.data.accessToken
+    if (accessToken) tokenStore.set(accessToken)
+    const refreshToken = result.data.refreshToken
+    if (refreshToken) tokenStore.setRefresh(refreshToken)
+  }
+  return result
+}
+
+/** 短信验证码登录（无密码） */
+export async function loginBySms(
+  cellphone: string,
+  countryTelephoneCode: string,
+  iotCaptchaId: string,
+  verifyCode: string
+): Promise<ApiResponse<LoginData>> {
+  const normalizedCode = countryTelephoneCode.replace(/^\+/, '')
+  const result = await api.postSkipAuth<LoginData>('/login/sms', {
+    cellphone,
+    countryTelephoneCode: normalizedCode,
+    captchaId: iotCaptchaId,
+    verifyCode,
+  })
+  if ((result.code === 0 || result.code === '0') && result.data) {
+    const accessToken = result.data.accessToken
+    if (accessToken) tokenStore.set(accessToken)
+    const refreshToken = result.data.refreshToken
+    if (refreshToken) tokenStore.setRefresh(refreshToken)
+  }
+  return result
+}
+
 // ═══════════════════════════════════════════════════════
 // 注册
 // ═══════════════════════════════════════════════════════
@@ -148,13 +202,15 @@ export async function registerByEmail(
   account: string,
   plainPassword: string,
   email: string,
-  captcha?: string
+  verifyCode?: string,
+  captchaId?: string
 ): Promise<ApiResponse<unknown>> {
   return api.postSkipAuth<unknown>('/user/register/email', {
     account,
     password: md5Password(plainPassword),
     email,
-    captcha,
+    verifyCode,
+    captchaId,
   })
 }
 
@@ -164,14 +220,18 @@ export async function registerByCellphone(
   plainPassword: string,
   cellphone: string,
   countryTelephoneCode: string,
-  captcha?: string
+  verifyCode?: string,
+  captchaId?: string
 ): Promise<ApiResponse<unknown>> {
+  // API 要求区号不带 "+" 前缀 (如 "86" 而非 "+86")
+  const normalizedCode = countryTelephoneCode.replace(/^\+/, '')
   return api.postSkipAuth<unknown>('/user/register/cellphone', {
     account,
     password: md5Password(plainPassword),
     cellphone,
-    countryTelephoneCode,
-    captcha,
+    countryTelephoneCode: normalizedCode,
+    verifyCode,
+    captchaId,
   })
 }
 
@@ -185,20 +245,22 @@ export async function checkEmailExists(email: string): Promise<ApiResponse<unkno
   return api.get<unknown>(`/user/email/check?email=${encodeURIComponent(email)}`)
 }
 
-/** 发送邮箱验证码 */
-export async function sendEmailCaptcha(email: string, intent = 'register'): Promise<ApiResponse<unknown>> {
-  return api.postSkipAuth<unknown>('/user/send/email/captcha', { email, intent })
+/** 发送邮箱验证码 — 返回 iotCaptchaId */
+export async function sendEmailCaptcha(email: string, intent = '1'): Promise<ApiResponse<SendCaptchaResponse>> {
+  // API 字段名是 address（非 email）
+  return api.postSkipAuth<SendCaptchaResponse>('/user/send/email/captcha', { address: email, intent })
 }
 
-/** 发送短信验证码 */
+/** 发送短信验证码 — 返回 iotCaptchaId */
 export async function sendSmsCaptcha(
   cellphone: string,
   countryTelephoneCode: string,
-  intent = 'register'
-): Promise<ApiResponse<unknown>> {
-  return api.postSkipAuth<unknown>('/user/send/sms/captcha', {
+  intent = '1'
+): Promise<ApiResponse<SendCaptchaResponse>> {
+  const normalizedCode = countryTelephoneCode.replace(/^\+/, '')
+  return api.postSkipAuth<SendCaptchaResponse>('/user/send/sms/captcha', {
     cellphone,
-    countryTelephoneCode,
+    countryTelephoneCode: normalizedCode,
     intent,
   })
 }
@@ -279,12 +341,14 @@ export async function updatePassword(
 export async function resetPassword(
   account: string,
   newPlainPassword: string,
-  captcha?: string
+  verifyCode?: string,
+  captchaId?: string
 ): Promise<ApiResponse<unknown>> {
   return api.postSkipAuth<unknown>('/user/reset/password', {
     account,
     newPassword: md5Password(newPlainPassword),
-    captcha,
+    verifyCode,
+    captchaId,
   })
 }
 
@@ -300,4 +364,18 @@ export async function deleteAccount(): Promise<ApiResponse<unknown>> {
 /** 是否已登录 */
 export function isLoggedIn(): boolean {
   return !!tokenStore.get()
+}
+
+/**
+ * 验证当前会话是否有效（轻量级检查）
+ * - 调用 fetchUserInfo 验证 token 是否过期
+ * - 用于 App 启动时静默恢复会话
+ */
+export async function verifySession(): Promise<boolean> {
+  try {
+    const result = await fetchUserInfo()
+    return result.code === 0 || result.code === '0'
+  } catch {
+    return false
+  }
 }

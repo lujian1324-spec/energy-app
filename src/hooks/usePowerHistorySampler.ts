@@ -33,7 +33,7 @@ export function usePowerHistorySampler() {
         temperature: s.temperature,
         mode: s.mode,
         deviceId: 'local',
-      }).catch(() => {/* ignore */})
+      }).catch(err => console.error('[usePowerHistorySampler] addSample failed:', err))
     }
 
     sample()

@@ -50,7 +50,7 @@ export default function BatteryRing({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#01D6BE"
+          stroke="#0D9488"
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           strokeDasharray={circumference}
@@ -70,8 +70,8 @@ export default function BatteryRing({
         {/* Charging 状态或倒计时 */}
         {isCharging ? (
           <div className="flex items-center gap-1 mt-1">
-            <Zap size={12} className="text-[#01D6BE]" />
-            <span className="text-[10px] font-semibold text-[#01D6BE] tracking-wide">CHARGING</span>
+            <Zap size={12} className="text-[#0D9488]" />
+            <span className="text-[10px] font-semibold text-[#0D9488] tracking-wide">CHARGING</span>
           </div>
         ) : (
           <div className="text-[10px] text-[#8E8E93] mt-1 tracking-wide">

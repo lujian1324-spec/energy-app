@@ -233,11 +233,11 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
           return (
             <div key={s.key} className="flex items-center">
               <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold transition-colors
-                ${isCompleted ? 'bg-[#01D6BE] text-[#000]' : isActive ? 'bg-[#01D6BE] text-[#000]' : 'bg-[#2C2C2E] text-[#48484A]'}`}>
+                ${isCompleted ? 'bg-[#0D9488] text-[#000]' : isActive ? 'bg-[#0D9488] text-[#000]' : 'bg-[#2C2C2E] text-[#48484A]'}`}>
                 {isCompleted ? '✓' : i + 1}
               </div>
               {i < STEPS.length - 1 && (
-                <div className={`w-6 h-px mx-0.5 ${i < currentStepIndex ? 'bg-[#01D6BE]' : 'bg-[#2C2C2E]'}`} />
+                <div className={`w-6 h-px mx-0.5 ${i < currentStepIndex ? 'bg-[#0D9488]' : 'bg-[#2C2C2E]'}`} />
               )}
             </div>
           )
@@ -251,8 +251,8 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
           {store.step === 'scan' && (
             <motion.div key="scan" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} className="mt-8">
               <div className="text-center mb-8">
-                <div className="w-16 h-16 rounded-2xl bg-[rgba(1,214,190,0.15)] flex items-center justify-center mx-auto mb-4">
-                  <Radio size={28} className="text-[#01D6BE]" />
+                <div className="w-16 h-16 rounded-2xl bg-[rgba(13,148,136,0.15)] flex items-center justify-center mx-auto mb-4">
+                  <Radio size={28} className="text-[#0D9488]" />
                 </div>
                 <h2 className="text-[16px] font-semibold text-[#FFFFFF] mb-1">扫描蓝牙设备</h2>
                 <p className="text-[12px] text-[#8E8E93]">请确保采集器已通电，蓝牙指示灯闪烁</p>
@@ -261,7 +261,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
               <button
                 onClick={handleScan}
                 disabled={store.isOperating}
-                className="w-full py-3.5 rounded-2xl bg-[#01D6BE] text-[#000] text-[14px] font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full py-3.5 rounded-2xl bg-[#0D9488] text-[#000] text-[14px] font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {store.isOperating ? (
                   <><Loader2 size={16} className="animate-spin" /> 扫描中...</>
@@ -281,8 +281,8 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
           {store.step === 'verify' && (
             <motion.div key="verify" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} className="mt-8">
               <div className="text-center mb-6">
-                <div className="w-16 h-16 rounded-2xl bg-[rgba(1,214,190,0.15)] flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle size={28} className="text-[#01D6BE]" />
+                <div className="w-16 h-16 rounded-2xl bg-[rgba(13,148,136,0.15)] flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle size={28} className="text-[#0D9488]" />
                 </div>
                 <h2 className="text-[16px] font-semibold text-[#FFFFFF] mb-1">设备已连接</h2>
                 <p className="text-[12px] text-[#8E8E93]">{store.deviceName}</p>
@@ -314,7 +314,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                     value={bleKeyInput}
                     onChange={(e) => setBleKeyInput(e.target.value)}
                     placeholder="请输入蓝牙密码"
-                    className="w-full bg-[#2C2C2E] rounded-lg px-3 py-2.5 text-[13px] text-[#FFFFFF] placeholder:text-[#48484A] outline-none border border-[rgba(255,255,255,0.06)] focus:border-[#01D6BE] mb-2"
+                    className="w-full bg-[#2C2C2E] rounded-lg px-3 py-2.5 text-[13px] text-[#FFFFFF] placeholder:text-[#48484A] outline-none border border-[rgba(255,255,255,0.06)] focus:border-[#0D9488] mb-2"
                   />
                   <button
                     onClick={handleConfirmBleKey}
@@ -330,7 +330,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
               <button
                 onClick={handleVerify}
                 disabled={store.isOperating}
-                className="w-full py-3.5 rounded-2xl bg-[#01D6BE] text-[#000] text-[14px] font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full py-3.5 rounded-2xl bg-[#0D9488] text-[#000] text-[14px] font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {store.isOperating ? <Loader2 size={16} className="animate-spin" /> : <Wifi size={16} />}
                 扫描 WiFi 列表
@@ -345,14 +345,14 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
 
               {store.apLoading ? (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 size={24} className="text-[#01D6BE] animate-spin" />
+                  <Loader2 size={24} className="text-[#0D9488] animate-spin" />
                   <span className="text-[12px] text-[#8E8E93] ml-2">扫描中...</span>
                 </div>
               ) : store.apList.length === 0 ? (
                 <div className="text-center py-12">
                   <WifiOff size={32} className="text-[#48484A] mx-auto mb-3" />
                   <p className="text-[12px] text-[#8E8E93]">未发现 WiFi 网络</p>
-                  <button onClick={handleScanWifi} className="mt-4 text-[12px] text-[#01D6BE] flex items-center gap-1 mx-auto">
+                  <button onClick={handleScanWifi} className="mt-4 text-[12px] text-[#0D9488] flex items-center gap-1 mx-auto">
                     <RefreshCw size={12} /> 重新扫描
                   </button>
                 </div>
@@ -365,7 +365,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                       className="w-full flex items-center justify-between px-4 py-3 bg-[#1C1C1E] rounded-xl active:bg-[#2C2C2E] transition-colors"
                     >
                       <div className="flex items-center gap-3">
-                        <Wifi size={16} className={ap.SSID ? 'text-[#01D6BE]' : 'text-[#48484A]'} />
+                        <Wifi size={16} className={ap.SSID ? 'text-[#0D9488]' : 'text-[#48484A]'} />
                         <span className="text-[13px] text-[#FFFFFF]">{ap.SSID || '(隐藏网络)'}</span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -407,7 +407,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                       value={store.selectedSsid ?? ''}
                       onChange={(e) => store.setSelectedSsid(e.target.value)}
                       placeholder="请输入 WiFi 名称"
-                      className="w-full bg-[#2C2C2E] rounded-lg px-3 py-2.5 text-[13px] text-[#FFFFFF] placeholder:text-[#48484A] outline-none border border-[rgba(255,255,255,0.06)] focus:border-[#01D6BE]"
+                      className="w-full bg-[#2C2C2E] rounded-lg px-3 py-2.5 text-[13px] text-[#FFFFFF] placeholder:text-[#48484A] outline-none border border-[rgba(255,255,255,0.06)] focus:border-[#0D9488]"
                     />
                   ) : (
                     <div className="flex items-center justify-between bg-[#2C2C2E] rounded-lg px-3 py-2.5">
@@ -426,7 +426,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                       value={store.wifiPassword}
                       onChange={(e) => store.setWifiPassword(e.target.value)}
                       placeholder="请输入 WiFi 密码"
-                      className="w-full bg-[#2C2C2E] rounded-lg px-3 py-2.5 pr-9 text-[13px] text-[#FFFFFF] placeholder:text-[#48484A] outline-none border border-[rgba(255,255,255,0.06)] focus:border-[#01D6BE]"
+                      className="w-full bg-[#2C2C2E] rounded-lg px-3 py-2.5 pr-9 text-[13px] text-[#FFFFFF] placeholder:text-[#48484A] outline-none border border-[rgba(255,255,255,0.06)] focus:border-[#0D9488]"
                     />
                     <button
                       onClick={() => setShowPassword(!showPassword)}
@@ -441,7 +441,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
               <button
                 onClick={handleConfig}
                 disabled={store.isOperating || !store.wifiPassword}
-                className="w-full mt-6 py-3.5 rounded-2xl bg-[#01D6BE] text-[#000] text-[14px] font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full mt-6 py-3.5 rounded-2xl bg-[#0D9488] text-[#000] text-[14px] font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {store.isOperating ? <Loader2 size={16} className="animate-spin" /> : <Wifi size={16} />}
                 开始配网
@@ -452,7 +452,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
           {/* ── Step 4: 配网中 ── */}
           {store.step === 'configuring' && (
             <motion.div key="configuring" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} className="mt-12 text-center">
-              <Loader2 size={32} className="text-[#01D6BE] animate-spin mx-auto mb-4" />
+              <Loader2 size={32} className="text-[#0D9488] animate-spin mx-auto mb-4" />
               <h2 className="text-[16px] font-semibold text-[#FFFFFF] mb-1">正在配置...</h2>
               <p className="text-[12px] text-[#8E8E93]">请稍候，正在向设备发送 WiFi 配置</p>
             </motion.div>
@@ -481,7 +481,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
               {store.wifiStatus && (
                 <div className="bg-[#1C1C1E] rounded-xl p-4 mb-4 space-y-2">
                   <div className="flex items-center gap-2 mb-2">
-                    <Wifi size={14} className="text-[#01D6BE]" />
+                    <Wifi size={14} className="text-[#0D9488]" />
                     <span className="text-[12px] text-[#FFFFFF] font-semibold">WiFi 状态</span>
                   </div>
                   <div className="flex justify-between">
@@ -513,7 +513,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                   <button
                     onClick={handleCheckStatus}
                     disabled={store.isOperating}
-                    className="w-full py-3 rounded-xl bg-[#1C1C1E] text-[#01D6BE] text-[13px] font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="w-full py-3 rounded-xl bg-[#1C1C1E] text-[#0D9488] text-[13px] font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     {store.isOperating ? <Loader2 size={14} className="animate-spin" /> : <Server size={14} />}
                     查询连接状态

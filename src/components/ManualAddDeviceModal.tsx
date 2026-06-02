@@ -129,9 +129,9 @@ export default function ManualAddDeviceModal({ onClose }: Props) {
               value={deviceName}
               onChange={e => { setDeviceName(e.target.value); setError(null) }}
               placeholder="e.g. Sierro 1000"
-              className="w-full px-4 py-3 rounded-xl bg-[#000000] border border-[rgba(1,214,190,0.15)]
+              className="w-full px-4 py-3 rounded-xl bg-[#000000] border border-[rgba(13,148,136,0.15)]
                 text-[#FFFFFF] text-[14px] placeholder:text-[#48484A]
-                focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
+                focus:outline-none focus:border-[rgba(13,148,136,0.5)] transition-colors"
             />
           </div>
 
@@ -145,9 +145,9 @@ export default function ManualAddDeviceModal({ onClose }: Props) {
               value={serialNumber}
               onChange={e => { setSerialNumber(e.target.value); setError(null) }}
               placeholder="e.g. 999256001232612"
-              className="w-full px-4 py-3 rounded-xl bg-[#000000] border border-[rgba(1,214,190,0.15)]
+              className="w-full px-4 py-3 rounded-xl bg-[#000000] border border-[rgba(13,148,136,0.15)]
                 text-[#FFFFFF] text-[14px] placeholder:text-[#48484A]
-                focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
+                focus:outline-none focus:border-[rgba(13,148,136,0.5)] transition-colors"
             />
           </div>
 
@@ -161,9 +161,9 @@ export default function ManualAddDeviceModal({ onClose }: Props) {
               value={dtuDtuid}
               onChange={e => { setDtuDtuid(e.target.value); setError(null) }}
               placeholder="e.g. DTU serial number"
-              className="w-full px-4 py-3 rounded-xl bg-[#000000] border border-[rgba(1,214,190,0.15)]
+              className="w-full px-4 py-3 rounded-xl bg-[#000000] border border-[rgba(13,148,136,0.15)]
                 text-[#FFFFFF] text-[14px] placeholder:text-[#48484A]
-                focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
+                focus:outline-none focus:border-[rgba(13,148,136,0.5)] transition-colors"
             />
           </div>
 
@@ -176,8 +176,8 @@ export default function ManualAddDeviceModal({ onClose }: Props) {
               <select
                 value={stationId}
                 onChange={e => setStationId(Number(e.target.value))}
-                className="w-full px-4 py-3 rounded-xl bg-[#000000] border border-[rgba(1,214,190,0.15)]
-                  text-[#FFFFFF] text-[14px] focus:outline-none focus:border-[rgba(1,214,190,0.5)]"
+                className="w-full px-4 py-3 rounded-xl bg-[#000000] border border-[rgba(13,148,136,0.15)]
+                  text-[#FFFFFF] text-[14px] focus:outline-none focus:border-[rgba(13,148,136,0.5)]"
               >
                 {stations.map(s => (
                   <option key={s.id} value={s.id}>{s.name}</option>
@@ -186,7 +186,7 @@ export default function ManualAddDeviceModal({ onClose }: Props) {
               <button
                 type="button"
                 onClick={() => setCreateNewStation(v => !v)}
-                className="mt-2 text-[12px] text-[#01D6BE] font-medium"
+                className="mt-2 text-[12px] text-[#0D9488] font-medium"
               >
                 {createNewStation ? '← Select existing station' : '+ Create new station'}
               </button>
@@ -204,9 +204,9 @@ export default function ManualAddDeviceModal({ onClose }: Props) {
                 value={newStationName}
                 onChange={e => setNewStationName(e.target.value)}
                 placeholder="e.g. Home Solar Station"
-                className="w-full px-4 py-3 rounded-xl bg-[#000000] border border-[rgba(1,214,190,0.15)]
+                className="w-full px-4 py-3 rounded-xl bg-[#000000] border border-[rgba(13,148,136,0.15)]
                   text-[#FFFFFF] text-[14px] placeholder:text-[#48484A]
-                  focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
+                  focus:outline-none focus:border-[rgba(13,148,136,0.5)] transition-colors"
               />
             </div>
           )}
@@ -225,7 +225,7 @@ export default function ManualAddDeviceModal({ onClose }: Props) {
             type="submit"
             disabled={loading || !deviceName.trim()}
             className="w-full py-3.5 rounded-xl font-semibold text-[14px]
-              bg-[#01D6BE] text-[#000000]
+              bg-[#0D9488] text-[#000000]
               disabled:opacity-40 disabled:cursor-not-allowed
               active:scale-[0.98] transition-all flex items-center justify-center gap-2"
           >

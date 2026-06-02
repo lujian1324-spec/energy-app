@@ -24,7 +24,6 @@ import {
   Leaf,
   AlertTriangle,
   CircleDot,
-  Trash2,
   Thermometer,
   RefreshCw,
   Wifi,
@@ -74,8 +73,6 @@ export default function OverviewPage() {
   const [showDisplaySettings, setShowDisplaySettings] = useState(false)
   const [showLockScreenAlert, setShowLockScreenAlert] = useState(false)
   const [showAlerts, setShowAlerts] = useState(false)
-  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false)
-  const [removingDevice, setRemovingDevice] = useState(false)
   const [alertList, setAlertList] = useState<DeviceAlert[]>([])
   const [pushPermission, setPushPermission] = useState<NotificationPermission>('default')
   const [showDeviceDropdown, setShowDeviceDropdown] = useState(false)
@@ -176,16 +173,50 @@ export default function OverviewPage() {
   const solarPower = realtime?.solarPower ?? 0
   const outputPower = realtime?.outputPower ?? 0
   const batteryTemp = realtime?.batteryTemp ?? 0
+  const inputPower = Math.max(acPower, solarPower, 0)
+  const currentDeviceListItem = devices.find(d => String(d.id) === selectedDeviceId)
+  const deviceModel = selectedDeviceDetails?.gatherProtocolNameDisplay ?? selectedDeviceDetails?.model ?? ''
+
+  // ─── 预估剩余时间 ───
+  const remainingTimeDisplay = useMemo(() => {
+    if (soc <= 0 || outputPower <= 0) return null
+    // Default capacity: 1kWh (Sierro 1000) or 2kWh (Sierro 2000)
+    const modelLower = deviceModel?.toLowerCase() ?? ''
+    const capacityWh = modelLower.includes('2000') ? 2000 : 1000
+    const remainingWh = (soc / 100) * capacityWh
+    const hours = remainingWh / outputPower
+    if (hours >= 1) {
+      const h = Math.floor(hours)
+      const m = Math.round((hours - h) * 60)
+      return `${h}h ${m}m remaining`
+    }
+    const m = Math.round(hours * 60)
+    if (m <= 0) return null
+    return `${m}m remaining`
+  }, [soc, outputPower, deviceModel])
+
+  const chargeTimeDisplay = useMemo(() => {
+    if (soc >= 100 || inputPower <= 0) return null
+    const modelLower = deviceModel?.toLowerCase() ?? ''
+    const capacityWh = modelLower.includes('2000') ? 2000 : 1000
+    const toChargeWh = ((100 - soc) / 100) * capacityWh
+    const hours = toChargeWh / inputPower
+    if (hours >= 1) {
+      const h = Math.floor(hours)
+      const m = Math.round((hours - h) * 60)
+      return `${h}h ${m}m to full`
+    }
+    const m = Math.round(hours * 60)
+    if (m <= 0) return null
+    return `${m}m to full`
+  }, [soc, inputPower, deviceModel])
   const acOut1Enable = realtime?.acOut1Enable ?? false
   const acOut2Enable = realtime?.acOut2Enable ?? false
   const usbOut1Enable = realtime?.usbOut1Enable ?? false
   const sleepMode = realtime?.sleepMode ?? false
   const workMode = realtime?.workMode ?? 0
   const isCharging = batteryPower > 0
-  const inputPower = Math.max(acPower, solarPower, 0)
-  const currentDeviceListItem = devices.find(d => String(d.id) === selectedDeviceId)
   const deviceName = selectedDeviceDetails?.name ?? currentDeviceListItem?.name ?? 'Device'
-  const deviceModel = selectedDeviceDetails?.gatherProtocolNameDisplay ?? selectedDeviceDetails?.model ?? ''
   const isOnline = selectedDeviceDetails?.isOnline ?? false
 
   // Quick Controls local state (synced with real data)
@@ -281,7 +312,7 @@ export default function OverviewPage() {
   // ─── Power chart data (mock SVG paths for now) ───
   const powerChartData = useMemo(() => ({
     battery: { value: batteryPower, color: '#34C759' },
-    ac: { value: acPower, color: '#01D6BE' },
+    ac: { value: acPower, color: '#0D9488' },
     solar: { value: solarPower, color: '#FF9500' },
     output: { value: outputPower, color: '#8E8E93' },
   }), [batteryPower, acPower, solarPower, outputPower])
@@ -330,7 +361,7 @@ export default function OverviewPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute top-full left-0 mt-2 w-[260px] bg-[#1C1C1E] rounded-[16px] border border-[rgba(1,214,190,0.15)] shadow-xl z-50 overflow-hidden"
+                  className="absolute top-full left-0 mt-2 w-[260px] bg-[#1C1C1E] rounded-[16px] border border-[rgba(13,148,136,0.15)] shadow-xl z-50 overflow-hidden"
                 >
                   <div className="py-2">
                     <div className="px-3 py-2 text-[10px] text-[#8E8E93] uppercase tracking-wider">
@@ -344,20 +375,20 @@ export default function OverviewPage() {
                           onClick={() => handleSelectDevice(String(device.id))}
                           className={`w-full flex items-center gap-3 px-3 py-3 transition-colors
                             ${isSelected
-                              ? 'bg-[rgba(1,214,190,0.1)]'
+                              ? 'bg-[rgba(13,148,136,0.1)]'
                               : 'hover:bg-[rgba(255,255,255,0.05)]'
                             }`}
                         >
                           <div className={`w-9 h-9 rounded-lg flex items-center justify-center
                             ${isSelected
-                              ? 'bg-[rgba(1,214,190,0.15)] text-[#01D6BE]'
+                              ? 'bg-[rgba(13,148,136,0.15)] text-[#0D9488]'
                               : 'bg-[rgba(255,255,255,0.06)] text-[#8E8E93]'
                             }`}
                           >
                             <Battery size={18} />
                           </div>
                           <div className="flex-1 text-left min-w-0">
-                            <div className={`text-[13px] font-semibold truncate ${isSelected ? 'text-[#01D6BE]' : 'text-[#FFFFFF]'}`}>
+                            <div className={`text-[13px] font-semibold truncate ${isSelected ? 'text-[#0D9488]' : 'text-[#FFFFFF]'}`}>
                               {device.name}
                             </div>
                             <div className="text-[10px] text-[#8E8E93] flex items-center gap-1.5">
@@ -367,7 +398,7 @@ export default function OverviewPage() {
                             </div>
                           </div>
                           {isSelected && (
-                            <div className="w-2 h-2 rounded-full bg-[#01D6BE]" />
+                            <div className="w-2 h-2 rounded-full bg-[#0D9488]" />
                           )}
                         </button>
                       )
@@ -378,15 +409,8 @@ export default function OverviewPage() {
             </AnimatePresence>
           </div>
 
-          {/* Right: Remove + Settings + Bell */}
+          {/* Right: Settings + Bell */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            <button
-              onClick={() => setShowRemoveConfirm(true)}
-              className="w-9 h-9 rounded-full bg-[#1C1C1E] flex items-center justify-center text-[#FF3B30] hover:bg-[#2C2C2E] transition-colors"
-              title="Remove device"
-            >
-              <Trash2 size={16} />
-            </button>
             <button
               onClick={() => navigate('/smart-schedule')}
               className="w-9 h-9 rounded-full bg-[#1C1C1E] flex items-center justify-center text-[#FFFFFF] hover:bg-[#2C2C2E] transition-colors"
@@ -409,21 +433,21 @@ export default function OverviewPage() {
         {/* Loading state */}
         {stateLoading && !realtime ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 size={24} className="text-[#01D6BE] animate-spin" />
+            <Loader2 size={24} className="text-[#0D9488] animate-spin" />
             <span className="ml-3 text-[13px] text-[#8E8E93]">Loading device data...</span>
           </div>
         ) : (
           <>
-            {/* Online/Offline status badge */}
+            {/* Connected / Disconnected status badge */}
             <div className="mx-5 mb-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {isOnline ? (
-                  <span className="text-[11px] text-[#34C759] flex items-center gap-1">
-                    <Wifi size={11} /> Online
+                  <span className="text-[10px] px-2.5 py-1 rounded-full bg-[rgba(13,148,136,0.12)] text-[#0D9488] font-semibold flex items-center gap-1">
+                    <Wifi size={10} /> Connected
                   </span>
                 ) : (
-                  <span className="text-[11px] text-[#48484A] flex items-center gap-1">
-                    <WifiOff size={11} /> Offline
+                  <span className="text-[10px] px-2.5 py-1 rounded-full bg-[rgba(255,59,48,0.12)] text-[#FF3B30] font-semibold flex items-center gap-1">
+                    <WifiOff size={10} /> Disconnected
                   </span>
                 )}
                 {deviceModel && (
@@ -433,7 +457,7 @@ export default function OverviewPage() {
               <button
                 onClick={handleRefresh}
                 disabled={stateLoading}
-                className="text-[11px] text-[#8E8E93] flex items-center gap-1 hover:text-[#01D6BE] transition-colors"
+                className="text-[11px] text-[#8E8E93] flex items-center gap-1 hover:text-[#0D9488] transition-colors"
               >
                 <RefreshCw size={11} className={stateLoading ? 'animate-spin' : ''} />
                 Refresh
@@ -456,7 +480,7 @@ export default function OverviewPage() {
                   </div>
                   <span className="text-[#48484A]">|</span>
                   {/* Grid */}
-                  <div className={`flex items-center gap-1 ${energyFlow.gridFlow?.isEnabled ? 'text-[#01D6BE]' : 'text-[#48484A]'}`}>
+                  <div className={`flex items-center gap-1 ${energyFlow.gridFlow?.isEnabled ? 'text-[#0D9488]' : 'text-[#48484A]'}`}>
                     <Zap size={10} />
                     <span>Grid: {energyFlow.gridFlow?.value?.valueDisplay ?? '--'} {energyFlow.gridFlow?.value?.unit ?? ''}</span>
                   </div>
@@ -482,27 +506,34 @@ export default function OverviewPage() {
                 <BatteryRing
                   percentage={soc}
                   isCharging={isCharging}
-                  timeToFull={isCharging ? '--' : ''}
+                  timeToFull={chargeTimeDisplay ?? '--'}
                 />
               </div>
 
-              {/* Remaining info */}
+              {/* Remaining time / Charging info */}
               <div className="text-center mb-4">
-                <span className="text-[12px] text-[#8E8E93]">
-                  {isCharging
-                    ? `Charging ${Math.abs(batteryPower)}W`
-                    : outputPower > 0
-                      ? `Outputting ${outputPower}W`
-                      : 'Idle'
-                  }
-                </span>
+                {isCharging ? (
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span className="text-[13px] font-semibold text-[#0D9488]">{chargeTimeDisplay}</span>
+                    <span className="text-[11px] text-[#8E8E93]">{Math.abs(batteryPower)}W charging</span>
+                  </div>
+                ) : outputPower > 0 ? (
+                  <div className="flex flex-col items-center gap-0.5">
+                    {remainingTimeDisplay && (
+                      <span className="text-[13px] font-semibold text-[#FFFFFF]">{remainingTimeDisplay}</span>
+                    )}
+                    <span className="text-[11px] text-[#8E8E93]">{outputPower}W output</span>
+                  </div>
+                ) : (
+                  <span className="text-[12px] text-[#8E8E93]">Idle</span>
+                )}
               </div>
 
               {/* Battery / AC / Solar / Output 4 cards */}
               <div className="grid grid-cols-4 gap-2.5 mb-4 px-0.5">
                 {[
                   { label: 'Battery', value: `${soc}%`, icon: Battery, color: soc < 20 ? '#FF3B30' : soc < 60 ? '#FF9500' : '#34C759' },
-                  { label: 'AC', value: `${acPower}W`, icon: Zap, color: acPower > 0 ? '#01D6BE' : '#8E8E93' },
+                  { label: 'AC', value: `${acPower}W`, icon: Zap, color: acPower > 0 ? '#0D9488' : '#8E8E93' },
                   { label: 'Solar', value: `${solarPower}W`, icon: Sun, color: solarPower > 0 ? '#FF9500' : '#8E8E93' },
                   { label: 'Output', value: `${outputPower}W`, icon: TrendingUp, color: outputPower > 0 ? '#8E8E93' : '#48484A' },
                 ].map((item) => {
@@ -519,10 +550,10 @@ export default function OverviewPage() {
 
               {/* Input / Output power labels */}
               <div className="flex justify-center gap-4">
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[rgba(1,214,190,0.15)] border border-[rgba(1,214,190,0.3)]">
-                  <TrendingDown size={13} className="text-[#01D6BE]" />
-                  <span className="text-[11px] text-[#01D6BE]">Input</span>
-                  <span className="text-[12px] font-semibold text-[#01D6BE]">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[rgba(13,148,136,0.15)] border border-[rgba(13,148,136,0.3)]">
+                  <TrendingDown size={13} className="text-[#0D9488]" />
+                  <span className="text-[11px] text-[#0D9488]">Input</span>
+                  <span className="text-[12px] font-semibold text-[#0D9488]">
                     {inputPower}W
                   </span>
                 </div>
@@ -626,8 +657,8 @@ export default function OverviewPage() {
                 <div className="flex items-center justify-between px-4 py-3.5 border-b border-[rgba(255,255,255,0.06)]">
                   <div className="flex items-center gap-3">
                     <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors
-                      ${localSleepMode ? 'bg-[rgba(1,214,190,0.15)]' : 'bg-[rgba(255,255,255,0.06)]'}`}>
-                      <Moon size={16} className={localSleepMode ? 'text-[#01D6BE]' : 'text-[#8E8E93]'} />
+                      ${localSleepMode ? 'bg-[rgba(13,148,136,0.15)]' : 'bg-[rgba(255,255,255,0.06)]'}`}>
+                      <Moon size={16} className={localSleepMode ? 'text-[#0D9488]' : 'text-[#8E8E93]'} />
                     </div>
                     <div>
                       <div className="text-[13px] font-semibold text-[#FFFFFF]">Sleep Mode</div>
@@ -730,7 +761,7 @@ export default function OverviewPage() {
                         const newValue = !port.enabled
                         setControlLoading(port.key)
                         controlDevice(selectedDeviceId, port.key, newValue)
-                          .catch(() => {})
+                          .catch(err => console.error('[OverviewPage] controlDevice failed:', err))
                           .finally(() => setControlLoading(null))
                       }}
                       size="sm"
@@ -808,10 +839,10 @@ export default function OverviewPage() {
                       key={item.key}
                       onClick={() => setPowerDataSource(item.key)}
                       className={`flex flex-col items-center gap-1 px-4 py-1 rounded-xl transition-all
-                        ${isActive ? 'bg-[rgba(1,214,190,0.15)]' : 'hover:bg-[rgba(255,255,255,0.03)]'}`}
+                        ${isActive ? 'bg-[rgba(13,148,136,0.15)]' : 'hover:bg-[rgba(255,255,255,0.03)]'}`}
                     >
-                      <Icon size={18} className={isActive ? 'text-[#01D6BE]' : 'text-[#8E8E93]'} />
-                      <span className={`text-[10px] font-medium ${isActive ? 'text-[#01D6BE]' : 'text-[#8E8E93]'}`}>
+                      <Icon size={18} className={isActive ? 'text-[#0D9488]' : 'text-[#8E8E93]'} />
+                      <span className={`text-[10px] font-medium ${isActive ? 'text-[#0D9488]' : 'text-[#8E8E93]'}`}>
                         {item.label}
                       </span>
                     </button>
@@ -862,7 +893,7 @@ export default function OverviewPage() {
               <div className="flex flex-col gap-2.5 max-h-[450px] overflow-y-auto scrollbar-hide">
                 {alarmLoading && (
                   <div className="flex items-center justify-center py-8">
-                    <Loader2 size={20} className="text-[#01D6BE] animate-spin" />
+                    <Loader2 size={20} className="text-[#0D9488] animate-spin" />
                     <span className="ml-2 text-[13px] text-[#8E8E93]">Loading alarms...</span>
                   </div>
                 )}
@@ -881,7 +912,7 @@ export default function OverviewPage() {
                     critical: { bg: 'bg-[rgba(255,59,48,0.06)]', dot: '#FF3B30', text: 'text-[#FF3B30]' },
                     major: { bg: 'bg-[rgba(255,59,48,0.06)]', dot: '#FF3B30', text: 'text-[#FF3B30]' },
                     minor: { bg: 'bg-[rgba(255,149,0,0.06)]', dot: '#FF9500', text: 'text-[#FF9500]' },
-                    info: { bg: 'bg-[rgba(1,214,190,0.04)]', dot: '#01D6BE', text: 'text-[#01D6BE]' },
+                    info: { bg: 'bg-[rgba(13,148,136,0.04)]', dot: '#0D9488', text: 'text-[#0D9488]' },
                   }
                   const colors = severityColors[alert.severity] || severityColors.info
 
@@ -920,7 +951,7 @@ export default function OverviewPage() {
                     major: { bg: 'bg-[rgba(255,59,48,0.06)]', dot: '#FF3B30', text: 'text-[#FF3B30]' },
                     warning: { bg: 'bg-[rgba(255,149,0,0.06)]', dot: '#FF9500', text: 'text-[#FF9500]' },
                     minor: { bg: 'bg-[rgba(255,149,0,0.06)]', dot: '#FF9500', text: 'text-[#FF9500]' },
-                    info: { bg: 'bg-[rgba(1,214,190,0.04)]', dot: '#01D6BE', text: 'text-[#01D6BE]' },
+                    info: { bg: 'bg-[rgba(13,148,136,0.04)]', dot: '#0D9488', text: 'text-[#0D9488]' },
                   }
                   const colors = levelColors[alarm.alarmLevel] || levelColors.info
 
@@ -953,7 +984,7 @@ export default function OverviewPage() {
                           <button
                             onClick={() => handleDismissAlarm(alarm.id)}
                             disabled={dismissingAlarmId === alarm.id}
-                            className="text-[10px] text-[#01D6BE] px-2 py-0.5 rounded-full bg-[rgba(1,214,190,0.1)] disabled:opacity-50 flex items-center gap-1"
+                            className="text-[10px] text-[#0D9488] px-2 py-0.5 rounded-full bg-[rgba(13,148,136,0.1)] disabled:opacity-50 flex items-center gap-1"
                           >
                             {dismissingAlarmId === alarm.id ? (
                               <><Loader2 size={10} className="animate-spin" /> Dismissing</>
@@ -971,7 +1002,7 @@ export default function OverviewPage() {
                     onClick={() => {
                       if (selectedDeviceId) loadAlarms(Number(selectedDeviceId), Math.ceil(alarms.length / 20) + 1, 20, true)
                     }}
-                    className="w-full py-2.5 text-[12px] text-[#01D6BE] font-medium"
+                    className="w-full py-2.5 text-[12px] text-[#0D9488] font-medium"
                   >
                     Load More ({alarmTotal - alarms.length} remaining)
                   </button>
@@ -1013,7 +1044,7 @@ export default function OverviewPage() {
               <div className="flex flex-col gap-2.5 max-h-[320px] overflow-y-auto scrollbar-hide">
                 {alarmLoading ? (
                   <div className="flex items-center justify-center py-8">
-                    <Loader2 size={20} className="text-[#01D6BE] animate-spin" />
+                    <Loader2 size={20} className="text-[#0D9488] animate-spin" />
                   </div>
                 ) : alarms.length === 0 ? (
                   <div className="text-center py-8">
@@ -1027,9 +1058,9 @@ export default function OverviewPage() {
                       major: '#FF3B30',
                       warning: '#FF9500',
                       minor: '#FF9500',
-                      info: '#01D6BE',
+                      info: '#0D9488',
                     }
-                    const dotColor = levelColorMap[alarm.alarmLevel] || '#01D6BE'
+                    const dotColor = levelColorMap[alarm.alarmLevel] || '#0D9488'
 
                     return (
                       <div
@@ -1055,7 +1086,7 @@ export default function OverviewPage() {
               {alarms.length > 15 && (
                 <button
                   onClick={() => { setShowNotifications(false); setShowAlerts(true) }}
-                  className="w-full mt-2 py-2 text-[12px] text-[#01D6BE] font-medium"
+                  className="w-full mt-2 py-2 text-[12px] text-[#0D9488] font-medium"
                 >
                   View All Alerts ({alarmTotal})
                 </button>
@@ -1095,7 +1126,7 @@ export default function OverviewPage() {
                 {displayItems.map(({ key, label, desc }) => (
                   <div key={key} className="flex items-center justify-between py-3 border-b border-[rgba(255,255,255,0.06)]">
                     <div className="flex items-center gap-3">
-                      {displayConfig[key] ? <Eye size={15} className="text-[#01D6BE]" /> : <EyeOff size={15} className="text-[#48484A]" />}
+                      {displayConfig[key] ? <Eye size={15} className="text-[#0D9488]" /> : <EyeOff size={15} className="text-[#48484A]" />}
                       <div>
                         <div className={`text-[13px] font-medium ${displayConfig[key] ? 'text-[#FFFFFF]' : 'text-[#48484A]'}`}>{label}</div>
                         <div className="text-[10px] text-[#48484A]">{desc}</div>
@@ -1114,58 +1145,6 @@ export default function OverviewPage() {
       <AnimatePresence>
         {showDeviceDetail && (
           <DeviceDetailPage onBack={() => setShowDeviceDetail(false)} />
-        )}
-      </AnimatePresence>
-
-      {/* ===== Remove Device Confirm ===== */}
-      <AnimatePresence>
-        {showRemoveConfirm && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-[rgba(0,0,0,0.7)] z-50 flex items-center justify-center p-6"
-            onClick={() => setShowRemoveConfirm(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-sm bg-[#1C1C1E] rounded-[24px] p-6"
-            >
-              <div className="w-14 h-14 rounded-full bg-[rgba(255,59,48,0.12)] flex items-center justify-center mx-auto mb-4">
-                <Trash2 size={28} className="text-[#FF3B30]" />
-              </div>
-              <h3 className="text-lg font-bold text-[#FFFFFF] text-center mb-2">Remove Device</h3>
-              <p className="text-[13px] text-[#8E8E93] text-center mb-6">
-                Are you sure you want to remove <span className="text-[#FFFFFF] font-medium">{deviceName}</span> from your account? This will unbind it.
-              </p>
-              <div className="flex gap-3">
-                <button onClick={() => setShowRemoveConfirm(false)} className="flex-1 py-3 rounded-xl bg-[#2C2C2E] text-[#FFFFFF] text-[14px] font-medium">
-                  Cancel
-                </button>
-                <button
-                  onClick={async () => {
-                    if (selectedDeviceId) {
-                      setRemovingDevice(true)
-                      try {
-                        await useDeviceStore.getState().removeDevice([Number(selectedDeviceId)])
-                        navigate('/', { replace: true })
-                      } catch { /* handled in store */ } finally {
-                        setRemovingDevice(false)
-                        setShowRemoveConfirm(false)
-                      }
-                    }
-                  }}
-                  disabled={removingDevice}
-                  className="flex-1 py-3 rounded-xl bg-[#FF3B30] text-[#FFFFFF] text-[14px] font-medium disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {removingDevice ? (<><Loader2 size={14} className="animate-spin" /> Removing...</>) : 'Remove'}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
         )}
       </AnimatePresence>
     </div>

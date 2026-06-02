@@ -46,6 +46,51 @@ export const tokenStore = {
   setRefresh: (token: string) => localStorage.setItem(REFRESH_TOKEN_KEY, token),
 }
 
+// ─── Auth 过期判定码 ───
+const AUTH_EXPIRED_CODES = new Set([401, '401', 1001, '1001', 1002, '1002'])
+
+function isAuthExpired(code: number | string): boolean {
+  return AUTH_EXPIRED_CODES.has(code)
+}
+
+// ─── Token 刷新单例 ───
+let refreshPromise: Promise<string | null> | null = null
+
+async function doRefreshToken(): Promise<string | null> {
+  const accessToken = tokenStore.get()
+  const refreshToken = tokenStore.getRefresh()
+  if (!accessToken || !refreshToken) return null
+
+  try {
+    const result = await requestInternal<{ accessToken?: string; refreshToken?: string }>(
+      '/login/refresh/access/token',
+      {
+        method: 'POST',
+        body: compactStringify({ accessToken, refreshToken }),
+        skipAuth: true,
+        _isRefresh: true,
+      }
+    )
+    if (result.data?.accessToken) {
+      tokenStore.set(result.data.accessToken)
+      if (result.data.refreshToken) tokenStore.setRefresh(result.data.refreshToken)
+      return result.data.accessToken
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+function getOrCreateRefreshPromise(): Promise<string | null> {
+  if (!refreshPromise) {
+    refreshPromise = doRefreshToken().finally(() => {
+      refreshPromise = null
+    })
+  }
+  return refreshPromise
+}
+
 /** 紧凑 JSON 序列化（无空格，与平台要求一致） */
 const compactStringify = (data: unknown): string => JSON.stringify(data)
 
@@ -65,6 +110,10 @@ export interface RequestOptions {
   retryDelay?: number
   /** 超时 ms（默认 10000） */
   timeout?: number
+  /** 内部标记：是否为 Token 刷新请求（避免递归刷新） */
+  _isRefresh?: boolean
+  /** 内部标记：是否已重试过（避免无限刷新重试） */
+  _retriedAfterRefresh?: boolean
 }
 
 /** 指数退避 sleep */
@@ -72,7 +121,7 @@ function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-export async function request<T = unknown>(
+export async function requestInternal<T = unknown>(
   path: string,
   options: RequestOptions = {}
 ): Promise<ApiResponse<T>> {
@@ -158,6 +207,37 @@ export async function request<T = unknown>(
   }
 
   throw lastError ?? new Error('Request failed after retries')
+}
+
+// ─── 带 Token 自动刷新的 request 包装 ───
+
+export async function request<T = unknown>(
+  path: string,
+  options: RequestOptions = {}
+): Promise<ApiResponse<T>> {
+  const result = await requestInternal<T>(path, options)
+
+  // Token 刷新请求本身不拦截
+  if (options._isRefresh) return result
+
+  // 检测 auth 过期
+  if (isAuthExpired(result.code) && !options.skipAuth && !options._retriedAfterRefresh) {
+    const newToken = await getOrCreateRefreshPromise()
+    if (newToken) {
+      // 刷新成功，重试原请求
+      return requestInternal<T>(path, {
+        ...options,
+        _retriedAfterRefresh: true,
+      })
+    }
+    // 刷新失败，广播事件通知 authStore 清除登录状态
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('auth:expired'))
+    }
+    throw new ApiError(result.code, result.message ?? result.msg ?? 'Session expired', 401)
+  }
+
+  return result
 }
 
 // ─── 快捷方法 ───

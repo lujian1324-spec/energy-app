@@ -26,7 +26,7 @@ function ToastCard({ toast, onDismiss }: { toast: ToastItem; onDismiss: (id: str
     success: { icon: CheckCircle, color: '#34C759', bg: 'rgba(52,199,89,0.12)', border: 'rgba(52,199,89,0.25)' },
     warning: { icon: AlertTriangle, color: '#FF9500', bg: 'rgba(255,149,0,0.12)', border: 'rgba(255,149,0,0.25)' },
     error:   { icon: XCircle,      color: '#FF3B30', bg: 'rgba(255,59,48,0.12)',  border: 'rgba(255,59,48,0.25)'  },
-    info:    { icon: Info,          color: '#01D6BE', bg: 'rgba(1,214,190,0.12)', border: 'rgba(1,214,190,0.25)' },
+    info:    { icon: Info,          color: '#0D9488', bg: 'rgba(13,148,136,0.12)', border: 'rgba(13,148,136,0.25)' },
   }
 
   const { icon: Icon, color, bg, border } = config[toast.type]

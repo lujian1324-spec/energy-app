@@ -149,7 +149,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
             
             {/* 头像容器 */}
             <div className={`relative w-28 h-28 rounded-[28px] overflow-hidden
-              ${settings.founderBadge ? 'bg-[#1C1C1E]' : 'bg-[rgba(1,214,190,0.08)] border-2 border-[rgba(1,214,190,0.3)]'}
+              ${settings.founderBadge ? 'bg-[#1C1C1E]' : 'bg-[rgba(13,148,136,0.08)] border-2 border-[rgba(13,148,136,0.3)]'}
               flex items-center justify-center`}
             >
               {profile.avatar ? (
@@ -159,7 +159,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <User size={48} className={settings.founderBadge ? 'text-[#FFD700]' : 'text-[#01D6BE]'} />
+                <User size={48} className={settings.founderBadge ? 'text-[#FFD700]' : 'text-[#0D9488]'} />
               )}
               
               {/* 悬停遮罩 */}
@@ -208,7 +208,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
             return (
               <div 
                 key={field.key}
-                className="bg-[#1C1C1E] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden"
+                className="bg-[#1C1C1E] border border-[rgba(13,148,136,0.08)] rounded-[20px] overflow-hidden"
               >
                 <div className="px-4 py-3">
                   <div className="flex items-center gap-2 mb-2">
@@ -250,7 +250,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
                       className="flex items-center justify-between cursor-pointer group"
                     >
                       <span className="text-[15px] text-[#FFFFFF]">{field.value}</span>
-                      <span className="text-[11px] text-[#01D6BE] opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-[11px] text-[#0D9488] opacity-0 group-hover:opacity-100 transition-opacity">
                         Edit
                       </span>
                     </div>
@@ -262,7 +262,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
         </div>
 
         {/* 提示信息 */}
-        <div className="mt-8 p-4 bg-[rgba(1,214,190,0.05)] rounded-[16px] border border-[rgba(1,214,190,0.1)]">
+        <div className="mt-8 p-4 bg-[rgba(13,148,136,0.05)] rounded-[16px] border border-[rgba(13,148,136,0.1)]">
           <p className="text-[12px] text-[#8E8E93] leading-relaxed">
             Your profile information is stored locally on your device. 
             It will be used to personalize your app experience.

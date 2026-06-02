@@ -35,7 +35,7 @@ import type { PeakShavingSchedule } from '../types'
 const scheduleTypeConfig = {
   charge: { label: 'Charge', color: '#34C759', icon: Battery, bgColor: 'rgba(52,199,89,0.15)', emoji: '⚡' },
   discharge: { label: 'Discharge', color: '#FF9500', icon: Zap, bgColor: 'rgba(255,149,0,0.15)', emoji: '🔋' },
-  grid: { label: 'Grid', color: '#01D6BE', icon: Power, bgColor: 'rgba(1,214,190,0.15)', emoji: '🔌' },
+  grid: { label: 'Grid', color: '#0D9488', icon: Power, bgColor: 'rgba(13,148,136,0.15)', emoji: '🔌' },
   battery: { label: 'Battery', color: '#FFD700', icon: Battery, bgColor: 'rgba(255,215,0,0.15)', emoji: '🔋' },
 }
 
@@ -160,7 +160,7 @@ export default function SmartSchedulePage() {
   const handleScheduleChanged = useCallback(() => {
     if (selectedDeviceId && apiConfigLoaded) {
       const config = mapSettingsToGeneralConfig(Number(selectedDeviceId), { ...peakShavingSettings })
-      savePeakValleyGeneral(config).catch(() => {})
+      savePeakValleyGeneral(config).catch(err => console.error('[SmartSchedulePage] save failed:', err))
     }
   }, [selectedDeviceId, apiConfigLoaded, peakShavingSettings, savePeakValleyGeneral])
 
@@ -351,7 +351,7 @@ export default function SmartSchedulePage() {
         <button
           onClick={() => setShowSettings(!showSettings)}
           className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors
-            ${showSettings ? 'bg-[#01D6BE] text-[#000000]' : 'bg-[#1C1C1E] text-[#FFFFFF]'}`}
+            ${showSettings ? 'bg-[#0D9488] text-[#000000]' : 'bg-[#1C1C1E] text-[#FFFFFF]'}`}
         >
           <Settings size={18} />
         </button>
@@ -366,7 +366,7 @@ export default function SmartSchedulePage() {
             <>
               {peakValleyLoading ? (
                 <div className="flex items-center gap-1.5 text-[11px] text-[#8E8E93] bg-[#1C1C1E] rounded-full px-3 py-1.5">
-                  <Loader2 size={12} className="animate-spin text-[#01D6BE]" />
+                  <Loader2 size={12} className="animate-spin text-[#0D9488]" />
                   Loading config...
                 </div>
               ) : peakValleyError ? (
@@ -384,7 +384,7 @@ export default function SmartSchedulePage() {
               <button
                 onClick={handleRefresh}
                 disabled={peakValleyLoading}
-                className="w-8 h-8 rounded-full bg-[#1C1C1E] flex items-center justify-center text-[#8E8E93] hover:text-[#01D6BE] transition-colors disabled:opacity-40"
+                className="w-8 h-8 rounded-full bg-[#1C1C1E] flex items-center justify-center text-[#8E8E93] hover:text-[#0D9488] transition-colors disabled:opacity-40"
                 title="Refresh from device"
               >
                 <RefreshCw size={14} className={peakValleyLoading ? 'animate-spin' : ''} />
@@ -393,7 +393,7 @@ export default function SmartSchedulePage() {
                 onClick={handleSaveToDevice}
                 disabled={peakValleySaving || peakValleyLoading}
                 className="flex items-center gap-1.5 h-8 px-3 rounded-full text-[11px] font-medium transition-colors
-                  bg-[rgba(1,214,190,0.12)] text-[#01D6BE] hover:bg-[rgba(1,214,190,0.2)] disabled:opacity-40"
+                  bg-[rgba(13,148,136,0.12)] text-[#0D9488] hover:bg-[rgba(13,148,136,0.2)] disabled:opacity-40"
                 title="Save settings to device"
               >
                 {peakValleySaving ? (
@@ -421,8 +421,8 @@ export default function SmartSchedulePage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors
-                ${peakShavingSettings.enabled ? 'bg-[rgba(1,214,190,0.15)]' : 'bg-[#2C2C2E]'}`}>
-                <Calendar size={24} className={peakShavingSettings.enabled ? 'text-[#01D6BE]' : 'text-[#48484A]'} />
+                ${peakShavingSettings.enabled ? 'bg-[rgba(13,148,136,0.15)]' : 'bg-[#2C2C2E]'}`}>
+                <Calendar size={24} className={peakShavingSettings.enabled ? 'text-[#0D9488]' : 'text-[#48484A]'} />
               </div>
               <div>
                 <div className="text-[15px] font-bold text-[#FFFFFF]">Smart Schedule</div>
@@ -434,7 +434,7 @@ export default function SmartSchedulePage() {
             <button
               onClick={() => handleTogglePeakShaving(!peakShavingSettings.enabled)}
               className={`w-14 h-8 rounded-full transition-colors relative
-                ${peakShavingSettings.enabled ? 'bg-[#01D6BE]' : 'bg-[#48484A]'}`}
+                ${peakShavingSettings.enabled ? 'bg-[#0D9488]' : 'bg-[#48484A]'}`}
             >
               <motion.div
                 className="w-6 h-6 rounded-full bg-[#FFFFFF] absolute top-1"
@@ -457,12 +457,12 @@ export default function SmartSchedulePage() {
               <div className={`w-16 h-16 rounded-2xl flex items-center justify-center
                 ${currentMode === 'charge' ? 'bg-[rgba(52,199,89,0.15)]' :
                   currentMode === 'discharge' ? 'bg-[rgba(255,149,0,0.15)]' :
-                  currentMode === 'grid' ? 'bg-[rgba(1,214,190,0.15)]' :
+                  currentMode === 'grid' ? 'bg-[rgba(13,148,136,0.15)]' :
                   currentMode === 'battery' ? 'bg-[rgba(255,215,0,0.15)]' :
                   'bg-[#2C2C2E]'}`}>
                 {currentMode === 'charge' && <Battery size={28} className="text-[#34C759]" />}
                 {currentMode === 'discharge' && <Zap size={28} className="text-[#FF9500]" />}
-                {currentMode === 'grid' && <Power size={28} className="text-[#01D6BE]" />}
+                {currentMode === 'grid' && <Power size={28} className="text-[#0D9488]" />}
                 {currentMode === 'battery' && <Battery size={28} className="text-[#FFD700]" />}
                 {currentMode === 'idle' && <Clock size={28} className="text-[#8E8E93]" />}
                 {currentMode === 'disabled' && <Power size={28} className="text-[#48484A]" />}
@@ -583,14 +583,14 @@ export default function SmartSchedulePage() {
           {/* Savings estimate */}
           <div className="flex items-center justify-between pt-3 border-t border-[rgba(255,255,255,0.06)]">
             <div className="flex items-center gap-2">
-              <DollarSign size={14} className="text-[#01D6BE]" />
+              <DollarSign size={14} className="text-[#0D9488]" />
               <span className="text-[12px] text-[#8E8E93]">Est. daily savings</span>
             </div>
-            <span className="text-[14px] font-bold text-[#01D6BE]">${savings.daily.toFixed(2)}</span>
+            <span className="text-[14px] font-bold text-[#0D9488]">${savings.daily.toFixed(2)}</span>
           </div>
           <div className="flex items-center justify-between mt-1">
             <span className="text-[11px] text-[#48484A] pl-[22px]">Est. monthly</span>
-            <span className="text-[12px] font-semibold text-[#01D6BE]">${savings.monthly.toFixed(2)}</span>
+            <span className="text-[12px] font-semibold text-[#0D9488]">${savings.monthly.toFixed(2)}</span>
           </div>
         </motion.div>
 
@@ -605,15 +605,15 @@ export default function SmartSchedulePage() {
           <div className="grid grid-cols-3 gap-3">
             <div className="text-center">
               <div className="text-[11px] text-[#8E8E93] mb-1">Daily</div>
-              <div className="text-[16px] font-bold text-[#01D6BE]">${savings.daily.toFixed(2)}</div>
+              <div className="text-[16px] font-bold text-[#0D9488]">${savings.daily.toFixed(2)}</div>
             </div>
             <div className="text-center border-x border-[rgba(255,255,255,0.05)]">
               <div className="text-[11px] text-[#8E8E93] mb-1">Monthly</div>
-              <div className="text-[16px] font-bold text-[#01D6BE]">${savings.monthly.toFixed(2)}</div>
+              <div className="text-[16px] font-bold text-[#0D9488]">${savings.monthly.toFixed(2)}</div>
             </div>
             <div className="text-center">
               <div className="text-[11px] text-[#8E8E93] mb-1">Yearly</div>
-              <div className="text-[16px] font-bold text-[#01D6BE]">${savings.yearly.toFixed(2)}</div>
+              <div className="text-[16px] font-bold text-[#0D9488]">${savings.yearly.toFixed(2)}</div>
             </div>
           </div>
           <div className="mt-3 pt-3 border-t border-[rgba(255,255,255,0.06)]">
@@ -760,7 +760,7 @@ export default function SmartSchedulePage() {
             <div className="text-[11px] font-bold text-[#8E8E93] tracking-widest uppercase">Schedule</div>
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-1 text-[12px] text-[#01D6BE] font-medium"
+              className="flex items-center gap-1 text-[12px] text-[#0D9488] font-medium"
             >
               <Plus size={14} />
               Add Schedule
@@ -823,7 +823,7 @@ export default function SmartSchedulePage() {
                               e.stopPropagation()
                               openEditModal(schedule)
                             }}
-                            className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[rgba(1,214,190,0.12)] text-[#01D6BE] text-[12px] font-medium"
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[rgba(13,148,136,0.12)] text-[#0D9488] text-[12px] font-medium"
                           >
                             <Edit2 size={12} />
                             Edit
@@ -868,10 +868,10 @@ export default function SmartSchedulePage() {
         </div>
 
         {/* How it works */}
-        <div className="bg-[rgba(1,214,190,0.05)] rounded-[16px] p-4 mb-4">
+        <div className="bg-[rgba(13,148,136,0.05)] rounded-[16px] p-4 mb-4">
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-full bg-[rgba(1,214,190,0.15)] flex items-center justify-center flex-shrink-0">
-              <TrendingDown size={16} className="text-[#01D6BE]" />
+            <div className="w-8 h-8 rounded-full bg-[rgba(13,148,136,0.15)] flex items-center justify-center flex-shrink-0">
+              <TrendingDown size={16} className="text-[#0D9488]" />
             </div>
             <div>
               <div className="text-[13px] font-semibold text-[#FFFFFF] mb-1">How it works</div>
@@ -928,7 +928,7 @@ export default function SmartSchedulePage() {
                         key={type}
                         onClick={() => setNewSchedule({ ...newSchedule, type: type as PeakShavingSchedule['type'] })}
                         className={`flex items-center gap-2 p-3 rounded-[14px] transition-colors
-                          ${newSchedule.type === type ? 'bg-[#2C2C2E] border border-[#01D6BE]' : 'bg-[#2C2C2E]'}`}
+                          ${newSchedule.type === type ? 'bg-[#2C2C2E] border border-[#0D9488]' : 'bg-[#2C2C2E]'}`}
                       >
                         <config.icon size={18} style={{ color: config.color }} />
                         <span className="text-[13px] text-[#FFFFFF]">{config.emoji} {config.label}</span>
@@ -987,7 +987,7 @@ export default function SmartSchedulePage() {
                 <button
                   onClick={handleAddSchedule}
                   disabled={!newSchedule.name}
-                  className="flex-1 h-11 rounded-[14px] bg-[#01D6BE] text-[#000000] text-[14px] font-semibold disabled:opacity-50"
+                  className="flex-1 h-11 rounded-[14px] bg-[#0D9488] text-[#000000] text-[14px] font-semibold disabled:opacity-50"
                 >
                   Add Schedule
                 </button>
@@ -1037,7 +1037,7 @@ export default function SmartSchedulePage() {
                 <button
                   onClick={handleTouLookup}
                   disabled={zipInput.length !== 5}
-                  className="px-4 h-11 rounded-[14px] bg-[#01D6BE] text-[#000000] text-[13px] font-semibold
+                  className="px-4 h-11 rounded-[14px] bg-[#0D9488] text-[#000000] text-[13px] font-semibold
                     disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Look up
@@ -1117,7 +1117,7 @@ export default function SmartSchedulePage() {
                         key={type}
                         onClick={() => handleEditFormChange({ type: type as PeakShavingSchedule['type'] })}
                         className={`flex items-center gap-2 p-3 rounded-[14px] transition-colors
-                          ${editForm.type === type ? 'bg-[#2C2C2E] border border-[#01D6BE]' : 'bg-[#2C2C2E]'}`}
+                          ${editForm.type === type ? 'bg-[#2C2C2E] border border-[#0D9488]' : 'bg-[#2C2C2E]'}`}
                       >
                         <config.icon size={18} style={{ color: config.color }} />
                         <span className="text-[13px] text-[#FFFFFF]">{config.emoji} {config.label}</span>
@@ -1176,7 +1176,7 @@ export default function SmartSchedulePage() {
                 <button
                   onClick={handleSaveEdit}
                   disabled={!editForm.name || editConflict.conflict}
-                  className="flex-1 h-11 rounded-[14px] bg-[#01D6BE] text-[#000000] text-[14px] font-semibold disabled:opacity-50"
+                  className="flex-1 h-11 rounded-[14px] bg-[#0D9488] text-[#000000] text-[14px] font-semibold disabled:opacity-50"
                 >
                   Save Changes
                 </button>

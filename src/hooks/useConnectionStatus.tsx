@@ -94,7 +94,7 @@ export function useConnectionStatus(opts: UseConnectionStatusOptions = {}) {
       if (bleConnected) statusLabel = `BLE · ${bleConnection.deviceName ?? 'Connected'}`
       else if (serialConnected) statusLabel = 'Serial · Connected'
       else statusLabel = 'Cloud · Live'
-      statusColor = '#01D6BE'  // Primary
+      statusColor = '#0D9488'  // Primary
     } else if (wsStatus === 'connecting' || bleConnection.status === 'connecting' || bleConnection.status === 'scanning') {
       health = 'degraded'
       statusLabel = 'Connecting...'

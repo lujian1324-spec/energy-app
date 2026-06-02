@@ -320,7 +320,7 @@ export function getProvisionManager(callbacks?: ProvisionCallbacks): BleProvisio
 
 export function destroyProvisionManager(): void {
   if (instance) {
-    instance.disconnect().catch(() => {})
+    instance.disconnect().catch(err => console.error('[bleProvision] disconnect failed:', err))
     instance = null
   }
 }

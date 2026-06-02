@@ -32,7 +32,7 @@ export default function BottomNavigation() {
               transition-all duration-250 ease-out
               relative
               ${isActive 
-                ? 'bg-[rgba(1,214,190,0.1)]' 
+                ? 'bg-[rgba(13,148,136,0.1)]' 
                 : 'hover:bg-[rgba(255,255,255,0.03)]'
               }
             `}
@@ -41,14 +41,14 @@ export default function BottomNavigation() {
               <>
                 <Icon 
                   size={22} 
-                  className={`transition-colors duration-250 ${isActive ? 'text-[#01D6BE]' : 'text-[#48484A]'}`}
+                  className={`transition-colors duration-250 ${isActive ? 'text-[#0D9488]' : 'text-[#48484A]'}`}
                 />
-                <span className={`text-[10px] font-medium ${isActive ? 'text-[#01D6BE]' : 'text-[#48484A]'}`}>
+                <span className={`text-[10px] font-medium ${isActive ? 'text-[#0D9488]' : 'text-[#48484A]'}`}>
                   {item.label}
                 </span>
                 {isActive && (
                   <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 
-                    w-1 h-1 rounded-full bg-[#01D6BE]" />
+                    w-1 h-1 rounded-full bg-[#0D9488]" />
                 )}
               </>
             )}
