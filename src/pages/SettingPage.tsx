@@ -12,19 +12,18 @@ import {
   Crown,
   Gift,
   Sparkles,
-  Sun,
   Tag,
   Star,
   User,
   Edit3,
   ChevronRight,
-  Zap,
-  WifiOff,
   LogOut,
   Trash2,
   RotateCcw,
   Link2,
   Link2Off,
+  Database,
+  Shield,
 } from 'lucide-react'
 import ToggleSwitch from '../components/ToggleSwitch'
 import { usePowerStationStore } from '../stores/powerStationStore'
@@ -62,11 +61,11 @@ export default function SettingPage() {
     memberSince: new Date().toISOString().slice(0, 10),
   })
 
-  // Push notification settings
-  const [pushOutage, setPushOutage] = useState(settings.pushNotifications)
-  const [pushLowBattery, setPushLowBattery] = useState(settings.pushNotifications)
-  const [pushSolarStatus, setPushSolarStatus] = useState(settings.pushSolarStatus ?? false)
-  const [lowBatteryThreshold, setLowBatteryThreshold] = useState(settings.lowBatteryThreshold ?? 30)
+  // Push notification settings — 状态在 NotificationsPage 中维护，SettingPage 仅展示摘要
+  const pushOutage = settings.pushNotifications
+  const pushLowBattery = settings.pushNotifications
+  const pushSolarStatus = settings.pushSolarStatus ?? false
+  const lowBatteryThreshold = settings.lowBatteryThreshold ?? 30
 
   useEffect(() => {
     getUserProfile().then(p => { if (p) setUserProfile(p) }).catch(err => console.error('[SettingPage] getUserProfile failed:', err))
@@ -145,94 +144,54 @@ export default function SettingPage() {
           </div>
         </motion.div>
 
-        {/* Push Notifications */}
+        {/* Push Notifications - PRD v1.1 §4.5.4: 跳转子页 */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
           className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden mb-4">
-          <div className="px-4 py-3 border-b border-[rgba(1,214,190,0.06)]">
-            <span className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase">Push Notifications</span>
-          </div>
-          <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[rgba(1,214,190,0.06)]">
+          <div
+            onClick={() => navigate('/notifications')}
+            className="flex items-center gap-3 px-4 py-3.5 cursor-pointer active:bg-[rgba(255,255,255,0.02)]"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate('/notifications') }}
+            aria-label="Open push notifications settings"
+          >
             <div className="w-9 h-9 rounded-lg bg-[rgba(255,59,48,0.08)] flex items-center justify-center flex-shrink-0">
-              <Zap size={16} className="text-[#FF3B30]" />
+              <Bell size={16} className="text-[#FF3B30]" />
             </div>
             <div className="flex-1">
-              <div className="text-[13px] font-semibold text-[#FFFFFF]">Power Outage</div>
-              <div className="text-[11px] text-[#A0A0A5] mt-0.5">Get alerted during outages</div>
+              <div className="text-[13px] font-semibold text-[#FFFFFF]">Push Notifications</div>
+              <div className="text-[11px] text-[#A0A0A5] mt-0.5">
+                {[
+                  pushOutage && 'Outage',
+                  pushLowBattery && `Low Bat<${lowBatteryThreshold}%`,
+                  pushSolarStatus && 'Solar',
+                ].filter(Boolean).join(' · ') || 'All off'}
+              </div>
             </div>
-            <ToggleSwitch isOn={pushOutage} onToggle={() => { setPushOutage(!pushOutage); updateSettings({ pushNotifications: !pushOutage }) }} size="sm" />
+            <ChevronRight size={16} className="text-[#636366]" />
           </div>
-          <div className="flex items-center gap-3 px-4 py-3.5">
-            <div className="w-9 h-9 rounded-lg bg-[rgba(255,149,0,0.08)] flex items-center justify-center flex-shrink-0">
-              <WifiOff size={16} className="text-[#FF9500]" />
+        </motion.div>
+
+        {/* Data & Privacy - PRD v1.1 §8.3: 跳转子页 */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.07 }}
+          className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden mb-4">
+          <div
+            onClick={() => navigate('/data-export')}
+            className="flex items-center gap-3 px-4 py-3.5 cursor-pointer active:bg-[rgba(255,255,255,0.02)]"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate('/data-export') }}
+            aria-label="Open data export and privacy settings"
+          >
+            <div className="w-9 h-9 rounded-lg bg-[rgba(52,199,89,0.08)] flex items-center justify-center flex-shrink-0">
+              <Database size={16} className="text-[#34C759]" />
             </div>
             <div className="flex-1">
-              <div className="text-[13px] font-semibold text-[#FFFFFF]">Low Battery</div>
-              <div className="text-[11px] text-[#A0A0A5] mt-0.5">Receive alerts below {lowBatteryThreshold}% battery</div>
+              <div className="text-[13px] font-semibold text-[#FFFFFF]">Data &amp; Privacy</div>
+              <div className="text-[11px] text-[#A0A0A5] mt-0.5">Export your data, manage recycle bin</div>
             </div>
-            <ToggleSwitch isOn={pushLowBattery} onToggle={() => { setPushLowBattery(!pushLowBattery); updateSettings({ pushNotifications: !pushLowBattery }) }} size="sm" />
+            <ChevronRight size={16} className="text-[#636366]" />
           </div>
-          {/* PRD v1.1 §4.6: Solar Status push notification */}
-          <div className="flex items-center gap-3 px-4 py-3.5 border-t border-[rgba(1,214,190,0.06)]">
-            <div className="w-9 h-9 rounded-lg bg-[rgba(1,214,190,0.08)] flex items-center justify-center flex-shrink-0">
-              <Sun size={16} className="text-[#01D6BE]" />
-            </div>
-            <div className="flex-1">
-              <div className="text-[13px] font-semibold text-[#FFFFFF]">Solar Status</div>
-              <div className="text-[11px] text-[#A0A0A5] mt-0.5">Get notified when solar generation changes</div>
-            </div>
-            <ToggleSwitch isOn={pushSolarStatus} onToggle={() => { setPushSolarStatus(!pushSolarStatus); updateSettings({ pushSolarStatus: !pushSolarStatus }) }} size="sm" />
-          </div>
-          {/* Low Battery Threshold Slider — shown when enabled */}
-          <AnimatePresence>
-            {pushLowBattery && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden"
-              >
-                <div className="px-4 pb-4 pt-1 border-t border-[rgba(255,149,0,0.06)]">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] text-[#A0A0A5]">Alert Threshold</span>
-                    <span className="text-[11px] font-semibold text-[#FF9500]">{lowBatteryThreshold}%</span>
-                  </div>
-                  <div className="relative">
-                    <input
-                      type="range"
-                      min="10"
-                      max="30"
-                      step="10"
-                      value={lowBatteryThreshold}
-                      onChange={(e) => {
-                        const val = parseInt(e.target.value)
-                        setLowBatteryThreshold(val)
-                        updateSettings({ lowBatteryThreshold: val })
-                      }}
-                      className="w-full h-1.5 bg-[#333333] rounded-full appearance-none cursor-pointer accent-[#FF9500]"
-                      style={{
-                        background: `linear-gradient(to right, #FF9500 0%, #FF9500 ${((lowBatteryThreshold - 10) / 20) * 100}%, #333333 ${((lowBatteryThreshold - 10) / 20) * 100}%, #333333 100%)`
-                      }}
-                    />
-                    {/* Tick marks */}
-                    <div className="flex justify-between px-0.5 mt-1">
-                      {[10, 20, 30].map((val) => (
-                        <button
-                          key={val}
-                          onClick={() => {
-                            setLowBatteryThreshold(val)
-                            updateSettings({ lowBatteryThreshold: val })
-                          }}
-                          className={`text-[9px] transition-colors ${lowBatteryThreshold === val ? 'text-[#FF9500] font-semibold' : 'text-[#636366]'}`}
-                        >
-                          {val}%
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </motion.div>
 
         {/* Founder Badge */}

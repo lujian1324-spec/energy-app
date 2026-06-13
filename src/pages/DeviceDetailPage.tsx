@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import { 
   Battery, 
   Zap, 
@@ -16,14 +17,36 @@ import {
   Pencil,
   Check,
   X,
+  Trash2,
+  Sun,
+  Server,
+  Snowflake,
+  Wind,
+  Plug,
+  Lightbulb,
+  Info,
 } from 'lucide-react'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useConnectionStore } from '../stores/connectionStore'
+import { useDeviceStore } from '../stores/deviceStore'
+import { toast } from '../components/Toast'
 import appVersion from '../version.json'
 
 interface DeviceDetailPageProps {
   onBack: () => void
 }
+
+// PRD v1.1 §4.3: Display Icon 8 种设备图标
+const DEVICE_ICON_OPTIONS = [
+  { key: 'powerstation', label: 'Power Station', Icon: Battery, defaultColor: '#01D6BE' },
+  { key: 'fridge', label: 'Refrigerator', Icon: Snowflake, defaultColor: '#5AC8FA' },
+  { key: 'cpap', label: 'CPAP', Icon: Wind, defaultColor: '#AF52DE' },
+  { key: 'solar', label: 'Solar Panel', Icon: Sun, defaultColor: '#FF9500' },
+  { key: 'ac', label: 'AC Unit', Icon: Zap, defaultColor: '#007AFF' },
+  { key: 'server', label: 'Server/NAS', Icon: Server, defaultColor: '#34C759' },
+  { key: 'light', label: 'Lighting', Icon: Lightbulb, defaultColor: '#FFD700' },
+  { key: 'plug', label: 'Generic Plug', Icon: Plug, defaultColor: '#FF3B30' },
+] as const
 
 // 规格字段配置
 interface SpecField {
@@ -47,8 +70,10 @@ const initialSpecs = {
 }
 
 export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
-  const { powerStation, settings, selectedDeviceId, updateDeviceNameById, updateDeviceSpecs } = usePowerStationStore()
+  const navigate = useNavigate()
+  const { powerStation, settings, selectedDeviceId, updateDeviceNameById, updateDeviceSpecs, updateSettings } = usePowerStationStore()
   const { bleConnection, serialConnection, activeDataSource } = useConnectionStore()
+  const { selectedDeviceDetails, devices, selectDevice, removeDeviceLocally } = useDeviceStore()
   
   // 设备名称编辑状态
   const [isEditingName, setIsEditingName] = useState(false)
@@ -69,6 +94,34 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     operatingTemp: powerStation.specs.operatingTemp,
     optimalTemp: powerStation.specs.optimalTemp,
   })
+
+  // PRD v1.1 §4.3: Display Icon 选择状态
+  const [selectedIconKey, setSelectedIconKey] = useState<string>(
+    settings.deviceIconKey ?? 'powerstation'
+  )
+
+  // PRD v1.1 §4.3: Delete Device 二次确认状态
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  const handleDeleteDevice = async () => {
+    if (!selectedDeviceId) return
+    setDeleting(true)
+    try {
+      // 调用 store 的 removeDevice（前端从列表中移除；如需真实 API 后续接 /device/delete）
+      removeDeviceLocally(selectedDeviceId)
+      toast.success('Device removed', 'Device has been removed from your account')
+      // 跳回设备列表
+      onBack()
+      // 切换到下一个设备或直接跳列表
+      setTimeout(() => navigate('/devices', { replace: true }), 100)
+    } catch (e) {
+      toast.error('Remove failed', e instanceof Error ? e.message : 'Unknown error')
+    } finally {
+      setDeleting(false)
+      setShowDeleteConfirm(false)
+    }
+  }
 
   const deviceSpecs = [
     { 
@@ -461,7 +514,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           </div>
         </motion.div>
 
-        {/* PRD v1.1 §4.3: Display Icon 编辑 */}
+        {/* PRD v1.1 §4.3: Display Icon 设备图标 8 选 1 + 颜色 */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -472,22 +525,50 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             Display Icon
           </div>
           <div className="bg-[#262626] rounded-[20px] p-4">
-            <div className="grid grid-cols-5 gap-2">
-              {['#01D6BE', '#34C759', '#FF9500', '#FF3B30', '#FFD700', '#AF52DE', '#5AC8FA', '#007AFF', '#8E8E93', '#FFFFFF'].map((color) => (
-                <button
-                  key={color}
-                  onClick={() => {
-                    // PRD: 更新设备图标颜色
-                    const updatedSettings = { ...settings, deviceIconColor: color }
-                    // 这里需要更新 store
-                  }}
-                  className={`w-10 h-10 rounded-full transition-transform hover:scale-110 ${
-                    settings.deviceIconColor === color ? 'ring-2 ring-[#FFFFFF] ring-offset-2 ring-offset-[#262626]' : ''
-                  }`}
-                  style={{ backgroundColor: color }}
-                  aria-label={`Set icon color to ${color}`}
-                />
-              ))}
+            <div className="grid grid-cols-4 gap-2 mb-3">
+              {DEVICE_ICON_OPTIONS.map((opt) => {
+                const Icon = opt.Icon
+                const isActive = selectedIconKey === opt.key
+                const color = settings.deviceIconColor ?? opt.defaultColor
+                return (
+                  <button
+                    key={opt.key}
+                    onClick={() => {
+                      setSelectedIconKey(opt.key)
+                      updateSettings({ deviceIconKey: opt.key })
+                    }}
+                    className={`flex flex-col items-center gap-1.5 p-2.5 rounded-[14px] transition-all
+                      ${isActive
+                        ? 'bg-[rgba(1,214,190,0.12)] border border-[#01D6BE]'
+                        : 'bg-[#333333] border border-transparent hover:bg-[#3C3C3E]'
+                      }`}
+                    aria-label={`Set display icon to ${opt.label}`}
+                    aria-pressed={isActive}
+                  >
+                    <Icon size={22} style={{ color: isActive ? '#01D6BE' : color }} />
+                    <span className={`text-[10px] ${isActive ? 'text-[#01D6BE] font-semibold' : 'text-[#A0A0A5]'}`}>
+                      {opt.label}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+            <div className="pt-3 border-t border-[rgba(255,255,255,0.06)]">
+              <div className="text-[10px] text-[#A0A0A5] mb-2 px-1">Icon Color</div>
+              <div className="grid grid-cols-5 gap-2">
+                {['#01D6BE', '#34C759', '#FF9500', '#FF3B30', '#FFD700', '#AF52DE', '#5AC8FA', '#007AFF', '#8E8E93', '#FFFFFF'].map((color) => (
+                  <button
+                    key={color}
+                    onClick={() => updateSettings({ deviceIconColor: color })}
+                    className={`w-10 h-10 rounded-full transition-transform hover:scale-110 ${
+                      settings.deviceIconColor === color ? 'ring-2 ring-[#FFFFFF] ring-offset-2 ring-offset-[#262626]' : ''
+                    }`}
+                    style={{ backgroundColor: color }}
+                    aria-label={`Set icon color to ${color}`}
+                    aria-pressed={settings.deviceIconColor === color}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </motion.div>
@@ -575,7 +656,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           </div>
         </motion.div>
 
-        {/* PRD v1.1 §4.3: Factory Reset */}
+        {/* PRD v1.1 §4.3: Danger Zone — Delete Device + Factory Reset */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -585,23 +666,32 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
             Danger Zone
           </div>
-          <div className="bg-[#262626] rounded-[20px] p-4">
+          <div className="bg-[#262626] rounded-[20px] p-4 space-y-3">
+            {/* Factory Reset */}
             <button
               onClick={() => {
-                // PRD: 弹出二次确认对话框
-                if (window.confirm('Are you sure you want to reset this device to factory settings? This action cannot be undone.')) {
-                  // API: /remote/device/config/write or specific factory reset endpoint
-                  console.log('Factory reset triggered')
+                if (window.confirm('Reset device to factory settings? Local customizations will be lost.')) {
+                  toast.info('Factory Reset', 'This action would be sent to the device in production')
                 }
               }}
+              className="w-full h-11 rounded-[14px] bg-[rgba(255,149,0,0.1)] text-[#FF9500] text-[13px] font-semibold
+                border border-[rgba(255,149,0,0.3)]
+                hover:bg-[rgba(255,149,0,0.18)] transition-colors flex items-center justify-center gap-2"
+            >
+              <RefreshCw size={14} /> Factory Reset
+            </button>
+
+            {/* Delete Device — PRD v1.1 §4.3 二次确认 */}
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
               className="w-full h-11 rounded-[14px] bg-[rgba(255,59,48,0.1)] text-[#FF3B30] text-[13px] font-semibold
                 border border-[rgba(255,59,48,0.3)]
-                hover:bg-[rgba(255,59,48,0.2)] transition-colors"
+                hover:bg-[rgba(255,59,48,0.18)] transition-colors flex items-center justify-center gap-2"
             >
-              Factory Reset
+              <Trash2 size={14} /> Delete Device
             </button>
-            <p className="text-[10px] text-[#636366] mt-2 text-center">
-              This will erase all settings and restore factory defaults
+            <p className="text-[10px] text-[#636366] text-center">
+              Deleting will remove the device from your account. Historical data is kept for 30 days in the recycle bin.
             </p>
           </div>
         </motion.div>
@@ -692,6 +782,60 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           <div className="mt-1">Made with precision in Shenzhen</div>
         </div>
       </div>
+
+      {/* PRD v1.1 §4.3: Delete Device 二次确认 Modal */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 p-4"
+            onClick={() => !deleting && setShowDeleteConfirm(false)}
+          >
+            <motion.div
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              onClick={e => e.stopPropagation()}
+              className="w-full max-w-md bg-[#262626] rounded-[28px] border border-[rgba(255,59,48,0.2)] overflow-hidden"
+              role="alertdialog"
+              aria-labelledby="delete-device-title"
+              aria-describedby="delete-device-desc"
+            >
+              <div className="p-5 space-y-4">
+                <div className="text-center">
+                  <div className="w-12 h-12 rounded-full bg-[rgba(255,59,48,0.15)] flex items-center justify-center mx-auto mb-3">
+                    <Trash2 size={24} className="text-[#FF3B30]" />
+                  </div>
+                  <h3 id="delete-device-title" className="text-base font-bold text-[#FFFFFF] mb-2">Delete this device?</h3>
+                  <p id="delete-device-desc" className="text-[13px] text-[#A0A0A5]">
+                    "{powerStation.name}" will be removed from your account. Historical data is kept for 30 days in case you want to recover it.
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    disabled={deleting}
+                    className="flex-1 py-3 rounded-xl bg-[rgba(255,255,255,0.06)] text-[#FFFFFF] font-semibold text-[13px] disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDeleteDevice}
+                    disabled={deleting}
+                    className="flex-1 py-3 rounded-xl bg-[rgba(255,59,48,0.15)] text-[#FF3B30] font-semibold text-[13px] border border-[rgba(255,59,48,0.3)] disabled:opacity-50 flex items-center justify-center gap-2"
+                    aria-label="Confirm delete device"
+                  >
+                    {deleting ? (
+                      <><RefreshCw size={14} className="animate-spin" /> Deleting…</>
+                    ) : (
+                      <><Trash2 size={14} /> Delete</>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }

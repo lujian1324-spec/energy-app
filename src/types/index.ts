@@ -202,12 +202,16 @@ export interface AppSettings {
   lowBatteryThreshold?: number;
   /** PRD v1.1 §4.3: Device display icon color */
   deviceIconColor?: string;
+  /** PRD v1.1 §4.3: Device display icon key (powerstation/fridge/cpap/solar/ac/server/light/plug) */
+  deviceIconKey?: string;
   /** PRD v1.1 §4.3: Sleep Mode (turn off display) */
   sleepMode?: boolean;
   /** PRD v1.1 §4.3: Battery Mode (0=Normal, 1=Backup, 2=Eco) */
   batteryMode?: number;
   /** PRD v1.1 §4.6: Solar Status push notification */
   pushSolarStatus?: boolean;
+  /** PRD v1.1 §8.3: Privacy acknowledged (anonymous analytics opt-in) */
+  privacyAcknowledged?: boolean;
 }
 
 // 削峰填谷时间段配置

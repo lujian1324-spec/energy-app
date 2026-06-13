@@ -421,6 +421,14 @@ export default function OverviewPage() {
           {/* Right: Settings + Bell */}
           <div className="flex items-center gap-2 flex-shrink-0">
             <button
+              onClick={() => selectedDeviceId && navigate(`/device-info/${selectedDeviceId}`)}
+              className="w-9 h-9 rounded-full bg-[#262626] flex items-center justify-center text-[#FFFFFF] hover:bg-[#333333] transition-colors"
+              aria-label="Device info"
+              title="Device Info"
+            >
+              <Info size={18} />
+            </button>
+            <button
               onClick={() => navigate('/smart-schedule')}
               className="w-9 h-9 rounded-full bg-[#262626] flex items-center justify-center text-[#FFFFFF] hover:bg-[#333333] transition-colors"
             >

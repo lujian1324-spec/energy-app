@@ -33,6 +33,7 @@ import { useDeviceStore } from '../stores/deviceStore'
 import { useAuthStore } from '../stores/authStore'
 import { mapFieldsToRealtime } from '../api/deviceApi'
 import type { DeviceListItem, DeviceStateField } from '../api/deviceApi'
+import BatteryTag from '../components/BatteryTag'
 
 // BLE device type
 interface BleDevice {
@@ -72,6 +73,8 @@ export default function DevicePage() {
     loadDeviceState,
     selectedDeviceState,
     stateLoading,
+    alarms,
+    loadAlarms,
   } = useDeviceStore()
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
   const isGuest = useAuthStore(s => s.isGuest)
@@ -117,7 +120,8 @@ export default function DevicePage() {
 
   useEffect(() => {
     fetchDevices()
-  }, [fetchDevices])
+    if (isAuthenticated) loadAlarms()
+  }, [fetchDevices, isAuthenticated, loadAlarms])
 
   // ── 加载设备实时状态（每个设备） ──
   const fetchDeviceRealtime = useCallback(async (deviceId: number | string) => {
@@ -343,6 +347,37 @@ export default function DevicePage() {
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto scrollbar-hide px-5 pb-4">
+        {/* PRD v1.1 §4.2.5: 最新通知 Banner */}
+        {alarms.length > 0 && (() => {
+          const latest = alarms[0]
+          const levelColor: Record<string, string> = {
+            critical: '#FF3B30', major: '#FF3B30', warning: '#FF9500', minor: '#FF9500', info: '#01D6BE',
+          }
+          const dot = levelColor[latest.alarmLevel] || '#01D6BE'
+          return (
+            <motion.button
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              onClick={() => navigate('/notifications')}
+              className="mb-3 w-full px-4 py-3 rounded-[20px] bg-[rgba(255,59,48,0.08)] border border-[rgba(255,59,48,0.18)] flex items-center gap-3 active:scale-[0.99] transition-transform text-left"
+              aria-label="View latest notification"
+            >
+              <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${dot}26` }}>
+                <AlertTriangle size={16} style={{ color: dot }} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[12px] font-semibold text-[#FFFFFF] truncate">
+                  {latest.alarmMessage || `Alarm ${latest.alarmCode}`}
+                </p>
+                <p className="text-[10px] text-[#A0A0A5] mt-0.5">
+                  {latest.deviceName ? `${latest.deviceName} · ` : ''}{latest.createdAt ? new Date(latest.createdAt).toLocaleString() : ''}
+                </p>
+              </div>
+              <ChevronRight size={16} className="text-[#636366] flex-shrink-0" />
+            </motion.button>
+          )
+        })()}
+
         {/* Low Battery Warning Banner */}
         {devices.some(d => {
           const soc = getDeviceNum(d.id, 'soc')
@@ -516,11 +551,9 @@ export default function DevicePage() {
                       )}
                     </div>
 
-                    {/* Parameter badges */}
-                    <div className="flex items-center gap-2 mt-1.5">
-                      <span className={`flex items-center gap-1 text-xs font-semibold ${getBatteryColor(soc)}`}>
-                        <Battery size={11} /> {soc}%
-                      </span>
+                    {/* Parameter badges - PRD v1.1 §4.2.3: Battery Tag 水平电池图标 */}
+                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                      <BatteryTag level={soc} isCharging={isCharging} size="sm" />
                       {batteryPower !== null && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[rgba(52,199,89,0.1)] text-[#34C759]">
                           {isCharging ? `${Math.abs(batteryPower)}W in` : `${Math.abs(batteryPower)}W out`}

@@ -1,13 +1,17 @@
 {
-  "version": "3.12.0",
-  "build": 2464,
-  "date": "2026-05-21",
+  "version": "3.13.0",
+  "build": 2465,
+  "date": "2026-06-14",
   "changelog": [
-    "T6: Global Toast notification system — success/error/warning/info types, 3.5s auto-dismiss, top-slide animation",
-    "T6: Toast container hoisted to App root — all routes (login, device detail, main) can now trigger toasts",
-    "T19: WebSocket real-time push with auto-reconnect and heartbeat",
-    "T23: Offline command queue with auto-replay on network restore",
-    "T25: QR Code scanner hook (BarcodeDetector API + fallback)",
-    "T26: Unified connection status hook + ConnectionIndicator component"
+    "PRD v1.1 gap-fill: BatteryTag horizontal battery tag component (9 states, charging icon)",
+    "PRD v1.1 §4.3.4: DeviceInfo detail page — Model/SN/Capacity/Battery Type/Charge+Output Power/Voltage/Frequency/Health/Cycles/Temp(°F)/Wifi",
+    "PRD v1.1 §4.3: Display Icon 8-option selector (PowerStation/Fridge/CPAP/Solar/AC/Server/Lighting/Plug) + color picker",
+    "PRD v1.1 §4.3: Danger Zone — Delete Device with 30-day recycle bin notice",
+    "PRD v1.1 §4.5.4: Push Notifications sub-page (Power Outage / Low Battery threshold / Solar Status / Quiet Hours / Email Digest)",
+    "PRD v1.1 §4.7.3: 4-step Onboarding flow (Welcome → Profile → Add Device → Done) with progress bar",
+    "PRD v1.1 §8.3: Data & Privacy page — JSON/CSV export, 30-day recycle bin, anonymous analytics toggle",
+    "T7+: Notification banner on DevicePage showing latest alarm with quick-link to /notifications",
+    "DevicePage list mode: BatteryTag replaces text SOC percentage (WCAG: ARIA label, ≥3:1 contrast)",
+    "AppSettings extended: deviceIconKey, privacyAcknowledged"
   ]
 }

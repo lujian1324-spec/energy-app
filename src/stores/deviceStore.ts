@@ -125,6 +125,8 @@ interface DeviceStoreState {
   loadDemoDevices: () => void
   /** 退出 demo 模式，清除 demo 数据 */
   exitDemoMode: () => void
+  /** PRD v1.1 §4.3: 仅从本地列表移除（不调用 API，用于 demo/失败 fallback） */
+  removeDeviceLocally: (deviceId: string | number) => void
 }
 
 // ═══════════════════════════════════════════════════════
@@ -568,6 +570,26 @@ export const useDeviceStore = create<DeviceStoreState>()(
           alarms: [],
           alarmTotal: 0,
           alarmLoading: false,
+        })
+      },
+
+      // ─── PRD v1.1 §4.3: 本地移除设备（不调 API） ───
+      removeDeviceLocally: (deviceId) => {
+        const idStr = String(deviceId)
+        set((state) => {
+          const nextDevices = state.devices.filter(d => String(d.id) !== idStr)
+          const isSelected = state.selectedDeviceId === idStr
+          return {
+            devices: nextDevices,
+            deviceTotal: Math.max(0, state.deviceTotal - 1),
+            ...(isSelected
+              ? {
+                  selectedDeviceId: nextDevices[0] ? String(nextDevices[0].id) : null,
+                  selectedDeviceDetails: null,
+                  selectedDeviceState: null,
+                }
+              : {}),
+          }
         })
       },
     }),

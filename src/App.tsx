@@ -13,6 +13,9 @@ import TermsPage from './pages/TermsPage'
 import PrivacyPage from './pages/PrivacyPage'
 import SmartSchedulePage from './pages/SmartSchedulePage'
 import NotificationsPage from './pages/NotificationsPage'
+import DeviceInfoPage from './pages/DeviceInfoPage'
+import OnboardingPage from './pages/OnboardingPage'
+import DataExportPage from './pages/DataExportPage'
 import { useRealtimeSimulator } from './hooks/useRealtimeSimulator'
 import { useAuthStore } from './stores/authStore'
 import { ToastContainer, useToast } from './components/Toast'
@@ -59,6 +62,7 @@ function SessionLoadingScreen() {
 function AppInner() {
   const location = useLocation()
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
+  const needsOnboarding = useAuthStore(s => s.needsOnboarding)
   const sessionReady = useAuthStore(s => s.sessionReady)
   const restoreSession = useAuthStore(s => s.restoreSession)
   useRealtimeSimulator()
@@ -71,6 +75,11 @@ function AppInner() {
   // 等待会话恢复完成
   if (!sessionReady) {
     return <SessionLoadingScreen />
+  }
+
+  // PRD v1.1 §4.7.3: 首次登录拦截 → onboarding
+  if (isAuthenticated && needsOnboarding && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />
   }
 
   // 登录/注册页单独渲染，不包含底部导航
@@ -101,8 +110,8 @@ function AppInner() {
     )
   }
 
-  // 设备详情页 & Smart Schedule 页 & 通知页单独渲染，不包含底部导航
-  if (location.pathname.startsWith('/device/') || location.pathname === '/smart-schedule' || location.pathname === '/notifications' || location.pathname.startsWith('/profile')) {
+  // 设备详情页 & Smart Schedule 页 & 通知页 & 数据导出页 单独渲染，不包含底部导航
+  if (location.pathname.startsWith('/device/') || location.pathname === '/smart-schedule' || location.pathname === '/notifications' || location.pathname.startsWith('/profile') || location.pathname.startsWith('/device-info/') || location.pathname === '/data-export') {
     return (
       <div className="h-full w-full bg-bg-base flex flex-col overflow-hidden">
         <div className="flex-1 overflow-hidden relative">
@@ -117,8 +126,11 @@ function AppInner() {
             >
               <Routes location={location}>
                 <Route path="/device/:id" element={<RequireAuth><OverviewPage /></RequireAuth>} />
+                <Route path="/device-info/:id" element={<RequireAuth><DeviceInfoPage /></RequireAuth>} />
                 <Route path="/smart-schedule" element={<RequireAuth><SmartSchedulePage /></RequireAuth>} />
                 <Route path="/notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
+                <Route path="/onboarding" element={<RequireAuth><OnboardingPage /></RequireAuth>} />
+                <Route path="/data-export" element={<RequireAuth><DataExportPage /></RequireAuth>} />
               </Routes>
             </motion.div>
           </AnimatePresence>
@@ -145,6 +157,8 @@ function AppInner() {
               <Route path="/devices" element={<RequireAuth><DevicePage /></RequireAuth>} />
               <Route path="/insights" element={<RequireAuth><StatsPage /></RequireAuth>} />
               <Route path="/setting" element={<RequireAuth><SettingPage /></RequireAuth>} />
+              {/* PRD v1.1 §4.7.3: 首次登录 onboarding 引导 */}
+              <Route path="/onboarding" element={<RequireAuth><OnboardingPage /></RequireAuth>} />
               {/* 默认进入 devices */}
               <Route path="/" element={<Navigate to="/devices" replace />} />
               {/* 旧路由重定向到新路由（向后兼容） */}
