@@ -13,6 +13,7 @@ import {
   LoginData,
 } from '../api/authApi'
 import { tokenStore } from '../utils/apiClient'
+import { useDeviceStore } from './deviceStore'
 
 interface AuthState {
   isAuthenticated: boolean
@@ -80,6 +81,8 @@ export const useAuthStore = create<AuthState>()(
 
       logout: async () => {
         await apiLogout()
+        // 清除 demo 模式
+        useDeviceStore.getState().exitDemoMode()
         set({ isAuthenticated: false, isGuest: false, user: null, error: null, sessionReady: true })
       },
 
@@ -87,6 +90,8 @@ export const useAuthStore = create<AuthState>()(
 
       setGuestMode: () => {
         set({ isGuest: true, isAuthenticated: false, sessionReady: true, error: null })
+        // 加载 demo 设备数据
+        useDeviceStore.getState().loadDemoDevices()
       },
 
       /**

@@ -2,6 +2,9 @@
  * 设备 Store — 连接真实 API
  *
  * 管理设备列表、当前设备状态、实时数据轮询等
+ *
+ * Demo 模式：当 authStore.isGuest === true 时，
+ *   自动加载 demo 数据（见 src/data/demoData.ts）
  */
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
@@ -41,12 +44,22 @@ import {
   type EnergyFlowData,
 } from '../api/deviceApi'
 import type { ApiResponse } from '../utils/apiClient'
+import { useAuthStore } from './authStore'
+import {
+  demoDevices,
+  getDemoDeviceState,
+  getDemoEnergyFlow,
+  getDemoHistoryData,
+} from '../data/demoData'
 
 // ═══════════════════════════════════════════════════════
 // 类型
 // ═══════════════════════════════════════════════════════
 
 interface DeviceStoreState {
+  // ─── Demo 模式 ───
+  isDemoMode: boolean
+
   // 设备列表
   devices: DeviceListItem[]
   deviceTotal: number
@@ -84,7 +97,7 @@ interface DeviceStoreState {
   historyLoading: boolean
   historyError: string | null
 
-  // 操作
+  // ─── 操作 ───
   loadDevices: (page?: number, count?: number, filters?: Record<string, unknown>) => Promise<void>
   loadDeviceDetails: (deviceId: string | number) => Promise<void>
   loadDeviceState: (deviceId: string | number) => Promise<void>
@@ -106,6 +119,12 @@ interface DeviceStoreState {
   savePeakValleyGeneral: (data: PeakValleyGeneralConfig) => Promise<ApiResponse<unknown>>
   loadEnergyFlow: (deviceId: string | number) => Promise<void>
   loadHistoryData: (deviceId: string | number, fromTime: string, toTime: string, keys?: string[], count?: number, orderByTimeAsc?: boolean) => Promise<void>
+
+  // ─── Demo 模式操作 ───
+  /** 加载 demo 设备列表（guest 模式调用） */
+  loadDemoDevices: () => void
+  /** 退出 demo 模式，清除 demo 数据 */
+  exitDemoMode: () => void
 }
 
 // ═══════════════════════════════════════════════════════
@@ -120,6 +139,9 @@ let energyFlowRequestSeq = 0
 export const useDeviceStore = create<DeviceStoreState>()(
   persist(
     (set, get) => ({
+      // ─── Demo 模式 ───
+      isDemoMode: false,
+
       devices: [],
       deviceTotal: 0,
       devicePage: 1,
@@ -156,6 +178,12 @@ export const useDeviceStore = create<DeviceStoreState>()(
       // ─── 设备列表 ───
 
       loadDevices: async (page = 1, count = 20, filters) => {
+        // Demo 模式：直接返回 demo 设备列表
+        if (get().isDemoMode) {
+          set({ deviceLoading: false })
+          return
+        }
+
         set({ deviceLoading: true })
         try {
           const result = await fetchDeviceList(page, count, filters)
@@ -190,6 +218,15 @@ export const useDeviceStore = create<DeviceStoreState>()(
       // ─── 设备实时状态 ───
 
       loadDeviceState: async (deviceId) => {
+        // Demo 模式：返回模拟设备状态
+        if (get().isDemoMode) {
+          const state = getDemoDeviceState(deviceId)
+          if (state) {
+            set({ selectedDeviceState: state, stateLoading: false })
+          }
+          return
+        }
+
         const seq = ++stateRequestSeq
         set({ stateLoading: true })
         try {
@@ -425,6 +462,16 @@ export const useDeviceStore = create<DeviceStoreState>()(
       // ─── 能量流动（每分钟轮询）───
       loadEnergyFlow: async (deviceId: string | number) => {
         if (!deviceId) return
+
+        // Demo 模式：返回模拟能量流动数据
+        if (get().isDemoMode) {
+          const flow = getDemoEnergyFlow(deviceId)
+          if (flow.data) {
+            set({ energyFlow: flow.data, energyFlowLoading: false, energyFlowError: null })
+          }
+          return
+        }
+
         const seq = ++energyFlowRequestSeq
         set({ energyFlowLoading: true, energyFlowError: null })
         try {
@@ -448,6 +495,14 @@ export const useDeviceStore = create<DeviceStoreState>()(
       // ─── 历史数据（StatsPage）───
       loadHistoryData: async (deviceId: string | number, fromTime: string, toTime: string, keys?: string[], count?: number, orderByTimeAsc = true) => {
         if (!deviceId) return
+
+        // Demo 模式：返回模拟历史数据
+        if (get().isDemoMode) {
+          const demoData = getDemoHistoryData(deviceId)
+          set({ historyData: demoData.data, historyLoading: false, historyError: null })
+          return
+        }
+
         set({ historyLoading: true, historyError: null })
         try {
           const result = await fetchHistoryData({
@@ -468,6 +523,52 @@ export const useDeviceStore = create<DeviceStoreState>()(
           const msg = e instanceof Error ? e.message : String(e)
           set({ historyLoading: false, historyError: msg })
         }
+      },
+
+      // ─── Demo 模式：加载 demo 设备列表 ───
+      loadDemoDevices: () => {
+        set({
+          isDemoMode: true,
+          devices: demoDevices,
+          deviceTotal: demoDevices.length,
+          deviceLoading: false,
+          // 自动选中第一个设备
+          selectedDeviceId: '10001',
+        })
+        // 加载第一个设备的状态和能量流动
+        const firstDevice = demoDevices[0]
+        if (firstDevice) {
+          const state = getDemoDeviceState(firstDevice.id)
+          if (state) {
+            set({ selectedDeviceState: state, stateLoading: false })
+          }
+          const flow = getDemoEnergyFlow(firstDevice.id)
+          if (flow.data) {
+            set({ energyFlow: flow.data, energyFlowLoading: false })
+          }
+        }
+      },
+
+      // ─── Demo 模式：退出 demo 模式 ───
+      exitDemoMode: () => {
+        set({
+          isDemoMode: false,
+          devices: [],
+          deviceTotal: 0,
+          selectedDeviceId: null,
+          selectedDeviceDetails: null,
+          selectedDeviceState: null,
+          stateLoading: false,
+          energyFlow: null,
+          energyFlowLoading: false,
+          energyFlowError: null,
+          historyData: null,
+          historyLoading: false,
+          historyError: null,
+          alarms: [],
+          alarmTotal: 0,
+          alarmLoading: false,
+        })
       },
     }),
     {
