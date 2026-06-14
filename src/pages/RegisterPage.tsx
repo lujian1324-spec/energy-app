@@ -1,41 +1,27 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { ChevronLeft, X } from 'lucide-react'
+import { ChevronLeft, X, Check, Loader2 } from 'lucide-react'
 import { registerByEmail, sendEmailCaptcha } from '../api/authApi'
 import { useAuthStore } from '../stores/authStore'
 
-type Screen = 'email' | 'otp'
-
 const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
-
-/**
- * 后端 /user/register/email 要求 account（账号名）+ password，
- * 不能直接用邮箱当账号（含 @ / . 会被判为账号错误）。
- * 这里基于邮箱本地部分生成合法账号，并随机后缀避免重名。
- */
-const genAccount = (email: string): string => {
-  const local = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '')
-  const base = (local || 'user').slice(0, 12)
-  const rand = Math.random().toString(36).slice(2, 7)
-  return `${base}${rand}`
-}
-
-/** 生成满足常见复杂度要求的随机密码（含大小写、数字、符号）。 */
-const genPassword = (): string =>
-  `Sr${Math.random().toString(36).slice(2, 10)}@9X`
+const ACCOUNT_RE = /^[a-zA-Z0-9_]+$/
 
 export default function RegisterPage() {
   const navigate = useNavigate()
-  const [screen, setScreen] = useState<Screen>('email')
+
+  const [account, setAccount] = useState('')
   const [email, setEmail] = useState('')
-  const [emailError, setEmailError] = useState('')
-  const [otp, setOtp] = useState('')
-  const [otpError, setOtpError] = useState('')
-  const [countdown, setCountdown] = useState(0)
+  const [code, setCode] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [agreed, setAgreed] = useState(false)
+
   const [captchaId, setCaptchaId] = useState<string | null>(null)
+  const [countdown, setCountdown] = useState(0)
+  const [sending, setSending] = useState(false)
   const [loading, setLoading] = useState(false)
-  const hiddenInputRef = useRef<HTMLInputElement>(null)
+  const [error, setError] = useState('')
 
   // Countdown timer
   useEffect(() => {
@@ -44,247 +30,211 @@ export default function RegisterPage() {
     return () => clearTimeout(t)
   }, [countdown])
 
-  const startCountdown = () => setCountdown(60)
+  // ── Validation ──
+  const accountValid = account.trim().length > 0 && ACCOUNT_RE.test(account.trim())
+  const emailValid = isValidEmail(email.trim())
+  const passwordValid = password.length >= 6 && password.length <= 32
+  const confirmValid = confirm.length > 0 && confirm === password
+  const codeValid = code.trim().length === 6
+  const canSubmit = accountValid && emailValid && codeValid && passwordValid && confirmValid && agreed
 
-  const handleSendCode = async () => {
-    if (!isValidEmail(email)) {
-      setEmailError('Please enter a valid email address.')
-      return
-    }
-    setEmailError('')
-    setLoading(true)
-    try {
-      const result = await sendEmailCaptcha(email.trim(), '1')
-      const cid = result.data?.iotCaptchaId
-      if (cid) setCaptchaId(cid)
-      startCountdown()
-      setScreen('otp')
-    } catch {
-      setEmailError('Failed to send code. Please try again.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleResend = async () => {
+  const handleObtainCode = async () => {
     if (countdown > 0) return
-    setLoading(true)
+    if (!emailValid) { setError('Please enter a valid email address.'); return }
+    setError('')
+    setSending(true)
     try {
       const result = await sendEmailCaptcha(email.trim(), '1')
-      const cid = result.data?.iotCaptchaId
-      if (cid) setCaptchaId(cid)
-      startCountdown()
+      if (result.code === 0 || result.code === '0') {
+        setCaptchaId(result.data?.iotCaptchaId ?? null)
+        setCountdown(60)
+      } else {
+        setError(result.message || result.msg || 'Failed to send code.')
+      }
     } catch {
-      setOtpError('Failed to resend. Please try again.')
+      setError('Failed to send code. Please try again.')
     } finally {
-      setLoading(false)
+      setSending(false)
     }
   }
 
-  const handleVerifyOtp = async () => {
-    if (otp.length !== 6) return
+  const handleRegister = async () => {
+    if (!canSubmit) return
+    setError('')
     setLoading(true)
-    setOtpError('')
     try {
-      const account = genAccount(email.trim())
-      const password = genPassword()
       const result = await registerByEmail(
-        account,
+        account.trim(),
         password,
         email.trim(),
-        otp,
+        code.trim(),
         captchaId || undefined
       )
       if (result.code === 0 || result.code === '0') {
-        // 注册成功后用刚创建的账号自动登录，拿到会话 token
-        const loggedIn = await useAuthStore.getState().login(account, password)
+        const loggedIn = await useAuthStore.getState().login(account.trim(), password)
         if (loggedIn) {
-          // First sign-up → run the Onboarding flow (PRD §4.7.3)
           navigate('/onboarding', { replace: true })
         } else {
-          // 注册成功但自动登录失败：回到登录页用邮箱验证码登录
           navigate('/login', { replace: true })
         }
       } else {
-        setOtpError(result.message ?? result.msg ?? 'Invalid code. Please try again.')
+        setError(result.message ?? result.msg ?? 'Registration failed. Please try again.')
       }
     } catch {
-      setOtpError('Verification failed. Please try again.')
+      setError('Registration failed. Please try again.')
     } finally {
       setLoading(false)
     }
   }
 
-  // ─── OTP Screen ───────────────────────────────────────────────────────────
-  if (screen === 'otp') {
-    const digits = otp.padEnd(6, ' ').split('')
-    const hasError = otpError.length > 0
-
-    return (
-      <div className="h-full flex flex-col bg-[#141414]">
-        <div className="px-4 pt-5 safe-area-top">
-          <button
-            onClick={() => { setScreen('email'); setOtp(''); setOtpError('') }}
-            className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center"
-          >
-            <ChevronLeft size={20} className="text-white" />
-          </button>
-        </div>
-
-        <div className="flex-1 px-6 pt-10">
-          <h1 className="text-headline-lg font-bold text-white mb-2">Enter verification code</h1>
-          <p className="text-body-md text-[#A0A0A5] mb-8">
-            We sent a 6-digit verification code to{' '}
-            <span className="font-semibold text-white">{email}</span>
-          </p>
-
-          {/* 6-box OTP input */}
-          <div className="relative mb-4">
-            {/* Visual boxes */}
-            <div className="flex gap-2 mb-1" onClick={() => hiddenInputRef.current?.focus()}>
-              {digits.map((d, i) => (
-                <div
-                  key={i}
-                  className={`flex-1 h-14 rounded-m flex items-center justify-center text-title-lg font-bold
-                    border transition-colors
-                    ${hasError
-                      ? 'border-danger bg-[rgba(255,53,48,0.06)] text-danger'
-                      : i === otp.length
-                        ? 'border-primary bg-[#262626] text-white'
-                        : d.trim()
-                          ? 'border-[rgba(255,255,255,0.2)] bg-[#262626] text-white'
-                          : 'border-[rgba(255,255,255,0.12)] bg-[#1A1A1A] text-white'
-                    }`}
-                >
-                  {d.trim()}
-                </div>
-              ))}
-            </div>
-
-            {/* Hidden numeric input */}
-            <input
-              ref={hiddenInputRef}
-              type="tel"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength={6}
-              value={otp}
-              onChange={e => {
-                const v = e.target.value.replace(/\D/g, '').slice(0, 6)
-                setOtp(v)
-                setOtpError('')
-                if (v.length === 6) {
-                  // auto-submit
-                  setTimeout(() => hiddenInputRef.current?.blur(), 50)
-                }
-              }}
-              className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-              autoFocus
-            />
-          </div>
-
-          {hasError && (
-            <p className="text-danger text-body-md mb-4">{otpError}</p>
-          )}
-
-          {/* Resend */}
-          <div className="text-center mb-8">
-            {countdown > 0 ? (
-              <span className="text-body-md text-primary">Resend Code ({countdown})</span>
-            ) : (
-              <button
-                onClick={handleResend}
-                className="text-body-md text-primary underline"
-              >
-                Resend Code
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Continue button */}
-        <div className="px-6 pb-10 safe-area-bottom">
-          <button
-            onClick={handleVerifyOtp}
-            disabled={otp.length !== 6 || loading}
-            className="w-full h-14 rounded-full bg-primary text-black text-body-lg font-semibold
-              disabled:bg-primary-dark disabled:text-[rgba(0,0,0,0.4)] transition-colors"
-          >
-            Continue
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  // ─── Email Screen ─────────────────────────────────────────────────────────
-  const emailInvalid = email.length > 0 && !isValidEmail(email)
-
   return (
-    <div className="h-full flex flex-col bg-[#141414]">
+    <div className="min-h-screen flex flex-col bg-ink-12">
       <div className="px-4 pt-5 safe-area-top">
         <button
           onClick={() => navigate(-1)}
-          className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center"
+          aria-label="Back"
+          className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-ink-1 active:scale-95 transition-transform"
         >
-          <ChevronLeft size={20} className="text-white" />
+          <ChevronLeft size={22} />
         </button>
       </div>
 
-      <div className="flex-1 px-6 pt-10">
-        <h1 className="text-headline-lg font-bold text-white mb-2">Create account</h1>
-        <p className="text-body-md text-[#A0A0A5] mb-8">
-          Enter your email to get started with Sierro.
-        </p>
+      <div className="flex-1 px-6 pt-6">
+        <h1 className="font-display text-headline-lg text-ink-1 mb-1">Create Account</h1>
+        <p className="text-body-md text-ink-7 mb-8">Sign up to get started with Sierro.</p>
 
-        {/* Email input card */}
-        <div className={`bg-[#262626] rounded-l px-4 py-4 flex items-center gap-3 mb-2
-          ${emailInvalid || emailError ? 'border border-danger' : ''}`}
-        >
+        {/* Account */}
+        <label className="block text-label text-ink-7 mb-1.5">Account</label>
+        <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-4">
           <input
-            type="email"
-            inputMode="email"
-            value={email}
-            onChange={e => { setEmail(e.target.value); setEmailError('') }}
-            placeholder="Email address"
-            autoFocus
-            className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#636366] outline-none"
+            type="text"
+            value={account}
+            onChange={e => { setAccount(e.target.value); setError('') }}
+            placeholder="Choose a username"
+            autoCapitalize="none"
+            autoCorrect="off"
+            className="flex-1 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
           />
-          {email.length > 0 && (
-            <button onClick={() => setEmail('')}>
-              <X size={16} className="text-[#636366]" />
+          {account && (
+            <button onClick={() => setAccount('')} aria-label="Clear account">
+              <X size={16} className="text-ink-7" />
             </button>
           )}
         </div>
 
-        {(emailInvalid || emailError) && (
-          <p className="text-danger text-body-md mt-1 mb-2">
-            {emailError || 'Please enter a valid email address.'}
-          </p>
+        {/* Email */}
+        <label className="block text-label text-ink-7 mb-1.5">Email</label>
+        <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-4">
+          <input
+            type="email"
+            inputMode="email"
+            value={email}
+            onChange={e => { setEmail(e.target.value); setError('') }}
+            placeholder="Email address"
+            autoCapitalize="none"
+            autoCorrect="off"
+            className="flex-1 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
+          />
+          {email && (
+            <button onClick={() => setEmail('')} aria-label="Clear email">
+              <X size={16} className="text-ink-7" />
+            </button>
+          )}
+        </div>
+
+        {/* Verification Code */}
+        <label className="block text-label text-ink-7 mb-1.5">Verification Code</label>
+        <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-3 mb-4">
+          <input
+            type="text"
+            inputMode="numeric"
+            value={code}
+            onChange={e => { setCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setError('') }}
+            placeholder="6-digit code"
+            autoComplete="one-time-code"
+            maxLength={6}
+            className="flex-1 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
+          />
+          <button
+            onClick={handleObtainCode}
+            disabled={countdown > 0 || sending || !emailValid}
+            className="shrink-0 text-label font-semibold text-primary disabled:text-ink-7 transition-colors flex items-center gap-1"
+          >
+            {sending ? <Loader2 size={14} className="animate-spin" /> : null}
+            {countdown > 0 ? `Resend (${countdown})` : 'Obtain Verification Code'}
+          </button>
+        </div>
+
+        {/* Password */}
+        <label className="block text-label text-ink-7 mb-1.5">Password</label>
+        <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-1">
+          <input
+            type="password"
+            value={password}
+            onChange={e => { setPassword(e.target.value); setError('') }}
+            placeholder="6–32 characters, case sensitive"
+            className="flex-1 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
+          />
+        </div>
+        {password.length > 0 && !passwordValid && (
+          <p className="text-label text-danger mb-3">Password must be 6–32 characters.</p>
         )}
+        {(password.length === 0 || passwordValid) && <div className="mb-3" />}
 
-        <p className="text-caption text-[#636366] mt-6 text-center">
-          Already have an account?{' '}
-          <Link to="/login" className="text-primary">Sign in</Link>
-        </p>
-      </div>
+        {/* Confirm Password */}
+        <label className="block text-label text-ink-7 mb-1.5">Confirm Password</label>
+        <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-1">
+          <input
+            type="password"
+            value={confirm}
+            onChange={e => { setConfirm(e.target.value); setError('') }}
+            placeholder="Re-enter your password"
+            onKeyDown={e => { if (e.key === 'Enter') handleRegister() }}
+            className="flex-1 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
+          />
+        </div>
+        {confirm.length > 0 && confirm !== password && (
+          <p className="text-label text-danger mb-3">Passwords do not match.</p>
+        )}
+        {(confirm.length === 0 || confirm === password) && <div className="mb-3" />}
 
-      {/* Continue button */}
-      <div className="px-6 pb-10 safe-area-bottom">
+        {/* User Service Agreement */}
         <button
-          onClick={handleSendCode}
-          disabled={!isValidEmail(email) || loading}
-          className="w-full h-14 rounded-full bg-primary text-black text-body-lg font-semibold
-            disabled:bg-primary-dark disabled:text-[rgba(0,0,0,0.4)] transition-colors"
+          onClick={() => setAgreed(v => !v)}
+          className="flex items-start gap-3 text-left w-full mt-1"
         >
-          Continue
+          <span
+            className={`shrink-0 mt-0.5 w-5 h-5 rounded-s flex items-center justify-center border-s transition-colors
+              ${agreed ? 'bg-primary border-primary' : 'bg-transparent border-ink-7'}`}
+          >
+            {agreed && <Check size={14} className="text-ink-13" />}
+          </span>
+          <span className="text-label text-ink-7 leading-relaxed">
+            I have read and agree to the{' '}
+            <Link to="/terms" className="text-primary underline underline-offset-2" onClick={e => e.stopPropagation()}>
+              User Service Agreement
+            </Link>
+          </span>
         </button>
 
-        <p className="text-caption text-[#636366] mt-4 text-center leading-relaxed">
-          By continuing, you agree to our{' '}
-          <Link to="/terms" className="text-primary">Terms of Use</Link>
-          {' '}and{' '}
-          <Link to="/privacy" className="text-primary">Privacy Policy</Link>
+        {error && <p className="text-label text-danger mt-4">{error}</p>}
+      </div>
+
+      {/* Register button */}
+      <div className="px-6 pb-10 pt-4 safe-area-bottom">
+        <button
+          onClick={handleRegister}
+          disabled={!canSubmit || loading}
+          className="w-full py-4 rounded-m font-display text-title-md text-ink-13
+            bg-primary disabled:bg-primary-dark disabled:text-ink-13/60 disabled:cursor-not-allowed
+            active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+        >
+          {loading ? <Loader2 size={18} className="animate-spin" /> : 'Register'}
+        </button>
+
+        <p className="text-body-md text-ink-7 mt-4 text-center">
+          Already have an account?{' '}
+          <Link to="/login" className="text-primary font-semibold">Sign in</Link>
         </p>
       </div>
     </div>
