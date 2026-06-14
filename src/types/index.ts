@@ -156,7 +156,7 @@ export interface PowerStation {
 }
 
 // 运行模式
-export type OperatingMode = 'solar' | 'backup' | 'car' | 'outdoor';
+export type OperatingMode = 'solar' | 'backup' | 'car' | 'outdoor' | 'home-backup';
 
 export interface ModeConfig {
   id: OperatingMode;

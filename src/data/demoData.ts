@@ -327,10 +327,10 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
         gatherProtocolVersionCode: '2.1',
         fields: {
           soc: makeField('soc', 'State of Charge', 78, '%', 'battery'),
-          batteryPower: makeField('batteryPower', 'Battery Power', -600, 'W', 'battery'),
-          acPower: makeField('acPower', 'AC Power', 800, 'W', 'ac'),
-          solarPower: makeField('solarPower', 'Solar Power', 400, 'W', 'solar'),
-          outputPower: makeField('outputPower', 'Output Power', 800, 'W', 'output'),
+          batteryPower: makeField('batteryPower', 'Battery Power', -769, 'W', 'battery'),
+          acPower: makeField('acPower', 'AC Power', 1000, 'W', 'ac'),
+          solarPower: makeField('solarPower', 'Solar Power', 0, 'W', 'solar'),
+          outputPower: makeField('outputPower', 'Output Power', 231, 'W', 'output'),
           batteryTemp: makeField('batteryTemp', 'Battery Temp', 28.5, '°C', 'battery'),
           workMode: makeField('workMode', 'Work Mode', 0, '', 'system'),
         },
@@ -342,7 +342,7 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
             category: 'battery',
             stateItems: [
               { ...makeField('soc', 'SoC', 78, '%', 'battery'), isHidden: false, nameDisplay: 'State of Charge' },
-              { ...makeField('batteryPower', 'Power', -1200, 'W', 'battery'), isHidden: false, nameDisplay: 'Battery Power' },
+              { ...makeField('batteryPower', 'Power', -769, 'W', 'battery'), isHidden: false, nameDisplay: 'Battery Power' },
             ],
           },
         ],
@@ -459,10 +459,10 @@ export function getDemoEnergyFlow(deviceId: string | number): { code: number; me
           },
           groups: [],
         },
-        pvPanelFlow: makeFlowNode('pvPanel', 'Solar Panel', 'icon_solar', 400),
-        batteryFlow: makeFlowNode('battery', 'Battery', 'icon_battery', -600),
-        loadFlow: makeFlowNode('load', 'Load', 'icon_load', 800),
-        gridFlow: makeFlowNode('grid', 'Grid', 'icon_grid', 0),
+        pvPanelFlow: makeFlowNode('pvPanel', 'Solar Panel', 'icon_solar', 0),
+        batteryFlow: makeFlowNode('battery', 'Battery', 'icon_battery', -769),
+        loadFlow: makeFlowNode('load', 'Load', 'icon_load', 231),
+        gridFlow: makeFlowNode('grid', 'Grid', 'icon_grid', 1000),
       },
     }
   }
@@ -500,32 +500,82 @@ export function getDemoEnergyFlow(deviceId: string | number): { code: number; me
 // ═══════════════════════════════════════════════════════
 
 export function getDemoHistoryData(deviceId: string | number, hours = 24): { code: number; message: string; data: HistoryDataResponse } {
-  const points: Array<{ time: string; value: number }> = []
+  const socPoints: Array<{ time: string; value: number }> = []
+  const solarPoints: Array<{ time: string; value: number }> = []
+  const outputPoints: Array<{ time: string; value: number }> = []
   const now = Date.now()
   const numericId = typeof deviceId === 'string' ? parseInt(deviceId) : deviceId
 
-  // 生成时间序列
-  for (let i = hours * 12 - 1; i >= 0; i--) { // 5分钟间隔
-    const time = new Date(now - i * 5 * 60 * 1000).toISOString()
+  // ── 根据设备确定基准功率参数 ──
+  let baseAC = 400, baseSolar = 0, baseOutput = 168   // 默认设备
+  if (numericId === 10001) {                           // Sierro2000
+    baseAC = 1000; baseSolar = 0; baseOutput = 231
+  } else if (numericId === 10004) {                    // Solar Panel
+    baseAC = 0; baseSolar = 4200; baseOutput = 800
+  }
 
-    let value = 50
-    if (numericId === 10001) { // Sierro2000 - SoC
-      value = 50 + Math.sin((i / (hours * 12)) * Math.PI * 2) * 30 + (Math.random() - 0.5) * 4
-      value = Math.max(0, Math.min(100, value))
-    } else if (numericId === 10004) { // Solar Panel - Power
-      const hour = new Date(now - i * 5 * 60 * 1000).getHours()
-      value = hour >= 6 && hour <= 18 ? Math.sin((hour - 6) / 12 * Math.PI) * 4200 + (Math.random() - 0.5) * 200 : 0
-      value = Math.max(0, value)
+  // 生成时间序列（5 分钟间隔）
+  for (let i = hours * 12 - 1; i >= 0; i--) {
+    const ts = now - i * 5 * 60 * 1000
+    const time = new Date(ts).toISOString()
+    const hour = new Date(ts).getHours()
+    const dayProgress = i / (hours * 12) // 0→1 从过去到现在
+
+    // ── SoC 曲线：模拟充放电循环 ──
+    let socValue = 50
+    if (numericId === 10001) {
+      // Sierro2000: 日间 AC 充电 (6-22h)，夜间放电
+      const chargePhase = hour >= 6 && hour <= 22
+      const cycleOffset = Math.sin(dayProgress * Math.PI * 2 * (hours / 24)) * 15
+      socValue = chargePhase
+        ? 60 + cycleOffset + (Math.random() - 0.5) * 6
+        : 45 + cycleOffset + (Math.random() - 0.5) * 6
+      socValue = Math.max(10, Math.min(98, socValue))
+    } else if (numericId === 10004) {
+      // Solar Panel: 白天太阳能充电，SoC 较高
+      socValue = hour >= 6 && hour <= 18
+        ? 70 + Math.sin((hour - 6) / 12 * Math.PI) * 20 + (Math.random() - 0.5) * 4
+        : 50 + (Math.random() - 0.5) * 6
+      socValue = Math.max(15, Math.min(98, socValue))
+    } else {
+      socValue = 50 + Math.sin(dayProgress * Math.PI * 2) * 30 + (Math.random() - 0.5) * 4
+      socValue = Math.max(0, Math.min(100, socValue))
     }
 
-    points.push({ time, value })
+    // ── Solar 功率曲线 ──
+    let solarValue = 0
+    if (baseSolar > 0) {
+      solarValue = hour >= 6 && hour <= 18
+        ? Math.round(baseSolar * Math.sin((hour - 6) / 12 * Math.PI) + (Math.random() - 0.5) * baseSolar * 0.08)
+        : 0
+      solarValue = Math.max(0, solarValue)
+    }
+
+    // ── Output 功率曲线 ──
+    let outputValue = 0
+    const isPeak = (hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 22)
+    if (numericId === 10001) {
+      // Sierro2000: 日间输出较低（充电中），早晚高峰略高
+      outputValue = Math.round(baseOutput * (isPeak ? 1.0 : 0.6) + (Math.random() - 0.5) * baseOutput * 0.15)
+    } else if (numericId === 10004) {
+      outputValue = Math.round(baseOutput * (isPeak ? 1.2 : 0.4) + (Math.random() - 0.5) * baseOutput * 0.1)
+    } else {
+      outputValue = Math.round(baseOutput * (isPeak ? 1.1 : 0.5) + (Math.random() - 0.5) * baseOutput * 0.2)
+    }
+    outputValue = Math.max(0, outputValue)
+
+    socPoints.push({ time, value: Math.round(socValue * 10) / 10 })
+    solarPoints.push({ time, value: solarValue })
+    outputPoints.push({ time, value: outputValue })
   }
 
   return {
     code: 0,
     message: 'success',
     data: {
-      soc: points,
+      soc: socPoints,
+      solarPower: solarPoints,
+      outputPower: outputPoints,
     },
   }
 }
