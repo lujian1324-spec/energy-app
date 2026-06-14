@@ -77,7 +77,8 @@ export default function RegisterPage() {
         captchaId || undefined
       )
       if (result.code === 0 || result.code === '0') {
-        navigate('/devices', { replace: true })
+        // First sign-up → run the Onboarding flow (PRD §4.7.3)
+        navigate('/onboarding', { replace: true })
       } else {
         setOtpError(result.message ?? result.msg ?? 'Invalid code. Please try again.')
       }
