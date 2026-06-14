@@ -498,7 +498,9 @@ export const useDeviceStore = create<DeviceStoreState>()(
 
         // Demo 模式：返回模拟历史数据
         if (get().isDemoMode) {
-          const demoData = getDemoHistoryData(deviceId)
+          const msRange = new Date(toTime).getTime() - new Date(fromTime).getTime()
+          const hoursRange = Math.round(msRange / (1000 * 3600)) || 24
+          const demoData = getDemoHistoryData(deviceId, hoursRange)
           set({ historyData: demoData.data, historyLoading: false, historyError: null })
           return
         }

@@ -1,9 +1,9 @@
 /**
- * Demo 数据 — Guest 模式使用的模拟设备和状态数据
+ * Demo 数据 — Guest / localtest / benson 模式使用的模拟设备和状态数据
  *
  * 包含设备：
- * - SIERRO 1000 (Sierro Energy Storage, 5 kWh)
- * - SIERRO 2000 (Sierro Energy Storage, 10 kWh)
+ * - SIERRO 1000 (1000Wh LiFePO4, 最大输入 400W / 最大输出 500W)
+ * - SIERRO 2000 (2000Wh LiFePO4, 最大输入 1000W / 最大输出 1000W)
  */
 
 import type {
@@ -22,13 +22,13 @@ export const demoDevices: DeviceListItem[] = [
   {
     id: 10001,
     name: 'SIERRO 1000',
-    serialNumber: 'SR-2024-10001',
-    model: 'SIERRO-1000',
+    serialNumber: 'SN26102503Z6104955',
+    model: 'Sierro 1000',
     deviceSortKey: 'energy_storage',
     deviceSortLocaleText: 'Energy Storage System',
     gatherProtocolNumber: 'GPN-001',
     gatherProtocolNameDisplay: 'Sierro Protocol v2.1',
-    softwareVersion: '3.11.0',
+    softwareVersion: 'V1.0.0',
     stationId: 5001,
     stationName: 'Home Station #1',
     dtuId: 80001,
@@ -45,11 +45,11 @@ export const demoDevices: DeviceListItem[] = [
     applyMode: 0,
     state: 'normal',
     stateDict: 'Normal Operation',
-    producingPower: 3600,
-    ratedPower: 5000,
-    dailyProducedQuantity: 15.6,
-    totalProducedQuantity: 1256.3,
-    installedAt: '2024-01-15T08:00:00Z',
+    producingPower: 400,
+    ratedPower: 500,
+    dailyProducedQuantity: 4.0,
+    totalProducedQuantity: 365.0,
+    installedAt: '2025-10-01T08:00:00Z',
     lastDataAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
     lastOnlineAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
     lastOfflineAt: '',
@@ -60,23 +60,23 @@ export const demoDevices: DeviceListItem[] = [
     stationTimezone: 'America/New_York',
     stationCurrencyCode: 'USD',
     stationEnergyIncomePrice: 0.12,
-    co2EmissionReduction: 14.2,
-    noxEmissionReduction: 0.05,
-    so2EmissionReduction: 0.02,
-    savingStandardCarbon: 5.8,
+    co2EmissionReduction: 3.2,
+    noxEmissionReduction: 0.01,
+    so2EmissionReduction: 0.005,
+    savingStandardCarbon: 1.3,
     extraProperty: {},
     summaryProperty: {},
   },
   {
     id: 10002,
     name: 'SIERRO 2000',
-    serialNumber: 'SR-2024-10002',
-    model: 'SIERRO-2000',
+    serialNumber: 'SN26102503Z6104955',
+    model: 'Sierro 2000',
     deviceSortKey: 'energy_storage',
     deviceSortLocaleText: 'Energy Storage System',
     gatherProtocolNumber: 'GPN-002',
     gatherProtocolNameDisplay: 'Sierro Protocol v2.1',
-    softwareVersion: '3.11.0',
+    softwareVersion: 'V1.0.0',
     stationId: 5002,
     stationName: 'Home Station #2',
     dtuId: 80002,
@@ -93,11 +93,11 @@ export const demoDevices: DeviceListItem[] = [
     applyMode: 0,
     state: 'normal',
     stateDict: 'Charging',
-    producingPower: 1800,
-    ratedPower: 10000,
-    dailyProducedQuantity: 22.4,
-    totalProducedQuantity: 843.7,
-    installedAt: '2024-06-01T10:00:00Z',
+    producingPower: 1000,
+    ratedPower: 1000,
+    dailyProducedQuantity: 5.5,
+    totalProducedQuantity: 502.5,
+    installedAt: '2025-10-01T10:00:00Z',
     lastDataAt: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
     lastOnlineAt: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
     lastOfflineAt: '',
@@ -108,10 +108,10 @@ export const demoDevices: DeviceListItem[] = [
     stationTimezone: 'America/New_York',
     stationCurrencyCode: 'USD',
     stationEnergyIncomePrice: 0.12,
-    co2EmissionReduction: 9.6,
-    noxEmissionReduction: 0.03,
-    so2EmissionReduction: 0.01,
-    savingStandardCarbon: 3.9,
+    co2EmissionReduction: 4.8,
+    noxEmissionReduction: 0.02,
+    so2EmissionReduction: 0.008,
+    savingStandardCarbon: 2.0,
     extraProperty: {},
     summaryProperty: {},
   },
@@ -170,7 +170,7 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
   const baseTime = Math.floor(now / 1000).toString()
 
   switch (numericId) {
-    case 10001: // SIERRO 1000
+    case 10001: // SIERRO 1000 — AC input 400W, Solar 0W, output 168W
       return {
         deviceId: '10001',
         dtuID: device.dtuDtuid,
@@ -180,20 +180,28 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
         gatherProtocolVersionCode: '2.1',
         fields: {
           soc: makeField('soc', 'State of Charge', 78, '%', 'battery'),
-          batteryPower: makeField('batteryPower', 'Battery Power', -1200, 'W', 'battery'),
-          batteryVoltage: makeField('batteryVoltage', 'Battery Voltage', 51.2, 'V', 'battery'),
-          batteryCurrent: makeField('batteryCurrent', 'Battery Current', -23.4, 'A', 'battery'),
+          batteryPower: makeField('batteryPower', 'Battery Power', 232, 'W', 'battery'),
+          batteryVoltage: makeField('batteryVoltage', 'Battery Voltage', 3.2, 'V', 'battery'),
+          batteryCurrent: makeField('batteryCurrent', 'Battery Current', 72.5, 'A', 'battery'),
           batteryTemp: makeField('batteryTemp', 'Battery Temp', 28.5, '°C', 'battery'),
           batteryHealth: makeField('batteryHealth', 'Battery Health', 98, '%', 'battery'),
           batteryCycles: makeField('batteryCycles', 'Cycles', 286, '', 'battery'),
-          acPower: makeField('acPower', 'AC Power', 2400, 'W', 'ac'),
-          solarPower: makeField('solarPower', 'Solar Power', 3200, 'W', 'solar'),
+          acPower: makeField('acPower', 'AC Power', 400, 'W', 'ac'),
+          solarPower: makeField('solarPower', 'Solar Power', 0, 'W', 'solar'),
           gridPower: makeField('gridPower', 'Grid Power', 0, 'W', 'grid'),
-          outputPower: makeField('outputPower', 'Output Power', 3600, 'W', 'output'),
-          dailyCharge: makeField('dailyCharge', 'Charged Today', 9.8, 'kWh', 'energy'),
-          dailyDischarge: makeField('dailyDischarge', 'Discharged Today', 6.2, 'kWh', 'energy'),
-          dailyProduced: makeField('dailyProduced', 'Solar Today', 15.6, 'kWh', 'energy'),
+          outputPower: makeField('outputPower', 'Output Power', 168, 'W', 'output'),
+          dailyCharge: makeField('dailyCharge', 'Charged Today', 2.4, 'kWh', 'energy'),
+          dailyDischarge: makeField('dailyDischarge', 'Discharged Today', 1.0, 'kWh', 'energy'),
+          dailyProduced: makeField('dailyProduced', 'AC Input Today', 4.0, 'kWh', 'energy'),
           workMode: makeField('workMode', 'Work Mode', 0, '', 'system'),
+          // Device info fields
+          hardwareVersion: makeField('hardwareVersion', 'Hardware Version', 'V1.0.0', '', 'system'),
+          capacity: makeField('capacity', 'Capacity', '1000Wh', '', 'system'),
+          batteryType: makeField('batteryType', 'Battery Type', 'LiFePO4', '', 'system'),
+          maxInputPower: makeField('maxInputPower', 'Max Input Power', '400W', '', 'system'),
+          maxOutputPower: makeField('maxOutputPower', 'Max Output Power', '500W', '', 'system'),
+          voltage: makeField('voltage', 'Voltage', '3.2V', '', 'system'),
+          frequency: makeField('frequency', 'Frequency', '60Hz', '', 'system'),
         },
         groups: [
           {
@@ -203,14 +211,14 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
             category: 'battery',
             stateItems: [
               { ...makeField('soc', 'SoC', 78, '%', 'battery'), isHidden: false, nameDisplay: 'State of Charge' },
-              { ...makeField('batteryPower', 'Power', -1200, 'W', 'battery'), isHidden: false, nameDisplay: 'Battery Power' },
+              { ...makeField('batteryPower', 'Power', 232, 'W', 'battery'), isHidden: false, nameDisplay: 'Battery Power' },
             ],
           },
         ],
         firingAlarms: [],
       }
 
-    case 10002: // SIERRO 2000
+    case 10002: // SIERRO 2000 — AC input 1000W, Solar 0W, output 231W
       return {
         deviceId: '10002',
         dtuID: device.dtuDtuid,
@@ -219,21 +227,29 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
         gatherProtocolNumber: device.gatherProtocolNumber,
         gatherProtocolVersionCode: '2.1',
         fields: {
-          soc: makeField('soc', 'State of Charge', 45, '%', 'battery'),
-          batteryPower: makeField('batteryPower', 'Battery Power', 1800, 'W', 'battery'),
-          batteryVoltage: makeField('batteryVoltage', 'Battery Voltage', 102.4, 'V', 'battery'),
-          batteryCurrent: makeField('batteryCurrent', 'Battery Current', 17.6, 'A', 'battery'),
+          soc: makeField('soc', 'State of Charge', 62, '%', 'battery'),
+          batteryPower: makeField('batteryPower', 'Battery Power', 769, 'W', 'battery'),
+          batteryVoltage: makeField('batteryVoltage', 'Battery Voltage', 6.4, 'V', 'battery'),
+          batteryCurrent: makeField('batteryCurrent', 'Battery Current', 120.2, 'A', 'battery'),
           batteryTemp: makeField('batteryTemp', 'Battery Temp', 31.2, '°C', 'battery'),
           batteryHealth: makeField('batteryHealth', 'Battery Health', 100, '%', 'battery'),
           batteryCycles: makeField('batteryCycles', 'Cycles', 48, '', 'battery'),
-          acPower: makeField('acPower', 'AC Power', 2200, 'W', 'ac'),
-          solarPower: makeField('solarPower', 'Solar Power', 4800, 'W', 'solar'),
-          gridPower: makeField('gridPower', 'Grid Power', -800, 'W', 'grid'),
-          outputPower: makeField('outputPower', 'Output Power', 2200, 'W', 'output'),
-          dailyCharge: makeField('dailyCharge', 'Charged Today', 14.2, 'kWh', 'energy'),
-          dailyDischarge: makeField('dailyDischarge', 'Discharged Today', 3.1, 'kWh', 'energy'),
-          dailyProduced: makeField('dailyProduced', 'Solar Today', 22.4, 'kWh', 'energy'),
+          acPower: makeField('acPower', 'AC Power', 1000, 'W', 'ac'),
+          solarPower: makeField('solarPower', 'Solar Power', 0, 'W', 'solar'),
+          gridPower: makeField('gridPower', 'Grid Power', 0, 'W', 'grid'),
+          outputPower: makeField('outputPower', 'Output Power', 231, 'W', 'output'),
+          dailyCharge: makeField('dailyCharge', 'Charged Today', 4.6, 'kWh', 'energy'),
+          dailyDischarge: makeField('dailyDischarge', 'Discharged Today', 0.8, 'kWh', 'energy'),
+          dailyProduced: makeField('dailyProduced', 'AC Input Today', 5.5, 'kWh', 'energy'),
           workMode: makeField('workMode', 'Work Mode', 1, '', 'system'),
+          // Device info fields
+          hardwareVersion: makeField('hardwareVersion', 'Hardware Version', 'V1.0.0', '', 'system'),
+          capacity: makeField('capacity', 'Capacity', '2000Wh', '', 'system'),
+          batteryType: makeField('batteryType', 'Battery Type', 'LiFePO4', '', 'system'),
+          maxInputPower: makeField('maxInputPower', 'Max Input Power', '1000W', '', 'system'),
+          maxOutputPower: makeField('maxOutputPower', 'Max Output Power', '1000W', '', 'system'),
+          voltage: makeField('voltage', 'Voltage', '6.4V', '', 'system'),
+          frequency: makeField('frequency', 'Frequency', '60Hz', '', 'system'),
         },
         groups: [
           {
@@ -242,8 +258,8 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
             name: 'Battery',
             category: 'battery',
             stateItems: [
-              { ...makeField('soc', 'SoC', 45, '%', 'battery'), isHidden: false, nameDisplay: 'State of Charge' },
-              { ...makeField('batteryPower', 'Power', 1800, 'W', 'battery'), isHidden: false, nameDisplay: 'Battery Power' },
+              { ...makeField('soc', 'SoC', 62, '%', 'battery'), isHidden: false, nameDisplay: 'State of Charge' },
+              { ...makeField('batteryPower', 'Power', 769, 'W', 'battery'), isHidden: false, nameDisplay: 'Battery Power' },
             ],
           },
         ],
@@ -277,7 +293,7 @@ export function getDemoEnergyFlow(deviceId: string | number): { code: number; me
     ctFlow: null,
   }
 
-  if (numericId === 10001) { // SIERRO 1000
+  if (numericId === 10001) { // SIERRO 1000 — AC 400W in, 168W out, 232W charging battery
     return {
       code: 0,
       message: 'success',
@@ -290,15 +306,15 @@ export function getDemoEnergyFlow(deviceId: string | number): { code: number; me
           },
           groups: [],
         },
-        pvPanelFlow: makeFlowNode('pvPanel', 'Solar Panel', 'icon_solar', 3200),
-        batteryFlow: makeFlowNode('battery', 'Battery', 'icon_battery', -1200),
-        loadFlow: makeFlowNode('load', 'Load', 'icon_load', 3600),
+        pvPanelFlow: makeFlowNode('pvPanel', 'Solar Panel', 'icon_solar', 0),
+        batteryFlow: makeFlowNode('battery', 'Battery', 'icon_battery', 232),
+        loadFlow: makeFlowNode('load', 'Load', 'icon_load', 168),
         gridFlow: makeFlowNode('grid', 'Grid', 'icon_grid', 0),
       },
     }
   }
 
-  if (numericId === 10002) { // SIERRO 2000 — charging from solar + exporting to grid
+  if (numericId === 10002) { // SIERRO 2000 — AC 1000W in, 231W out, 769W charging battery
     return {
       code: 0,
       message: 'success',
@@ -307,14 +323,14 @@ export function getDemoEnergyFlow(deviceId: string | number): { code: number; me
         deviceAttributeState: {
           time: Math.floor(Date.now() / 1000).toString(),
           fields: {
-            soc: makeField('soc', 'SoC', 45, '%', 'battery'),
+            soc: makeField('soc', 'SoC', 62, '%', 'battery'),
           },
           groups: [],
         },
-        pvPanelFlow: makeFlowNode('pvPanel', 'Solar Panel', 'icon_solar', 4800),
-        batteryFlow: makeFlowNode('battery', 'Battery', 'icon_battery', 1800),
-        loadFlow: makeFlowNode('load', 'Load', 'icon_load', 2200),
-        gridFlow: makeFlowNode('grid', 'Grid', 'icon_grid', -800),
+        pvPanelFlow: makeFlowNode('pvPanel', 'Solar Panel', 'icon_solar', 0),
+        batteryFlow: makeFlowNode('battery', 'Battery', 'icon_battery', 769),
+        loadFlow: makeFlowNode('load', 'Load', 'icon_load', 231),
+        gridFlow: makeFlowNode('grid', 'Grid', 'icon_grid', 0),
       },
     }
   }
@@ -327,12 +343,19 @@ export function getDemoEnergyFlow(deviceId: string | number): { code: number; me
 }
 
 // ═══════════════════════════════════════════════════════
-// Demo 历史数据
+// Demo 历史数据（支持 Day / Week / Month 3个月范围）
 // ═══════════════════════════════════════════════════════
 
-export function getDemoHistoryData(deviceId: string | number, hours = 24): { code: number; message: string; data: HistoryDataResponse } {
+export function getDemoHistoryData(
+  deviceId: string | number,
+  hours = 24
+): { code: number; message: string; data: HistoryDataResponse } {
   const now = Date.now()
   const numericId = typeof deviceId === 'string' ? parseInt(deviceId) : deviceId
+
+  // AC 功率（作为输入功率存入 solarPower 字段供图表展示）
+  const acInput = numericId === 10002 ? 1000 : 400
+  const outputBase = numericId === 10002 ? 231 : 168
 
   const soc: Array<{ time: string; value: number }> = []
   const solarPower: Array<{ time: string; value: number }> = []
@@ -340,41 +363,43 @@ export function getDemoHistoryData(deviceId: string | number, hours = 24): { cod
   const batteryPower: Array<{ time: string; value: number }> = []
   const gridPower: Array<{ time: string; value: number }> = []
 
-  // 设备额定功率（用于缩放曲线）
-  const solarPeak = numericId === 10002 ? 5000 : 3600
-  const loadPeak = numericId === 10002 ? 2200 : 2400
+  // 根据时间范围选择采样间隔：避免数据点过多
+  // Day(24h)→5min(288pts), Week(168h)→30min(336pts), Month+(720h+)→2h(360pts)
+  const intervalMins = hours <= 24 ? 5 : hours <= 200 ? 30 : 120
+  const totalPoints = Math.round((hours * 60) / intervalMins)
 
-  // 生成 5 分钟间隔的时间序列
-  for (let i = hours * 12 - 1; i >= 0; i--) {
-    const ts = new Date(now - i * 5 * 60 * 1000)
+  // 固定随机种子：用设备 id + 点索引保证同设备每次生成相同曲线
+  const pseudoRand = (i: number, amp: number) => {
+    const x = Math.sin(i * 127.1 + numericId * 0.01) * 43758.5453
+    return (x - Math.floor(x) - 0.5) * amp
+  }
+
+  // 初始 SoC：SIERRO 1000 从 40% 开始，SIERRO 2000 从 30% 开始
+  // 每个 interval 净充电 = acInput - outputBase（单位 W），换算成 kWh
+  const capacityKwh = numericId === 10002 ? 2.0 : 1.0
+  const intervalH = intervalMins / 60
+  const netChargePerInterval = ((acInput - outputBase) * intervalH) / 1000 // kWh
+  const socChangePerInterval = (netChargePerInterval / capacityKwh) * 100  // %
+
+  let currentSoc = numericId === 10002 ? 30 : 40
+
+  for (let i = totalPoints - 1; i >= 0; i--) {
+    const ts = new Date(now - i * intervalMins * 60 * 1000)
     const time = ts.toISOString()
-    const hour = ts.getHours() + ts.getMinutes() / 60
-    const jitter = (amp: number) => (Math.random() - 0.5) * amp
+    const jitter = (amp: number) => pseudoRand(i, amp)
 
-    // 太阳能：日出到日落的钟形曲线（6:00–18:00）
-    const solar = hour >= 6 && hour <= 18
-      ? Math.max(0, Math.sin(((hour - 6) / 12) * Math.PI) * solarPeak + jitter(180))
-      : 0
+    // SoC: 随时间线性增长（充电状态），加小幅抖动，夹在 5~100%
+    currentSoc = Math.max(5, Math.min(100, currentSoc + socChangePerInterval + jitter(0.5)))
 
-    // 负载：早晚双峰（早 7-9 点、晚 18-22 点更高）
-    const morningPeak = Math.exp(-Math.pow(hour - 8, 2) / 4)
-    const eveningPeak = Math.exp(-Math.pow(hour - 20, 2) / 6)
-    const base = 350
-    const output = Math.max(120, base + (morningPeak + eveningPeak) * loadPeak + jitter(120))
+    // 功率加轻微抖动模拟真实波动（±5%）
+    const inputVal = Math.round(Math.max(0, acInput + jitter(acInput * 0.05)))
+    const outputVal = Math.round(Math.max(0, outputBase + jitter(outputBase * 0.05)))
 
-    // 电池：白天光伏富余时充电（负值=充电），夜晚放电（正值）
-    const battery = solar - output
-    // 电网：补足缺口（正值=从电网取电）
-    const grid = Math.max(0, output - solar - Math.max(0, -battery))
-
-    // SoC：白天充电上升、夜晚放电下降，限制在 20–100%
-    const socVal = 60 + Math.sin(((hour - 9) / 24) * Math.PI * 2) * 35 + jitter(3)
-
-    soc.push({ time, value: Math.max(20, Math.min(100, Math.round(socVal))) })
-    solarPower.push({ time, value: Math.round(solar) })
-    outputPower.push({ time, value: Math.round(output) })
-    batteryPower.push({ time, value: Math.round(battery) })
-    gridPower.push({ time, value: Math.round(grid) })
+    soc.push({ time, value: Math.round(currentSoc) })
+    solarPower.push({ time, value: inputVal })  // AC power stored as solarPower for chart input series
+    outputPower.push({ time, value: outputVal })
+    batteryPower.push({ time, value: Math.round(inputVal - outputVal) })
+    gridPower.push({ time, value: 0 })
   }
 
   return {
@@ -398,13 +423,13 @@ export interface DemoNotification {
 }
 
 export const demoNotifications: DemoNotification[] = [
-  { id: 1, type: 'low_battery', deviceName: 'SIERRO 1000', description: 'Reserve threshold reached (20%). Charging from solar now.', time: '5 mins ago', date: 'Today' },
+  { id: 1, type: 'low_battery', deviceName: 'SIERRO 1000', description: 'Reserve threshold reached (20%). Charging from AC now.', time: '5 mins ago', date: 'Today' },
   { id: 2, type: 'power_outage', deviceName: 'SIERRO 2000', description: 'Grid outage detected. Switched to battery backup automatically.', time: '3:42 PM', date: 'Today' },
   { id: 3, type: 'low_battery', deviceName: 'SIERRO 1000', description: 'Battery at 22% — peak-shaving paused until charged.', time: '1:10 PM', date: 'Today' },
   { id: 4, type: 'power_outage', deviceName: 'SIERRO 2000', description: 'Grid restored after 18-minute outage. Resuming normal operation.', time: '11:24 AM', date: 'Yesterday' },
-  { id: 5, type: 'low_battery', deviceName: 'SIERRO 1000', description: 'Battery fully charged — exporting surplus to grid.', time: 'Apr 28', date: 'April' },
+  { id: 5, type: 'low_battery', deviceName: 'SIERRO 1000', description: 'Battery fully charged — ready for backup.', time: 'Apr 28', date: 'April' },
   { id: 6, type: 'power_outage', deviceName: 'SIERRO 2000', description: 'Backup power engaged for 42 minutes during outage.', time: 'Apr 15', date: 'April' },
-  { id: 7, type: 'low_battery', deviceName: 'SIERRO 1000', description: 'Overnight discharge completed. Solar recharge begins at sunrise.', time: 'Mar 23', date: 'March' },
+  { id: 7, type: 'low_battery', deviceName: 'SIERRO 1000', description: 'Overnight discharge completed. AC recharge begins at 6 AM.', time: 'Mar 23', date: 'March' },
 ]
 
 // ═══════════════════════════════════════════════════════
@@ -415,7 +440,7 @@ export const demoUserProfile = {
   name: 'Demo User',
   email: 'demo@sierro.energy',
   avatar: null as string | null,
-  memberSince: '2024-01-15T08:00:00Z',
+  memberSince: '2025-10-01T08:00:00Z',
   founderBadge: true,
   founderNumber: 42,
 }
@@ -426,14 +451,12 @@ export const demoUserProfile = {
 
 export const demoPeakValleyConfig = {
   enabled: true,
-  // 分时电价（美元/kWh）
   peakPrice: 0.42,
   offPeakPrice: 0.12,
-  // 时段（分钟，自午夜起算）
-  peakStart: 16 * 60,   // 16:00
-  peakEnd: 21 * 60,     // 21:00
-  offPeakStart: 0,      // 00:00
-  offPeakEnd: 6 * 60,   // 06:00
-  reserveSoc: 20,       // 保留电量 %
-  estimatedMonthlySaving: 48.6, // USD
+  peakStart: 16 * 60,
+  peakEnd: 21 * 60,
+  offPeakStart: 0,
+  offPeakEnd: 6 * 60,
+  reserveSoc: 20,
+  estimatedMonthlySaving: 48.6,
 }
