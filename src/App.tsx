@@ -114,7 +114,8 @@ function AppInner() {
   }
 
   // 设备详情页 & Smart Schedule 页 & 通知页单独渲染，不包含底部导航
-  if (location.pathname.startsWith('/device') || location.pathname === '/smart-schedule' || location.pathname === '/notifications' || location.pathname === '/onboarding' || location.pathname.startsWith('/profile')) {
+  // 注意：/devices（设备列表，带底部导航）不在此分支，故用 '/device/' 前缀匹配
+  if (location.pathname.startsWith('/device/') || location.pathname === '/smart-schedule' || location.pathname === '/notifications' || location.pathname === '/onboarding' || location.pathname.startsWith('/profile')) {
     return (
       <div className="h-full w-full bg-bg-base flex flex-col overflow-hidden">
         <div className="flex-1 overflow-hidden relative">
