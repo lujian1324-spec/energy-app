@@ -12,6 +12,7 @@ import {
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useAuthStore } from '../stores/authStore'
 import { saveUserProfile, getUserProfile } from '../db/powerflowDB'
+import { toast } from '../components/Toast'
 import type { UserProfile } from '../types/protocol'
 
 interface ProfileEditPageProps {
@@ -19,7 +20,7 @@ interface ProfileEditPageProps {
 }
 
 export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
-  const { settings } = usePowerStationStore()
+  const { settings, activateFounderBadge } = usePowerStationStore()
   const { user: authUser, logout } = useAuthStore()
 
   // 用户个人信息状态 - 从 authStore 获取登录账号
@@ -42,6 +43,11 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
 
   // 二次确认弹窗：'signout' | 'delete' | null
   const [confirmAction, setConfirmAction] = useState<'signout' | 'delete' | null>(null)
+
+  // Redeem Founder Badge 弹窗
+  const [showRedeem, setShowRedeem] = useState(false)
+  const [founderCode, setFounderCode] = useState('')
+  const [founderError, setFounderError] = useState('')
 
   // 头像上传
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -131,6 +137,19 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
       logout()
     }
     onBack()
+  }
+
+  // 激活 Founder Badge：验证码正确则点亮徽章
+  const handleActivateBadge = () => {
+    const result = activateFounderBadge(founderCode.trim())
+    if (result.success) {
+      setShowRedeem(false)
+      setFounderCode('')
+      setFounderError('')
+      toast.success('Founder badge activated')
+    } else {
+      setFounderError(result.message)
+    }
   }
 
   // If editing a field, show sub-screen
@@ -263,7 +282,9 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
         {/* Avatar section */}
         <div className="flex flex-col items-center pt-8 pb-4">
           <div className="relative cursor-pointer" onClick={handleAvatarClick}>
-            <div className="w-24 h-24 rounded-full border-2 border-[#01D6BE] overflow-hidden bg-[#262626] flex items-center justify-center">
+            <div className={`w-24 h-24 rounded-full border-2 overflow-hidden bg-[#262626] flex items-center justify-center ${
+              settings.founderBadge ? 'border-[#FFD700]' : 'border-[#01D6BE]'
+            }`}>
               {profile.avatar ? (
                 <img
                   src={profile.avatar}
@@ -292,7 +313,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
           {/* Founder badge pill */}
           {settings.founderBadge && (
             <span className="mt-3 flex items-center gap-1 px-3 py-1 rounded-full bg-[rgba(255,215,0,0.15)] text-[#FFD700] border border-[#FFD700] text-caption">
-              👑 Founding Member #42
+              👑 Founding Member #{settings.founderBadgeNumber}
             </span>
           )}
         </div>
@@ -361,13 +382,80 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
         </div>
 
         {/* Footer: founder code */}
-        <p className="mt-6 text-center text-caption text-[#A0A0A5]">
-          Have a founder code?{' '}
-          <button className="text-[#01D6BE] underline text-caption">
-            Redeem founder badge
-          </button>
-        </p>
+        {!settings.founderBadge && (
+          <p className="mt-6 text-center text-caption text-[#A0A0A5]">
+            Have a founder code?{' '}
+            <button
+              onClick={() => { setFounderCode(''); setFounderError(''); setShowRedeem(true) }}
+              className="text-[#01D6BE] underline text-caption"
+            >
+              Redeem founder badge
+            </button>
+          </p>
+        )}
       </div>
+
+      {/* ==================== Redeem Founder Badge 弹窗 (bottom sheet) ==================== */}
+      <AnimatePresence>
+        {showRedeem && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end bg-black/60"
+            onClick={() => setShowRedeem(false)}
+          >
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full bg-[#262626] rounded-t-[24px] px-6 pt-3 pb-8 safe-area-bottom"
+            >
+              {/* Grabber */}
+              <div className="w-9 h-1 rounded-full bg-[#5A5A5A] mx-auto mb-5" />
+
+              {/* Header */}
+              <div className="flex items-start justify-between mb-5">
+                <h3 className="text-headline-md font-bold text-white">Redeem Founder Badge</h3>
+                <button
+                  onClick={() => setShowRedeem(false)}
+                  className="w-8 h-8 rounded-full bg-[#3A3A3A] flex items-center justify-center flex-shrink-0"
+                >
+                  <X size={16} className="text-[#A0A0A5]" />
+                </button>
+              </div>
+
+              {/* Activation Code input */}
+              <div className={`rounded-m border px-4 pt-2.5 pb-3 mb-4 ${founderError ? 'border-[#FF3530]' : 'border-[#4A4A4A]'}`}>
+                <label className="text-label text-[#A0A0A5]">Activation Code</label>
+                <input
+                  type="text"
+                  value={founderCode}
+                  onChange={(e) => { setFounderCode(e.target.value); setFounderError('') }}
+                  placeholder="Enter your code"
+                  autoFocus
+                  className="w-full bg-transparent text-title-md text-white placeholder:text-[#636366] focus:outline-none mt-0.5"
+                />
+              </div>
+
+              {founderError && (
+                <p className="text-body-md text-[#FF3530] mb-3 -mt-1">{founderError}</p>
+              )}
+
+              {/* Activate button */}
+              <button
+                onClick={handleActivateBadge}
+                disabled={!founderCode.trim()}
+                className="w-full h-14 rounded-m bg-[#01D6BE] text-black font-semibold text-body-lg active:scale-[0.98] transition-transform disabled:opacity-40 disabled:active:scale-100"
+              >
+                Activate Badge
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ==================== 二次确认弹窗 (Sign out / Delete Account) ==================== */}
       <AnimatePresence>
