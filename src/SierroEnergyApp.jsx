@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Home, TrendingUp, Settings, Bell, Plus, ChevronLeft, ChevronRight, ChevronDown,
   Zap, Refrigerator, Server, Lamp, Car, Cable, Router, Wind, X, Check, Info,
-  AlertCircle as CircleAlert, Sun, Moon, Share2, Pencil, MoreHorizontal, Mail, User, Bluetooth,
-  Globe, QrCode, CheckCircle2 as CircleCheck, XCircle as CircleX, Trash2, MessageSquareText, PowerOff,
+  CircleAlert, Sun, Moon, Share2, Pencil, MoreHorizontal, Mail, User, Bluetooth,
+  Globe, QrCode, CircleCheck, CircleX, Trash2, MessageSquareText, PowerOff,
   BatteryLow, SunMedium, Gem, CalendarDays
 } from "lucide-react";
 
