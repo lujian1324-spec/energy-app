@@ -1,17 +1,1 @@
-{
-  "version": "3.13.0",
-  "build": 2465,
-  "date": "2026-06-14",
-  "changelog": [
-    "PRD v1.1 gap-fill: BatteryTag horizontal battery tag component (9 states, charging icon)",
-    "PRD v1.1 §4.3.4: DeviceInfo detail page — Model/SN/Capacity/Battery Type/Charge+Output Power/Voltage/Frequency/Health/Cycles/Temp(°F)/Wifi",
-    "PRD v1.1 §4.3: Display Icon 8-option selector (PowerStation/Fridge/CPAP/Solar/AC/Server/Lighting/Plug) + color picker",
-    "PRD v1.1 §4.3: Danger Zone — Delete Device with 30-day recycle bin notice",
-    "PRD v1.1 §4.5.4: Push Notifications sub-page (Power Outage / Low Battery threshold / Solar Status / Quiet Hours / Email Digest)",
-    "PRD v1.1 §4.7.3: 4-step Onboarding flow (Welcome → Profile → Add Device → Done) with progress bar",
-    "PRD v1.1 §8.3: Data & Privacy page — JSON/CSV export, 30-day recycle bin, anonymous analytics toggle",
-    "T7+: Notification banner on DevicePage showing latest alarm with quick-link to /notifications",
-    "DevicePage list mode: BatteryTag replaces text SOC percentage (WCAG: ARIA label, ≥3:1 contrast)",
-    "AppSettings extended: deviceIconKey, privacyAcknowledged"
-  ]
-}
+{"version": "3.14.0", "build": 2466, "date": "2026-06-14", "changelog": ["Design System Sync: Figma Handoff v1 — Border Radius (s=4/m=8/l=12/xl=100)", "Design System Sync: Figma Handoff v1 — Border Width (xs=0.5px/s=1px/m=1.3px)", "Design System Sync: Figma Handoff v1 — Color Scheme (Primary 10 shades + Membership/Green/Orange/Red/Neutral Block 1-15)", "Design System Sync: Figma Handoff v1 — Typography 17-level scale (Display 32→xs 10, LineHeight=1.2, LetterSpacing=0)", "Design System Sync: Figma Handoff v1 — Grid system (Mobile 4col/11col → Desktop 12col, Gutters 16/24, Margins 16/24/32)", "Global migration: 23 rounded-xl→rounded-l, 10 rounded-2xl→rounded-l, 99 arbitrary radius→semantic", "Global migration: 471 text-[Npx]→semantic typography names (text-label/text-body-md/text-title-lg/etc)", "tailwind.config.js: Full Design System token definition with SF Pro font family"]}

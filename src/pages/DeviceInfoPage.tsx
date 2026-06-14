@@ -111,7 +111,7 @@ export default function DeviceInfoPage() {
         </button>
         <div>
           <h2 className="text-lg font-bold text-[#FFFFFF]">Device Info</h2>
-          <p className="text-[11px] text-[#A0A0A5]">{deviceName}</p>
+          <p className="text-caption text-[#A0A0A5]">{deviceName}</p>
         </div>
       </div>
 
@@ -128,7 +128,7 @@ export default function DeviceInfoPage() {
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="text-base font-bold text-[#FFFFFF] truncate">{model}</h3>
-              <p className="text-[12px] text-[#A0A0A5] mt-0.5">SN: {serial}</p>
+              <p className="text-label text-[#A0A0A5] mt-0.5">SN: {serial}</p>
               <div className="flex items-center gap-2 mt-1.5">
                 <DataSourceTag source="ble" />
                 <LastSync lastSyncAt={lastDataAt} />
@@ -141,23 +141,23 @@ export default function DeviceInfoPage() {
               <BatteryRing percentage={soc} isCharging={batteryPower > 0} timeToFull="--" uid={`info-${id}`} />
             </div>
             <div className="flex-1 grid grid-cols-2 gap-2.5">
-              <div className="bg-[#141414] rounded-[12px] p-2.5 text-center">
-                <div className="text-[14px] font-bold text-[#FFFFFF]">{soc}%</div>
-                <div className="text-[10px] text-[#A0A0A5] mt-0.5">SOC</div>
+              <div className="bg-[#141414] rounded-l p-2.5 text-center">
+                <div className="text-body-md font-bold text-[#FFFFFF]">{soc}%</div>
+                <div className="text-xs text-[#A0A0A5] mt-0.5">SOC</div>
               </div>
-              <div className="bg-[#141414] rounded-[12px] p-2.5 text-center">
-                <div className="text-[14px] font-bold text-[#FF9500]">
+              <div className="bg-[#141414] rounded-l p-2.5 text-center">
+                <div className="text-body-md font-bold text-[#FF9500]">
                   {batteryTemp > 0 ? formatTemp(batteryTemp, 'F') : '--'}
                 </div>
-                <div className="text-[10px] text-[#A0A0A5] mt-0.5">Temp</div>
+                <div className="text-xs text-[#A0A0A5] mt-0.5">Temp</div>
               </div>
-              <div className="bg-[#141414] rounded-[12px] p-2.5 text-center">
-                <div className="text-[14px] font-bold text-[#34C759]">{batteryHealth}%</div>
-                <div className="text-[10px] text-[#A0A0A5] mt-0.5">Health</div>
+              <div className="bg-[#141414] rounded-l p-2.5 text-center">
+                <div className="text-body-md font-bold text-[#34C759]">{batteryHealth}%</div>
+                <div className="text-xs text-[#A0A0A5] mt-0.5">Health</div>
               </div>
-              <div className="bg-[#141414] rounded-[12px] p-2.5 text-center">
-                <div className="text-[14px] font-bold text-[#01D6BE]">{cycles}</div>
-                <div className="text-[10px] text-[#A0A0A5] mt-0.5">Cycles</div>
+              <div className="bg-[#141414] rounded-l p-2.5 text-center">
+                <div className="text-body-md font-bold text-[#01D6BE]">{cycles}</div>
+                <div className="text-xs text-[#A0A0A5] mt-0.5">Cycles</div>
               </div>
             </div>
           </div>
@@ -166,7 +166,7 @@ export default function DeviceInfoPage() {
             <SampleRate intervalSec={30} />
             <div className="flex items-center gap-1.5">
               <Wifi size={12} className={isOnline ? 'text-[#34C759]' : 'text-[#636366]'} />
-              <span className={`text-[11px] ${isOnline ? 'text-[#34C759]' : 'text-[#636366]'}`}>
+              <span className={`text-caption ${isOnline ? 'text-[#34C759]' : 'text-[#636366]'}`}>
                 {isOnline ? 'Online' : 'Offline'}
               </span>
             </div>
@@ -180,7 +180,7 @@ export default function DeviceInfoPage() {
           transition={{ delay: 0.05 }}
           className="mb-4"
         >
-          <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
+          <div className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
             Specifications
           </div>
           <div className="bg-[#262626] rounded-[20px] overflow-hidden divide-y divide-[rgba(255,255,255,0.06)]">
@@ -200,7 +200,7 @@ export default function DeviceInfoPage() {
           transition={{ delay: 0.1 }}
           className="mb-4"
         >
-          <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
+          <div className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
             Identity
           </div>
           <div className="bg-[#262626] rounded-[20px] overflow-hidden divide-y divide-[rgba(255,255,255,0.06)]">
@@ -219,7 +219,7 @@ export default function DeviceInfoPage() {
             transition={{ delay: 0.15 }}
             className="mb-4"
           >
-            <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
+            <div className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
               Live Readings
             </div>
             <div className="bg-[#262626] rounded-[20px] p-4 grid grid-cols-3 gap-2.5">
@@ -231,7 +231,7 @@ export default function DeviceInfoPage() {
         )}
 
         {/* Footer */}
-        <div className="text-center pt-3 text-[11px] text-[#636366]">
+        <div className="text-center pt-3 text-caption text-[#636366]">
           <div>Sierro Inc. · {model}</div>
           <div className="mt-1">Cycles rated: {specs.cyclesRated}+ to 80% capacity</div>
         </div>
@@ -250,9 +250,9 @@ function InfoRow({ icon: Icon, label, value, subValue, color }: { icon: typeof B
         <Icon size={16} />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-[11px] text-[#A0A0A5]">{label}</div>
-        <div className="text-[14px] font-semibold text-[#FFFFFF] mt-0.5">{value}</div>
-        {subValue && <div className="text-[10px] text-[#636366] mt-0.5">{subValue}</div>}
+        <div className="text-caption text-[#A0A0A5]">{label}</div>
+        <div className="text-body-md font-semibold text-[#FFFFFF] mt-0.5">{value}</div>
+        {subValue && <div className="text-xs text-[#636366] mt-0.5">{subValue}</div>}
       </div>
     </div>
   )
@@ -260,9 +260,9 @@ function InfoRow({ icon: Icon, label, value, subValue, color }: { icon: typeof B
 
 function LiveReading({ label, value, color }: { label: string; value: string; color: string }) {
   return (
-    <div className="bg-[#141414] rounded-[12px] p-3 text-center">
-      <div className="text-[14px] font-bold" style={{ color }}>{value}</div>
-      <div className="text-[10px] text-[#A0A0A5] mt-0.5">{label}</div>
+    <div className="bg-[#141414] rounded-l p-3 text-center">
+      <div className="text-body-md font-bold" style={{ color }}>{value}</div>
+      <div className="text-xs text-[#A0A0A5] mt-0.5">{label}</div>
     </div>
   )
 }

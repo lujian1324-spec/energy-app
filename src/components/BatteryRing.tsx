@@ -135,18 +135,18 @@ export default function BatteryRing({
           <div className="flex items-center gap-1 mt-1">
             <StateIcon size={12} style={{ color: ringColor }} aria-hidden="true" />
             <span
-              className="text-[10px] font-semibold tracking-wide"
+              className="text-xs font-semibold tracking-wide"
               style={{ color: ringColor }}
             >
               {stateLabel}
             </span>
           </div>
         ) : showTime ? (
-          <div className="text-[10px] text-[#A0A0A5] mt-1 tracking-wide" aria-hidden="true">
+          <div className="text-xs text-[#A0A0A5] mt-1 tracking-wide" aria-hidden="true">
             {timeRemaining} remaining
           </div>
         ) : isCharging ? (
-          <div className="text-[10px] text-[#A0A0A5] mt-1 tracking-wide" aria-hidden="true">
+          <div className="text-xs text-[#A0A0A5] mt-1 tracking-wide" aria-hidden="true">
             {timeToFull} to full
           </div>
         ) : null}

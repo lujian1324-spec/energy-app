@@ -368,7 +368,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           
           {/* 状态标签 */}
           <div className="flex gap-2 mt-3">
-            <span className={`text-[10px] px-2.5 py-1 rounded-full font-medium border
+            <span className={`text-xs px-2.5 py-1 rounded-full font-medium border
               ${activeDataSource === 'bluetooth'
                 ? 'bg-[rgba(1,214,190,0.12)] text-[#01D6BE] border-[rgba(1,214,190,0.3)]'
                 : activeDataSource === 'serial'
@@ -379,7 +379,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 : '◎ Simulator Mode'}
             </span>
             {settings.founderBadge && (
-              <span className="text-[10px] px-2.5 py-1 rounded-full font-medium border
+              <span className="text-xs px-2.5 py-1 rounded-full font-medium border
                 bg-[rgba(255,215,0,0.12)] text-[#FFD700] border-[rgba(255,215,0,0.3)]
                 flex items-center gap-1">
                 <Award size={10} />
@@ -397,10 +397,10 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           className="mb-5"
         >
           <div className="flex items-center justify-between mb-3 px-1">
-            <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase">
+            <div className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase">
               Specifications
             </div>
-            <div className="text-[10px] text-[#636366]">Tap to edit</div>
+            <div className="text-xs text-[#636366]">Tap to edit</div>
           </div>
           <div className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden">
             {deviceSpecs.map((item, i) => {
@@ -427,7 +427,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                       // 编辑模式
                       <div className="space-y-2">
                         <div className="flex items-center justify-between mb-1">
-                          <div className="text-[12px] text-[#A0A0A5]">{item.label}</div>
+                          <div className="text-label text-[#A0A0A5]">{item.label}</div>
                           <div className="flex items-center gap-1">
                             <button 
                               onClick={(e) => { e.stopPropagation(); handleSaveSpec(); }}
@@ -450,7 +450,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                             value={editSpecValues[key as keyof typeof editSpecValues]}
                             onChange={(e) => handleSpecChange(key as keyof typeof editSpecValues, e.target.value)}
                             onClick={(e) => e.stopPropagation()}
-                            className="w-full text-[12px] bg-[#333333] border border-[#3C3C3E] rounded-md px-2 py-1 text-[#FFFFFF] outline-none focus:border-[#01D6BE]"
+                            className="w-full text-label bg-[#333333] border border-[#3C3C3E] rounded-md px-2 py-1 text-[#FFFFFF] outline-none focus:border-[#01D6BE]"
                             placeholder={key}
                           />
                         ))}
@@ -459,11 +459,11 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                       // 显示模式
                       <>
                         <div className="flex items-center justify-between mb-0.5">
-                          <div className="text-[12px] text-[#A0A0A5]">{item.label}</div>
-                          <div className="text-[14px] font-bold text-[#FFFFFF]">{item.value}</div>
+                          <div className="text-label text-[#A0A0A5]">{item.label}</div>
+                          <div className="text-body-md font-bold text-[#FFFFFF]">{item.value}</div>
                         </div>
-                        <div className="text-[11px] text-[#FFFFFF] font-medium">{item.desc}</div>
-                        {item.subDesc && <div className="text-[10px] text-[#636366] mt-0.5">{item.subDesc}</div>}
+                        <div className="text-caption text-[#FFFFFF] font-medium">{item.desc}</div>
+                        {item.subDesc && <div className="text-xs text-[#636366] mt-0.5">{item.subDesc}</div>}
                       </>
                     )}
                   </div>
@@ -480,7 +480,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           transition={{ delay: 0.3 }}
           className="mb-5"
         >
-          <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
+          <div className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
             Device Status
           </div>
           <div className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden">
@@ -503,7 +503,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-[13px] font-semibold text-[#FFFFFF]">{item.label}</div>
-                    <div className="text-[11px] text-[#A0A0A5] mt-0.5">{item.desc}</div>
+                    <div className="text-caption text-[#A0A0A5] mt-0.5">{item.desc}</div>
                   </div>
                   <div className="text-[13px] font-semibold" style={{ color: item.color }}>
                     {item.value}
@@ -521,7 +521,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           transition={{ delay: 0.32 }}
           className="mb-5"
         >
-          <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
+          <div className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
             Display Icon
           </div>
           <div className="bg-[#262626] rounded-[20px] p-4">
@@ -537,7 +537,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                       setSelectedIconKey(opt.key)
                       updateSettings({ deviceIconKey: opt.key })
                     }}
-                    className={`flex flex-col items-center gap-1.5 p-2.5 rounded-[14px] transition-all
+                    className={`flex flex-col items-center gap-1.5 p-2.5 rounded-l transition-all
                       ${isActive
                         ? 'bg-[rgba(1,214,190,0.12)] border border-[#01D6BE]'
                         : 'bg-[#333333] border border-transparent hover:bg-[#3C3C3E]'
@@ -546,7 +546,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                     aria-pressed={isActive}
                   >
                     <Icon size={22} style={{ color: isActive ? '#01D6BE' : color }} />
-                    <span className={`text-[10px] ${isActive ? 'text-[#01D6BE] font-semibold' : 'text-[#A0A0A5]'}`}>
+                    <span className={`text-xs ${isActive ? 'text-[#01D6BE] font-semibold' : 'text-[#A0A0A5]'}`}>
                       {opt.label}
                     </span>
                   </button>
@@ -554,7 +554,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               })}
             </div>
             <div className="pt-3 border-t border-[rgba(255,255,255,0.06)]">
-              <div className="text-[10px] text-[#A0A0A5] mb-2 px-1">Icon Color</div>
+              <div className="text-xs text-[#A0A0A5] mb-2 px-1">Icon Color</div>
               <div className="grid grid-cols-5 gap-2">
                 {['#01D6BE', '#34C759', '#FF9500', '#FF3B30', '#FFD700', '#AF52DE', '#5AC8FA', '#007AFF', '#8E8E93', '#FFFFFF'].map((color) => (
                   <button
@@ -580,7 +580,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           transition={{ delay: 0.34 }}
           className="mb-5"
         >
-          <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
+          <div className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
             Device Settings
           </div>
           <div className="bg-[#262626] rounded-[20px] overflow-hidden">
@@ -591,7 +591,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               </div>
               <div className="flex-1">
                 <div className="text-[13px] font-semibold text-[#FFFFFF]">Sleep Mode</div>
-                <div className="text-[11px] text-[#A0A0A5]">Turn off display to save energy</div>
+                <div className="text-caption text-[#A0A0A5]">Turn off display to save energy</div>
               </div>
               <button
                 onClick={() => {
@@ -624,16 +624,16 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                       // PRD: 切换 Battery Mode
                       // API: /remote/device/config/write, key: workMode
                     }}
-                    className={`p-3 rounded-[14px] text-center transition-colors
+                    className={`p-3 rounded-l text-center transition-colors
                       ${settings.batteryMode === mode.value
                         ? 'bg-[rgba(1,214,190,0.15)] border border-[#01D6BE]'
                         : 'bg-[#333333] border border-transparent'
                       }`}
                   >
-                    <div className={`text-[12px] font-semibold ${settings.batteryMode === mode.value ? 'text-[#01D6BE]' : 'text-[#FFFFFF]'}`}>
+                    <div className={`text-label font-semibold ${settings.batteryMode === mode.value ? 'text-[#01D6BE]' : 'text-[#FFFFFF]'}`}>
                       {mode.label}
                     </div>
-                    <div className="text-[10px] text-[#636366] mt-0.5">{mode.desc}</div>
+                    <div className="text-xs text-[#636366] mt-0.5">{mode.desc}</div>
                   </button>
                 ))}
               </div>
@@ -649,7 +649,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               </div>
               <div className="flex-1">
                 <div className="text-[13px] font-semibold text-[#FFFFFF]">Smart Schedule</div>
-                <div className="text-[11px] text-[#A0A0A5]">Manage peak shaving schedule</div>
+                <div className="text-caption text-[#A0A0A5]">Manage peak shaving schedule</div>
               </div>
               <ChevronLeft size={18} className="text-[#636366] rotate-180" />
             </div>
@@ -663,7 +663,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           transition={{ delay: 0.36 }}
           className="mb-5"
         >
-          <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
+          <div className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
             Danger Zone
           </div>
           <div className="bg-[#262626] rounded-[20px] p-4 space-y-3">
@@ -674,7 +674,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                   toast.info('Factory Reset', 'This action would be sent to the device in production')
                 }
               }}
-              className="w-full h-11 rounded-[14px] bg-[rgba(255,149,0,0.1)] text-[#FF9500] text-[13px] font-semibold
+              className="w-full h-11 rounded-l bg-[rgba(255,149,0,0.1)] text-[#FF9500] text-[13px] font-semibold
                 border border-[rgba(255,149,0,0.3)]
                 hover:bg-[rgba(255,149,0,0.18)] transition-colors flex items-center justify-center gap-2"
             >
@@ -684,13 +684,13 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             {/* Delete Device — PRD v1.1 §4.3 二次确认 */}
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              className="w-full h-11 rounded-[14px] bg-[rgba(255,59,48,0.1)] text-[#FF3B30] text-[13px] font-semibold
+              className="w-full h-11 rounded-l bg-[rgba(255,59,48,0.1)] text-[#FF3B30] text-[13px] font-semibold
                 border border-[rgba(255,59,48,0.3)]
                 hover:bg-[rgba(255,59,48,0.18)] transition-colors flex items-center justify-center gap-2"
             >
               <Trash2 size={14} /> Delete Device
             </button>
-            <p className="text-[10px] text-[#636366] text-center">
+            <p className="text-xs text-[#636366] text-center">
               Deleting will remove the device from your account. Historical data is kept for 30 days in the recycle bin.
             </p>
           </div>
@@ -703,7 +703,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           transition={{ delay: 0.4 }}
           className="mb-5"
         >
-          <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
+          <div className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
             Connection Status
           </div>
           <div className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden">
@@ -726,10 +726,10 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-[13px] font-semibold text-[#FFFFFF]">{item.label}</div>
-                    <div className="text-[11px] text-[#A0A0A5] mt-0.5">{item.detail}</div>
+                    <div className="text-caption text-[#A0A0A5] mt-0.5">{item.detail}</div>
                   </div>
                   <div 
-                    className="text-[11px] px-2 py-0.5 rounded-full font-medium"
+                    className="text-caption px-2 py-0.5 rounded-full font-medium"
                     style={{ 
                       backgroundColor: `${item.color}15`,
                       color: item.color 
@@ -750,7 +750,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           transition={{ delay: 0.5 }}
           className="mb-5"
         >
-          <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
+          <div className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
             Safety & Certifications
           </div>
           <div className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-[20px] p-4">
@@ -760,14 +760,14 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               </div>
               <div>
                 <div className="text-[13px] font-semibold text-[#FFFFFF]">Safety Certified</div>
-                <div className="text-[11px] text-[#A0A0A5]">UL2743, CE, FCC, PSE, RoHS</div>
+                <div className="text-caption text-[#A0A0A5]">UL2743, CE, FCC, PSE, RoHS</div>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
               {['BMS Protection', 'Overcharge Protection', 'Short Circuit Protection', 'Temperature Control'].map((tag) => (
                 <span 
                   key={tag} 
-                  className="text-[10px] px-2 py-1 rounded-full bg-[rgba(255,255,255,0.05)] text-[#A0A0A5]"
+                  className="text-xs px-2 py-1 rounded-full bg-[rgba(255,255,255,0.05)] text-[#A0A0A5]"
                 >
                   {tag}
                 </span>
@@ -777,7 +777,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
         </motion.div>
 
         {/* 底部信息 */}
-        <div className="text-center pt-4 text-[11px] text-[#636366]">
+        <div className="text-center pt-4 text-caption text-[#636366]">
           <div>Sierro Inc.</div>
           <div className="mt-1">Made with precision in Shenzhen</div>
         </div>
@@ -814,14 +814,14 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                   <button
                     onClick={() => setShowDeleteConfirm(false)}
                     disabled={deleting}
-                    className="flex-1 py-3 rounded-xl bg-[rgba(255,255,255,0.06)] text-[#FFFFFF] font-semibold text-[13px] disabled:opacity-50"
+                    className="flex-1 py-3 rounded-l bg-[rgba(255,255,255,0.06)] text-[#FFFFFF] font-semibold text-[13px] disabled:opacity-50"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleDeleteDevice}
                     disabled={deleting}
-                    className="flex-1 py-3 rounded-xl bg-[rgba(255,59,48,0.15)] text-[#FF3B30] font-semibold text-[13px] border border-[rgba(255,59,48,0.3)] disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="flex-1 py-3 rounded-l bg-[rgba(255,59,48,0.15)] text-[#FF3B30] font-semibold text-[13px] border border-[rgba(255,59,48,0.3)] disabled:opacity-50 flex items-center justify-center gap-2"
                     aria-label="Confirm delete device"
                   >
                     {deleting ? (

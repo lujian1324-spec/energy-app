@@ -16,7 +16,7 @@ export function DeviceCardSkeleton() {
   return (
     <div className="bg-[#262626] rounded-[20px] p-4 flex items-center gap-3">
       {/* 图标 */}
-      <SkeletonBlock className="w-11 h-11 rounded-[14px] flex-shrink-0" />
+      <SkeletonBlock className="w-11 h-11 rounded-l flex-shrink-0" />
 
       {/* 文字 */}
       <div className="flex-1 space-y-2">

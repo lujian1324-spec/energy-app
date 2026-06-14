@@ -42,7 +42,7 @@ export default function NotificationsPage() {
         </button>
         <div className="flex-1">
           <h2 className="text-lg font-bold text-[#FFFFFF]">Push Notifications</h2>
-          <p className="text-[11px] text-[#A0A0A5]">Manage alerts and quiet hours</p>
+          <p className="text-caption text-[#A0A0A5]">Manage alerts and quiet hours</p>
         </div>
         <div className="w-9 h-9 rounded-full bg-[rgba(1,214,190,0.12)] flex items-center justify-center">
           <Bell size={18} className="text-[#01D6BE]" />
@@ -61,8 +61,8 @@ export default function NotificationsPage() {
               <Zap size={18} className="text-[#FF3B30]" />
             </div>
             <div className="flex-1">
-              <div className="text-[14px] font-semibold text-[#FFFFFF]">Power Outage</div>
-              <div className="text-[11px] text-[#A0A0A5] mt-0.5">Alert when the grid power is lost</div>
+              <div className="text-body-md font-semibold text-[#FFFFFF]">Power Outage</div>
+              <div className="text-caption text-[#A0A0A5] mt-0.5">Alert when the grid power is lost</div>
             </div>
             <ToggleSwitch
               isOn={pushOutage}
@@ -87,8 +87,8 @@ export default function NotificationsPage() {
               <WifiOff size={18} className="text-[#FF9500]" />
             </div>
             <div className="flex-1">
-              <div className="text-[14px] font-semibold text-[#FFFFFF]">Low Battery</div>
-              <div className="text-[11px] text-[#A0A0A5] mt-0.5">
+              <div className="text-body-md font-semibold text-[#FFFFFF]">Low Battery</div>
+              <div className="text-caption text-[#A0A0A5] mt-0.5">
                 {pushLowBattery
                   ? `Alert when below ${lowBatteryThreshold}%`
                   : 'Disabled'}
@@ -114,7 +114,7 @@ export default function NotificationsPage() {
               >
                 <div className="px-4 pb-4 pt-2 border-t border-[rgba(255,149,0,0.1)]">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-[11px] text-[#A0A0A5]">Alert Threshold</span>
+                    <span className="text-caption text-[#A0A0A5]">Alert Threshold</span>
                     <span className="text-[13px] font-semibold text-[#FF9500]">{lowBatteryThreshold}%</span>
                   </div>
                   <div className="relative">
@@ -143,7 +143,7 @@ export default function NotificationsPage() {
                             setLowBatteryThreshold(val)
                             persist('lowBatteryThreshold', val)
                           }}
-                          className={`text-[10px] transition-colors px-2 py-0.5 rounded ${
+                          className={`text-xs transition-colors px-2 py-0.5 rounded ${
                             lowBatteryThreshold === val
                               ? 'text-[#FF9500] font-semibold bg-[rgba(255,149,0,0.1)]'
                               : 'text-[#636366]'
@@ -174,8 +174,8 @@ export default function NotificationsPage() {
               <Sun size={18} className="text-[#01D6BE]" />
             </div>
             <div className="flex-1">
-              <div className="text-[14px] font-semibold text-[#FFFFFF]">Solar Status</div>
-              <div className="text-[11px] text-[#A0A0A5] mt-0.5">Notify when solar generation changes</div>
+              <div className="text-body-md font-semibold text-[#FFFFFF]">Solar Status</div>
+              <div className="text-caption text-[#A0A0A5] mt-0.5">Notify when solar generation changes</div>
             </div>
             <ToggleSwitch
               isOn={pushSolarStatus}
@@ -200,8 +200,8 @@ export default function NotificationsPage() {
               <Bell size={18} className="text-[#A855F7]" />
             </div>
             <div className="flex-1">
-              <div className="text-[14px] font-semibold text-[#FFFFFF]">Quiet Hours</div>
-              <div className="text-[11px] text-[#A0A0A5] mt-0.5">
+              <div className="text-body-md font-semibold text-[#FFFFFF]">Quiet Hours</div>
+              <div className="text-caption text-[#A0A0A5] mt-0.5">
                 {quietEnabled ? `${quietStart} – ${quietEnd}` : 'Disable all sounds'}
               </div>
             </div>
@@ -225,7 +225,7 @@ export default function NotificationsPage() {
               >
                 <div className="px-4 pb-4 pt-2 flex items-center gap-3">
                   <div className="flex-1">
-                    <div className="text-[10px] text-[#A0A0A5] mb-1">From</div>
+                    <div className="text-xs text-[#A0A0A5] mb-1">From</div>
                     <input
                       type="time"
                       value={quietStart}
@@ -237,7 +237,7 @@ export default function NotificationsPage() {
                     />
                   </div>
                   <div className="flex-1">
-                    <div className="text-[10px] text-[#A0A0A5] mb-1">To</div>
+                    <div className="text-xs text-[#A0A0A5] mb-1">To</div>
                     <input
                       type="time"
                       value={quietEnd}
@@ -266,8 +266,8 @@ export default function NotificationsPage() {
               <Mail size={18} className="text-[#01D6BE]" />
             </div>
             <div className="flex-1">
-              <div className="text-[14px] font-semibold text-[#FFFFFF]">Email Digest</div>
-              <div className="text-[11px] text-[#A0A0A5] mt-0.5">Weekly summary of energy usage</div>
+              <div className="text-body-md font-semibold text-[#FFFFFF]">Email Digest</div>
+              <div className="text-caption text-[#A0A0A5] mt-0.5">Weekly summary of energy usage</div>
             </div>
             <ToggleSwitch
               isOn={emailNotif}
@@ -277,7 +277,7 @@ export default function NotificationsPage() {
           </div>
         </motion.div>
 
-        <p className="text-[11px] text-[#636366] text-center px-4 leading-relaxed">
+        <p className="text-caption text-[#636366] text-center px-4 leading-relaxed">
           Critical alerts (e.g. fire, hardware fault) will always notify you regardless of quiet hours.
         </p>
       </div>

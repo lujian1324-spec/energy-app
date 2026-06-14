@@ -110,7 +110,7 @@ export default function OnboardingPage() {
 
       {/* Step counter */}
       <div className="px-5 pb-2">
-        <p className="text-[11px] text-[#A0A0A5]">Step {step + 1} of {totalSteps}</p>
+        <p className="text-caption text-[#A0A0A5]">Step {step + 1} of {totalSteps}</p>
       </div>
 
       <AnimatePresence mode="wait">
@@ -133,7 +133,7 @@ export default function OnboardingPage() {
       <div className="absolute bottom-0 left-0 right-0 px-5 pb-6 pt-3 bg-gradient-to-t from-[#141414] via-[#141414] to-transparent">
         <button
           onClick={handleNext}
-          className="w-full h-12 rounded-[16px] bg-[#01D6BE] text-[#000000] text-[14px] font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+          className="w-full h-12 rounded-l bg-[#01D6BE] text-[#000000] text-body-md font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
         >
           {isLast ? (<><Check size={18} /> Get Started</>) : (<>Continue <ArrowRight size={18} /></>)}
         </button>
@@ -154,7 +154,7 @@ function Step0Welcome() {
         <Zap size={48} className="text-[#01D6BE]" />
       </motion.div>
       <h1 className="text-[28px] font-bold text-[#FFFFFF] mb-3">Welcome to Sierro</h1>
-      <p className="text-[14px] text-[#A0A0A5] max-w-[280px] leading-relaxed mb-8">
+      <p className="text-body-md text-[#A0A0A5] max-w-[280px] leading-relaxed mb-8">
         Smart energy management for your home battery, solar, and devices. Let&apos;s get you set up in a few quick steps.
       </p>
       <div className="grid grid-cols-2 gap-3 w-full max-w-[320px]">
@@ -180,8 +180,8 @@ function Step1Profile({ name, setName }: { name: string; setName: (v: string) =>
             <User size={18} className="text-[#01D6BE]" />
           </div>
           <div>
-            <div className="text-[12px] font-semibold text-[#FFFFFF]">Display Name</div>
-            <div className="text-[10px] text-[#A0A0A5]">2-20 characters</div>
+            <div className="text-label font-semibold text-[#FFFFFF]">Display Name</div>
+            <div className="text-xs text-[#A0A0A5]">2-20 characters</div>
           </div>
         </div>
         <input
@@ -191,9 +191,9 @@ function Step1Profile({ name, setName }: { name: string; setName: (v: string) =>
           maxLength={20}
           autoFocus
           placeholder="e.g. Alex"
-          className="w-full px-4 py-3 rounded-[14px] bg-[#141414] border border-[rgba(1,214,190,0.15)] text-[#FFFFFF] text-[15px] placeholder:text-[#636366] focus:outline-none focus:border-[#01D6BE] transition-colors"
+          className="w-full px-4 py-3 rounded-l bg-[#141414] border border-[rgba(1,214,190,0.15)] text-[#FFFFFF] text-[15px] placeholder:text-[#636366] focus:outline-none focus:border-[#01D6BE] transition-colors"
         />
-        <p className="text-[10px] text-[#636366] mt-2 text-right">{name.length}/20</p>
+        <p className="text-xs text-[#636366] mt-2 text-right">{name.length}/20</p>
       </div>
     </div>
   )
@@ -217,54 +217,54 @@ function Step2AddDevice({
       <div className="space-y-3 mb-5">
         <button
           onClick={() => { setAddingMethod('ble'); setSkipDevice(false) }}
-          className={`w-full flex items-center gap-4 p-4 rounded-[16px] border-2 transition-all text-left ${
+          className={`w-full flex items-center gap-4 p-4 rounded-l border-2 transition-all text-left ${
             addingMethod === 'ble'
               ? 'bg-[rgba(1,214,190,0.12)] border-[#01D6BE]'
               : 'bg-[#262626] border-transparent hover:border-[rgba(1,214,190,0.3)]'
           }`}
         >
-          <div className="w-12 h-12 rounded-[14px] bg-[rgba(1,214,190,0.15)] flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 rounded-l bg-[rgba(1,214,190,0.15)] flex items-center justify-center flex-shrink-0">
             <Bluetooth size={22} className="text-[#01D6BE]" />
           </div>
           <div className="flex-1">
-            <div className="text-[14px] font-semibold text-[#FFFFFF]">Bluetooth Pairing</div>
-            <div className="text-[11px] text-[#A0A0A5] mt-0.5">Recommended · Fastest setup</div>
+            <div className="text-body-md font-semibold text-[#FFFFFF]">Bluetooth Pairing</div>
+            <div className="text-caption text-[#A0A0A5] mt-0.5">Recommended · Fastest setup</div>
           </div>
           {addingMethod === 'ble' && <Check size={18} className="text-[#01D6BE]" />}
         </button>
 
         <button
           onClick={() => { setAddingMethod('qr'); setSkipDevice(false) }}
-          className={`w-full flex items-center gap-4 p-4 rounded-[16px] border-2 transition-all text-left ${
+          className={`w-full flex items-center gap-4 p-4 rounded-l border-2 transition-all text-left ${
             addingMethod === 'qr'
               ? 'bg-[rgba(1,214,190,0.12)] border-[#01D6BE]'
               : 'bg-[#262626] border-transparent hover:border-[rgba(1,214,190,0.3)]'
           }`}
         >
-          <div className="w-12 h-12 rounded-[14px] bg-[rgba(255,149,0,0.15)] flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 rounded-l bg-[rgba(255,149,0,0.15)] flex items-center justify-center flex-shrink-0">
             <QrCode size={22} className="text-[#FF9500]" />
           </div>
           <div className="flex-1">
-            <div className="text-[14px] font-semibold text-[#FFFFFF]">Scan QR Code</div>
-            <div className="text-[11px] text-[#A0A0A5] mt-0.5">Use the code on the device label</div>
+            <div className="text-body-md font-semibold text-[#FFFFFF]">Scan QR Code</div>
+            <div className="text-caption text-[#A0A0A5] mt-0.5">Use the code on the device label</div>
           </div>
           {addingMethod === 'qr' && <Check size={18} className="text-[#01D6BE]" />}
         </button>
 
         <button
           onClick={() => { setSkipDevice(true); setAddingMethod(null) }}
-          className={`w-full flex items-center gap-4 p-4 rounded-[16px] border-2 transition-all text-left ${
+          className={`w-full flex items-center gap-4 p-4 rounded-l border-2 transition-all text-left ${
             skipDevice
               ? 'bg-[rgba(168,85,247,0.08)] border-[#A855F7]'
               : 'bg-[#262626] border-transparent hover:border-[rgba(168,85,247,0.3)]'
           }`}
         >
-          <div className="w-12 h-12 rounded-[14px] bg-[rgba(168,85,247,0.15)] flex items-center justify-center flex-shrink-0">
+          <div className="w-12 h-12 rounded-l bg-[rgba(168,85,247,0.15)] flex items-center justify-center flex-shrink-0">
             <ArrowRight size={22} className="text-[#A855F7]" />
           </div>
           <div className="flex-1">
-            <div className="text-[14px] font-semibold text-[#FFFFFF]">Skip for now</div>
-            <div className="text-[11px] text-[#A0A0A5] mt-0.5">Add devices later from Devices tab</div>
+            <div className="text-body-md font-semibold text-[#FFFFFF]">Skip for now</div>
+            <div className="text-caption text-[#A0A0A5] mt-0.5">Add devices later from Devices tab</div>
           </div>
           {skipDevice && <Check size={18} className="text-[#A855F7]" />}
         </button>
@@ -274,12 +274,12 @@ function Step2AddDevice({
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-[rgba(1,214,190,0.06)] border border-[rgba(1,214,190,0.2)] rounded-[16px] p-4"
+          className="bg-[rgba(1,214,190,0.06)] border border-[rgba(1,214,190,0.2)] rounded-l p-4"
         >
-          <p className="text-[12px] text-[#01D6BE] mb-2 font-semibold">
+          <p className="text-label text-[#01D6BE] mb-2 font-semibold">
             {addingMethod === 'ble' ? 'Bluetooth pairing' : 'QR scanning'} is ready
           </p>
-          <p className="text-[11px] text-[#A0A0A5] leading-relaxed">
+          <p className="text-caption text-[#A0A0A5] leading-relaxed">
             {addingMethod === 'ble'
               ? 'You can start pairing your device from the Devices tab once setup is complete.'
               : 'Open the camera and point it at the device QR code on the next screen.'}
@@ -289,7 +289,7 @@ function Step2AddDevice({
 
       {/* Sample device preview */}
       <div className="mt-6">
-        <p className="text-[10px] text-[#A0A0A5] uppercase tracking-widest font-bold mb-2 px-1">Compatible Devices</p>
+        <p className="text-xs text-[#A0A0A5] uppercase tracking-widest font-bold mb-2 px-1">Compatible Devices</p>
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
           {[
             { icon: Battery, label: 'Sierro 1000', color: '#01D6BE' },
@@ -299,9 +299,9 @@ function Step2AddDevice({
           ].map(d => {
             const Icon = d.icon
             return (
-              <div key={d.label} className="flex-shrink-0 w-20 bg-[#262626] rounded-[14px] p-3 text-center">
+              <div key={d.label} className="flex-shrink-0 w-20 bg-[#262626] rounded-l p-3 text-center">
                 <Icon size={22} style={{ color: d.color }} className="mx-auto mb-1" />
-                <div className="text-[10px] text-[#A0A0A5]">{d.label}</div>
+                <div className="text-xs text-[#A0A0A5]">{d.label}</div>
               </div>
             )
           })}
@@ -328,16 +328,16 @@ function Step3Done({ name }: { name: string }) {
           className="absolute inset-0 rounded-full border-2 border-[#34C759]"
         />
       </motion.div>
-      <h2 className="text-[24px] font-bold text-[#FFFFFF] mb-3">You&apos;re all set{name ? `, ${name}` : ''}!</h2>
-      <p className="text-[14px] text-[#A0A0A5] max-w-[300px] leading-relaxed mb-6">
+      <h2 className="text-headline-md font-bold text-[#FFFFFF] mb-3">You&apos;re all set{name ? `, ${name}` : ''}!</h2>
+      <p className="text-body-md text-[#A0A0A5] max-w-[300px] leading-relaxed mb-6">
         Your Sierro app is ready. Head to the Devices tab to start monitoring your power and solar.
       </p>
       <div className="bg-[#262626] rounded-[20px] p-4 w-full max-w-[320px]">
         <div className="flex items-center gap-3 text-left">
           <Sparkles size={18} className="text-[#FFD700] flex-shrink-0" />
           <div>
-            <div className="text-[12px] font-semibold text-[#FFFFFF]">Pro tip</div>
-            <div className="text-[11px] text-[#A0A0A5] mt-0.5 leading-relaxed">
+            <div className="text-label font-semibold text-[#FFFFFF]">Pro tip</div>
+            <div className="text-caption text-[#A0A0A5] mt-0.5 leading-relaxed">
               Connect to Wi-Fi to enable cloud sync and remote monitoring.
             </div>
           </div>
@@ -349,12 +349,12 @@ function Step3Done({ name }: { name: string }) {
 
 function FeatureCard({ icon: Icon, label, desc, color }: { icon: typeof Zap; label: string; desc: string; color: string }) {
   return (
-    <div className="bg-[#262626] rounded-[16px] p-3 text-left">
+    <div className="bg-[#262626] rounded-l p-3 text-left">
       <div className="w-9 h-9 rounded-[10px] flex items-center justify-center mb-2" style={{ backgroundColor: `${color}1A` }}>
         <Icon size={18} style={{ color }} />
       </div>
-      <div className="text-[12px] font-semibold text-[#FFFFFF]">{label}</div>
-      <div className="text-[10px] text-[#A0A0A5] mt-0.5 leading-tight">{desc}</div>
+      <div className="text-label font-semibold text-[#FFFFFF]">{label}</div>
+      <div className="text-xs text-[#A0A0A5] mt-0.5 leading-tight">{desc}</div>
     </div>
   )
 }

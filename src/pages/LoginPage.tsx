@@ -125,7 +125,7 @@ export default function LoginPage() {
           </div>
           <div className="text-center">
             <h1 className="text-2xl font-bold text-[#FFFFFF]">Sierro</h1>
-            <p className="text-[12px] text-[#A0A0A5] mt-1">Smart Energy Management</p>
+            <p className="text-label text-[#A0A0A5] mt-1">Smart Energy Management</p>
           </div>
         </motion.div>
 
@@ -152,12 +152,12 @@ export default function LoginPage() {
               </button>
 
               {/* Heading */}
-              <h2 className="text-[20px] font-bold text-[#FFFFFF] mb-1">Email Sign In</h2>
+              <h2 className="text-title-lg font-bold text-[#FFFFFF] mb-1">Email Sign In</h2>
               <p className="text-[13px] text-[#A0A0A5] mb-5">Enter your email to receive a verification code</p>
 
               {/* Email input */}
               <div className="mb-3">
-                <label className="text-[11px] font-semibold text-[#A0A0A5] mb-1.5 flex items-center gap-1.5">
+                <label className="text-caption font-semibold text-[#A0A0A5] mb-1.5 flex items-center gap-1.5">
                   <Mail size={12} />
                   Email Address
                 </label>
@@ -169,14 +169,14 @@ export default function LoginPage() {
                     placeholder="you@example.com"
                     autoComplete="email"
                     autoFocus
-                    className="flex-1 px-4 py-3 rounded-xl bg-[#262626] border border-[rgba(1,214,190,0.15)]
-                      text-[#FFFFFF] text-[14px] placeholder:text-[#636366]
+                    className="flex-1 px-4 py-3 rounded-l bg-[#262626] border border-[rgba(1,214,190,0.15)]
+                      text-[#FFFFFF] text-body-md placeholder:text-[#636366]
                       focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
                   />
                   <button
                     onClick={handleSendEmailCode}
                     disabled={emailSending || emailCooldown > 0 || !email.trim()}
-                    className="px-4 py-3 rounded-xl text-[13px] font-semibold whitespace-nowrap
+                    className="px-4 py-3 rounded-l text-[13px] font-semibold whitespace-nowrap
                       bg-[#01D6BE] text-[#000000]
                       disabled:opacity-40 disabled:cursor-not-allowed
                       active:scale-[0.97] transition-all min-w-[80px]"
@@ -194,7 +194,7 @@ export default function LoginPage() {
 
               {/* Verification code input */}
               <div className="mb-4">
-                <label className="text-[11px] font-semibold text-[#A0A0A5] mb-1.5 flex items-center gap-1.5">
+                <label className="text-caption font-semibold text-[#A0A0A5] mb-1.5 flex items-center gap-1.5">
                   <Lock size={12} />
                   Verification Code
                 </label>
@@ -206,8 +206,8 @@ export default function LoginPage() {
                   placeholder="Enter 6-digit code"
                   maxLength={6}
                   autoComplete="one-time-code"
-                  className="w-full px-4 py-3 rounded-xl bg-[#262626] border border-[rgba(1,214,190,0.15)]
-                    text-[#FFFFFF] text-[14px] placeholder:text-[#636366] tracking-[0.3em] text-center
+                  className="w-full px-4 py-3 rounded-l bg-[#262626] border border-[rgba(1,214,190,0.15)]
+                    text-[#FFFFFF] text-body-md placeholder:text-[#636366] tracking-[0.3em] text-center
                     focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
                 />
               </div>
@@ -219,7 +219,7 @@ export default function LoginPage() {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="text-[12px] text-[#FF3B30] text-center mb-3"
+                    className="text-label text-[#FF3B30] text-center mb-3"
                   >
                     {emailError}
                   </motion.p>
@@ -230,7 +230,7 @@ export default function LoginPage() {
               <button
                 onClick={handleEmailLogin}
                 disabled={emailLoggingIn || !emailIotCaptchaId || !emailCode.trim()}
-                className="w-full py-3.5 rounded-xl font-semibold text-[14px]
+                className="w-full py-3.5 rounded-l font-semibold text-body-md
                   bg-[#01D6BE] text-[#000000]
                   disabled:opacity-40 disabled:cursor-not-allowed
                   active:scale-[0.98] transition-all flex items-center justify-center gap-2"
@@ -261,7 +261,7 @@ export default function LoginPage() {
             >
               {/* Heading */}
               <div className="text-center mb-6">
-                <h2 className="text-[20px] font-bold text-[#FFFFFF] mb-1">Welcome</h2>
+                <h2 className="text-title-lg font-bold text-[#FFFFFF] mb-1">Welcome</h2>
                 <p className="text-[13px] text-[#A0A0A5]">Sign in to manage your devices</p>
               </div>
 
@@ -269,7 +269,7 @@ export default function LoginPage() {
               <form onSubmit={handleLogin} className="space-y-3">
                 {/* Account input */}
                 <div>
-                  <label className="text-[11px] font-semibold text-[#A0A0A5] mb-1.5 flex items-center gap-1.5">
+                  <label className="text-caption font-semibold text-[#A0A0A5] mb-1.5 flex items-center gap-1.5">
                     <User size={12} />
                     Account
                   </label>
@@ -279,15 +279,15 @@ export default function LoginPage() {
                     onChange={e => { setAccount(e.target.value); clearError() }}
                     placeholder="Username or email"
                     autoComplete="username"
-                    className="w-full px-4 py-3 rounded-xl bg-[#262626] border border-[rgba(1,214,190,0.15)]
-                      text-[#FFFFFF] text-[14px] placeholder:text-[#636366]
+                    className="w-full px-4 py-3 rounded-l bg-[#262626] border border-[rgba(1,214,190,0.15)]
+                      text-[#FFFFFF] text-body-md placeholder:text-[#636366]
                       focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
                   />
                 </div>
 
                 {/* Password input */}
                 <div>
-                  <label className="text-[11px] font-semibold text-[#A0A0A5] mb-1.5 flex items-center gap-1.5">
+                  <label className="text-caption font-semibold text-[#A0A0A5] mb-1.5 flex items-center gap-1.5">
                     <Lock size={12} />
                     Password
                   </label>
@@ -298,8 +298,8 @@ export default function LoginPage() {
                       onChange={e => { setPassword(e.target.value); clearError() }}
                       placeholder="Enter your password"
                       autoComplete="current-password"
-                      className="w-full px-4 py-3 pr-11 rounded-xl bg-[#262626] border border-[rgba(1,214,190,0.15)]
-                        text-[#FFFFFF] text-[14px] placeholder:text-[#636366]
+                      className="w-full px-4 py-3 pr-11 rounded-l bg-[#262626] border border-[rgba(1,214,190,0.15)]
+                        text-[#FFFFFF] text-body-md placeholder:text-[#636366]
                         focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
                     />
                     <button
@@ -319,7 +319,7 @@ export default function LoginPage() {
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="text-[12px] text-[#FF3B30] text-center py-1"
+                      className="text-label text-[#FF3B30] text-center py-1"
                     >
                       {error}
                     </motion.p>
@@ -330,7 +330,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading || !account.trim() || !password.trim()}
-                  className="w-full py-3.5 rounded-xl font-semibold text-[14px]
+                  className="w-full py-3.5 rounded-l font-semibold text-body-md
                     bg-[#01D6BE] text-[#000000]
                     disabled:opacity-40 disabled:cursor-not-allowed
                     active:scale-[0.98] transition-all flex items-center justify-center gap-2"
@@ -354,7 +354,7 @@ export default function LoginPage() {
                 <button
                   onClick={() => setEmailFlow(true)}
                   disabled={loading}
-                  className="w-full py-3.5 rounded-[14px] bg-[#262626] border border-[rgba(1,214,190,0.12)] text-[#FFFFFF] text-[14px] font-medium
+                  className="w-full py-3.5 rounded-l bg-[#262626] border border-[rgba(1,214,190,0.12)] text-[#FFFFFF] text-body-md font-medium
                     flex items-center justify-center gap-3 active:scale-[0.98] transition-transform"
                 >
                   <Mail size={18} className="text-[#01D6BE]" />
@@ -366,7 +366,7 @@ export default function LoginPage() {
               <div className="mt-4 space-y-3">
                 <div className="flex items-center gap-3">
                   <div className="flex-1 h-px bg-[#333333]" />
-                  <span className="text-[11px] text-[#636366]">or</span>
+                  <span className="text-caption text-[#636366]">or</span>
                   <div className="flex-1 h-px bg-[#333333]" />
                 </div>
                 {/* Google Login */}
@@ -375,7 +375,7 @@ export default function LoginPage() {
                     // PRD: Google 登录
                     alert('Google login not implemented yet')
                   }}
-                  className="w-full py-3.5 rounded-[14px] bg-[#262626] border border-[rgba(255,255,255,0.1)] text-[#FFFFFF] text-[14px] font-medium
+                  className="w-full py-3.5 rounded-l bg-[#262626] border border-[rgba(255,255,255,0.1)] text-[#FFFFFF] text-body-md font-medium
                     flex items-center justify-center gap-3 active:scale-[0.98] transition-transform"
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -392,7 +392,7 @@ export default function LoginPage() {
                     // PRD: Apple 登录
                     alert('Apple login not implemented yet')
                   }}
-                  className="w-full py-3.5 rounded-[14px] bg-[#262626] border border-[rgba(255,255,255,0.1)] text-[#FFFFFF] text-[14px] font-medium
+                  className="w-full py-3.5 rounded-l bg-[#262626] border border-[rgba(255,255,255,0.1)] text-[#FFFFFF] text-body-md font-medium
                     flex items-center justify-center gap-3 active:scale-[0.98] transition-transform"
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
@@ -417,7 +417,7 @@ export default function LoginPage() {
           {/* Sign Up link */}
           <button
             onClick={() => navigate('/register')}
-            className="text-[14px] text-[#01D6BE] font-medium
+            className="text-body-md text-[#01D6BE] font-medium
               flex items-center justify-center gap-1 mx-auto hover:opacity-80 transition-opacity"
           >
             <span>Don&apos;t have an account?</span>
@@ -440,7 +440,7 @@ export default function LoginPage() {
           </div>
 
           {/* Terms & Privacy */}
-          <p className="text-[11px] leading-relaxed text-[#A0A0A5]">
+          <p className="text-caption leading-relaxed text-[#A0A0A5]">
             By continuing, you agree to our{' '}
             <Link to="/terms" className="text-[#01D6BE] underline underline-offset-2 hover:text-[#14B8A6] transition-colors">
               Terms of Use

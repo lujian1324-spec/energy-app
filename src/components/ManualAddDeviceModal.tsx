@@ -121,7 +121,7 @@ export default function ManualAddDeviceModal({ onClose }: Props) {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* 设备名称 */}
           <div>
-            <label className="text-[11px] font-semibold text-[#A0A0A5] mb-1.5 block">
+            <label className="text-caption font-semibold text-[#A0A0A5] mb-1.5 block">
               Device Name *
             </label>
             <input
@@ -129,15 +129,15 @@ export default function ManualAddDeviceModal({ onClose }: Props) {
               value={deviceName}
               onChange={e => { setDeviceName(e.target.value); setError(null) }}
               placeholder="e.g. Sierro 1000"
-              className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-[rgba(1,214,190,0.15)]
-                text-[#FFFFFF] text-[14px] placeholder:text-[#636366]
+              className="w-full px-4 py-3 rounded-l bg-[#141414] border border-[rgba(1,214,190,0.15)]
+                text-[#FFFFFF] text-body-md placeholder:text-[#636366]
                 focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
             />
           </div>
 
           {/* 序列号 */}
           <div>
-            <label className="text-[11px] font-semibold text-[#A0A0A5] mb-1.5 block">
+            <label className="text-caption font-semibold text-[#A0A0A5] mb-1.5 block">
               Serial Number (SN)
             </label>
             <input
@@ -145,15 +145,15 @@ export default function ManualAddDeviceModal({ onClose }: Props) {
               value={serialNumber}
               onChange={e => { setSerialNumber(e.target.value); setError(null) }}
               placeholder="e.g. 999256001232612"
-              className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-[rgba(1,214,190,0.15)]
-                text-[#FFFFFF] text-[14px] placeholder:text-[#636366]
+              className="w-full px-4 py-3 rounded-l bg-[#141414] border border-[rgba(1,214,190,0.15)]
+                text-[#FFFFFF] text-body-md placeholder:text-[#636366]
                 focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
             />
           </div>
 
           {/* DTU ID */}
           <div>
-            <label className="text-[11px] font-semibold text-[#A0A0A5] mb-1.5 block">
+            <label className="text-caption font-semibold text-[#A0A0A5] mb-1.5 block">
               DTU ID (Data Logger)
             </label>
             <input
@@ -161,8 +161,8 @@ export default function ManualAddDeviceModal({ onClose }: Props) {
               value={dtuDtuid}
               onChange={e => { setDtuDtuid(e.target.value); setError(null) }}
               placeholder="e.g. DTU serial number"
-              className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-[rgba(1,214,190,0.15)]
-                text-[#FFFFFF] text-[14px] placeholder:text-[#636366]
+              className="w-full px-4 py-3 rounded-l bg-[#141414] border border-[rgba(1,214,190,0.15)]
+                text-[#FFFFFF] text-body-md placeholder:text-[#636366]
                 focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
             />
           </div>
@@ -170,14 +170,14 @@ export default function ManualAddDeviceModal({ onClose }: Props) {
           {/* 选择电站（如果有） */}
           {stations.length > 0 && (
             <div>
-              <label className="text-[11px] font-semibold text-[#A0A0A5] mb-1.5 block">
+              <label className="text-caption font-semibold text-[#A0A0A5] mb-1.5 block">
                 Station
               </label>
               <select
                 value={stationId}
                 onChange={e => setStationId(Number(e.target.value))}
-                className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-[rgba(1,214,190,0.15)]
-                  text-[#FFFFFF] text-[14px] focus:outline-none focus:border-[rgba(1,214,190,0.5)]"
+                className="w-full px-4 py-3 rounded-l bg-[#141414] border border-[rgba(1,214,190,0.15)]
+                  text-[#FFFFFF] text-body-md focus:outline-none focus:border-[rgba(1,214,190,0.5)]"
               >
                 {stations.map(s => (
                   <option key={s.id} value={s.id}>{s.name}</option>
@@ -186,7 +186,7 @@ export default function ManualAddDeviceModal({ onClose }: Props) {
               <button
                 type="button"
                 onClick={() => setCreateNewStation(v => !v)}
-                className="mt-2 text-[12px] text-[#01D6BE] font-medium"
+                className="mt-2 text-label text-[#01D6BE] font-medium"
               >
                 {createNewStation ? '← Select existing station' : '+ Create new station'}
               </button>
@@ -196,7 +196,7 @@ export default function ManualAddDeviceModal({ onClose }: Props) {
           {/* 新电站名称 */}
           {createNewStation && (
             <div>
-              <label className="text-[11px] font-semibold text-[#A0A0A5] mb-1.5 block">
+              <label className="text-caption font-semibold text-[#A0A0A5] mb-1.5 block">
                 New Station Name
               </label>
               <input
@@ -204,8 +204,8 @@ export default function ManualAddDeviceModal({ onClose }: Props) {
                 value={newStationName}
                 onChange={e => setNewStationName(e.target.value)}
                 placeholder="e.g. Home Solar Station"
-                className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-[rgba(1,214,190,0.15)]
-                  text-[#FFFFFF] text-[14px] placeholder:text-[#636366]
+                className="w-full px-4 py-3 rounded-l bg-[#141414] border border-[rgba(1,214,190,0.15)]
+                  text-[#FFFFFF] text-body-md placeholder:text-[#636366]
                   focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
               />
             </div>
@@ -213,10 +213,10 @@ export default function ManualAddDeviceModal({ onClose }: Props) {
 
           {/* 错误提示 */}
           {error && (
-            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl
+            <div className="flex items-center gap-2 px-3 py-2.5 rounded-l
               bg-[rgba(255,59,48,0.08)] border border-[rgba(255,59,48,0.2)]">
               <AlertCircle size={14} className="text-[#FF3B30] flex-shrink-0" />
-              <p className="text-[12px] text-[#FF3B30]">{error}</p>
+              <p className="text-label text-[#FF3B30]">{error}</p>
             </div>
           )}
 
@@ -224,7 +224,7 @@ export default function ManualAddDeviceModal({ onClose }: Props) {
           <button
             type="submit"
             disabled={loading || !deviceName.trim()}
-            className="w-full py-3.5 rounded-xl font-semibold text-[14px]
+            className="w-full py-3.5 rounded-l font-semibold text-body-md
               bg-[#01D6BE] text-[#000000]
               disabled:opacity-40 disabled:cursor-not-allowed
               active:scale-[0.98] transition-all flex items-center justify-center gap-2"

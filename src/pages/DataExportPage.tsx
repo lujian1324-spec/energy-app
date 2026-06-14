@@ -113,7 +113,7 @@ export default function DataExportPage() {
         </button>
         <div className="flex-1">
           <h2 className="text-lg font-bold text-[#FFFFFF]">Privacy & Data</h2>
-          <p className="text-[11px] text-[#A0A0A5]">Export and manage your data</p>
+          <p className="text-caption text-[#A0A0A5]">Export and manage your data</p>
         </div>
         <div className="w-9 h-9 rounded-full bg-[rgba(1,214,190,0.12)] flex items-center justify-center">
           <Shield size={18} className="text-[#01D6BE]" />
@@ -131,7 +131,7 @@ export default function DataExportPage() {
             <Info size={18} className="text-[#01D6BE] flex-shrink-0 mt-0.5" />
             <div>
               <h3 className="text-[13px] font-semibold text-[#FFFFFF] mb-1">Your data, your control</h3>
-              <p className="text-[11px] text-[#A0A0A5] leading-relaxed">
+              <p className="text-caption text-[#A0A0A5] leading-relaxed">
                 Sierro stores your energy data locally on this device and on our secure cloud.
                 You can export or delete it at any time.
               </p>
@@ -146,21 +146,21 @@ export default function DataExportPage() {
           transition={{ delay: 0.05 }}
           className="mb-4"
         >
-          <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
+          <div className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
             Export Data
           </div>
           <div className="space-y-2.5">
             <button
               onClick={handleExportJson}
               disabled={!!exportLoading}
-              className="w-full flex items-center gap-3.5 p-4 bg-[#262626] rounded-[16px] active:scale-[0.99] transition-transform disabled:opacity-50"
+              className="w-full flex items-center gap-3.5 p-4 bg-[#262626] rounded-l active:scale-[0.99] transition-transform disabled:opacity-50"
             >
-              <div className="w-11 h-11 rounded-[12px] bg-[rgba(1,214,190,0.12)] flex items-center justify-center flex-shrink-0">
+              <div className="w-11 h-11 rounded-l bg-[rgba(1,214,190,0.12)] flex items-center justify-center flex-shrink-0">
                 <FileJson size={20} className="text-[#01D6BE]" />
               </div>
               <div className="flex-1 text-left">
-                <div className="text-[14px] font-semibold text-[#FFFFFF]">Export as JSON</div>
-                <div className="text-[11px] text-[#A0A0A5] mt-0.5">Full snapshot: devices, history, settings</div>
+                <div className="text-body-md font-semibold text-[#FFFFFF]">Export as JSON</div>
+                <div className="text-caption text-[#A0A0A5] mt-0.5">Full snapshot: devices, history, settings</div>
               </div>
               {exportLoading === 'json' ? (
                 <RotateCcw size={18} className="text-[#01D6BE] animate-spin" />
@@ -171,14 +171,14 @@ export default function DataExportPage() {
             <button
               onClick={handleExportCsv}
               disabled={!!exportLoading}
-              className="w-full flex items-center gap-3.5 p-4 bg-[#262626] rounded-[16px] active:scale-[0.99] transition-transform disabled:opacity-50"
+              className="w-full flex items-center gap-3.5 p-4 bg-[#262626] rounded-l active:scale-[0.99] transition-transform disabled:opacity-50"
             >
-              <div className="w-11 h-11 rounded-[12px] bg-[rgba(255,149,0,0.12)] flex items-center justify-center flex-shrink-0">
+              <div className="w-11 h-11 rounded-l bg-[rgba(255,149,0,0.12)] flex items-center justify-center flex-shrink-0">
                 <FileText size={20} className="text-[#FF9500]" />
               </div>
               <div className="flex-1 text-left">
-                <div className="text-[14px] font-semibold text-[#FFFFFF]">Export as CSV</div>
-                <div className="text-[11px] text-[#A0A0A5] mt-0.5">Time-series history data for analysis</div>
+                <div className="text-body-md font-semibold text-[#FFFFFF]">Export as CSV</div>
+                <div className="text-caption text-[#A0A0A5] mt-0.5">Time-series history data for analysis</div>
               </div>
               {exportLoading === 'csv' ? (
                 <RotateCcw size={18} className="text-[#FF9500] animate-spin" />
@@ -203,11 +203,11 @@ export default function DataExportPage() {
                   <RotateCcw size={18} className="text-[#A855F7]" />
                 </div>
                 <div>
-                  <div className="text-[14px] font-semibold text-[#FFFFFF]">Recycle Bin</div>
-                  <div className="text-[11px] text-[#A0A0A5] mt-0.5">Deleted data kept for 30 days</div>
+                  <div className="text-body-md font-semibold text-[#FFFFFF]">Recycle Bin</div>
+                  <div className="text-caption text-[#A0A0A5] mt-0.5">Deleted data kept for 30 days</div>
                 </div>
               </div>
-              <span className="text-[11px] px-2 py-0.5 rounded-full bg-[rgba(168,85,247,0.15)] text-[#A855F7] font-semibold">
+              <span className="text-caption px-2 py-0.5 rounded-full bg-[rgba(168,85,247,0.15)] text-[#A855F7] font-semibold">
                 Empty
               </span>
             </div>
@@ -222,7 +222,7 @@ export default function DataExportPage() {
           className="bg-[#262626] rounded-[20px] overflow-hidden mb-4"
         >
           <div className="px-4 py-3 border-b border-[rgba(255,255,255,0.06)]">
-            <span className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase">
+            <span className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase">
               Privacy Preferences
             </span>
           </div>
@@ -232,7 +232,7 @@ export default function DataExportPage() {
             </div>
             <div className="flex-1">
               <div className="text-[13px] font-semibold text-[#FFFFFF]">Anonymous Analytics</div>
-              <div className="text-[11px] text-[#A0A0A5] mt-0.5">Help improve Sierro (no personal data)</div>
+              <div className="text-caption text-[#A0A0A5] mt-0.5">Help improve Sierro (no personal data)</div>
             </div>
             <ToggleSwitch
               isOn={privacyAck}
@@ -247,7 +247,7 @@ export default function DataExportPage() {
         </motion.div>
 
         {/* Legal links */}
-        <div className="text-center py-2 text-[11px]">
+        <div className="text-center py-2 text-caption">
           <div className="flex items-center justify-center gap-3 mb-2">
             <button onClick={() => navigate('/privacy')} className="text-[#A0A0A5] hover:text-[#FFFFFF] transition-colors">
               Privacy Policy

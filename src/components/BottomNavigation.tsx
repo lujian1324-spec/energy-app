@@ -41,7 +41,7 @@ export default function BottomNavigation() {
                 >
                   <Icon size={22} aria-hidden="true" />
                   {isActive && (
-                    <span className="text-[12px] font-bold tracking-wider uppercase">
+                    <span className="text-label font-bold tracking-wider uppercase">
                       {item.label}
                     </span>
                   )}

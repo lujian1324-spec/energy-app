@@ -124,7 +124,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
       <div className="px-5 pt-4 pb-4 safe-area-top flex items-center gap-3">
         <button 
           onClick={onBack}
-          className="p-2 -ml-2 rounded-xl hover:bg-[rgba(255,255,255,0.05)] transition-colors"
+          className="p-2 -ml-2 rounded-l hover:bg-[rgba(255,255,255,0.05)] transition-colors"
         >
           <ArrowLeft size={24} className="text-[#FFFFFF]" />
         </button>
@@ -165,7 +165,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
               {/* 悬停遮罩 */}
               <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <Camera size={24} className="text-white mb-1" />
-                <span className="text-[10px] text-white font-medium">Change Photo</span>
+                <span className="text-xs text-white font-medium">Change Photo</span>
               </div>
             </div>
             
@@ -186,11 +186,11 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
             className="hidden"
           />
           
-          <p className="text-[11px] text-[#A0A0A5] mt-3">
+          <p className="text-caption text-[#A0A0A5] mt-3">
             Tap to upload a new photo
           </p>
           {settings.founderBadge && (
-            <span className="flex items-center gap-1 text-[10px] mt-2 px-2 py-0.5 rounded-full 
+            <span className="flex items-center gap-1 text-xs mt-2 px-2 py-0.5 rounded-full 
               bg-[rgba(255,215,0,0.15)] text-[#FFD700] border border-[rgba(255,215,0,0.3)]
               font-semibold">
               <Crown size={10} />
@@ -213,7 +213,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
                 <div className="px-4 py-3">
                   <div className="flex items-center gap-2 mb-2">
                     <Icon size={14} className="text-[#A0A0A5]" />
-                    <span className="text-[11px] font-semibold text-[#A0A0A5] uppercase tracking-wide">
+                    <span className="text-caption font-semibold text-[#A0A0A5] uppercase tracking-wide">
                       {field.label}
                     </span>
                   </div>
@@ -232,13 +232,13 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
                       <div className="flex items-center gap-1">
                         <button
                           onClick={handleSave}
-                          className="p-2 rounded-xl bg-[rgba(52,199,89,0.15)] text-[#34C759]"
+                          className="p-2 rounded-l bg-[rgba(52,199,89,0.15)] text-[#34C759]"
                         >
                           <Check size={18} />
                         </button>
                         <button
                           onClick={handleCancel}
-                          className="p-2 rounded-xl bg-[rgba(255,59,48,0.15)] text-[#FF3B30]"
+                          className="p-2 rounded-l bg-[rgba(255,59,48,0.15)] text-[#FF3B30]"
                         >
                           <X size={18} />
                         </button>
@@ -250,7 +250,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
                       className="flex items-center justify-between cursor-pointer group"
                     >
                       <span className="text-[15px] text-[#FFFFFF]">{field.value}</span>
-                      <span className="text-[11px] text-[#01D6BE] opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="text-caption text-[#01D6BE] opacity-0 group-hover:opacity-100 transition-opacity">
                         Edit
                       </span>
                     </div>
@@ -262,8 +262,8 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
         </div>
 
         {/* 提示信息 */}
-        <div className="mt-8 p-4 bg-[rgba(1,214,190,0.05)] rounded-[16px] border border-[rgba(1,214,190,0.1)]">
-          <p className="text-[12px] text-[#A0A0A5] leading-relaxed">
+        <div className="mt-8 p-4 bg-[rgba(1,214,190,0.05)] rounded-l border border-[rgba(1,214,190,0.1)]">
+          <p className="text-label text-[#A0A0A5] leading-relaxed">
             Your profile information is stored locally on your device. 
             It will be used to personalize your app experience.
           </p>
@@ -271,7 +271,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
 
         {/* PRD v1.1 §4.7: Linked Email OTP Verification */}
         <div className="mt-5">
-          <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
+          <div className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
             Email Verification
           </div>
           <div className="bg-[#262626] rounded-[20px] p-4">
@@ -281,14 +281,14 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
               </div>
               <div className="flex-1">
                 <div className="text-[13px] font-semibold text-[#FFFFFF]">Linked Email</div>
-                <div className="text-[11px] text-[#A0A0A5]">{profile.email || 'No email linked'}</div>
+                <div className="text-caption text-[#A0A0A5]">{profile.email || 'No email linked'}</div>
               </div>
               <button
                 onClick={() => {
                   // PRD: 发送 OTP 到邮箱
                   alert('OTP sent to ' + profile.email)
                 }}
-                className="h-8 px-3 rounded-full bg-[rgba(1,214,190,0.12)] text-[#01D6BE] text-[11px] font-medium"
+                className="h-8 px-3 rounded-full bg-[rgba(1,214,190,0.12)] text-[#01D6BE] text-caption font-medium"
               >
                 Verify
               </button>
@@ -298,7 +298,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
 
         {/* PRD v1.1 §4.7: Third-Party Accounts */}
         <div className="mt-5">
-          <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
+          <div className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
             Linked Accounts
           </div>
           <div className="bg-[#262626] rounded-[20px] overflow-hidden">
@@ -314,14 +314,14 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
               </div>
               <div className="flex-1">
                 <div className="text-[13px] font-semibold text-[#FFFFFF]">Google</div>
-                <div className="text-[11px] text-[#636366]">Not linked</div>
+                <div className="text-caption text-[#636366]">Not linked</div>
               </div>
               <button
                 onClick={() => {
                   // PRD: Google 登录 / 链接账号
                   alert('Google login not implemented yet')
                 }}
-                className="h-8 px-3 rounded-full bg-[#333333] text-[#FFFFFF] text-[11px] font-medium"
+                className="h-8 px-3 rounded-full bg-[#333333] text-[#FFFFFF] text-caption font-medium"
               >
                 Link
               </button>
@@ -336,14 +336,14 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
               </div>
               <div className="flex-1">
                 <div className="text-[13px] font-semibold text-[#FFFFFF]">Apple</div>
-                <div className="text-[11px] text-[#636366]">Not linked</div>
+                <div className="text-caption text-[#636366]">Not linked</div>
               </div>
               <button
                 onClick={() => {
                   // PRD: Apple 登录 / 链接账号
                   alert('Apple login not implemented yet')
                 }}
-                className="h-8 px-3 rounded-full bg-[#333333] text-[#FFFFFF] text-[11px] font-medium"
+                className="h-8 px-3 rounded-full bg-[#333333] text-[#FFFFFF] text-caption font-medium"
               >
                 Link
               </button>

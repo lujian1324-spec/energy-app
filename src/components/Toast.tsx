@@ -51,7 +51,7 @@ function ToastCard({ toast, onDismiss }: { toast: ToastItem; onDismiss: (id: str
       <div className="flex-1 min-w-0">
         <div className="text-[13px] font-semibold text-[#FFFFFF] leading-snug">{toast.title}</div>
         {toast.message && (
-          <div className="text-[11px] text-[#A0A0A5] mt-0.5 leading-snug">{toast.message}</div>
+          <div className="text-caption text-[#A0A0A5] mt-0.5 leading-snug">{toast.message}</div>
         )}
       </div>
       <button

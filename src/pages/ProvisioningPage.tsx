@@ -217,9 +217,9 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
         <button onClick={handleClose} className="p-1">
           <XCircle size={20} className="text-[#A0A0A5]" />
         </button>
-        <h1 className="text-[14px] font-semibold text-[#FFFFFF] ml-2 flex-1">蓝牙配网</h1>
+        <h1 className="text-body-md font-semibold text-[#FFFFFF] ml-2 flex-1">蓝牙配网</h1>
         {currentStepIndex > 0 && (
-          <button onClick={goBack} className="text-[12px] text-[#A0A0A5] flex items-center gap-0.5">
+          <button onClick={goBack} className="text-label text-[#A0A0A5] flex items-center gap-0.5">
             <ChevronLeft size={14} /> 上一步
           </button>
         )}
@@ -232,7 +232,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
           const isCompleted = i < currentStepIndex
           return (
             <div key={s.key} className="flex items-center">
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold transition-colors
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold transition-colors
                 ${isCompleted ? 'bg-[#01D6BE] text-[#000]' : isActive ? 'bg-[#01D6BE] text-[#000]' : 'bg-[#333333] text-[#636366]'}`}>
                 {isCompleted ? '✓' : i + 1}
               </div>
@@ -251,17 +251,17 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
           {store.step === 'scan' && (
             <motion.div key="scan" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} className="mt-8">
               <div className="text-center mb-8">
-                <div className="w-16 h-16 rounded-2xl bg-[rgba(1,214,190,0.15)] flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 rounded-l bg-[rgba(1,214,190,0.15)] flex items-center justify-center mx-auto mb-4">
                   <Radio size={28} className="text-[#01D6BE]" />
                 </div>
-                <h2 className="text-[16px] font-semibold text-[#FFFFFF] mb-1">扫描蓝牙设备</h2>
-                <p className="text-[12px] text-[#A0A0A5]">请确保采集器已通电，蓝牙指示灯闪烁</p>
+                <h2 className="text-body-lg font-semibold text-[#FFFFFF] mb-1">扫描蓝牙设备</h2>
+                <p className="text-label text-[#A0A0A5]">请确保采集器已通电，蓝牙指示灯闪烁</p>
               </div>
 
               <button
                 onClick={handleScan}
                 disabled={store.isOperating}
-                className="w-full py-3.5 rounded-2xl bg-[#01D6BE] text-[#000] text-[14px] font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full py-3.5 rounded-l bg-[#01D6BE] text-[#000] text-body-md font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {store.isOperating ? (
                   <><Loader2 size={16} className="animate-spin" /> 扫描中...</>
@@ -270,9 +270,9 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                 )}
               </button>
 
-              <div className="mt-4 bg-[#262626] rounded-xl p-3">
-                <p className="text-[10px] text-[#636366] mb-1">设备蓝牙名称格式: SSL_0...</p>
-                <p className="text-[10px] text-[#636366]">0=WiFi未连接, 1=WiFi已连接, 3=MQTT已连接</p>
+              <div className="mt-4 bg-[#262626] rounded-l p-3">
+                <p className="text-xs text-[#636366] mb-1">设备蓝牙名称格式: SSL_0...</p>
+                <p className="text-xs text-[#636366]">0=WiFi未连接, 1=WiFi已连接, 3=MQTT已连接</p>
               </div>
             </motion.div>
           )}
@@ -281,33 +281,33 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
           {store.step === 'verify' && (
             <motion.div key="verify" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} className="mt-8">
               <div className="text-center mb-6">
-                <div className="w-16 h-16 rounded-2xl bg-[rgba(1,214,190,0.15)] flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 rounded-l bg-[rgba(1,214,190,0.15)] flex items-center justify-center mx-auto mb-4">
                   <CheckCircle size={28} className="text-[#01D6BE]" />
                 </div>
-                <h2 className="text-[16px] font-semibold text-[#FFFFFF] mb-1">设备已连接</h2>
-                <p className="text-[12px] text-[#A0A0A5]">{store.deviceName}</p>
-                {store.dtuid && <p className="text-[10px] text-[#636366] mt-1">DTUID: {store.dtuid}</p>}
+                <h2 className="text-body-lg font-semibold text-[#FFFFFF] mb-1">设备已连接</h2>
+                <p className="text-label text-[#A0A0A5]">{store.deviceName}</p>
+                {store.dtuid && <p className="text-xs text-[#636366] mt-1">DTUID: {store.dtuid}</p>}
               </div>
 
               {store.deviceVersion && (
-                <div className="bg-[#262626] rounded-xl p-4 mb-4 space-y-2">
+                <div className="bg-[#262626] rounded-l p-4 mb-4 space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-[12px] text-[#A0A0A5]">软件版本</span>
-                    <span className="text-[12px] text-[#FFFFFF]">{store.deviceVersion}</span>
+                    <span className="text-label text-[#A0A0A5]">软件版本</span>
+                    <span className="text-label text-[#FFFFFF]">{store.deviceVersion}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[12px] text-[#A0A0A5]">硬件型号</span>
-                    <span className="text-[12px] text-[#FFFFFF]">{store.hardwareVersion}</span>
+                    <span className="text-label text-[#A0A0A5]">硬件型号</span>
+                    <span className="text-label text-[#FFFFFF]">{store.hardwareVersion}</span>
                   </div>
                 </div>
               )}
 
               {/* 蓝牙密码验证 */}
               {store.needBleKey && !store.bleKeyVerified && (
-                <div className="bg-[#262626] rounded-xl p-4 mb-4">
+                <div className="bg-[#262626] rounded-l p-4 mb-4">
                   <div className="flex items-center gap-2 mb-3">
                     <Lock size={14} className="text-[#FF9500]" />
-                    <span className="text-[12px] text-[#FFFFFF] font-semibold">需要蓝牙密码</span>
+                    <span className="text-label text-[#FFFFFF] font-semibold">需要蓝牙密码</span>
                   </div>
                   <input
                     type="password"
@@ -319,7 +319,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                   <button
                     onClick={handleConfirmBleKey}
                     disabled={store.isOperating || !bleKeyInput.trim()}
-                    className="w-full py-2.5 rounded-lg bg-[#FF9500] text-[#000] text-[12px] font-semibold disabled:opacity-50 flex items-center justify-center gap-1"
+                    className="w-full py-2.5 rounded-lg bg-[#FF9500] text-[#000] text-label font-semibold disabled:opacity-50 flex items-center justify-center gap-1"
                   >
                     {store.isOperating ? <Loader2 size={12} className="animate-spin" /> : <Unlock size={12} />}
                     验证密码
@@ -330,7 +330,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
               <button
                 onClick={handleVerify}
                 disabled={store.isOperating}
-                className="w-full py-3.5 rounded-2xl bg-[#01D6BE] text-[#000] text-[14px] font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full py-3.5 rounded-l bg-[#01D6BE] text-[#000] text-body-md font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {store.isOperating ? <Loader2 size={16} className="animate-spin" /> : <Wifi size={16} />}
                 扫描 WiFi 列表
@@ -341,18 +341,18 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
           {/* ── Step 2: WiFi 列表 ── */}
           {store.step === 'wifi' && (
             <motion.div key="wifi" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} className="mt-4">
-              <h2 className="text-[14px] font-semibold text-[#FFFFFF] mb-3">可用 WiFi ({store.apList.length})</h2>
+              <h2 className="text-body-md font-semibold text-[#FFFFFF] mb-3">可用 WiFi ({store.apList.length})</h2>
 
               {store.apLoading ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 size={24} className="text-[#01D6BE] animate-spin" />
-                  <span className="text-[12px] text-[#A0A0A5] ml-2">扫描中...</span>
+                  <span className="text-label text-[#A0A0A5] ml-2">扫描中...</span>
                 </div>
               ) : store.apList.length === 0 ? (
                 <div className="text-center py-12">
                   <WifiOff size={32} className="text-[#636366] mx-auto mb-3" />
-                  <p className="text-[12px] text-[#A0A0A5]">未发现 WiFi 网络</p>
-                  <button onClick={handleScanWifi} className="mt-4 text-[12px] text-[#01D6BE] flex items-center gap-1 mx-auto">
+                  <p className="text-label text-[#A0A0A5]">未发现 WiFi 网络</p>
+                  <button onClick={handleScanWifi} className="mt-4 text-label text-[#01D6BE] flex items-center gap-1 mx-auto">
                     <RefreshCw size={12} /> 重新扫描
                   </button>
                 </div>
@@ -362,7 +362,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                     <button
                       key={`${ap.SSID}-${i}`}
                       onClick={() => { store.setSelectedSsid(ap.SSID); store.setStep('password') }}
-                      className="w-full flex items-center justify-between px-4 py-3 bg-[#262626] rounded-xl active:bg-[#333333] transition-colors"
+                      className="w-full flex items-center justify-between px-4 py-3 bg-[#262626] rounded-l active:bg-[#333333] transition-colors"
                     >
                       <div className="flex items-center gap-3">
                         <Wifi size={16} className={ap.SSID ? 'text-[#01D6BE]' : 'text-[#636366]'} />
@@ -374,7 +374,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                       </div>
                     </button>
                   ))}
-                  <button onClick={handleScanWifi} className="text-[11px] text-[#A0A0A5] flex items-center gap-1 mx-auto mt-2">
+                  <button onClick={handleScanWifi} className="text-caption text-[#A0A0A5] flex items-center gap-1 mx-auto mt-2">
                     <RefreshCw size={10} /> 重新扫描
                   </button>
                 </div>
@@ -384,7 +384,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
               <div className="mt-4">
                 <button
                   onClick={() => { store.setSelectedSsid(''); store.setStep('password') }}
-                  className="w-full py-3 rounded-xl border border-dashed border-[#636366] text-[12px] text-[#A0A0A5] flex items-center justify-center gap-1"
+                  className="w-full py-3 rounded-l border border-dashed border-[#636366] text-label text-[#A0A0A5] flex items-center justify-center gap-1"
                 >
                   手动输入 SSID
                 </button>
@@ -395,12 +395,12 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
           {/* ── Step 3: 输入密码 ── */}
           {store.step === 'password' && (
             <motion.div key="password" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} className="mt-8">
-              <h2 className="text-[16px] font-semibold text-[#FFFFFF] mb-4">WiFi 配置</h2>
+              <h2 className="text-body-lg font-semibold text-[#FFFFFF] mb-4">WiFi 配置</h2>
 
-              <div className="bg-[#262626] rounded-xl p-4 space-y-4">
+              <div className="bg-[#262626] rounded-l p-4 space-y-4">
                 {/* SSID */}
                 <div>
-                  <label className="text-[11px] text-[#A0A0A5] mb-1.5 block">WiFi 名称 (SSID)</label>
+                  <label className="text-caption text-[#A0A0A5] mb-1.5 block">WiFi 名称 (SSID)</label>
                   {store.selectedSsid === null ? (
                     <input
                       type="text"
@@ -412,14 +412,14 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                   ) : (
                     <div className="flex items-center justify-between bg-[#333333] rounded-lg px-3 py-2.5">
                       <span className="text-[13px] text-[#FFFFFF]">{store.selectedSsid}</span>
-                      <button onClick={() => store.setSelectedSsid(null)} className="text-[11px] text-[#A0A0A5]">更换</button>
+                      <button onClick={() => store.setSelectedSsid(null)} className="text-caption text-[#A0A0A5]">更换</button>
                     </div>
                   )}
                 </div>
 
                 {/* Password */}
                 <div>
-                  <label className="text-[11px] text-[#A0A0A5] mb-1.5 block">WiFi 密码</label>
+                  <label className="text-caption text-[#A0A0A5] mb-1.5 block">WiFi 密码</label>
                   <div className="relative">
                     <input
                       type={showPassword ? 'text' : 'password'}
@@ -441,7 +441,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
               <button
                 onClick={handleConfig}
                 disabled={store.isOperating || !store.wifiPassword}
-                className="w-full mt-6 py-3.5 rounded-2xl bg-[#01D6BE] text-[#000] text-[14px] font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full mt-6 py-3.5 rounded-l bg-[#01D6BE] text-[#000] text-body-md font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {store.isOperating ? <Loader2 size={16} className="animate-spin" /> : <Wifi size={16} />}
                 开始配网
@@ -453,8 +453,8 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
           {store.step === 'configuring' && (
             <motion.div key="configuring" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} className="mt-12 text-center">
               <Loader2 size={32} className="text-[#01D6BE] animate-spin mx-auto mb-4" />
-              <h2 className="text-[16px] font-semibold text-[#FFFFFF] mb-1">正在配置...</h2>
-              <p className="text-[12px] text-[#A0A0A5]">请稍候，正在向设备发送 WiFi 配置</p>
+              <h2 className="text-body-lg font-semibold text-[#FFFFFF] mb-1">正在配置...</h2>
+              <p className="text-label text-[#A0A0A5]">请稍候，正在向设备发送 WiFi 配置</p>
             </motion.div>
           )}
 
@@ -462,45 +462,45 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
           {store.step === 'result' && (
             <motion.div key="result" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} className="mt-8">
               <div className="text-center mb-6">
-                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4
+                <div className={`w-16 h-16 rounded-l flex items-center justify-center mx-auto mb-4
                   ${store.configResult === 'success' ? 'bg-[rgba(52,199,89,0.15)]' : 'bg-[rgba(255,59,48,0.15)]'}`}>
                   {store.configResult === 'success'
                     ? <CheckCircle size={28} className="text-[#34C759]" />
                     : <XCircle size={28} className="text-[#FF3B30]" />
                   }
                 </div>
-                <h2 className="text-[16px] font-semibold text-[#FFFFFF] mb-1">
+                <h2 className="text-body-lg font-semibold text-[#FFFFFF] mb-1">
                   {store.configResult === 'success' ? '配网成功' : '配网失败'}
                 </h2>
                 {store.errorMessage && (
-                  <p className="text-[12px] text-[#FF3B30]">{store.errorMessage}</p>
+                  <p className="text-label text-[#FF3B30]">{store.errorMessage}</p>
                 )}
               </div>
 
               {/* WiFi 状态 */}
               {store.wifiStatus && (
-                <div className="bg-[#262626] rounded-xl p-4 mb-4 space-y-2">
+                <div className="bg-[#262626] rounded-l p-4 mb-4 space-y-2">
                   <div className="flex items-center gap-2 mb-2">
                     <Wifi size={14} className="text-[#01D6BE]" />
-                    <span className="text-[12px] text-[#FFFFFF] font-semibold">WiFi 状态</span>
+                    <span className="text-label text-[#FFFFFF] font-semibold">WiFi 状态</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[11px] text-[#A0A0A5]">连接状态</span>
-                    <span className={`text-[11px] ${store.wifiStatus.WConn ? 'text-[#34C759]' : 'text-[#FF3B30]'}`}>
+                    <span className="text-caption text-[#A0A0A5]">连接状态</span>
+                    <span className={`text-caption ${store.wifiStatus.WConn ? 'text-[#34C759]' : 'text-[#FF3B30]'}`}>
                       {store.wifiStatus.WConn ? '已连接' : '未连接'}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[11px] text-[#A0A0A5]">SSID</span>
-                    <span className="text-[11px] text-[#FFFFFF]">{store.wifiStatus.SSID}</span>
+                    <span className="text-caption text-[#A0A0A5]">SSID</span>
+                    <span className="text-caption text-[#FFFFFF]">{store.wifiStatus.SSID}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[11px] text-[#A0A0A5]">信号强度</span>
-                    <span className="text-[11px] text-[#FFFFFF]">{store.wifiStatus.RSSI} dBm</span>
+                    <span className="text-caption text-[#A0A0A5]">信号强度</span>
+                    <span className="text-caption text-[#FFFFFF]">{store.wifiStatus.RSSI} dBm</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[11px] text-[#A0A0A5]">MQTT</span>
-                    <span className={`text-[11px] ${store.wifiStatus.SConn ? 'text-[#34C759]' : 'text-[#FF9500]'}`}>
+                    <span className="text-caption text-[#A0A0A5]">MQTT</span>
+                    <span className={`text-caption ${store.wifiStatus.SConn ? 'text-[#34C759]' : 'text-[#FF9500]'}`}>
                       {store.wifiStatus.SConn ? '已连接' : '未连接'}
                     </span>
                   </div>
@@ -513,7 +513,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                   <button
                     onClick={handleCheckStatus}
                     disabled={store.isOperating}
-                    className="w-full py-3 rounded-xl bg-[#262626] text-[#01D6BE] text-[13px] font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="w-full py-3 rounded-l bg-[#262626] text-[#01D6BE] text-[13px] font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     {store.isOperating ? <Loader2 size={14} className="animate-spin" /> : <Server size={14} />}
                     查询连接状态
@@ -523,7 +523,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                 <button
                   onClick={handleRestart}
                   disabled={store.isOperating}
-                  className="w-full py-3 rounded-xl bg-[#262626] text-[#FF9500] text-[13px] font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-l bg-[#262626] text-[#FF9500] text-[13px] font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {store.isOperating ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
                   重启设备
@@ -532,7 +532,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                 {store.configResult === 'fail' && (
                   <button
                     onClick={() => { store.setStep('wifi'); store.setErrorMessage(null) }}
-                    className="w-full py-3 rounded-xl bg-[#262626] text-[#FFFFFF] text-[13px] font-semibold flex items-center justify-center gap-2"
+                    className="w-full py-3 rounded-l bg-[#262626] text-[#FFFFFF] text-[13px] font-semibold flex items-center justify-center gap-2"
                   >
                     <ArrowLeft size={14} /> 重新配置
                   </button>
@@ -547,10 +547,10 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
           {store.errorMessage && store.step !== 'result' && (
             <motion.div
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
-              className="mt-4 flex items-start gap-2 bg-[rgba(255,59,48,0.1)] rounded-xl px-3 py-2.5"
+              className="mt-4 flex items-start gap-2 bg-[rgba(255,59,48,0.1)] rounded-l px-3 py-2.5"
             >
               <AlertCircle size={14} className="text-[#FF3B30] mt-0.5 shrink-0" />
-              <span className="text-[11px] text-[#FF3B30]">{store.errorMessage}</span>
+              <span className="text-caption text-[#FF3B30]">{store.errorMessage}</span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -558,7 +558,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
         {/* Debug Log (折叠) */}
         {store.logs.length > 0 && (
           <details className="mt-6">
-            <summary className="text-[10px] text-[#636366] cursor-pointer">调试日志 ({store.logs.length})</summary>
+            <summary className="text-xs text-[#636366] cursor-pointer">调试日志 ({store.logs.length})</summary>
             <div className="mt-1 max-h-32 overflow-y-auto bg-[#262626] rounded-lg p-2">
               {store.logs.map((log, i) => (
                 <div key={i} className="text-[9px] font-mono text-[#636366]">{log}</div>

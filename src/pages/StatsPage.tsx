@@ -249,7 +249,7 @@ function ChartAreaSkeleton() {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
       className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-[20px] p-4 mb-4">
       <div className="h-4 w-28 bg-[rgba(255,255,255,0.05)] rounded animate-pulse mb-4" />
-      <div className="h-[140px] bg-[rgba(255,255,255,0.02)] rounded-[14px] animate-pulse" />
+      <div className="h-[140px] bg-[rgba(255,255,255,0.02)] rounded-l animate-pulse" />
     </motion.div>
   )
 }
@@ -260,11 +260,11 @@ function ChartEmptyState({ message }: { message: string }) {
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
       className="flex flex-col items-center justify-center py-12 px-6 bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-[20px] mb-4">
-      <div className="w-14 h-14 rounded-2xl bg-[rgba(255,255,255,0.03)] flex items-center justify-center mb-3">
+      <div className="w-14 h-14 rounded-l bg-[rgba(255,255,255,0.03)] flex items-center justify-center mb-3">
         <BarChart3 size={28} className="text-[#636366]" />
       </div>
-      <p className="text-[14px] font-semibold text-[#FFFFFF] mb-1">No history data yet</p>
-      <p className="text-[12px] text-[#A0A0A5] text-center leading-relaxed">{message}</p>
+      <p className="text-body-md font-semibold text-[#FFFFFF] mb-1">No history data yet</p>
+      <p className="text-label text-[#A0A0A5] text-center leading-relaxed">{message}</p>
     </motion.div>
   )
 }
@@ -406,16 +406,16 @@ export default function StatsPage() {
   const noDevice = (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
       className="flex flex-col items-center justify-center py-20 px-8">
-      <div className="w-16 h-16 rounded-2xl bg-[#262626] flex items-center justify-center mb-4">
+      <div className="w-16 h-16 rounded-l bg-[#262626] flex items-center justify-center mb-4">
         <BarChart3 size={32} className="text-[#636366]" />
       </div>
-      <h3 className="text-[16px] font-bold text-[#FFFFFF] mb-2">No Data Yet</h3>
+      <h3 className="text-body-lg font-bold text-[#FFFFFF] mb-2">No Data Yet</h3>
       <p className="text-[13px] text-[#A0A0A5] text-center leading-relaxed mb-6">
         Connect a device to start tracking energy usage and statistics.
       </p>
       <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#262626] border border-[rgba(255,255,255,0.06)]">
         <WifiOff size={14} className="text-[#636366]" />
-        <span className="text-[12px] text-[#636366]">No device connected</span>
+        <span className="text-label text-[#636366]">No device connected</span>
       </div>
     </motion.div>
   )
@@ -470,7 +470,7 @@ export default function StatsPage() {
               <button
                 key={p}
                 onClick={() => setPeriod(p)}
-                className={`text-[10px] font-semibold px-2.5 py-1 rounded-full transition-all duration-200
+                className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-all duration-200
                   ${period === p ? 'bg-[#01D6BE] text-[#000000]' : 'text-[#A0A0A5] hover:text-[#FFFFFF]'}`}
               >
                 {p}
@@ -516,9 +516,9 @@ export default function StatsPage() {
                     <span className="text-[36px] font-extrabold text-[#34C759] leading-none">
                       {chartFrame.co2Kg}
                     </span>
-                    <span className="text-[14px] text-[#A0A0A5]">Kg</span>
+                    <span className="text-body-md text-[#A0A0A5]">Kg</span>
                   </div>
-                  <p className="text-[12px] text-[#A0A0A5]">{chartFrame.ecoInsight}</p>
+                  <p className="text-label text-[#A0A0A5]">{chartFrame.ecoInsight}</p>
                   {/* PRD v1.1 §8.3: 计算逻辑可审计 */}
                   <div className="mt-3">
                     <CalcAudit
@@ -541,11 +541,11 @@ Data source: US EPA eGRID 2024 average emission rate`}
                   <div className="flex justify-between items-center mb-4">
                     <div className="text-sm font-bold text-[#FFFFFF]">Input vs Output</div>
                     <div className="flex gap-3">
-                      <div className="flex items-center gap-1.5 text-[10px] text-[#A0A0A5]">
+                      <div className="flex items-center gap-1.5 text-xs text-[#A0A0A5]">
                         <div className="w-2 h-2 rounded-full bg-[#01D6BE]" />
                         <span>Solar (W)</span>
                       </div>
-                      <div className="flex items-center gap-1.5 text-[10px] text-[#A0A0A5]">
+                      <div className="flex items-center gap-1.5 text-xs text-[#A0A0A5]">
                         <div className="w-2 h-2 rounded-full bg-[#01A88F]" />
                         <span>Output (W)</span>
                       </div>
@@ -612,7 +612,7 @@ Data source: US EPA eGRID 2024 average emission rate`}
 
                   {/* AI Insight */}
                   <div className="mt-4 pt-3 border-t border-[rgba(1,214,190,0.06)]">
-                    <p className="text-[11px] text-[#A0A0A5]">
+                    <p className="text-caption text-[#A0A0A5]">
                       <span className="text-[#01D6BE] font-semibold">Insight: </span>
                       {chartFrame.insight}
                     </p>
@@ -630,7 +630,7 @@ Data source: US EPA eGRID 2024 average emission rate`}
               >
                 <div className="flex justify-between items-center mb-3">
                   <div className="text-sm font-bold text-[#FFFFFF]">Battery Health</div>
-                  <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[rgba(52,199,89,0.12)] text-[#34C759] border border-[rgba(52,199,89,0.25)] text-[10px] font-semibold">
+                  <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[rgba(52,199,89,0.12)] text-[#34C759] border border-[rgba(52,199,89,0.25)] text-xs font-semibold">
                     Good
                   </div>
                 </div>
@@ -645,22 +645,22 @@ Data source: US EPA eGRID 2024 average emission rate`}
                     />
                   </div>
                   <div className="flex-1 grid grid-cols-2 gap-3">
-                    <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-[12px] p-2.5">
-                      <div className="text-[14px] font-bold text-[#FFFFFF]">{soc}%</div>
+                    <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-l p-2.5">
+                      <div className="text-body-md font-bold text-[#FFFFFF]">{soc}%</div>
                       <div className="text-[9px] text-[#A0A0A5] mt-0.5">Charge</div>
                     </div>
-                    <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-[12px] p-2.5">
-                      <div className="text-[14px] font-bold text-[#34C759]">
+                    <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-l p-2.5">
+                      <div className="text-body-md font-bold text-[#34C759]">
                         {batteryTemp > 0 ? `${batteryTemp}°C` : '--'}
                       </div>
                       <div className="text-[9px] text-[#A0A0A5] mt-0.5">Temp</div>
                     </div>
-                    <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-[12px] p-2.5">
-                      <div className="text-[14px] font-bold text-[#01D6BE]">{deviceDays}</div>
+                    <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-l p-2.5">
+                      <div className="text-body-md font-bold text-[#01D6BE]">{deviceDays}</div>
                       <div className="text-[9px] text-[#A0A0A5] mt-0.5">Days</div>
                     </div>
-                    <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-[12px] p-2.5">
-                      <div className="text-[14px] font-bold text-[#FF9500]">{batteryHealth}%</div>
+                    <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-l p-2.5">
+                      <div className="text-body-md font-bold text-[#FF9500]">{batteryHealth}%</div>
                       <div className="text-[9px] text-[#A0A0A5] mt-0.5">Health</div>
                     </div>
                   </div>

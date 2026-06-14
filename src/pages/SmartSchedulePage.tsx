@@ -366,17 +366,17 @@ export default function SmartSchedulePage() {
           {selectedDeviceId ? (
             <>
               {peakValleyLoading ? (
-                <div className="flex items-center gap-1.5 text-[11px] text-[#A0A0A5] bg-[#262626] rounded-full px-3 py-1.5">
+                <div className="flex items-center gap-1.5 text-caption text-[#A0A0A5] bg-[#262626] rounded-full px-3 py-1.5">
                   <Loader2 size={12} className="animate-spin text-[#01D6BE]" />
                   Loading config...
                 </div>
               ) : peakValleyError ? (
-                <div className="flex items-center gap-1.5 text-[11px] text-[#FF9500] bg-[rgba(255,149,0,0.1)] rounded-full px-3 py-1.5">
+                <div className="flex items-center gap-1.5 text-caption text-[#FF9500] bg-[rgba(255,149,0,0.1)] rounded-full px-3 py-1.5">
                   <CloudOff size={12} />
                   Using cached settings
                 </div>
               ) : (
-                <div className="flex items-center gap-1.5 text-[11px] text-[#34C759] bg-[rgba(52,199,89,0.1)] rounded-full px-3 py-1.5">
+                <div className="flex items-center gap-1.5 text-caption text-[#34C759] bg-[rgba(52,199,89,0.1)] rounded-full px-3 py-1.5">
                   <Check size={12} />
                   Synced to device
                 </div>
@@ -393,7 +393,7 @@ export default function SmartSchedulePage() {
               <button
                 onClick={handleSaveToDevice}
                 disabled={peakValleySaving || peakValleyLoading}
-                className="flex items-center gap-1.5 h-8 px-3 rounded-full text-[11px] font-medium transition-colors
+                className="flex items-center gap-1.5 h-8 px-3 rounded-full text-caption font-medium transition-colors
                   bg-[rgba(1,214,190,0.12)] text-[#01D6BE] hover:bg-[rgba(1,214,190,0.2)] disabled:opacity-40"
                 title="Save settings to device"
               >
@@ -406,7 +406,7 @@ export default function SmartSchedulePage() {
               </button>
             </>
           ) : (
-            <div className="flex items-center gap-1.5 text-[11px] text-[#636366] bg-[#262626] rounded-full px-3 py-1.5">
+            <div className="flex items-center gap-1.5 text-caption text-[#636366] bg-[#262626] rounded-full px-3 py-1.5">
               <CloudOff size={12} />
               Demo mode — no device selected
             </div>
@@ -427,7 +427,7 @@ export default function SmartSchedulePage() {
               </div>
               <div>
                 <div className="text-[15px] font-bold text-[#FFFFFF]">Smart Schedule</div>
-                <div className="text-[12px] text-[#A0A0A5]">
+                <div className="text-label text-[#A0A0A5]">
                   {peakShavingSettings.enabled ? 'Active — Optimizing electricity cost' : 'Disabled'}
                 </div>
               </div>
@@ -453,9 +453,9 @@ export default function SmartSchedulePage() {
             animate={{ opacity: 1, y: 0 }}
             className="bg-[#262626] rounded-[20px] p-4 mb-4"
           >
-            <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase mb-3">Current Status</div>
+            <div className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase mb-3">Current Status</div>
             <div className="flex items-center gap-4">
-              <div className={`w-16 h-16 rounded-2xl flex items-center justify-center
+              <div className={`w-16 h-16 rounded-l flex items-center justify-center
                 ${currentMode === 'charge' ? 'bg-[rgba(52,199,89,0.15)]' :
                   currentMode === 'discharge' ? 'bg-[rgba(255,149,0,0.15)]' :
                   currentMode === 'grid' ? 'bg-[rgba(1,214,190,0.15)]' :
@@ -469,14 +469,14 @@ export default function SmartSchedulePage() {
                 {currentMode === 'disabled' && <Power size={28} className="text-[#636366]" />}
               </div>
               <div className="flex-1">
-                <div className="text-[18px] font-bold text-[#FFFFFF]">
+                <div className="text-title-md font-bold text-[#FFFFFF]">
                   {currentMode === 'charge' ? 'Charging' :
                    currentMode === 'discharge' ? 'Discharging' :
                    currentMode === 'grid' ? 'Grid Power' :
                    currentMode === 'battery' ? 'Battery Power' :
                    currentMode === 'disabled' ? 'Disabled' : 'Idle'}
                 </div>
-                <div className="text-[12px] text-[#A0A0A5]">
+                <div className="text-label text-[#A0A0A5]">
                   Battery: {powerStation.batteryLevel}% · {powerStation.timeToFull}
                 </div>
               </div>
@@ -491,12 +491,12 @@ export default function SmartSchedulePage() {
           transition={{ delay: 0.05 }}
           className="bg-[#262626] rounded-[20px] p-4 mb-4"
         >
-          <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase mb-3">24h Schedule</div>
+          <div className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase mb-3">24h Schedule</div>
 
           {/* Timeline bar */}
           <div className="relative mb-2">
             {/* Background bar */}
-            <div className="h-8 bg-[#333333] rounded-[8px] overflow-hidden relative">
+            <div className="h-8 bg-[#333333] rounded-m overflow-hidden relative">
               {/* Schedule blocks */}
               {peakShavingSettings.schedules.filter(s => s.enabled).map((schedule) => {
                 const config = scheduleTypeConfig[schedule.type]
@@ -554,16 +554,16 @@ export default function SmartSchedulePage() {
               <>
                 <div className="flex items-center gap-1.5">
                   <div className="w-2 h-2 rounded-full bg-[#FF9500]" />
-                  <span className="text-[10px] text-[#A0A0A5]">Peak ${peakShavingSettings.peakPrice}/kWh</span>
+                  <span className="text-xs text-[#A0A0A5]">Peak ${peakShavingSettings.peakPrice}/kWh</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-2 h-2 rounded-full bg-[#34C759]" />
-                  <span className="text-[10px] text-[#A0A0A5]">Off-Peak ${peakShavingSettings.offPeakPrice}/kWh</span>
+                  <span className="text-xs text-[#A0A0A5]">Off-Peak ${peakShavingSettings.offPeakPrice}/kWh</span>
                 </div>
                 {peakShavingSettings.partPeakPrice && (
                   <div className="flex items-center gap-1.5">
                     <div className="w-2 h-2 rounded-full bg-[#FFD700]" />
-                    <span className="text-[10px] text-[#A0A0A5]">Part-Peak ${peakShavingSettings.partPeakPrice}/kWh</span>
+                    <span className="text-xs text-[#A0A0A5]">Part-Peak ${peakShavingSettings.partPeakPrice}/kWh</span>
                   </div>
                 )}
               </>
@@ -571,11 +571,11 @@ export default function SmartSchedulePage() {
               <>
                 <div className="flex items-center gap-1.5">
                   <div className="w-2 h-2 rounded-full bg-[#FF9500]" />
-                  <span className="text-[10px] text-[#A0A0A5]">Peak ${peakShavingSettings.peakPrice}/kWh</span>
+                  <span className="text-xs text-[#A0A0A5]">Peak ${peakShavingSettings.peakPrice}/kWh</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-2 h-2 rounded-full bg-[#34C759]" />
-                  <span className="text-[10px] text-[#A0A0A5]">Off-Peak ${peakShavingSettings.offPeakPrice}/kWh</span>
+                  <span className="text-xs text-[#A0A0A5]">Off-Peak ${peakShavingSettings.offPeakPrice}/kWh</span>
                 </div>
               </>
             )}
@@ -585,13 +585,13 @@ export default function SmartSchedulePage() {
           <div className="flex items-center justify-between pt-3 border-t border-[rgba(255,255,255,0.06)]">
             <div className="flex items-center gap-2">
               <DollarSign size={14} className="text-[#01D6BE]" />
-              <span className="text-[12px] text-[#A0A0A5]">Est. daily savings</span>
+              <span className="text-label text-[#A0A0A5]">Est. daily savings</span>
             </div>
-            <span className="text-[14px] font-bold text-[#01D6BE]">${savings.daily.toFixed(2)}</span>
+            <span className="text-body-md font-bold text-[#01D6BE]">${savings.daily.toFixed(2)}</span>
           </div>
           <div className="flex items-center justify-between mt-1">
-            <span className="text-[11px] text-[#636366] pl-[22px]">Est. monthly</span>
-            <span className="text-[12px] font-semibold text-[#01D6BE]">${savings.monthly.toFixed(2)}</span>
+            <span className="text-caption text-[#636366] pl-[22px]">Est. monthly</span>
+            <span className="text-label font-semibold text-[#01D6BE]">${savings.monthly.toFixed(2)}</span>
           </div>
           {/* PRD v1.1 §8.3: 节省金额计算公式审计 */}
           <div className="mt-2">
@@ -614,23 +614,23 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
           transition={{ delay: 0.15 }}
           className="bg-[#262626] rounded-[20px] p-4 mb-4"
         >
-          <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase mb-3">Estimated Savings</div>
+          <div className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase mb-3">Estimated Savings</div>
           <div className="grid grid-cols-3 gap-3">
             <div className="text-center">
-              <div className="text-[11px] text-[#A0A0A5] mb-1">Daily</div>
-              <div className="text-[16px] font-bold text-[#01D6BE]">${savings.daily.toFixed(2)}</div>
+              <div className="text-caption text-[#A0A0A5] mb-1">Daily</div>
+              <div className="text-body-lg font-bold text-[#01D6BE]">${savings.daily.toFixed(2)}</div>
             </div>
             <div className="text-center border-x border-[rgba(255,255,255,0.05)]">
-              <div className="text-[11px] text-[#A0A0A5] mb-1">Monthly</div>
-              <div className="text-[16px] font-bold text-[#01D6BE]">${savings.monthly.toFixed(2)}</div>
+              <div className="text-caption text-[#A0A0A5] mb-1">Monthly</div>
+              <div className="text-body-lg font-bold text-[#01D6BE]">${savings.monthly.toFixed(2)}</div>
             </div>
             <div className="text-center">
-              <div className="text-[11px] text-[#A0A0A5] mb-1">Yearly</div>
-              <div className="text-[16px] font-bold text-[#01D6BE]">${savings.yearly.toFixed(2)}</div>
+              <div className="text-caption text-[#A0A0A5] mb-1">Yearly</div>
+              <div className="text-body-lg font-bold text-[#01D6BE]">${savings.yearly.toFixed(2)}</div>
             </div>
           </div>
           <div className="mt-3 pt-3 border-t border-[rgba(255,255,255,0.06)]">
-            <p className="text-[10px] text-[#636366]">
+            <p className="text-xs text-[#636366]">
               Formula: (Peak − Off-Peak) × Capacity × Cycles × Efficiency(95%) × DoD(90%) × Execution(85%)
             </p>
           </div>
@@ -645,7 +645,7 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
               exit={{ opacity: 0, height: 0 }}
               className="bg-[#262626] rounded-[20px] p-4 mb-4 overflow-hidden"
             >
-              <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase mb-3">Parameters</div>
+              <div className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase mb-3">Parameters</div>
 
               <div className="space-y-4">
                 {/* Peak Price */}
@@ -702,8 +702,8 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
                 {/* Power limits */}
                 <div className="grid grid-cols-2 gap-3 pt-2">
                   <div>
-                    <div className="text-[11px] text-[#A0A0A5] mb-1">Max Charge</div>
-                    <div className="flex items-center gap-2 bg-[#333333] rounded-[12px] px-3 py-2">
+                    <div className="text-caption text-[#A0A0A5] mb-1">Max Charge</div>
+                    <div className="flex items-center gap-2 bg-[#333333] rounded-l px-3 py-2">
                       <Battery size={14} className="text-[#34C759]" />
                       <input
                         type="number"
@@ -711,12 +711,12 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
                         onChange={(e) => updatePeakShavingSettings({ maxChargePower: parseInt(e.target.value) || 0 })}
                         className="bg-transparent text-[13px] text-[#FFFFFF] w-full outline-none"
                       />
-                      <span className="text-[11px] text-[#A0A0A5]">W</span>
+                      <span className="text-caption text-[#A0A0A5]">W</span>
                     </div>
                   </div>
                   <div>
-                    <div className="text-[11px] text-[#A0A0A5] mb-1">Max Discharge</div>
-                    <div className="flex items-center gap-2 bg-[#333333] rounded-[12px] px-3 py-2">
+                    <div className="text-caption text-[#A0A0A5] mb-1">Max Discharge</div>
+                    <div className="flex items-center gap-2 bg-[#333333] rounded-l px-3 py-2">
                       <Zap size={14} className="text-[#FF9500]" />
                       <input
                         type="number"
@@ -724,7 +724,7 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
                         onChange={(e) => updatePeakShavingSettings({ maxDischargePower: parseInt(e.target.value) || 0 })}
                         className="bg-transparent text-[13px] text-[#FFFFFF] w-full outline-none"
                       />
-                      <span className="text-[11px] text-[#A0A0A5]">W</span>
+                      <span className="text-caption text-[#A0A0A5]">W</span>
                     </div>
                   </div>
                 </div>
@@ -732,8 +732,8 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
                 {/* Battery limits */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <div className="text-[11px] text-[#A0A0A5] mb-1">Min SOC</div>
-                    <div className="flex items-center gap-2 bg-[#333333] rounded-[12px] px-3 py-2">
+                    <div className="text-caption text-[#A0A0A5] mb-1">Min SOC</div>
+                    <div className="flex items-center gap-2 bg-[#333333] rounded-l px-3 py-2">
                       <Battery size={14} className="text-[#FF3B30]" />
                       <input
                         type="number"
@@ -743,12 +743,12 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
                         onChange={(e) => updatePeakShavingSettings({ minBatteryLevel: parseInt(e.target.value) || 0 })}
                         className="bg-transparent text-[13px] text-[#FFFFFF] w-full outline-none"
                       />
-                      <span className="text-[11px] text-[#A0A0A5]">%</span>
+                      <span className="text-caption text-[#A0A0A5]">%</span>
                     </div>
                   </div>
                   <div>
-                    <div className="text-[11px] text-[#A0A0A5] mb-1">Max SOC</div>
-                    <div className="flex items-center gap-2 bg-[#333333] rounded-[12px] px-3 py-2">
+                    <div className="text-caption text-[#A0A0A5] mb-1">Max SOC</div>
+                    <div className="flex items-center gap-2 bg-[#333333] rounded-l px-3 py-2">
                       <Battery size={14} className="text-[#34C759]" />
                       <input
                         type="number"
@@ -758,7 +758,7 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
                         onChange={(e) => updatePeakShavingSettings({ maxBatteryLevel: parseInt(e.target.value) || 0 })}
                         className="bg-transparent text-[13px] text-[#FFFFFF] w-full outline-none"
                       />
-                      <span className="text-[11px] text-[#A0A0A5]">%</span>
+                      <span className="text-caption text-[#A0A0A5]">%</span>
                     </div>
                   </div>
                 </div>
@@ -770,10 +770,10 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
         {/* Schedule List */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-3">
-            <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase">Schedule</div>
+            <div className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase">Schedule</div>
             <button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-1 text-[12px] text-[#01D6BE] font-medium"
+              className="flex items-center gap-1 text-label text-[#01D6BE] font-medium"
             >
               <Plus size={14} />
               Add Schedule
@@ -792,7 +792,7 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className={`bg-[#262626] rounded-[16px] overflow-hidden transition-all
+                  className={`bg-[#262626] rounded-l overflow-hidden transition-all
                     ${schedule.enabled ? '' : 'opacity-50'}`}
                 >
                   <div
@@ -806,14 +806,14 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
                       <Icon size={20} style={{ color: config.color }} />
                     </div>
                     <div className="flex-1">
-                      <div className="text-[14px] font-semibold text-[#FFFFFF]">{schedule.name}</div>
-                      <div className="text-[11px] text-[#A0A0A5]">
+                      <div className="text-body-md font-semibold text-[#FFFFFF]">{schedule.name}</div>
+                      <div className="text-caption text-[#A0A0A5]">
                         {schedule.startTime} – {schedule.endTime}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <span
-                        className="text-[11px] px-2 py-1 rounded-full font-medium"
+                        className="text-caption px-2 py-1 rounded-full font-medium"
                         style={{ backgroundColor: config.bgColor, color: config.color }}
                       >
                         {config.emoji} {config.label}
@@ -836,7 +836,7 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
                               e.stopPropagation()
                               openEditModal(schedule)
                             }}
-                            className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[rgba(1,214,190,0.12)] text-[#01D6BE] text-[12px] font-medium"
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[rgba(1,214,190,0.12)] text-[#01D6BE] text-label font-medium"
                           >
                             <Edit2 size={12} />
                             Edit
@@ -846,7 +846,7 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
                               e.stopPropagation()
                               toggleScheduleEnabled(schedule.id, !schedule.enabled)
                             }}
-                            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-label font-medium transition-colors
                               ${schedule.enabled ? 'bg-[#34C759] text-[#000000]' : 'bg-[#636366] text-[#FFFFFF]'}`}
                           >
                             <Power size={12} />
@@ -857,7 +857,7 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
                               e.stopPropagation()
                               handleDeleteClick(schedule)
                             }}
-                            className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[rgba(255,59,48,0.15)] text-[#FF3B30] text-[12px] font-medium"
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[rgba(255,59,48,0.15)] text-[#FF3B30] text-label font-medium"
                           >
                             <Trash2 size={12} />
                             Delete
@@ -875,20 +875,20 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
             <div className="text-center py-8 text-[#636366]">
               <Clock size={48} className="mx-auto mb-3 opacity-30" />
               <p className="text-sm font-medium text-[#A0A0A5]">No schedules</p>
-              <p className="text-[11px] text-[#636366] mt-1">Add a schedule to start smart scheduling</p>
+              <p className="text-caption text-[#636366] mt-1">Add a schedule to start smart scheduling</p>
             </div>
           )}
         </div>
 
         {/* How it works */}
-        <div className="bg-[rgba(1,214,190,0.05)] rounded-[16px] p-4 mb-4">
+        <div className="bg-[rgba(1,214,190,0.05)] rounded-l p-4 mb-4">
           <div className="flex items-start gap-3">
             <div className="w-8 h-8 rounded-full bg-[rgba(1,214,190,0.15)] flex items-center justify-center flex-shrink-0">
               <TrendingDown size={16} className="text-[#01D6BE]" />
             </div>
             <div>
               <div className="text-[13px] font-semibold text-[#FFFFFF] mb-1">How it works</div>
-              <p className="text-[11px] text-[#A0A0A5] leading-relaxed">
+              <p className="text-caption text-[#A0A0A5] leading-relaxed">
                 During off-peak hours, the system charges the battery using grid power at lower rates.
                 During peak hours, the battery discharges to power your devices, reducing your electricity costs.
                 Smart Schedule automatically optimizes charge/discharge timing based on your local TOU rates.
@@ -922,25 +922,25 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
               <div className="space-y-4">
                 {/* Name */}
                 <div>
-                  <label className="text-[11px] text-[#A0A0A5] mb-2 block">Schedule Name</label>
+                  <label className="text-caption text-[#A0A0A5] mb-2 block">Schedule Name</label>
                   <input
                     type="text"
                     value={newSchedule.name}
                     onChange={(e) => setNewSchedule({ ...newSchedule, name: e.target.value })}
                     placeholder="e.g., Morning Charge"
-                    className="w-full h-11 bg-[#333333] rounded-[14px] px-4 text-[14px] text-[#FFFFFF] placeholder-[#636366] outline-none"
+                    className="w-full h-11 bg-[#333333] rounded-l px-4 text-body-md text-[#FFFFFF] placeholder-[#636366] outline-none"
                   />
                 </div>
 
                 {/* Type */}
                 <div>
-                  <label className="text-[11px] text-[#A0A0A5] mb-2 block">Type</label>
+                  <label className="text-caption text-[#A0A0A5] mb-2 block">Type</label>
                   <div className="grid grid-cols-2 gap-2">
                     {Object.entries(scheduleTypeConfig).map(([type, config]) => (
                       <button
                         key={type}
                         onClick={() => setNewSchedule({ ...newSchedule, type: type as PeakShavingSchedule['type'] })}
-                        className={`flex items-center gap-2 p-3 rounded-[14px] transition-colors
+                        className={`flex items-center gap-2 p-3 rounded-l transition-colors
                           ${newSchedule.type === type ? 'bg-[#333333] border border-[#01D6BE]' : 'bg-[#333333]'}`}
                       >
                         <config.icon size={18} style={{ color: config.color }} />
@@ -953,21 +953,21 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
                 {/* Time */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[11px] text-[#A0A0A5] mb-2 block">Start Time</label>
+                    <label className="text-caption text-[#A0A0A5] mb-2 block">Start Time</label>
                     <input
                       type="time"
                       value={newSchedule.startTime}
                       onChange={(e) => setNewSchedule({ ...newSchedule, startTime: e.target.value })}
-                      className="w-full h-11 bg-[#333333] rounded-[14px] px-4 text-[14px] text-[#FFFFFF] outline-none"
+                      className="w-full h-11 bg-[#333333] rounded-l px-4 text-body-md text-[#FFFFFF] outline-none"
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] text-[#A0A0A5] mb-2 block">End Time</label>
+                    <label className="text-caption text-[#A0A0A5] mb-2 block">End Time</label>
                     <input
                       type="time"
                       value={newSchedule.endTime}
                       onChange={(e) => setNewSchedule({ ...newSchedule, endTime: e.target.value })}
-                      className="w-full h-11 bg-[#333333] rounded-[14px] px-4 text-[14px] text-[#FFFFFF] outline-none"
+                      className="w-full h-11 bg-[#333333] rounded-l px-4 text-body-md text-[#FFFFFF] outline-none"
                     />
                   </div>
                 </div>
@@ -977,12 +977,12 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
                   <motion.div
                     initial={{ opacity: 0, y: -5 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex items-start gap-2 p-3 bg-[rgba(255,149,0,0.1)] rounded-[12px] border border-[rgba(255,149,0,0.2)]"
+                    className="flex items-start gap-2 p-3 bg-[rgba(255,149,0,0.1)] rounded-l border border-[rgba(255,149,0,0.2)]"
                   >
                     <AlertTriangle size={16} className="text-[#FF9500] flex-shrink-0 mt-0.5" />
                     <div>
-                      <div className="text-[12px] font-semibold text-[#FF9500]">Schedule Conflict</div>
-                      <div className="text-[11px] text-[#A0A0A5]">
+                      <div className="text-label font-semibold text-[#FF9500]">Schedule Conflict</div>
+                      <div className="text-caption text-[#A0A0A5]">
                         Overlaps with "{conflictResult.with}" ({conflictResult.overlap})
                       </div>
                     </div>
@@ -993,14 +993,14 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
               <div className="flex gap-3 mt-6">
                 <button
                   onClick={() => setShowAddModal(false)}
-                  className="flex-1 h-11 rounded-[14px] bg-[#333333] text-[#FFFFFF] text-[14px] font-medium"
+                  className="flex-1 h-11 rounded-l bg-[#333333] text-[#FFFFFF] text-body-md font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleAddSchedule}
                   disabled={!newSchedule.name}
-                  className="flex-1 h-11 rounded-[14px] bg-[#01D6BE] text-[#000000] text-[14px] font-semibold disabled:opacity-50"
+                  className="flex-1 h-11 rounded-l bg-[#01D6BE] text-[#000000] text-body-md font-semibold disabled:opacity-50"
                 >
                   Add Schedule
                 </button>
@@ -1045,12 +1045,12 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
                   onChange={(e) => { setZipInput(e.target.value); setTouNotFound(false) }}
                   placeholder="Enter ZIP code"
                   maxLength={5}
-                  className="flex-1 h-11 bg-[#333333] rounded-[14px] px-4 text-[14px] text-[#FFFFFF] placeholder-[#636366] outline-none"
+                  className="flex-1 h-11 bg-[#333333] rounded-l px-4 text-body-md text-[#FFFFFF] placeholder-[#636366] outline-none"
                 />
                 <button
                   onClick={handleTouLookup}
                   disabled={zipInput.length !== 5}
-                  className="px-4 h-11 rounded-[14px] bg-[#01D6BE] text-[#000000] text-[13px] font-semibold
+                  className="px-4 h-11 rounded-l bg-[#01D6BE] text-[#000000] text-[13px] font-semibold
                     disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Look up
@@ -1058,19 +1058,19 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
               </div>
 
               {touNotFound && (
-                <p className="text-[11px] text-[#FF9500]">ZIP code not found. Try 94025, 90210, 10001, 77001, or 60601.</p>
+                <p className="text-caption text-[#FF9500]">ZIP code not found. Try 94025, 90210, 10001, 77001, or 60601.</p>
               )}
 
               <div className="flex gap-3 mt-4">
                 <button
                   onClick={() => setShowTouLookup(false)}
-                  className="flex-1 h-11 rounded-[14px] bg-[#333333] text-[#FFFFFF] text-[14px] font-medium"
+                  className="flex-1 h-11 rounded-l bg-[#333333] text-[#FFFFFF] text-body-md font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => { setShowTouLookup(false); setShowSettings(true) }}
-                  className="flex-1 h-11 rounded-[14px] bg-[#333333] text-[#A0A0A5] text-[14px] font-medium"
+                  className="flex-1 h-11 rounded-l bg-[#333333] text-[#A0A0A5] text-body-md font-medium"
                 >
                   Enter Custom
                 </button>
@@ -1112,24 +1112,24 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
               <div className="space-y-4">
                 {/* Name */}
                 <div>
-                  <label className="text-[11px] text-[#A0A0A5] mb-2 block">Schedule Name</label>
+                  <label className="text-caption text-[#A0A0A5] mb-2 block">Schedule Name</label>
                   <input
                     type="text"
                     value={editForm.name || ''}
                     onChange={(e) => handleEditFormChange({ name: e.target.value })}
-                    className="w-full h-11 bg-[#333333] rounded-[14px] px-4 text-[14px] text-[#FFFFFF] outline-none"
+                    className="w-full h-11 bg-[#333333] rounded-l px-4 text-body-md text-[#FFFFFF] outline-none"
                   />
                 </div>
 
                 {/* Type */}
                 <div>
-                  <label className="text-[11px] text-[#A0A0A5] mb-2 block">Type</label>
+                  <label className="text-caption text-[#A0A0A5] mb-2 block">Type</label>
                   <div className="grid grid-cols-2 gap-2">
                     {Object.entries(scheduleTypeConfig).map(([type, config]) => (
                       <button
                         key={type}
                         onClick={() => handleEditFormChange({ type: type as PeakShavingSchedule['type'] })}
-                        className={`flex items-center gap-2 p-3 rounded-[14px] transition-colors
+                        className={`flex items-center gap-2 p-3 rounded-l transition-colors
                           ${editForm.type === type ? 'bg-[#333333] border border-[#01D6BE]' : 'bg-[#333333]'}`}
                       >
                         <config.icon size={18} style={{ color: config.color }} />
@@ -1142,21 +1142,21 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
                 {/* Time */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[11px] text-[#A0A0A5] mb-2 block">Start Time</label>
+                    <label className="text-caption text-[#A0A0A5] mb-2 block">Start Time</label>
                     <input
                       type="time"
                       value={editForm.startTime || ''}
                       onChange={(e) => handleEditFormChange({ startTime: e.target.value })}
-                      className="w-full h-11 bg-[#333333] rounded-[14px] px-4 text-[14px] text-[#FFFFFF] outline-none"
+                      className="w-full h-11 bg-[#333333] rounded-l px-4 text-body-md text-[#FFFFFF] outline-none"
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] text-[#A0A0A5] mb-2 block">End Time</label>
+                    <label className="text-caption text-[#A0A0A5] mb-2 block">End Time</label>
                     <input
                       type="time"
                       value={editForm.endTime || ''}
                       onChange={(e) => handleEditFormChange({ endTime: e.target.value })}
-                      className="w-full h-11 bg-[#333333] rounded-[14px] px-4 text-[14px] text-[#FFFFFF] outline-none"
+                      className="w-full h-11 bg-[#333333] rounded-l px-4 text-body-md text-[#FFFFFF] outline-none"
                     />
                   </div>
                 </div>
@@ -1166,12 +1166,12 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
                   <motion.div
                     initial={{ opacity: 0, y: -5 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex items-start gap-2 p-3 bg-[rgba(255,149,0,0.1)] rounded-[12px] border border-[rgba(255,149,0,0.2)]"
+                    className="flex items-start gap-2 p-3 bg-[rgba(255,149,0,0.1)] rounded-l border border-[rgba(255,149,0,0.2)]"
                   >
                     <AlertTriangle size={16} className="text-[#FF9500] flex-shrink-0 mt-0.5" />
                     <div>
-                      <div className="text-[12px] font-semibold text-[#FF9500]">Schedule Conflict</div>
-                      <div className="text-[11px] text-[#A0A0A5]">
+                      <div className="text-label font-semibold text-[#FF9500]">Schedule Conflict</div>
+                      <div className="text-caption text-[#A0A0A5]">
                         Overlaps with "{editConflict.with}" ({editConflict.overlap})
                       </div>
                     </div>
@@ -1182,14 +1182,14 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
               <div className="flex gap-3 mt-6">
                 <button
                   onClick={() => setEditingSchedule(null)}
-                  className="flex-1 h-11 rounded-[14px] bg-[#333333] text-[#FFFFFF] text-[14px] font-medium"
+                  className="flex-1 h-11 rounded-l bg-[#333333] text-[#FFFFFF] text-body-md font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveEdit}
                   disabled={!editForm.name || editConflict.conflict}
-                  className="flex-1 h-11 rounded-[14px] bg-[#01D6BE] text-[#000000] text-[14px] font-semibold disabled:opacity-50"
+                  className="flex-1 h-11 rounded-l bg-[#01D6BE] text-[#000000] text-body-md font-semibold disabled:opacity-50"
                 >
                   Save Changes
                 </button>
@@ -1201,7 +1201,7 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
                   setEditingSchedule(null)
                   handleDeleteClick({ id: editingSchedule.id, name: editingSchedule.name } as PeakShavingSchedule)
                 }}
-                className="w-full mt-3 h-11 rounded-[14px] bg-transparent text-[#FF3B30] text-[13px] font-medium
+                className="w-full mt-3 h-11 rounded-l bg-transparent text-[#FF3B30] text-[13px] font-medium
                   border border-[rgba(255,59,48,0.3)] flex items-center justify-center gap-2
                   hover:bg-[rgba(255,59,48,0.08)] active:bg-[rgba(255,59,48,0.15)] transition-colors"
               >
@@ -1246,13 +1246,13 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
               <div className="flex gap-3">
                 <button
                   onClick={handleDeleteCancel}
-                  className="flex-1 h-11 rounded-[14px] bg-[#333333] text-[#FFFFFF] text-[14px] font-medium"
+                  className="flex-1 h-11 rounded-l bg-[#333333] text-[#FFFFFF] text-body-md font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleDeleteConfirm}
-                  className="flex-1 h-11 rounded-[14px] bg-[#FF3B30] text-[#FFFFFF] text-[14px] font-semibold
+                  className="flex-1 h-11 rounded-l bg-[#FF3B30] text-[#FFFFFF] text-body-md font-semibold
                     hover:opacity-90 active:opacity-80 transition-opacity"
                 >
                   Delete
