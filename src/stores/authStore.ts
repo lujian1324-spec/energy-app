@@ -79,7 +79,9 @@ export const useAuthStore = create<AuthState>()(
             if (result.data.userId) {
               localStorage.setItem('iot_user_id', String(result.data.userId))
             }
-            set({ isAuthenticated: true, user: result.data, loading: false, error: null })
+            // 登录成功必须清除游客标记，否则会出现 isGuest && isAuthenticated
+            // 同时为真，导致游客横幅残留、/login 路由被守卫弹回。
+            set({ isAuthenticated: true, isGuest: false, user: result.data, loading: false, error: null })
             return true
           }
 
@@ -126,7 +128,7 @@ export const useAuthStore = create<AuthState>()(
         // Step 1: 用现有 token 验证
         const valid = await verifySession()
         if (valid) {
-          set({ isAuthenticated: true, sessionReady: true })
+          set({ isAuthenticated: true, isGuest: false, sessionReady: true })
           return
         }
 
@@ -136,7 +138,7 @@ export const useAuthStore = create<AuthState>()(
           // 刷新成功，再验证一次
           const valid2 = await verifySession()
           if (valid2) {
-            set({ isAuthenticated: true, sessionReady: true })
+            set({ isAuthenticated: true, isGuest: false, sessionReady: true })
             return
           }
         }

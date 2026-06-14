@@ -99,6 +99,8 @@ export default function LoginPage() {
     try {
       const result = await loginByEmail(email.trim(), emailIotCaptchaId, emailCode.trim())
       if (result.code === 0 || result.code === '0') {
+        // 更新 store 状态并清除游客标记
+        useAuthStore.setState({ isAuthenticated: true, isGuest: false, user: result.data ?? null })
         navigate('/', { replace: true })
       } else {
         setEmailError(result.message || result.msg || 'Invalid verification code.')
