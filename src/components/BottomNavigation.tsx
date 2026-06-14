@@ -35,16 +35,11 @@ export default function BottomNavigation() {
             >
               {({ isActive }) => (
                 <span
-                  className={`flex items-center gap-2 transition-colors duration-200 ${
+                  className={`flex items-center justify-center transition-colors duration-200 ${
                     isActive ? 'text-[#FFFFFF]' : 'text-[#01D6BE]/70'
                   }`}
                 >
                   <Icon size={22} aria-hidden="true" />
-                  {isActive && (
-                    <span className="text-[12px] font-bold tracking-wider uppercase">
-                      {item.label}
-                    </span>
-                  )}
                 </span>
               )}
             </NavLink>
