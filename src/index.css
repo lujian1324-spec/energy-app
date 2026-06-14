@@ -12,7 +12,7 @@
   --clr-accent: #01D6BE;
   --clr-accent-dim: #01A88F;
   --clr-warning: #FF9500;
-  --clr-danger: #FF3B30;
+  --clr-danger: #FF3530;
   --clr-success: #34C759;
   --clr-gold: #FFD700;
 
@@ -70,8 +70,16 @@ body {
   font-family: 'Inter', 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
   background: var(--bg-base);
   color: var(--txt-primary);
+  letter-spacing: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Design System: Anton for display / page titles (Figma) */
+.font-display,
+.text-display {
+  font-family: 'Anton', Impact, sans-serif;
+  letter-spacing: 0;
 }
 
 /* 隐藏滚动条 */
