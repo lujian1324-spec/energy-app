@@ -1,26 +1,11 @@
-import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Zap, AlertTriangle, Battery, WifiOff } from 'lucide-react'
+import { ArrowLeft, Battery, WifiOff } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { demoNotifications, type DemoNotification } from '../data/demoData'
 
-interface NotificationItem {
-  id: number
-  type: 'low_battery' | 'power_outage'
-  deviceName: string
-  description: string
-  time: string
-  date: string
-}
+type NotificationItem = DemoNotification
 
-const notifications: NotificationItem[] = [
-  { id: 1, type: 'low_battery', deviceName: 'Fish Tank', description: 'Estimated remaining time 1h 24m', time: '5 mins ago', date: 'Today' },
-  { id: 2, type: 'power_outage', deviceName: 'Fridge', description: 'Switched to backup power automatically.', time: '3:42 PM', date: 'Today' },
-  { id: 3, type: 'power_outage', deviceName: 'CPAP', description: 'Switched to backup power automatically.', time: '2:15 PM', date: 'Today' },
-  { id: 4, type: 'low_battery', deviceName: 'NAS', description: 'Estimated remaining time 34m', time: 'April 28', date: 'April' },
-  { id: 5, type: 'low_battery', deviceName: 'Fish Tank', description: 'Estimated remaining time 24m', time: 'April 15', date: 'April' },
-  { id: 6, type: 'power_outage', deviceName: 'Fish Tank', description: 'Switched to backup power automatically.', time: 'March 23', date: 'March' },
-  { id: 7, type: 'power_outage', deviceName: 'Fridge', description: 'Switched to backup power automatically.', time: 'March 10', date: 'March' },
-]
+const notifications: NotificationItem[] = demoNotifications
 
 export default function NotificationsPage() {
   const navigate = useNavigate()
@@ -32,7 +17,7 @@ export default function NotificationsPage() {
     return acc
   }, {})
 
-  const dateOrder = ['Today', 'April', 'March', 'May']
+  const dateOrder = ['Today', 'Yesterday', 'April', 'March', 'May']
 
   const getIcon = (type: string) => {
     if (type === 'low_battery') return <Battery size={18} className="text-[#FF9500]" />

@@ -328,10 +328,18 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
         fields: {
           soc: makeField('soc', 'State of Charge', 78, '%', 'battery'),
           batteryPower: makeField('batteryPower', 'Battery Power', -1200, 'W', 'battery'),
+          batteryVoltage: makeField('batteryVoltage', 'Battery Voltage', 51.2, 'V', 'battery'),
+          batteryCurrent: makeField('batteryCurrent', 'Battery Current', -23.4, 'A', 'battery'),
+          batteryTemp: makeField('batteryTemp', 'Battery Temp', 28.5, '°C', 'battery'),
+          batteryHealth: makeField('batteryHealth', 'Battery Health', 98, '%', 'battery'),
+          batteryCycles: makeField('batteryCycles', 'Cycles', 286, '', 'battery'),
           acPower: makeField('acPower', 'AC Power', 2400, 'W', 'ac'),
           solarPower: makeField('solarPower', 'Solar Power', 3200, 'W', 'solar'),
+          gridPower: makeField('gridPower', 'Grid Power', 0, 'W', 'grid'),
           outputPower: makeField('outputPower', 'Output Power', 3600, 'W', 'output'),
-          batteryTemp: makeField('batteryTemp', 'Battery Temp', 28.5, '°C', 'battery'),
+          dailyCharge: makeField('dailyCharge', 'Charged Today', 9.8, 'kWh', 'energy'),
+          dailyDischarge: makeField('dailyDischarge', 'Discharged Today', 6.2, 'kWh', 'energy'),
+          dailyProduced: makeField('dailyProduced', 'Solar Today', 15.6, 'kWh', 'energy'),
           workMode: makeField('workMode', 'Work Mode', 0, '', 'system'),
         },
         groups: [
@@ -500,32 +508,109 @@ export function getDemoEnergyFlow(deviceId: string | number): { code: number; me
 // ═══════════════════════════════════════════════════════
 
 export function getDemoHistoryData(deviceId: string | number, hours = 24): { code: number; message: string; data: HistoryDataResponse } {
-  const points: Array<{ time: string; value: number }> = []
   const now = Date.now()
   const numericId = typeof deviceId === 'string' ? parseInt(deviceId) : deviceId
 
-  // 生成时间序列
-  for (let i = hours * 12 - 1; i >= 0; i--) { // 5分钟间隔
-    const time = new Date(now - i * 5 * 60 * 1000).toISOString()
+  const soc: Array<{ time: string; value: number }> = []
+  const solarPower: Array<{ time: string; value: number }> = []
+  const outputPower: Array<{ time: string; value: number }> = []
+  const batteryPower: Array<{ time: string; value: number }> = []
+  const gridPower: Array<{ time: string; value: number }> = []
 
-    let value = 50
-    if (numericId === 10001) { // SIERRO 1000 - SoC
-      value = 50 + Math.sin((i / (hours * 12)) * Math.PI * 2) * 30 + (Math.random() - 0.5) * 4
-      value = Math.max(0, Math.min(100, value))
-    } else if (numericId === 10004) { // Solar Panel - Power
-      const hour = new Date(now - i * 5 * 60 * 1000).getHours()
-      value = hour >= 6 && hour <= 18 ? Math.sin((hour - 6) / 12 * Math.PI) * 4200 + (Math.random() - 0.5) * 200 : 0
-      value = Math.max(0, value)
-    }
+  // 设备额定功率（用于缩放曲线），其余设备用一套通用的住宅用电曲线
+  const solarPeak = numericId === 10004 ? 5000 : numericId === 10001 ? 3600 : 2500
+  const loadPeak = numericId === 10004 ? 1800 : 2400
 
-    points.push({ time, value })
+  // 生成 5 分钟间隔的时间序列
+  for (let i = hours * 12 - 1; i >= 0; i--) {
+    const ts = new Date(now - i * 5 * 60 * 1000)
+    const time = ts.toISOString()
+    const hour = ts.getHours() + ts.getMinutes() / 60
+    const jitter = (amp: number) => (Math.random() - 0.5) * amp
+
+    // 太阳能：日出到日落的钟形曲线（6:00–18:00）
+    const solar = hour >= 6 && hour <= 18
+      ? Math.max(0, Math.sin(((hour - 6) / 12) * Math.PI) * solarPeak + jitter(180))
+      : 0
+
+    // 负载：早晚双峰（早 7-9 点、晚 18-22 点更高）
+    const morningPeak = Math.exp(-Math.pow(hour - 8, 2) / 4)
+    const eveningPeak = Math.exp(-Math.pow(hour - 20, 2) / 6)
+    const base = 350
+    const output = Math.max(120, base + (morningPeak + eveningPeak) * loadPeak + jitter(120))
+
+    // 电池：白天光伏富余时充电（负值=充电），夜晚放电（正值）
+    const battery = solar - output
+    // 电网：补足缺口（正值=从电网取电）
+    const grid = Math.max(0, output - solar - Math.max(0, -battery))
+
+    // SoC：白天充电上升、夜晚放电下降，限制在 20–100%
+    const socVal = 60 + Math.sin(((hour - 9) / 24) * Math.PI * 2) * 35 + jitter(3)
+
+    soc.push({ time, value: Math.max(20, Math.min(100, Math.round(socVal))) })
+    solarPower.push({ time, value: Math.round(solar) })
+    outputPower.push({ time, value: Math.round(output) })
+    batteryPower.push({ time, value: Math.round(battery) })
+    gridPower.push({ time, value: Math.round(grid) })
   }
 
   return {
     code: 0,
     message: 'success',
-    data: {
-      soc: points,
-    },
+    data: { soc, solarPower, outputPower, batteryPower, gridPower },
   }
+}
+
+// ═══════════════════════════════════════════════════════
+// Demo 通知数据（Notifications 模块）
+// ═══════════════════════════════════════════════════════
+
+export interface DemoNotification {
+  id: number
+  type: 'low_battery' | 'power_outage'
+  deviceName: string
+  description: string
+  time: string
+  date: string
+}
+
+export const demoNotifications: DemoNotification[] = [
+  { id: 1, type: 'low_battery', deviceName: 'CPAP Machine', description: 'Battery at 18% — estimated 1h 24m remaining.', time: '5 mins ago', date: 'Today' },
+  { id: 2, type: 'power_outage', deviceName: 'Smart Fridge', description: 'Grid outage detected. Switched to backup power automatically.', time: '3:42 PM', date: 'Today' },
+  { id: 3, type: 'low_battery', deviceName: 'SIERRO 1000', description: 'Reserve threshold reached (20%). Charging from solar.', time: '1:10 PM', date: 'Today' },
+  { id: 4, type: 'power_outage', deviceName: 'AC Unit', description: 'Communication lost with device. Check connection.', time: 'Yesterday', date: 'Yesterday' },
+  { id: 5, type: 'low_battery', deviceName: 'Solar Panel System', description: 'Battery fully charged — exporting surplus to grid.', time: 'Apr 28', date: 'April' },
+  { id: 6, type: 'power_outage', deviceName: 'Smart Fridge', description: 'Backup power engaged for 42 minutes during outage.', time: 'Apr 15', date: 'April' },
+  { id: 7, type: 'low_battery', deviceName: 'CPAP Machine', description: 'Night session completed on backup power.', time: 'Mar 23', date: 'March' },
+]
+
+// ═══════════════════════════════════════════════════════
+// Demo 用户资料（Profile / Setting 模块）
+// ═══════════════════════════════════════════════════════
+
+export const demoUserProfile = {
+  name: 'Demo User',
+  email: 'demo@sierro.energy',
+  avatar: null as string | null,
+  memberSince: '2024-01-15T08:00:00Z',
+  founderBadge: true,
+  founderNumber: 42,
+}
+
+// ═══════════════════════════════════════════════════════
+// Demo 削峰填谷配置（Peak Shaving 模块）
+// ═══════════════════════════════════════════════════════
+
+export const demoPeakValleyConfig = {
+  enabled: true,
+  // 分时电价（美元/kWh）
+  peakPrice: 0.42,
+  offPeakPrice: 0.12,
+  // 时段（分钟，自午夜起算）
+  peakStart: 16 * 60,   // 16:00
+  peakEnd: 21 * 60,     // 21:00
+  offPeakStart: 0,      // 00:00
+  offPeakEnd: 6 * 60,   // 06:00
+  reserveSoc: 20,       // 保留电量 %
+  estimatedMonthlySaving: 48.6, // USD
 }
