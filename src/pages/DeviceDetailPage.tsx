@@ -169,12 +169,12 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
       desc: 'Total charge cycles completed',
       color: '#01D6BE' 
     },
-    { 
-      icon: Calendar, 
-      label: 'Manufactured', 
-      value: '2024-01', 
-      desc: 'Serial: SR-1000-8842',
-      color: '#A0A0A5' 
+    {
+      icon: Calendar,
+      label: 'Manufactured',
+      value: '2024-10',
+      desc: 'Serial: SN26102503Z6104955',
+      color: '#A0A0A5'
     },
     { 
       icon: Hash, 
@@ -320,9 +320,13 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           transition={{ delay: 0.1 }}
           className="flex flex-col items-center py-6"
         >
-          <div className="w-20 h-20 rounded-[24px] bg-[#262626] border border-[rgba(1,214,190,0.2)]
-            flex items-center justify-center mb-4">
-            <Battery size={36} className="text-[#01D6BE]" />
+          <div className="w-28 h-28 rounded-[24px] bg-[#1A1A1A] border border-[rgba(255,255,255,0.08)]
+            flex items-center justify-center mb-4 overflow-hidden">
+            <img
+              src="/sierro-2000-product.webp"
+              alt="Sierro 2000"
+              className="w-full h-full object-contain"
+            />
           </div>
           
           {/* 可编辑的设备名称 */}
@@ -364,7 +368,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               </>
             )}
           </div>
-          <p className="text-sm text-[#A0A0A5] mt-1">Sierro 1000 Portable Power Station</p>
+          <p className="text-sm text-[#A0A0A5] mt-1">Sierro 2000 Portable Power Station</p>
           
           {/* 状态标签 */}
           <div className="flex gap-2 mt-3">

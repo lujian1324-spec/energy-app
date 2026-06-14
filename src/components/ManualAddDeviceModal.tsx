@@ -128,7 +128,7 @@ export default function ManualAddDeviceModal({ onClose }: Props) {
               type="text"
               value={deviceName}
               onChange={e => { setDeviceName(e.target.value); setError(null) }}
-              placeholder="e.g. Sierro 1000"
+              placeholder="e.g. Sierro 2000"
               className="w-full px-4 py-3 rounded-l bg-[#141414] border border-[rgba(1,214,190,0.15)]
                 text-[#FFFFFF] text-body-md placeholder:text-[#636366]
                 focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"

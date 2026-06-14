@@ -1,6 +1,6 @@
 ﻿/**
  * Web Serial API + Modbus RTU 通讯层
- * 实现通过 RS485/串口与 Sierro 1000 储能站通信
+ * 实现通过 RS485/串口与 Sierro 2000 储能站通信
  *
  * 协议规格：
  * - Modbus RTU，设备地址 0x01

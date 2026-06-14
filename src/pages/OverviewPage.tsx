@@ -186,7 +186,7 @@ export default function OverviewPage() {
   // ─── 预估剩余时间 ───
   const remainingTimeDisplay = useMemo(() => {
     if (soc <= 0 || outputPower <= 0) return null
-    // Default capacity: 1kWh (Sierro 1000) or 2kWh (Sierro 2000)
+    // Default capacity: 2kWh (Sierro 2000)
     const modelLower = deviceModel?.toLowerCase() ?? ''
     const capacityWh = modelLower.includes('2000') ? 2000 : 1000
     const remainingWh = (soc / 100) * capacityWh

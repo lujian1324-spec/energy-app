@@ -49,19 +49,19 @@ interface PowerStationState {
 }
 
 const initialPowerStation: PowerStation = {
-  name: 'Sierro 1000',
-  model: 'SR-1000',
-  serialNumber: 'SR-2024-08842',
+  name: 'Sierro2000',
+  model: 'Sierro 2000',
+  serialNumber: 'SN26102503Z6104955',
   batteryLevel: 90,
-  remainingWh: 900,
-  totalWh: 1000,
+  remainingWh: 1800,
+  totalWh: 2000,
   inputPower: 400,
   outputPower: 200,
   temperature: 28,
   cycleCount: 286,
   batteryHealth: 98,
   isCharging: true,
-  timeToFull: '0h 15min',
+  timeToFull: '2h 00min',
   mode: 'solar',
   ports: [
 { id: 'ac-out-1', name: 'AC Out', type: 'ac-out', status: 'active', power: 200 },
@@ -70,23 +70,25 @@ const initialPowerStation: PowerStation = {
 { id: 'dc-in', name: 'DC Input', type: 'dc-in', status: 'inactive', deviceName: 'Solar Panel', power: 0 },
   ],
   specs: {
-    batteryCapacity: '1000Wh',
-    batteryType: 'LiFePO₄ Lithium Iron Phosphate',
-    maxOutputPower: '1000W',
-    maxOutputSurge: '2000W',
+    batteryCapacity: '2000 Wh',
+    batteryType: 'LiFePO₄',
+    maxOutputPower: '1000 W',
+    maxOutputSurge: '2000 W',
     outputType: 'Pure Sine Wave AC Output',
-    maxChargePower: '500W',
+    maxChargePower: '1000 W',
     chargeMode: 'AC + Solar Simultaneous',
     chargeTime: '0-80% in 1.5 hours',
     operatingTemp: '-10°C ~ 40°C',
     optimalTemp: '20°C ~ 30°C',
+    hardwareVersion: 'V1.0.0',
+    firmwareVersion: 'V1.0.0',
   }
 }
 
 const initialDevices: Device[] = [
   { id: '1', name: 'CPAP', type: 'cpap', status: 'online', batteryLevel: 92, isOn: true, power: 45 },
   { id: '2', name: 'Fridge', type: 'fridge', status: 'online', batteryLevel: 48, isOn: true, power: 120 },
-  { id: '3', name: 'Sierro 1000', type: 'powerstation', status: 'online', batteryLevel: 90, isOn: true, power: 0 },
+  { id: '3', name: 'Sierro2000', type: 'powerstation', status: 'online', batteryLevel: 90, isOn: true, power: 0 },
 ]
 
 // 设备参数模板（用于不同设备的模拟数据）
@@ -148,27 +150,27 @@ const deviceProfiles: Record<string, Partial<PowerStation>> = {
     }
   },
   '3': {
-    name: 'Sierro 1000',
-    model: 'SR-1000',
-    serialNumber: 'SR-2024-08842',
+    name: 'Sierro2000',
+    model: 'Sierro 2000',
+    serialNumber: 'SN26102503Z6104955',
     batteryLevel: 90,
-    remainingWh: 900,
-    totalWh: 1000,
+    remainingWh: 1800,
+    totalWh: 2000,
     inputPower: 400,
     outputPower: 200,
     temperature: 28,
     cycleCount: 286,
     batteryHealth: 98,
     isCharging: true,
-    timeToFull: '0h 15min',
+    timeToFull: '2h 00min',
     mode: 'solar',
     specs: {
-      batteryCapacity: '1000Wh',
-      batteryType: 'LiFePO₄ Lithium Iron Phosphate',
-      maxOutputPower: '1000W',
-      maxOutputSurge: '2000W',
+      batteryCapacity: '2000 Wh',
+      batteryType: 'LiFePO₄',
+      maxOutputPower: '1000 W',
+      maxOutputSurge: '2000 W',
       outputType: 'Pure Sine Wave AC Output',
-      maxChargePower: '500W',
+      maxChargePower: '1000 W',
       chargeMode: 'AC + Solar Simultaneous',
       chargeTime: '0-80% in 1.5 hours',
       operatingTemp: '-10°C ~ 40°C',
@@ -228,7 +230,7 @@ const initialPeakShavingSettings: PeakShavingSettings = {
   peakPrice: 0.42,
   offPeakPrice: 0.12,
   partPeakPrice: 0.28,
-  maxChargePower: 500,
+  maxChargePower: 1000,
   maxDischargePower: 1000,
   minBatteryLevel: 10,
   maxBatteryLevel: 95,
@@ -253,7 +255,7 @@ export const usePowerStationStore = create<PowerStationState>()(
 powerStation: initialPowerStation,
 devices: initialDevices,
 settings: initialSettings,
-selectedDeviceId: '3', // 默认选中 Sierro 1000
+selectedDeviceId: '3', // 默认选中 Sierro2000
 peakShavingSettings: initialPeakShavingSettings,
 peakShavingStatus: initialPeakShavingStatus,
 

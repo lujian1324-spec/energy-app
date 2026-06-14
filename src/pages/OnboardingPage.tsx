@@ -292,7 +292,7 @@ function Step2AddDevice({
         <p className="text-xs text-[#A0A0A5] uppercase tracking-widest font-bold mb-2 px-1">Compatible Devices</p>
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
           {[
-            { icon: Battery, label: 'Sierro 1000', color: '#01D6BE' },
+            { icon: Battery, label: 'Sierro 2000', color: '#01D6BE' },
             { icon: Snowflake, label: 'Fridge', color: '#5AC8FA' },
             { icon: Wind, label: 'CPAP', color: '#AF52DE' },
             { icon: Sun, label: 'Solar', color: '#FF9500' },

@@ -52,7 +52,7 @@ export default function DeviceInfoPage() {
 
   // 设备名 & 元信息
   const deviceName = device?.name ?? 'Device'
-  const model = device?.gatherProtocolNameDisplay ?? device?.model ?? 'Sierro 1000'
+  const model = device?.gatherProtocolNameDisplay ?? device?.model ?? 'Sierro 2000'
   const serial = device?.serialNumber ?? '--'
   const station = device?.stationName ?? '--'
   const firmware = device?.softwareVersion ?? '--'
@@ -86,14 +86,14 @@ export default function DeviceInfoPage() {
     const lower = model.toLowerCase()
     const is2000 = lower.includes('2000')
     return {
-      capacity: is2000 ? '2048 Wh' : '1024 Wh',
+      capacity: is2000 ? '2000 Wh' : '1024 Wh',
       batteryType: is2000 ? 'LiFePO4' : 'NMC',
-      maxChargePower: is2000 ? '1800 W' : '1100 W',
-      maxOutputPower: is2000 ? '2400 W' : '1500 W',
-      voltage: '120 V AC',
+      maxChargePower: is2000 ? '1000 W' : '1100 W',
+      maxOutputPower: is2000 ? '1000 W' : '1500 W',
+      voltage: is2000 ? '6.4V DC' : '120 V AC',
       frequency: '60 Hz',
-      weight: is2000 ? '27.5 kg' : '12.5 kg',
-      dimensions: is2000 ? '390 × 260 × 320 mm' : '340 × 220 × 250 mm',
+      weight: is2000 ? '~15 kg' : '12.5 kg',
+      dimensions: is2000 ? 'Compact Portable' : '340 × 220 × 250 mm',
       cyclesRated: 3000,
     }
   }, [model])

@@ -129,6 +129,10 @@ export interface DeviceSpecs {
   chargeTime: string;
   operatingTemp: string;
   optimalTemp: string;
+  /** 硬件版本 (e.g. V1.0.0) */
+  hardwareVersion?: string;
+  /** 固件版本 (e.g. V1.0.0) */
+  firmwareVersion?: string;
 }
 
 // 电源站状态

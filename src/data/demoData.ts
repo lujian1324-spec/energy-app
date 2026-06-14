@@ -2,9 +2,9 @@
  * Demo 数据 — Guest 模式使用的模拟设备和状态数据
  *
  * 包含设备：
+ * - Sierro2000 (Sierro 2000 Portable Power Station)
  * - CPAP (CPAP Machine)
  * - FRIDGE (Smart Fridge)
- * - SIERRO 1000 (Sierro Energy Storage)
  * - SOLAR PANEL (Solar Panel System)
  * - AC UNIT (Air Conditioner)
  */
@@ -24,19 +24,19 @@ import type {
 export const demoDevices: DeviceListItem[] = [
   {
     id: 10001,
-    name: 'SIERRO 1000',
-    serialNumber: 'SR-2024-10001',
-    model: 'SIERRO-1000',
+    name: 'Sierro2000',
+    serialNumber: 'SN26102503Z6104955',
+    model: 'Sierro 2000',
     deviceSortKey: 'energy_storage',
-    deviceSortLocaleText: 'Energy Storage System',
-    gatherProtocolNumber: 'GPN-001',
+    deviceSortLocaleText: 'Portable Power Station',
+    gatherProtocolNumber: 'GPN-S2000',
     gatherProtocolNameDisplay: 'Sierro Protocol v2.1',
-    softwareVersion: '3.11.0',
+    softwareVersion: 'V1.0.0',
     stationId: 5001,
     stationName: 'Home Station #1',
     dtuId: 80001,
-    dtuDtuid: 'SIERRO-DEMO-001',
-    dtuName: 'SIERRO DTU-001',
+    dtuDtuid: 'Sierro2000-DEMO-001',
+    dtuName: 'Sierro 2000 DTU',
     isOnline: true,
     isAlarmed: false,
     isPined: true,
@@ -48,8 +48,8 @@ export const demoDevices: DeviceListItem[] = [
     applyMode: 0,
     state: 'normal',
     stateDict: 'Normal Operation',
-    producingPower: 3600,
-    ratedPower: 5000,
+    producingPower: 1000,
+    ratedPower: 1000,
     dailyProducedQuantity: 15.6,
     totalProducedQuantity: 1256.3,
     installedAt: '2024-01-15T08:00:00Z',
@@ -317,7 +317,7 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
   const baseTime = Math.floor(now / 1000).toString()
 
   switch (numericId) {
-    case 10001: // SIERRO 1000
+    case 10001: // Sierro2000
       return {
         deviceId: '10001',
         dtuID: device.dtuDtuid,
@@ -327,10 +327,10 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
         gatherProtocolVersionCode: '2.1',
         fields: {
           soc: makeField('soc', 'State of Charge', 78, '%', 'battery'),
-          batteryPower: makeField('batteryPower', 'Battery Power', -1200, 'W', 'battery'),
-          acPower: makeField('acPower', 'AC Power', 2400, 'W', 'ac'),
-          solarPower: makeField('solarPower', 'Solar Power', 3200, 'W', 'solar'),
-          outputPower: makeField('outputPower', 'Output Power', 3600, 'W', 'output'),
+          batteryPower: makeField('batteryPower', 'Battery Power', -600, 'W', 'battery'),
+          acPower: makeField('acPower', 'AC Power', 800, 'W', 'ac'),
+          solarPower: makeField('solarPower', 'Solar Power', 400, 'W', 'solar'),
+          outputPower: makeField('outputPower', 'Output Power', 800, 'W', 'output'),
           batteryTemp: makeField('batteryTemp', 'Battery Temp', 28.5, '°C', 'battery'),
           workMode: makeField('workMode', 'Work Mode', 0, '', 'system'),
         },
@@ -446,7 +446,7 @@ export function getDemoEnergyFlow(deviceId: string | number): { code: number; me
     ctFlow: null,
   }
 
-  if (numericId === 10001) { // SIERRO 1000
+  if (numericId === 10001) { // Sierro2000
     return {
       code: 0,
       message: 'success',
@@ -459,9 +459,9 @@ export function getDemoEnergyFlow(deviceId: string | number): { code: number; me
           },
           groups: [],
         },
-        pvPanelFlow: makeFlowNode('pvPanel', 'Solar Panel', 'icon_solar', 3200),
-        batteryFlow: makeFlowNode('battery', 'Battery', 'icon_battery', -1200),
-        loadFlow: makeFlowNode('load', 'Load', 'icon_load', 3600),
+        pvPanelFlow: makeFlowNode('pvPanel', 'Solar Panel', 'icon_solar', 400),
+        batteryFlow: makeFlowNode('battery', 'Battery', 'icon_battery', -600),
+        loadFlow: makeFlowNode('load', 'Load', 'icon_load', 800),
         gridFlow: makeFlowNode('grid', 'Grid', 'icon_grid', 0),
       },
     }
@@ -509,7 +509,7 @@ export function getDemoHistoryData(deviceId: string | number, hours = 24): { cod
     const time = new Date(now - i * 5 * 60 * 1000).toISOString()
 
     let value = 50
-    if (numericId === 10001) { // SIERRO 1000 - SoC
+    if (numericId === 10001) { // Sierro2000 - SoC
       value = 50 + Math.sin((i / (hours * 12)) * Math.PI * 2) * 30 + (Math.random() - 0.5) * 4
       value = Math.max(0, Math.min(100, value))
     } else if (numericId === 10004) { // Solar Panel - Power
