@@ -33,6 +33,7 @@ import { useAuthStore } from '../stores/authStore'
 import { getUserProfile } from '../db/powerflowDB'
 import appVersion from '../version.json'
 import ProfileEditPage from './ProfileEditPage'
+import ToggleSwitch from '../components/ToggleSwitch'
 import type { UserProfile } from '../types/protocol'
 
 export default function SettingPage() {
@@ -147,9 +148,7 @@ export default function SettingPage() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
           className="space-y-3 mb-6">
           {/* Power Outage */}
-          <button
-            onClick={() => { setPushOutage(!pushOutage); updateSettings({ pushNotifications: !pushOutage }) }}
-            className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 active:scale-[0.99] transition-transform text-left">
+          <div className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 text-left">
             <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
               <Zap size={16} className="text-ink-1" />
             </div>
@@ -157,14 +156,15 @@ export default function SettingPage() {
               <div className="text-body-lg font-semibold text-ink-1">Power Outage</div>
               <div className="text-body-md text-ink-6 mt-0.5">Get alerted during outages</div>
             </div>
-            <span className="text-body-lg text-ink-6 flex-shrink-0">{pushOutage ? 'On' : 'Off'}</span>
-            <ChevronRight size={20} className="text-ink-1 flex-shrink-0" />
-          </button>
+            <ToggleSwitch
+              isOn={pushOutage}
+              onToggle={() => { setPushOutage(!pushOutage); updateSettings({ pushNotifications: !pushOutage }) }}
+              ariaLabel="Toggle power outage alerts"
+            />
+          </div>
 
           {/* Low Battery */}
-          <button
-            onClick={() => { setPushLowBattery(!pushLowBattery); updateSettings({ pushNotifications: !pushLowBattery }) }}
-            className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 active:scale-[0.99] transition-transform text-left">
+          <div className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 text-left">
             <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
               <Battery size={16} className="text-ink-1" />
             </div>
@@ -174,9 +174,12 @@ export default function SettingPage() {
                 {pushLowBattery ? `Get alerted when battery falls below ${lowBatteryThreshold}%` : 'Get notified when battery gets low'}
               </div>
             </div>
-            <span className="text-body-lg text-ink-6 flex-shrink-0">{pushLowBattery ? 'On' : 'Off'}</span>
-            <ChevronRight size={20} className="text-ink-1 flex-shrink-0" />
-          </button>
+            <ToggleSwitch
+              isOn={pushLowBattery}
+              onToggle={() => { setPushLowBattery(!pushLowBattery); updateSettings({ pushNotifications: !pushLowBattery }) }}
+              ariaLabel="Toggle low battery alerts"
+            />
+          </div>
 
           {/* Low Battery Threshold Slider — shown when enabled */}
           <AnimatePresence>
@@ -230,9 +233,7 @@ export default function SettingPage() {
           </AnimatePresence>
 
           {/* Solar Status */}
-          <button
-            onClick={() => { setPushSolarStatus(!pushSolarStatus); updateSettings({ pushSolarStatus: !pushSolarStatus }) }}
-            className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 active:scale-[0.99] transition-transform text-left">
+          <div className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 text-left">
             <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
               <Sun size={16} className="text-ink-1" />
             </div>
@@ -240,9 +241,12 @@ export default function SettingPage() {
               <div className="text-body-lg font-semibold text-ink-1">Solar Status</div>
               <div className="text-body-md text-ink-6 mt-0.5">Get alerted when solar connects or disconnects</div>
             </div>
-            <span className="text-body-lg text-ink-6 flex-shrink-0">{pushSolarStatus ? 'On' : 'Off'}</span>
-            <ChevronRight size={20} className="text-ink-1 flex-shrink-0" />
-          </button>
+            <ToggleSwitch
+              isOn={pushSolarStatus}
+              onToggle={() => { setPushSolarStatus(!pushSolarStatus); updateSettings({ pushSolarStatus: !pushSolarStatus }) }}
+              ariaLabel="Toggle solar status alerts"
+            />
+          </div>
         </motion.div>
 
         {/* Support */}
