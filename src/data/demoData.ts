@@ -1,5 +1,5 @@
 /**
- * Demo 数据 — Guest 模式使用的模拟设备和状态数据
+ * Demo 数据 — Guest / localtest / benson 模式使用的模拟设备和状态数据
  *
  * 包含设备：
  * - Sierro2000 (Sierro 2000 Portable Power Station)
@@ -63,202 +63,58 @@ export const demoDevices: DeviceListItem[] = [
     stationTimezone: 'America/New_York',
     stationCurrencyCode: 'USD',
     stationEnergyIncomePrice: 0.12,
-    co2EmissionReduction: 14.2,
-    noxEmissionReduction: 0.05,
-    so2EmissionReduction: 0.02,
-    savingStandardCarbon: 5.8,
+    co2EmissionReduction: 3.2,
+    noxEmissionReduction: 0.01,
+    so2EmissionReduction: 0.005,
+    savingStandardCarbon: 1.3,
     extraProperty: {},
     summaryProperty: {},
   },
   {
     id: 10002,
-    name: 'CPAP Machine',
-    serialNumber: 'CP-2024-10002',
-    model: 'DreamStation 2',
-    deviceSortKey: 'medical_device',
-    deviceSortLocaleText: 'Medical Device',
+    name: 'SIERRO 2000',
+    serialNumber: 'SN26102503Z6104955',
+    model: 'Sierro 2000',
+    deviceSortKey: 'energy_storage',
+    deviceSortLocaleText: 'Energy Storage System',
     gatherProtocolNumber: 'GPN-002',
-    gatherProtocolNameDisplay: 'CPAP Protocol v1.0',
-    softwareVersion: '2.3.1',
+    gatherProtocolNameDisplay: 'Sierro Protocol v2.1',
+    softwareVersion: 'V1.0.0',
     stationId: 5002,
-    stationName: 'Bedroom Station',
+    stationName: 'Home Station #2',
     dtuId: 80002,
-    dtuDtuid: 'CPAP-DEMO-002',
-    dtuName: 'CPAP DTU-002',
-    isOnline: true,
-    isAlarmed: false,
-    isPined: false,
-    isPeakValleyEnabled: false,
-    isUpgrading: false,
-    isFirmwareUpgradeEnabled: false,
-    isExternalDevice: true,
-    isMainMasterDevice: false,
-    applyMode: 0,
-    state: 'normal',
-    stateDict: 'Normal Operation',
-    producingPower: 80,
-    ratedPower: 100,
-    dailyProducedQuantity: 0,
-    totalProducedQuantity: 0,
-    installedAt: '2024-03-20T10:00:00Z',
-    lastDataAt: new Date(Date.now() - 2 * 60 * 1000).toISOString(),
-    lastOnlineAt: new Date(Date.now() - 2 * 60 * 1000).toISOString(),
-    lastOfflineAt: '',
-    place: 'Bedroom',
-    iconResid: 'icon_medical',
-    ownerUserId: 9999,
-    ownerUserName: 'Demo User',
-    stationTimezone: 'America/New_York',
-    stationCurrencyCode: 'USD',
-    stationEnergyIncomePrice: 0,
-    co2EmissionReduction: 0,
-    noxEmissionReduction: 0,
-    so2EmissionReduction: 0,
-    savingStandardCarbon: 0,
-    extraProperty: {},
-    summaryProperty: {},
-  },
-  {
-    id: 10003,
-    name: 'Smart Fridge',
-    serialNumber: 'FR-2024-10003',
-    model: 'SmartFridge Pro',
-    deviceSortKey: 'appliance',
-    deviceSortLocaleText: 'Home Appliance',
-    gatherProtocolNumber: 'GPN-003',
-    gatherProtocolNameDisplay: 'Appliance Protocol v1.5',
-    softwareVersion: '1.8.0',
-    stationId: 5003,
-    stationName: 'Kitchen Station',
-    dtuId: 80003,
-    dtuDtuid: 'FRIDGE-DEMO-003',
-    dtuName: 'Fridge DTU-003',
-    isOnline: true,
-    isAlarmed: false,
-    isPined: false,
-    isPeakValleyEnabled: false,
-    isUpgrading: false,
-    isFirmwareUpgradeEnabled: true,
-    isExternalDevice: true,
-    isMainMasterDevice: false,
-    applyMode: 0,
-    state: 'normal',
-    stateDict: 'Normal Operation',
-    producingPower: 150,
-    ratedPower: 200,
-    dailyProducedQuantity: 0,
-    totalProducedQuantity: 0,
-    installedAt: '2024-06-10T12:00:00Z',
-    lastDataAt: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
-    lastOnlineAt: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
-    lastOfflineAt: '',
-    place: 'Kitchen',
-    iconResid: 'icon_fridge',
-    ownerUserId: 9999,
-    ownerUserName: 'Demo User',
-    stationTimezone: 'America/New_York',
-    stationCurrencyCode: 'USD',
-    stationEnergyIncomePrice: 0,
-    co2EmissionReduction: 0,
-    noxEmissionReduction: 0,
-    so2EmissionReduction: 0,
-    savingStandardCarbon: 0,
-    extraProperty: {},
-    summaryProperty: {},
-  },
-  {
-    id: 10004,
-    name: 'Solar Panel System',
-    serialNumber: 'SP-2024-10004',
-    model: 'SolarMax 5000',
-    deviceSortKey: 'solar_inverter',
-    deviceSortLocaleText: 'Solar Inverter',
-    gatherProtocolNumber: 'GPN-004',
-    gatherProtocolNameDisplay: 'Solar Protocol v3.0',
-    softwareVersion: '4.2.1',
-    stationId: 5004,
-    stationName: 'Roof Station',
-    dtuId: 80004,
-    dtuDtuid: 'SOLAR-DEMO-004',
-    dtuName: 'Solar DTU-004',
+    dtuDtuid: 'SIERRO-DEMO-002',
+    dtuName: 'SIERRO DTU-002',
     isOnline: true,
     isAlarmed: false,
     isPined: true,
-    isPeakValleyEnabled: false,
+    isPeakValleyEnabled: true,
     isUpgrading: false,
     isFirmwareUpgradeEnabled: true,
     isExternalDevice: false,
-    isMainMasterDevice: true,
-    applyMode: 0,
-    state: 'normal',
-    stateDict: 'Normal Operation',
-    producingPower: 4200,
-    ratedPower: 5000,
-    dailyProducedQuantity: 28.5,
-    totalProducedQuantity: 2560.8,
-    installedAt: '2023-11-05T09:00:00Z',
-    lastDataAt: new Date(Date.now() - 1 * 60 * 1000).toISOString(),
-    lastOnlineAt: new Date(Date.now() - 1 * 60 * 1000).toISOString(),
-    lastOfflineAt: '',
-    place: 'Roof',
-    iconResid: 'icon_solar',
-    ownerUserId: 9999,
-    ownerUserName: 'Demo User',
-    stationTimezone: 'America/New_York',
-    stationCurrencyCode: 'USD',
-    stationEnergyIncomePrice: 0.15,
-    co2EmissionReduction: 28.5,
-    noxEmissionReduction: 0.1,
-    so2EmissionReduction: 0.05,
-    savingStandardCarbon: 12.3,
-    extraProperty: {},
-    summaryProperty: {},
-  },
-  {
-    id: 10005,
-    name: 'AC Unit',
-    serialNumber: 'AC-2024-10005',
-    model: 'CoolMax 12000',
-    deviceSortKey: 'hvac',
-    deviceSortLocaleText: 'HVAC System',
-    gatherProtocolNumber: 'GPN-005',
-    gatherProtocolNameDisplay: 'HVAC Protocol v2.0',
-    softwareVersion: '3.0.0',
-    stationId: 5005,
-    stationName: 'Living Room Station',
-    dtuId: 80005,
-    dtuDtuid: 'AC-DEMO-005',
-    dtuName: 'AC DTU-005',
-    isOnline: false,
-    isAlarmed: true,
-    isPined: false,
-    isPeakValleyEnabled: false,
-    isUpgrading: false,
-    isFirmwareUpgradeEnabled: false,
-    isExternalDevice: true,
     isMainMasterDevice: false,
     applyMode: 0,
-    state: 'offline',
-    stateDict: 'Offline - Communication Lost',
-    producingPower: 0,
-    ratedPower: 3500,
-    dailyProducedQuantity: 0,
-    totalProducedQuantity: 0,
-    installedAt: '2024-09-01T14:00:00Z',
-    lastDataAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    lastOnlineAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    lastOfflineAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    place: 'Living Room',
-    iconResid: 'icon_ac',
+    state: 'normal',
+    stateDict: 'Charging',
+    producingPower: 1000,
+    ratedPower: 1000,
+    dailyProducedQuantity: 5.5,
+    totalProducedQuantity: 502.5,
+    installedAt: '2025-10-01T10:00:00Z',
+    lastDataAt: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
+    lastOnlineAt: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
+    lastOfflineAt: '',
+    place: 'Basement',
+    iconResid: 'icon_battery',
     ownerUserId: 9999,
     ownerUserName: 'Demo User',
     stationTimezone: 'America/New_York',
     stationCurrencyCode: 'USD',
-    stationEnergyIncomePrice: 0,
-    co2EmissionReduction: 0,
-    noxEmissionReduction: 0,
-    so2EmissionReduction: 0,
-    savingStandardCarbon: 0,
+    stationEnergyIncomePrice: 0.12,
+    co2EmissionReduction: 4.8,
+    noxEmissionReduction: 0.02,
+    so2EmissionReduction: 0.008,
+    savingStandardCarbon: 2.0,
     extraProperty: {},
     summaryProperty: {},
   },
@@ -332,7 +188,24 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
           solarPower: makeField('solarPower', 'Solar Power', 0, 'W', 'solar'),
           outputPower: makeField('outputPower', 'Output Power', 231, 'W', 'output'),
           batteryTemp: makeField('batteryTemp', 'Battery Temp', 28.5, '°C', 'battery'),
+          batteryHealth: makeField('batteryHealth', 'Battery Health', 98, '%', 'battery'),
+          batteryCycles: makeField('batteryCycles', 'Cycles', 286, '', 'battery'),
+          acPower: makeField('acPower', 'AC Power', 400, 'W', 'ac'),
+          solarPower: makeField('solarPower', 'Solar Power', 0, 'W', 'solar'),
+          gridPower: makeField('gridPower', 'Grid Power', 0, 'W', 'grid'),
+          outputPower: makeField('outputPower', 'Output Power', 168, 'W', 'output'),
+          dailyCharge: makeField('dailyCharge', 'Charged Today', 2.4, 'kWh', 'energy'),
+          dailyDischarge: makeField('dailyDischarge', 'Discharged Today', 1.0, 'kWh', 'energy'),
+          dailyProduced: makeField('dailyProduced', 'AC Input Today', 4.0, 'kWh', 'energy'),
           workMode: makeField('workMode', 'Work Mode', 0, '', 'system'),
+          // Device info fields
+          hardwareVersion: makeField('hardwareVersion', 'Hardware Version', 'V1.0.0', '', 'system'),
+          capacity: makeField('capacity', 'Capacity', '1000Wh', '', 'system'),
+          batteryType: makeField('batteryType', 'Battery Type', 'LiFePO4', '', 'system'),
+          maxInputPower: makeField('maxInputPower', 'Max Input Power', '400W', '', 'system'),
+          maxOutputPower: makeField('maxOutputPower', 'Max Output Power', '500W', '', 'system'),
+          voltage: makeField('voltage', 'Voltage', '3.2V', '', 'system'),
+          frequency: makeField('frequency', 'Frequency', '60Hz', '', 'system'),
         },
         groups: [
           {
@@ -349,74 +222,52 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
         firingAlarms: [],
       }
 
-    case 10002: // CPAP Machine
+    case 10002: // SIERRO 2000 — AC input 1000W, Solar 0W, output 231W
       return {
         deviceId: '10002',
         dtuID: device.dtuDtuid,
         time: baseTime,
         stationId: device.stationId.toString(),
         gatherProtocolNumber: device.gatherProtocolNumber,
-        gatherProtocolVersionCode: '1.0',
+        gatherProtocolVersionCode: '2.1',
         fields: {
-          acPower: makeField('acPower', 'AC Power', 80, 'W', 'ac'),
-          batteryTemp: makeField('batteryTemp', 'Device Temp', 22.0, '°C', 'system'),
+          soc: makeField('soc', 'State of Charge', 62, '%', 'battery'),
+          batteryPower: makeField('batteryPower', 'Battery Power', 769, 'W', 'battery'),
+          batteryVoltage: makeField('batteryVoltage', 'Battery Voltage', 6.4, 'V', 'battery'),
+          batteryCurrent: makeField('batteryCurrent', 'Battery Current', 120.2, 'A', 'battery'),
+          batteryTemp: makeField('batteryTemp', 'Battery Temp', 31.2, '°C', 'battery'),
+          batteryHealth: makeField('batteryHealth', 'Battery Health', 100, '%', 'battery'),
+          batteryCycles: makeField('batteryCycles', 'Cycles', 48, '', 'battery'),
+          acPower: makeField('acPower', 'AC Power', 1000, 'W', 'ac'),
+          solarPower: makeField('solarPower', 'Solar Power', 0, 'W', 'solar'),
+          gridPower: makeField('gridPower', 'Grid Power', 0, 'W', 'grid'),
+          outputPower: makeField('outputPower', 'Output Power', 231, 'W', 'output'),
+          dailyCharge: makeField('dailyCharge', 'Charged Today', 4.6, 'kWh', 'energy'),
+          dailyDischarge: makeField('dailyDischarge', 'Discharged Today', 0.8, 'kWh', 'energy'),
+          dailyProduced: makeField('dailyProduced', 'AC Input Today', 5.5, 'kWh', 'energy'),
+          workMode: makeField('workMode', 'Work Mode', 1, '', 'system'),
+          // Device info fields
+          hardwareVersion: makeField('hardwareVersion', 'Hardware Version', 'V1.0.0', '', 'system'),
+          capacity: makeField('capacity', 'Capacity', '2000Wh', '', 'system'),
+          batteryType: makeField('batteryType', 'Battery Type', 'LiFePO4', '', 'system'),
+          maxInputPower: makeField('maxInputPower', 'Max Input Power', '1000W', '', 'system'),
+          maxOutputPower: makeField('maxOutputPower', 'Max Output Power', '1000W', '', 'system'),
+          voltage: makeField('voltage', 'Voltage', '6.4V', '', 'system'),
+          frequency: makeField('frequency', 'Frequency', '60Hz', '', 'system'),
         },
-        groups: [],
-        firingAlarms: [],
-      }
-
-    case 10003: // Smart Fridge
-      return {
-        deviceId: '10003',
-        dtuID: device.dtuDtuid,
-        time: baseTime,
-        stationId: device.stationId.toString(),
-        gatherProtocolNumber: device.gatherProtocolNumber,
-        gatherProtocolVersionCode: '1.5',
-        fields: {
-          acPower: makeField('acPower', 'AC Power', 150, 'W', 'ac'),
-          batteryTemp: makeField('batteryTemp', 'Fridge Temp', 18.5, '°C', 'sensor'),
-        },
-        groups: [],
-        firingAlarms: [],
-      }
-
-    case 10004: // Solar Panel System
-      return {
-        deviceId: '10004',
-        dtuID: device.dtuDtuid,
-        time: baseTime,
-        stationId: device.stationId.toString(),
-        gatherProtocolNumber: device.gatherProtocolNumber,
-        gatherProtocolVersionCode: '3.0',
-        fields: {
-          soc: makeField('soc', 'Battery SoC', 85, '%', 'battery'),
-          solarPower: makeField('solarPower', 'Solar Power', 4200, 'W', 'solar'),
-          batteryTemp: makeField('batteryTemp', 'Battery Temp', 32.0, '°C', 'battery'),
-        },
-        groups: [],
-        firingAlarms: [],
-      }
-
-    case 10005: // AC Unit (离线)
-      return {
-        deviceId: '10005',
-        dtuID: device.dtuDtuid,
-        time: Math.floor((now - 2 * 60 * 60 * 1000) / 1000).toString(),
-        stationId: device.stationId.toString(),
-        gatherProtocolNumber: device.gatherProtocolNumber,
-        gatherProtocolVersionCode: '2.0',
-        fields: {},
-        groups: [],
-        firingAlarms: [
+        groups: [
           {
-            alarmId: 'alarm-001',
-            alarmCode: 'COMM_LOST',
-            alarmMessage: 'Communication lost with device',
-            severity: 'warning',
-            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+            id: 1,
+            key: 'battery',
+            name: 'Battery',
+            category: 'battery',
+            stateItems: [
+              { ...makeField('soc', 'SoC', 62, '%', 'battery'), isHidden: false, nameDisplay: 'State of Charge' },
+              { ...makeField('batteryPower', 'Power', 769, 'W', 'battery'), isHidden: false, nameDisplay: 'Battery Power' },
+            ],
           },
         ],
+        firingAlarms: [],
       }
 
     default:
@@ -467,7 +318,7 @@ export function getDemoEnergyFlow(deviceId: string | number): { code: number; me
     }
   }
 
-  if (numericId === 10004) { // Solar Panel System
+  if (numericId === 10002) { // SIERRO 2000 — AC 1000W in, 231W out, 769W charging battery
     return {
       code: 0,
       message: 'success',
@@ -476,14 +327,14 @@ export function getDemoEnergyFlow(deviceId: string | number): { code: number; me
         deviceAttributeState: {
           time: Math.floor(Date.now() / 1000).toString(),
           fields: {
-            soc: makeField('soc', 'SoC', 85, '%', 'battery'),
+            soc: makeField('soc', 'SoC', 62, '%', 'battery'),
           },
           groups: [],
         },
-        pvPanelFlow: makeFlowNode('pvPanel', 'Solar Panel', 'icon_solar', 4200),
-        batteryFlow: makeFlowNode('battery', 'Battery', 'icon_battery', 2800),
-        loadFlow: makeFlowNode('load', 'Load', 'icon_load', 800),
-        gridFlow: makeFlowNode('grid', 'Grid', 'icon_grid', -200),
+        pvPanelFlow: makeFlowNode('pvPanel', 'Solar Panel', 'icon_solar', 0),
+        batteryFlow: makeFlowNode('battery', 'Battery', 'icon_battery', 769),
+        loadFlow: makeFlowNode('load', 'Load', 'icon_load', 231),
+        gridFlow: makeFlowNode('grid', 'Grid', 'icon_grid', 0),
       },
     }
   }
@@ -496,7 +347,7 @@ export function getDemoEnergyFlow(deviceId: string | number): { code: number; me
 }
 
 // ═══════════════════════════════════════════════════════
-// Demo 历史数据
+// Demo 历史数据（支持 Day / Week / Month 3个月范围）
 // ═══════════════════════════════════════════════════════
 
 export function getDemoHistoryData(deviceId: string | number, hours = 24): { code: number; message: string; data: HistoryDataResponse } {
@@ -578,4 +429,56 @@ export function getDemoHistoryData(deviceId: string | number, hours = 24): { cod
       outputPower: outputPoints,
     },
   }
+}
+
+// ═══════════════════════════════════════════════════════
+// Demo 通知数据（Notifications 模块）
+// ═══════════════════════════════════════════════════════
+
+export interface DemoNotification {
+  id: number
+  type: 'low_battery' | 'power_outage'
+  deviceName: string
+  description: string
+  time: string
+  date: string
+}
+
+export const demoNotifications: DemoNotification[] = [
+  { id: 1, type: 'low_battery', deviceName: 'SIERRO 1000', description: 'Reserve threshold reached (20%). Charging from AC now.', time: '5 mins ago', date: 'Today' },
+  { id: 2, type: 'power_outage', deviceName: 'SIERRO 2000', description: 'Grid outage detected. Switched to battery backup automatically.', time: '3:42 PM', date: 'Today' },
+  { id: 3, type: 'low_battery', deviceName: 'SIERRO 1000', description: 'Battery at 22% — peak-shaving paused until charged.', time: '1:10 PM', date: 'Today' },
+  { id: 4, type: 'power_outage', deviceName: 'SIERRO 2000', description: 'Grid restored after 18-minute outage. Resuming normal operation.', time: '11:24 AM', date: 'Yesterday' },
+  { id: 5, type: 'low_battery', deviceName: 'SIERRO 1000', description: 'Battery fully charged — ready for backup.', time: 'Apr 28', date: 'April' },
+  { id: 6, type: 'power_outage', deviceName: 'SIERRO 2000', description: 'Backup power engaged for 42 minutes during outage.', time: 'Apr 15', date: 'April' },
+  { id: 7, type: 'low_battery', deviceName: 'SIERRO 1000', description: 'Overnight discharge completed. AC recharge begins at 6 AM.', time: 'Mar 23', date: 'March' },
+]
+
+// ═══════════════════════════════════════════════════════
+// Demo 用户资料（Profile / Setting 模块）
+// ═══════════════════════════════════════════════════════
+
+export const demoUserProfile = {
+  name: 'Demo User',
+  email: 'demo@sierro.energy',
+  avatar: null as string | null,
+  memberSince: '2025-10-01T08:00:00Z',
+  founderBadge: true,
+  founderNumber: 42,
+}
+
+// ═══════════════════════════════════════════════════════
+// Demo 削峰填谷配置（Peak Shaving 模块）
+// ═══════════════════════════════════════════════════════
+
+export const demoPeakValleyConfig = {
+  enabled: true,
+  peakPrice: 0.42,
+  offPeakPrice: 0.12,
+  peakStart: 16 * 60,
+  peakEnd: 21 * 60,
+  offPeakStart: 0,
+  offPeakEnd: 6 * 60,
+  reserveSoc: 20,
+  estimatedMonthlySaving: 48.6,
 }

@@ -7,14 +7,8 @@ import {
   Thermometer, 
   RefreshCw,
   ChevronLeft,
-  Wifi,
-  Bluetooth,
-  Usb,
-  Calendar,
-  Hash,
-  Shield,
-  Award,
-  Pencil,
+  ChevronRight,
+  ChevronDown,
   Check,
   X,
   Trash2,
@@ -26,6 +20,7 @@ import {
   Lightbulb,
   Info,
 } from 'lucide-react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useConnectionStore } from '../stores/connectionStore'
 import { useDeviceStore } from '../stores/deviceStore'
@@ -33,7 +28,9 @@ import { toast } from '../components/Toast'
 import appVersion from '../version.json'
 
 interface DeviceDetailPageProps {
-  onBack: () => void
+  /** When rendered as an overlay (inside OverviewPage) a custom back handler is
+   *  passed; when mounted as a standalone route we fall back to navigate(-1). */
+  onBack?: () => void
 }
 
 // PRD v1.1 §4.3: Display Icon 8 种设备图标
@@ -56,18 +53,16 @@ interface SpecField {
   color: string;
 }
 
-const initialSpecs = {
-  batteryCapacity: '',
-  batteryType: '',
-  maxOutputPower: '',
-  maxOutputSurge: '',
-  outputType: '',
-  maxChargePower: '',
-  chargeMode: '',
-  chargeTime: '',
-  operatingTemp: '',
-  optimalTemp: '',
-}
+const DISPLAY_ICONS = [
+  { id: 'zap', Icon: Zap, label: 'Power Station' },
+  { id: 'refrigerator', Icon: Refrigerator, label: 'Refrigerator' },
+  { id: 'server', Icon: Server, label: 'Server' },
+  { id: 'lamp', Icon: Lamp, label: 'Lamp' },
+  { id: 'fish', Icon: Fish, label: 'Aquarium' },
+  { id: 'plugzap', Icon: PlugZap, label: 'EV Charger' },
+  { id: 'wifi', Icon: Wifi, label: 'Router' },
+  { id: 'cpap', Icon: BookOpen, label: 'CPAP' },
+]
 
 export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const navigate = useNavigate()
@@ -80,20 +75,9 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const [editName, setEditName] = useState(powerStation.name)
   const nameInputRef = useRef<HTMLInputElement>(null)
 
-  // 规格编辑状态
-  const [editingSpec, setEditingSpec] = useState<string | null>(null)
-  const [editSpecValues, setEditSpecValues] = useState({
-    batteryCapacity: powerStation.specs.batteryCapacity,
-    batteryType: powerStation.specs.batteryType,
-    maxOutputPower: powerStation.specs.maxOutputPower,
-    maxOutputSurge: powerStation.specs.maxOutputSurge,
-    outputType: powerStation.specs.outputType,
-    maxChargePower: powerStation.specs.maxChargePower,
-    chargeMode: powerStation.specs.chargeMode,
-    chargeTime: powerStation.specs.chargeTime,
-    operatingTemp: powerStation.specs.operatingTemp,
-    optimalTemp: powerStation.specs.optimalTemp,
-  })
+  // ── Real device data (useDeviceStore) — used when mounted as a route ──
+  const { devices, selectedDeviceState, selectDevice, loadDeviceState, renameDeviceLocal } = useDeviceStore()
+  const realDevice = devices.find(d => String(d.id) === routeId)
 
   // PRD v1.1 §4.3: Display Icon 选择状态
   const [selectedIconKey, setSelectedIconKey] = useState<string>(
@@ -185,131 +169,103 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     },
   ]
 
-  const connectionStatus = [
-    {
-      icon: Bluetooth,
-      label: 'Bluetooth BLE',
-      status: bleConnection.status === 'connected' ? 'Connected' : 'Disconnected',
-      detail: bleConnection.status === 'connected' 
-        ? `${bleConnection.deviceName ?? 'Device'} · ${bleConnection.rssi ? `${bleConnection.rssi} dBm` : 'Active'}`
-        : 'Tap to connect in Settings',
-      color: bleConnection.status === 'connected' ? '#01D6BE' : '#636366',
-    },
-    {
-      icon: Usb,
-      label: 'Serial · Modbus',
-      status: serialConnection.status === 'connected' ? 'Connected' : 'Disconnected',
-      detail: serialConnection.status === 'connected'
-        ? 'RS485 · 9600 bps · 8N1'
-        : 'Tap to connect in Settings',
-      color: serialConnection.status === 'connected' ? '#A855F7' : '#636366',
-    },
-    {
-      icon: Wifi,
-      label: 'Wi-Fi',
-      status: 'Connected',
-      detail: 'HomeNetwork · 5GHz',
-      color: '#34C759',
-    },
-  ]
+  // Prefer real device info, fall back to the mock powerStation profile
+  const deviceName = realDevice?.name ?? powerStation.name
+  const handleBack = onBack ?? (() => navigate(-1))
 
-  // 处理开始编辑设备名称
-  const handleStartEditName = () => {
-    setEditName(powerStation.name)
-    setIsEditingName(true)
-    setTimeout(() => nameInputRef.current?.focus(), 100)
-  }
+  const [screen, setScreen] = useState<Screen>('main')
+  const [editName, setEditName] = useState(deviceName)
+  // 设备名称编辑：当前正在编辑的目标设备 + 下拉选择器
+  const [editTargetId, setEditTargetId] = useState<string>(routeId ?? selectedDeviceId ?? '')
+  const [showDeviceDropdown, setShowDeviceDropdown] = useState(false)
+  const [sleepMode, setSleepMode] = useState<'Off' | 'On'>('Off')
+  const [batteryPriority] = useState('Backup Mode')
+  const [selectedIcon, setSelectedIcon] = useState('zap')
+  const [pendingIcon, setPendingIcon] = useState('zap')
 
-  // 处理保存设备名称
+  // ─── Helpers ─────────────────────────────────────────────────────────────
+
+  // 当前正在编辑的目标设备及其原始名称（用于判断 Save 是否可点击）
+  const editTargetDevice = devices.find(d => String(d.id) === editTargetId)
+  const editTargetOriginalName = editTargetDevice?.name ?? deviceName
+  const nameChanged = editName.trim().length > 0 && editName.trim() !== editTargetOriginalName
+
   const handleSaveName = () => {
-    const trimmedName = editName.trim()
-    if (trimmedName && trimmedName !== powerStation.name && selectedDeviceId) {
-      updateDeviceNameById(selectedDeviceId, trimmedName)
+    if (!nameChanged) return
+    const trimmed = editName.trim()
+    const targetId = editTargetId || routeId || selectedDeviceId
+    if (targetId) {
+      // 同步到两个 store：home page (deviceStore) + 详情/下拉菜单 (powerStationStore)
+      renameDeviceLocal(targetId, trimmed)
+      updateDeviceNameById(targetId, trimmed)
     }
-    setIsEditingName(false)
+    setShowDeviceDropdown(false)
+    setScreen('main')
   }
 
-  // 处理取消编辑
-  const handleCancelEditName = () => {
-    setEditName(powerStation.name)
-    setIsEditingName(false)
+  // 切换下拉中选择的设备：载入其当前名称
+  const handleSelectDevice = (id: string) => {
+    setEditTargetId(id)
+    const dev = devices.find(d => String(d.id) === id)
+    setEditName(dev?.name ?? '')
+    setShowDeviceDropdown(false)
   }
 
-  // 处理输入框键盘事件
-  const handleNameKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSaveName()
-    } else if (e.key === 'Escape') {
-      handleCancelEditName()
-    }
+  const handleSaveIcon = () => {
+    setSelectedIcon(pendingIcon)
+    setScreen('main')
   }
 
-  // 处理开始编辑规格
-  const handleStartEditSpec = (label: string) => {
-    setEditSpecValues({
-      batteryCapacity: powerStation.specs.batteryCapacity,
-      batteryType: powerStation.specs.batteryType,
-      maxOutputPower: powerStation.specs.maxOutputPower,
-      maxOutputSurge: powerStation.specs.maxOutputSurge,
-      outputType: powerStation.specs.outputType,
-      maxChargePower: powerStation.specs.maxChargePower,
-      chargeMode: powerStation.specs.chargeMode,
-      chargeTime: powerStation.specs.chargeTime,
-      operatingTemp: powerStation.specs.operatingTemp,
-      optimalTemp: powerStation.specs.optimalTemp,
-    })
-    setEditingSpec(label)
-  }
+  const CurrentIconComp =
+    DISPLAY_ICONS.find((i) => i.id === selectedIcon)?.Icon ?? Battery
 
-  // 处理保存规格
-  const handleSaveSpec = () => {
-    updateDeviceSpecs({
-      batteryCapacity: editSpecValues.batteryCapacity,
-      batteryType: editSpecValues.batteryType,
-      maxOutputPower: editSpecValues.maxOutputPower,
-      maxOutputSurge: editSpecValues.maxOutputSurge,
-      outputType: editSpecValues.outputType,
-      maxChargePower: editSpecValues.maxChargePower,
-      chargeMode: editSpecValues.chargeMode,
-      chargeTime: editSpecValues.chargeTime,
-      operatingTemp: editSpecValues.operatingTemp,
-      optimalTemp: editSpecValues.optimalTemp,
-    })
-    setEditingSpec(null)
-  }
+  // ─── Back button (shared) ─────────────────────────────────────────────────
 
-  // 处理取消编辑规格
-  const handleCancelEditSpec = () => {
-    setEditingSpec(null)
-  }
-
-  // 处理规格输入变化
-  const handleSpecChange = (key: keyof typeof editSpecValues, value: string) => {
-    setEditSpecValues(prev => ({ ...prev, [key]: value }))
-  }
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: '100%' }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: '100%' }}
-      transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-      className="fixed inset-0 z-50 bg-[#141414] flex flex-col"
+  const BackBtn = ({ to }: { to: Screen | 'parent' }) => (
+    <button
+      onClick={() => (to === 'parent' ? handleBack() : setScreen(to as Screen))}
+      className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center active:scale-95 transition-transform flex-shrink-0"
     >
-      {/* Header */}
-      <div className="px-5 pt-4 pb-4 safe-area-top flex items-center gap-3">
-        <button
-          onClick={onBack}
-          className="w-9 h-9 rounded-full bg-[#262626] flex items-center justify-center
-            active:scale-95 transition-transform"
-        >
-          <ChevronLeft size={20} className="text-[#FFFFFF]" />
-        </button>
-        <div>
-          <h2 className="text-lg font-bold text-[#FFFFFF]">Device Details</h2>
-          <p className="text-xs text-[#A0A0A5]">{powerStation.name}</p>
-        </div>
+      <ChevronLeft size={20} className="text-white" />
+    </button>
+  )
+
+  // ─── Info row (Device Info screen) ───────────────────────────────────────
+
+  const InfoRow = ({ label, value }: { label: string; value: string }) => (
+    <div className="flex items-center justify-between px-4 py-4 border-b border-white/5 last:border-0">
+      <span className="text-body-md text-[#A0A0A5]">{label}</span>
+      <span className="text-body-md text-white">{value}</span>
+    </div>
+  )
+
+  // ─── Settings row (main screen) ───────────────────────────────────────────
+
+  const SettingsRow = ({
+    label,
+    value,
+    preview,
+    onPress,
+  }: {
+    label: string
+    value?: string
+    preview?: React.ReactNode
+    onPress: () => void
+  }) => (
+    <div
+      onClick={onPress}
+      className="rounded-l bg-[#262626] mb-2 px-4 py-4 flex items-center justify-between cursor-pointer active:opacity-70 transition-opacity"
+    >
+      <span className="text-body-lg text-white">{label}</span>
+      <div className="flex items-center gap-2">
+        {preview}
+        {value !== undefined && (
+          <span className="text-body-md text-[#A0A0A5]">{value}</span>
+        )}
+        <ChevronRight size={18} className="text-[#A0A0A5]" />
       </div>
+    </div>
+  )
 
       {/* 可滚动内容 */}
       <div className="flex-1 overflow-y-auto scrollbar-hide px-5 pb-6">
@@ -598,17 +554,15 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 <div className="text-caption text-[#A0A0A5]">Turn off display to save energy</div>
               </div>
               <button
-                onClick={() => {
-                  // PRD: 切换 Sleep Mode
-                  // API: /remote/device/config/write
-                }}
-                className={`w-12 h-7 rounded-full transition-colors relative
-                  ${settings.sleepMode ? 'bg-[#01D6BE]' : 'bg-[#636366]'}`}
-                aria-label="Toggle Sleep Mode"
+                onClick={() => setShowDeviceDropdown(v => !v)}
+                className="w-full rounded-l bg-[#262626] px-4 py-4 flex items-center justify-between active:opacity-70 transition-opacity"
               >
-                <div
-                  className="w-5 h-5 rounded-full bg-[#FFFFFF] absolute top-1 transition-left"
-                  style={{ left: settings.sleepMode ? '26px' : '4px' }}
+                <span className="text-body-lg text-white truncate">
+                  {editTargetDevice?.name ?? editTargetOriginalName}
+                </span>
+                <ChevronDown
+                  size={18}
+                  className={`text-[#A0A0A5] transition-transform ${showDeviceDropdown ? 'rotate-180' : ''}`}
                 />
               </button>
             </div>
@@ -778,7 +732,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               ))}
             </div>
           </div>
-        </motion.div>
+        )}
 
         {/* 底部信息 */}
         <div className="text-center pt-4 text-caption text-[#636366]">

@@ -1,17 +1,18 @@
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useRef, useEffect } from 'react'
 import {
-  ArrowLeft,
+  ChevronLeft,
   User,
   Mail,
   Camera,
   Check,
   X,
-  Crown,
+  ChevronRight,
 } from 'lucide-react'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useAuthStore } from '../stores/authStore'
 import { saveUserProfile, getUserProfile } from '../db/powerflowDB'
+import { toast } from '../components/Toast'
 import type { UserProfile } from '../types/protocol'
 
 interface ProfileEditPageProps {
@@ -19,8 +20,8 @@ interface ProfileEditPageProps {
 }
 
 export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
-  const { settings } = usePowerStationStore()
-  const { user: authUser } = useAuthStore()
+  const { settings, activateFounderBadge } = usePowerStationStore()
+  const { user: authUser, logout } = useAuthStore()
 
   // 用户个人信息状态 - 从 authStore 获取登录账号
   const [profile, setProfile] = useState<UserProfile>({
@@ -29,17 +30,28 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
     avatar: null,
     memberSince: new Date().toISOString().slice(0, 10),
   })
-  
+
   // 加载状态
   const [isLoading, setIsLoading] = useState(true)
-  
+
   // 编辑状态
   const [editingField, setEditingField] = useState<string | null>(null)
   const [tempValue, setTempValue] = useState('')
-  
+
+  // "..." dropdown menu
+  const [showMenu, setShowMenu] = useState(false)
+
+  // 二次确认弹窗：'signout' | 'delete' | null
+  const [confirmAction, setConfirmAction] = useState<'signout' | 'delete' | null>(null)
+
+  // Redeem Founder Badge 弹窗
+  const [showRedeem, setShowRedeem] = useState(false)
+  const [founderCode, setFounderCode] = useState('')
+  const [founderError, setFounderError] = useState('')
+
   // 头像上传
   const fileInputRef = useRef<HTMLInputElement>(null)
-  
+
   // 加载用户资料
   useEffect(() => {
     const loadProfile = async () => {
@@ -56,7 +68,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
     }
     loadProfile()
   }, [])
-  
+
   // 保存用户资料到 IndexedDB
   const persistProfile = async (newProfile: UserProfile) => {
     try {
@@ -68,12 +80,12 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
       console.error('Failed to save user profile:', error)
     }
   }
-  
+
   const handleEdit = (field: string, currentValue: string) => {
     setEditingField(field)
     setTempValue(currentValue)
   }
-  
+
   const handleSave = async () => {
     if (editingField) {
       const newProfile = { ...profile, [editingField]: tempValue }
@@ -83,16 +95,16 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
       setTempValue('')
     }
   }
-  
+
   const handleCancel = () => {
     setEditingField(null)
     setTempValue('')
   }
-  
+
   const handleAvatarClick = () => {
     fileInputRef.current?.click()
   }
-  
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -106,11 +118,106 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
       reader.readAsDataURL(file)
     }
   }
-  
-  const profileFields = [
-    { key: 'name' as const, label: 'Full Name', icon: User, value: profile.name, placeholder: 'Enter your name' },
-    { key: 'email' as const, label: 'Email Address', icon: Mail, value: profile.email, placeholder: 'Enter your email' },
-  ]
+
+  // 点击菜单项 → 打开对应的二次确认弹窗
+  const handleSignOut = () => {
+    setShowMenu(false)
+    setConfirmAction('signout')
+  }
+
+  const handleDeleteAccount = () => {
+    setShowMenu(false)
+    setConfirmAction('delete')
+  }
+
+  // 弹窗内确认 → 执行登出/删除
+  const handleConfirm = () => {
+    setConfirmAction(null)
+    if (typeof logout === 'function') {
+      logout()
+    }
+    onBack()
+  }
+
+  // 激活 Founder Badge：验证码正确则点亮徽章
+  const handleActivateBadge = () => {
+    const result = activateFounderBadge(founderCode.trim())
+    if (result.success) {
+      setShowRedeem(false)
+      setFounderCode('')
+      setFounderError('')
+      toast.success('Founder badge activated')
+    } else {
+      setFounderError(result.message)
+    }
+  }
+
+  // If editing a field, show sub-screen
+  if (editingField) {
+    const isEmail = editingField === 'email'
+    return (
+      <motion.div
+        initial={{ opacity: 0, x: '100%' }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: '100%' }}
+        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+        className="fixed inset-0 z-50 bg-[#141414] flex flex-col"
+      >
+        {/* Sub-screen header */}
+        <div className="px-4 pt-4 pb-4 safe-area-top flex items-center justify-between">
+          <button
+            onClick={handleCancel}
+            className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center"
+          >
+            <ChevronLeft size={20} className="text-white" />
+          </button>
+          <span className="text-title-lg font-semibold text-white">
+            {isEmail ? 'Linked Email' : 'Name'}
+          </span>
+          <button
+            onClick={handleSave}
+            className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center"
+          >
+            <Check size={18} className="text-[#01D6BE]" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-4 pt-6">
+          <div className="bg-[#262626] rounded-l overflow-hidden mb-4">
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-white/5">
+              {isEmail ? (
+                <Mail size={16} className="text-[#A0A0A5] flex-shrink-0" />
+              ) : (
+                <User size={16} className="text-[#A0A0A5] flex-shrink-0" />
+              )}
+              <input
+                type={isEmail ? 'email' : 'text'}
+                value={tempValue}
+                onChange={(e) => setTempValue(e.target.value)}
+                placeholder={isEmail ? 'Enter your email' : 'Enter your name'}
+                autoFocus
+                className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#636366] focus:outline-none"
+              />
+              {tempValue.length > 0 && (
+                <button onClick={() => setTempValue('')}>
+                  <X size={16} className="text-[#636366]" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {isEmail && (
+            <button
+              onClick={handleSave}
+              className="w-full h-12 rounded-full bg-[#01D6BE] text-black font-semibold text-body-md"
+            >
+              Verify New Email
+            </button>
+          )}
+        </div>
+      </motion.div>
+    )
+  }
 
   return (
     <motion.div
@@ -120,46 +227,72 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
       transition={{ type: 'spring', damping: 25, stiffness: 300 }}
       className="fixed inset-0 z-40 bg-[#141414] flex flex-col"
     >
-      {/* Header */}
-      <div className="px-5 pt-4 pb-4 safe-area-top flex items-center gap-3">
-        <button 
+      {/* Top bar */}
+      <div className="px-4 pt-4 pb-2 safe-area-top flex items-center justify-between relative">
+        <button
           onClick={onBack}
           className="p-2 -ml-2 rounded-l hover:bg-[rgba(255,255,255,0.05)] transition-colors"
         >
-          <ArrowLeft size={24} className="text-[#FFFFFF]" />
+          <ChevronLeft size={20} className="text-white" />
         </button>
-        <div>
-          <h2 className="text-xl font-bold text-[#FFFFFF]">Edit Profile</h2>
-          <p className="text-xs text-[#A0A0A5]">Manage your personal information</p>
+
+        <span className="text-title-lg font-semibold text-white absolute left-1/2 -translate-x-1/2">
+          Profile
+        </span>
+
+        <div className="relative">
+          <button
+            onClick={() => setShowMenu((v) => !v)}
+            className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center"
+          >
+            <span className="text-white text-body-lg leading-none tracking-widest">···</span>
+          </button>
+
+          {/* Dropdown menu */}
+          {showMenu && (
+            <>
+              {/* Backdrop to close */}
+              <div
+                className="fixed inset-0 z-10"
+                onClick={() => setShowMenu(false)}
+              />
+              <div className="absolute right-0 top-12 z-20 w-44 bg-[#262626] rounded-l shadow-xl overflow-hidden border border-white/10">
+                <button
+                  onClick={handleSignOut}
+                  className="w-full text-left px-4 py-3 text-body-md text-white hover:bg-white/5 transition-colors"
+                >
+                  Sign out
+                </button>
+                <div className="border-t border-white/10" />
+                <button
+                  onClick={handleDeleteAccount}
+                  className="w-full text-left px-4 py-3 text-body-md text-[#FF3530] hover:bg-white/5 transition-colors"
+                >
+                  Delete Account
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
-      {/* 可滚动内容 */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide px-5 pb-6">
-        {/* 头像上传区域 */}
-        <div className="flex flex-col items-center py-8">
-          <div 
-            onClick={handleAvatarClick}
-            className={`relative cursor-pointer group ${settings.founderBadge ? 'p-1' : ''}`}
-          >
-            {/* Founder Badge 金边 */}
-            {settings.founderBadge && (
-              <div className="absolute inset-0 rounded-[32px] bg-gradient-to-br from-[#FFD700] via-[#FFA500] to-[#FFD700]" />
-            )}
-            
-            {/* 头像容器 */}
-            <div className={`relative w-28 h-28 rounded-[28px] overflow-hidden
-              ${settings.founderBadge ? 'bg-[#262626]' : 'bg-[rgba(1,214,190,0.08)] border-2 border-[rgba(1,214,190,0.3)]'}
-              flex items-center justify-center`}
-            >
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pb-8">
+
+        {/* Avatar section */}
+        <div className="flex flex-col items-center pt-8 pb-4">
+          <div className="relative cursor-pointer" onClick={handleAvatarClick}>
+            <div className={`w-24 h-24 rounded-full border-2 overflow-hidden bg-[#262626] flex items-center justify-center ${
+              settings.founderBadge ? 'border-[#FFD700]' : 'border-[#01D6BE]'
+            }`}>
               {profile.avatar ? (
-                <img 
-                  src={profile.avatar} 
-                  alt="Avatar" 
+                <img
+                  src={profile.avatar}
+                  alt="Avatar"
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <User size={48} className={settings.founderBadge ? 'text-[#FFD700]' : 'text-[#01D6BE]'} />
+                <User size={40} className="text-[#A0A0A5]" />
               )}
               
               {/* 悬停遮罩 */}
@@ -168,16 +301,13 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
                 <span className="text-xs text-white font-medium">Change Photo</span>
               </div>
             </div>
-            
-            {/* Founder Badge 皇冠图标 */}
-            {settings.founderBadge && (
-              <div className="absolute -top-1 -right-1 w-8 h-8 rounded-full bg-[#262626] border-2 border-[#FFD700] flex items-center justify-center z-10">
-                <Crown size={16} className="text-[#FFD700]" />
-              </div>
-            )}
+            {/* Pencil edit overlay bottom-right */}
+            <div className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-[#01D6BE] flex items-center justify-center border-2 border-[#141414]">
+              <Camera size={13} className="text-black" />
+            </div>
           </div>
-          
-          {/* 隐藏的文件输入 */}
+
+          {/* Hidden file input */}
           <input
             ref={fileInputRef}
             type="file"
@@ -351,6 +481,117 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
           </div>
         </div>
       </div>
+
+      {/* ==================== Redeem Founder Badge 弹窗 (bottom sheet) ==================== */}
+      <AnimatePresence>
+        {showRedeem && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end bg-black/60"
+            onClick={() => setShowRedeem(false)}
+          >
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full bg-[#262626] rounded-t-[24px] px-6 pt-3 pb-8 safe-area-bottom"
+            >
+              {/* Grabber */}
+              <div className="w-9 h-1 rounded-full bg-[#5A5A5A] mx-auto mb-5" />
+
+              {/* Header */}
+              <div className="flex items-start justify-between mb-5">
+                <h3 className="text-headline-md font-bold text-white">Redeem Founder Badge</h3>
+                <button
+                  onClick={() => setShowRedeem(false)}
+                  className="w-8 h-8 rounded-full bg-[#3A3A3A] flex items-center justify-center flex-shrink-0"
+                >
+                  <X size={16} className="text-[#A0A0A5]" />
+                </button>
+              </div>
+
+              {/* Activation Code input */}
+              <div className={`rounded-m border px-4 pt-2.5 pb-3 mb-4 ${founderError ? 'border-[#FF3530]' : 'border-[#4A4A4A]'}`}>
+                <label className="text-label text-[#A0A0A5]">Activation Code</label>
+                <input
+                  type="text"
+                  value={founderCode}
+                  onChange={(e) => { setFounderCode(e.target.value); setFounderError('') }}
+                  placeholder="Enter your code"
+                  autoFocus
+                  className="w-full bg-transparent text-title-md text-white placeholder:text-[#636366] focus:outline-none mt-0.5"
+                />
+              </div>
+
+              {founderError && (
+                <p className="text-body-md text-[#FF3530] mb-3 -mt-1">{founderError}</p>
+              )}
+
+              {/* Activate button */}
+              <button
+                onClick={handleActivateBadge}
+                disabled={!founderCode.trim()}
+                className="w-full h-14 rounded-m bg-[#01D6BE] text-black font-semibold text-body-lg active:scale-[0.98] transition-transform disabled:opacity-40 disabled:active:scale-100"
+              >
+                Activate Badge
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ==================== 二次确认弹窗 (Sign out / Delete Account) ==================== */}
+      <AnimatePresence>
+        {confirmAction && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-8"
+            onClick={() => setConfirmAction(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.92 }}
+              transition={{ type: 'spring', damping: 24, stiffness: 320 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-[340px] bg-[#262626] rounded-[20px] px-6 pt-6 pb-5"
+            >
+              <h3 className="text-headline-md font-bold text-white text-center mb-2">
+                {confirmAction === 'signout' ? 'Sign out?' : 'Delete Account?'}
+              </h3>
+              <p className="text-body-md text-[#A0A0A5] text-center mb-6 leading-snug">
+                {confirmAction === 'signout'
+                  ? "You'll need to sign in again to access your account."
+                  : 'This will permanently delete your account and all data. This action cannot be undone.'}
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setConfirmAction(null)}
+                  className="flex-1 h-12 rounded-m border-s border-white text-white font-semibold text-body-lg active:scale-95 transition-transform"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirm}
+                  className={`flex-1 h-12 rounded-m font-semibold text-body-lg active:scale-95 transition-transform ${
+                    confirmAction === 'signout'
+                      ? 'bg-[#01D6BE] text-black'
+                      : 'bg-[#FF3530] text-white'
+                  }`}
+                >
+                  {confirmAction === 'signout' ? 'Sign Out' : 'Delete'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }

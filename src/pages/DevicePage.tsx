@@ -11,8 +11,7 @@ import {
   Bluetooth,
   RefreshCw,
   Bell,
-  LayoutGrid,
-  List,
+  BatteryWarning,
   Wifi,
   WifiOff,
   Thermometer,
@@ -31,6 +30,7 @@ import {
 } from 'lucide-react'
 import { useDeviceStore } from '../stores/deviceStore'
 import { useAuthStore } from '../stores/authStore'
+import sierro1000Img from '../assets/sierro-1000.webp'
 import { mapFieldsToRealtime } from '../api/deviceApi'
 import type { DeviceListItem, DeviceStateField } from '../api/deviceApi'
 import BatteryTag from '../components/BatteryTag'
@@ -84,8 +84,12 @@ export default function DevicePage() {
   const [showQrScan, setShowQrScan] = useState(false)
   const [showBleScan, setShowBleScan] = useState(false)
   const [showProvisioning, setShowProvisioning] = useState(false)
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [error, setError] = useState<string | null>(null)
+
+  // 最新通知 Banner 关闭状态（仅 UI）
+  const [bannerDismissed, setBannerDismissed] = useState(false)
+  // 设备电源开关本地状态（仅 UI；不触发 API）
+  const [powerStates, setPowerStates] = useState<Record<string, boolean>>({})
 
   // 设备实时状态缓存
   const [realtimeCache, setRealtimeCache] = useState<DeviceRealtimeCache>({})
@@ -210,26 +214,19 @@ export default function DevicePage() {
     return val !== undefined ? Number(val) : null
   }
 
-  const getBatteryColor = (level: number) => {
-    if (level <= 0) return 'text-[#636366]'
-    if (level < 20) return 'text-[#FF3B30]'
-    if (level < 60) return 'text-[#FF9500]'
-    return 'text-[#34C759]'
-  }
-
-  const getBatteryBg = (level: number) => {
-    if (level <= 0) return 'bg-[rgba(72,72,74,0.08)]'
-    if (level < 20) return 'bg-[rgba(255,59,48,0.06)]'
-    if (level < 60) return 'bg-[rgba(255,149,0,0.06)]'
-    return 'bg-[rgba(52,199,89,0.06)]'
-  }
-
   const getDeviceIcon = (sortKey: string) => {
     const key = sortKey?.toLowerCase() ?? ''
     if (key.includes('storage') || key.includes('power') || key.includes('sierro')) return deviceIcons.powerstation
     if (key.includes('fridge')) return deviceIcons.fridge
     if (key.includes('cpap')) return deviceIcons.cpap
     return deviceIcons.default
+  }
+
+  // Real product photo for SIERRO power stations (falls back to emoji elsewhere)
+  const getDeviceImage = (sortKey: string): string | null => {
+    const key = sortKey?.toLowerCase() ?? ''
+    if (key.includes('storage') || key.includes('power') || key.includes('sierro')) return sierro1000Img
+    return null
   }
 
   const getWorkModeLabel = (mode: number | null | undefined): string => {
@@ -243,12 +240,91 @@ export default function DevicePage() {
     navigate(`/device/${device.id}`)
   }
 
+  // 设备型号显示（Sierro 1000 / Sierro 2000 ...）
+  const getDeviceModel = (device: DeviceListItem): string =>
+    device.model || device.gatherProtocolNameDisplay || 'Sierro'
+
+  // 电量标签颜色（依 BatteryTag 9 状态规范）
+  // 60-100% 绿/主色，20-59% 橘，1-19% 红
+  const getTagColor = (level: number): string => {
+    if (level >= 60) return '#34C759'
+    if (level >= 20) return '#FF9500'
+    return '#FF3530'
+  }
+
+  // 电源开关切换（本地 UI 状态）
+  const togglePower = (deviceId: string | number, e: React.MouseEvent) => {
+    e.stopPropagation()
+    const idStr = String(deviceId)
+    setPowerStates(prev => ({ ...prev, [idStr]: !(prev[idStr] ?? true) }))
+  }
+
+  // 是否有低电量设备（用于最新通知 Banner）
+  const lowBatteryDevice = devices.find(d => {
+    const soc = getDeviceNum(d.id, 'soc')
+    return soc !== null && soc < 30
+  })
+
+  // ── BatteryTag 电量标签（横式电池 + 充电闪电 + 百分比 / Disconnected） ──
+  const BatteryTag = ({ level, connected, charging }: { level: number; connected: boolean; charging: boolean }) => {
+    if (!connected) {
+      return (
+        <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-[#4B1512] text-[#FF3530] text-body-md font-semibold">
+          Disconnected
+        </span>
+      )
+    }
+    const color = getTagColor(level)
+    const fill = Math.max(4, Math.min(100, level))
+    return (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#3A3A3A]">
+        {/* 横式电池 */}
+        <span className="relative inline-flex items-center">
+          <span className="relative w-[22px] h-[12px] rounded-[3px] border-s flex items-center" style={{ borderColor: '#8C8C8C' }}>
+            <span
+              className="absolute left-[1.5px] top-[1.5px] bottom-[1.5px] rounded-[1.5px]"
+              style={{ width: `calc(${fill}% - 3px)`, backgroundColor: color }}
+            />
+            {charging && (
+              <Zap size={9} className="relative mx-auto text-white" fill="currentColor" strokeWidth={0} />
+            )}
+          </span>
+          {/* 电池正极 */}
+          <span className="w-[2px] h-[5px] rounded-r-[1px] ml-[1px]" style={{ backgroundColor: '#8C8C8C' }} />
+        </span>
+        <span className="text-body-md font-semibold text-white">{level}%</span>
+      </span>
+    )
+  }
+
+  // ── 电源开关组件（disconnected 时 disabled） ──
+  const PowerToggle = ({ deviceId, on, disabled }: { deviceId: string | number; on: boolean; disabled: boolean }) => (
+    <button
+      onClick={(e) => { if (!disabled) togglePower(deviceId, e) }}
+      disabled={disabled}
+      aria-label="Power toggle"
+      className={`relative w-[52px] h-[31px] rounded-full transition-colors duration-200 flex-shrink-0 ${
+        disabled
+          ? 'bg-[#454545] opacity-50 cursor-not-allowed'
+          : on
+            ? 'bg-primary active:scale-95'
+            : 'bg-[#454545] active:scale-95'
+      } transition-transform`}
+    >
+      <span
+        className={`absolute top-[2px] w-[27px] h-[27px] rounded-full bg-white shadow-sm transition-all duration-200 ${
+          on && !disabled ? 'left-[23px]' : 'left-[2px]'
+        }`}
+      />
+    </button>
+  )
+
   // ── 未登录 + 非游客 → 强制引导登录 ──
   if (!isAuthenticated && !isGuest) {
     return (
       <div className="h-full flex flex-col bg-[#141414] overflow-hidden">
         <div className="px-5 pt-4 pb-3 safe-area-top">
-          <h2 className="text-xl font-bold text-[#FFFFFF]">Devices</h2>
+          <h1 className="text-display font-display text-white">Device</h1>
         </div>
         <div className="flex-1 flex flex-col items-center justify-center px-5">
           <WifiOff size={48} className="text-[#636366] mb-3 opacity-40" />
@@ -296,32 +372,24 @@ export default function DevicePage() {
         className="px-5 pt-4 pb-3 safe-area-top"
       >
         <div className="flex justify-between items-center mb-3">
-          <h2 className="text-xl font-bold text-[#FFFFFF]">Devices</h2>
-          <div className="flex items-center gap-2">
+          <h1 className="text-display font-display text-white">Device</h1>
+          <div className="flex items-center gap-2.5">
             <button
-              onClick={handleRefreshAll}
-              className="w-9 h-9 rounded-full bg-[#262626] flex items-center justify-center text-[#FFFFFF] hover:bg-[#333333] transition-colors"
-              title="Refresh all devices"
+              onClick={() => setShowAddModal(true)}
+              aria-label="Add device"
+              className="w-11 h-11 rounded-full bg-[#262626] flex items-center justify-center text-white hover:bg-[#333333] transition-colors active:scale-95"
             >
-              <RefreshCw size={16} />
+              <Plus size={20} />
             </button>
             <button
               onClick={() => navigate('/notifications')}
-              className="w-9 h-9 rounded-full bg-[#262626] flex items-center justify-center text-[#FFFFFF] hover:bg-[#333333] transition-colors"
+              aria-label="Notifications"
+              className="relative w-11 h-11 rounded-full bg-[#262626] flex items-center justify-center text-white hover:bg-[#333333] transition-colors active:scale-95"
             >
-              <Bell size={18} />
-            </button>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="w-9 h-9 rounded-full bg-[#262626] flex items-center justify-center text-[#FFFFFF] hover:bg-[#333333] transition-colors"
-            >
-              <Plus size={18} />
-            </button>
-            <button
-              onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-              className="w-9 h-9 rounded-full bg-[#262626] flex items-center justify-center text-[#FFFFFF] hover:bg-[#333333] transition-colors"
-            >
-              {viewMode === 'grid' ? <LayoutGrid size={18} /> : <List size={18} />}
+              <Bell size={20} />
+              {(lowBatteryDevice || devices.some(d => d.isAlarmed)) && (
+                <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-[#FF3530] border-2 border-[#141414]" />
+              )}
             </button>
           </div>
         </div>
@@ -400,32 +468,34 @@ export default function DevicePage() {
                 <p key={d.id} className="text-caption text-[#FF3B30] opacity-80 truncate">
                   {d.name} — Estimated remaining time: {getDeviceField(String(d.id), 'remainingTime') || 'calculating...'}
                 </p>
-              ))}
-            </div>
-          </motion.div>
-        )}
+              </div>
+              <button
+                onClick={(e) => { e.stopPropagation(); setBannerDismissed(true) }}
+                aria-label="Dismiss notification"
+                className="text-white flex-shrink-0 active:scale-90 transition-transform"
+              >
+                <X size={20} />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Loading Skeleton */}
         {deviceLoading && devices.length === 0 ? (
-          <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-2.5' : 'flex flex-col gap-2.5'}>
-            {[0, 1, 2, 3].map(i => (
-              <div key={i} className={`${viewMode === 'grid' ? 'rounded-[20px] p-4' : 'rounded-[18px] p-4'} bg-[#262626] animate-pulse`}>
-                <div className="h-8 bg-[#333333] rounded-lg mb-2 w-16" />
-                <div className="h-3 bg-[#333333] rounded mb-1 w-24" />
-                <div className="h-2 bg-[#333333] rounded w-20" />
-              </div>
+          <div className="flex flex-col gap-3">
+            {[0, 1, 2].map(i => (
+              <div key={i} className="rounded-l p-5 bg-[#262626] animate-pulse h-[150px]" />
             ))}
           </div>
-        ) : viewMode === 'grid' ? (
-          /* Bento Box Grid Layout */
-          <div className="grid grid-cols-2 gap-2.5">
+        ) : devices.length > 0 ? (
+          /* Device Card List (newest on top — devices[0] assumed newest) */
+          <div className="flex flex-col gap-3">
             {devices.map((device, index) => {
               const soc = getDeviceNum(device.id, 'soc') ?? 0
               const batteryPower = getDeviceNum(device.id, 'batteryPower')
-              const outputPower = getDeviceNum(device.id, 'outputPower')
-              const batteryTemp = getDeviceNum(device.id, 'batteryTemp')
-              const workMode = getDeviceNum(device.id, 'workMode')
               const isCharging = batteryPower !== null && batteryPower > 0
+              const connected = device.isOnline
+              const powerOn = powerStates[String(device.id)] ?? device.isOnline
 
               return (
                 <motion.div
@@ -434,7 +504,7 @@ export default function DevicePage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: index * 0.06, ease: [0.25, 0.46, 0.45, 0.94] }}
                   onClick={() => handleDeviceClick(device)}
-                  className={`${getBatteryBg(soc)} rounded-[20px] p-4 cursor-pointer active:scale-[0.97] transition-transform relative`}
+                  className="bg-[#262626] rounded-l p-5 cursor-pointer active:scale-[0.99] transition-transform"
                 >
                   {/* Top row: SOC + Online status + Refresh */}
                   <div className="flex items-start justify-between mb-2">
@@ -496,16 +566,21 @@ export default function DevicePage() {
                         {getWorkModeLabel(workMode)}
                       </span>
                     )}
+                    <BatteryTag level={soc} connected={connected} charging={isCharging} />
                   </div>
 
-                  {/* Offline overlay */}
-                  {!device.isOnline && (
-                    <div className="absolute top-2 right-2">
-                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[rgba(72,72,74,0.3)] text-[#636366] font-medium">
-                        Offline
-                      </span>
-                    </div>
-                  )}
+                  {/* Name (up to 2 lines, then ...) */}
+                  <h3 className="text-title-lg font-semibold text-white leading-tight line-clamp-2 break-words">
+                    {device.name}
+                  </h3>
+
+                  {/* Model */}
+                  <p className="text-body-md text-ink-7 mt-0.5">{getDeviceModel(device)}</p>
+
+                  {/* Power toggle (disabled when disconnected) */}
+                  <div className="flex justify-end mt-3" onClick={(e) => e.stopPropagation()}>
+                    <PowerToggle deviceId={device.id} on={powerOn} disabled={!connected} />
+                  </div>
                 </motion.div>
               )
             })}
@@ -604,9 +679,13 @@ export default function DevicePage() {
             <p className="text-xs text-[#636366] mb-1">
               {error ? 'Check your network connection' : 'Tap + to add your first device'}
             </p>
-            {error && (
-              <button onClick={fetchDevices} className="mt-3 px-5 py-2 bg-[#01D6BE] rounded-full text-[#000000] text-[13px] font-semibold flex items-center gap-2 mx-auto">
-                <RefreshCw size={14} /> Retry
+            {error ? (
+              <button onClick={fetchDevices} className="px-6 py-3 rounded-m border-m border-primary text-primary text-body-lg font-semibold flex items-center gap-2 active:scale-95 transition-transform">
+                <RefreshCw size={18} /> Retry
+              </button>
+            ) : (
+              <button onClick={() => setShowAddModal(true)} className="px-7 py-3.5 rounded-m border-m border-primary text-primary text-body-lg font-semibold flex items-center gap-2 active:scale-95 transition-transform">
+                <Plus size={20} /> Add Device
               </button>
             )}
           </motion.div>

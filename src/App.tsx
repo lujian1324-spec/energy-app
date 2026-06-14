@@ -1,8 +1,9 @@
 ﻿import { Routes, Route, Navigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useLocation } from 'react-router-dom'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import BottomNavigation from './components/BottomNavigation'
+import PermissionsGate, { hasAskedPermissions } from './components/PermissionsGate'
 import DevicePage from './pages/DevicePage'
 import OverviewPage from './pages/OverviewPage'
 import StatsPage from './pages/StatsPage'
@@ -66,6 +67,9 @@ function AppInner() {
   const sessionReady = useAuthStore(s => s.sessionReady)
   const restoreSession = useAuthStore(s => s.restoreSession)
   useRealtimeSimulator()
+
+  // 首次启动权限引导：session 恢复完成后检查
+  const [permissionsDone, setPermissionsDone] = useState(hasAskedPermissions)
 
   // 启动时恢复会话
   useEffect(() => {

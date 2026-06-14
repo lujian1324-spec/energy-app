@@ -1,116 +1,146 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Zap, Mail, User, Lock, Eye, EyeOff, Loader2, ChevronRight, ArrowRight, ArrowLeft } from 'lucide-react'
+import { Loader2, X } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import { sendEmailCaptcha, loginByEmail } from '../api/authApi'
 
+type Tab = 'email' | 'username'
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 export default function LoginPage() {
-  const { login, loading, error, clearError, isAuthenticated } = useAuthStore()
+  const { loading, isAuthenticated, login } = useAuthStore()
   const navigate = useNavigate()
 
-  // ── Account/Password form ──
-  const [account, setAccount] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPwd, setShowPwd] = useState(false)
-
-  // ── Email login flow ──
-  const [emailFlow, setEmailFlow] = useState(false)        // show email login UI
+  // ── Tab + shared fields ──
+  const [tab, setTab] = useState<Tab>('email')
   const [email, setEmail] = useState('')
-  const [emailCode, setEmailCode] = useState('')
-  const [emailIotCaptchaId, setEmailIotCaptchaId] = useState<string | null>(null)
-  const [emailSending, setEmailSending] = useState(false)
-  const [emailCooldown, setEmailCooldown] = useState(0)
-  const [emailError, setEmailError] = useState<string | null>(null)
-  const [emailLoggingIn, setEmailLoggingIn] = useState(false)
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+
+  // ── Verification-code (OTP) mode ──
+  const [otpMode, setOtpMode] = useState(false)
+  const [otpCode, setOtpCode] = useState('')
+  const [otpSent, setOtpSent] = useState(false)
+  const [captchaId, setCaptchaId] = useState<string | null>(null)
+  const [cooldown, setCooldown] = useState(0)
+  const [sending, setSending] = useState(false)
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // ── Status ──
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  const emailValid = EMAIL_RE.test(email.trim())
 
   // ── redirect on auth ──
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/', { replace: true })
-    }
+    if (isAuthenticated) navigate('/', { replace: true })
   }, [isAuthenticated, navigate])
 
-  // ── Cleanup cooldown on unmount ──
+  // ── cleanup cooldown ──
   useEffect(() => {
     return () => { if (cooldownRef.current) clearInterval(cooldownRef.current) }
   }, [])
 
-  // ═══════════════════════════════════════
-  //  Account/Password Login
-  // ═══════════════════════════════════════
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!account.trim() || !password.trim()) return
-    const ok = await login(account.trim(), password)
-    if (ok) navigate('/', { replace: true })
+  const startCooldown = () => {
+    setCooldown(60)
+    cooldownRef.current = setInterval(() => {
+      setCooldown(prev => {
+        if (prev <= 1) { if (cooldownRef.current) clearInterval(cooldownRef.current); return 0 }
+        return prev - 1
+      })
+    }, 1000)
   }
 
-  // ═══════════════════════════════════════
-  //  Email Captcha Login Flow
-  // ═══════════════════════════════════════
+  const switchTab = (next: Tab) => {
+    if (next === tab) return
+    setTab(next)
+    setError(null)
+    // Username tab can't use verification-code login
+    if (next === 'username') setOtpMode(false)
+  }
 
-  const handleSendEmailCode = async () => {
-    if (emailCooldown > 0 || !email.trim()) return
-    setEmailError(null)
-    setEmailSending(true)
+  const toggleOtpMode = () => {
+    setOtpMode(v => !v)
+    setError(null)
+    setOtpSent(false)
+    setOtpCode('')
+    setCaptchaId(null)
+  }
+
+  // ── Obtain verification code (email OTP) ──
+  const handleObtainCode = async () => {
+    if (cooldown > 0 || !emailValid) { setError('Please enter a valid email address.'); return }
+    setError(null)
+    setSending(true)
     try {
       const result = await sendEmailCaptcha(email.trim(), '3')
       if (result.code === 0 || result.code === '0') {
-        setEmailIotCaptchaId(result.data?.iotCaptchaId ?? null)
-        setEmailCooldown(60)
-        cooldownRef.current = setInterval(() => {
-          setEmailCooldown(prev => {
-            if (prev <= 1) { if (cooldownRef.current) clearInterval(cooldownRef.current); return 0 }
-            return prev - 1
-          })
-        }, 1000)
+        setCaptchaId(result.data?.iotCaptchaId ?? null)
+        setOtpSent(true)
+        startCooldown()
       } else {
-        setEmailError(result.message || result.msg || 'Failed to send code')
+        setError(result.message || result.msg || 'Failed to send code.')
       }
     } catch {
-      setEmailError('Failed to send verification code. Please try again.')
+      setError('Failed to send verification code. Please try again.')
     } finally {
-      setEmailSending(false)
+      setSending(false)
     }
   }
 
-  const handleEmailLogin = async () => {
-    if (!emailIotCaptchaId || !emailCode.trim() || !email.trim()) return
-    setEmailError(null)
-    setEmailLoggingIn(true)
+  // ── Sign in ──
+  const handleSignIn = async () => {
+    setError(null)
+
+    // Email + verification-code login
+    if (tab === 'email' && otpMode) {
+      if (!captchaId || otpCode.trim().length < 6 || !email.trim()) return
+      setBusy(true)
+      try {
+        const result = await loginByEmail(email.trim(), captchaId, otpCode.trim())
+        if (result.code === 0 || result.code === '0') {
+          useAuthStore.setState({ isAuthenticated: true, isGuest: false, user: result.data ?? null })
+          navigate('/', { replace: true })
+        } else {
+          setError(result.message || result.msg || 'Invalid verification code.')
+        }
+      } catch {
+        setError('Invalid verification code.')
+      } finally {
+        setBusy(false)
+      }
+      return
+    }
+
+    // Password login (email or username)
+    const account = tab === 'email' ? email.trim() : username.trim()
+    if (!account || !password) return
+    setBusy(true)
     try {
-      const result = await loginByEmail(email.trim(), emailIotCaptchaId, emailCode.trim())
-      if (result.code === 0 || result.code === '0') {
+      const ok = await login(account, password)
+      if (ok) {
         navigate('/', { replace: true })
       } else {
-        setEmailError(result.message || result.msg || 'Login failed')
+        setError(useAuthStore.getState().error || 'Invalid credentials.')
       }
     } catch {
-      setEmailError('Login failed. Please try again.')
+      setError('Login failed. Please try again.')
     } finally {
-      setEmailLoggingIn(false)
+      setBusy(false)
     }
   }
 
-  const resetEmailFlow = () => {
-    setEmailFlow(false)
-    setEmail('')
-    setEmailCode('')
-    setEmailIotCaptchaId(null)
-    setEmailError(null)
-    setEmailCooldown(0)
-    if (cooldownRef.current) { clearInterval(cooldownRef.current); cooldownRef.current = null }
-  }
-
-  // ═══════════════════════════════════════
-  //  Render
-  // ═══════════════════════════════════════
+  // ── Sign-in button disabled state ──
+  const signInDisabled = (() => {
+    if (tab === 'email' && otpMode) return !captchaId || otpCode.length < 6
+    const account = tab === 'email' ? email.trim() : username.trim()
+    return !account || !password
+  })()
 
   return (
-    <div className="min-h-screen bg-[#141414] flex flex-col px-6">
+    <div className="min-h-screen bg-ink-12 flex flex-col px-6">
       <div className="flex-1 flex flex-col justify-center">
         {/* Logo */}
         <motion.div
@@ -428,16 +458,94 @@ export default function LoginPage() {
           {/* Continue as Guest */}
           <div>
             <button
-              onClick={() => {
-                useAuthStore.getState().setGuestMode()
-                navigate('/', { replace: true })
-              }}
-              disabled={loading}
-              className="text-[13px] text-[#A0A0A5] hover:text-[#FFFFFF] transition-colors"
+              key={t}
+              onClick={() => switchTab(t)}
+              className={`flex-1 pb-3 text-title-md font-semibold transition-colors relative
+                ${tab === t ? 'text-ink-1' : 'text-ink-7'}`}
             >
-              Continue as Guest
+              {t === 'email' ? 'Email' : 'Username'}
+              {tab === t && (
+                <span className="absolute -bottom-px left-0 right-0 h-0.5 bg-primary rounded-pill" />
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Identifier field ── */}
+        {tab === 'email' ? (
+          <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-3">
+            <input
+              type="email"
+              value={email}
+              onChange={e => { setEmail(e.target.value); setError(null) }}
+              placeholder="Email address"
+              autoComplete="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              className="flex-1 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
+            />
+            {email && (
+              <button onClick={() => setEmail('')} aria-label="Clear email">
+                <X size={16} className="text-ink-7" />
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-3">
+            <input
+              type="text"
+              value={username}
+              onChange={e => { setUsername(e.target.value); setError(null) }}
+              placeholder="Username"
+              autoComplete="username"
+              autoCapitalize="none"
+              autoCorrect="off"
+              className="flex-1 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
+            />
+            {username && (
+              <button onClick={() => setUsername('')} aria-label="Clear username">
+                <X size={16} className="text-ink-7" />
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* ── Password OR verification-code field ── */}
+        {tab === 'email' && otpMode ? (
+          <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-3 mb-3">
+            <input
+              type="text"
+              inputMode="numeric"
+              value={otpCode}
+              onChange={e => { setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setError(null) }}
+              placeholder="Verification code"
+              autoComplete="one-time-code"
+              maxLength={6}
+              className="flex-1 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
+            />
+            <button
+              onClick={handleObtainCode}
+              disabled={cooldown > 0 || sending || !emailValid}
+              className="shrink-0 text-label font-semibold text-primary disabled:text-ink-7 transition-colors
+                flex items-center gap-1"
+            >
+              {sending ? <Loader2 size={14} className="animate-spin" /> : null}
+              {cooldown > 0 ? `Resend (${cooldown})` : otpSent ? 'Resend Code' : 'Obtain Code'}
             </button>
           </div>
+        ) : (
+          <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-3">
+            <input
+              type="password"
+              value={password}
+              onChange={e => { setPassword(e.target.value); setError(null) }}
+              placeholder="Password"
+              autoComplete="current-password"
+              onKeyDown={e => { if (e.key === 'Enter') handleSignIn() }}
+              className="flex-1 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
+            />
+          </div>
+        )}
 
           {/* Terms & Privacy */}
           <p className="text-caption leading-relaxed text-[#A0A0A5]">
@@ -450,8 +558,26 @@ export default function LoginPage() {
               Privacy Policy
             </Link>
           </p>
-        </motion.div>
-      )}
+          <button
+            onClick={() => {
+              useAuthStore.getState().setGuestMode()
+              navigate('/', { replace: true })
+            }}
+            disabled={loading}
+            className="text-body-md text-ink-7 hover:text-ink-1 transition-colors"
+          >
+            Continue as Guest
+          </button>
+        </div>
+      </div>
+
+      {/* Terms & Privacy */}
+      <p className="pb-8 pt-4 text-center text-caption leading-relaxed text-ink-7">
+        By continuing, you agree to our{' '}
+        <Link to="/terms" className="text-primary underline underline-offset-2">Terms of Use</Link>
+        {' '}and{' '}
+        <Link to="/privacy" className="text-primary underline underline-offset-2">Privacy Policy</Link>
+      </p>
     </div>
   )
 }

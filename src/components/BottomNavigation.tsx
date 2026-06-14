@@ -35,7 +35,7 @@ export default function BottomNavigation() {
             >
               {({ isActive }) => (
                 <span
-                  className={`flex items-center gap-2 transition-colors duration-200 ${
+                  className={`flex items-center justify-center transition-colors duration-200 ${
                     isActive ? 'text-[#FFFFFF]' : 'text-[#01D6BE]/70'
                   }`}
                 >

@@ -1,4 +1,12 @@
-/** @type {import('tailwindcss').Config} */
+/** @type {import('tailwindcss').Config}
+ *
+ *  ┌──────────────────────────────────────────────────────────────┐
+ *  │  Sierro Design System — LOCKED TOKENS (Figma Handoff)         │
+ *  │  These values come from the official Figma Design System.     │
+ *  │  DO NOT change them arbitrarily when adjusting the app.       │
+ *  │  See CLAUDE.md › "Design System (locked)" for the full spec.  │
+ *  └──────────────────────────────────────────────────────────────┘
+ */
 export default {
   content: [
     "./index.html",

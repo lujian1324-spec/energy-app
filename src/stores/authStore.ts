@@ -61,6 +61,27 @@ export const useAuthStore = create<AuthState>()(
       login: async (username: string, password: string) => {
         set({ loading: true, error: null })
 
+        // 本地测试账号：跳过后端，直接进入 demo 模式（展示演示数据）
+        const u = username.trim().toLowerCase()
+        const localAccounts: Record<string, { password: string; email: string }> = {
+          localtest: { password: 'localtest', email: 'localtest@sierro.test' },
+          localest:  { password: 'localtest', email: 'localtest@sierro.test' },
+          benson:    { password: 'benson1234', email: 'benson8191@gmail.com' },
+        }
+        const localAccount = localAccounts[u]
+        if (localAccount && password === localAccount.password) {
+          useDeviceStore.getState().loadDemoDevices()
+          set({
+            isAuthenticated: true,
+            isGuest: false,
+            user: { account: u, email: localAccount.email } as LoginData,
+            loading: false,
+            error: null,
+            sessionReady: true,
+          })
+          return true
+        }
+
         try {
           const result = await loginByAccount(username, password)
 
@@ -69,7 +90,9 @@ export const useAuthStore = create<AuthState>()(
             if (result.data.userId) {
               localStorage.setItem('iot_user_id', String(result.data.userId))
             }
-            set({ isAuthenticated: true, user: result.data, loading: false, error: null })
+            // 登录成功必须清除游客标记，否则会出现 isGuest && isAuthenticated
+            // 同时为真，导致游客横幅残留、/login 路由被守卫弹回。
+            set({ isAuthenticated: true, isGuest: false, user: result.data, loading: false, error: null })
             return true
           }
 
@@ -151,7 +174,7 @@ export const useAuthStore = create<AuthState>()(
           // 刷新成功，再验证一次
           const valid2 = await verifySession()
           if (valid2) {
-            set({ isAuthenticated: true, sessionReady: true })
+            set({ isAuthenticated: true, isGuest: false, sessionReady: true })
             return
           }
         }

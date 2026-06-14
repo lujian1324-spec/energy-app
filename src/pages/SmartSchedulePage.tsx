@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -6,20 +6,13 @@ import {
   Zap,
   Battery,
   Clock,
-  Settings,
   Plus,
   Trash2,
-  ChevronDown,
-  ChevronUp,
   Power,
-  TrendingDown,
-  Search,
   AlertTriangle,
   Check,
   X,
-  MapPin,
-  DollarSign,
-  Calendar,
+  Info,
   Edit2,
   Save,
   Loader2,
@@ -30,48 +23,62 @@ import { usePowerStationStore } from '../stores/powerStationStore'
 import { useDeviceStore } from '../stores/deviceStore'
 import { mapBundleToSettings, mapSettingsToGeneralConfig } from '../api/deviceApi'
 import type { PeakShavingSchedule } from '../types'
-import { CalcAudit } from '../components/DataTrust'
 
-// 日程类型配置 — 色盲友好（颜色 + 图标标签）
+// 日程类型配置
 const scheduleTypeConfig = {
-  charge: { label: 'Charge', color: '#34C759', icon: Battery, bgColor: 'rgba(52,199,89,0.15)', emoji: '⚡' },
-  discharge: { label: 'Discharge', color: '#FF9500', icon: Zap, bgColor: 'rgba(255,149,0,0.15)', emoji: '🔋' },
-  grid: { label: 'Grid', color: '#01D6BE', icon: Power, bgColor: 'rgba(1,214,190,0.15)', emoji: '🔌' },
-  battery: { label: 'Battery', color: '#FFD700', icon: Battery, bgColor: 'rgba(255,215,0,0.15)', emoji: '🔋' },
+  charge: { label: 'Charge', color: '#01D6BE', icon: Battery, bgColor: 'rgba(1,214,190,0.15)' },
+  discharge: { label: 'Discharge', color: '#FF9500', icon: Zap, bgColor: 'rgba(255,149,0,0.15)' },
+  grid: { label: 'Grid', color: '#01D6BE', icon: Power, bgColor: 'rgba(1,214,190,0.15)' },
+  battery: { label: 'Battery', color: '#FFD700', icon: Battery, bgColor: 'rgba(255,215,0,0.15)' },
 }
 
-// 时间转分钟数
 const timeToMinutes = (t: string) => {
   const [h, m] = t.split(':').map(Number)
   return h * 60 + m
 }
 
-// 冲突检测
+const minutesToLabel = (mins: number) => {
+  const h = Math.floor(mins / 60) % 24
+  const m = mins % 60
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  const h12 = h % 12 || 12
+  return m === 0 ? `${h12} ${ampm}` : `${h12}:${String(m).padStart(2, '0')} ${ampm}`
+}
+
+/** 分钟数 → 整点 HH:00 字符串（时间刻度仅支持整点） */
+const minsToHourTime = (mins: number) => `${String(Math.floor(mins / 60) % 24).padStart(2, '0')}:00`
+
 const checkScheduleConflict = (
   newSchedule: { startTime: string; endTime: string; id?: string },
   existingSchedules: PeakShavingSchedule[]
 ): { conflict: boolean; with?: string; overlap?: string } => {
   const newStart = timeToMinutes(newSchedule.startTime)
   const newEnd = timeToMinutes(newSchedule.endTime)
-
   for (const existing of existingSchedules) {
     if (newSchedule.id && existing.id === newSchedule.id) continue
     const exStart = timeToMinutes(existing.startTime)
     const exEnd = timeToMinutes(existing.endTime)
-
-    const overlaps = newStart < exEnd && newEnd > exStart
-    if (overlaps) {
+    if (newStart < exEnd && newEnd > exStart) {
       const overlapStart = Math.max(newStart, exStart)
       const overlapEnd = Math.min(newEnd, exEnd)
       const fmtMin = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`
-      return {
-        conflict: true,
-        with: existing.name,
-        overlap: `${fmtMin(overlapStart)} - ${fmtMin(overlapEnd)}`,
-      }
+      return { conflict: true, with: existing.name, overlap: `${fmtMin(overlapStart)} - ${fmtMin(overlapEnd)}` }
     }
   }
   return { conflict: false }
+}
+
+// SVG clock donut arc path helper
+function arcPath(cx: number, cy: number, r: number, startDeg: number, endDeg: number): string {
+  const toRad = (d: number) => (d * Math.PI) / 180
+  const startRad = toRad(startDeg)
+  const endRad = toRad(endDeg)
+  const x1 = cx + r * Math.cos(startRad)
+  const y1 = cy + r * Math.sin(startRad)
+  const x2 = cx + r * Math.cos(endRad)
+  const y2 = cy + r * Math.sin(endRad)
+  const large = endDeg - startDeg > 180 ? 1 : 0
+  return `M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}`
 }
 
 export default function SmartSchedulePage() {
@@ -88,7 +95,6 @@ export default function SmartSchedulePage() {
     powerStation,
   } = usePowerStationStore()
 
-  // T18: 接入设备 Store 的削峰填谷 API
   const {
     selectedDeviceId,
     peakValleyConfig,
@@ -100,7 +106,6 @@ export default function SmartSchedulePage() {
     savePeakValleyGeneral,
   } = useDeviceStore()
 
-  // 首次加载：从 API 拉取削峰填谷配置
   const [apiConfigLoaded, setApiConfigLoaded] = useState(false)
   useEffect(() => {
     if (!selectedDeviceId || apiConfigLoaded) return
@@ -118,7 +123,6 @@ export default function SmartSchedulePage() {
     })()
   }, [selectedDeviceId, apiConfigLoaded, loadPeakValley, updatePeakShavingSettings])
 
-  // 手动刷新
   const handleRefresh = useCallback(async () => {
     if (!selectedDeviceId) return
     const deviceIdNum = Number(selectedDeviceId)
@@ -130,57 +134,38 @@ export default function SmartSchedulePage() {
     }
   }, [selectedDeviceId, loadPeakValley, updatePeakShavingSettings])
 
-  // 开/关削峰填谷 — 通过 API
   const handleTogglePeakShaving = useCallback(async (enabled: boolean) => {
     if (!selectedDeviceId) {
-      // 无真实设备，回退到本地 mock 操作
       togglePeakShaving(enabled)
       return
     }
     try {
       await enablePeakValley(Number(selectedDeviceId), enabled)
-      // API 成功后更新本地状态
       togglePeakShaving(enabled)
-    } catch {
-      // 失败时不做本地更新
-    }
+    } catch { /* noop */ }
   }, [selectedDeviceId, enablePeakValley, togglePeakShaving])
 
-  // 保存到设备 — 将当前设置推送到 API
   const handleSaveToDevice = useCallback(async () => {
     if (!selectedDeviceId) return
     try {
       const config = mapSettingsToGeneralConfig(Number(selectedDeviceId), peakShavingSettings)
       await savePeakValleyGeneral(config)
-    } catch {
-      // error is tracked via peakValleyError in deviceStore
-    }
+    } catch { /* noop */ }
   }, [selectedDeviceId, peakShavingSettings, savePeakValleyGeneral])
 
-  // 日程变更后自动保存到 API（debounce 效果：在关闭添加/编辑 modal 时触发）
   const handleScheduleChanged = useCallback(() => {
     if (selectedDeviceId && apiConfigLoaded) {
       const config = mapSettingsToGeneralConfig(Number(selectedDeviceId), { ...peakShavingSettings })
-      savePeakValleyGeneral(config).catch(err => console.error('[SmartSchedulePage] save failed:', err))
+      savePeakValleyGeneral(config).catch(() => {})
     }
   }, [selectedDeviceId, apiConfigLoaded, peakShavingSettings, savePeakValleyGeneral])
 
   const [showAddModal, setShowAddModal] = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
-  const [showTouLookup, setShowTouLookup] = useState(false)
-  const [expandedSchedule, setExpandedSchedule] = useState<string | null>(null)
-
-  // T2: 编辑日程 modal 状态
   const [editingSchedule, setEditingSchedule] = useState<PeakShavingSchedule | null>(null)
   const [editForm, setEditForm] = useState<Partial<PeakShavingSchedule>>({})
   const [editConflict, setEditConflict] = useState<{ conflict: boolean; with?: string; overlap?: string }>({ conflict: false })
-
-  // T2: 删除确认对话框状态
-  const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; scheduleId: string; scheduleName: string }>({
-    show: false,
-    scheduleId: '',
-    scheduleName: '',
-  })
+  const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; scheduleId: string; scheduleName: string }>({ show: false, scheduleId: '', scheduleName: '' })
+  const [showPartPeak, setShowPartPeak] = useState(false)
 
   const openEditModal = (schedule: PeakShavingSchedule) => {
     setEditingSchedule(schedule)
@@ -188,33 +173,23 @@ export default function SmartSchedulePage() {
     setEditConflict({ conflict: false })
   }
 
-  // 编辑表单时间变化时检测冲突
   const handleEditFormChange = (updates: Partial<PeakShavingSchedule>) => {
     const updated = { ...editForm, ...updates }
     setEditForm(updated)
-    if (updates.startTime || updates.endTime) {
-      if (updated.startTime && updated.endTime) {
-        const result = checkScheduleConflict(
-          { startTime: updated.startTime, endTime: updated.endTime, id: editingSchedule?.id },
-          peakShavingSettings.schedules
-        )
-        setEditConflict(result)
-      }
+    if ((updates.startTime || updates.endTime) && updated.startTime && updated.endTime) {
+      const result = checkScheduleConflict({ startTime: updated.startTime, endTime: updated.endTime, id: editingSchedule?.id }, peakShavingSettings.schedules)
+      setEditConflict(result)
     }
   }
 
   const handleSaveEdit = () => {
-    if (editingSchedule && editForm.name && editForm.startTime && editForm.endTime) {
-      if (editConflict.conflict) return
+    if (editingSchedule && editForm.name && editForm.startTime && editForm.endTime && !editConflict.conflict) {
       updatePeakShavingSchedule(editingSchedule.id, editForm)
       setEditingSchedule(null)
-      setEditConflict({ conflict: false })
-      // T18: 自动同步到 API
       setTimeout(() => handleScheduleChanged(), 50)
     }
   }
 
-  // T2: 带确认的删除
   const handleDeleteClick = (schedule: PeakShavingSchedule) => {
     setDeleteConfirm({ show: true, scheduleId: schedule.id, scheduleName: schedule.name })
   }
@@ -222,22 +197,11 @@ export default function SmartSchedulePage() {
   const handleDeleteConfirm = () => {
     if (deleteConfirm.scheduleId) {
       deletePeakShavingSchedule(deleteConfirm.scheduleId)
-      setExpandedSchedule(null)
-      // T18: 自动同步到 API
       setTimeout(() => handleScheduleChanged(), 50)
     }
     setDeleteConfirm({ show: false, scheduleId: '', scheduleName: '' })
   }
 
-  const handleDeleteCancel = () => {
-    setDeleteConfirm({ show: false, scheduleId: '', scheduleName: '' })
-  }
-
-  // TOU 查找
-  const [zipInput, setZipInput] = useState(peakShavingSettings.zipCode || '')
-  const [touNotFound, setTouNotFound] = useState(false)
-
-  // 新日程表单
   const [newSchedule, setNewSchedule] = useState<Partial<PeakShavingSchedule>>({
     name: '',
     startTime: '09:00',
@@ -246,120 +210,128 @@ export default function SmartSchedulePage() {
     enabled: true,
   })
 
-  // 冲突检测结果
   const conflictResult = useMemo(() => {
     if (!newSchedule.startTime || !newSchedule.endTime) return { conflict: false }
-    return checkScheduleConflict(
-      { startTime: newSchedule.startTime, endTime: newSchedule.endTime },
-      peakShavingSettings.schedules
-    )
+    return checkScheduleConflict({ startTime: newSchedule.startTime, endTime: newSchedule.endTime }, peakShavingSettings.schedules)
   }, [newSchedule.startTime, newSchedule.endTime, peakShavingSettings.schedules])
 
-  // 当前模式
-  const getCurrentMode = () => {
-    if (!peakShavingSettings.enabled) return 'disabled'
-    const now = new Date()
-    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
-    const activeSchedule = peakShavingSettings.schedules.find(s => {
-      if (!s.enabled) return false
-      return currentTime >= s.startTime && currentTime < s.endTime
-    })
-    return activeSchedule?.type || 'idle'
-  }
-  const currentMode = getCurrentMode()
-
-  // 改进的节省计算（v1.1）
-  const calculateSavings = () => {
-    const { peakPrice, offPeakPrice, chargingEfficiency = 0.95, depthOfDischarge = 0.90, executionRate = 0.85 } = peakShavingSettings
-    const batteryCapacity = powerStation.totalWh / 1000 // kWh
-    const dailyCycles = 1
-
-    const dailySavings = (peakPrice - offPeakPrice)
-      * batteryCapacity
-      * dailyCycles
-      * chargingEfficiency
-      * depthOfDischarge
-      * executionRate
-
-    return {
-      daily: dailySavings,
-      monthly: dailySavings * 30,
-      yearly: dailySavings * 365,
-    }
-  }
-  const savings = calculateSavings()
-
-  // TOU 查找处理
-  const handleTouLookup = () => {
-    const result = lookupTOURate(zipInput)
-    setTouNotFound(!result)
-    if (result) {
-      setShowTouLookup(false)
-    }
-  }
-
-  // 添加日程
   const handleAddSchedule = () => {
     if (newSchedule.name && newSchedule.startTime && newSchedule.endTime) {
       addPeakShavingSchedule(newSchedule as Omit<PeakShavingSchedule, 'id'>)
       setShowAddModal(false)
       setNewSchedule({ name: '', startTime: '09:00', endTime: '17:00', type: 'discharge', enabled: true })
-      // T18: 自动同步到 API
       setTimeout(() => handleScheduleChanged(), 50)
     }
   }
 
-  const toggleScheduleEnabled = (id: string, enabled: boolean) => {
-    updatePeakShavingSchedule(id, { enabled })
-    // T18: 自动同步到 API
-    setTimeout(() => handleScheduleChanged(), 50)
+  const calculateSavings = () => {
+    const { peakPrice, offPeakPrice, chargingEfficiency = 0.95, depthOfDischarge = 0.90, executionRate = 0.85 } = peakShavingSettings
+    const batteryCapacity = powerStation.totalWh / 1000
+    const daily = (peakPrice - offPeakPrice) * batteryCapacity * chargingEfficiency * depthOfDischarge * executionRate
+    return { daily, monthly: daily * 30, yearly: daily * 365 }
+  }
+  const savings = calculateSavings()
+
+  // ─── 时钟几何参数（24h 表盘，12am 在顶部）───
+  // Map time (minutes 0-1440) → degrees (0=east), 12 o'clock(0min) = -90 (top)
+  const timeToDeg = (mins: number) => (mins / 1440) * 360 - 90
+  const cx = 120, cy = 120, r = 92, strokeW = 24
+  const innerFaceR = r - strokeW / 2 - 6
+
+  // 极坐标 → SVG 坐标
+  const polar = (deg: number): [number, number] => {
+    const rad = (deg * Math.PI) / 180
+    return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)]
   }
 
-  // 24h 时间轴数据
-  const timelineHours = Array.from({ length: 25 }, (_, i) => i) // 0-24
-  const getScheduleBlock = (hour: number) => {
-    const timeStr = `${String(hour).padStart(2, '0')}:00`
-    for (const s of peakShavingSettings.schedules) {
-      if (!s.enabled) continue
-      const sStart = timeToMinutes(s.startTime)
-      const sEnd = timeToMinutes(s.endTime)
-      const hMin = hour * 60
-      // 跨午夜处理
-      if (sEnd < sStart) {
-        if (hMin >= sStart || hMin < sEnd) return s
-      } else {
-        if (hMin >= sStart && hMin < sEnd) return s
-      }
+  // Collect schedule arc segments（支持跨午夜环绕）
+  const arcs = peakShavingSettings.schedules
+    .filter(s => s.enabled)
+    .map(s => {
+      const startMins = timeToMinutes(s.startTime)
+      const endMinsRaw = timeToMinutes(s.endTime)
+      let span = endMinsRaw - startMins
+      if (span <= 0) span += 1440 // 跨午夜
+      const startDeg = timeToDeg(startMins)
+      const endDeg = startDeg + (span / 1440) * 360
+      const color = s.type === 'discharge' ? '#FF9500' : s.type === 'charge' ? '#01D6BE' : '#636366'
+      return { startDeg, endDeg, color, schedule: s, startMins, endMins: endMinsRaw }
+    })
+
+  // ─── 拖拽调整时间（参考 iPhone「睡眠」时钟交互）───
+  const svgRef = useRef<SVGSVGElement>(null)
+  const [drag, setDrag] = useState<{ id: string; which: 'start' | 'end' } | null>(null)
+  const [dragLabel, setDragLabel] = useState<string | null>(null)
+
+  // 指针坐标 → 整点分钟数（吸附到整点）
+  const pointerToMins = useCallback((clientX: number, clientY: number): number | null => {
+    const svg = svgRef.current
+    if (!svg) return null
+    const rect = svg.getBoundingClientRect()
+    const px = (clientX - rect.left) * (240 / rect.width)
+    const py = (clientY - rect.top) * (240 / rect.height)
+    const deg = (Math.atan2(py - cy, px - cx) * 180) / Math.PI
+    let mins = ((deg + 90) / 360) * 1440
+    mins = (((mins % 1440) + 1440) % 1440)
+    mins = Math.round(mins / 60) * 60
+    if (mins >= 1440) mins -= 1440
+    return mins
+  }, [])
+
+  useEffect(() => {
+    if (!drag) return
+    const onMove = (e: PointerEvent) => {
+      const mins = pointerToMins(e.clientX, e.clientY)
+      if (mins == null) return
+      const t = minsToHourTime(mins)
+      if (drag.which === 'start') updatePeakShavingSchedule(drag.id, { startTime: t })
+      else updatePeakShavingSchedule(drag.id, { endTime: t })
+      setDragLabel(minutesToLabel(mins))
     }
-    return null
-  }
+    const onUp = () => {
+      setDrag(null)
+      setDragLabel(null)
+      setTimeout(() => handleScheduleChanged(), 50)
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    return () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+    }
+  }, [drag, pointerToMins, updatePeakShavingSchedule, handleScheduleChanged])
 
-  // 当前时间指示线位置
-  const now = new Date()
-  const currentHourOffset = (now.getHours() * 60 + now.getMinutes()) / (24 * 60)
+  // Hours labels on clock face
+  const clockLabels = [
+    { label: '12am', deg: -90 },
+    { label: '6am', deg: 0 },
+    { label: '12pm', deg: 90 },
+    { label: '6pm', deg: 180 },
+  ]
+
+  // Find peak (discharge) and off-peak (charge) schedules
+  const peakSchedule = peakShavingSettings.schedules.find(s => s.type === 'discharge' && s.enabled)
+  const offPeakSchedule = peakShavingSettings.schedules.find(s => s.type === 'charge' && s.enabled)
 
   return (
     <div className="h-full flex flex-col bg-[#141414] overflow-hidden">
       {/* Header */}
-      <div className="px-5 pt-4 pb-3 safe-area-top flex items-center gap-3">
+      <div className="px-4 pt-4 pb-3 safe-area-top flex items-center gap-3">
         <button
           onClick={() => navigate(-1)}
-          className="w-9 h-9 rounded-full bg-[#262626] flex items-center justify-center text-[#FFFFFF] hover:bg-[#333333] transition-colors flex-shrink-0"
+          className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center text-white active:scale-95 transition-transform flex-shrink-0"
         >
-          <ChevronLeft size={22} />
+          <ChevronLeft size={20} />
         </button>
-        <h2 className="text-xl font-bold text-[#FFFFFF] flex-1">Smart Schedule</h2>
+        <h2 className="flex-1 text-center text-body-lg font-semibold text-white">Smart Schedule</h2>
         <button
-          onClick={() => setShowSettings(!showSettings)}
-          className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors
-            ${showSettings ? 'bg-[#01D6BE] text-[#000000]' : 'bg-[#262626] text-[#FFFFFF]'}`}
+          className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center text-[#A0A0A5] flex-shrink-0"
         >
-          <Settings size={18} />
+          <Info size={18} />
         </button>
       </div>
 
-      {/* Scrollable */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide px-5 pb-4">
+      <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pb-24">
 
         {/* T18: API 连接状态 + 保存按钮 */}
         <div className="mb-3 flex items-center gap-2">
@@ -546,7 +518,6 @@ export default function SmartSchedulePage() {
             {['12AM', '3AM', '6AM', '9AM', '12PM', '3PM', '6PM', '9PM', '12AM'].map((label, i) => (
               <span key={i} className="text-[8px] text-[#636366]">{label}</span>
             ))}
-          </div>
 
           {/* Rate labels under timeline */}
           <div className="flex items-center gap-3 mb-2">
@@ -600,12 +571,25 @@ export default function SmartSchedulePage() {
 = ($${peakShavingSettings.peakPrice} − $${peakShavingSettings.offPeakPrice}) × ${(powerStation.totalWh / 1000).toFixed(1)} kWh × 95% × 90% × 85%
 = $${savings.daily.toFixed(4)}/day
 
-Monthly = $${savings.daily.toFixed(4)} × 30 = $${savings.monthly.toFixed(2)}
-Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
-              label="How savings are calculated"
-            />
-          </div>
-        </motion.div>
+            {/* Clock labels */}
+            {clockLabels.map(({ label, deg: degNum }) => {
+              const rad = (degNum * Math.PI) / 180
+              const labelR = innerFaceR - 16
+              return (
+                <text
+                  key={label}
+                  x={cx + labelR * Math.cos(rad)}
+                  y={cy + labelR * Math.sin(rad)}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fill="#636366"
+                  fontSize={9}
+                  fontFamily="Inter, sans-serif"
+                >
+                  {label}
+                </text>
+              )
+            })}
 
         {/* Estimated Savings */}
         <motion.div
@@ -634,7 +618,6 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
               Formula: (Peak − Off-Peak) × Capacity × Cycles × Efficiency(95%) × DoD(90%) × Execution(85%)
             </p>
           </div>
-        </motion.div>
 
         {/* Settings Panel */}
         <AnimatePresence>
@@ -647,23 +630,14 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
             >
               <div className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase mb-3">Parameters</div>
 
-              <div className="space-y-4">
-                {/* Peak Price */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[13px] text-[#FFFFFF]">Peak Price</span>
-                    <span className="text-[13px] text-[#FF9500]">${peakShavingSettings.peakPrice}/kWh</span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0.1"
-                    max="2"
-                    step="0.01"
-                    value={peakShavingSettings.peakPrice}
-                    onChange={(e) => updatePeakShavingSettings({ peakPrice: parseFloat(e.target.value) })}
-                    className="w-full h-2 bg-[#333333] rounded-full appearance-none cursor-pointer accent-[#FF9500]"
-                  />
-                </div>
+        {/* Idle hint */}
+        <div className="bg-[#262626] rounded-l p-3 mb-3 flex items-center gap-3">
+          <div className="w-2 h-2 rounded-full bg-[#636366]" />
+          <div className="flex-1">
+            <span className="text-label font-semibold text-[#A0A0A5]">Idle</span>
+            <p className="text-tiny text-[#636366]">Gaps on the clock — grid powers devices directly, Sierro stays idle.</p>
+          </div>
+        </div>
 
                 {/* Off-Peak Price */}
                 <div>
@@ -775,17 +749,18 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
               onClick={() => setShowAddModal(true)}
               className="flex items-center gap-1 text-label text-[#01D6BE] font-medium"
             >
-              <Plus size={14} />
-              Add Schedule
+              <Plus size={12} />
+              Add
             </button>
           </div>
-
           <div className="space-y-2">
-            {peakShavingSettings.schedules.map((schedule, index) => {
-              const config = scheduleTypeConfig[schedule.type]
-              const Icon = config.icon
-              const isExpanded = expandedSchedule === schedule.id
-
+            {peakShavingSettings.schedules.length === 0 && (
+              <div className="bg-[#262626] rounded-l p-4 text-center text-tiny text-[#636366]">
+                No time periods. Tap “Add” to create one.
+              </div>
+            )}
+            {peakShavingSettings.schedules.map((s) => {
+              const cfg = scheduleTypeConfig[s.type]
               return (
                 <motion.div
                   key={schedule.id}
@@ -896,6 +871,38 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
             </div>
           </div>
         </div>
+
+        {/* Estimated Savings */}
+        <div className="mb-6">
+          <span className="text-body-md font-semibold text-white block mb-2">Estimated Savings</span>
+          <div className="bg-[#262626] rounded-l p-4 grid grid-cols-3 gap-3 text-center">
+            <div>
+              <div className="text-caption text-[#A0A0A5] mb-1">Daily</div>
+              <div className="text-body-lg font-bold text-primary">${savings.daily.toFixed(2)}</div>
+            </div>
+            <div className="border-x border-[rgba(255,255,255,0.06)]">
+              <div className="text-caption text-[#A0A0A5] mb-1">Monthly</div>
+              <div className="text-body-lg font-bold text-primary">${savings.monthly.toFixed(2)}</div>
+            </div>
+            <div>
+              <div className="text-caption text-[#A0A0A5] mb-1">Yearly</div>
+              <div className="text-body-lg font-bold text-primary">${savings.yearly.toFixed(2)}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Save button */}
+      <div className="absolute bottom-0 left-0 right-0 px-4 pb-8 pt-3 bg-[#141414]">
+        <button
+          onClick={handleSaveToDevice}
+          disabled={peakValleySaving}
+          className="w-full h-14 rounded-full bg-primary text-black text-body-md font-semibold
+            disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          {peakValleySaving ? <Loader2 size={18} className="animate-spin" /> : null}
+          Save
+        </button>
       </div>
 
       {/* Add Schedule Modal */}
@@ -909,18 +916,16 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
             onClick={() => setShowAddModal(false)}
           >
             <motion.div
-              initial={{ y: 300, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 300, opacity: 0 }}
+              initial={{ y: 300 }}
+              animate={{ y: 0 }}
+              exit={{ y: 300 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
               className="w-full bg-[#262626] rounded-t-[28px] p-6 pb-10"
             >
               <div className="w-10 h-1 bg-[rgba(255,255,255,0.15)] rounded-full mx-auto mb-5" />
-              <h3 className="text-lg font-bold text-[#FFFFFF] mb-5">Add Schedule</h3>
-
+              <h3 className="text-body-lg font-bold text-white mb-5">Add Schedule</h3>
               <div className="space-y-4">
-                {/* Name */}
                 <div>
                   <label className="text-caption text-[#A0A0A5] mb-2 block">Schedule Name</label>
                   <input
@@ -931,8 +936,6 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
                     className="w-full h-11 bg-[#333333] rounded-l px-4 text-body-md text-[#FFFFFF] placeholder-[#636366] outline-none"
                   />
                 </div>
-
-                {/* Type */}
                 <div>
                   <label className="text-caption text-[#A0A0A5] mb-2 block">Type</label>
                   <div className="grid grid-cols-2 gap-2">
@@ -943,14 +946,12 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
                         className={`flex items-center gap-2 p-3 rounded-l transition-colors
                           ${newSchedule.type === type ? 'bg-[#333333] border border-[#01D6BE]' : 'bg-[#333333]'}`}
                       >
-                        <config.icon size={18} style={{ color: config.color }} />
-                        <span className="text-[13px] text-[#FFFFFF]">{config.emoji} {config.label}</span>
+                        <config.icon size={16} style={{ color: config.color }} />
+                        <span className="text-body-md text-white">{config.label}</span>
                       </button>
                     ))}
                   </div>
                 </div>
-
-                {/* Time */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-caption text-[#A0A0A5] mb-2 block">Start Time</label>
@@ -971,8 +972,6 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
                     />
                   </div>
                 </div>
-
-                {/* Conflict Warning */}
                 {conflictResult.conflict && (
                   <motion.div
                     initial={{ opacity: 0, y: -5 }}
@@ -986,10 +985,9 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
                         Overlaps with "{conflictResult.with}" ({conflictResult.overlap})
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
                 )}
               </div>
-
               <div className="flex gap-3 mt-6">
                 <button
                   onClick={() => setShowAddModal(false)}
@@ -1091,26 +1089,21 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
             onClick={() => setEditingSchedule(null)}
           >
             <motion.div
-              initial={{ y: 300, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 300, opacity: 0 }}
+              initial={{ y: 300 }}
+              animate={{ y: 0 }}
+              exit={{ y: 300 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
               className="w-full bg-[#262626] rounded-t-[28px] p-6 pb-10"
             >
               <div className="w-10 h-1 bg-[rgba(255,255,255,0.15)] rounded-full mx-auto mb-5" />
               <div className="flex items-center justify-between mb-5">
-                <h3 className="text-lg font-bold text-[#FFFFFF]">Edit Schedule</h3>
-                <button
-                  onClick={() => setEditingSchedule(null)}
-                  className="w-8 h-8 rounded-full bg-[#333333] flex items-center justify-center text-[#A0A0A5]"
-                >
+                <h3 className="text-body-lg font-bold text-white">Edit Schedule</h3>
+                <button onClick={() => setEditingSchedule(null)} className="w-8 h-8 rounded-full bg-[#333333] flex items-center justify-center text-[#A0A0A5]">
                   <X size={18} />
                 </button>
               </div>
-
               <div className="space-y-4">
-                {/* Name */}
                 <div>
                   <label className="text-caption text-[#A0A0A5] mb-2 block">Schedule Name</label>
                   <input
@@ -1120,8 +1113,6 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
                     className="w-full h-11 bg-[#333333] rounded-l px-4 text-body-md text-[#FFFFFF] outline-none"
                   />
                 </div>
-
-                {/* Type */}
                 <div>
                   <label className="text-caption text-[#A0A0A5] mb-2 block">Type</label>
                   <div className="grid grid-cols-2 gap-2">
@@ -1132,14 +1123,12 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
                         className={`flex items-center gap-2 p-3 rounded-l transition-colors
                           ${editForm.type === type ? 'bg-[#333333] border border-[#01D6BE]' : 'bg-[#333333]'}`}
                       >
-                        <config.icon size={18} style={{ color: config.color }} />
-                        <span className="text-[13px] text-[#FFFFFF]">{config.emoji} {config.label}</span>
+                        <config.icon size={16} style={{ color: config.color }} />
+                        <span className="text-body-md text-white">{config.label}</span>
                       </button>
                     ))}
                   </div>
                 </div>
-
-                {/* Time */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-caption text-[#A0A0A5] mb-2 block">Start Time</label>
@@ -1160,8 +1149,6 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
                     />
                   </div>
                 </div>
-
-                {/* T2: Edit Conflict Warning */}
                 {editConflict.conflict && (
                   <motion.div
                     initial={{ opacity: 0, y: -5 }}
@@ -1175,10 +1162,9 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
                         Overlaps with "{editConflict.with}" ({editConflict.overlap})
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
                 )}
               </div>
-
               <div className="flex gap-3 mt-6">
                 <button
                   onClick={() => setEditingSchedule(null)}
@@ -1194,8 +1180,6 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
                   Save Changes
                 </button>
               </div>
-
-              {/* T2: Delete button in edit modal */}
               <button
                 onClick={() => {
                   setEditingSchedule(null)
@@ -1206,14 +1190,14 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
                   hover:bg-[rgba(255,59,48,0.08)] active:bg-[rgba(255,59,48,0.15)] transition-colors"
               >
                 <Trash2 size={14} />
-                Delete This Schedule
+                Delete
               </button>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* T2: Delete Confirmation Dialog */}
+      {/* Delete Confirm */}
       <AnimatePresence>
         {deleteConfirm.show && (
           <motion.div
@@ -1221,28 +1205,24 @@ Yearly = $${savings.daily.toFixed(4)} × 365 = $${savings.yearly.toFixed(2)}`}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="absolute inset-0 bg-[rgba(0,0,0,0.8)] z-[60] flex items-center justify-center p-5"
-            onClick={handleDeleteCancel}
+            onClick={() => setDeleteConfirm({ show: false, scheduleId: '', scheduleName: '' })}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.9 }}
               onClick={(e) => e.stopPropagation()}
               className="w-full max-w-sm bg-[#262626] rounded-[24px] p-6"
             >
-              {/* Warning icon */}
               <div className="flex flex-col items-center mb-5">
-                <div className="w-14 h-14 rounded-full bg-[rgba(255,59,48,0.12)] flex items-center justify-center mb-4">
-                  <AlertTriangle size={28} className="text-[#FF3B30]" />
+                <div className="w-14 h-14 rounded-full bg-[rgba(255,53,48,0.12)] flex items-center justify-center mb-4">
+                  <AlertTriangle size={28} className="text-danger" />
                 </div>
-                <h3 className="text-lg font-bold text-[#FFFFFF] mb-1">Delete Schedule?</h3>
-                <p className="text-[13px] text-[#A0A0A5] text-center">
-                  Are you sure you want to delete <span className="text-[#FFFFFF] font-semibold">"{deleteConfirm.scheduleName}"</span>?
-                  This action cannot be undone.
+                <h3 className="text-body-lg font-bold text-white mb-1">Delete Schedule?</h3>
+                <p className="text-body-md text-[#A0A0A5] text-center">
+                  Delete "<span className="text-white font-semibold">{deleteConfirm.scheduleName}</span>"? This cannot be undone.
                 </p>
               </div>
-
               <div className="flex gap-3">
                 <button
                   onClick={handleDeleteCancel}

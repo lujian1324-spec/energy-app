@@ -25,12 +25,12 @@ import {
   Database,
   Shield,
 } from 'lucide-react'
-import ToggleSwitch from '../components/ToggleSwitch'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useAuthStore } from '../stores/authStore'
 import { getUserProfile } from '../db/powerflowDB'
 import appVersion from '../version.json'
 import ProfileEditPage from './ProfileEditPage'
+import ToggleSwitch from '../components/ToggleSwitch'
 import type { UserProfile } from '../types/protocol'
 
 export default function SettingPage() {
@@ -94,30 +94,26 @@ export default function SettingPage() {
 
 
   return (
-    <div className="h-full flex flex-col bg-[#141414] overflow-hidden">
-      {/* Header */}
-      <div className="px-5 pt-4 pb-4 safe-area-top">
-        <h2 className="text-xl font-bold text-[#FFFFFF]">Setting</h2>
-      </div>
-
+    <div className="h-full flex flex-col bg-ink-12 overflow-hidden">
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide px-5 pb-4">
-        {/* User Profile Card */}
+      <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pt-4 pb-4 safe-area-top">
+        {/* User Profile — avatar + name + manage-account row, Founding Member gold tag */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          onClick={() => isGuest ? navigate('/login') : setShowManageAccount(true)}
-          className="bg-[#262626] border border-[rgba(1,214,190,0.2)] rounded-[28px] p-4 mb-4
-            flex items-center gap-4 cursor-pointer active:scale-[0.98] transition-transform">
-          <div className="relative flex-shrink-0">
-            {settings.founderBadge && (
-              <div className="absolute -inset-[2px] rounded-[22px] bg-gradient-to-br from-[#FFD700] via-[#FFA500] to-[#FFD700]" />
-            )}
-            <div className={`relative w-[60px] h-[60px] rounded-[20px]
-              ${settings.founderBadge ? 'bg-[#262626]' : 'bg-[rgba(1,214,190,0.08)] border border-[rgba(1,214,190,0.3)]'}
-              flex items-center justify-center overflow-hidden`}>
+          className="flex items-center gap-3 mb-6">
+          {/* Avatar: green ring (default) / gold ring (founder); default icon lightning / diamond */}
+          <button
+            onClick={() => isGuest ? navigate('/login') : setShowManageAccount(true)}
+            className="relative flex-shrink-0 active:scale-[0.96] transition-transform">
+            <div className={`w-[52px] h-[52px] rounded-full flex items-center justify-center overflow-hidden border-m
+              ${settings.founderBadge
+                ? 'border-membership bg-[rgba(255,215,0,0.06)]'
+                : 'border-primary bg-[rgba(1,214,190,0.06)]'}`}>
               {userProfile.avatar ? (
                 <img src={userProfile.avatar} alt={userProfile.name} className="w-full h-full object-cover" />
+              ) : settings.founderBadge ? (
+                <Gem size={24} className="text-membership" />
               ) : (
-                <User size={28} className={settings.founderBadge ? 'text-[#FFD700]' : 'text-[#01D6BE]'} />
+                <Zap size={24} className="text-primary fill-primary" />
               )}
             </div>
             {settings.founderBadge && (
@@ -194,14 +190,10 @@ export default function SettingPage() {
           </div>
         </motion.div>
 
-        {/* Founder Badge */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
-          className={`bg-[#262626] border rounded-[20px] overflow-hidden mb-4 cursor-pointer active:scale-[0.98] transition-transform`}
-          style={{ borderColor: settings.founderBadge ? 'rgba(255,215,0,0.25)' : 'rgba(1,214,190,0.08)' }}
-          onClick={() => setShowFounderModal(true)}>
-          <div className="flex items-center gap-3 px-4 py-3.5">
-            <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${settings.founderBadge ? 'bg-[rgba(255,215,0,0.12)]' : 'bg-[rgba(255,255,255,0.06)]'}`}>
-              <Crown size={16} className={settings.founderBadge ? 'text-[#FFD700]' : 'text-[#FFFFFF]'} />
+          {/* Solar Status */}
+          <div className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 text-left">
+            <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
+              <Sun size={16} className="text-ink-1" />
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2">
@@ -214,11 +206,16 @@ export default function SettingPage() {
                 {settings.founderBadge ? `Member #${settings.founderBadgeNumber}` : 'Unlock exclusive benefits'}
               </div>
             </div>
-            <ChevronRight size={16} className={settings.founderBadge ? 'text-[#FFD700]' : 'text-[#636366]'} />
+            <ToggleSwitch
+              isOn={pushSolarStatus}
+              onToggle={() => { setPushSolarStatus(!pushSolarStatus); updateSettings({ pushSolarStatus: !pushSolarStatus }) }}
+              ariaLabel="Toggle solar status alerts"
+            />
           </div>
         </motion.div>
 
         {/* Support */}
+        <h3 className="text-title-md font-semibold text-ink-1 mb-3">Support</h3>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden mb-4">
           <div className="px-4 py-3 border-b border-[rgba(1,214,190,0.06)]">
@@ -233,28 +230,21 @@ export default function SettingPage() {
               <div className="text-[13px] font-semibold text-[#FFFFFF]">Feedback</div>
               <div className="text-caption text-[#A0A0A5] mt-0.5">Send feedback to the Sierro team</div>
             </div>
-            <ChevronRight size={16} className="text-[#636366]" />
-          </div>
+          </button>
         </motion.div>
 
         {/* Version Info + Legal */}
         <div className="text-center py-4 text-caption leading-relaxed">
           <div className="flex items-center justify-center gap-2 mb-1">
-            <Link
-              to="/privacy"
-              className="text-[#A0A0A5] hover:text-[#FFFFFF] transition-colors"
-            >
+            <Link to="/privacy" className="text-body-md font-semibold text-primary hover:opacity-80 transition-opacity">
               Privacy Policy
             </Link>
-            <span className="text-[#636366]">|</span>
-            <Link
-              to="/terms"
-              className="text-[#A0A0A5] hover:text-[#FFFFFF] transition-colors"
-            >
+            <span className="text-ink-7">|</span>
+            <Link to="/terms" className="text-body-md font-semibold text-primary hover:opacity-80 transition-opacity">
               Terms of Use
             </Link>
           </div>
-          <div className="text-[#636366]">
+          <div className="text-caption text-ink-7">
             Sierro App v{appVersion.version} &copy; 2026 Sierro Inc.
           </div>
         </div>

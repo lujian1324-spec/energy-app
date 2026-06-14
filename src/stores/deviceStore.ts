@@ -120,6 +120,9 @@ interface DeviceStoreState {
   loadEnergyFlow: (deviceId: string | number) => Promise<void>
   loadHistoryData: (deviceId: string | number, fromTime: string, toTime: string, keys?: string[], count?: number, orderByTimeAsc?: boolean) => Promise<void>
 
+  /** 本地重命名设备（不调用后端，同步更新列表/详情，demo 模式同样生效） */
+  renameDeviceLocal: (deviceId: string | number, name: string) => void
+
   // ─── Demo 模式操作 ───
   /** 加载 demo 设备列表（guest 模式调用） */
   loadDemoDevices: () => void
@@ -500,7 +503,9 @@ export const useDeviceStore = create<DeviceStoreState>()(
 
         // Demo 模式：返回模拟历史数据
         if (get().isDemoMode) {
-          const demoData = getDemoHistoryData(deviceId)
+          const msRange = new Date(toTime).getTime() - new Date(fromTime).getTime()
+          const hoursRange = Math.round(msRange / (1000 * 3600)) || 24
+          const demoData = getDemoHistoryData(deviceId, hoursRange)
           set({ historyData: demoData.data, historyLoading: false, historyError: null })
           return
         }
@@ -525,6 +530,20 @@ export const useDeviceStore = create<DeviceStoreState>()(
           const msg = e instanceof Error ? e.message : String(e)
           set({ historyLoading: false, historyError: msg })
         }
+      },
+
+      // ─── 本地重命名设备 ───
+      renameDeviceLocal: (deviceId, name) => {
+        const idStr = String(deviceId)
+        set((state) => ({
+          devices: state.devices.map(d =>
+            String(d.id) === idStr ? { ...d, name } : d
+          ),
+          selectedDeviceDetails:
+            state.selectedDeviceDetails && String(state.selectedDeviceDetails.id) === idStr
+              ? { ...state.selectedDeviceDetails, name }
+              : state.selectedDeviceDetails,
+        }))
       },
 
       // ─── Demo 模式：加载 demo 设备列表 ───

@@ -1,81 +1,87 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { Zap, User, Lock, Mail, Eye, EyeOff, AlertCircle, Loader2, ArrowLeft } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { ChevronLeft, X, Check, Loader2 } from 'lucide-react'
 import { registerByEmail, sendEmailCaptcha } from '../api/authApi'
+import { useAuthStore } from '../stores/authStore'
+
+const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
+const ACCOUNT_RE = /^[a-zA-Z0-9_]+$/
 
 export default function RegisterPage() {
+  const navigate = useNavigate()
+
   const [account, setAccount] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
   const [email, setEmail] = useState('')
-  const [captcha, setCaptcha] = useState('')
+  const [code, setCode] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [agreed, setAgreed] = useState(false)
+
   const [captchaId, setCaptchaId] = useState<string | null>(null)
-  const [showPwd, setShowPwd] = useState(false)
+  const [countdown, setCountdown] = useState(0)
+  const [sending, setSending] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
-  const [captchaSent, setCaptchaSent] = useState(false)
-  const [captchaCooldown, setCaptchaCooldown] = useState(0)
+  const [error, setError] = useState('')
 
-  const clearError = () => setError(null)
+  // Countdown timer
+  useEffect(() => {
+    if (countdown <= 0) return
+    const t = setTimeout(() => setCountdown(c => c - 1), 1000)
+    return () => clearTimeout(t)
+  }, [countdown])
 
-  // 发送验证码（仅邮箱）
-  const handleSendCaptcha = async () => {
-    if (captchaCooldown > 0) return
-    if (!email.trim()) {
-      setError('Please enter your email address')
-      return
-    }
+  // ── Validation ──
+  const accountValid = account.trim().length > 0 && ACCOUNT_RE.test(account.trim())
+  const emailValid = isValidEmail(email.trim())
+  const passwordValid = password.length >= 6 && password.length <= 32
+  const confirmValid = confirm.length > 0 && confirm === password
+  const codeValid = code.trim().length === 6
+  const canSubmit = accountValid && emailValid && codeValid && passwordValid && confirmValid && agreed
 
+  const handleObtainCode = async () => {
+    if (countdown > 0) return
+    if (!emailValid) { setError('Please enter a valid email address.'); return }
+    setError('')
+    setSending(true)
     try {
       const result = await sendEmailCaptcha(email.trim(), '1')
-      const cid = result.data?.iotCaptchaId
-      if (cid) {
-        setCaptchaId(cid)
+      if (result.code === 0 || result.code === '0') {
+        setCaptchaId(result.data?.iotCaptchaId ?? null)
+        setCountdown(60)
+      } else {
+        setError(result.message || result.msg || 'Failed to send code.')
       }
-      setCaptchaSent(true)
-      setCaptchaCooldown(60)
-      const timer = setInterval(() => {
-        setCaptchaCooldown(prev => {
-          if (prev <= 1) { clearInterval(timer); return 0 }
-          return prev - 1
-        })
-      }, 1000)
-    } catch (err) {
-      setError('Failed to send verification code. Please try again.')
-      console.error('[RegisterPage] sendCaptcha failed:', err)
+    } catch {
+      setError('Failed to send code. Please try again.')
+    } finally {
+      setSending(false)
     }
   }
 
-  // 注册提交（仅邮箱）
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    clearError()
-
-    if (!account.trim()) { setError('Please enter an account name'); return }
-    if (account.trim().length < 3) { setError('Account must be at least 3 characters'); return }
-    if (!password.trim()) { setError('Please enter a password'); return }
-    if (password.length < 6) { setError('Password must be at least 6 characters'); return }
-    if (password !== confirmPassword) { setError('Passwords do not match'); return }
-    if (!email.trim()) { setError('Please enter your email'); return }
-
+  const handleRegister = async () => {
+    if (!canSubmit) return
+    setError('')
     setLoading(true)
     try {
       const result = await registerByEmail(
         account.trim(),
         password,
         email.trim(),
-        captcha || undefined,
+        code.trim(),
         captchaId || undefined
       )
       if (result.code === 0 || result.code === '0') {
-        setSuccess(true)
+        const loggedIn = await useAuthStore.getState().login(account.trim(), password)
+        if (loggedIn) {
+          navigate('/onboarding', { replace: true })
+        } else {
+          navigate('/login', { replace: true })
+        }
       } else {
-        setError(result.message ?? result.msg ?? 'Registration failed')
+        setError(result.message ?? result.msg ?? 'Registration failed. Please try again.')
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Network error')
+    } catch {
+      setError('Registration failed. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -111,14 +117,16 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#141414] flex flex-col px-6 pt-14">
-      {/* 返回按钮 */}
-      <button
-        onClick={() => window.history.back()}
-        className="self-start mb-6 p-2 -ml-2 text-[#A0A0A5] active:text-[#FFFFFF]"
-      >
-        <ArrowLeft size={22} />
-      </button>
+    <div className="min-h-screen flex flex-col bg-ink-12">
+      <div className="px-4 pt-5 safe-area-top">
+        <button
+          onClick={() => navigate(-1)}
+          aria-label="Back"
+          className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-ink-1 active:scale-95 transition-transform"
+        >
+          <ChevronLeft size={22} />
+        </button>
+      </div>
 
       {/* 标题 */}
       <motion.div
@@ -155,6 +163,11 @@ export default function RegisterPage() {
               text-[#FFFFFF] text-body-md placeholder:text-[#636366]
               focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
           />
+          {account && (
+            <button onClick={() => setAccount('')} aria-label="Clear account">
+              <X size={16} className="text-ink-7" />
+            </button>
+          )}
         </div>
 
         {/* 邮箱地址 */}
@@ -165,6 +178,7 @@ export default function RegisterPage() {
           </label>
           <input
             type="email"
+            inputMode="email"
             value={email}
             onChange={e => { setEmail(e.target.value); clearError() }}
             placeholder="Enter your email"
@@ -201,7 +215,7 @@ export default function RegisterPage() {
             >
               {captchaCooldown > 0 ? `${captchaCooldown}s` : captchaSent ? 'Resend' : 'Send Code'}
             </button>
-          </div>
+          )}
         </div>
 
         {/* 密码 */}
@@ -247,6 +261,14 @@ export default function RegisterPage() {
               text-[#FFFFFF] text-body-md placeholder:text-[#636366]
               focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
           />
+          <button
+            onClick={handleObtainCode}
+            disabled={countdown > 0 || sending || !emailValid}
+            className="shrink-0 text-label font-semibold text-primary disabled:text-ink-7 transition-colors flex items-center gap-1"
+          >
+            {sending ? <Loader2 size={14} className="animate-spin" /> : null}
+            {countdown > 0 ? `Resend (${countdown})` : 'Obtain Verification Code'}
+          </button>
         </div>
 
         {/* 错误提示 */}
@@ -261,6 +283,7 @@ export default function RegisterPage() {
             <p className="text-label text-[#FF3B30]">{error}</p>
           </motion.div>
         )}
+        {(password.length === 0 || passwordValid) && <div className="mb-3" />}
 
         {/* Terms & Privacy */}
         <p className="text-caption leading-relaxed text-center text-[#A0A0A5] px-4">
@@ -280,7 +303,7 @@ export default function RegisterPage() {
           </Link>
         </p>
 
-        {/* 提交按钮 */}
+        {/* User Service Agreement */}
         <button
           type="submit"
           disabled={loading || !account.trim() || !password.trim()}
@@ -289,16 +312,14 @@ export default function RegisterPage() {
             disabled:opacity-40 disabled:cursor-not-allowed
             active:scale-[0.98] transition-all flex items-center justify-center gap-2"
         >
-          {loading ? (
-            <>
-              <Loader2 size={16} className="animate-spin" />
-              <span>Creating account...</span>
-            </>
-          ) : (
-            'Create Account'
-          )}
+          {loading ? <Loader2 size={18} className="animate-spin" /> : 'Register'}
         </button>
-      </motion.form>
+
+        <p className="text-body-md text-ink-7 mt-4 text-center">
+          Already have an account?{' '}
+          <Link to="/login" className="text-primary font-semibold">Sign in</Link>
+        </p>
+      </div>
     </div>
   )
 }
