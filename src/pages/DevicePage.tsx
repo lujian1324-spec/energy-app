@@ -30,7 +30,7 @@ import {
 } from 'lucide-react'
 import { useDeviceStore } from '../stores/deviceStore'
 import { useAuthStore } from '../stores/authStore'
-import sierro1000Img from '../assets/sierro-1000.jpg'
+import sierro1000Img from '../assets/sierro-1000.webp'
 import { mapFieldsToRealtime } from '../api/deviceApi'
 import type { DeviceListItem, DeviceStateField } from '../api/deviceApi'
 
@@ -468,11 +468,11 @@ export default function DevicePage() {
                   {/* Top row: Display icon/photo + BatteryTag */}
                   <div className="flex items-start justify-between mb-3">
                     {getDeviceImage(device.deviceSortKey) ? (
-                      <div className="w-12 h-12 rounded-m bg-white flex items-center justify-center overflow-hidden">
+                      <div className="w-14 h-14 flex items-center justify-center">
                         <img
                           src={getDeviceImage(device.deviceSortKey)!}
                           alt={getDeviceModel(device)}
-                          className="w-full h-full object-contain"
+                          className="w-full h-full object-contain drop-shadow-sm"
                         />
                       </div>
                     ) : (
@@ -543,7 +543,7 @@ export default function DevicePage() {
               {/* Header */}
               <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-[rgba(255,255,255,0.06)]">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-[14px] bg-white flex items-center justify-center text-lg overflow-hidden">
+                  <div className="w-10 h-10 flex items-center justify-center text-lg">
                     {getDeviceImage(showDeviceParams.deviceSortKey) ? (
                       <img
                         src={getDeviceImage(showDeviceParams.deviceSortKey)!}
@@ -551,7 +551,9 @@ export default function DevicePage() {
                         className="w-full h-full object-contain"
                       />
                     ) : (
-                      getDeviceIcon(showDeviceParams.deviceSortKey)
+                      <div className="w-10 h-10 rounded-[14px] bg-[rgba(1,214,190,0.12)] flex items-center justify-center">
+                        {getDeviceIcon(showDeviceParams.deviceSortKey)}
+                      </div>
                     )}
                   </div>
                   <div>
