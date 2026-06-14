@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -44,6 +44,9 @@ const minutesToLabel = (mins: number) => {
   const h12 = h % 12 || 12
   return m === 0 ? `${h12} ${ampm}` : `${h12}:${String(m).padStart(2, '0')} ${ampm}`
 }
+
+/** 分钟数 → 整点 HH:00 字符串（时间刻度仅支持整点） */
+const minsToHourTime = (mins: number) => `${String(Math.floor(mins / 60) % 24).padStart(2, '0')}:00`
 
 const checkScheduleConflict = (
   newSchedule: { startTime: string; endTime: string; id?: string },
@@ -229,24 +232,74 @@ export default function SmartSchedulePage() {
   }
   const savings = calculateSavings()
 
-  // Build donut arcs from schedules
-  // Map time (minutes 0-1440) → degrees (-90 to 270, i.e. 12 o'clock = -90)
+  // ─── 时钟几何参数（24h 表盘，12am 在顶部）───
+  // Map time (minutes 0-1440) → degrees (0=east), 12 o'clock(0min) = -90 (top)
   const timeToDeg = (mins: number) => (mins / 1440) * 360 - 90
+  const cx = 120, cy = 120, r = 92, strokeW = 24
+  const innerFaceR = r - strokeW / 2 - 6
 
-  const cx = 110, cy = 110, r = 88, strokeW = 18
-  const circumference = 2 * Math.PI * r
+  // 极坐标 → SVG 坐标
+  const polar = (deg: number): [number, number] => {
+    const rad = (deg * Math.PI) / 180
+    return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)]
+  }
 
-  // Collect schedule arc segments
+  // Collect schedule arc segments（支持跨午夜环绕）
   const arcs = peakShavingSettings.schedules
     .filter(s => s.enabled)
     .map(s => {
       const startMins = timeToMinutes(s.startTime)
-      const endMins = timeToMinutes(s.endTime)
+      const endMinsRaw = timeToMinutes(s.endTime)
+      let span = endMinsRaw - startMins
+      if (span <= 0) span += 1440 // 跨午夜
       const startDeg = timeToDeg(startMins)
-      const endDeg = timeToDeg(endMins)
+      const endDeg = startDeg + (span / 1440) * 360
       const color = s.type === 'discharge' ? '#FF9500' : s.type === 'charge' ? '#01D6BE' : '#636366'
-      return { startDeg, endDeg, color, schedule: s }
+      return { startDeg, endDeg, color, schedule: s, startMins, endMins: endMinsRaw }
     })
+
+  // ─── 拖拽调整时间（参考 iPhone「睡眠」时钟交互）───
+  const svgRef = useRef<SVGSVGElement>(null)
+  const [drag, setDrag] = useState<{ id: string; which: 'start' | 'end' } | null>(null)
+  const [dragLabel, setDragLabel] = useState<string | null>(null)
+
+  // 指针坐标 → 整点分钟数（吸附到整点）
+  const pointerToMins = useCallback((clientX: number, clientY: number): number | null => {
+    const svg = svgRef.current
+    if (!svg) return null
+    const rect = svg.getBoundingClientRect()
+    const px = (clientX - rect.left) * (240 / rect.width)
+    const py = (clientY - rect.top) * (240 / rect.height)
+    const deg = (Math.atan2(py - cy, px - cx) * 180) / Math.PI
+    let mins = ((deg + 90) / 360) * 1440
+    mins = (((mins % 1440) + 1440) % 1440)
+    mins = Math.round(mins / 60) * 60
+    if (mins >= 1440) mins -= 1440
+    return mins
+  }, [])
+
+  useEffect(() => {
+    if (!drag) return
+    const onMove = (e: PointerEvent) => {
+      const mins = pointerToMins(e.clientX, e.clientY)
+      if (mins == null) return
+      const t = minsToHourTime(mins)
+      if (drag.which === 'start') updatePeakShavingSchedule(drag.id, { startTime: t })
+      else updatePeakShavingSchedule(drag.id, { endTime: t })
+      setDragLabel(minutesToLabel(mins))
+    }
+    const onUp = () => {
+      setDrag(null)
+      setDragLabel(null)
+      setTimeout(() => handleScheduleChanged(), 50)
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    return () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+    }
+  }, [drag, pointerToMins, updatePeakShavingSchedule, handleScheduleChanged])
 
   // Hours labels on clock face
   const clockLabels = [
@@ -295,44 +348,40 @@ export default function SmartSchedulePage() {
           </button>
         </div>
 
-        {/* Clock Donut SVG */}
-        <div className="flex justify-center mb-4">
-          <svg width={220} height={220} viewBox="0 0 220 220">
+        {/* Clock Donut SVG — draggable handles (iPhone sleep-style) */}
+        <div className="flex justify-center mb-4 select-none">
+          <svg
+            ref={svgRef}
+            width={240}
+            height={240}
+            viewBox="0 0 240 240"
+            style={{ touchAction: 'none' }}
+          >
             {/* Background ring */}
             <circle cx={cx} cy={cy} r={r} fill="none" stroke="#333333" strokeWidth={strokeW} />
 
             {/* Schedule arcs */}
-            {arcs.map(({ startDeg, endDeg, color, schedule }) => {
-              const totalDeg = endDeg - startDeg
-              if (totalDeg <= 0) return null
-              const arcLenFraction = totalDeg / 360
-              const dash = circumference * arcLenFraction
-              const offset = circumference * ((startDeg + 90) / 360)
-              return (
-                <circle
-                  key={schedule.id}
-                  cx={cx} cy={cy} r={r}
-                  fill="none"
-                  stroke={color}
-                  strokeWidth={strokeW}
-                  strokeDasharray={`${dash} ${circumference - dash}`}
-                  strokeDashoffset={-offset}
-                  strokeLinecap="round"
-                  transform={`rotate(-90 ${cx} ${cy})`}
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => openEditModal(schedule)}
-                />
-              )
-            })}
+            {arcs.map(({ startDeg, endDeg, color, schedule }) => (
+              <path
+                key={schedule.id}
+                d={arcPath(cx, cy, r, startDeg, endDeg)}
+                fill="none"
+                stroke={color}
+                strokeWidth={strokeW}
+                strokeLinecap="round"
+                style={{ cursor: 'pointer' }}
+                onClick={() => { if (!drag) openEditModal(schedule) }}
+              />
+            ))}
 
             {/* Clock face inner circle */}
-            <circle cx={cx} cy={cy} r={r - strokeW / 2 - 4} fill="#1A1A1A" />
+            <circle cx={cx} cy={cy} r={innerFaceR} fill="#1A1A1A" />
 
             {/* Hour tick marks */}
             {Array.from({ length: 24 }, (_, i) => {
               const deg = ((i / 24) * 360 - 90) * (Math.PI / 180)
-              const innerR = r - strokeW / 2 - 8
-              const outerR = r - strokeW / 2 - 4
+              const innerR = innerFaceR - 4
+              const outerR = innerFaceR
               return (
                 <line
                   key={i}
@@ -349,7 +398,7 @@ export default function SmartSchedulePage() {
             {/* Clock labels */}
             {clockLabels.map(({ label, deg: degNum }) => {
               const rad = (degNum * Math.PI) / 180
-              const labelR = r - strokeW / 2 - 20
+              const labelR = innerFaceR - 16
               return (
                 <text
                   key={label}
@@ -366,13 +415,39 @@ export default function SmartSchedulePage() {
               )
             })}
 
+            {/* Moon (top / midnight) & Sun (bottom / noon) */}
+            <text x={cx} y={cy - innerFaceR + 22} textAnchor="middle" dominantBaseline="middle" fontSize={16}>🌙</text>
+            <text x={cx} y={cy + innerFaceR - 22} textAnchor="middle" dominantBaseline="middle" fontSize={16}>☀️</text>
+
             {/* Center text */}
-            <text x={cx} y={cy - 6} textAnchor="middle" fill="#FFFFFF" fontSize={11} fontFamily="Inter, sans-serif" fontWeight="600">
-              {peakShavingSettings.enabled ? 'Active' : 'Off'}
+            <text x={cx} y={cy - 4} textAnchor="middle" fill="#FFFFFF" fontSize={dragLabel ? 15 : 12} fontFamily="Inter, sans-serif" fontWeight="600">
+              {dragLabel ?? (peakShavingSettings.enabled ? 'Active' : 'Off')}
             </text>
-            <text x={cx} y={cy + 8} textAnchor="middle" fill="#636366" fontSize={9} fontFamily="Inter, sans-serif">
-              Smart Schedule
+            <text x={cx} y={cy + 12} textAnchor="middle" fill="#636366" fontSize={9} fontFamily="Inter, sans-serif">
+              {dragLabel ? 'Drag to adjust' : 'Smart Schedule'}
             </text>
+
+            {/* Drag handles (start / end of each arc) */}
+            {arcs.map(({ startDeg, endDeg, color, schedule }) => {
+              const [sx, sy] = polar(startDeg)
+              const [ex, ey] = polar(endDeg)
+              return (
+                <g key={`h-${schedule.id}`}>
+                  <circle
+                    cx={sx} cy={sy} r={11}
+                    fill="#FFFFFF" stroke={color} strokeWidth={2.5}
+                    style={{ cursor: 'grab' }}
+                    onPointerDown={(e) => { e.stopPropagation(); (e.target as Element).releasePointerCapture?.(e.pointerId); setDrag({ id: schedule.id, which: 'start' }) }}
+                  />
+                  <circle
+                    cx={ex} cy={ey} r={11}
+                    fill="#FFFFFF" stroke={color} strokeWidth={2.5}
+                    style={{ cursor: 'grab' }}
+                    onPointerDown={(e) => { e.stopPropagation(); (e.target as Element).releasePointerCapture?.(e.pointerId); setDrag({ id: schedule.id, which: 'end' }) }}
+                  />
+                </g>
+              )
+            })}
           </svg>
         </div>
 
@@ -411,20 +486,55 @@ export default function SmartSchedulePage() {
           </div>
         </div>
 
-        {/* Idle row */}
-        <div className="bg-[#262626] rounded-l p-3 mb-4 flex items-center gap-3">
+        {/* Idle hint */}
+        <div className="bg-[#262626] rounded-l p-3 mb-3 flex items-center gap-3">
           <div className="w-2 h-2 rounded-full bg-[#636366]" />
           <div className="flex-1">
             <span className="text-label font-semibold text-[#A0A0A5]">Idle</span>
-            <p className="text-tiny text-[#636366]">Grid powers devices directly. Sierro stays idle.</p>
+            <p className="text-tiny text-[#636366]">Gaps on the clock — grid powers devices directly, Sierro stays idle.</p>
           </div>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="text-primary text-tiny flex items-center gap-1"
-          >
-            <Plus size={12} />
-            Add
-          </button>
+        </div>
+
+        {/* Schedule list — add & delete */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-body-md font-semibold text-white">Time Periods</span>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="text-tiny text-primary border border-[rgba(1,214,190,0.4)] rounded-full px-3 py-1 flex items-center gap-1"
+            >
+              <Plus size={12} />
+              Add
+            </button>
+          </div>
+          <div className="space-y-2">
+            {peakShavingSettings.schedules.length === 0 && (
+              <div className="bg-[#262626] rounded-l p-4 text-center text-tiny text-[#636366]">
+                No time periods. Tap “Add” to create one.
+              </div>
+            )}
+            {peakShavingSettings.schedules.map((s) => {
+              const cfg = scheduleTypeConfig[s.type]
+              return (
+                <div key={s.id} className="bg-[#262626] rounded-l p-3 flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: cfg.color }} />
+                  <button onClick={() => openEditModal(s)} className="flex-1 min-w-0 text-left">
+                    <div className="text-label font-semibold text-white truncate">{s.name}</div>
+                    <div className="text-tiny text-[#A0A0A5]">
+                      {cfg.label} · {minutesToLabel(timeToMinutes(s.startTime))} – {minutesToLabel(timeToMinutes(s.endTime))}
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => handleDeleteClick(s)}
+                    className="w-8 h-8 rounded-full bg-[#333333] flex items-center justify-center text-danger flex-shrink-0 active:scale-95 transition-transform"
+                    aria-label={`Delete ${s.name}`}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              )
+            })}
+          </div>
         </div>
 
         {/* Price section */}

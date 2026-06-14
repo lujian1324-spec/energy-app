@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from 'react'
 import {
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  Check,
   X,
   Battery,
   Zap,
@@ -47,7 +49,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const { id: routeId } = useParams<{ id: string }>()
 
   // ── Real device data (useDeviceStore) — used when mounted as a route ──
-  const { devices, selectedDeviceState, selectDevice, loadDeviceState } = useDeviceStore()
+  const { devices, selectedDeviceState, selectDevice, loadDeviceState, renameDeviceLocal } = useDeviceStore()
   const realDevice = devices.find(d => String(d.id) === routeId)
 
   // Standalone route: ensure the real device + its realtime state are loaded
@@ -71,6 +73,9 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
 
   const [screen, setScreen] = useState<Screen>('main')
   const [editName, setEditName] = useState(deviceName)
+  // 设备名称编辑：当前正在编辑的目标设备 + 下拉选择器
+  const [editTargetId, setEditTargetId] = useState<string>(routeId ?? selectedDeviceId ?? '')
+  const [showDeviceDropdown, setShowDeviceDropdown] = useState(false)
   const [sleepMode, setSleepMode] = useState<'Off' | 'On'>('Off')
   const [batteryPriority] = useState('Backup Mode')
   const [selectedIcon, setSelectedIcon] = useState('zap')
@@ -78,13 +83,30 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
 
   // ─── Helpers ─────────────────────────────────────────────────────────────
 
+  // 当前正在编辑的目标设备及其原始名称（用于判断 Save 是否可点击）
+  const editTargetDevice = devices.find(d => String(d.id) === editTargetId)
+  const editTargetOriginalName = editTargetDevice?.name ?? deviceName
+  const nameChanged = editName.trim().length > 0 && editName.trim() !== editTargetOriginalName
+
   const handleSaveName = () => {
+    if (!nameChanged) return
     const trimmed = editName.trim()
-    if (trimmed) {
-      const targetId = routeId ?? selectedDeviceId
-      if (targetId) updateDeviceNameById(targetId, trimmed)
+    const targetId = editTargetId || routeId || selectedDeviceId
+    if (targetId) {
+      // 同步到两个 store：home page (deviceStore) + 详情/下拉菜单 (powerStationStore)
+      renameDeviceLocal(targetId, trimmed)
+      updateDeviceNameById(targetId, trimmed)
     }
+    setShowDeviceDropdown(false)
     setScreen('main')
+  }
+
+  // 切换下拉中选择的设备：载入其当前名称
+  const handleSelectDevice = (id: string) => {
+    setEditTargetId(id)
+    const dev = devices.find(d => String(d.id) === id)
+    setEditName(dev?.name ?? '')
+    setShowDeviceDropdown(false)
   }
 
   const handleSaveIcon = () => {
@@ -158,14 +180,58 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           </h1>
           <button
             onClick={handleSaveName}
-            className="ml-auto text-body-lg font-semibold text-[#01D6BE]"
+            disabled={!nameChanged}
+            className={`ml-auto text-body-lg font-semibold transition-colors ${
+              nameChanged ? 'text-[#01D6BE]' : 'text-[#4A4A4A] cursor-not-allowed'
+            }`}
           >
             Save
           </button>
         </div>
 
+        {/* Device selector dropdown — pick which device to rename */}
+        {devices.length > 1 && (
+          <div className="px-4 pt-2">
+            <span className="text-caption text-[#A0A0A5] block mb-2 px-1">Select Device</span>
+            <div className="relative">
+              <button
+                onClick={() => setShowDeviceDropdown(v => !v)}
+                className="w-full rounded-l bg-[#262626] px-4 py-4 flex items-center justify-between active:opacity-70 transition-opacity"
+              >
+                <span className="text-body-lg text-white truncate">
+                  {editTargetDevice?.name ?? editTargetOriginalName}
+                </span>
+                <ChevronDown
+                  size={18}
+                  className={`text-[#A0A0A5] transition-transform ${showDeviceDropdown ? 'rotate-180' : ''}`}
+                />
+              </button>
+              {showDeviceDropdown && (
+                <div className="absolute left-0 right-0 mt-2 z-10 rounded-l bg-[#262626] border border-white/10 overflow-hidden shadow-xl">
+                  {devices.map((d) => {
+                    const isSel = String(d.id) === editTargetId
+                    return (
+                      <button
+                        key={d.id}
+                        onClick={() => handleSelectDevice(String(d.id))}
+                        className="w-full px-4 py-3.5 flex items-center justify-between border-b border-white/5 last:border-0 active:bg-white/5"
+                      >
+                        <span className={`text-body-md ${isSel ? 'text-[#01D6BE] font-semibold' : 'text-white'}`}>
+                          {d.name}
+                        </span>
+                        {isSel && <Check size={16} className="text-[#01D6BE]" />}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Input */}
         <div className="px-4 pt-4">
+          <span className="text-caption text-[#A0A0A5] block mb-2 px-1">Name</span>
           <div className="rounded-l bg-[#262626] px-4 py-4 flex items-center gap-3">
             <input
               type="text"
@@ -326,7 +392,10 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           label="Device Name"
           value={deviceName}
           onPress={() => {
+            const targetId = routeId ?? selectedDeviceId ?? ''
+            setEditTargetId(targetId)
             setEditName(deviceName)
+            setShowDeviceDropdown(false)
             setScreen('editName')
           }}
         />
