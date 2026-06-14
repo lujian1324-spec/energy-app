@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { Share2, BarChart3, WifiOff, Leaf, RefreshCw } from 'lucide-react'
+import { Share2, BarChart3, WifiOff, Zap, ChevronLeft, ChevronRight, Leaf } from 'lucide-react'
 import BatteryRing from '../components/BatteryRing'
 import { DataSourceTag, LastSync, SampleRate, CalcAudit, type DataSource } from '../components/DataTrust'
 import { useDeviceStore } from '../stores/deviceStore'
@@ -230,26 +230,44 @@ function getDemoChartFrame(period: Period): ChartFrame {
 
 // ─── 加载骨架屏 ───
 
-function ChartSkeleton() {
+// Days overview skeleton (top, borderless on app bg)
+function DaysSkeleton() {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-      className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-[20px] p-5 mb-4">
-      <div className="flex items-center gap-2 mb-3">
-        <div className="w-8 h-8 rounded-lg bg-[rgba(255,255,255,0.05)] animate-pulse" />
-        <div className="h-4 w-24 bg-[rgba(255,255,255,0.05)] rounded animate-pulse" />
-      </div>
-      <div className="h-10 w-32 bg-[rgba(255,255,255,0.03)] rounded animate-pulse mb-2" />
-      <div className="h-3 w-48 bg-[rgba(255,255,255,0.03)] rounded animate-pulse" />
+      className="flex flex-col items-center py-4 mb-2">
+      <div className="h-12 w-44 bg-ink-10 rounded-m animate-pulse mb-3" />
+      <div className="h-3 w-52 bg-ink-10 rounded-s animate-pulse" />
     </motion.div>
   )
 }
 
+// CO2 stat card skeleton
+function ChartSkeleton() {
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+      className="bg-ink-10 rounded-l p-5 mb-4">
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="h-11 w-28 bg-[rgba(255,255,255,0.05)] rounded-m animate-pulse" />
+          <div className="h-3 w-40 bg-[rgba(255,255,255,0.03)] rounded-s animate-pulse mt-3" />
+        </div>
+        <div className="h-4 w-24 bg-[rgba(255,255,255,0.05)] rounded-s animate-pulse mt-2" />
+      </div>
+    </motion.div>
+  )
+}
+
+// Chart card skeleton
 function ChartAreaSkeleton() {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-      className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-[20px] p-4 mb-4">
-      <div className="h-4 w-28 bg-[rgba(255,255,255,0.05)] rounded animate-pulse mb-4" />
-      <div className="h-[140px] bg-[rgba(255,255,255,0.02)] rounded-[14px] animate-pulse" />
+      className="bg-ink-10 rounded-l p-5 mb-4">
+      <div className="flex items-center justify-between mb-2">
+        <div className="h-5 w-32 bg-[rgba(255,255,255,0.05)] rounded-s animate-pulse" />
+        <div className="h-3 w-28 bg-[rgba(255,255,255,0.03)] rounded-s animate-pulse" />
+      </div>
+      <div className="h-3 w-40 bg-[rgba(255,255,255,0.03)] rounded-s animate-pulse mb-4" />
+      <div className="h-[160px] bg-[rgba(255,255,255,0.02)] rounded-m animate-pulse" />
     </motion.div>
   )
 }
@@ -259,12 +277,12 @@ function ChartAreaSkeleton() {
 function ChartEmptyState({ message }: { message: string }) {
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col items-center justify-center py-12 px-6 bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-[20px] mb-4">
-      <div className="w-14 h-14 rounded-2xl bg-[rgba(255,255,255,0.03)] flex items-center justify-center mb-3">
-        <BarChart3 size={28} className="text-[#636366]" />
+      className="flex flex-col items-center justify-center py-12 px-6 bg-ink-10 rounded-l mb-4">
+      <div className="w-14 h-14 rounded-l bg-[rgba(255,255,255,0.03)] flex items-center justify-center mb-3">
+        <BarChart3 size={28} className="text-ink-7" />
       </div>
-      <p className="text-[14px] font-semibold text-[#FFFFFF] mb-1">No history data yet</p>
-      <p className="text-[12px] text-[#A0A0A5] text-center leading-relaxed">{message}</p>
+      <p className="text-body-md font-semibold text-ink-1 mb-1">No history data yet</p>
+      <p className="text-label text-ink-6 text-center">{message}</p>
     </motion.div>
   )
 }
@@ -398,6 +416,44 @@ export default function StatsPage() {
     return Math.max(1, Math.floor((Date.now() - installed.getTime()) / (24 * 3600 * 1000)))
   }, [deviceId, devices])
 
+  // 安装年份（用于 Days 副标题）
+  const installedYearLabel = useMemo(() => {
+    const dev = devices.find(d => d.id === deviceId)
+    if (!dev?.installedAt) return null
+    const d = new Date(dev.installedAt)
+    if (isNaN(d.getTime())) return null
+    return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+  }, [deviceId, devices])
+
+  // 时间标题（display-only，格式随 period 变化）— 不改变取数逻辑
+  const dateTitle = useMemo(() => {
+    const now = new Date()
+    const mdy = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    switch (period) {
+      case 'Day':
+        return mdy(now)
+      case 'Week': {
+        const start = new Date(now)
+        start.setDate(now.getDate() - now.getDay())
+        const end = new Date(start)
+        end.setDate(start.getDate() + 6)
+        const sameMonth = start.getMonth() === end.getMonth()
+        const sameYear = start.getFullYear() === end.getFullYear()
+        if (sameMonth) return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${end.getDate()}, ${end.getFullYear()}`
+        if (sameYear) return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${mdy(end)}`
+        return `${mdy(start)} – ${mdy(end)}`
+      }
+      case 'Month':
+        return now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+      case 'Range': {
+        const start = new Date(now)
+        start.setMonth(now.getMonth() - 2)
+        start.setDate(1)
+        return `${mdy(start)} – ${mdy(now)}`
+      }
+    }
+  }, [period])
+
   // ═══════════════════════════════════════════════════
   // 渲染
   // ═══════════════════════════════════════════════════
@@ -433,59 +489,93 @@ export default function StatsPage() {
     ) : null
 
   return (
-    <div className="h-full flex flex-col bg-[#141414] overflow-hidden pt-6">
+    <div className="h-full flex flex-col bg-ink-12 overflow-hidden pt-6">
       {/* Header */}
-      <div className="px-5 pt-8 pb-2 safe-area-top flex justify-between items-start">
+      <div className="px-4 pt-8 pb-2 safe-area-top flex justify-between items-start">
         <div>
-          <h2 className="text-xl font-bold text-[#FFFFFF]">Insights</h2>
-          <p className="text-xs text-[#A0A0A5] mt-1">
-            {deviceDays > 0
-              ? `${deviceDays} Days · ${deviceName ?? 'Device'}`
-              : (deviceName ? `${deviceName}` : 'Select a device')
-            }
-          </p>
+          <h1 className="text-display font-display text-ink-1 leading-none">Insights</h1>
           {/* PRD v1.1 §8: 数据来源 + 同步时间 */}
-          <div className="flex items-center gap-2 mt-1.5">
+          <div className="flex items-center gap-2 mt-2">
             <DataSourceTag source={useDemo ? 'demo' : 'cloud'} />
             <LastSync lastSyncAt={lastSyncAt} />
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            className="w-9 h-9 flex items-center justify-center rounded-full bg-[#262626] border border-[rgba(1,214,190,0.08)] text-[#A0A0A5] hover:text-[#01D6BE] transition-colors"
-            onClick={() => {
-              if (navigator.share && chartFrame) {
-                navigator.share({
-                  title: 'Sierro Energy Stats',
-                  text: `CO2 Reduced: ${chartFrame.co2Kg} kg`,
-                  url: window.location.href,
-                }).catch(err => console.error('[StatsPage] Share failed:', err))
-              }
-            }}
-          >
-            <Share2 size={18} />
-          </button>
-          <div className="flex bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-full p-1">
-            {periods.map((p) => (
-              <button
-                key={p}
-                onClick={() => setPeriod(p)}
-                className={`text-[10px] font-semibold px-2.5 py-1 rounded-full transition-all duration-200
-                  ${period === p ? 'bg-[#01D6BE] text-[#000000]' : 'text-[#A0A0A5] hover:text-[#FFFFFF]'}`}
-              >
-                {p}
-              </button>
-            ))}
-          </div>
-        </div>
+        <button
+          aria-label="Share"
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-ink-10 text-ink-6 hover:text-primary transition-colors"
+          onClick={() => {
+            if (navigator.share && chartFrame) {
+              navigator.share({
+                title: 'Sierro Energy Stats',
+                text: `CO2 Reduced: ${chartFrame.co2Kg} kg`,
+                url: window.location.href,
+              }).catch(err => console.error('[StatsPage] Share failed:', err))
+            }
+          }}
+        >
+          <Share2 size={18} />
+        </button>
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide px-5 pb-4">
+      <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pb-4">
         {!hasDevice && noDevice}
 
         {hasDevice && (
           <>
+            {/* ── Days overview (NOT controlled by period) ── */}
+            {historyLoading ? (
+              <DaysSkeleton />
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col items-center text-center py-5"
+              >
+                <div className="flex items-baseline justify-center gap-2">
+                  <Zap size={32} className="text-primary fill-primary self-center" />
+                  <span className="text-headline-xl font-display text-ink-1 leading-none">{deviceDays}</span>
+                  <span className="text-title-md text-ink-6">Days</span>
+                </div>
+                <p className="text-body-md text-ink-6 mt-3">
+                  {installedYearLabel
+                    ? `Reliable backup power since ${installedYearLabel}`
+                    : 'Reliable backup power'}
+                </p>
+              </motion.div>
+            )}
+
+            {/* ── Segmented time-range control (full width) ── */}
+            <div className="flex bg-ink-10 rounded-pill p-1 mb-3">
+              {periods.map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPeriod(p)}
+                  className={`flex-1 text-body-md font-semibold py-2 rounded-pill transition-all duration-200
+                    ${period === p ? 'bg-ink-3 text-ink-13' : 'text-ink-6 hover:text-ink-1'}`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+
+            {/* ── Date navigator ── */}
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <button
+                aria-label="Previous"
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-ink-10 text-ink-4 hover:text-ink-1 transition-colors"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <span className="text-title-md font-semibold text-ink-1">{dateTitle}</span>
+              <button
+                aria-label="Next"
+                disabled
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-ink-10 text-ink-9 opacity-40 cursor-not-allowed"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+
             {/* Loading skeleton */}
             {historyLoading && (
               <>
@@ -500,25 +590,26 @@ export default function StatsPage() {
             {/* Data loaded */}
             {!historyLoading && isDataLoaded && chartFrame && (
               <>
-                {/* CO2 Card */}
+                {/* CO2 Card (PRD §4.4.3) */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                  className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-[20px] p-5 mb-4 relative overflow-hidden"
+                  className="bg-ink-10 rounded-l p-5 mb-4"
                 >
-                  <div className="absolute top-0 left-0 right-0 h-px bg-[rgba(1,214,190,0.15)]" />
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-8 h-8 rounded-lg bg-[rgba(52,199,89,0.1)] flex items-center justify-center">
-                      <Leaf size={16} className="text-[#34C759]" />
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-headline-lg font-display text-ink-1 leading-none">
+                          {chartFrame.co2Kg}
+                        </span>
+                        <span className="text-body-md text-ink-6">Kg</span>
+                      </div>
+                      <p className="text-body-md text-ink-6 mt-2">{chartFrame.ecoInsight}</p>
                     </div>
-                    <span className="text-[13px] font-semibold text-[#FFFFFF]">CO2 Reduced</span>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <Leaf size={14} className="text-success" />
+                      <span className="text-body-lg text-ink-4">CO₂ Reduced</span>
+                    </div>
                   </div>
-                  <div className="flex items-baseline gap-1 mb-1">
-                    <span className="text-[36px] font-extrabold text-[#34C759] leading-none">
-                      {chartFrame.co2Kg}
-                    </span>
-                    <span className="text-[14px] text-[#A0A0A5]">Kg</span>
-                  </div>
-                  <p className="text-[12px] text-[#A0A0A5]">{chartFrame.ecoInsight}</p>
                   {/* PRD v1.1 §8.3: 计算逻辑可审计 */}
                   <div className="mt-3">
                     <CalcAudit
@@ -536,18 +627,21 @@ Data source: US EPA eGRID 2024 average emission rate`}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.05 }}
-                  className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-[20px] p-4 mb-4"
+                  className="bg-ink-10 rounded-l p-4 mb-4"
                 >
-                  <div className="flex justify-between items-center mb-4">
-                    <div className="text-sm font-bold text-[#FFFFFF]">Input vs Output</div>
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <div className="text-title-md font-semibold text-ink-1">Input vs. Output</div>
+                      <p className="text-label text-ink-6 mt-1">{chartFrame.insight}</p>
+                    </div>
                     <div className="flex gap-3">
-                      <div className="flex items-center gap-1.5 text-[10px] text-[#A0A0A5]">
-                        <div className="w-2 h-2 rounded-full bg-[#01D6BE]" />
-                        <span>Solar (W)</span>
+                      <div className="flex items-center gap-1.5 text-label text-ink-4">
+                        <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+                        <span>Input</span>
                       </div>
-                      <div className="flex items-center gap-1.5 text-[10px] text-[#A0A0A5]">
-                        <div className="w-2 h-2 rounded-full bg-[#01A88F]" />
-                        <span>Output (W)</span>
+                      <div className="flex items-center gap-1.5 text-label text-ink-4">
+                        <div className="w-2.5 h-2.5 rounded-full bg-warning" />
+                        <span>Output</span>
                       </div>
                     </div>
                   </div>
@@ -555,68 +649,68 @@ Data source: US EPA eGRID 2024 average emission rate`}
                   {period === 'Week' ? (
                     /* Week: Dual Bar Chart */
                     <div>
-                      <div className="flex items-end gap-2 h-[140px]">
+                      <div className="flex items-end gap-2 h-[160px]">
                         {chartFrame.input.map((input, i) => {
                           const maxVal = Math.max(...chartFrame.input, ...chartFrame.output, 1)
                           return (
-                            <div key={i} className="flex-1 flex items-end gap-0.5 h-full">
+                            <div key={i} className="flex-1 flex items-end justify-center gap-1 h-full">
                               <div
-                                className="flex-1 rounded-t bg-[#01D6BE] min-h-[2px] transition-all duration-500"
+                                className="flex-1 max-w-[12px] rounded-t-s bg-primary min-h-[2px] transition-all duration-500"
                                 style={{ height: `${(input / maxVal) * 100}%` }}
                               />
                               <div
-                                className="flex-1 rounded-t bg-[#01A88F] min-h-[2px] transition-all duration-500"
+                                className="flex-1 max-w-[12px] rounded-t-s bg-warning min-h-[2px] transition-all duration-500"
                                 style={{ height: `${(chartFrame.output[i] / maxVal) * 100}%` }}
                               />
                             </div>
                           )
                         })}
                       </div>
-                      <div className="h-px bg-[rgba(1,214,190,0.08)] my-1.5" />
+                      <div className="h-px bg-[rgba(255,255,255,0.08)] my-2" />
                       <div className="flex gap-2">
                         {chartFrame.labels.map((day) => (
-                          <div key={day} className="flex-1 text-center text-[9px] text-[#636366]">{day}</div>
+                          <div key={day} className="flex-1 text-center text-tiny text-ink-6">{day}</div>
                         ))}
                       </div>
                     </div>
                   ) : (
                     /* Day/Month/Range: Line + Area Chart */
                     <div>
-                      <svg viewBox="0 0 340 160" className="w-full h-[140px]">
+                      <svg viewBox="0 0 340 160" className="w-full h-[160px]">
+                        {/* gridlines */}
+                        {[0, 1, 2, 3, 4].map((g) => (
+                          <line
+                            key={g}
+                            x1="0" x2="340"
+                            y1={4 + (g / 4) * 152} y2={4 + (g / 4) * 152}
+                            stroke="rgba(255,255,255,0.06)" strokeWidth="1"
+                          />
+                        ))}
+                        {/* Output: orange solid line + area fill */}
                         {(() => {
-                          const { linePath, areaPath } = generateAreaPath(chartFrame.input, 340, 140)
+                          const { linePath, areaPath } = generateAreaPath(chartFrame.output, 340, 160)
                           return (
                             <g>
-                              <path d={areaPath} fill="rgba(1,214,190,0.1)" />
-                              <path d={linePath} fill="none" stroke="#01D6BE" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              <path d={areaPath} fill="rgba(255,149,0,0.18)" />
+                              <path d={linePath} fill="none" stroke="#FF9500" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                             </g>
                           )
                         })()}
+                        {/* Input: teal dashed line */}
                         {(() => {
-                          const { linePath, areaPath } = generateAreaPath(chartFrame.output, 340, 140)
+                          const { linePath } = generateAreaPath(chartFrame.input, 340, 160)
                           return (
-                            <g>
-                              <path d={areaPath} fill="rgba(1,168,143,0.08)" />
-                              <path d={linePath} fill="none" stroke="#01A88F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </g>
+                            <path d={linePath} fill="none" stroke="#01D6BE" strokeWidth="2.5" strokeDasharray="6 5" strokeLinecap="round" strokeLinejoin="round" />
                           )
                         })()}
                       </svg>
-                      <div className="flex justify-between px-1">
+                      <div className="flex justify-between px-1 mt-1">
                         {chartFrame.labels.filter((_, i) => i % Math.max(1, Math.floor(chartFrame.labels.length / 6)) === 0).map((label) => (
-                          <span key={label} className="text-[9px] text-[#636366]">{label}</span>
+                          <span key={label} className="text-tiny text-ink-6">{label}</span>
                         ))}
                       </div>
                     </div>
                   )}
-
-                  {/* AI Insight */}
-                  <div className="mt-4 pt-3 border-t border-[rgba(1,214,190,0.06)]">
-                    <p className="text-[11px] text-[#A0A0A5]">
-                      <span className="text-[#01D6BE] font-semibold">Insight: </span>
-                      {chartFrame.insight}
-                    </p>
-                  </div>
                 </motion.div>
               </>
             )}

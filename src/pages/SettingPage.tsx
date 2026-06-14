@@ -19,14 +19,15 @@ import {
   Edit3,
   ChevronRight,
   Zap,
-  WifiOff,
+  Gem,
+  Battery,
+  MessageSquare,
   LogOut,
   Trash2,
   RotateCcw,
   Link2,
   Link2Off,
 } from 'lucide-react'
-import ToggleSwitch from '../components/ToggleSwitch'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useAuthStore } from '../stores/authStore'
 import { getUserProfile } from '../db/powerflowDB'
@@ -95,93 +96,88 @@ export default function SettingPage() {
 
 
   return (
-    <div className="h-full flex flex-col bg-[#141414] overflow-hidden">
-      {/* Header */}
-      <div className="px-5 pt-4 pb-4 safe-area-top">
-        <h2 className="text-xl font-bold text-[#FFFFFF]">Setting</h2>
-      </div>
-
+    <div className="h-full flex flex-col bg-ink-12 overflow-hidden">
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide px-5 pb-4">
-        {/* User Profile Card */}
+      <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pt-4 pb-4 safe-area-top">
+        {/* User Profile — avatar + name + manage-account row, Founding Member gold tag */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          onClick={() => isGuest ? navigate('/login') : setShowManageAccount(true)}
-          className="bg-[#262626] border border-[rgba(1,214,190,0.2)] rounded-[28px] p-4 mb-4
-            flex items-center gap-4 cursor-pointer active:scale-[0.98] transition-transform">
-          <div className="relative flex-shrink-0">
-            {settings.founderBadge && (
-              <div className="absolute -inset-[2px] rounded-[22px] bg-gradient-to-br from-[#FFD700] via-[#FFA500] to-[#FFD700]" />
-            )}
-            <div className={`relative w-[60px] h-[60px] rounded-[20px]
-              ${settings.founderBadge ? 'bg-[#262626]' : 'bg-[rgba(1,214,190,0.08)] border border-[rgba(1,214,190,0.3)]'}
-              flex items-center justify-center overflow-hidden`}>
+          className="flex items-center gap-3 mb-6">
+          {/* Avatar: green ring (default) / gold ring (founder); default icon lightning / diamond */}
+          <button
+            onClick={() => isGuest ? navigate('/login') : setShowManageAccount(true)}
+            className="relative flex-shrink-0 active:scale-[0.96] transition-transform">
+            <div className={`w-[52px] h-[52px] rounded-full flex items-center justify-center overflow-hidden border-m
+              ${settings.founderBadge
+                ? 'border-membership bg-[rgba(255,215,0,0.06)]'
+                : 'border-primary bg-[rgba(1,214,190,0.06)]'}`}>
               {userProfile.avatar ? (
                 <img src={userProfile.avatar} alt={userProfile.name} className="w-full h-full object-cover" />
+              ) : settings.founderBadge ? (
+                <Gem size={24} className="text-membership" />
               ) : (
-                <User size={28} className={settings.founderBadge ? 'text-[#FFD700]' : 'text-[#01D6BE]'} />
+                <Zap size={24} className="text-primary fill-primary" />
               )}
             </div>
-            {settings.founderBadge && (
-              <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[#262626] border-2 border-[#FFD700] flex items-center justify-center z-10">
-                <Crown size={12} className="text-[#FFD700]" />
-              </div>
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-[#FFFFFF] truncate">
-                {isGuest ? 'Guest User' : userProfile.name}
-              </h3>
-              {settings.founderBadge && (
-                <span className="flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-[rgba(255,215,0,0.15)] text-[#FFD700] border border-[rgba(255,215,0,0.3)] font-semibold flex-shrink-0">
-                  <Crown size={10} /> Founding Member
-                </span>
-              )}
+          </button>
+          <button
+            onClick={() => isGuest ? navigate('/login') : setShowManageAccount(true)}
+            className="flex-1 min-w-0 text-left active:opacity-80 transition-opacity">
+            <h3 className="text-title-lg font-semibold text-ink-1 truncate">
+              {isGuest ? 'Guest User' : userProfile.name}
+            </h3>
+            <div className="flex items-center gap-0.5 mt-0.5 text-ink-6">
+              <span className="text-body-md">{isGuest ? 'Sign in to manage your account' : 'Manage my account'}</span>
+              <ChevronRight size={14} className="text-ink-6" />
             </div>
-            <p className="text-[12px] text-[#01D6BE] mt-0.5">{isGuest ? 'Sign in to manage your account' : 'Manage my account'}</p>
-          </div>
-          <div className="flex-shrink-0">
-            <ChevronRight size={18} className="text-[#636366]" />
-          </div>
+          </button>
+          {/* Founding Member gold tag */}
+          {settings.founderBadge && (
+            <button
+              onClick={() => setShowFounderModal(true)}
+              className="flex-shrink-0 px-3 py-1 rounded-pill bg-[rgba(255,215,0,0.18)] border-s border-membership active:scale-[0.96] transition-transform">
+              <span className="text-label font-semibold text-membership whitespace-nowrap">
+                Founding Member #{settings.founderBadgeNumber}
+              </span>
+            </button>
+          )}
         </motion.div>
 
         {/* Push Notifications */}
+        <h3 className="text-title-md font-semibold text-ink-1 mb-3">Push Notifications</h3>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-          className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden mb-4">
-          <div className="px-4 py-3 border-b border-[rgba(1,214,190,0.06)]">
-            <span className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase">Push Notifications</span>
-          </div>
-          <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[rgba(1,214,190,0.06)]">
-            <div className="w-9 h-9 rounded-lg bg-[rgba(255,59,48,0.08)] flex items-center justify-center flex-shrink-0">
-              <Zap size={16} className="text-[#FF3B30]" />
+          className="space-y-3 mb-6">
+          {/* Power Outage */}
+          <button
+            onClick={() => { setPushOutage(!pushOutage); updateSettings({ pushNotifications: !pushOutage }) }}
+            className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 active:scale-[0.99] transition-transform text-left">
+            <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
+              <Zap size={16} className="text-ink-1" />
             </div>
-            <div className="flex-1">
-              <div className="text-[13px] font-semibold text-[#FFFFFF]">Power Outage</div>
-              <div className="text-[11px] text-[#A0A0A5] mt-0.5">Get alerted during outages</div>
+            <div className="flex-1 min-w-0">
+              <div className="text-body-lg font-semibold text-ink-1">Power Outage</div>
+              <div className="text-body-md text-ink-6 mt-0.5">Get alerted during outages</div>
             </div>
-            <ToggleSwitch isOn={pushOutage} onToggle={() => { setPushOutage(!pushOutage); updateSettings({ pushNotifications: !pushOutage }) }} size="sm" />
-          </div>
-          <div className="flex items-center gap-3 px-4 py-3.5">
-            <div className="w-9 h-9 rounded-lg bg-[rgba(255,149,0,0.08)] flex items-center justify-center flex-shrink-0">
-              <WifiOff size={16} className="text-[#FF9500]" />
+            <span className="text-body-lg text-ink-6 flex-shrink-0">{pushOutage ? 'On' : 'Off'}</span>
+            <ChevronRight size={20} className="text-ink-1 flex-shrink-0" />
+          </button>
+
+          {/* Low Battery */}
+          <button
+            onClick={() => { setPushLowBattery(!pushLowBattery); updateSettings({ pushNotifications: !pushLowBattery }) }}
+            className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 active:scale-[0.99] transition-transform text-left">
+            <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
+              <Battery size={16} className="text-ink-1" />
             </div>
-            <div className="flex-1">
-              <div className="text-[13px] font-semibold text-[#FFFFFF]">Low Battery</div>
-              <div className="text-[11px] text-[#A0A0A5] mt-0.5">Receive alerts below {lowBatteryThreshold}% battery</div>
+            <div className="flex-1 min-w-0">
+              <div className="text-body-lg font-semibold text-ink-1">Low Battery</div>
+              <div className="text-body-md text-ink-6 mt-0.5">
+                {pushLowBattery ? `Get alerted when battery falls below ${lowBatteryThreshold}%` : 'Get notified when battery gets low'}
+              </div>
             </div>
-            <ToggleSwitch isOn={pushLowBattery} onToggle={() => { setPushLowBattery(!pushLowBattery); updateSettings({ pushNotifications: !pushLowBattery }) }} size="sm" />
-          </div>
-          {/* PRD v1.1 §4.6: Solar Status push notification */}
-          <div className="flex items-center gap-3 px-4 py-3.5 border-t border-[rgba(1,214,190,0.06)]">
-            <div className="w-9 h-9 rounded-lg bg-[rgba(1,214,190,0.08)] flex items-center justify-center flex-shrink-0">
-              <Sun size={16} className="text-[#01D6BE]" />
-            </div>
-            <div className="flex-1">
-              <div className="text-[13px] font-semibold text-[#FFFFFF]">Solar Status</div>
-              <div className="text-[11px] text-[#A0A0A5] mt-0.5">Get notified when solar generation changes</div>
-            </div>
-            <ToggleSwitch isOn={pushSolarStatus} onToggle={() => { setPushSolarStatus(!pushSolarStatus); updateSettings({ pushSolarStatus: !pushSolarStatus }) }} size="sm" />
-          </div>
+            <span className="text-body-lg text-ink-6 flex-shrink-0">{pushLowBattery ? 'On' : 'Off'}</span>
+            <ChevronRight size={20} className="text-ink-1 flex-shrink-0" />
+          </button>
+
           {/* Low Battery Threshold Slider — shown when enabled */}
           <AnimatePresence>
             {pushLowBattery && (
@@ -191,10 +187,10 @@ export default function SettingPage() {
                 exit={{ height: 0, opacity: 0 }}
                 className="overflow-hidden"
               >
-                <div className="px-4 pb-4 pt-1 border-t border-[rgba(255,149,0,0.06)]">
+                <div className="bg-ink-10 rounded-l px-4 py-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] text-[#A0A0A5]">Alert Threshold</span>
-                    <span className="text-[11px] font-semibold text-[#FF9500]">{lowBatteryThreshold}%</span>
+                    <span className="text-label text-ink-6">Alert Threshold</span>
+                    <span className="text-label font-semibold text-primary">{lowBatteryThreshold}%</span>
                   </div>
                   <div className="relative">
                     <input
@@ -208,12 +204,11 @@ export default function SettingPage() {
                         setLowBatteryThreshold(val)
                         updateSettings({ lowBatteryThreshold: val })
                       }}
-                      className="w-full h-1.5 bg-[#333333] rounded-full appearance-none cursor-pointer accent-[#FF9500]"
+                      className="w-full h-1.5 bg-ink-9 rounded-pill appearance-none cursor-pointer accent-primary"
                       style={{
-                        background: `linear-gradient(to right, #FF9500 0%, #FF9500 ${((lowBatteryThreshold - 10) / 20) * 100}%, #333333 ${((lowBatteryThreshold - 10) / 20) * 100}%, #333333 100%)`
+                        background: `linear-gradient(to right, #01D6BE 0%, #01D6BE ${((lowBatteryThreshold - 10) / 20) * 100}%, #454545 ${((lowBatteryThreshold - 10) / 20) * 100}%, #454545 100%)`
                       }}
                     />
-                    {/* Tick marks */}
                     <div className="flex justify-between px-0.5 mt-1">
                       {[10, 20, 30].map((val) => (
                         <button
@@ -222,7 +217,7 @@ export default function SettingPage() {
                             setLowBatteryThreshold(val)
                             updateSettings({ lowBatteryThreshold: val })
                           }}
-                          className={`text-[9px] transition-colors ${lowBatteryThreshold === val ? 'text-[#FF9500] font-semibold' : 'text-[#636366]'}`}
+                          className={`text-tiny transition-colors ${lowBatteryThreshold === val ? 'text-primary font-semibold' : 'text-ink-7'}`}
                         >
                           {val}%
                         </button>
@@ -233,69 +228,52 @@ export default function SettingPage() {
               </motion.div>
             )}
           </AnimatePresence>
-        </motion.div>
 
-        {/* Founder Badge */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
-          className={`bg-[#262626] border rounded-[20px] overflow-hidden mb-4 cursor-pointer active:scale-[0.98] transition-transform`}
-          style={{ borderColor: settings.founderBadge ? 'rgba(255,215,0,0.25)' : 'rgba(1,214,190,0.08)' }}
-          onClick={() => setShowFounderModal(true)}>
-          <div className="flex items-center gap-3 px-4 py-3.5">
-            <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${settings.founderBadge ? 'bg-[rgba(255,215,0,0.12)]' : 'bg-[rgba(255,255,255,0.06)]'}`}>
-              <Crown size={16} className={settings.founderBadge ? 'text-[#FFD700]' : 'text-[#FFFFFF]'} />
+          {/* Solar Status */}
+          <button
+            onClick={() => { setPushSolarStatus(!pushSolarStatus); updateSettings({ pushSolarStatus: !pushSolarStatus }) }}
+            className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 active:scale-[0.99] transition-transform text-left">
+            <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
+              <Sun size={16} className="text-ink-1" />
             </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <span className="text-[13px] font-semibold text-[#FFFFFF]">Founder Badge</span>
-                {settings.founderBadge && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[rgba(255,215,0,0.15)] text-[#FFD700] border border-[rgba(255,215,0,0.3)] font-semibold">Active</span>
-                )}
-              </div>
-              <div className="text-[11px] text-[#A0A0A5] mt-0.5">
-                {settings.founderBadge ? `Member #${settings.founderBadgeNumber}` : 'Unlock exclusive benefits'}
-              </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-body-lg font-semibold text-ink-1">Solar Status</div>
+              <div className="text-body-md text-ink-6 mt-0.5">Get alerted when solar connects or disconnects</div>
             </div>
-            <ChevronRight size={16} className={settings.founderBadge ? 'text-[#FFD700]' : 'text-[#636366]'} />
-          </div>
+            <span className="text-body-lg text-ink-6 flex-shrink-0">{pushSolarStatus ? 'On' : 'Off'}</span>
+            <ChevronRight size={20} className="text-ink-1 flex-shrink-0" />
+          </button>
         </motion.div>
 
         {/* Support */}
+        <h3 className="text-title-md font-semibold text-ink-1 mb-3">Support</h3>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden mb-4">
-          <div className="px-4 py-3 border-b border-[rgba(1,214,190,0.06)]">
-            <span className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase">Support</span>
-          </div>
-          <div className="flex items-center gap-3 px-4 py-3.5 cursor-pointer active:bg-[rgba(255,255,255,0.02)]"
-            onClick={() => setShowSupport(true)}>
-            <div className="w-9 h-9 rounded-lg bg-[rgba(255,255,255,0.06)] flex items-center justify-center flex-shrink-0">
-              <Headphones size={16} className="text-[#FFFFFF]" />
+          className="mb-6">
+          <button
+            onClick={() => setShowSupport(true)}
+            className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 active:scale-[0.99] transition-transform text-left">
+            <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
+              <MessageSquare size={16} className="text-ink-1" />
             </div>
-            <div className="flex-1">
-              <div className="text-[13px] font-semibold text-[#FFFFFF]">Feedback</div>
-              <div className="text-[11px] text-[#A0A0A5] mt-0.5">Send feedback to the Sierro team</div>
+            <div className="flex-1 min-w-0">
+              <div className="text-body-lg font-semibold text-ink-1">Feedback</div>
+              <div className="text-body-md text-ink-6 mt-0.5">Send feedback to the Sierro team</div>
             </div>
-            <ChevronRight size={16} className="text-[#636366]" />
-          </div>
+          </button>
         </motion.div>
 
-        {/* Version Info + Legal */}
-        <div className="text-center py-4 text-[11px] leading-relaxed">
+        {/* Legal + Version */}
+        <div className="text-center py-2 leading-relaxed">
           <div className="flex items-center justify-center gap-2 mb-1">
-            <Link
-              to="/privacy"
-              className="text-[#A0A0A5] hover:text-[#FFFFFF] transition-colors"
-            >
+            <Link to="/privacy" className="text-body-md font-semibold text-primary hover:opacity-80 transition-opacity">
               Privacy Policy
             </Link>
-            <span className="text-[#636366]">|</span>
-            <Link
-              to="/terms"
-              className="text-[#A0A0A5] hover:text-[#FFFFFF] transition-colors"
-            >
+            <span className="text-ink-7">|</span>
+            <Link to="/terms" className="text-body-md font-semibold text-primary hover:opacity-80 transition-opacity">
               Terms of Use
             </Link>
           </div>
-          <div className="text-[#636366]">
+          <div className="text-caption text-ink-7">
             Sierro App v{appVersion.version} &copy; 2026 Sierro Inc.
           </div>
         </div>
