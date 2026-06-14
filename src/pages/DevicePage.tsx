@@ -30,6 +30,7 @@ import {
 } from 'lucide-react'
 import { useDeviceStore } from '../stores/deviceStore'
 import { useAuthStore } from '../stores/authStore'
+import sierro1000Img from '../assets/sierro-1000.jpg'
 import { mapFieldsToRealtime } from '../api/deviceApi'
 import type { DeviceListItem, DeviceStateField } from '../api/deviceApi'
 
@@ -215,6 +216,13 @@ export default function DevicePage() {
     if (key.includes('fridge')) return deviceIcons.fridge
     if (key.includes('cpap')) return deviceIcons.cpap
     return deviceIcons.default
+  }
+
+  // Real product photo for SIERRO power stations (falls back to emoji elsewhere)
+  const getDeviceImage = (sortKey: string): string | null => {
+    const key = sortKey?.toLowerCase() ?? ''
+    if (key.includes('storage') || key.includes('power') || key.includes('sierro')) return sierro1000Img
+    return null
   }
 
   const getWorkModeLabel = (mode: number | null | undefined): string => {
@@ -457,9 +465,19 @@ export default function DevicePage() {
                   onClick={() => handleDeviceClick(device)}
                   className="bg-[#262626] rounded-l p-5 cursor-pointer active:scale-[0.99] transition-transform"
                 >
-                  {/* Top row: Display icon + BatteryTag */}
+                  {/* Top row: Display icon/photo + BatteryTag */}
                   <div className="flex items-start justify-between mb-3">
-                    <span className="text-[28px] leading-none">{getDeviceIcon(device.deviceSortKey)}</span>
+                    {getDeviceImage(device.deviceSortKey) ? (
+                      <div className="w-12 h-12 rounded-m bg-white flex items-center justify-center overflow-hidden">
+                        <img
+                          src={getDeviceImage(device.deviceSortKey)!}
+                          alt={getDeviceModel(device)}
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    ) : (
+                      <span className="text-[28px] leading-none">{getDeviceIcon(device.deviceSortKey)}</span>
+                    )}
                     <BatteryTag level={soc} connected={connected} charging={isCharging} />
                   </div>
 
@@ -525,8 +543,16 @@ export default function DevicePage() {
               {/* Header */}
               <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-[rgba(255,255,255,0.06)]">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-[14px] bg-[rgba(1,214,190,0.12)] flex items-center justify-center text-lg">
-                    {getDeviceIcon(showDeviceParams.deviceSortKey)}
+                  <div className="w-10 h-10 rounded-[14px] bg-white flex items-center justify-center text-lg overflow-hidden">
+                    {getDeviceImage(showDeviceParams.deviceSortKey) ? (
+                      <img
+                        src={getDeviceImage(showDeviceParams.deviceSortKey)!}
+                        alt={showDeviceParams.model || 'Sierro'}
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      getDeviceIcon(showDeviceParams.deviceSortKey)
+                    )}
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-[#FFFFFF]">{showDeviceParams.name}</h3>
