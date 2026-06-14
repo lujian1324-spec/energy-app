@@ -3,10 +3,27 @@ import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ChevronLeft, X } from 'lucide-react'
 import { registerByEmail, sendEmailCaptcha } from '../api/authApi'
+import { useAuthStore } from '../stores/authStore'
 
 type Screen = 'email' | 'otp'
 
 const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
+
+/**
+ * 后端 /user/register/email 要求 account（账号名）+ password，
+ * 不能直接用邮箱当账号（含 @ / . 会被判为账号错误）。
+ * 这里基于邮箱本地部分生成合法账号，并随机后缀避免重名。
+ */
+const genAccount = (email: string): string => {
+  const local = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '')
+  const base = (local || 'user').slice(0, 12)
+  const rand = Math.random().toString(36).slice(2, 7)
+  return `${base}${rand}`
+}
+
+/** 生成满足常见复杂度要求的随机密码（含大小写、数字、符号）。 */
+const genPassword = (): string =>
+  `Sr${Math.random().toString(36).slice(2, 10)}@9X`
 
 export default function RegisterPage() {
   const navigate = useNavigate()
@@ -69,16 +86,25 @@ export default function RegisterPage() {
     setLoading(true)
     setOtpError('')
     try {
+      const account = genAccount(email.trim())
+      const password = genPassword()
       const result = await registerByEmail(
-        email.trim(),
-        '',
+        account,
+        password,
         email.trim(),
         otp,
         captchaId || undefined
       )
       if (result.code === 0 || result.code === '0') {
-        // First sign-up → run the Onboarding flow (PRD §4.7.3)
-        navigate('/onboarding', { replace: true })
+        // 注册成功后用刚创建的账号自动登录，拿到会话 token
+        const loggedIn = await useAuthStore.getState().login(account, password)
+        if (loggedIn) {
+          // First sign-up → run the Onboarding flow (PRD §4.7.3)
+          navigate('/onboarding', { replace: true })
+        } else {
+          // 注册成功但自动登录失败：回到登录页用邮箱验证码登录
+          navigate('/login', { replace: true })
+        }
       } else {
         setOtpError(result.message ?? result.msg ?? 'Invalid code. Please try again.')
       }
