@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useRef, useEffect } from 'react'
 import {
   ChevronLeft,
@@ -39,6 +39,9 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
 
   // "..." dropdown menu
   const [showMenu, setShowMenu] = useState(false)
+
+  // 二次确认弹窗：'signout' | 'delete' | null
+  const [confirmAction, setConfirmAction] = useState<'signout' | 'delete' | null>(null)
 
   // 头像上传
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -110,22 +113,24 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
     }
   }
 
+  // 点击菜单项 → 打开对应的二次确认弹窗
   const handleSignOut = () => {
     setShowMenu(false)
-    if (typeof logout === 'function') {
-      logout()
-    }
-    onBack()
+    setConfirmAction('signout')
   }
 
   const handleDeleteAccount = () => {
     setShowMenu(false)
-    if (window.confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
-      if (typeof logout === 'function') {
-        logout()
-      }
-      onBack()
+    setConfirmAction('delete')
+  }
+
+  // 弹窗内确认 → 执行登出/删除
+  const handleConfirm = () => {
+    setConfirmAction(null)
+    if (typeof logout === 'function') {
+      logout()
     }
+    onBack()
   }
 
   // If editing a field, show sub-screen
@@ -363,6 +368,55 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
           </button>
         </p>
       </div>
+
+      {/* ==================== 二次确认弹窗 (Sign out / Delete Account) ==================== */}
+      <AnimatePresence>
+        {confirmAction && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-8"
+            onClick={() => setConfirmAction(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.92 }}
+              transition={{ type: 'spring', damping: 24, stiffness: 320 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-[340px] bg-[#262626] rounded-[20px] px-6 pt-6 pb-5"
+            >
+              <h3 className="text-headline-md font-bold text-white text-center mb-2">
+                {confirmAction === 'signout' ? 'Sign out?' : 'Delete Account?'}
+              </h3>
+              <p className="text-body-md text-[#A0A0A5] text-center mb-6 leading-snug">
+                {confirmAction === 'signout'
+                  ? "You'll need to sign in again to access your account."
+                  : 'This will permanently delete your account and all data. This action cannot be undone.'}
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setConfirmAction(null)}
+                  className="flex-1 h-12 rounded-m border-s border-white text-white font-semibold text-body-lg active:scale-95 transition-transform"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirm}
+                  className={`flex-1 h-12 rounded-m font-semibold text-body-lg active:scale-95 transition-transform ${
+                    confirmAction === 'signout'
+                      ? 'bg-[#01D6BE] text-black'
+                      : 'bg-[#FF3530] text-white'
+                  }`}
+                >
+                  {confirmAction === 'signout' ? 'Sign Out' : 'Delete'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }
