@@ -6,8 +6,33 @@ import { useAuthStore } from '../stores/authStore'
 import { sendEmailCaptcha, loginByEmail } from '../api/authApi'
 
 export default function LoginPage() {
-  const { loading, isAuthenticated } = useAuthStore()
+  const { loading, isAuthenticated, login } = useAuthStore()
   const navigate = useNavigate()
+
+  // ── Account (username + password) login flow ──
+  const [accountFlow, setAccountFlow] = useState(false)
+  const [acctName, setAcctName] = useState('')
+  const [acctPassword, setAcctPassword] = useState('')
+  const [acctError, setAcctError] = useState<string | null>(null)
+  const [acctBusy, setAcctBusy] = useState(false)
+
+  const handleAccountLogin = async () => {
+    if (!acctName.trim() || !acctPassword) return
+    setAcctError(null)
+    setAcctBusy(true)
+    try {
+      const ok = await login(acctName.trim(), acctPassword)
+      if (ok) {
+        navigate('/', { replace: true })
+      } else {
+        setAcctError(useAuthStore.getState().error || 'Invalid username or password.')
+      }
+    } catch {
+      setAcctError('Login failed. Please try again.')
+    } finally {
+      setAcctBusy(false)
+    }
+  }
 
   // ── Email login flow ──
   const [emailFlow, setEmailFlow] = useState(false)        // show email login UI
@@ -140,7 +165,75 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-ink-12 flex flex-col">
       <AnimatePresence mode="wait">
-        {emailFlow ? (
+        {accountFlow ? (
+          // ═══════════════════════════════════════
+          //  Username + Password login
+          // ═══════════════════════════════════════
+          <motion.div
+            key="account"
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -40 }}
+            transition={{ duration: 0.25 }}
+            className="flex-1 flex flex-col px-6"
+          >
+            <div className="pt-6">
+              <button
+                onClick={() => { setAccountFlow(false); setAcctError(null) }}
+                aria-label="Back"
+                className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-ink-1 active:scale-95 transition-transform"
+              >
+                <ChevronLeft size={22} />
+              </button>
+            </div>
+
+            <div className="flex-1 flex flex-col justify-center">
+              <h1 className="font-display text-headline-lg text-ink-1 mb-1">Log in</h1>
+              <p className="text-body-md text-ink-7 mb-8">Enter your username and password.</p>
+
+              {/* Username */}
+              <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 border-s border-transparent mb-3">
+                <input
+                  type="text"
+                  value={acctName}
+                  onChange={(e) => { setAcctName(e.target.value); setAcctError(null) }}
+                  placeholder="Username"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  autoFocus
+                  className="flex-1 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
+                />
+                {acctName && (
+                  <button onClick={() => setAcctName('')} aria-label="Clear username">
+                    <X size={16} className="text-ink-7" />
+                  </button>
+                )}
+              </div>
+
+              {/* Password */}
+              <div className={`flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 border-s ${acctError ? 'border-danger' : 'border-transparent'}`}>
+                <input
+                  type="password"
+                  value={acctPassword}
+                  onChange={(e) => { setAcctPassword(e.target.value); setAcctError(null) }}
+                  placeholder="Password"
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleAccountLogin() }}
+                  className="flex-1 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
+                />
+              </div>
+
+              {acctError && <p className="text-label text-danger mt-2">{acctError}</p>}
+            </div>
+
+            <div className="pb-8 pt-4">
+              <ContinueButton
+                onClick={handleAccountLogin}
+                disabled={!acctName.trim() || !acctPassword}
+                busy={acctBusy}
+              />
+            </div>
+          </motion.div>
+        ) : emailFlow ? (
           emailStep === 'email' ? (
             // ═══════════════════════════════════════
             //  Step 1 — Enter email
@@ -344,6 +437,16 @@ export default function LoginPage() {
                     <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
                   </svg>
                   Continue with Google
+                </button>
+
+                {/* Log in with Username */}
+                <button
+                  onClick={() => { setAccountFlow(true); setAcctError(null) }}
+                  disabled={loading}
+                  className="w-full py-4 rounded-m bg-ink-10 border-s border-ink-9 text-ink-1 text-body-lg font-semibold
+                    active:scale-[0.98] transition-transform"
+                >
+                  Log in with Username
                 </button>
 
                 {/* Continue as Guest */}
