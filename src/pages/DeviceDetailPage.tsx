@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
   ChevronLeft,
   ChevronRight,
@@ -13,13 +13,17 @@ import {
   Wifi,
   BookOpen,
 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useConnectionStore } from '../stores/connectionStore'
+import { useDeviceStore } from '../stores/deviceStore'
+import { mapFieldsToRealtime } from '../api/deviceApi'
 import appVersion from '../version.json'
 
 interface DeviceDetailPageProps {
-  onBack: () => void
+  /** When rendered as an overlay (inside OverviewPage) a custom back handler is
+   *  passed; when mounted as a standalone route we fall back to navigate(-1). */
+  onBack?: () => void
 }
 
 type Screen = 'main' | 'editName' | 'displayIcon' | 'deviceInfo'
@@ -40,9 +44,33 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     usePowerStationStore()
   const { bleConnection, serialConnection, activeDataSource } = useConnectionStore()
   const navigate = useNavigate()
+  const { id: routeId } = useParams<{ id: string }>()
+
+  // ── Real device data (useDeviceStore) — used when mounted as a route ──
+  const { devices, selectedDeviceState, selectDevice, loadDeviceState } = useDeviceStore()
+  const realDevice = devices.find(d => String(d.id) === routeId)
+
+  // Standalone route: ensure the real device + its realtime state are loaded
+  useEffect(() => {
+    if (routeId) {
+      selectDevice(routeId)
+      loadDeviceState(routeId)
+    }
+  }, [routeId])
+
+  // Realtime fields (battery health / cycles / temp / voltage) for Device Info
+  const realtime = useMemo(
+    () => (selectedDeviceState?.fields ? mapFieldsToRealtime(selectedDeviceState.fields) : null),
+    [selectedDeviceState]
+  )
+  const rtField = (key: string): string | undefined => selectedDeviceState?.fields?.[key]?.valueDisplay
+
+  // Prefer real device info, fall back to the mock powerStation profile
+  const deviceName = realDevice?.name ?? powerStation.name
+  const handleBack = onBack ?? (() => navigate(-1))
 
   const [screen, setScreen] = useState<Screen>('main')
-  const [editName, setEditName] = useState(powerStation.name)
+  const [editName, setEditName] = useState(deviceName)
   const [sleepMode, setSleepMode] = useState<'Off' | 'On'>('Off')
   const [batteryPriority] = useState('Backup Mode')
   const [selectedIcon, setSelectedIcon] = useState('zap')
@@ -52,8 +80,9 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
 
   const handleSaveName = () => {
     const trimmed = editName.trim()
-    if (trimmed && selectedDeviceId) {
-      updateDeviceNameById(selectedDeviceId, trimmed)
+    if (trimmed) {
+      const targetId = routeId ?? selectedDeviceId
+      if (targetId) updateDeviceNameById(targetId, trimmed)
     }
     setScreen('main')
   }
@@ -70,7 +99,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
 
   const BackBtn = ({ to }: { to: Screen | 'parent' }) => (
     <button
-      onClick={() => (to === 'parent' ? onBack() : setScreen(to as Screen))}
+      onClick={() => (to === 'parent' ? handleBack() : setScreen(to as Screen))}
       className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center active:scale-95 transition-transform flex-shrink-0"
     >
       <ChevronLeft size={20} className="text-white" />
@@ -233,33 +262,43 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
         {/* Info list */}
         <div className="flex-1 overflow-y-auto px-4 pt-2">
           <div className="rounded-l bg-[#262626] overflow-hidden">
-            <InfoRow label="Model" value={powerStation.model || 'Sierro 1000'} />
+            <InfoRow label="Model" value={realDevice?.model || powerStation.model || 'Sierro 1000'} />
             <InfoRow
               label="Serial Number"
-              value={(powerStation as any).serialNumber || 'SNXXXX'}
+              value={realDevice?.serialNumber || (powerStation as any).serialNumber || 'SNXXXX'}
             />
             <InfoRow
               label="Capacity"
-              value={`${(powerStation.totalWh / 1000).toFixed(1)} kWh`}
+              value={
+                realDevice?.ratedPower
+                  ? `${(realDevice.ratedPower / 1000).toFixed(1)} kWh`
+                  : `${(powerStation.totalWh / 1000).toFixed(1)} kWh`
+              }
             />
             <InfoRow label="Battery Type" value="LFP" />
             <InfoRow
-              label="Charging Power"
-              value={String(powerStation.specs?.maxChargePower || '400W')}
+              label="Firmware Version"
+              value={realDevice?.softwareVersion || appVersion.version || '--'}
             />
             <InfoRow
               label="Output Power"
-              value={String(powerStation.specs?.maxOutputPower || '500W')}
+              value={rtField('outputPower') || String(powerStation.specs?.maxOutputPower || '500W')}
             />
-            <InfoRow label="Voltage" value="120V" />
+            <InfoRow label="Voltage" value={rtField('batteryVoltage') || '120V'} />
             <InfoRow label="Frequency" value="60Hz" />
-            <InfoRow label="Battery Health" value="98%" />
-            <InfoRow label="Cycles" value="286" />
+            <InfoRow
+              label="Battery Health"
+              value={rtField('batteryHealth') || (realtime?.soc !== undefined ? '98%' : '98%')}
+            />
+            <InfoRow label="Cycles" value={rtField('batteryCycles') || '286'} />
             <InfoRow
               label="Temperature"
-              value={`${powerStation.temperature || '82.4'}°F`}
+              value={rtField('batteryTemp') || `${powerStation.temperature || '82.4'}°F`}
             />
-            <InfoRow label="Wi-Fi Status" value="Connected" />
+            <InfoRow
+              label="Wi-Fi Status"
+              value={realDevice ? (realDevice.isOnline ? 'Connected' : 'Offline') : 'Connected'}
+            />
           </div>
         </div>
       </div>
@@ -285,9 +324,9 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
         {/* Device Name */}
         <SettingsRow
           label="Device Name"
-          value={powerStation.name}
+          value={deviceName}
           onPress={() => {
-            setEditName(powerStation.name)
+            setEditName(deviceName)
             setScreen('editName')
           }}
         />

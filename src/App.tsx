@@ -15,6 +15,7 @@ import SmartSchedulePage from './pages/SmartSchedulePage'
 import NotificationsPage from './pages/NotificationsPage'
 import OnboardingPage from './pages/OnboardingPage'
 import DeviceMonitorPage from './pages/DeviceMonitorPage'
+import DeviceDetailPage from './pages/DeviceDetailPage'
 import { useRealtimeSimulator } from './hooks/useRealtimeSimulator'
 import { useAuthStore } from './stores/authStore'
 import { ToastContainer, useToast } from './components/Toast'
@@ -119,7 +120,8 @@ function AppInner() {
             >
               <Routes location={location}>
                 <Route path="/device/:id" element={<RequireAuth><DeviceMonitorPage /></RequireAuth>} />
-                <Route path="/device/:id/settings" element={<RequireAuth><OverviewPage /></RequireAuth>} />
+                <Route path="/device/:id/settings" element={<RequireAuth><DeviceDetailPage /></RequireAuth>} />
+                <Route path="/device/:id/dashboard" element={<RequireAuth><OverviewPage /></RequireAuth>} />
                 <Route path="/smart-schedule" element={<RequireAuth><SmartSchedulePage /></RequireAuth>} />
                 <Route path="/notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
                 <Route path="/onboarding" element={<RequireAuth><OnboardingPage /></RequireAuth>} />
