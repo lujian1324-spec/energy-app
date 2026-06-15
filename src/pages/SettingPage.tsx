@@ -12,18 +12,21 @@ import {
   Crown,
   Gift,
   Sparkles,
+  Sun,
   Tag,
   Star,
   User,
   Edit3,
   ChevronRight,
+  Zap,
+  Gem,
+  Battery,
+  MessageSquare,
   LogOut,
   Trash2,
   RotateCcw,
   Link2,
   Link2Off,
-  Database,
-  Shield,
 } from 'lucide-react'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useAuthStore } from '../stores/authStore'
@@ -61,11 +64,11 @@ export default function SettingPage() {
     memberSince: new Date().toISOString().slice(0, 10),
   })
 
-  // Push notification settings — 状态在 NotificationsPage 中维护，SettingPage 仅展示摘要
-  const pushOutage = settings.pushNotifications
-  const pushLowBattery = settings.pushNotifications
-  const pushSolarStatus = settings.pushSolarStatus ?? false
-  const lowBatteryThreshold = settings.lowBatteryThreshold ?? 30
+  // Push notification settings
+  const [pushOutage, setPushOutage] = useState(settings.pushNotifications)
+  const [pushLowBattery, setPushLowBattery] = useState(settings.pushNotifications)
+  const [pushSolarStatus, setPushSolarStatus] = useState(settings.pushSolarStatus ?? false)
+  const [lowBatteryThreshold, setLowBatteryThreshold] = useState(settings.lowBatteryThreshold ?? 30)
 
   useEffect(() => {
     getUserProfile().then(p => { if (p) setUserProfile(p) }).catch(err => console.error('[SettingPage] getUserProfile failed:', err))
@@ -116,95 +119,127 @@ export default function SettingPage() {
                 <Zap size={24} className="text-primary fill-primary" />
               )}
             </div>
-            {settings.founderBadge && (
-              <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-[#262626] border-2 border-[#FFD700] flex items-center justify-center z-10">
-                <Crown size={12} className="text-[#FFD700]" />
-              </div>
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-[#FFFFFF] truncate">
-                {isGuest ? 'Guest User' : userProfile.name}
-              </h3>
-              {settings.founderBadge && (
-                <span className="flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded-full bg-[rgba(255,215,0,0.15)] text-[#FFD700] border border-[rgba(255,215,0,0.3)] font-semibold flex-shrink-0">
-                  <Crown size={10} /> Founding Member
-                </span>
-              )}
+          </button>
+          <button
+            onClick={() => isGuest ? navigate('/login') : setShowManageAccount(true)}
+            className="flex-1 min-w-0 text-left active:opacity-80 transition-opacity">
+            <h3 className="text-title-lg font-semibold text-ink-1 truncate">
+              {isGuest ? 'Guest User' : userProfile.name}
+            </h3>
+            <div className="flex items-center gap-0.5 mt-0.5 text-ink-6">
+              <span className="text-body-md">{isGuest ? 'Sign in to manage your account' : 'Manage my account'}</span>
+              <ChevronRight size={14} className="text-ink-6" />
             </div>
-            <p className="text-label text-[#01D6BE] mt-0.5">{isGuest ? 'Sign in to manage your account' : 'Manage my account'}</p>
-          </div>
-          <div className="flex-shrink-0">
-            <ChevronRight size={18} className="text-[#636366]" />
-          </div>
+          </button>
+          {/* Founding Member gold tag */}
+          {settings.founderBadge && (
+            <button
+              onClick={() => setShowFounderModal(true)}
+              className="flex-shrink-0 px-3 py-1 rounded-pill bg-[rgba(255,215,0,0.18)] border-s border-membership active:scale-[0.96] transition-transform">
+              <span className="text-label font-semibold text-membership whitespace-nowrap">
+                Founding Member #{settings.founderBadgeNumber}
+              </span>
+            </button>
+          )}
         </motion.div>
 
-        {/* Push Notifications - PRD v1.1 §4.5.4: 跳转子页 */}
+        {/* Push Notifications */}
+        <h3 className="text-title-md font-semibold text-ink-1 mb-3">Push Notifications</h3>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-          className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden mb-4">
-          <div
-            onClick={() => navigate('/notifications')}
-            className="flex items-center gap-3 px-4 py-3.5 cursor-pointer active:bg-[rgba(255,255,255,0.02)]"
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate('/notifications') }}
-            aria-label="Open push notifications settings"
-          >
-            <div className="w-9 h-9 rounded-lg bg-[rgba(255,59,48,0.08)] flex items-center justify-center flex-shrink-0">
-              <Bell size={16} className="text-[#FF3B30]" />
+          className="space-y-3 mb-6">
+          {/* Power Outage */}
+          <div className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 text-left">
+            <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
+              <Zap size={16} className="text-ink-1" />
             </div>
-            <div className="flex-1">
-              <div className="text-[13px] font-semibold text-[#FFFFFF]">Push Notifications</div>
-              <div className="text-caption text-[#A0A0A5] mt-0.5">
-                {[
-                  pushOutage && 'Outage',
-                  pushLowBattery && `Low Bat<${lowBatteryThreshold}%`,
-                  pushSolarStatus && 'Solar',
-                ].filter(Boolean).join(' · ') || 'All off'}
+            <div className="flex-1 min-w-0">
+              <div className="text-body-lg font-semibold text-ink-1">Power Outage</div>
+              <div className="text-body-md text-ink-6 mt-0.5">Get alerted during outages</div>
+            </div>
+            <ToggleSwitch
+              isOn={pushOutage}
+              onToggle={() => { setPushOutage(!pushOutage); updateSettings({ pushNotifications: !pushOutage }) }}
+              ariaLabel="Toggle power outage alerts"
+            />
+          </div>
+
+          {/* Low Battery */}
+          <div className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 text-left">
+            <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
+              <Battery size={16} className="text-ink-1" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-body-lg font-semibold text-ink-1">Low Battery</div>
+              <div className="text-body-md text-ink-6 mt-0.5">
+                {pushLowBattery ? `Get alerted when battery falls below ${lowBatteryThreshold}%` : 'Get notified when battery gets low'}
               </div>
             </div>
-            <ChevronRight size={16} className="text-[#636366]" />
+            <ToggleSwitch
+              isOn={pushLowBattery}
+              onToggle={() => { setPushLowBattery(!pushLowBattery); updateSettings({ pushNotifications: !pushLowBattery }) }}
+              ariaLabel="Toggle low battery alerts"
+            />
           </div>
-        </motion.div>
 
-        {/* Data & Privacy - PRD v1.1 §8.3: 跳转子页 */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.07 }}
-          className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden mb-4">
-          <div
-            onClick={() => navigate('/data-export')}
-            className="flex items-center gap-3 px-4 py-3.5 cursor-pointer active:bg-[rgba(255,255,255,0.02)]"
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') navigate('/data-export') }}
-            aria-label="Open data export and privacy settings"
-          >
-            <div className="w-9 h-9 rounded-lg bg-[rgba(52,199,89,0.08)] flex items-center justify-center flex-shrink-0">
-              <Database size={16} className="text-[#34C759]" />
-            </div>
-            <div className="flex-1">
-              <div className="text-[13px] font-semibold text-[#FFFFFF]">Data &amp; Privacy</div>
-              <div className="text-caption text-[#A0A0A5] mt-0.5">Export your data, manage recycle bin</div>
-            </div>
-            <ChevronRight size={16} className="text-[#636366]" />
-          </div>
-        </motion.div>
+          {/* Low Battery Threshold Slider — shown when enabled */}
+          <AnimatePresence>
+            {pushLowBattery && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="bg-ink-10 rounded-l px-4 py-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-label text-ink-6">Alert Threshold</span>
+                    <span className="text-label font-semibold text-primary">{lowBatteryThreshold}%</span>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="range"
+                      min="10"
+                      max="30"
+                      step="10"
+                      value={lowBatteryThreshold}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value)
+                        setLowBatteryThreshold(val)
+                        updateSettings({ lowBatteryThreshold: val })
+                      }}
+                      className="w-full h-1.5 bg-ink-9 rounded-pill appearance-none cursor-pointer accent-primary"
+                      style={{
+                        background: `linear-gradient(to right, #01D6BE 0%, #01D6BE ${((lowBatteryThreshold - 10) / 20) * 100}%, #454545 ${((lowBatteryThreshold - 10) / 20) * 100}%, #454545 100%)`
+                      }}
+                    />
+                    <div className="flex justify-between px-0.5 mt-1">
+                      {[10, 20, 30].map((val) => (
+                        <button
+                          key={val}
+                          onClick={() => {
+                            setLowBatteryThreshold(val)
+                            updateSettings({ lowBatteryThreshold: val })
+                          }}
+                          className={`text-tiny transition-colors ${lowBatteryThreshold === val ? 'text-primary font-semibold' : 'text-ink-7'}`}
+                        >
+                          {val}%
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Solar Status */}
           <div className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 text-left">
             <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
               <Sun size={16} className="text-ink-1" />
             </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <span className="text-[13px] font-semibold text-[#FFFFFF]">Founder Badge</span>
-                {settings.founderBadge && (
-                  <span className="text-xs px-1.5 py-0.5 rounded-full bg-[rgba(255,215,0,0.15)] text-[#FFD700] border border-[rgba(255,215,0,0.3)] font-semibold">Active</span>
-                )}
-              </div>
-              <div className="text-caption text-[#A0A0A5] mt-0.5">
-                {settings.founderBadge ? `Member #${settings.founderBadgeNumber}` : 'Unlock exclusive benefits'}
-              </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-body-lg font-semibold text-ink-1">Solar Status</div>
+              <div className="text-body-md text-ink-6 mt-0.5">Get alerted when solar connects or disconnects</div>
             </div>
             <ToggleSwitch
               isOn={pushSolarStatus}
@@ -217,24 +252,22 @@ export default function SettingPage() {
         {/* Support */}
         <h3 className="text-title-md font-semibold text-ink-1 mb-3">Support</h3>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden mb-4">
-          <div className="px-4 py-3 border-b border-[rgba(1,214,190,0.06)]">
-            <span className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase">Support</span>
-          </div>
-          <div className="flex items-center gap-3 px-4 py-3.5 cursor-pointer active:bg-[rgba(255,255,255,0.02)]"
-            onClick={() => setShowSupport(true)}>
-            <div className="w-9 h-9 rounded-lg bg-[rgba(255,255,255,0.06)] flex items-center justify-center flex-shrink-0">
-              <Headphones size={16} className="text-[#FFFFFF]" />
+          className="mb-6">
+          <button
+            onClick={() => setShowSupport(true)}
+            className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 active:scale-[0.99] transition-transform text-left">
+            <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
+              <MessageSquare size={16} className="text-ink-1" />
             </div>
-            <div className="flex-1">
-              <div className="text-[13px] font-semibold text-[#FFFFFF]">Feedback</div>
-              <div className="text-caption text-[#A0A0A5] mt-0.5">Send feedback to the Sierro team</div>
+            <div className="flex-1 min-w-0">
+              <div className="text-body-lg font-semibold text-ink-1">Feedback</div>
+              <div className="text-body-md text-ink-6 mt-0.5">Send feedback to the Sierro team</div>
             </div>
           </button>
         </motion.div>
 
-        {/* Version Info + Legal */}
-        <div className="text-center py-4 text-caption leading-relaxed">
+        {/* Legal + Version */}
+        <div className="text-center py-2 leading-relaxed">
           <div className="flex items-center justify-center gap-2 mb-1">
             <Link to="/privacy" className="text-body-md font-semibold text-primary hover:opacity-80 transition-opacity">
               Privacy Policy
@@ -274,7 +307,7 @@ export default function SettingPage() {
                   </div>
                   <div className="flex-1">
                     <div className="text-[13px] font-semibold text-[#FFFFFF]">Personal Info</div>
-                    <div className="text-caption text-[#A0A0A5] mt-0.5">{userProfile.name}</div>
+                    <div className="text-[11px] text-[#A0A0A5] mt-0.5">{userProfile.name}</div>
                   </div>
                   <ChevronRight size={16} className="text-[#636366]" />
                 </div>
@@ -284,11 +317,11 @@ export default function SettingPage() {
                   </div>
                   <div className="flex-1">
                     <div className="text-[13px] font-semibold text-[#FFFFFF]">Account</div>
-                    <div className="text-caption text-[#A0A0A5] mt-0.5">{authUser?.account || userProfile.email}</div>
+                    <div className="text-[11px] text-[#A0A0A5] mt-0.5">{authUser?.account || userProfile.email}</div>
                   </div>
                 </div>
                 <div className="px-4 py-3 border-b border-[rgba(1,214,190,0.06)]">
-                  <span className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase">Link Accounts</span>
+                  <span className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase">Link Accounts</span>
                 </div>
                 <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[rgba(1,214,190,0.06)]">
                   <div className="w-9 h-9 rounded-lg bg-[rgba(255,255,255,0.06)] flex items-center justify-center">
@@ -297,7 +330,7 @@ export default function SettingPage() {
                   <div className="flex-1">
                     <div className="text-[13px] font-semibold text-[#FFFFFF]">Apple</div>
                   </div>
-                  <span className="text-label text-[#FF3B30]">Unlink</span>
+                  <span className="text-[12px] text-[#FF3B30]">Unlink</span>
                 </div>
                 <div className="flex items-center gap-3 px-4 py-3.5">
                   <div className="w-9 h-9 rounded-lg bg-[rgba(255,255,255,0.06)] flex items-center justify-center">
@@ -306,7 +339,7 @@ export default function SettingPage() {
                   <div className="flex-1">
                     <div className="text-[13px] font-semibold text-[#FFFFFF]">Google</div>
                   </div>
-                  <span className="text-label text-[#01D6BE]">Link</span>
+                  <span className="text-[12px] text-[#01D6BE]">Link</span>
                 </div>
               </div>
 
@@ -369,7 +402,7 @@ export default function SettingPage() {
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-[#FFFFFF]">Feedback</h3>
-                    <p className="text-caption text-[#A0A0A5]">We'd love to hear from you</p>
+                    <p className="text-[11px] text-[#A0A0A5]">We'd love to hear from you</p>
                   </div>
                 </div>
                 <button onClick={() => setShowSupport(false)} className="p-2 rounded-full hover:bg-[rgba(255,255,255,0.05)]"><X size={20} className="text-[#A0A0A5]" /></button>
@@ -381,21 +414,21 @@ export default function SettingPage() {
                       <CheckCircle size={32} className="text-[#34C759]" />
                     </div>
                     <h4 className="text-[15px] font-bold text-[#FFFFFF] mb-2">Feedback Submitted!</h4>
-                    <p className="text-label text-[#A0A0A5]">We will get back to you within 24 hours.</p>
+                    <p className="text-[12px] text-[#A0A0A5]">We will get back to you within 24 hours.</p>
                   </motion.div>
                 ) : (
                   <form onSubmit={handleSupportSubmit} className="space-y-4">
                     <div>
-                      <label className="text-label font-semibold text-[#A0A0A5] mb-2 flex items-center gap-2"><Mail size={14} />Your Email</label>
+                      <label className="text-[12px] font-semibold text-[#A0A0A5] mb-2 flex items-center gap-2"><Mail size={14} />Your Email</label>
                       <input type="email" required value={supportEmail} onChange={e => setSupportEmail(e.target.value)} placeholder="you@example.com"
-                        className="w-full px-4 py-3 rounded-l bg-[#141414] border border-[rgba(1,214,190,0.15)] text-[#FFFFFF] text-[13px] placeholder:text-[#636366] focus:outline-none focus:border-[rgba(1,214,190,0.4)] transition-colors" />
+                        className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-[rgba(1,214,190,0.15)] text-[#FFFFFF] text-[13px] placeholder:text-[#636366] focus:outline-none focus:border-[rgba(1,214,190,0.4)] transition-colors" />
                     </div>
                     <div>
-                      <label className="text-label font-semibold text-[#A0A0A5] mb-2 flex items-center gap-2"><FileText size={14} />Your Feedback</label>
+                      <label className="text-[12px] font-semibold text-[#A0A0A5] mb-2 flex items-center gap-2"><FileText size={14} />Your Feedback</label>
                       <textarea required value={supportMessage} onChange={e => setSupportMessage(e.target.value)} placeholder="Describe your issue or suggestion..." rows={4}
-                        className="w-full px-4 py-3 rounded-l bg-[#141414] border border-[rgba(1,214,190,0.15)] text-[#FFFFFF] text-[13px] placeholder:text-[#636366] resize-none focus:outline-none focus:border-[rgba(1,214,190,0.4)] transition-colors" />
+                        className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-[rgba(1,214,190,0.15)] text-[#FFFFFF] text-[13px] placeholder:text-[#636366] resize-none focus:outline-none focus:border-[rgba(1,214,190,0.4)] transition-colors" />
                     </div>
-                    <button type="submit" className="w-full py-3.5 rounded-l bg-[rgba(255,149,0,0.12)] text-[#FF9500] font-semibold text-[13px] flex items-center justify-center gap-2 active:scale-95 transition-transform border border-[rgba(255,149,0,0.2)]">
+                    <button type="submit" className="w-full py-3.5 rounded-xl bg-[rgba(255,149,0,0.12)] text-[#FF9500] font-semibold text-[13px] flex items-center justify-center gap-2 active:scale-95 transition-transform border border-[rgba(255,149,0,0.2)]">
                       <Send size={16} />Submit Feedback
                     </button>
                   </form>
@@ -425,8 +458,8 @@ export default function SettingPage() {
                   <p className="text-[13px] text-[#A0A0A5]">All settings, device configurations, and membership data will be permanently deleted.</p>
                 </div>
                 <div className="flex gap-3">
-                  <button onClick={() => setShowResetConfirm(false)} className="flex-1 py-3 rounded-l bg-[rgba(255,255,255,0.06)] text-[#FFFFFF] font-semibold text-[13px]">Cancel</button>
-                  <button onClick={() => { resetAll(); setShowResetConfirm(false) }} className="flex-1 py-3 rounded-l bg-[rgba(255,59,48,0.15)] text-[#FF3B30] font-semibold text-[13px] border border-[rgba(255,59,48,0.3)]">Reset</button>
+                  <button onClick={() => setShowResetConfirm(false)} className="flex-1 py-3 rounded-xl bg-[rgba(255,255,255,0.06)] text-[#FFFFFF] font-semibold text-[13px]">Cancel</button>
+                  <button onClick={() => { resetAll(); setShowResetConfirm(false) }} className="flex-1 py-3 rounded-xl bg-[rgba(255,59,48,0.15)] text-[#FF3B30] font-semibold text-[13px] border border-[rgba(255,59,48,0.3)]">Reset</button>
                 </div>
               </div>
             </motion.div>
@@ -449,7 +482,7 @@ export default function SettingPage() {
                   <div className="w-10 h-10 rounded-xl bg-[rgba(255,215,0,0.1)] flex items-center justify-center"><Crown size={20} className="text-[#FFD700]" /></div>
                   <div>
                     <h3 className="text-base font-bold text-[#FFFFFF]">Founder Badge</h3>
-                    <p className="text-caption text-[#A0A0A5]">Unlock exclusive benefits</p>
+                    <p className="text-[11px] text-[#A0A0A5]">Unlock exclusive benefits</p>
                   </div>
                 </div>
                 <button onClick={() => setShowFounderModal(false)} className="p-2 rounded-full hover:bg-[rgba(255,255,255,0.05)]"><X size={20} className="text-[#A0A0A5]" /></button>
@@ -459,28 +492,28 @@ export default function SettingPage() {
                   <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-8">
                     <div className="w-16 h-16 rounded-full bg-[rgba(255,215,0,0.15)] flex items-center justify-center mx-auto mb-4"><Crown size={32} className="text-[#FFD700]" /></div>
                     <h4 className="text-[15px] font-bold text-[#FFD700] mb-2">Welcome, Founding Member!</h4>
-                    <p className="text-label text-[#A0A0A5]">Your exclusive benefits are now active.</p>
+                    <p className="text-[12px] text-[#A0A0A5]">Your exclusive benefits are now active.</p>
                   </motion.div>
                 ) : (
                   <>
                     <div className="mb-5">
-                      <p className="text-label text-[#A0A0A5] mb-3">Founding Members enjoy:</p>
+                      <p className="text-[12px] text-[#A0A0A5] mb-3">Founding Members enjoy:</p>
                       <div className="grid grid-cols-2 gap-2">
                         {founderBenefits.map(b => { const Icon = b.icon; return (
                           <div key={b.label} className="flex items-center gap-2 bg-[rgba(255,215,0,0.05)] rounded-lg p-2">
-                            <Icon size={14} className="text-[#FFD700]" /><span className="text-caption text-[#FFFFFF]">{b.label}</span>
+                            <Icon size={14} className="text-[#FFD700]" /><span className="text-[11px] text-[#FFFFFF]">{b.label}</span>
                           </div>
                         )})}
                       </div>
                     </div>
                     <form onSubmit={handleFounderSubmit} className="space-y-4">
                       <div>
-                        <label className="text-label font-semibold text-[#A0A0A5] mb-2 flex items-center gap-2"><Sparkles size={14} />Enter Code</label>
+                        <label className="text-[12px] font-semibold text-[#A0A0A5] mb-2 flex items-center gap-2"><Sparkles size={14} />Enter Code</label>
                         <input type="text" required value={founderCode} onChange={e => setFounderCode(e.target.value)} placeholder="e.g., FOUNDER2024"
-                          className="w-full px-4 py-3 rounded-l bg-[#141414] border border-[rgba(255,215,0,0.2)] text-[#FFFFFF] text-[13px] placeholder:text-[#636366] uppercase focus:outline-none focus:border-[rgba(255,215,0,0.5)] transition-colors" />
+                          className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-[rgba(255,215,0,0.2)] text-[#FFFFFF] text-[13px] placeholder:text-[#636366] uppercase focus:outline-none focus:border-[rgba(255,215,0,0.5)] transition-colors" />
                       </div>
-                      {founderMessage && <div className={`text-caption text-center ${founderSuccess ? 'text-[#34C759]' : 'text-[#FF3B30]'}`}>{founderMessage}</div>}
-                      <button type="submit" className="w-full py-3.5 rounded-l bg-[rgba(255,215,0,0.12)] text-[#FFD700] font-semibold text-[13px] flex items-center justify-center gap-2 active:scale-95 transition-transform border border-[rgba(255,215,0,0.25)]">
+                      {founderMessage && <div className={`text-[11px] text-center ${founderSuccess ? 'text-[#34C759]' : 'text-[#FF3B30]'}`}>{founderMessage}</div>}
+                      <button type="submit" className="w-full py-3.5 rounded-xl bg-[rgba(255,215,0,0.12)] text-[#FFD700] font-semibold text-[13px] flex items-center justify-center gap-2 active:scale-95 transition-transform border border-[rgba(255,215,0,0.25)]">
                         <Crown size={16} />Activate Badge
                       </button>
                     </form>

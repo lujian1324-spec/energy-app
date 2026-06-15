@@ -2,11 +2,8 @@
  * Demo 数据 — Guest / localtest / benson 模式使用的模拟设备和状态数据
  *
  * 包含设备：
- * - Sierro2000 (Sierro 2000 Portable Power Station)
- * - CPAP (CPAP Machine)
- * - FRIDGE (Smart Fridge)
- * - SOLAR PANEL (Solar Panel System)
- * - AC UNIT (Air Conditioner)
+ * - SIERRO 1000 (1000Wh LiFePO4, 最大输入 400W / 最大输出 500W)
+ * - SIERRO 2000 (2000Wh LiFePO4, 最大输入 1000W / 最大输出 1000W)
  */
 
 import type {
@@ -24,19 +21,19 @@ import type {
 export const demoDevices: DeviceListItem[] = [
   {
     id: 10001,
-    name: 'Sierro2000',
+    name: 'SIERRO 1000',
     serialNumber: 'SN26102503Z6104955',
-    model: 'Sierro 2000',
+    model: 'Sierro 1000',
     deviceSortKey: 'energy_storage',
-    deviceSortLocaleText: 'Portable Power Station',
-    gatherProtocolNumber: 'GPN-S2000',
+    deviceSortLocaleText: 'Energy Storage System',
+    gatherProtocolNumber: 'GPN-001',
     gatherProtocolNameDisplay: 'Sierro Protocol v2.1',
     softwareVersion: 'V1.0.0',
     stationId: 5001,
     stationName: 'Home Station #1',
     dtuId: 80001,
-    dtuDtuid: 'Sierro2000-DEMO-001',
-    dtuName: 'Sierro 2000 DTU',
+    dtuDtuid: 'SIERRO-DEMO-001',
+    dtuName: 'SIERRO DTU-001',
     isOnline: true,
     isAlarmed: false,
     isPined: true,
@@ -48,11 +45,11 @@ export const demoDevices: DeviceListItem[] = [
     applyMode: 0,
     state: 'normal',
     stateDict: 'Normal Operation',
-    producingPower: 1000,
-    ratedPower: 1000,
-    dailyProducedQuantity: 15.6,
-    totalProducedQuantity: 1256.3,
-    installedAt: '2024-01-15T08:00:00Z',
+    producingPower: 400,
+    ratedPower: 500,
+    dailyProducedQuantity: 4.0,
+    totalProducedQuantity: 365.0,
+    installedAt: '2025-10-01T08:00:00Z',
     lastDataAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
     lastOnlineAt: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
     lastOfflineAt: '',
@@ -173,7 +170,7 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
   const baseTime = Math.floor(now / 1000).toString()
 
   switch (numericId) {
-    case 10001: // Sierro2000
+    case 10001: // SIERRO 1000 — AC input 400W, Solar 0W, output 168W
       return {
         deviceId: '10001',
         dtuID: device.dtuDtuid,
@@ -183,10 +180,9 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
         gatherProtocolVersionCode: '2.1',
         fields: {
           soc: makeField('soc', 'State of Charge', 78, '%', 'battery'),
-          batteryPower: makeField('batteryPower', 'Battery Power', -769, 'W', 'battery'),
-          acPower: makeField('acPower', 'AC Power', 1000, 'W', 'ac'),
-          solarPower: makeField('solarPower', 'Solar Power', 0, 'W', 'solar'),
-          outputPower: makeField('outputPower', 'Output Power', 231, 'W', 'output'),
+          batteryPower: makeField('batteryPower', 'Battery Power', 232, 'W', 'battery'),
+          batteryVoltage: makeField('batteryVoltage', 'Battery Voltage', 3.2, 'V', 'battery'),
+          batteryCurrent: makeField('batteryCurrent', 'Battery Current', 72.5, 'A', 'battery'),
           batteryTemp: makeField('batteryTemp', 'Battery Temp', 28.5, '°C', 'battery'),
           batteryHealth: makeField('batteryHealth', 'Battery Health', 98, '%', 'battery'),
           batteryCycles: makeField('batteryCycles', 'Cycles', 286, '', 'battery'),
@@ -215,7 +211,7 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
             category: 'battery',
             stateItems: [
               { ...makeField('soc', 'SoC', 78, '%', 'battery'), isHidden: false, nameDisplay: 'State of Charge' },
-              { ...makeField('batteryPower', 'Power', -769, 'W', 'battery'), isHidden: false, nameDisplay: 'Battery Power' },
+              { ...makeField('batteryPower', 'Power', 232, 'W', 'battery'), isHidden: false, nameDisplay: 'Battery Power' },
             ],
           },
         ],
@@ -297,7 +293,7 @@ export function getDemoEnergyFlow(deviceId: string | number): { code: number; me
     ctFlow: null,
   }
 
-  if (numericId === 10001) { // Sierro2000
+  if (numericId === 10001) { // SIERRO 1000 — AC 400W in, 168W out, 232W charging battery
     return {
       code: 0,
       message: 'success',
@@ -311,9 +307,9 @@ export function getDemoEnergyFlow(deviceId: string | number): { code: number; me
           groups: [],
         },
         pvPanelFlow: makeFlowNode('pvPanel', 'Solar Panel', 'icon_solar', 0),
-        batteryFlow: makeFlowNode('battery', 'Battery', 'icon_battery', -769),
-        loadFlow: makeFlowNode('load', 'Load', 'icon_load', 231),
-        gridFlow: makeFlowNode('grid', 'Grid', 'icon_grid', 1000),
+        batteryFlow: makeFlowNode('battery', 'Battery', 'icon_battery', 232),
+        loadFlow: makeFlowNode('load', 'Load', 'icon_load', 168),
+        gridFlow: makeFlowNode('grid', 'Grid', 'icon_grid', 0),
       },
     }
   }
@@ -350,84 +346,66 @@ export function getDemoEnergyFlow(deviceId: string | number): { code: number; me
 // Demo 历史数据（支持 Day / Week / Month 3个月范围）
 // ═══════════════════════════════════════════════════════
 
-export function getDemoHistoryData(deviceId: string | number, hours = 24): { code: number; message: string; data: HistoryDataResponse } {
-  const socPoints: Array<{ time: string; value: number }> = []
-  const solarPoints: Array<{ time: string; value: number }> = []
-  const outputPoints: Array<{ time: string; value: number }> = []
+export function getDemoHistoryData(
+  deviceId: string | number,
+  hours = 24
+): { code: number; message: string; data: HistoryDataResponse } {
   const now = Date.now()
   const numericId = typeof deviceId === 'string' ? parseInt(deviceId) : deviceId
 
-  // ── 根据设备确定基准功率参数 ──
-  let baseAC = 400, baseSolar = 0, baseOutput = 168   // 默认设备
-  if (numericId === 10001) {                           // Sierro2000
-    baseAC = 1000; baseSolar = 0; baseOutput = 231
-  } else if (numericId === 10004) {                    // Solar Panel
-    baseAC = 0; baseSolar = 4200; baseOutput = 800
+  // AC 功率（作为输入功率存入 solarPower 字段供图表展示）
+  const acInput = numericId === 10002 ? 1000 : 400
+  const outputBase = numericId === 10002 ? 231 : 168
+
+  const soc: Array<{ time: string; value: number }> = []
+  const solarPower: Array<{ time: string; value: number }> = []
+  const outputPower: Array<{ time: string; value: number }> = []
+  const batteryPower: Array<{ time: string; value: number }> = []
+  const gridPower: Array<{ time: string; value: number }> = []
+
+  // 根据时间范围选择采样间隔：避免数据点过多
+  // Day(24h)→5min(288pts), Week(168h)→30min(336pts), Month+(720h+)→2h(360pts)
+  const intervalMins = hours <= 24 ? 5 : hours <= 200 ? 30 : 120
+  const totalPoints = Math.round((hours * 60) / intervalMins)
+
+  // 固定随机种子：用设备 id + 点索引保证同设备每次生成相同曲线
+  const pseudoRand = (i: number, amp: number) => {
+    const x = Math.sin(i * 127.1 + numericId * 0.01) * 43758.5453
+    return (x - Math.floor(x) - 0.5) * amp
   }
 
-  // 生成时间序列（5 分钟间隔）
-  for (let i = hours * 12 - 1; i >= 0; i--) {
-    const ts = now - i * 5 * 60 * 1000
-    const time = new Date(ts).toISOString()
-    const hour = new Date(ts).getHours()
-    const dayProgress = i / (hours * 12) // 0→1 从过去到现在
+  // 初始 SoC：SIERRO 1000 从 40% 开始，SIERRO 2000 从 30% 开始
+  // 每个 interval 净充电 = acInput - outputBase（单位 W），换算成 kWh
+  const capacityKwh = numericId === 10002 ? 2.0 : 1.0
+  const intervalH = intervalMins / 60
+  const netChargePerInterval = ((acInput - outputBase) * intervalH) / 1000 // kWh
+  const socChangePerInterval = (netChargePerInterval / capacityKwh) * 100  // %
 
-    // ── SoC 曲线：模拟充放电循环 ──
-    let socValue = 50
-    if (numericId === 10001) {
-      // Sierro2000: 日间 AC 充电 (6-22h)，夜间放电
-      const chargePhase = hour >= 6 && hour <= 22
-      const cycleOffset = Math.sin(dayProgress * Math.PI * 2 * (hours / 24)) * 15
-      socValue = chargePhase
-        ? 60 + cycleOffset + (Math.random() - 0.5) * 6
-        : 45 + cycleOffset + (Math.random() - 0.5) * 6
-      socValue = Math.max(10, Math.min(98, socValue))
-    } else if (numericId === 10004) {
-      // Solar Panel: 白天太阳能充电，SoC 较高
-      socValue = hour >= 6 && hour <= 18
-        ? 70 + Math.sin((hour - 6) / 12 * Math.PI) * 20 + (Math.random() - 0.5) * 4
-        : 50 + (Math.random() - 0.5) * 6
-      socValue = Math.max(15, Math.min(98, socValue))
-    } else {
-      socValue = 50 + Math.sin(dayProgress * Math.PI * 2) * 30 + (Math.random() - 0.5) * 4
-      socValue = Math.max(0, Math.min(100, socValue))
-    }
+  let currentSoc = numericId === 10002 ? 30 : 40
 
-    // ── Solar 功率曲线 ──
-    let solarValue = 0
-    if (baseSolar > 0) {
-      solarValue = hour >= 6 && hour <= 18
-        ? Math.round(baseSolar * Math.sin((hour - 6) / 12 * Math.PI) + (Math.random() - 0.5) * baseSolar * 0.08)
-        : 0
-      solarValue = Math.max(0, solarValue)
-    }
+  for (let i = totalPoints - 1; i >= 0; i--) {
+    const ts = new Date(now - i * intervalMins * 60 * 1000)
+    const time = ts.toISOString()
+    const jitter = (amp: number) => pseudoRand(i, amp)
 
-    // ── Output 功率曲线 ──
-    let outputValue = 0
-    const isPeak = (hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 22)
-    if (numericId === 10001) {
-      // Sierro2000: 日间输出较低（充电中），早晚高峰略高
-      outputValue = Math.round(baseOutput * (isPeak ? 1.0 : 0.6) + (Math.random() - 0.5) * baseOutput * 0.15)
-    } else if (numericId === 10004) {
-      outputValue = Math.round(baseOutput * (isPeak ? 1.2 : 0.4) + (Math.random() - 0.5) * baseOutput * 0.1)
-    } else {
-      outputValue = Math.round(baseOutput * (isPeak ? 1.1 : 0.5) + (Math.random() - 0.5) * baseOutput * 0.2)
-    }
-    outputValue = Math.max(0, outputValue)
+    // SoC: 随时间线性增长（充电状态），加小幅抖动，夹在 5~100%
+    currentSoc = Math.max(5, Math.min(100, currentSoc + socChangePerInterval + jitter(0.5)))
 
-    socPoints.push({ time, value: Math.round(socValue * 10) / 10 })
-    solarPoints.push({ time, value: solarValue })
-    outputPoints.push({ time, value: outputValue })
+    // 功率加轻微抖动模拟真实波动（±5%）
+    const inputVal = Math.round(Math.max(0, acInput + jitter(acInput * 0.05)))
+    const outputVal = Math.round(Math.max(0, outputBase + jitter(outputBase * 0.05)))
+
+    soc.push({ time, value: Math.round(currentSoc) })
+    solarPower.push({ time, value: inputVal })  // AC power stored as solarPower for chart input series
+    outputPower.push({ time, value: outputVal })
+    batteryPower.push({ time, value: Math.round(inputVal - outputVal) })
+    gridPower.push({ time, value: 0 })
   }
 
   return {
     code: 0,
     message: 'success',
-    data: {
-      soc: socPoints,
-      solarPower: solarPoints,
-      outputPower: outputPoints,
-    },
+    data: { soc, solarPower, outputPower, batteryPower, gridPower },
   }
 }
 
