@@ -213,7 +213,7 @@ export default function PrivacyPage() {
           </div>
           <div>
             <h1 className="text-lg font-bold text-[#FFFFFF]">Privacy Policy</h1>
-            <p className="text-caption text-[#A0A0A5]">Last updated: May 2026</p>
+            <p className="text-[11px] text-[#A0A0A5]">Last updated: May 2026</p>
           </div>
         </div>
       </div>
@@ -233,14 +233,14 @@ export default function PrivacyPage() {
           </p>
 
           {/* Table of Contents */}
-          <div className="bg-[#262626] border border-[rgba(255,255,255,0.06)] rounded-l p-4 mb-6">
-            <h2 className="text-label font-bold text-[#A0A0A5] uppercase tracking-wider mb-3">Contents</h2>
+          <div className="bg-[#262626] border border-[rgba(255,255,255,0.06)] rounded-[16px] p-4 mb-6">
+            <h2 className="text-[12px] font-bold text-[#A0A0A5] uppercase tracking-wider mb-3">Contents</h2>
             <div className="space-y-1">
               {sections.map(s => (
                 <a
                   key={s.id}
                   href={`#${s.id}`}
-                  className="block text-label text-[#01D6BE] py-1 hover:text-[#14B8A6] transition-colors"
+                  className="block text-[12px] text-[#01D6BE] py-1 hover:text-[#14B8A6] transition-colors"
                 >
                   {s.title}
                 </a>
@@ -257,10 +257,10 @@ export default function PrivacyPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2, delay: i * 0.03 }}
-                className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-l p-4"
+                className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-[16px] p-4"
               >
                 <h3 className="text-[13px] font-bold text-[#01D6BE] mb-2">{section.title}</h3>
-                <p className="text-label text-[#AEAEB2] leading-relaxed whitespace-pre-line">
+                <p className="text-[12px] text-[#AEAEB2] leading-relaxed whitespace-pre-line">
                   {section.content}
                 </p>
                 {section.subsections && (
@@ -268,12 +268,12 @@ export default function PrivacyPage() {
                     {section.subsections.map(sub => (
                       <div
                         key={sub.title}
-                        className="bg-[rgba(255,255,255,0.02)] rounded-l p-3 border border-[rgba(255,255,255,0.04)]"
+                        className="bg-[rgba(255,255,255,0.02)] rounded-[12px] p-3 border border-[rgba(255,255,255,0.04)]"
                       >
-                        <h4 className="text-label font-semibold text-[#FFFFFF] mb-1">
+                        <h4 className="text-[12px] font-semibold text-[#FFFFFF] mb-1">
                           {sub.title}
                         </h4>
-                        <p className="text-caption text-[#A0A0A5] leading-relaxed">
+                        <p className="text-[11px] text-[#A0A0A5] leading-relaxed">
                           {sub.content}
                         </p>
                       </div>
@@ -285,7 +285,7 @@ export default function PrivacyPage() {
           </div>
 
           {/* Footer */}
-          <div className="text-center pt-8 pb-4 text-caption text-[#636366]">
+          <div className="text-center pt-8 pb-4 text-[11px] text-[#636366]">
             &copy; 2026 Sierro Inc. All rights reserved.
           </div>
         </motion.div>

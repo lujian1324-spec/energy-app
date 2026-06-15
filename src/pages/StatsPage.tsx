@@ -146,28 +146,22 @@ function getDemoChartFrame(period: Period): ChartFrame {
   const rng = (min: number, max: number) =>
     Math.round((min + Math.random() * (max - min)) * 10) / 10
 
-  // ── 基准功率参数（对齐 Sierro 2000 真实规格）──
-  // AC input 1000W, Solar 0W, Output 231W
-  const BASE_AC = 1000
-  const BASE_OUTPUT = 231
-
   if (period === 'Day') {
-    // 24 个点（0:00-23:00），模拟 AC 充电 + 早晚用电高峰
+    // 24 个点（0:00-23:00），模拟日间太阳能 + 早晚用电高峰
     const labels: string[] = []
     const input: number[] = []
     const output: number[] = []
     const soc: number[] = []
     for (let h = 0; h < 24; h++) {
       labels.push(`${String(h).padStart(2, '0')}:00`)
-      // AC 充电：6:00-22:00 稳定输入 ~1000W，夜间待机
-      const isChargeTime = h >= 6 && h <= 22
-      input.push(isChargeTime ? Math.round(BASE_AC * (0.85 + Math.random() * 0.15)) : 0)
-      // 用电：早晨 7-9 和傍晚 17-22 有峰值 ~231W
-      const isPeak = (h >= 7 && h <= 9) || (h >= 17 && h <= 22)
-      output.push(isPeak ? Math.round(BASE_OUTPUT * (0.9 + Math.random() * 0.2)) : Math.round(BASE_OUTPUT * (0.3 + Math.random() * 0.3)))
-      // SOC：白天充电上升，晚上放电下降
-      const socBase = 55 + 25 * Math.sin((h - 4) * Math.PI / 18)
-      soc.push(Math.round(Math.max(20, Math.min(95, socBase + rng(-3, 3)))))
+      // 太阳能：6:00-18:00 有值，正午峰值 ~1200W
+      input.push(h >= 6 && h <= 18 ? Math.round(1200 * Math.sin((h - 6) * Math.PI / 12)) : 0)
+      // 用电：早晨 6-9 和傍晚 17-22 有峰值
+      const isPeak = (h >= 6 && h <= 9) || (h >= 17 && h <= 22)
+      output.push(isPeak ? rng(400, 900) : rng(50, 200))
+      // SOC：白天充电上升，晚上放电下降，20%-95% 之间
+      const socBase = 60 + 30 * Math.sin((h - 8) * Math.PI / 16)
+      soc.push(Math.round(Math.max(20, Math.min(95, socBase + rng(-5, 5)))))
     }
     const totalInputKwh = input.reduce((s, v) => s + (v * 1) / 1000, 0)
     const totalOutputKwh = output.reduce((s, v) => s + (v * 1) / 1000, 0)
@@ -183,12 +177,10 @@ function getDemoChartFrame(period: Period): ChartFrame {
 
   if (period === 'Week') {
     const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-    // 周均 AC 输入 ~1000W
-    const input = labels.map(() => Math.round(BASE_AC * (0.75 + Math.random() * 0.25)))
-    // 工作日用电略高，周末稍低
-    const output = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map(() => Math.round(BASE_OUTPUT * (0.85 + Math.random() * 0.3)))
-      .concat(['Sat', 'Sun'].map(() => Math.round(BASE_OUTPUT * (0.6 + Math.random() * 0.3))))
-    const soc = labels.map(() => rng(35, 85))
+    const input = labels.map(() => rng(800, 3500))
+    const output = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map(() => rng(2500, 5000))
+      .concat(['Sat', 'Sun'].map(() => rng(1200, 3000)))
+    const soc = labels.map(() => rng(30, 90))
     const totalInputKwh = input.reduce((s, v) => s + (v * 24) / 1000, 0)
     const totalOutputKwh = output.reduce((s, v) => s + (v * 24) / 1000, 0)
     const maxOutputIdx = output.indexOf(Math.max(...output))
@@ -201,7 +193,7 @@ function getDemoChartFrame(period: Period): ChartFrame {
     }
   }
 
-  // ── Month / Range：模拟3个月（90天）统计数据 ──
+  // Month / Range：生成合理的多天数据
   const days = period === 'Month' ? 30 : 90
   const labels: string[] = []
   const input: number[] = []
@@ -211,13 +203,9 @@ function getDemoChartFrame(period: Period): ChartFrame {
     const m = Math.floor(i / 30) + 1
     const d = (i % 30) + 1
     labels.push(`${m}/${d}`)
-    // AC 输入: 日均 800-1050W（充电策略变化）
-    input.push(Math.round(BASE_AC * (0.8 + Math.random() * 0.2)))
-    // 输出: 日均 150-280W（工作日偏高，季节波动）
-    const seasonFactor = 0.85 + Math.sin(i / 90 * Math.PI) * 0.15
-    output.push(Math.round(BASE_OUTPUT * seasonFactor * (0.65 + Math.random() * 0.35)))
-    // SOC: 40-90% 波动
-    soc.push(rng(40, 90))
+    input.push(rng(1200, 6000))
+    output.push(rng(800, 4500))
+    soc.push(rng(25, 92))
   }
   // 采样到 maxPoints
   const maxPoints = period === 'Month' ? 30 : 12
@@ -273,9 +261,13 @@ function ChartSkeleton() {
 function ChartAreaSkeleton() {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-      className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-[20px] p-4 mb-4">
-      <div className="h-4 w-28 bg-[rgba(255,255,255,0.05)] rounded animate-pulse mb-4" />
-      <div className="h-[140px] bg-[rgba(255,255,255,0.02)] rounded-l animate-pulse" />
+      className="bg-ink-10 rounded-l p-5 mb-4">
+      <div className="flex items-center justify-between mb-2">
+        <div className="h-5 w-32 bg-[rgba(255,255,255,0.05)] rounded-s animate-pulse" />
+        <div className="h-3 w-28 bg-[rgba(255,255,255,0.03)] rounded-s animate-pulse" />
+      </div>
+      <div className="h-3 w-40 bg-[rgba(255,255,255,0.03)] rounded-s animate-pulse mb-4" />
+      <div className="h-[160px] bg-[rgba(255,255,255,0.02)] rounded-m animate-pulse" />
     </motion.div>
   )
 }
@@ -285,12 +277,12 @@ function ChartAreaSkeleton() {
 function ChartEmptyState({ message }: { message: string }) {
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col items-center justify-center py-12 px-6 bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-[20px] mb-4">
+      className="flex flex-col items-center justify-center py-12 px-6 bg-ink-10 rounded-l mb-4">
       <div className="w-14 h-14 rounded-l bg-[rgba(255,255,255,0.03)] flex items-center justify-center mb-3">
-        <BarChart3 size={28} className="text-[#636366]" />
+        <BarChart3 size={28} className="text-ink-7" />
       </div>
-      <p className="text-body-md font-semibold text-[#FFFFFF] mb-1">No history data yet</p>
-      <p className="text-label text-[#A0A0A5] text-center leading-relaxed">{message}</p>
+      <p className="text-body-md font-semibold text-ink-1 mb-1">No history data yet</p>
+      <p className="text-label text-ink-6 text-center">{message}</p>
     </motion.div>
   )
 }
@@ -470,16 +462,16 @@ export default function StatsPage() {
   const noDevice = (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
       className="flex flex-col items-center justify-center py-20 px-8">
-      <div className="w-16 h-16 rounded-l bg-[#262626] flex items-center justify-center mb-4">
+      <div className="w-16 h-16 rounded-2xl bg-[#262626] flex items-center justify-center mb-4">
         <BarChart3 size={32} className="text-[#636366]" />
       </div>
-      <h3 className="text-body-lg font-bold text-[#FFFFFF] mb-2">No Data Yet</h3>
+      <h3 className="text-[16px] font-bold text-[#FFFFFF] mb-2">No Data Yet</h3>
       <p className="text-[13px] text-[#A0A0A5] text-center leading-relaxed mb-6">
         Connect a device to start tracking energy usage and statistics.
       </p>
       <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#262626] border border-[rgba(255,255,255,0.06)]">
         <WifiOff size={14} className="text-[#636366]" />
-        <span className="text-label text-[#636366]">No device connected</span>
+        <span className="text-[12px] text-[#636366]">No device connected</span>
       </div>
     </motion.div>
   )
@@ -508,34 +500,21 @@ export default function StatsPage() {
             <LastSync lastSyncAt={lastSyncAt} />
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            className="w-9 h-9 flex items-center justify-center rounded-full bg-[#262626] border border-[rgba(1,214,190,0.08)] text-[#A0A0A5] hover:text-[#01D6BE] transition-colors"
-            onClick={() => {
-              if (navigator.share && chartFrame) {
-                navigator.share({
-                  title: 'Sierro Energy Stats',
-                  text: `CO2 Reduced: ${chartFrame.co2Kg} kg`,
-                  url: window.location.href,
-                }).catch(err => console.error('[StatsPage] Share failed:', err))
-              }
-            }}
-          >
-            <Share2 size={18} />
-          </button>
-          <div className="flex bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-full p-1">
-            {periods.map((p) => (
-              <button
-                key={p}
-                onClick={() => setPeriod(p)}
-                className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-all duration-200
-                  ${period === p ? 'bg-[#01D6BE] text-[#000000]' : 'text-[#A0A0A5] hover:text-[#FFFFFF]'}`}
-              >
-                {p}
-              </button>
-            ))}
-          </div>
-        </div>
+        <button
+          aria-label="Share"
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-ink-10 text-ink-6 hover:text-primary transition-colors"
+          onClick={() => {
+            if (navigator.share && chartFrame) {
+              navigator.share({
+                title: 'Sierro Energy Stats',
+                text: `CO2 Reduced: ${chartFrame.co2Kg} kg`,
+                url: window.location.href,
+              }).catch(err => console.error('[StatsPage] Share failed:', err))
+            }
+          }}
+        >
+          <Share2 size={18} />
+        </button>
       </div>
 
       {/* Scrollable content */}
@@ -631,13 +610,6 @@ export default function StatsPage() {
                       <span className="text-body-lg text-ink-4">CO₂ Reduced</span>
                     </div>
                   </div>
-                  <div className="flex items-baseline gap-1 mb-1">
-                    <span className="text-[36px] font-extrabold text-[#34C759] leading-none">
-                      {chartFrame.co2Kg}
-                    </span>
-                    <span className="text-body-md text-[#A0A0A5]">Kg</span>
-                  </div>
-                  <p className="text-label text-[#A0A0A5]">{chartFrame.ecoInsight}</p>
                   {/* PRD v1.1 §8.3: 计算逻辑可审计 */}
                   <div className="mt-3">
                     <CalcAudit
@@ -663,13 +635,13 @@ Data source: US EPA eGRID 2024 average emission rate`}
                       <p className="text-label text-ink-6 mt-1">{chartFrame.insight}</p>
                     </div>
                     <div className="flex gap-3">
-                      <div className="flex items-center gap-1.5 text-xs text-[#A0A0A5]">
-                        <div className="w-2 h-2 rounded-full bg-[#01D6BE]" />
-                        <span>Solar (W)</span>
+                      <div className="flex items-center gap-1.5 text-label text-ink-4">
+                        <div className="w-2.5 h-2.5 rounded-full bg-primary" />
+                        <span>Input</span>
                       </div>
-                      <div className="flex items-center gap-1.5 text-xs text-[#A0A0A5]">
-                        <div className="w-2 h-2 rounded-full bg-[#01A88F]" />
-                        <span>Output (W)</span>
+                      <div className="flex items-center gap-1.5 text-label text-ink-4">
+                        <div className="w-2.5 h-2.5 rounded-full bg-warning" />
+                        <span>Output</span>
                       </div>
                     </div>
                   </div>
@@ -739,14 +711,6 @@ Data source: US EPA eGRID 2024 average emission rate`}
                       </div>
                     </div>
                   )}
-
-                  {/* AI Insight */}
-                  <div className="mt-4 pt-3 border-t border-[rgba(1,214,190,0.06)]">
-                    <p className="text-caption text-[#A0A0A5]">
-                      <span className="text-[#01D6BE] font-semibold">Insight: </span>
-                      {chartFrame.insight}
-                    </p>
-                  </div>
                 </motion.div>
               </>
             )}
@@ -760,7 +724,7 @@ Data source: US EPA eGRID 2024 average emission rate`}
               >
                 <div className="flex justify-between items-center mb-3">
                   <div className="text-sm font-bold text-[#FFFFFF]">Battery Health</div>
-                  <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[rgba(52,199,89,0.12)] text-[#34C759] border border-[rgba(52,199,89,0.25)] text-xs font-semibold">
+                  <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[rgba(52,199,89,0.12)] text-[#34C759] border border-[rgba(52,199,89,0.25)] text-[10px] font-semibold">
                     Good
                   </div>
                 </div>
@@ -775,22 +739,22 @@ Data source: US EPA eGRID 2024 average emission rate`}
                     />
                   </div>
                   <div className="flex-1 grid grid-cols-2 gap-3">
-                    <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-l p-2.5">
-                      <div className="text-body-md font-bold text-[#FFFFFF]">{soc}%</div>
+                    <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-[12px] p-2.5">
+                      <div className="text-[14px] font-bold text-[#FFFFFF]">{soc}%</div>
                       <div className="text-[9px] text-[#A0A0A5] mt-0.5">Charge</div>
                     </div>
-                    <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-l p-2.5">
-                      <div className="text-body-md font-bold text-[#34C759]">
+                    <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-[12px] p-2.5">
+                      <div className="text-[14px] font-bold text-[#34C759]">
                         {batteryTemp > 0 ? `${batteryTemp}°C` : '--'}
                       </div>
                       <div className="text-[9px] text-[#A0A0A5] mt-0.5">Temp</div>
                     </div>
-                    <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-l p-2.5">
-                      <div className="text-body-md font-bold text-[#01D6BE]">{deviceDays}</div>
+                    <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-[12px] p-2.5">
+                      <div className="text-[14px] font-bold text-[#01D6BE]">{deviceDays}</div>
                       <div className="text-[9px] text-[#A0A0A5] mt-0.5">Days</div>
                     </div>
-                    <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-l p-2.5">
-                      <div className="text-body-md font-bold text-[#FF9500]">{batteryHealth}%</div>
+                    <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-[12px] p-2.5">
+                      <div className="text-[14px] font-bold text-[#FF9500]">{batteryHealth}%</div>
                       <div className="text-[9px] text-[#A0A0A5] mt-0.5">Health</div>
                     </div>
                   </div>

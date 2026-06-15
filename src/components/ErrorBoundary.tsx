@@ -64,7 +64,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
             <button
               onClick={this.handleRetry}
-              className="w-full py-3 bg-[#01D6BE] text-black font-semibold rounded-l active:scale-95 transition-transform"
+              className="w-full py-3 bg-[#01D6BE] text-black font-semibold rounded-[14px] active:scale-95 transition-transform"
             >
               Try Again
             </button>

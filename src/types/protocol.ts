@@ -22,7 +22,7 @@ export interface ConnectionInfo {
 }
 
 // -------------------- BLE GATT 服务定义 --------------------
-// Sierro 2000 BLE Profile（自定义 UUID）
+// Sierro 1000 BLE Profile（自定义 UUID）
 
 /** BLE 服务 & 特征 UUID（与固件对齐，16-bit short form） */
 export const BLE_UUIDS = {
@@ -143,7 +143,7 @@ export enum ModbusFunctionCode {
   WRITE_MULTIPLE_REGISTERS= 0x10,
 }
 
-/** Modbus 寄存器地址表（Sierro 2000 自定义寄存器映射） */
+/** Modbus 寄存器地址表（Sierro 1000 自定义寄存器映射） */
 export const MODBUS_REGISTERS = {
   // 只读输入寄存器 (FC04)
   INPUT: {

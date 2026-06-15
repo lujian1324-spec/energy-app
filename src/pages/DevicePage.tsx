@@ -33,7 +33,6 @@ import { useAuthStore } from '../stores/authStore'
 import sierro1000Img from '../assets/sierro-1000.webp'
 import { mapFieldsToRealtime } from '../api/deviceApi'
 import type { DeviceListItem, DeviceStateField } from '../api/deviceApi'
-import BatteryTag from '../components/BatteryTag'
 
 // BLE device type
 interface BleDevice {
@@ -73,8 +72,6 @@ export default function DevicePage() {
     loadDeviceState,
     selectedDeviceState,
     stateLoading,
-    alarms,
-    loadAlarms,
   } = useDeviceStore()
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
   const isGuest = useAuthStore(s => s.isGuest)
@@ -124,8 +121,7 @@ export default function DevicePage() {
 
   useEffect(() => {
     fetchDevices()
-    if (isAuthenticated) loadAlarms()
-  }, [fetchDevices, isAuthenticated, loadAlarms])
+  }, [fetchDevices])
 
   // ── 加载设备实时状态（每个设备） ──
   const fetchDeviceRealtime = useCallback(async (deviceId: number | string) => {
@@ -351,12 +347,12 @@ export default function DevicePage() {
           className="bg-[rgba(1,214,190,0.1)] border-b border-[rgba(1,214,190,0.15)] px-5 py-2.5 safe-area-top"
         >
           <div className="flex items-center justify-between">
-            <p className="text-label text-[#AEAEB2]">
+            <p className="text-[12px] text-[#AEAEB2]">
               Browsing as <span className="text-[#01D6BE] font-medium">Guest</span>
             </p>
             <button
               onClick={() => navigate('/login')}
-              className="flex items-center gap-1 px-3 py-1.5 bg-[#01D6BE] rounded-full text-[#000000] text-caption font-semibold active:scale-[0.97] transition-transform"
+              className="flex items-center gap-1 px-3 py-1.5 bg-[#01D6BE] rounded-full text-[#000000] text-[11px] font-semibold active:scale-[0.97] transition-transform"
             >
               Sign In <ChevronRight size={12} />
             </button>
@@ -401,10 +397,10 @@ export default function DevicePage() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="bg-[rgba(255,59,48,0.08)] border border-[rgba(255,59,48,0.15)] rounded-l px-4 py-2.5 flex items-center gap-2 mb-1"
+              className="bg-[rgba(255,59,48,0.08)] border border-[rgba(255,59,48,0.15)] rounded-[14px] px-4 py-2.5 flex items-center gap-2 mb-1"
             >
               <AlertTriangle size={14} className="text-[#FF3B30] flex-shrink-0" />
-              <span className="text-label text-[#FF3B30] flex-1">{error}</span>
+              <span className="text-[12px] text-[#FF3B30] flex-1">{error}</span>
               <button onClick={() => setError(null)} className="text-[#FF3B30]">
                 <X size={14} />
               </button>
@@ -414,59 +410,22 @@ export default function DevicePage() {
       </motion.div>
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide px-5 pb-4">
-        {/* PRD v1.1 §4.2.5: 最新通知 Banner */}
-        {alarms.length > 0 && (() => {
-          const latest = alarms[0]
-          const levelColor: Record<string, string> = {
-            critical: '#FF3B30', major: '#FF3B30', warning: '#FF9500', minor: '#FF9500', info: '#01D6BE',
-          }
-          const dot = levelColor[latest.alarmLevel] || '#01D6BE'
-          return (
-            <motion.button
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
+      <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pb-4">
+        {/* 最新通知 Banner（可按 X 关闭） */}
+        <AnimatePresence>
+          {lowBatteryDevice && !bannerDismissed && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
               onClick={() => navigate('/notifications')}
-              className="mb-3 w-full px-4 py-3 rounded-[20px] bg-[rgba(255,59,48,0.08)] border border-[rgba(255,59,48,0.18)] flex items-center gap-3 active:scale-[0.99] transition-transform text-left"
-              aria-label="View latest notification"
+              className="mb-3 rounded-l bg-[#4B1512] px-4 py-3.5 flex items-start gap-3 cursor-pointer"
             >
-              <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${dot}26` }}>
-                <AlertTriangle size={16} style={{ color: dot }} />
-              </div>
+              <BatteryWarning size={22} className="text-white flex-shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
-                <p className="text-label font-semibold text-[#FFFFFF] truncate">
-                  {latest.alarmMessage || `Alarm ${latest.alarmCode}`}
-                </p>
-                <p className="text-xs text-[#A0A0A5] mt-0.5">
-                  {latest.deviceName ? `${latest.deviceName} · ` : ''}{latest.createdAt ? new Date(latest.createdAt).toLocaleString() : ''}
-                </p>
-              </div>
-              <ChevronRight size={16} className="text-[#636366] flex-shrink-0" />
-            </motion.button>
-          )
-        })()}
-
-        {/* Low Battery Warning Banner */}
-        {devices.some(d => {
-          const soc = getDeviceNum(d.id, 'soc')
-          return soc !== null && soc < 20
-        }) && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-3 px-4 py-3 rounded-[20px] bg-[rgba(255,59,48,0.12)] border border-[rgba(255,59,48,0.2)] flex items-center gap-3"
-          >
-            <div className="w-8 h-8 rounded-full bg-[#FF3B30] flex items-center justify-center flex-shrink-0">
-              <AlertTriangle size={16} className="text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-semibold text-[#FF3B30]">Low Battery</p>
-              {devices.filter(d => {
-                const soc = getDeviceNum(d.id, 'soc')
-                return soc !== null && soc < 20
-              }).slice(0, 1).map(d => (
-                <p key={d.id} className="text-caption text-[#FF3B30] opacity-80 truncate">
-                  {d.name} — Estimated remaining time: {getDeviceField(String(d.id), 'remainingTime') || 'calculating...'}
+                <p className="text-body-md font-semibold text-white leading-tight truncate">Low Battery</p>
+                <p className="text-label text-white/90 mt-0.5 leading-snug">
+                  {lowBatteryDevice.name} • Battery below 30%, estimated remaining time: {getDeviceField(String(lowBatteryDevice.id), 'remainingTime') || '1h 24m'}
                 </p>
               </div>
               <button
@@ -506,65 +465,18 @@ export default function DevicePage() {
                   onClick={() => handleDeviceClick(device)}
                   className="bg-[#262626] rounded-l p-5 cursor-pointer active:scale-[0.99] transition-transform"
                 >
-                  {/* Top row: SOC + Online status + Refresh */}
-                  <div className="flex items-start justify-between mb-2">
-                    <span className={`text-display font-extrabold ${getBatteryColor(soc)} leading-none`}>
-                      {soc}
-                      <span className="text-body-lg font-bold">%</span>
-                    </span>
-                    <div className="flex items-center gap-1">
-                      {/* Online indicator */}
-                      {device.isOnline ? (
-                        <Wifi size={12} className="text-[#34C759]" />
-                      ) : (
-                        <WifiOff size={12} className="text-[#636366]" />
-                      )}
-                      {/* Refresh single device */}
-                      <button
-                        onClick={(e) => handleRefreshDevice(device.id, e)}
-                        className="w-6 h-6 rounded-full flex items-center justify-center hover:bg-[rgba(255,255,255,0.1)] transition-colors"
-                      >
-                        <RefreshCw
-                          size={11}
-                          className={`text-[#A0A0A5] ${refreshingId === String(device.id) ? 'animate-spin' : ''}`}
+                  {/* Top row: Display icon/photo + BatteryTag */}
+                  <div className="flex items-start justify-between mb-3">
+                    {getDeviceImage(device.deviceSortKey) ? (
+                      <div className="w-14 h-14 flex items-center justify-center">
+                        <img
+                          src={getDeviceImage(device.deviceSortKey)!}
+                          alt={getDeviceModel(device)}
+                          className="w-full h-full object-contain drop-shadow-sm"
                         />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Charging indicator */}
-                  {isCharging && (
-                    <div className="flex items-center gap-1 mb-1">
-                      <TrendingDown size={10} className="text-[#34C759]" />
-                      <span className="text-xs text-[#34C759] font-medium">Charging {Math.abs(batteryPower)}W</span>
-                    </div>
-                  )}
-
-                  {/* Device Icon + Name */}
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-body-md">{getDeviceIcon(device.deviceSortKey)}</span>
-                    <span className="text-[13px] font-semibold text-[#FFFFFF] truncate">
-                      {device.name}
-                    </span>
-                  </div>
-
-                  {/* Model / SN / Station */}
-                  <div className="text-caption text-[#A0A0A5] truncate">
-                    {device.gatherProtocolNameDisplay || device.model || 'Power Station'}
-                  </div>
-
-                  {/* Bottom: temperature + mode */}
-                  <div className="flex items-center gap-2 mt-1.5">
-                    {batteryTemp !== null && (
-                      <span className="text-xs text-[#A0A0A5] flex items-center gap-0.5">
-                        <Thermometer size={9} />
-                        {batteryTemp}°C
-                      </span>
-                    )}
-                    {workMode !== null && (
-                      <span className="text-xs px-1.5 py-0.5 rounded-full bg-[rgba(1,214,190,0.1)] text-[#01D6BE]">
-                        {getWorkModeLabel(workMode)}
-                      </span>
+                      </div>
+                    ) : (
+                      <span className="text-[28px] leading-none">{getDeviceIcon(device.deviceSortKey)}</span>
                     )}
                     <BatteryTag level={soc} connected={connected} charging={isCharging} />
                   </div>
@@ -586,98 +498,16 @@ export default function DevicePage() {
             })}
           </div>
         ) : (
-          /* List Layout */
-          <div className="flex flex-col gap-2.5">
-            {devices.map((device, index) => {
-              const soc = getDeviceNum(device.id, 'soc') ?? 0
-              const batteryPower = getDeviceNum(device.id, 'batteryPower')
-              const outputPower = getDeviceNum(device.id, 'outputPower')
-              const batteryTemp = getDeviceNum(device.id, 'batteryTemp')
-              const workMode = getDeviceNum(device.id, 'workMode')
-              const isCharging = batteryPower !== null && batteryPower > 0
-
-              return (
-                <motion.div
-                  key={device.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: index * 0.06, ease: [0.25, 0.46, 0.45, 0.94] }}
-                  onClick={() => handleDeviceClick(device)}
-                  className="flex items-center gap-3.5 p-4 bg-[#262626] rounded-[18px] cursor-pointer active:bg-[#333333] transition-all duration-200"
-                >
-                  {/* Left: Icon */}
-                  <div className="w-11 h-11 rounded-l bg-[rgba(1,214,190,0.12)] flex items-center justify-center flex-shrink-0 text-lg relative">
-                    {getDeviceIcon(device.deviceSortKey)}
-                    {/* Online dot */}
-                    <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#262626] ${device.isOnline ? 'bg-[#34C759]' : 'bg-[#636366]'}`} />
-                  </div>
-
-                  {/* Middle: Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-body-md font-semibold text-[#FFFFFF] truncate">{device.name}</span>
-                      {!device.isOnline && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[rgba(72,72,74,0.3)] text-[#636366]">Offline</span>}
-                      {device.isAlarmed && <AlertTriangle size={12} className="text-[#FF3B30] flex-shrink-0" />}
-                    </div>
-                    <div className="flex items-center gap-3 mt-1">
-                      <span className="text-xs text-[#A0A0A5]">{device.gatherProtocolNameDisplay || device.model || 'Power Station'}</span>
-                      {device.serialNumber && (
-                        <span className="text-xs text-[#636366] hidden sm:inline">SN: {device.serialNumber.slice(-8)}</span>
-                      )}
-                    </div>
-
-                    {/* Parameter badges - PRD v1.1 §4.2.3: Battery Tag 水平电池图标 */}
-                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                      <BatteryTag level={soc} isCharging={isCharging} size="sm" />
-                      {batteryPower !== null && (
-                        <span className="text-xs px-1.5 py-0.5 rounded-full bg-[rgba(52,199,89,0.1)] text-[#34C759]">
-                          {isCharging ? `${Math.abs(batteryPower)}W in` : `${Math.abs(batteryPower)}W out`}
-                        </span>
-                      )}
-                      {outputPower !== null && outputPower > 0 && (
-                        <span className="text-xs px-1.5 py-0.5 rounded-full bg-[rgba(255,149,0,0.1)] text-[#FF9500]">
-                          Out {outputPower}W
-                        </span>
-                      )}
-                      {batteryTemp !== null && (
-                        <span className="text-xs text-[#A0A0A5] flex items-center gap-0.5">
-                          <Thermometer size={9} /> {batteryTemp}°C
-                        </span>
-                      )}
-                      {workMode !== null && (
-                        <span className="text-xs px-1.5 py-0.5 rounded-full bg-[rgba(1,214,190,0.1)] text-[#01D6BE]">
-                          {getWorkModeLabel(workMode)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Right: Refresh + Chevron */}
-                  <div className="flex flex-col items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      onClick={(e) => handleRefreshDevice(device.id, e)}
-                      className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-[rgba(255,255,255,0.1)] transition-colors"
-                    >
-                      <RefreshCw
-                        size={13}
-                        className={`text-[#A0A0A5] ${refreshingId === String(device.id) ? 'animate-spin' : ''}`}
-                      />
-                    </button>
-                    <ChevronRight size={16} className="text-[#636366]" />
-                  </div>
-                </motion.div>
-              )
-            })}
-          </div>
-        )}
-
-        {/* Empty State */}
-        {!deviceLoading && devices.length === 0 && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16">
-            <Zap size={48} className="mx-auto mb-3 text-[#636366] opacity-30" />
-            <p className="text-sm font-medium text-[#A0A0A5] mb-1">No devices found</p>
-            <p className="text-xs text-[#636366] mb-1">
-              {error ? 'Check your network connection' : 'Tap + to add your first device'}
+          /* Empty State */
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center text-center pt-24 px-6">
+            <div className="w-40 h-40 rounded-l bg-[#3A3A3A] mb-7 flex items-center justify-center">
+              <Zap size={56} className="text-ink-7 opacity-40" />
+            </div>
+            <h2 className="text-headline-md font-semibold text-white mb-2">
+              {error ? 'Something went wrong' : 'No devices yet'}
+            </h2>
+            <p className="text-body-lg text-ink-7 mb-8 max-w-[280px]">
+              {error ? 'Check your network connection and try again.' : 'Add your first Sierro device to start monitoring and receiving alerts.'}
             </p>
             {error ? (
               <button onClick={fetchDevices} className="px-6 py-3 rounded-m border-m border-primary text-primary text-body-lg font-semibold flex items-center gap-2 active:scale-95 transition-transform">
@@ -713,12 +543,22 @@ export default function DevicePage() {
               {/* Header */}
               <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-[rgba(255,255,255,0.06)]">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-l bg-[rgba(1,214,190,0.12)] flex items-center justify-center text-lg">
-                    {getDeviceIcon(showDeviceParams.deviceSortKey)}
+                  <div className="w-10 h-10 flex items-center justify-center text-lg">
+                    {getDeviceImage(showDeviceParams.deviceSortKey) ? (
+                      <img
+                        src={getDeviceImage(showDeviceParams.deviceSortKey)!}
+                        alt={showDeviceParams.model || 'Sierro'}
+                        className="w-full h-full object-contain"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-[14px] bg-[rgba(1,214,190,0.12)] flex items-center justify-center">
+                        {getDeviceIcon(showDeviceParams.deviceSortKey)}
+                      </div>
+                    )}
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-[#FFFFFF]">{showDeviceParams.name}</h3>
-                    <div className="text-caption text-[#A0A0A5]">{showDeviceParams.gatherProtocolNameDisplay || showDeviceParams.model}</div>
+                    <div className="text-[11px] text-[#A0A0A5]">{showDeviceParams.gatherProtocolNameDisplay || showDeviceParams.model}</div>
                   </div>
                 </div>
                 <button
@@ -733,8 +573,8 @@ export default function DevicePage() {
               <div className="flex-1 overflow-y-auto scrollbar-hide p-5 space-y-4">
                 {/* Device Meta Info */}
                 <div className="space-y-3">
-                  <h4 className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase">Device Info</h4>
-                  <div className="bg-[#141414] rounded-l divide-y divide-[rgba(255,255,255,0.06)]">
+                  <h4 className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase">Device Info</h4>
+                  <div className="bg-[#141414] rounded-[16px] divide-y divide-[rgba(255,255,255,0.06)]">
                     {[
                       { icon: Hash, label: 'Serial Number', value: showDeviceParams.serialNumber || '--' },
                       { icon: Server, label: 'Station', value: showDeviceParams.stationName || '--' },
@@ -763,13 +603,13 @@ export default function DevicePage() {
                 {/* Real-time Parameters */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase">Real-Time Parameters</h4>
+                    <h4 className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase">Real-Time Parameters</h4>
                     {realtimeCache[String(showDeviceParams.id)]?.loading ? (
                       <RefreshCw size={12} className="text-[#01D6BE] animate-spin" />
                     ) : (
                       <button
                         onClick={() => fetchDeviceRealtime(showDeviceParams.id)}
-                        className="text-caption text-[#01D6BE] flex items-center gap-1"
+                        className="text-[11px] text-[#01D6BE] flex items-center gap-1"
                       >
                         <RefreshCw size={11} /> Refresh
                       </button>
@@ -786,9 +626,9 @@ export default function DevicePage() {
                     ].map((item) => {
                       const Icon = item.icon
                       return (
-                        <div key={item.label} className="bg-[#141414] rounded-l p-3 flex flex-col items-center">
+                        <div key={item.label} className="bg-[#141414] rounded-[14px] p-3 flex flex-col items-center">
                           <Icon size={14} style={{ color: item.color }} className="mb-1.5" />
-                          <div className="text-body-md font-bold text-[#FFFFFF]">{item.value}</div>
+                          <div className="text-[14px] font-bold text-[#FFFFFF]">{item.value}</div>
                           <div className="text-[9px] text-[#A0A0A5] mt-0.5">{item.label}</div>
                         </div>
                       )
@@ -798,8 +638,8 @@ export default function DevicePage() {
 
                 {/* Port Status */}
                 <div className="space-y-3">
-                  <h4 className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase">Port Controls</h4>
-                  <div className="bg-[#141414] rounded-l divide-y divide-[rgba(255,255,255,0.06)]">
+                  <h4 className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase">Port Controls</h4>
+                  <div className="bg-[#141414] rounded-[16px] divide-y divide-[rgba(255,255,255,0.06)]">
                     {[
                       { label: 'AC Output 1', key: 'acOut1Enable' },
                       { label: 'AC Output 2', key: 'acOut2Enable' },
@@ -811,7 +651,7 @@ export default function DevicePage() {
                       return (
                         <div key={port.key} className="flex items-center justify-between px-4 py-3">
                           <span className="text-[13px] text-[#FFFFFF]">{port.label}</span>
-                          <span className={`text-label px-2 py-0.5 rounded-full font-medium ${
+                          <span className={`text-[12px] px-2 py-0.5 rounded-full font-medium ${
                             isEnabled ? 'bg-[rgba(52,199,89,0.15)] text-[#34C759]' : 'bg-[rgba(255,255,255,0.06)] text-[#636366]'
                           }`}>
                             {isEnabled ? 'ON' : 'OFF'}
@@ -820,9 +660,9 @@ export default function DevicePage() {
                       )
                     })}
                   </div>
-                  <div className="bg-[#141414] rounded-l px-4 py-3 flex items-center justify-between">
+                  <div className="bg-[#141414] rounded-[16px] px-4 py-3 flex items-center justify-between">
                     <span className="text-[13px] text-[#FFFFFF]">Work Mode</span>
-                    <span className="text-label px-2 py-0.5 rounded-full bg-[rgba(1,214,190,0.1)] text-[#01D6BE] font-medium">
+                    <span className="text-[12px] px-2 py-0.5 rounded-full bg-[rgba(1,214,190,0.1)] text-[#01D6BE] font-medium">
                       {getWorkModeLabel(getDeviceNum(showDeviceParams.id, 'workMode'))}
                     </span>
                   </div>
@@ -831,14 +671,14 @@ export default function DevicePage() {
                 {/* All API Fields (for debugging) */}
                 {realtimeCache[String(showDeviceParams.id)]?.fields && (
                   <div className="space-y-3">
-                    <h4 className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase">All Parameters</h4>
-                    <div className="bg-[#141414] rounded-l divide-y divide-[rgba(255,255,255,0.04)]">
+                    <h4 className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase">All Parameters</h4>
+                    <div className="bg-[#141414] rounded-[16px] divide-y divide-[rgba(255,255,255,0.04)]">
                       {Object.entries(realtimeCache[String(showDeviceParams.id)].fields)
                         .sort((a, b) => a[0].localeCompare(b[0]))
                         .map(([key, field]) => (
                           <div key={key} className="flex items-center justify-between px-4 py-2.5">
-                            <span className="text-label text-[#A0A0A5] font-mono">{field.name || key}</span>
-                            <span className="text-label text-[#FFFFFF] font-mono">
+                            <span className="text-[12px] text-[#A0A0A5] font-mono">{field.name || key}</span>
+                            <span className="text-[12px] text-[#FFFFFF] font-mono">
                               {field.valueDisplay ?? String(field.value ?? '--')}
                             </span>
                           </div>
@@ -853,7 +693,7 @@ export default function DevicePage() {
               <div className="p-5 border-t border-[rgba(255,255,255,0.06)]">
                 <button
                   onClick={() => { setShowDeviceParams(null); navigate(`/device/${showDeviceParams.id}`) }}
-                  className="w-full py-3 rounded-l bg-[#01D6BE] text-[#000000] text-body-md font-semibold flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-[14px] bg-[#01D6BE] text-[#000000] text-[14px] font-semibold flex items-center justify-center gap-2"
                 >
                   View Full Dashboard <ChevronRight size={16} />
                 </button>
@@ -884,17 +724,17 @@ export default function DevicePage() {
                 ].map((opt) => (
                   <button key={opt.label}
                     onClick={() => { if ('action' in opt && opt.action) opt.action(); else setShowAddModal(false) }}
-                    className="flex items-center gap-4 p-4 bg-[#333333] rounded-l text-left transition-all">
+                    className="flex items-center gap-4 p-4 bg-[#333333] rounded-[16px] text-left transition-all">
                     <span className="text-2xl">{opt.icon}</span>
                     <div className="flex-1">
-                      <div className="text-body-md font-semibold" style={{ color: opt.color }}>{opt.label}</div>
-                      <div className="text-caption text-[#A0A0A5] mt-0.5">{opt.desc}</div>
+                      <div className="text-[14px] font-semibold" style={{ color: opt.color }}>{opt.label}</div>
+                      <div className="text-[11px] text-[#A0A0A5] mt-0.5">{opt.desc}</div>
                     </div>
                   </button>
                 ))}
               </div>
               <button onClick={() => setShowAddModal(false)}
-                className="w-full mt-4 h-11 rounded-l bg-[rgba(255,255,255,0.06)] text-[#A0A0A5] text-sm font-medium">
+                className="w-full mt-4 h-11 rounded-[14px] bg-[rgba(255,255,255,0.06)] text-[#A0A0A5] text-sm font-medium">
                 Cancel
               </button>
             </motion.div>
@@ -923,7 +763,7 @@ export default function DevicePage() {
                 <div className="flex flex-col items-center justify-center py-10">
                   <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
                     className="w-12 h-12 rounded-full border-2 border-[#01D6BE] border-t-transparent mb-4" />
-                  <p className="text-body-md text-[#A0A0A5]">Scanning for devices...</p>
+                  <p className="text-[14px] text-[#A0A0A5]">Scanning for devices...</p>
                 </div>
               )}
               {scanError && (
@@ -931,8 +771,8 @@ export default function DevicePage() {
                   <div className="w-12 h-12 rounded-full bg-[rgba(255,59,48,0.15)] flex items-center justify-center mb-3">
                     <Bluetooth size={24} className="text-[#FF3B30]" />
                   </div>
-                  <p className="text-body-md text-[#FF3B30] text-center mb-1">Scan Failed</p>
-                  <p className="text-label text-[#A0A0A5] text-center px-4">{scanError}</p>
+                  <p className="text-[14px] text-[#FF3B30] text-center mb-1">Scan Failed</p>
+                  <p className="text-[12px] text-[#A0A0A5] text-center px-4">{scanError}</p>
                 </div>
               )}
               {!isScanning && !scanError && scannedDevices.length === 0 && (
@@ -940,7 +780,7 @@ export default function DevicePage() {
                   <div className="w-12 h-12 rounded-full bg-[#333333] flex items-center justify-center mb-3">
                     <Bluetooth size={24} className="text-[#A0A0A5]" />
                   </div>
-                  <p className="text-body-md text-[#A0A0A5]">No devices found</p>
+                  <p className="text-[14px] text-[#A0A0A5]">No devices found</p>
                 </div>
               )}
             </motion.div>
@@ -979,13 +819,13 @@ export default function DevicePage() {
                   </div>
                   {qrError ? (
                     <div className="text-center">
-                      <p className="text-body-md text-[#FF3B30] mb-2">{qrError}</p>
+                      <p className="text-[14px] text-[#FF3B30] mb-2">{qrError}</p>
                       <button onClick={startQrScan} className="px-5 py-2 bg-[#01D6BE] rounded-full text-[#000000] text-[13px] font-semibold">Retry</button>
                     </div>
                   ) : (
                     <>
                       <p className="text-[15px] font-semibold text-[#FFFFFF] mb-1">Point camera at QR code</p>
-                      <p className="text-label text-[#A0A0A5]">The code will be scanned automatically</p>
+                      <p className="text-[12px] text-[#A0A0A5]">The code will be scanned automatically</p>
                     </>
                   )}
                 </>
@@ -995,18 +835,18 @@ export default function DevicePage() {
                     <QrCode size={32} className="text-[#34C759]" />
                   </div>
                   <h4 className="text-lg font-bold text-[#FFFFFF] text-center mb-2">QR Code Scanned!</h4>
-                  <div className="bg-[#333333] rounded-l p-4 mb-5">
-                    <pre className="text-label text-[#A0A0A5] whitespace-pre-wrap break-all">{qrResult}</pre>
+                  <div className="bg-[#333333] rounded-[12px] p-4 mb-5">
+                    <pre className="text-[12px] text-[#A0A0A5] whitespace-pre-wrap break-all">{qrResult}</pre>
                   </div>
                   <div className="flex gap-3">
-                    <button onClick={() => { setQrResult(null); startQrScan() }} className="flex-1 h-11 rounded-l bg-[#333333] text-[#FFFFFF] text-body-md font-medium">Scan Again</button>
-                    <button onClick={() => { stopQrScan(); setShowQrScan(false); setQrResult(null); setQrError(null) }} className="flex-1 h-11 rounded-l bg-[#01D6BE] text-[#000000] text-body-md font-semibold">Add Device</button>
+                    <button onClick={() => { setQrResult(null); startQrScan() }} className="flex-1 h-11 rounded-[14px] bg-[#333333] text-[#FFFFFF] text-[14px] font-medium">Scan Again</button>
+                    <button onClick={() => { stopQrScan(); setShowQrScan(false); setQrResult(null); setQrError(null) }} className="flex-1 h-11 rounded-[14px] bg-[#01D6BE] text-[#000000] text-[14px] font-semibold">Add Device</button>
                   </div>
                 </motion.div>
               )}
             </div>
             <div className="p-5 safe-area-bottom text-center">
-              <p className="text-caption text-[#636366]">Make sure the QR code is well-lit and in focus</p>
+              <p className="text-[11px] text-[#636366]">Make sure the QR code is well-lit and in focus</p>
             </div>
           </motion.div>
         )}
@@ -1026,7 +866,7 @@ export default function DevicePage() {
             </div>
             <div className="flex-1 p-5">
               <p className="text-[13px] text-[#A0A0A5] mb-6">Manual device entry is under development. Please use Bluetooth Scan or QR Code to add devices.</p>
-              <button onClick={() => setShowManualAdd(false)} className="w-full py-3 rounded-l bg-[rgba(1,214,190,0.12)] text-[#01D6BE] font-semibold text-[13px]">OK</button>
+              <button onClick={() => setShowManualAdd(false)} className="w-full py-3 rounded-xl bg-[rgba(1,214,190,0.12)] text-[#01D6BE] font-semibold text-[13px]">OK</button>
             </div>
           </motion.div>
         )}

@@ -49,7 +49,7 @@ export function DemoBanner({ show, onRetry }: DemoBannerProps) {
       {onRetry && (
         <button
           onClick={onRetry}
-          className="ml-2 underline text-caption hover:text-[#FFB84D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#01D6BE] rounded"
+          className="ml-2 underline text-[11px] hover:text-[#FFB84D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#01D6BE] rounded"
           aria-label="Retry connecting to real device"
         >
           Retry
@@ -78,7 +78,7 @@ export function LastSync({ lastSyncAt, className = '' }: LastSyncProps) {
 
   return (
     <span
-      className={`text-xs text-[#636366] tracking-wide ${className}`}
+      className={`text-[10px] text-[#636366] tracking-wide ${className}`}
       title={`Last sync: ${new Date(lastSyncAt).toLocaleString()}`}
     >
       Last sync: {text}
@@ -94,12 +94,12 @@ interface CalcAuditProps {
 /** PRD v1.1 §8.3: 计算逻辑可审计 - ℹ️ 展开计算公式 */
 export function CalcAudit({ formula, label = 'How we calculated this' }: CalcAuditProps) {
   return (
-    <details className="text-caption text-[#A0A0A5] group">
+    <details className="text-[11px] text-[#A0A0A5] group">
       <summary className="cursor-pointer list-none flex items-center gap-1 hover:text-[#01D6BE] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#01D6BE] rounded">
         <span aria-hidden="true">ℹ️</span>
         <span className="underline">{label}</span>
       </summary>
-      <pre className="mt-2 p-3 bg-[#1A1A1A] rounded-[10px] text-xs text-[#A0A0A5] whitespace-pre-wrap font-mono leading-relaxed">
+      <pre className="mt-2 p-3 bg-[#1A1A1A] rounded-[10px] text-[10px] text-[#A0A0A5] whitespace-pre-wrap font-mono leading-relaxed">
 {formula}
       </pre>
     </details>
@@ -114,7 +114,7 @@ interface SampleRateProps {
 /** PRD v1.1 §8.2: 功率曲线底部标注 Updated every 1s */
 export function SampleRate({ intervalSec = 1, className = '' }: SampleRateProps) {
   return (
-    <span className={`text-xs text-[#636366] tracking-wide ${className}`}>
+    <span className={`text-[10px] text-[#636366] tracking-wide ${className}`}>
       Updated every {intervalSec}s
     </span>
   )

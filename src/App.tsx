@@ -14,9 +14,9 @@ import TermsPage from './pages/TermsPage'
 import PrivacyPage from './pages/PrivacyPage'
 import SmartSchedulePage from './pages/SmartSchedulePage'
 import NotificationsPage from './pages/NotificationsPage'
-import DeviceInfoPage from './pages/DeviceInfoPage'
 import OnboardingPage from './pages/OnboardingPage'
-import DataExportPage from './pages/DataExportPage'
+import DeviceMonitorPage from './pages/DeviceMonitorPage'
+import DeviceDetailPage from './pages/DeviceDetailPage'
 import { useRealtimeSimulator } from './hooks/useRealtimeSimulator'
 import { useAuthStore } from './stores/authStore'
 import { ToastContainer, useToast } from './components/Toast'
@@ -63,7 +63,6 @@ function SessionLoadingScreen() {
 function AppInner() {
   const location = useLocation()
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
-  const needsOnboarding = useAuthStore(s => s.needsOnboarding)
   const sessionReady = useAuthStore(s => s.sessionReady)
   const restoreSession = useAuthStore(s => s.restoreSession)
   useRealtimeSimulator()
@@ -81,9 +80,9 @@ function AppInner() {
     return <SessionLoadingScreen />
   }
 
-  // PRD v1.1 §4.7.3: 首次登录拦截 → onboarding
-  if (isAuthenticated && needsOnboarding && location.pathname !== '/onboarding') {
-    return <Navigate to="/onboarding" replace />
+  // 首次启动 → 显示权限引导页
+  if (!permissionsDone) {
+    return <PermissionsGate onDone={() => setPermissionsDone(true)} />
   }
 
   // 登录/注册页单独渲染，不包含底部导航
@@ -114,8 +113,9 @@ function AppInner() {
     )
   }
 
-  // 设备详情页 & Smart Schedule 页 & 通知页 & 数据导出页 单独渲染，不包含底部导航
-  if (location.pathname.startsWith('/device/') || location.pathname === '/smart-schedule' || location.pathname === '/notifications' || location.pathname.startsWith('/profile') || location.pathname.startsWith('/device-info/') || location.pathname === '/data-export') {
+  // 设备详情页 & Smart Schedule 页 & 通知页单独渲染，不包含底部导航
+  // 注意：/devices（设备列表，带底部导航）不在此分支，故用 '/device/' 前缀匹配
+  if (location.pathname.startsWith('/device/') || location.pathname === '/smart-schedule' || location.pathname === '/notifications' || location.pathname === '/onboarding' || location.pathname.startsWith('/profile')) {
     return (
       <div className="h-full w-full bg-bg-base flex flex-col overflow-hidden">
         <div className="flex-1 overflow-hidden relative">
@@ -129,12 +129,12 @@ function AppInner() {
               className="h-full w-full"
             >
               <Routes location={location}>
-                <Route path="/device/:id" element={<RequireAuth><OverviewPage /></RequireAuth>} />
-                <Route path="/device-info/:id" element={<RequireAuth><DeviceInfoPage /></RequireAuth>} />
+                <Route path="/device/:id" element={<RequireAuth><DeviceMonitorPage /></RequireAuth>} />
+                <Route path="/device/:id/settings" element={<RequireAuth><DeviceDetailPage /></RequireAuth>} />
+                <Route path="/device/:id/dashboard" element={<RequireAuth><OverviewPage /></RequireAuth>} />
                 <Route path="/smart-schedule" element={<RequireAuth><SmartSchedulePage /></RequireAuth>} />
                 <Route path="/notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
                 <Route path="/onboarding" element={<RequireAuth><OnboardingPage /></RequireAuth>} />
-                <Route path="/data-export" element={<RequireAuth><DataExportPage /></RequireAuth>} />
               </Routes>
             </motion.div>
           </AnimatePresence>
@@ -161,8 +161,6 @@ function AppInner() {
               <Route path="/devices" element={<RequireAuth><DevicePage /></RequireAuth>} />
               <Route path="/insights" element={<RequireAuth><StatsPage /></RequireAuth>} />
               <Route path="/setting" element={<RequireAuth><SettingPage /></RequireAuth>} />
-              {/* PRD v1.1 §4.7.3: 首次登录 onboarding 引导 */}
-              <Route path="/onboarding" element={<RequireAuth><OnboardingPage /></RequireAuth>} />
               {/* 默认进入 devices */}
               <Route path="/" element={<Navigate to="/devices" replace />} />
               {/* 旧路由重定向到新路由（向后兼容） */}

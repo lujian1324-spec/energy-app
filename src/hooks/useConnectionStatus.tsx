@@ -185,7 +185,7 @@ export const ConnectionIndicator: React.FC<ConnectionIndicatorProps> = ({
       {/* 未读告警 badge */}
       {summary.unreadAlerts > 0 && (
         <span
-          className="ml-0.5 px-1 rounded-full text-white text-xs font-bold leading-4"
+          className="ml-0.5 px-1 rounded-full text-white text-[10px] font-bold leading-4"
           style={{ backgroundColor: '#FF3B30', minWidth: '16px', textAlign: 'center' }}
         >
           {summary.unreadAlerts > 99 ? '99+' : summary.unreadAlerts}

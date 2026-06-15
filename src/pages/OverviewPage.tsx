@@ -186,7 +186,7 @@ export default function OverviewPage() {
   // ─── 预估剩余时间 ───
   const remainingTimeDisplay = useMemo(() => {
     if (soc <= 0 || outputPower <= 0) return null
-    // Default capacity: 2kWh (Sierro 2000)
+    // Default capacity: 1kWh (Sierro 1000) or 2kWh (Sierro 2000)
     const modelLower = deviceModel?.toLowerCase() ?? ''
     const capacityWh = modelLower.includes('2000') ? 2000 : 1000
     const remainingWh = (soc / 100) * capacityWh
@@ -356,7 +356,7 @@ export default function OverviewPage() {
 
       {/* Status bar spacer */}
       <div className="h-8 px-5 flex justify-between items-center opacity-0">
-        <span className="text-label text-[#FFFFFF]">{soc}%</span>
+        <span className="text-[12px] text-[#FFFFFF]">{soc}%</span>
       </div>
 
       {/* Scrollable content */}
@@ -377,13 +377,22 @@ export default function OverviewPage() {
               onClick={() => devices.length > 1 && setShowDeviceDropdown(!showDeviceDropdown)}
               className="flex flex-col items-center"
             >
-              <h2 className="text-body-lg font-bold text-[#FFFFFF] tracking-wide max-w-[180px] truncate">
-                {deviceName}
-              </h2>
-              <ChevronDown
-                size={16}
-                className={`text-[#A0A0A5] transition-transform duration-200 ${showDeviceDropdown ? 'rotate-180' : ''}`}
-              />
+              <div className="flex items-center gap-1.5">
+                <h2 className="text-[18px] font-bold text-[#FFFFFF] max-w-[180px] truncate">
+                  {deviceName}
+                </h2>
+                {/* PRD §4.1.2: chevron only when multiple devices */}
+                {devices.length > 1 && (
+                  <ChevronDown
+                    size={16}
+                    className={`text-[#FFFFFF] transition-transform duration-200 ${showDeviceDropdown ? 'rotate-180' : ''}`}
+                  />
+                )}
+              </div>
+              {/* PRD §4.1.1: Connected / Disconnected subtitle under device name */}
+              <span className={`text-[12px] mt-0.5 ${isOnline ? 'text-[#A0A0A5]' : 'text-[#FF3530]'}`}>
+                {isOnline ? 'Connected' : 'Disconnected'}
+              </span>
             </button>
 
             {/* Dropdown - real device list */}
@@ -394,10 +403,10 @@ export default function OverviewPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute top-full left-0 mt-2 w-[260px] bg-[#262626] rounded-l border border-[rgba(1,214,190,0.15)] shadow-xl z-50 overflow-hidden"
+                  className="absolute top-full left-0 mt-2 w-[260px] bg-[#262626] rounded-[16px] border border-[rgba(1,214,190,0.15)] shadow-xl z-50 overflow-hidden"
                 >
                   <div className="py-2">
-                    <div className="px-3 py-2 text-xs text-[#A0A0A5] uppercase tracking-wider">
+                    <div className="px-3 py-2 text-[10px] text-[#A0A0A5] uppercase tracking-wider">
                       Select Device
                     </div>
                     {devices.map((device) => {
@@ -424,7 +433,7 @@ export default function OverviewPage() {
                             <div className={`text-[13px] font-semibold truncate ${isSelected ? 'text-[#01D6BE]' : 'text-[#FFFFFF]'}`}>
                               {device.name}
                             </div>
-                            <div className="text-xs text-[#A0A0A5] flex items-center gap-1.5">
+                            <div className="text-[10px] text-[#A0A0A5] flex items-center gap-1.5">
                               <span className={`inline-block w-1.5 h-1.5 rounded-full ${device.isOnline ? 'bg-[#34C759]' : 'bg-[#636366]'}`} />
                               {device.isOnline ? 'Online' : 'Offline'}
                               {device.model && ` · ${device.model}`}
@@ -444,14 +453,6 @@ export default function OverviewPage() {
 
           {/* Right: Settings + Bell */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            <button
-              onClick={() => selectedDeviceId && navigate(`/device-info/${selectedDeviceId}`)}
-              className="w-9 h-9 rounded-full bg-[#262626] flex items-center justify-center text-[#FFFFFF] hover:bg-[#333333] transition-colors"
-              aria-label="Device info"
-              title="Device Info"
-            >
-              <Info size={18} />
-            </button>
             <button
               onClick={() => navigate('/smart-schedule')}
               className="w-9 h-9 rounded-full bg-[#262626] flex items-center justify-center text-[#FFFFFF] hover:bg-[#333333] transition-colors"
@@ -479,73 +480,13 @@ export default function OverviewPage() {
           </div>
         ) : (
           <>
-            {/* Connected / Disconnected status badge */}
-            <div className="mx-5 mb-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {isOnline ? (
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-[rgba(1,214,190,0.12)] text-[#01D6BE] font-semibold flex items-center gap-1">
-                    <Wifi size={10} /> Connected
-                  </span>
-                ) : (
-                  <span className="text-xs px-2.5 py-1 rounded-full bg-[rgba(255,59,48,0.12)] text-[#FF3B30] font-semibold flex items-center gap-1">
-                    <WifiOff size={10} /> Disconnected
-                  </span>
-                )}
-                {deviceModel && (
-                  <span className="text-caption text-[#636366]">· {deviceModel}</span>
-                )}
-                {/* PRD v1.1 §8.1: 数据来源标签 */}
-                <DataSourceTag source={dataSource} className="ml-1" />
-              </div>
-              <button
-                onClick={handleRefresh}
-                disabled={stateLoading}
-                className="text-caption text-[#A0A0A5] flex items-center gap-1 hover:text-[#01D6BE] transition-colors"
-              >
-                <RefreshCw size={11} className={stateLoading ? 'animate-spin' : ''} />
-                Refresh
-              </button>
-            </div>
-
-            {/* Battery Hero - with real data */}
+            {/* Battery Hero — PRD §4.1.1: ring + Input/Output only */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="mx-5 mb-4 bg-[#262626] rounded-[24px] p-5"
             >
-              {/* Energy Flow Summary Bar */}
-              {energyFlow && (
-                <div className="flex items-center justify-center gap-4 mb-4 text-xs text-[#A0A0A5] flex-wrap">
-                  {/* PV Panel */}
-                  <div className={`flex items-center gap-1 ${energyFlow.pvPanelFlow?.isEnabled ? 'text-[#FF9500]' : 'text-[#636366]'}`}>
-                    <Sun size={10} />
-                    <span>PV: {energyFlow.pvPanelFlow?.value?.valueDisplay ?? '--'} {energyFlow.pvPanelFlow?.value?.unit ?? ''}</span>
-                  </div>
-                  <span className="text-[#636366]">|</span>
-                  {/* Grid */}
-                  <div className={`flex items-center gap-1 ${energyFlow.gridFlow?.isEnabled ? 'text-[#01D6BE]' : 'text-[#636366]'}`}>
-                    <Zap size={10} />
-                    <span>Grid: {energyFlow.gridFlow?.value?.valueDisplay ?? '--'} {energyFlow.gridFlow?.value?.unit ?? ''}</span>
-                  </div>
-                  <span className="text-[#636366]">|</span>
-                  {/* Battery */}
-                  <div className={`flex items-center gap-1 ${energyFlow.batteryFlow?.isLight ? 'text-[#34C759]' : 'text-[#A0A0A5]'}`}>
-                    <Battery size={10} />
-                    <span>
-                      Batt: {energyFlow.batteryFlow?.flowDirection === 1 ? '⚡Charge' : energyFlow.batteryFlow?.flowDirection === -1 ? '🔋Discharge' : '—'}
-                      {energyFlow.batteryFlow?.value?.valueDisplay ? ` ${energyFlow.batteryFlow.value.valueDisplay}${energyFlow.batteryFlow.value.unit}` : ''}
-                    </span>
-                  </div>
-                  <span className="text-[#636366]">|</span>
-                  {/* Load */}
-                  <div className={`flex items-center gap-1 ${energyFlow.loadFlow?.isEnabled ? 'text-[#A0A0A5]' : 'text-[#636366]'}`}>
-                    <TrendingUp size={10} />
-                    <span>Load: {energyFlow.loadFlow?.value?.valueDisplay ?? '--'}</span>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex justify-center mb-4">
+              <div className="flex justify-center mb-5">
                 <BatteryRing
                   percentage={soc}
                   isCharging={isCharging}
@@ -555,59 +496,36 @@ export default function OverviewPage() {
                 />
               </div>
 
-              {/* Remaining time / Charging info */}
-              <div className="text-center mb-4">
-                {isCharging ? (
-                  <div className="flex flex-col items-center gap-0.5">
-                    <span className="text-[13px] font-semibold text-[#01D6BE]">{chargeTimeDisplay}</span>
-                    <span className="text-caption text-[#A0A0A5]">{Math.abs(batteryPower)}W charging</span>
+              {/* Input (AC + Solar) / Output — PRD §4.1.1 / §4.1.3: three values */}
+              <div className="flex items-stretch justify-center gap-3">
+                {/* Input block: AC + Solar */}
+                <div className="flex-1 max-w-[180px] rounded-[16px] bg-[rgba(1,214,190,0.10)] border border-[rgba(1,214,190,0.25)] px-3 py-2">
+                  <div className="flex items-center gap-1 mb-1.5">
+                    <TrendingDown size={12} className="text-[#01D6BE]" />
+                    <span className="text-[11px] font-medium text-[#01D6BE]">Input</span>
                   </div>
-                ) : outputPower > 0 ? (
-                  <div className="flex flex-col items-center gap-0.5">
-                    {remainingTimeDisplay && (
-                      <span className="text-[13px] font-semibold text-[#FFFFFF]">{remainingTimeDisplay}</span>
-                    )}
-                    <span className="text-caption text-[#A0A0A5]">{outputPower}W output</span>
-                  </div>
-                ) : (
-                  <span className="text-label text-[#A0A0A5]">Idle</span>
-                )}
-              </div>
-
-              {/* Battery / AC / Solar / Output 4 cards */}
-              <div className="grid grid-cols-4 gap-2.5 mb-4 px-0.5">
-                {[
-                  { label: 'Battery', value: `${soc}%`, icon: Battery, color: soc < 20 ? '#FF3B30' : soc < 60 ? '#FF9500' : '#34C759' },
-                  { label: 'AC', value: `${acPower}W`, icon: Zap, color: acPower > 0 ? '#01D6BE' : '#A0A0A5' },
-                  { label: 'Solar', value: `${solarPower}W`, icon: Sun, color: solarPower > 0 ? '#FF9500' : '#A0A0A5' },
-                  { label: 'Output', value: `${outputPower}W`, icon: TrendingUp, color: outputPower > 0 ? '#A0A0A5' : '#636366' },
-                ].map((item) => {
-                  const Icon = item.icon
-                  return (
-                    <div key={item.label} className="bg-[#141414] rounded-l p-2.5 flex flex-col items-center min-w-0">
-                      <Icon size={13} className="mb-1 flex-shrink-0" style={{ color: item.color }} />
-                      <div className="text-label font-bold text-[#FFFFFF] truncate w-full text-center leading-tight">{item.value}</div>
-                      <div className="text-[9px] text-[#A0A0A5] mt-0.5 truncate w-full text-center">{item.label}</div>
+                  <div className="flex items-center justify-around">
+                    <div className="flex flex-col items-center">
+                      <span className="text-[13px] font-bold text-[#FFFFFF]">{isOnline ? `${acPower}W` : '-'}</span>
+                      <span className="text-[9px] text-[#A0A0A5] mt-0.5">AC</span>
                     </div>
-                  )
-                })}
-              </div>
-
-              {/* Input / Output power labels */}
-              <div className="flex justify-center gap-4">
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[rgba(1,214,190,0.15)] border border-[rgba(1,214,190,0.3)]">
-                  <TrendingDown size={13} className="text-[#01D6BE]" />
-                  <span className="text-caption text-[#01D6BE]">Input</span>
-                  <span className="text-label font-semibold text-[#01D6BE]">
-                    {inputPower}W
-                  </span>
+                    <span className="text-[#01D6BE] text-[13px] font-semibold px-1">+</span>
+                    <div className="flex flex-col items-center">
+                      <span className="text-[13px] font-bold text-[#FFFFFF]">{isOnline ? `${solarPower}W` : '-'}</span>
+                      <span className="text-[9px] text-[#FF9500] mt-0.5">Solar</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#333333]">
-                  <TrendingUp size={13} className="text-[#A0A0A5]" />
-                  <span className="text-caption text-[#A0A0A5]">Output</span>
-                  <span className="text-label font-semibold text-[#A0A0A5]">
-                    {outputPower}W
-                  </span>
+                {/* Output block */}
+                <div className="flex-1 max-w-[120px] rounded-[16px] bg-[#333333] px-3 py-2">
+                  <div className="flex items-center gap-1 mb-1.5">
+                    <TrendingUp size={12} className="text-[#A0A0A5]" />
+                    <span className="text-[11px] font-medium text-[#A0A0A5]">Output</span>
+                  </div>
+                  <div className="flex flex-col items-center justify-center">
+                    <span className="text-[13px] font-bold text-[#FFFFFF]">{isOnline ? `${outputPower}W` : '-'}</span>
+                    <span className="text-[9px] text-[#A0A0A5] mt-0.5">Load</span>
+                  </div>
                 </div>
               </div>
 
@@ -615,13 +533,13 @@ export default function OverviewPage() {
               {batteryTemp > 0 && (
                 <div className="flex items-center justify-center gap-1.5 mt-3">
                   <Thermometer size={12} className="text-[#A0A0A5]" aria-hidden="true" />
-                  <span className="text-caption text-[#A0A0A5]">Battery: {formatTemp(batteryTemp, 'F')}</span>
+                  <span className="text-[11px] text-[#A0A0A5]">Battery: {formatTemp(batteryTemp, 'F')}</span>
                 </div>
               )}
 
               {/* Energy Flow Error */}
               {energyFlowError && (
-                <div className="text-center mt-2 text-xs text-[#FF3B30]">
+                <div className="text-center mt-2 text-[10px] text-[#FF3B30]">
                   Energy flow: {energyFlowError}
                 </div>
               )}
@@ -653,8 +571,8 @@ export default function OverviewPage() {
                   >
                     <div className="flex items-center gap-2">
                       <Icon size={14} className="text-[#A0A0A5]" />
-                      <span className="text-label font-semibold text-[#FFFFFF]">{group.name}</span>
-                      <span className="text-xs text-[#636366]">({visibleItems.length})</span>
+                      <span className="text-[12px] font-semibold text-[#FFFFFF]">{group.name}</span>
+                      <span className="text-[10px] text-[#636366]">({visibleItems.length})</span>
                     </div>
                     <ChevronDown
                       size={14}
@@ -673,8 +591,8 @@ export default function OverviewPage() {
                         <div className="px-4 pb-3 grid grid-cols-2 gap-x-3 gap-y-1.5">
                           {visibleItems.map(item => (
                             <div key={item.key} className="flex justify-between items-center py-1 border-b border-[rgba(255,255,255,0.03)]">
-                              <span className="text-xs text-[#A0A0A5] truncate mr-2">{item.nameDisplay}</span>
-                              <span className="text-xs text-[#FFFFFF] font-mono whitespace-nowrap">
+                              <span className="text-[10px] text-[#A0A0A5] truncate mr-2">{item.nameDisplay}</span>
+                              <span className="text-[10px] text-[#FFFFFF] font-mono whitespace-nowrap">
                                 {item.valueDisplay}{item.unit ? ` ${item.unit}` : ''}
                               </span>
                             </div>
@@ -694,7 +612,7 @@ export default function OverviewPage() {
               transition={{ delay: 0.05 }}
               className="mx-5 mb-4"
             >
-              <div className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase mb-2.5 px-1">
+              <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase mb-2.5 px-1">
                 Quick Controls
               </div>
               <div className="bg-[#262626] rounded-[20px] overflow-hidden">
@@ -707,7 +625,7 @@ export default function OverviewPage() {
                     </div>
                     <div>
                       <div className="text-[13px] font-semibold text-[#FFFFFF]">Sleep Mode</div>
-                      <div className="text-xs text-[#A0A0A5]">Low power standby · 5W output</div>
+                      <div className="text-[10px] text-[#A0A0A5]">Low power standby · 5W output</div>
                     </div>
                   </div>
                   <div className={`${controlLoading === 'sleepMode' ? 'opacity-50 pointer-events-none' : ''}`}>
@@ -733,7 +651,7 @@ export default function OverviewPage() {
                       <div className="text-[13px] font-semibold text-[#FFFFFF]">
                         {activeMode === 'backup' ? 'Backup Mode' : 'Saving Mode'}
                       </div>
-                      <div className="text-xs text-[#A0A0A5]">
+                      <div className="text-[10px] text-[#A0A0A5]">
                         {activeMode === 'backup' ? 'Prioritize backup reserve' : 'Optimize energy efficiency'}
                       </div>
                     </div>
@@ -742,7 +660,7 @@ export default function OverviewPage() {
                     <button
                       onClick={() => handleSetWorkMode('backup')}
                       disabled={controlLoading === 'workMode'}
-                      className={`px-3 py-1.5 rounded-full text-caption font-semibold transition-all
+                      className={`px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all
                         ${activeMode === 'backup'
                           ? 'bg-[#FF9500] text-[#000000]'
                           : 'text-[#A0A0A5] hover:text-[#FFFFFF]'
@@ -753,7 +671,7 @@ export default function OverviewPage() {
                     <button
                       onClick={() => handleSetWorkMode('saving')}
                       disabled={controlLoading === 'workMode'}
-                      className={`px-3 py-1.5 rounded-full text-caption font-semibold transition-all
+                      className={`px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all
                         ${activeMode === 'saving'
                           ? 'bg-[#34C759] text-[#000000]'
                           : 'text-[#A0A0A5] hover:text-[#FFFFFF]'
@@ -773,7 +691,7 @@ export default function OverviewPage() {
               transition={{ delay: 0.08 }}
               className="mx-5 mb-4"
             >
-              <div className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase mb-2.5 px-1">
+              <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase mb-2.5 px-1">
                 Ports
               </div>
               <div className="bg-[#262626] rounded-[20px] overflow-hidden">
@@ -794,7 +712,7 @@ export default function OverviewPage() {
                       </div>
                       <div>
                         <div className="text-[13px] font-semibold text-[#FFFFFF]">{port.label}</div>
-                        <div className="text-xs text-[#A0A0A5]">
+                        <div className="text-[10px] text-[#A0A0A5]">
                           {port.enabled ? 'Active' : 'Inactive'}
                         </div>
                       </div>
@@ -829,7 +747,7 @@ export default function OverviewPage() {
                   key={isOnline ? currentChartData.value : 'offline'}
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  className="text-caption px-2 py-0.5 rounded-full font-semibold"
+                  className="text-[11px] px-2 py-0.5 rounded-full font-semibold"
                   style={{
                     backgroundColor: isOnline ? `${currentChartData.color}26` : 'rgba(160,160,165,0.15)',
                     color: isOnline ? currentChartData.color : '#A0A0A5'
@@ -903,11 +821,11 @@ export default function OverviewPage() {
                     <button
                       key={item.key}
                       onClick={() => setPowerDataSource(item.key)}
-                      className={`flex flex-col items-center gap-1 px-4 py-1 rounded-l transition-all
+                      className={`flex flex-col items-center gap-1 px-4 py-1 rounded-xl transition-all
                         ${isActive ? 'bg-[rgba(1,214,190,0.15)]' : 'hover:bg-[rgba(255,255,255,0.03)]'}`}
                     >
                       <Icon size={18} className={isActive ? 'text-[#01D6BE]' : 'text-[#A0A0A5]'} />
-                      <span className={`text-xs font-medium ${isActive ? 'text-[#01D6BE]' : 'text-[#A0A0A5]'}`}>
+                      <span className={`text-[10px] font-medium ${isActive ? 'text-[#01D6BE]' : 'text-[#A0A0A5]'}`}>
                         {item.label}
                       </span>
                     </button>
@@ -945,7 +863,7 @@ export default function OverviewPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   {unreadAlarmCount > 0 && (
-                    <span className="text-caption px-2 py-0.5 rounded-full bg-[rgba(255,59,48,0.12)] text-[#FF3B30] font-semibold">
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-[rgba(255,59,48,0.12)] text-[#FF3B30] font-semibold">
                       {unreadAlarmCount} Active
                     </span>
                   )}
@@ -967,7 +885,7 @@ export default function OverviewPage() {
                   <div className="text-center py-8">
                     <Check size={32} className="mx-auto mb-2 text-[#34C759]" />
                     <p className="text-[13px] text-[#A0A0A5]">No active alerts</p>
-                    <p className="text-caption text-[#636366] mt-1">All systems normal</p>
+                    <p className="text-[11px] text-[#636366] mt-1">All systems normal</p>
                   </div>
                 )}
 
@@ -984,7 +902,7 @@ export default function OverviewPage() {
                   return (
                     <div
                       key={`firing-${alert.alarmId}-${index}`}
-                      className={`flex items-start gap-3 p-3.5 rounded-l ${colors.bg}`}
+                      className={`flex items-start gap-3 p-3.5 rounded-[16px] ${colors.bg}`}
                     >
                       <div className="mt-0.5 flex-shrink-0">
                         <CircleDot size={14} style={{ color: colors.dot }} />
@@ -994,15 +912,15 @@ export default function OverviewPage() {
                           <span className={`text-[13px] font-semibold text-[#FFFFFF]`}>
                             {alert.alarmMessage || `Alarm ${alert.alarmCode}`}
                           </span>
-                          <span className={`text-xs px-1.5 py-0.5 rounded ${colors.bg} ${colors.text} font-medium`}>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded ${colors.bg} ${colors.text} font-medium`}>
                             LIVE
                           </span>
                         </div>
-                        <div className="text-caption mt-0.5 text-[#A0A0A5]">
+                        <div className="text-[11px] mt-0.5 text-[#A0A0A5]">
                           Code: {alert.alarmCode} · {alert.severity}
                         </div>
                       </div>
-                      <div className="text-xs text-[#636366] whitespace-nowrap mt-0.5">
+                      <div className="text-[10px] text-[#636366] whitespace-nowrap mt-0.5">
                         {alert.timestamp ? new Date(alert.timestamp).toLocaleTimeString() : 'now'}
                       </div>
                     </div>
@@ -1023,7 +941,7 @@ export default function OverviewPage() {
                   return (
                     <div
                       key={`alarm-${alarm.id}`}
-                      className={`flex items-start gap-3 p-3.5 rounded-l transition-colors
+                      className={`flex items-start gap-3 p-3.5 rounded-[16px] transition-colors
                         ${alarm.isProcessed ? 'bg-[rgba(255,255,255,0.02)]' : colors.bg}`}
                     >
                       <div className="mt-0.5 flex-shrink-0">
@@ -1036,20 +954,20 @@ export default function OverviewPage() {
                         <div className={`text-[13px] font-semibold ${alarm.isProcessed ? 'text-[#636366]' : 'text-[#FFFFFF]'}`}>
                           {alarm.alarmMessage || `Alarm ${alarm.alarmCode}`}
                         </div>
-                        <div className="text-caption mt-0.5 text-[#A0A0A5]">
+                        <div className="text-[11px] mt-0.5 text-[#A0A0A5]">
                           Code: {alarm.alarmCode} · Level: {alarm.alarmLevel}
                           {alarm.deviceName && <> · <span className="text-[#A0A0A5]">{alarm.deviceName}</span></>}
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                        <div className="text-xs text-[#636366] whitespace-nowrap">
+                        <div className="text-[10px] text-[#636366] whitespace-nowrap">
                           {alarm.createdAt ? new Date(alarm.createdAt).toLocaleString() : ''}
                         </div>
                         {!alarm.isProcessed && (
                           <button
                             onClick={() => handleDismissAlarm(alarm.id)}
                             disabled={dismissingAlarmId === alarm.id}
-                            className="text-xs text-[#01D6BE] px-2 py-0.5 rounded-full bg-[rgba(1,214,190,0.1)] disabled:opacity-50 flex items-center gap-1"
+                            className="text-[10px] text-[#01D6BE] px-2 py-0.5 rounded-full bg-[rgba(1,214,190,0.1)] disabled:opacity-50 flex items-center gap-1"
                           >
                             {dismissingAlarmId === alarm.id ? (
                               <><Loader2 size={10} className="animate-spin" /> Dismissing</>
@@ -1067,7 +985,7 @@ export default function OverviewPage() {
                     onClick={() => {
                       if (selectedDeviceId) loadAlarms(Number(selectedDeviceId), Math.ceil(alarms.length / 20) + 1, 20, true)
                     }}
-                    className="w-full py-2.5 text-label text-[#01D6BE] font-medium"
+                    className="w-full py-2.5 text-[12px] text-[#01D6BE] font-medium"
                   >
                     Load More ({alarmTotal - alarms.length} remaining)
                   </button>
@@ -1099,8 +1017,8 @@ export default function OverviewPage() {
               <div className="flex justify-between items-center mb-4">
                 <div>
                   <h3 className="text-base font-bold text-[#FFFFFF]">Alert History</h3>
-                  {unreadAlarmCount > 0 && <span className="text-caption text-[#FF3B30]">{unreadAlarmCount} unread</span>}
-                  {unreadAlarmCount === 0 && alarms.length > 0 && <span className="text-caption text-[#A0A0A5]">{alarms.length} total</span>}
+                  {unreadAlarmCount > 0 && <span className="text-[11px] text-[#FF3B30]">{unreadAlarmCount} unread</span>}
+                  {unreadAlarmCount === 0 && alarms.length > 0 && <span className="text-[11px] text-[#A0A0A5]">{alarms.length} total</span>}
                 </div>
                 <button onClick={() => setShowNotifications(false)} className="w-7 h-7 rounded-full bg-[rgba(255,255,255,0.08)] flex items-center justify-center">
                   <X size={14} className="text-[#A0A0A5]" />
@@ -1130,14 +1048,14 @@ export default function OverviewPage() {
                     return (
                       <div
                         key={`notif-${alarm.id}`}
-                        className={`flex items-start gap-3 p-3.5 rounded-l ${alarm.isProcessed ? 'bg-[rgba(255,255,255,0.03)]' : 'bg-[rgba(255,59,48,0.04)]'}`}
+                        className={`flex items-start gap-3 p-3.5 rounded-[16px] ${alarm.isProcessed ? 'bg-[rgba(255,255,255,0.03)]' : 'bg-[rgba(255,59,48,0.04)]'}`}
                       >
                         <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: alarm.isProcessed ? '#636366' : dotColor }} />
                         <div className="flex-1 min-w-0">
                           <div className={`text-[13px] font-semibold ${alarm.isProcessed ? 'text-[#A0A0A5]' : 'text-[#FFFFFF]'}`}>
                             {alarm.alarmMessage || alarm.alarmCode}
                           </div>
-                          <div className="text-caption text-[#636366] mt-0.5">
+                          <div className="text-[11px] text-[#636366] mt-0.5">
                             {alarm.deviceName && <>{alarm.deviceName} · </>}
                             {alarm.createdAt ? new Date(alarm.createdAt).toLocaleString() : ''}
                           </div>
@@ -1151,7 +1069,7 @@ export default function OverviewPage() {
               {alarms.length > 15 && (
                 <button
                   onClick={() => { setShowNotifications(false); setShowAlerts(true) }}
-                  className="w-full mt-2 py-2 text-label text-[#01D6BE] font-medium"
+                  className="w-full mt-2 py-2 text-[12px] text-[#01D6BE] font-medium"
                 >
                   View All Alerts ({alarmTotal})
                 </button>
@@ -1186,7 +1104,7 @@ export default function OverviewPage() {
                   <X size={14} className="text-[#A0A0A5]" />
                 </button>
               </div>
-              <p className="text-caption text-[#636366] mb-4">Choose which sections to show on the overview screen</p>
+              <p className="text-[11px] text-[#636366] mb-4">Choose which sections to show on the overview screen</p>
               <div className="flex flex-col gap-2">
                 {displayItems.map(({ key, label, desc }) => (
                   <div key={key} className="flex items-center justify-between py-3 border-b border-[rgba(255,255,255,0.06)]">
@@ -1194,7 +1112,7 @@ export default function OverviewPage() {
                       {displayConfig[key] ? <Eye size={15} className="text-[#01D6BE]" /> : <EyeOff size={15} className="text-[#636366]" />}
                       <div>
                         <div className={`text-[13px] font-medium ${displayConfig[key] ? 'text-[#FFFFFF]' : 'text-[#636366]'}`}>{label}</div>
-                        <div className="text-xs text-[#636366]">{desc}</div>
+                        <div className="text-[10px] text-[#636366]">{desc}</div>
                       </div>
                     </div>
                     <ToggleSwitch isOn={displayConfig[key]} onToggle={() => setDisplayConfig(prev => ({ ...prev, [key]: !prev[key] }))} size="sm" />

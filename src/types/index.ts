@@ -129,10 +129,6 @@ export interface DeviceSpecs {
   chargeTime: string;
   operatingTemp: string;
   optimalTemp: string;
-  /** 硬件版本 (e.g. V1.0.0) */
-  hardwareVersion?: string;
-  /** 固件版本 (e.g. V1.0.0) */
-  firmwareVersion?: string;
 }
 
 // 电源站状态
@@ -156,7 +152,7 @@ export interface PowerStation {
 }
 
 // 运行模式
-export type OperatingMode = 'solar' | 'backup' | 'car' | 'outdoor' | 'home-backup';
+export type OperatingMode = 'solar' | 'backup' | 'car' | 'outdoor';
 
 export interface ModeConfig {
   id: OperatingMode;
@@ -206,16 +202,12 @@ export interface AppSettings {
   lowBatteryThreshold?: number;
   /** PRD v1.1 §4.3: Device display icon color */
   deviceIconColor?: string;
-  /** PRD v1.1 §4.3: Device display icon key (powerstation/fridge/cpap/solar/ac/server/light/plug) */
-  deviceIconKey?: string;
   /** PRD v1.1 §4.3: Sleep Mode (turn off display) */
   sleepMode?: boolean;
   /** PRD v1.1 §4.3: Battery Mode (0=Normal, 1=Backup, 2=Eco) */
   batteryMode?: number;
   /** PRD v1.1 §4.6: Solar Status push notification */
   pushSolarStatus?: boolean;
-  /** PRD v1.1 §8.3: Privacy acknowledged (anonymous analytics opt-in) */
-  privacyAcknowledged?: boolean;
 }
 
 // 削峰填谷时间段配置

@@ -24,8 +24,6 @@ interface AuthState {
   error: string | null
   /** 会话恢复是否已完成（防止首次渲染闪烁） */
   sessionReady: boolean
-  /** PRD v1.1 §4.7.3: 是否需要 onboarding 引导（首次登录） */
-  needsOnboarding: boolean
 
   login: (username: string, password: string) => Promise<boolean>
   logout: () => Promise<void>
@@ -34,8 +32,6 @@ interface AuthState {
   restoreSession: () => Promise<void>
   /** 进入游客模式（跳过 API 登录） */
   setGuestMode: () => void
-  /** PRD v1.1 §4.7.3: 完成 onboarding，更新 user profile */
-  completeOnboarding: (profile: { name?: string }) => void
 }
 
 /** 判断业务响应码是否成功 */
@@ -56,7 +52,6 @@ export const useAuthStore = create<AuthState>()(
       loading: false,
       error: null,
       sessionReady: false,
-      needsOnboarding: false,
 
       login: async (username: string, password: string) => {
         set({ loading: true, error: null })
@@ -117,30 +112,9 @@ export const useAuthStore = create<AuthState>()(
       clearError: () => set({ error: null }),
 
       setGuestMode: () => {
-        set({ isGuest: true, isAuthenticated: false, sessionReady: true, error: null, needsOnboarding: false })
+        set({ isGuest: true, isAuthenticated: false, sessionReady: true, error: null })
         // 加载 demo 设备数据
         useDeviceStore.getState().loadDemoDevices()
-      },
-
-      // PRD v1.1 §4.7.3: 完成 onboarding 引导
-      completeOnboarding: (profile) => {
-        const current = get().user
-        if (current) {
-          set({
-            user: {
-              ...current,
-              // 兼容 LoginData 接口（不含 name 字段时仅本地记录）
-              ...(profile?.name ? { name: profile.name } : {}),
-            },
-            needsOnboarding: false,
-          })
-        } else {
-          set({ needsOnboarding: false })
-        }
-        // 本地持久化：标记 onboarding 已完成
-        try {
-          localStorage.setItem('powerflow-onboarding-completed', '1')
-        } catch { /* noop */ }
       },
 
       /**
@@ -160,11 +134,7 @@ export const useAuthStore = create<AuthState>()(
         // Step 1: 用现有 token 验证
         const valid = await verifySession()
         if (valid) {
-          // PRD v1.1 §4.7.3: 首次登录检测 onboarding
-          const completed = typeof localStorage !== 'undefined'
-            ? localStorage.getItem('powerflow-onboarding-completed') === '1'
-            : true
-          set({ isAuthenticated: true, sessionReady: true, needsOnboarding: !completed })
+          set({ isAuthenticated: true, isGuest: false, sessionReady: true })
           return
         }
 

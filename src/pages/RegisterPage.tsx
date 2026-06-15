@@ -87,35 +87,6 @@ export default function RegisterPage() {
     }
   }
 
-  // 注册成功
-  if (success) {
-    return (
-      <div className="min-h-screen bg-[#141414] flex flex-col items-center justify-center px-6">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="flex flex-col items-center gap-4"
-        >
-          <div className="w-20 h-20 rounded-full bg-[rgba(52,199,89,0.12)] border border-[rgba(52,199,89,0.3)]
-            flex items-center justify-center">
-            <Zap size={36} className="text-[#34C759]" />
-          </div>
-          <h2 className="text-xl font-bold text-[#FFFFFF]">Registration Successful!</h2>
-          <p className="text-[13px] text-[#A0A0A5] text-center max-w-[260px]">
-            Your account has been created. You can now sign in with your credentials.
-          </p>
-          <button
-            onClick={() => window.history.back()}
-            className="mt-4 px-8 py-3 rounded-l font-semibold text-body-md
-              bg-[#01D6BE] text-[#000000] active:scale-[0.98] transition-all"
-          >
-            Go to Sign In
-          </button>
-        </motion.div>
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen flex flex-col bg-ink-12">
       <div className="px-4 pt-5 safe-area-top">
@@ -128,40 +99,21 @@ export default function RegisterPage() {
         </button>
       </div>
 
-      {/* 标题 */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="mb-8"
-      >
-        <h1 className="text-headline-lg-em font-bold text-[#FFFFFF]">Create Account</h1>
-        <p className="text-[13px] text-[#A0A0A5] mt-1">Sign up to start managing your devices</p>
-      </motion.div>
+      <div className="flex-1 px-6 pt-6">
+        <h1 className="font-display text-headline-lg text-ink-1 mb-1">Create Account</h1>
+        <p className="text-body-md text-ink-7 mb-8">Sign up to get started with Sierro.</p>
 
-      {/* 表单 */}
-      <motion.form
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
-        onSubmit={handleSubmit}
-        className="space-y-4"
-      >
-        {/* 账号 */}
-        <div>
-          <label className="text-caption font-semibold text-[#A0A0A5] mb-1.5 flex items-center gap-1.5">
-            <User size={12} />
-            Account Name
-          </label>
+        {/* Account */}
+        <label className="block text-label text-ink-7 mb-1.5">Account</label>
+        <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-4">
           <input
             type="text"
             value={account}
-            onChange={e => { setAccount(e.target.value); clearError() }}
-            placeholder="Choose an account name"
-            autoComplete="username"
-            className="w-full px-4 py-3 rounded-l bg-[#262626] border border-[rgba(1,214,190,0.15)]
-              text-[#FFFFFF] text-body-md placeholder:text-[#636366]
-              focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
+            onChange={e => { setAccount(e.target.value); setError('') }}
+            placeholder="Choose a username"
+            autoCapitalize="none"
+            autoCorrect="off"
+            className="flex-1 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
           />
           {account && (
             <button onClick={() => setAccount('')} aria-label="Clear account">
@@ -170,96 +122,38 @@ export default function RegisterPage() {
           )}
         </div>
 
-        {/* 邮箱地址 */}
-        <div>
-          <label className="text-caption font-semibold text-[#A0A0A5] mb-1.5 flex items-center gap-1.5">
-            <Mail size={12} />
-            Email Address
-          </label>
+        {/* Email */}
+        <label className="block text-label text-ink-7 mb-1.5">Email</label>
+        <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-4">
           <input
             type="email"
             inputMode="email"
             value={email}
-            onChange={e => { setEmail(e.target.value); clearError() }}
-            placeholder="Enter your email"
-            autoComplete="email"
-            className="w-full px-4 py-3 rounded-l bg-[#262626] border border-[rgba(1,214,190,0.15)]
-              text-[#FFFFFF] text-body-md placeholder:text-[#636366]
-              focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
+            onChange={e => { setEmail(e.target.value); setError('') }}
+            placeholder="Email address"
+            autoCapitalize="none"
+            autoCorrect="off"
+            className="flex-1 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
           />
-        </div>
-
-        {/* 验证码 */}
-        <div>
-          <label className="text-caption font-semibold text-[#A0A0A5] mb-1.5 flex items-center gap-1.5">
-            Verification Code
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={captcha}
-              onChange={e => { setCaptcha(e.target.value); clearError() }}
-              placeholder="Enter verification code"
-              maxLength={6}
-              className="flex-1 px-4 py-3 rounded-l bg-[#262626] border border-[rgba(1,214,190,0.15)]
-                text-[#FFFFFF] text-body-md placeholder:text-[#636366]
-                focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
-            />
-            <button
-              type="button"
-              onClick={handleSendCaptcha}
-              disabled={captchaCooldown > 0 || !email.trim()}
-              className="px-4 py-3 rounded-l text-[13px] font-medium whitespace-nowrap
-                bg-[rgba(1,214,190,0.12)] text-[#01D6BE] border border-[rgba(1,214,190,0.2)]
-                disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {captchaCooldown > 0 ? `${captchaCooldown}s` : captchaSent ? 'Resend' : 'Send Code'}
+          {email && (
+            <button onClick={() => setEmail('')} aria-label="Clear email">
+              <X size={16} className="text-ink-7" />
             </button>
           )}
         </div>
 
-        {/* 密码 */}
-        <div>
-          <label className="text-caption font-semibold text-[#A0A0A5] mb-1.5 flex items-center gap-1.5">
-            <Lock size={12} />
-            Password
-          </label>
-          <div className="relative">
-            <input
-              type={showPwd ? 'text' : 'password'}
-              value={password}
-              onChange={e => { setPassword(e.target.value); clearError() }}
-              placeholder="At least 6 characters"
-              autoComplete="new-password"
-              className="w-full px-4 py-3 pr-11 rounded-l bg-[#262626] border border-[rgba(1,214,190,0.15)]
-                text-[#FFFFFF] text-body-md placeholder:text-[#636366]
-                focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPwd(v => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-[#636366] hover:text-[#A0A0A5]"
-            >
-              {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
-          </div>
-        </div>
-
-        {/* 确认密码 */}
-        <div>
-          <label className="text-caption font-semibold text-[#A0A0A5] mb-1.5 flex items-center gap-1.5">
-            <Lock size={12} />
-            Confirm Password
-          </label>
+        {/* Verification Code */}
+        <label className="block text-label text-ink-7 mb-1.5">Verification Code</label>
+        <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-3 mb-4">
           <input
-            type={showPwd ? 'text' : 'password'}
-            value={confirmPassword}
-            onChange={e => { setConfirmPassword(e.target.value); clearError() }}
-            placeholder="Confirm your password"
-            autoComplete="new-password"
-            className="w-full px-4 py-3 rounded-l bg-[#262626] border border-[rgba(1,214,190,0.15)]
-              text-[#FFFFFF] text-body-md placeholder:text-[#636366]
-              focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
+            type="text"
+            inputMode="numeric"
+            value={code}
+            onChange={e => { setCode(e.target.value.replace(/\D/g, '').slice(0, 6)); setError('') }}
+            placeholder="6-digit code"
+            autoComplete="one-time-code"
+            maxLength={6}
+            className="flex-1 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
           />
           <button
             onClick={handleObtainCode}
@@ -271,45 +165,68 @@ export default function RegisterPage() {
           </button>
         </div>
 
-        {/* 错误提示 */}
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            className="flex items-center gap-2 px-3 py-2.5 rounded-l
-              bg-[rgba(255,59,48,0.08)] border border-[rgba(255,59,48,0.2)]"
-          >
-            <AlertCircle size={14} className="text-[#FF3B30] flex-shrink-0" />
-            <p className="text-label text-[#FF3B30]">{error}</p>
-          </motion.div>
+        {/* Password */}
+        <label className="block text-label text-ink-7 mb-1.5">Password</label>
+        <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-1">
+          <input
+            type="password"
+            value={password}
+            onChange={e => { setPassword(e.target.value); setError('') }}
+            placeholder="6–32 characters, case sensitive"
+            className="flex-1 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
+          />
+        </div>
+        {password.length > 0 && !passwordValid && (
+          <p className="text-label text-danger mb-3">Password must be 6–32 characters.</p>
         )}
         {(password.length === 0 || passwordValid) && <div className="mb-3" />}
 
-        {/* Terms & Privacy */}
-        <p className="text-caption leading-relaxed text-center text-[#A0A0A5] px-4">
-          By creating an account, you agree to our{' '}
-          <Link
-            to="/terms"
-            className="text-[#01D6BE] underline underline-offset-2 hover:text-[#14B8A6] transition-colors"
-          >
-            Terms of Use
-          </Link>
-          {' '}and{' '}
-          <Link
-            to="/privacy"
-            className="text-[#01D6BE] underline underline-offset-2 hover:text-[#14B8A6] transition-colors"
-          >
-            Privacy Policy
-          </Link>
-        </p>
+        {/* Confirm Password */}
+        <label className="block text-label text-ink-7 mb-1.5">Confirm Password</label>
+        <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-1">
+          <input
+            type="password"
+            value={confirm}
+            onChange={e => { setConfirm(e.target.value); setError('') }}
+            placeholder="Re-enter your password"
+            onKeyDown={e => { if (e.key === 'Enter') handleRegister() }}
+            className="flex-1 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
+          />
+        </div>
+        {confirm.length > 0 && confirm !== password && (
+          <p className="text-label text-danger mb-3">Passwords do not match.</p>
+        )}
+        {(confirm.length === 0 || confirm === password) && <div className="mb-3" />}
 
         {/* User Service Agreement */}
         <button
-          type="submit"
-          disabled={loading || !account.trim() || !password.trim()}
-          className="w-full py-3.5 rounded-l font-semibold text-body-md
-            bg-[#01D6BE] text-[#000000]
-            disabled:opacity-40 disabled:cursor-not-allowed
+          onClick={() => setAgreed(v => !v)}
+          className="flex items-start gap-3 text-left w-full mt-1"
+        >
+          <span
+            className={`shrink-0 mt-0.5 w-5 h-5 rounded-s flex items-center justify-center border-s transition-colors
+              ${agreed ? 'bg-primary border-primary' : 'bg-transparent border-ink-7'}`}
+          >
+            {agreed && <Check size={14} className="text-ink-13" />}
+          </span>
+          <span className="text-label text-ink-7 leading-relaxed">
+            I have read and agree to the{' '}
+            <Link to="/terms" className="text-primary underline underline-offset-2" onClick={e => e.stopPropagation()}>
+              User Service Agreement
+            </Link>
+          </span>
+        </button>
+
+        {error && <p className="text-label text-danger mt-4">{error}</p>}
+      </div>
+
+      {/* Register button */}
+      <div className="px-6 pb-10 pt-4 safe-area-bottom">
+        <button
+          onClick={handleRegister}
+          disabled={!canSubmit || loading}
+          className="w-full py-4 rounded-m font-display text-title-md text-ink-13
+            bg-primary disabled:bg-primary-dark disabled:text-ink-13/60 disabled:cursor-not-allowed
             active:scale-[0.98] transition-all flex items-center justify-center gap-2"
         >
           {loading ? <Loader2 size={18} className="animate-spin" /> : 'Register'}

@@ -1,6 +1,6 @@
 ﻿/**
  * Web Bluetooth API 通讯层
- * 实现与 Sierro 2000 储能站的 BLE GATT 通信
+ * 实现与 Sierro 1000 储能站的 BLE GATT 通信
  *
  * 支持：
  * - 设备扫描 & 配对
