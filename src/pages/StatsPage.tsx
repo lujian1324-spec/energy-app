@@ -140,90 +140,133 @@ function aggregateHistory(
   }
 }
 
-// ─── Demo/Mock 数据（API 失败时的 fallback） ───
+// ─── Demo/Mock 数据 — 来自 Sierro 1000 真实模拟 CSV ───
+
+/** 3-point weighted moving average, applied `passes` times */
+function smooth(arr: number[], passes = 2): number[] {
+  let out = [...arr]
+  for (let p = 0; p < passes; p++) {
+    const tmp = [...out]
+    for (let i = 0; i < tmp.length; i++) {
+      const prev = tmp[Math.max(0, i - 1)]
+      const next = tmp[Math.min(tmp.length - 1, i + 1)]
+      out[i] = Math.round((prev * 0.25 + tmp[i] * 0.5 + next * 0.25) * 10) / 10
+    }
+  }
+  return out
+}
 
 function getDemoChartFrame(period: Period): ChartFrame {
-  const rng = (min: number, max: number) =>
-    Math.round((min + Math.random() * (max - min)) * 10) / 10
 
+  // ── Day: Jun 2 hourly data (24h) ──
+  // Source: sierro1000_4days_simulation.csv — day with battery discharge at night
   if (period === 'Day') {
-    // 24 个点（0:00-23:00），模拟日间太阳能 + 早晚用电高峰
-    const labels: string[] = []
-    const input: number[] = []
-    const output: number[] = []
-    const soc: number[] = []
-    for (let h = 0; h < 24; h++) {
-      labels.push(`${String(h).padStart(2, '0')}:00`)
-      // 太阳能：6:00-18:00 有值，正午峰值 ~1200W
-      input.push(h >= 6 && h <= 18 ? Math.round(1200 * Math.sin((h - 6) * Math.PI / 12)) : 0)
-      // 用电：早晨 6-9 和傍晚 17-22 有峰值
-      const isPeak = (h >= 6 && h <= 9) || (h >= 17 && h <= 22)
-      output.push(isPeak ? rng(400, 900) : rng(50, 200))
-      // SOC：白天充电上升，晚上放电下降，20%-95% 之间
-      const socBase = 60 + 30 * Math.sin((h - 8) * Math.PI / 16)
-      soc.push(Math.round(Math.max(20, Math.min(95, socBase + rng(-5, 5)))))
-    }
-    const totalInputKwh = input.reduce((s, v) => s + (v * 1) / 1000, 0)
-    const totalOutputKwh = output.reduce((s, v) => s + (v * 1) / 1000, 0)
-    const maxOutputIdx = output.indexOf(Math.max(...output))
+    const labels = Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2, '0')}:00`)
+    // Grid_Input_W + PV_Input_W (total power in); night hours 20-23 are battery-only
+    const rawInput  = [87,50,49,85,53,44,79,69,139,202,261,287,300,290,250,206,149,84,87,43,0,0,0,0]
+    const rawOutput = [87,50,49,85,53,44,79,53, 46, 78, 45, 40, 85, 43, 44, 71, 45,49,87,43,42,73,48,47]
+    const rawSoc    = [100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,95.8,88.5,83.7,79.0]
+    const input  = smooth(rawInput, 2)
+    const output = smooth(rawOutput, 2)
+    const soc    = smooth(rawSoc, 1)
+    const totalInputKwh  = rawInput.reduce((s, v) => s + v / 1000, 0)
+    const totalOutputKwh = rawOutput.reduce((s, v) => s + v / 1000, 0)
     return {
       input, output, soc, labels,
       co2Kg: parseFloat((totalInputKwh * 0.5).toFixed(1)),
       totalInputKwh, totalOutputKwh,
-      insight: `Peak output around ${labels[maxOutputIdx]}`,
+      insight: 'Peak solar input around 12:00',
       ecoInsight: `Equivalent to driving ${Math.round(totalOutputKwh * 3.5)} fewer miles`,
     }
   }
 
+  // ── Week: Jun 8–14 (mixed cloud — SOC swings 12–74%) ──
+  // Source: sierro1000_4weeks_simulation.csv, Week 2
   if (period === 'Week') {
     const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-    const input = labels.map(() => rng(800, 3500))
-    const output = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map(() => rng(2500, 5000))
-      .concat(['Sat', 'Sun'].map(() => rng(1200, 3000)))
-    const soc = labels.map(() => rng(30, 90))
-    const totalInputKwh = input.reduce((s, v) => s + (v * 24) / 1000, 0)
-    const totalOutputKwh = output.reduce((s, v) => s + (v * 24) / 1000, 0)
-    const maxOutputIdx = output.indexOf(Math.max(...output))
+    // PV_In_Wh / 24 → avg W per day
+    const rawInput  = [41.1, 47.3, 40.5, 48.3, 49.1, 34.3, 40.6]
+    const rawOutput = [57.6, 60.5, 54.7, 53.5, 55.5, 56.7, 57.2]
+    const rawSoc    = [67, 40, 72, 12, 64, 74, 44]
+    const input  = smooth(rawInput, 2)
+    const output = smooth(rawOutput, 2)
+    const soc    = smooth(rawSoc, 1)
+    const totalInputKwh  = rawInput.reduce((s, v) => s + v * 24 / 1000, 0)
+    const totalOutputKwh = rawOutput.reduce((s, v) => s + v * 24 / 1000, 0)
+    const maxIdx = rawInput.indexOf(Math.max(...rawInput))
     return {
       input, output, soc, labels,
       co2Kg: parseFloat((totalInputKwh * 0.5).toFixed(1)),
       totalInputKwh, totalOutputKwh,
-      insight: `Highest output on ${labels[maxOutputIdx]}`,
+      insight: `Best solar day: ${labels[maxIdx]}`,
       ecoInsight: `Equivalent to driving ${Math.round(totalOutputKwh * 3.5)} fewer miles`,
     }
   }
 
-  // Month / Range：生成合理的多天数据
-  const days = period === 'Month' ? 30 : 90
-  const labels: string[] = []
-  const input: number[] = []
-  const output: number[] = []
-  const soc: number[] = []
-  for (let i = 0; i < days; i++) {
-    const m = Math.floor(i / 30) + 1
-    const d = (i % 30) + 1
-    labels.push(`${m}/${d}`)
-    input.push(rng(1200, 6000))
-    output.push(rng(800, 4500))
-    soc.push(rng(25, 92))
+  // ── Month: Jun 1–28 (4 distinct weather weeks) ──
+  // Wk1 sunny → Wk2 partial → Wk3 cloudy → Wk4 sunniest
+  // Source: sierro1000_4weeks_simulation.csv (all 28 days)
+  if (period === 'Month') {
+    const labels = [
+      '6/1','6/2','6/3','6/4','6/5','6/6','6/7',
+      '6/8','6/9','6/10','6/11','6/12','6/13','6/14',
+      '6/15','6/16','6/17','6/18','6/19','6/20','6/21',
+      '6/22','6/23','6/24','6/25','6/26','6/27','6/28',
+    ]
+    // PV_In_Wh / 24 → avg W; Week 3 is heavy overcast (12–16 W)
+    const rawInput = [
+      72.6, 71.5, 70.1, 79.3, 72.5, 73.0, 73.3,   // wk1 sunny
+      41.1, 47.3, 40.5, 48.3, 49.1, 34.3, 40.6,   // wk2 partial
+      14.5, 14.2, 12.9, 15.9, 12.2, 12.2, 13.4,   // wk3 cloudy
+      81.0, 78.2, 85.2, 81.7, 84.8, 85.6, 77.6,   // wk4 sunniest
+    ]
+    // Fridge_Load_Wh / 24 → avg W (relatively stable ~53–63 W)
+    const rawOutput = [
+      59.0, 52.8, 59.8, 59.3, 54.3, 62.3, 56.9,
+      57.6, 60.5, 54.7, 53.5, 55.5, 56.7, 57.2,
+      58.0, 60.5, 54.3, 53.2, 57.1, 56.2, 56.1,
+      52.8, 57.9, 57.9, 55.5, 63.1, 53.3, 58.8,
+    ]
+    const rawSoc = [
+      84, 91, 90, 81, 93, 85, 89,
+      67, 40, 72, 12, 64, 74, 44,
+      67, 53, 62, 57, 42, 69, 50,
+      93, 92, 80, 85, 89, 90, 81,
+    ]
+    const input  = smooth(rawInput, 3)
+    const output = smooth(rawOutput, 3)
+    const soc    = smooth(rawSoc, 2)
+    const totalInputKwh  = rawInput.reduce((s, v) => s + v * 24 / 1000, 0)
+    const totalOutputKwh = rawOutput.reduce((s, v) => s + v * 24 / 1000, 0)
+    return {
+      input, output, soc, labels,
+      co2Kg: parseFloat((totalInputKwh * 0.5).toFixed(1)),
+      totalInputKwh, totalOutputKwh,
+      insight: 'Wk 4 peaked — Wk 3 was heavily overcast',
+      ecoInsight: `Equivalent to driving ${Math.round(totalOutputKwh * 3.5)} fewer miles`,
+    }
   }
-  // 采样到 maxPoints
-  const maxPoints = period === 'Month' ? 30 : 12
-  const step = Math.max(1, Math.ceil(labels.length / maxPoints))
-  const sLabels = labels.filter((_, i) => i % step === 0)
-  const sInput = input.filter((_, i) => i % step === 0)
-  const sOutput = output.filter((_, i) => i % step === 0)
-  const sSoc = soc.filter((_, i) => i % step === 0)
 
-  const hoursPerBucket = period === 'Month' ? 24 : 72
-  const totalInputKwh = sInput.reduce((s, v) => s + (v * hoursPerBucket) / 1000, 0)
-  const totalOutputKwh = sOutput.reduce((s, v) => s + (v * hoursPerBucket) / 1000, 0)
-  const maxOutputIdx = sOutput.indexOf(Math.max(...sOutput))
+  // ── Range: 4-month summary Jun–Sep ──
+  // Source: sierro1000_4months_simulation.csv
+  const labels = ['Jun', 'Jul', 'Aug', 'Sep']
+  // Monthly_PV_In_kWh * 1000 / (30 × 24) → avg W
+  const rawInput  = [45.0, 49.7, 40.6, 46.5]
+  // Monthly_Fridge_Load_kWh * 1000 / (30 × 24) → avg W
+  const rawOutput = [56.3, 58.5, 62.2, 54.0]
+  // Green_Energy_Ratio_Pct as proxy for SOC trend
+  const rawSoc    = [80.0, 85.0, 65.2, 86.1]
+  const input  = smooth(rawInput, 1)
+  const output = smooth(rawOutput, 1)
+  const soc    = smooth(rawSoc, 1)
+  // Monthly totals from CSV
+  const totalInputKwh  = 32.4 + 35.8 + 29.2 + 33.5
+  const totalOutputKwh = 40.5 + 42.1 + 44.8 + 38.9
   return {
-    input: sInput, output: sOutput, soc: sSoc, labels: sLabels,
+    input, output, soc, labels,
     co2Kg: parseFloat((totalInputKwh * 0.5).toFixed(1)),
     totalInputKwh, totalOutputKwh,
-    insight: `Output peaked on ${sLabels[maxOutputIdx]}`,
+    insight: 'Sep had the best green energy ratio (86%)',
     ecoInsight: `Equivalent to driving ${Math.round(totalOutputKwh * 3.5)} fewer miles`,
   }
 }
