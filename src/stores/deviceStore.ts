@@ -594,6 +594,11 @@ export const useDeviceStore = create<DeviceStoreState>()(
       name: 'powerflow-device-store',
       partialize: (state) => ({
         selectedDeviceId: state.selectedDeviceId,
+        // 设备列表本地缓存：避免每次重新打开 App 时设备列表先短暂清空再请求，
+        // 也避免在网络请求完成前误显示“No devices yet / Add Device”空状态。
+        devices: state.devices,
+        deviceTotal: state.deviceTotal,
+        isDemoMode: state.isDemoMode,
       }),
     }
   )

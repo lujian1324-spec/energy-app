@@ -160,7 +160,7 @@ export const useAuthStore = create<AuthState>()(
       name: 'iot-auth',
       partialize: (state) => ({
         isAuthenticated: state.isAuthenticated,
-        isGuest: state.isGuest,
+        // 游客模式不持久化：关闭/重新打开 App 后必须回到登录页，而不是直接进入设备列表。
         user: state.user,
       }),
     }
