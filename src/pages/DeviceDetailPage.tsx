@@ -20,7 +20,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useConnectionStore } from '../stores/connectionStore'
 import { useDeviceStore } from '../stores/deviceStore'
-import { mapFieldsToRealtime } from '../api/deviceApi'
+import { mapFieldsToRealtime, toggleSleepMode, setWorkMode } from '../api/deviceApi'
 import appVersion from '../version.json'
 
 interface DeviceDetailPageProps {
@@ -78,7 +78,13 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const [editTargetId, setEditTargetId] = useState<string>(routeId ?? selectedDeviceId ?? '')
   const [showDeviceDropdown, setShowDeviceDropdown] = useState(false)
   const [sleepMode, setSleepMode] = useState<'Off' | 'On'>('Off')
-  const [batteryPriority] = useState('Backup Mode')
+  const [showWorkModeMenu, setShowWorkModeMenu] = useState(false)
+  const WORK_MODES: { label: string; value: 0 | 1 | 2 }[] = [
+    { label: 'Normal Mode', value: 0 },
+    { label: 'Backup Mode', value: 1 },
+    { label: 'ECO Mode', value: 2 },
+  ]
+  const [workMode, setWorkMode_] = useState<0 | 1 | 2>(1)
   const [selectedIcon, setSelectedIcon] = useState('zap')
   const [pendingIcon, setPendingIcon] = useState('zap')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -439,15 +445,50 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
         <SettingsRow
           label="Sleep Mode"
           value={sleepMode}
-          onPress={() => setSleepMode((prev) => (prev === 'Off' ? 'On' : 'Off'))}
+          onPress={async () => {
+            const next = sleepMode === 'Off' ? 'On' : 'Off'
+            setSleepMode(next)
+            const deviceId = routeId ?? selectedDeviceId
+            if (deviceId) {
+              try { await toggleSleepMode(deviceId, next === 'On') } catch { /* noop */ }
+            }
+          }}
         />
 
         {/* Battery Priority */}
-        <SettingsRow
-          label="Battery Priority"
-          value={batteryPriority}
-          onPress={() => {}}
-        />
+        <div className="relative mb-2">
+          <div
+            onClick={() => setShowWorkModeMenu(v => !v)}
+            className="rounded-l bg-[#262626] px-4 py-4 flex items-center justify-between cursor-pointer active:opacity-70 transition-opacity"
+          >
+            <span className="text-body-lg text-white">Battery Priority</span>
+            <div className="flex items-center gap-2">
+              <span className="text-body-md text-[#A0A0A5]">{WORK_MODES.find(m => m.value === workMode)?.label ?? 'Backup Mode'}</span>
+              <ChevronDown size={18} className={`text-[#A0A0A5] transition-transform ${showWorkModeMenu ? 'rotate-180' : ''}`} />
+            </div>
+          </div>
+          {showWorkModeMenu && (
+            <div className="absolute left-0 right-0 mt-1 z-10 rounded-l bg-[#262626] border border-white/10 overflow-hidden shadow-xl">
+              {WORK_MODES.map(m => (
+                <button
+                  key={m.value}
+                  onClick={async () => {
+                    setWorkMode_(m.value)
+                    setShowWorkModeMenu(false)
+                    const deviceId = routeId ?? selectedDeviceId
+                    if (deviceId) {
+                      try { await setWorkMode(deviceId, m.value) } catch { /* noop */ }
+                    }
+                  }}
+                  className="w-full px-4 py-3.5 flex items-center justify-between border-b border-white/5 last:border-0 active:bg-white/5"
+                >
+                  <span className={`text-body-md ${workMode === m.value ? 'text-[#01D6BE] font-semibold' : 'text-white'}`}>{m.label}</span>
+                  {workMode === m.value && <Check size={16} className="text-[#01D6BE]" />}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Smart Schedule */}
         <SettingsRow

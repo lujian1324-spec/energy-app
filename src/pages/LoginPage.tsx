@@ -276,6 +276,15 @@ export default function LoginPage() {
           </div>
         )}
 
+        {/* Forgot password */}
+        {!otpMode && (
+          <div className="flex justify-end mt-1">
+            <Link to="/forgot-password" className="text-body-md text-primary">
+              Forgot password?
+            </Link>
+          </div>
+        )}
+
         {error && <p className="text-label text-danger mt-2">{error}</p>}
 
         {/* Sign In */}

@@ -17,6 +17,7 @@ import NotificationsPage from './pages/NotificationsPage'
 import OnboardingPage from './pages/OnboardingPage'
 import DeviceMonitorPage from './pages/DeviceMonitorPage'
 import DeviceDetailPage from './pages/DeviceDetailPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import { useRealtimeSimulator } from './hooks/useRealtimeSimulator'
 import { useAuthStore } from './stores/authStore'
 import { ToastContainer, useToast } from './components/Toast'
@@ -86,7 +87,7 @@ function AppInner() {
   }
 
   // 登录/注册页单独渲染，不包含底部导航
-  if (location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/terms' || location.pathname === '/privacy') {
+  if (location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/terms' || location.pathname === '/privacy' || location.pathname === '/forgot-password') {
     return (
       <AnimatePresence mode="wait">
         <motion.div
@@ -105,6 +106,7 @@ function AppInner() {
               path="/register"
               element={isAuthenticated ? <Navigate to="/devices" replace /> : <RegisterPage />}
             />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
           </Routes>
