@@ -615,7 +615,7 @@ export default function StatsPage() {
               >
                 <div className="flex items-baseline justify-center gap-2">
                   <Zap size={32} className="text-primary fill-primary self-center" />
-                  <span className="text-headline-xl font-display text-ink-1 leading-none">{deviceDays}</span>
+                  <span className="text-headline-xl font-semibold text-ink-1 leading-none">{deviceDays}</span>
                   <span className="text-title-md text-ink-6">Days</span>
                 </div>
                 <p className="text-body-md text-ink-6 mt-3">
@@ -683,7 +683,7 @@ export default function StatsPage() {
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-baseline gap-1.5">
-                        <span className="text-headline-lg font-display text-ink-1 leading-none">
+                        <span className="text-headline-lg font-semibold text-ink-1 leading-none">
                           {chartFrame.co2Kg}
                         </span>
                         <span className="text-body-md text-ink-6">Kg</span>

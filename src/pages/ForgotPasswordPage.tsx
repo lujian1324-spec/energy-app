@@ -215,7 +215,7 @@ export default function ForgotPasswordPage() {
             <button
               onClick={handleSendCode}
               disabled={!emailValid || sending || countdown > 0}
-              className="w-full py-4 rounded-m font-display text-title-md text-ink-13
+              className="w-full py-4 rounded-m font-semibold text-title-md text-ink-13
                 bg-primary disabled:bg-primary-dark disabled:text-ink-13/60 disabled:cursor-not-allowed
                 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
             >
@@ -225,7 +225,7 @@ export default function ForgotPasswordPage() {
             <button
               onClick={handleReset}
               disabled={!canReset || loading}
-              className="w-full py-4 rounded-m font-display text-title-md text-ink-13
+              className="w-full py-4 rounded-m font-semibold text-title-md text-ink-13
                 bg-primary disabled:bg-primary-dark disabled:text-ink-13/60 disabled:cursor-not-allowed
                 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
             >

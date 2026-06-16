@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ChevronLeft, ChevronDown, Check, Settings, Bell, Zap, Sun, PlugZap, ArrowUpRight } from 'lucide-react'
+import { ChevronLeft, ChevronDown, Check, Settings, Bell, Sun, PlugZap } from 'lucide-react'
 import BatteryRing from '../components/BatteryRing'
 import { useDeviceStore } from '../stores/deviceStore'
 import { mapFieldsToRealtime } from '../api/deviceApi'
@@ -350,33 +350,6 @@ export default function DeviceMonitorPage() {
                 </button>
               )
             })}
-          </div>
-        </motion.div>
-
-        {/* ─── Quick stats row ──────────────────────────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.14 }}
-          className="grid grid-cols-2 gap-3"
-        >
-          <div className="bg-[#262626] rounded-l p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <Zap size={14} className="text-[#01D6BE]" />
-              <span className="text-tiny text-[#A0A0A5] uppercase tracking-wider">Daily Produced</span>
-            </div>
-            <p className="text-title-lg font-semibold text-white">
-              {device?.dailyProducedQuantity?.toFixed(1) ?? '--'}<span className="text-label text-[#A0A0A5] ml-1">kWh</span>
-            </p>
-          </div>
-          <div className="bg-[#262626] rounded-l p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <ArrowUpRight size={14} className="text-[#34C759]" />
-              <span className="text-tiny text-[#A0A0A5] uppercase tracking-wider">Total Produced</span>
-            </div>
-            <p className="text-title-lg font-semibold text-white">
-              {device?.totalProducedQuantity?.toFixed(0) ?? '--'}<span className="text-label text-[#A0A0A5] ml-1">kWh</span>
-            </p>
           </div>
         </motion.div>
       </div>

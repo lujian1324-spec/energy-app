@@ -291,7 +291,7 @@ export default function LoginPage() {
         <button
           onClick={handleSignIn}
           disabled={signInDisabled || busy || loading}
-          className="w-full py-4 mt-6 rounded-m font-display text-title-md text-ink-13
+          className="w-full py-4 mt-6 rounded-m font-semibold text-title-md text-ink-13
             bg-primary disabled:bg-primary-dark disabled:text-ink-13/60 disabled:cursor-not-allowed
             active:scale-[0.98] transition-all flex items-center justify-center gap-2"
         >
