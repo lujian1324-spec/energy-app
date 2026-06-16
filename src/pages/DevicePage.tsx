@@ -339,27 +339,6 @@ export default function DevicePage() {
 
   return (
     <div className="h-full flex flex-col bg-[#141414] overflow-hidden">
-      {/* Guest Sign In Banner */}
-      {isGuest && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: 'auto' }}
-          className="bg-[rgba(1,214,190,0.1)] border-b border-[rgba(1,214,190,0.15)] px-5 py-2.5 safe-area-top"
-        >
-          <div className="flex items-center justify-between">
-            <p className="text-[12px] text-[#AEAEB2]">
-              Browsing as <span className="text-[#01D6BE] font-medium">Guest</span>
-            </p>
-            <button
-              onClick={() => navigate('/login')}
-              className="flex items-center gap-1 px-3 py-1.5 bg-[#01D6BE] rounded-full text-[#000000] text-[11px] font-semibold active:scale-[0.97] transition-transform"
-            >
-              Sign In <ChevronRight size={12} />
-            </button>
-          </div>
-        </motion.div>
-      )}
-
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}

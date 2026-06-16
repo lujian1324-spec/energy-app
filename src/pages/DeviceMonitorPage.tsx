@@ -246,34 +246,30 @@ export default function DeviceMonitorPage() {
             />
           </div>
 
-          {/* Input / Output row */}
-          <div className="flex items-start justify-between gap-3">
-            {/* Input */}
-            <div>
-              <p className="text-label text-[#A0A0A5] mb-2">Input</p>
-              <div className="flex items-stretch gap-2">
-                <div className="bg-[#1F1F1F] rounded-m px-3 py-2 text-center flex flex-col justify-center">
-                  <div>
-                    <span className="text-title-md font-semibold text-white">{fmtW(acPower)}</span>
-                    <span className="text-label text-[#A0A0A5]">w</span>
-                  </div>
-                  <p className="text-tiny text-[#636366] mt-0.5">AC</p>
-                </div>
-                <span className="text-[#636366] text-body-md font-semibold self-center">+</span>
-                <div className="bg-[#1F1F1F] rounded-m px-3 py-2 text-center flex flex-col justify-center">
-                  <div>
-                    <span className="text-title-md font-semibold text-white">{fmtW(solarPower)}</span>
-                    <span className="text-label text-[#A0A0A5]">w</span>
-                  </div>
-                  <p className="text-tiny text-[#636366] mt-0.5">Solar</p>
-                </div>
-              </div>
+          {/* Input / Output row — three equal-size value cards */}
+          <div>
+            <div className="flex items-center gap-1 mb-2">
+              <p className="text-label text-[#A0A0A5] flex-1">Input</p>
+              <span className="w-4 flex-shrink-0" />
+              <p className="text-label text-[#A0A0A5] flex-1">Output</p>
             </div>
-
-            {/* Output */}
-            <div className="text-right">
-              <p className="text-label text-[#A0A0A5] mb-2">Output</p>
-              <div className="bg-[#1F1F1F] rounded-m px-4 py-2 inline-flex flex-col items-center justify-center">
+            <div className="grid grid-cols-[1fr_16px_1fr_1fr] gap-2 items-stretch">
+              <div className="bg-[#1F1F1F] rounded-m px-3 py-3 text-center flex flex-col items-center justify-center">
+                <div>
+                  <span className="text-title-md font-semibold text-white">{fmtW(acPower)}</span>
+                  <span className="text-label text-[#A0A0A5]">w</span>
+                </div>
+                <p className="text-tiny text-[#636366] mt-0.5">AC</p>
+              </div>
+              <span className="text-[#636366] text-body-md font-semibold self-center text-center">+</span>
+              <div className="bg-[#1F1F1F] rounded-m px-3 py-3 text-center flex flex-col items-center justify-center">
+                <div>
+                  <span className="text-title-md font-semibold text-white">{fmtW(solarPower)}</span>
+                  <span className="text-label text-[#A0A0A5]">w</span>
+                </div>
+                <p className="text-tiny text-[#636366] mt-0.5">Solar</p>
+              </div>
+              <div className="bg-[#1F1F1F] rounded-m px-3 py-3 text-center flex flex-col items-center justify-center">
                 <div>
                   <span className="text-title-md font-semibold text-white">{fmtW(outputPower)}</span>
                   <span className="text-label text-[#A0A0A5]">w</span>
