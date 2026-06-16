@@ -28,7 +28,7 @@ interface DeviceDetailPageProps {
   onBack?: () => void
 }
 
-type Screen = 'main' | 'editName' | 'displayIcon' | 'deviceInfo'
+type Screen = 'main' | 'editName' | 'displayIcon' | 'deviceInfo' | 'sleepMode'
 
 const DISPLAY_ICONS = [
   { id: 'zap', Icon: Zap, label: 'Power Station' },
@@ -92,6 +92,8 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const [editTargetId, setEditTargetId] = useState<string>(routeId ?? selectedDeviceId ?? '')
   const [showDeviceDropdown, setShowDeviceDropdown] = useState(false)
   const [sleepMode, setSleepMode] = useState<'Off' | 'On'>('Off')
+  const [sleepFrom, setSleepFrom] = useState('22:00')
+  const [sleepTo, setSleepTo] = useState('09:00')
   const [showWorkModeMenu, setShowWorkModeMenu] = useState(false)
   const WORK_MODES: { label: string; value: 0 | 1 | 2 }[] = [
     { label: 'Normal Mode', value: 0 },
@@ -409,6 +411,100 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   }
 
   // ═════════════════════════════════════════════════════════════════════════
+  // SCREEN: Sleep Mode
+  // ═════════════════════════════════════════════════════════════════════════
+
+  if (screen === 'sleepMode') {
+    const enabled = sleepMode === 'On'
+
+    const handleSaveSleepMode = async () => {
+      const deviceId = routeId ?? selectedDeviceId
+      if (deviceId) {
+        try { await toggleSleepMode(deviceId, enabled) } catch { /* noop */ }
+      }
+      setScreen('main')
+    }
+
+    // Format "HH:MM" → "h:MM AM/PM"
+    const fmt = (t: string) => {
+      const [h, m] = t.split(':').map(Number)
+      const ampm = h < 12 ? 'AM' : 'PM'
+      const h12 = h % 12 === 0 ? 12 : h % 12
+      return `${h12}:${String(m).padStart(2, '0')} ${ampm}`
+    }
+
+    return (
+      <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
+        {/* Header */}
+        <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative">
+          <BackBtn to="main" />
+          <h1 className="text-title-lg font-semibold text-white absolute left-1/2 -translate-x-1/2">
+            Sleep Mode
+          </h1>
+          <button
+            onClick={handleSaveSleepMode}
+            className="ml-auto text-body-lg font-semibold text-[#01D6BE]"
+          >
+            Save
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-4 pt-2 pb-8 space-y-6">
+          {/* Toggle row */}
+          <div className="rounded-l bg-[#262626] px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-body-lg text-white">Sleep Mode</p>
+                <p className="text-caption text-[#A0A0A5] mt-0.5">Low-noise charging · 150W AC charging limit</p>
+              </div>
+              <button
+                onClick={() => setSleepMode(enabled ? 'Off' : 'On')}
+                className={`relative w-12 h-7 rounded-full transition-colors duration-200 ${enabled ? 'bg-[#01D6BE]' : 'bg-[#3A3A3C]'}`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow-sm transition-transform duration-200 ${enabled ? 'translate-x-5' : 'translate-x-0'}`}
+                />
+              </button>
+            </div>
+          </div>
+
+          {/* Time section — only shown when enabled */}
+          {enabled && (
+            <div>
+              <p className="text-body-md font-semibold text-white mb-2">Time</p>
+              <div className="rounded-l bg-[#262626] overflow-hidden">
+                {/* From */}
+                <div className="flex items-center justify-between px-4 py-4 border-b border-white/5">
+                  <span className="text-body-lg text-white">From</span>
+                  <input
+                    type="time"
+                    value={sleepFrom}
+                    onChange={e => setSleepFrom(e.target.value)}
+                    className="bg-[#3A3A3C] text-white text-body-md rounded-m px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#01D6BE] [color-scheme:dark]"
+                  />
+                </div>
+                {/* To */}
+                <div className="flex items-center justify-between px-4 py-4">
+                  <span className="text-body-lg text-white">To</span>
+                  <input
+                    type="time"
+                    value={sleepTo}
+                    onChange={e => setSleepTo(e.target.value)}
+                    className="bg-[#3A3A3C] text-white text-body-md rounded-m px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#01D6BE] [color-scheme:dark]"
+                  />
+                </div>
+              </div>
+              <p className="text-caption text-[#636366] mt-2 px-1">
+                Sleep mode active {fmt(sleepFrom)} – {fmt(sleepTo)}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // ═════════════════════════════════════════════════════════════════════════
   // SCREEN: Main — Device Settings
   // ═════════════════════════════════════════════════════════════════════════
 
@@ -461,14 +557,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
         <SettingsRow
           label="Sleep Mode"
           value={sleepMode}
-          onPress={async () => {
-            const next = sleepMode === 'Off' ? 'On' : 'Off'
-            setSleepMode(next)
-            const deviceId = routeId ?? selectedDeviceId
-            if (deviceId) {
-              try { await toggleSleepMode(deviceId, next === 'On') } catch { /* noop */ }
-            }
-          }}
+          onPress={() => setScreen('sleepMode')}
         />
 
         {/* Battery Priority */}
