@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ChevronLeft, ChevronDown, Settings, Bell, Zap, Sun, PlugZap, ArrowUpRight } from 'lucide-react'
+import { ChevronLeft, ChevronDown, Check, Settings, Bell, Zap, Sun, PlugZap } from 'lucide-react'
 import BatteryRing from '../components/BatteryRing'
 import { useDeviceStore } from '../stores/deviceStore'
 import { mapFieldsToRealtime } from '../api/deviceApi'
@@ -69,6 +69,7 @@ export default function DeviceMonitorPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<Metric>('battery')
+  const [showDeviceDropdown, setShowDeviceDropdown] = useState(false)
 
   const {
     devices,
@@ -161,17 +162,47 @@ export default function DeviceMonitorPage() {
         </button>
 
         {/* Device name + dropdown */}
-        <button className="flex-1 flex flex-col items-center">
-          <div className="flex items-center gap-1">
-            <span className="text-title-md font-semibold text-white">
-              {device?.name ?? 'Device'}
+        <div className="flex-1 flex flex-col items-center relative">
+          <button
+            onClick={() => setShowDeviceDropdown(v => !v)}
+            className="flex flex-col items-center active:opacity-70 transition-opacity"
+          >
+            <div className="flex items-center gap-1">
+              <span className="text-title-md font-semibold text-white">
+                {device?.name ?? 'Device'}
+              </span>
+              <ChevronDown
+                size={16}
+                className={`text-white transition-transform duration-200 ${showDeviceDropdown ? 'rotate-180' : ''}`}
+              />
+            </div>
+            <span className="text-label text-[#01D6BE]">
+              {isOnline ? 'Connected' : 'Offline'}
             </span>
-            <ChevronDown size={16} className="text-white" />
-          </div>
-          <span className="text-label text-[#01D6BE]">
-            {isOnline ? 'Connected' : 'Offline'}
-          </span>
-        </button>
+          </button>
+          {showDeviceDropdown && devices.length > 1 && (
+            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-50 w-48 rounded-l bg-[#262626] border border-white/10 shadow-xl overflow-hidden">
+              {devices.map(d => {
+                const isSelected = String(d.id) === id
+                return (
+                  <button
+                    key={d.id}
+                    onClick={() => {
+                      setShowDeviceDropdown(false)
+                      if (!isSelected) navigate(`/device/${d.id}`)
+                    }}
+                    className="w-full px-4 py-3 flex items-center justify-between border-b border-white/5 last:border-0 active:bg-white/5"
+                  >
+                    <span className={`text-body-md ${isSelected ? 'text-[#01D6BE] font-semibold' : 'text-white'}`}>
+                      {d.name}
+                    </span>
+                    {isSelected && <Check size={15} className="text-[#01D6BE]" />}
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
 
         {/* Settings + Bell */}
         <div className="flex items-center gap-2">
@@ -216,20 +247,24 @@ export default function DeviceMonitorPage() {
           </div>
 
           {/* Input / Output row */}
-          <div className="flex items-end justify-between">
+          <div className="flex items-start justify-between gap-3">
             {/* Input */}
             <div>
               <p className="text-label text-[#A0A0A5] mb-2">Input</p>
-              <div className="flex items-center gap-2">
-                <div className="bg-[#1F1F1F] rounded-m px-3 py-2 text-center">
-                  <span className="text-title-md font-semibold text-white">{fmtW(acPower)}</span>
-                  <span className="text-label text-[#A0A0A5]">w</span>
+              <div className="flex items-stretch gap-2">
+                <div className="bg-[#1F1F1F] rounded-m px-3 py-2 text-center flex flex-col justify-center">
+                  <div>
+                    <span className="text-title-md font-semibold text-white">{fmtW(acPower)}</span>
+                    <span className="text-label text-[#A0A0A5]">w</span>
+                  </div>
                   <p className="text-tiny text-[#636366] mt-0.5">AC</p>
                 </div>
-                <span className="text-[#636366] text-body-md font-semibold">+</span>
-                <div className="bg-[#1F1F1F] rounded-m px-3 py-2 text-center">
-                  <span className="text-title-md font-semibold text-white">{fmtW(solarPower)}</span>
-                  <span className="text-label text-[#A0A0A5]">w</span>
+                <span className="text-[#636366] text-body-md font-semibold self-center">+</span>
+                <div className="bg-[#1F1F1F] rounded-m px-3 py-2 text-center flex flex-col justify-center">
+                  <div>
+                    <span className="text-title-md font-semibold text-white">{fmtW(solarPower)}</span>
+                    <span className="text-label text-[#A0A0A5]">w</span>
+                  </div>
                   <p className="text-tiny text-[#636366] mt-0.5">Solar</p>
                 </div>
               </div>
@@ -238,9 +273,12 @@ export default function DeviceMonitorPage() {
             {/* Output */}
             <div className="text-right">
               <p className="text-label text-[#A0A0A5] mb-2">Output</p>
-              <div className="bg-[#1F1F1F] rounded-m px-4 py-2 inline-block">
-                <span className="text-title-md font-semibold text-white">{fmtW(outputPower)}</span>
-                <span className="text-label text-[#A0A0A5]">w</span>
+              <div className="bg-[#1F1F1F] rounded-m px-4 py-2 inline-flex flex-col items-center justify-center">
+                <div>
+                  <span className="text-title-md font-semibold text-white">{fmtW(outputPower)}</span>
+                  <span className="text-label text-[#A0A0A5]">w</span>
+                </div>
+                <p className="text-tiny text-[#636366] mt-0.5">DC</p>
               </div>
             </div>
           </div>
