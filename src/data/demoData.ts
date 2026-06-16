@@ -227,7 +227,7 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
         gatherProtocolNumber: device.gatherProtocolNumber,
         gatherProtocolVersionCode: '2.1',
         fields: {
-          soc: makeField('soc', 'State of Charge', 100, '%', 'battery'),
+          soc: makeField('soc', 'State of Charge', 95, '%', 'battery'),
           batteryPower: makeField('batteryPower', 'Battery Power', 0, 'W', 'battery'),
           batteryVoltage: makeField('batteryVoltage', 'Battery Voltage', 3.2, 'V', 'battery'),
           batteryCurrent: makeField('batteryCurrent', 'Battery Current', 72.5, 'A', 'battery'),
@@ -258,7 +258,7 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
             name: 'Battery',
             category: 'battery',
             stateItems: [
-              { ...makeField('soc', 'SoC', 100, '%', 'battery'), isHidden: false, nameDisplay: 'State of Charge' },
+              { ...makeField('soc', 'SoC', 95, '%', 'battery'), isHidden: false, nameDisplay: 'State of Charge' },
               { ...makeField('batteryPower', 'Power', 0, 'W', 'battery'), isHidden: false, nameDisplay: 'Battery Power' },
             ],
           },
@@ -388,7 +388,7 @@ export function getDemoEnergyFlow(deviceId: string | number): { code: number; me
     ctFlow: null,
   }
 
-  if (numericId === 10001) { // SIERRO 1000 — AC 45W in, 0W solar, 45W out, 0W battery, SoC 100%
+  if (numericId === 10001) { // SIERRO 1000 — AC 45W in, 0W solar, 45W out, 0W battery, SoC 95%
     return {
       code: 0,
       message: 'success',
@@ -397,7 +397,7 @@ export function getDemoEnergyFlow(deviceId: string | number): { code: number; me
         deviceAttributeState: {
           time: Math.floor(Date.now() / 1000).toString(),
           fields: {
-            soc: makeField('soc', 'SoC', 100, '%', 'battery'),
+            soc: makeField('soc', 'SoC', 95, '%', 'battery'),
           },
           groups: [],
         },
@@ -451,7 +451,8 @@ const REAL_HOURLY: Record<number, { grid: number[]; pv: number[]; load: number[]
     grid: [84,51,41,84,52,54,70,25,14,40,0,0,0,0,0,16,4,32,81,47,52,86,43,45],
     pv:   [0,0,0,0,0,0,0,18,29,46,65,82,87,76,76,59,43,13,3,0,0,0,0,0],
     load: [84,51,41,84,52,54,70,43,43,86,52,44,73,43,42,75,47,45,84,47,52,86,43,45],
-    soc:  [100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100],
+    // 90% → 100% (charging) → 95% (discharging) repeating every 12h
+    soc:  [90,92,94,96,98,100,99,98,97,96,95.5,95, 90,92,94,96,98,100,99,98,97,96,95.5,95],
   },
   10002: { // SIERRO 2000 — Jul 4, 2026
     grid: [0,0,1000,0,0,1000,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1000,0,0,1000],
