@@ -21,6 +21,7 @@ interface ChartFrame {
   totalOutputKwh: number
   insight: string
   ecoInsight: string
+  dateLabel?: string
 }
 
 // ─── 按时间段采样/聚合历史数据 ───
@@ -142,6 +143,74 @@ function aggregateHistory(
 
 // ─── Demo/Mock 数据 — 来自 Sierro 1000 真实模拟 CSV ───
 
+// Day: 4 days (Jun 1–4). pageIdx 0=Jun4, 1=Jun3, 2=Jun2, 3=Jun1
+const DAY_PAGES = [
+  { dateLabel: 'Jun 4, 2026', insight: 'Overcast day — mixed grid/solar',
+    rawInput:  [84,51,41,84,52,54,70,43,43,86,65,82,87,76,76,75,47,45,84,47,52,86,43,45],
+    rawOutput: [84,51,41,84,52,54,70,43,43,86,52,44,73,43,42,75,47,45,84,47,52,86,43,45],
+    rawSoc:    [100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100] },
+  { dateLabel: 'Jun 3, 2026', insight: 'Mostly sunny after 8am',
+    rawInput:  [283,49,46,70,53,45,85,51,73,96,126,134,148,150,126,101,80,53,74,40,44,71,42,40],
+    rawOutput: [73,49,46,70,53,45,85,51,51,82,51,54,77,40,47,72,44,53,74,40,44,71,42,40],
+    rawSoc:    [100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100] },
+  { dateLabel: 'Jun 2, 2026', insight: 'Battery ran on reserve 20:00–23:00',
+    rawInput:  [87,50,49,85,53,44,79,69,139,202,261,287,300,290,250,206,149,84,87,43,0,0,0,0],
+    rawOutput: [87,50,49,85,53,44,79,53,46,78,45,40,85,43,44,71,45,49,87,43,42,73,48,47],
+    rawSoc:    [100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,95.8,88.5,83.7,79.0] },
+  { dateLabel: 'Jun 1, 2026', insight: 'Full solar day — battery fully charged',
+    rawInput:  [71,46,50,83,53,53,89,62,136,175,228,258,253,260,223,176,120,71,71,40,46,74,43,40],
+    rawOutput: [71,46,50,83,53,53,89,45,52,72,46,53,70,49,47,70,47,44,71,40,46,74,43,40],
+    rawSoc:    [100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100] },
+] as const
+
+// Week: 4 weeks. pageIdx 0=Wk4 (Jun 22-28), 1=Wk3, 2=Wk2, 3=Wk1
+const WEEK_PAGES = [
+  { dateLabel: 'Jun 22 – 28, 2026', insight: 'Best solar week — 80–94% SOC daily',
+    rawInput:  [81.0, 78.2, 85.2, 81.7, 84.8, 85.6, 77.6],
+    rawOutput: [52.8, 57.9, 57.9, 55.5, 63.1, 53.3, 58.8],
+    rawSoc:    [93, 92, 80, 85, 89, 90, 81] },
+  { dateLabel: 'Jun 15 – 21, 2026', insight: 'Heavy overcast — mostly grid powered',
+    rawInput:  [14.5, 14.2, 12.9, 15.9, 12.2, 12.2, 13.4],
+    rawOutput: [58.0, 60.5, 54.3, 53.2, 57.1, 56.2, 56.1],
+    rawSoc:    [67, 53, 62, 57, 42, 69, 50] },
+  { dateLabel: 'Jun 8 – 14, 2026', insight: 'Mixed cloud — SOC dipped to 12% on Thu',
+    rawInput:  [41.1, 47.3, 40.5, 48.3, 49.1, 34.3, 40.6],
+    rawOutput: [57.6, 60.5, 54.7, 53.5, 55.5, 56.7, 57.2],
+    rawSoc:    [67, 40, 72, 12, 64, 74, 44] },
+  { dateLabel: 'Jun 1 – 7, 2026', insight: 'Steady solar — battery stayed 81–93%',
+    rawInput:  [72.6, 71.5, 70.1, 79.3, 72.5, 73.0, 73.3],
+    rawOutput: [59.0, 52.8, 59.8, 59.3, 54.3, 62.3, 56.9],
+    rawSoc:    [84, 91, 90, 81, 93, 85, 89] },
+]
+
+// Month: 4 months. pageIdx 0=Sep, 1=Aug, 2=Jul, 3=Jun
+const MONTH_PAGES = [
+  { dateLabel: 'September 2026', monthNum: 9,
+    totalInputKwh: 33.5, totalOutputKwh: 38.9,
+    insight: 'Sep best green ratio (86%) — 33.5 kWh solar',
+    rawInput:  [48.0,46.9,51.1,49.0,50.9,51.4,46.6,41.1,47.3,40.5,48.3,49.1,34.3,40.6,43.5,42.6,38.7,47.7,36.6,36.6,40.2,48.6,46.9,51.1,49.0,50.9,51.4,46.6,48.0,48.0],
+    rawOutput: [53.5,52.5,57.3,55.0,51.3,58.9,53.9,54.0,56.8,51.3,50.2,52.1,53.2,53.7,54.5,57.2,51.3,50.2,54.0,53.2,53.0,49.9,54.7,54.7,52.5,59.7,50.4,55.6,53.5,53.5],
+    rawSoc:    [86,91,90,81,93,85,89,67,40,72,42,64,74,54,67,53,62,57,52,69,50,93,92,80,85,89,90,81,86,86] },
+  { dateLabel: 'August 2026', monthNum: 8,
+    totalInputKwh: 29.2, totalOutputKwh: 44.8,
+    insight: 'Aug heaviest load (44.8 kWh) — lowest solar',
+    rawInput:  [43.4,42.9,42.0,47.6,43.5,43.8,44.0,24.7,28.4,24.3,29.0,29.5,20.6,24.4,8.7,8.5,7.7,9.5,7.3,7.3,8.0,48.6,46.9,51.1,49.0,50.9,51.4,46.6,43.4,43.4,43.4],
+    rawOutput: [64.5,60.1,69.3,66.5,62.0,71.2,65.0,69.7,73.2,66.1,64.6,63.1,64.6,65.3,70.1,73.2,65.7,64.3,69.1,68.0,67.8,63.9,70.1,70.1,67.5,76.5,64.5,71.2,64.5,64.5,64.5],
+    rawSoc:    [72,79,78,69,81,73,77,55,32,60,5,52,62,36,55,43,52,47,34,57,42,81,80,68,73,77,78,69,72,72,72] },
+  { dateLabel: 'July 2026', monthNum: 7,
+    totalInputKwh: 35.8, totalOutputKwh: 42.1,
+    insight: 'Jul peak solar (35.8 kWh) — 85% green energy',
+    rawInput:  [79.9,78.7,77.1,87.2,79.8,80.3,80.7,45.2,52.0,44.6,53.1,54.0,37.7,44.7,16.0,15.6,14.2,17.5,13.4,13.4,14.7,89.1,86.0,93.7,89.8,93.3,94.2,85.4,79.9,79.9,79.9],
+    rawOutput: [60.4,56.5,65.1,62.5,58.3,66.9,61.1,65.5,68.8,62.1,60.7,59.3,60.7,61.4,65.9,68.8,61.8,60.4,64.9,63.9,63.7,60.1,65.9,65.9,63.4,71.9,60.6,66.9,60.4,60.4,60.4],
+    rawSoc:    [84,91,90,81,93,85,89,67,40,72,12,64,74,44,67,53,62,57,42,69,50,93,92,80,85,89,90,81,84,84,84] },
+  { dateLabel: 'June 2026', monthNum: 6,
+    totalInputKwh: 32.4, totalOutputKwh: 40.5,
+    insight: 'Jun — Wk4 sunniest, Wk3 heavily overcast',
+    rawInput:  [72.6,71.5,70.1,79.3,72.5,73.0,73.3,41.1,47.3,40.5,48.3,49.1,34.3,40.6,14.5,14.2,12.9,15.9,12.2,12.2,13.4,81.0,78.2,85.2,81.7,84.8,85.6,77.6,72.6,72.6],
+    rawOutput: [59.0,52.8,59.8,59.3,54.3,62.3,56.9,57.6,60.5,54.7,53.5,55.5,56.7,57.2,58.0,60.5,54.3,53.2,57.1,56.2,56.1,52.8,57.9,57.9,55.5,63.1,53.3,58.8,59.0,59.0],
+    rawSoc:    [84,91,90,81,93,85,89,67,40,72,12,64,74,44,67,53,62,57,42,69,50,93,92,80,85,89,90,81,84,84] },
+]
+
 /** 3-point weighted moving average, applied `passes` times */
 function smooth(arr: number[], passes = 2): number[] {
   let out = [...arr]
@@ -156,114 +225,66 @@ function smooth(arr: number[], passes = 2): number[] {
   return out
 }
 
-function getDemoChartFrame(period: Period): ChartFrame {
 
-  // ── Day: Jun 2 hourly data (24h) ──
-  // Source: sierro1000_4days_simulation.csv — day with battery discharge at night
+function getDemoChartFrame(period: Period, pageOffset = 0): ChartFrame {
+  const pageIdx = Math.min(-pageOffset, 3)  // pageOffset 0→-3 maps to pageIdx 0→3
+
   if (period === 'Day') {
+    const page = DAY_PAGES[pageIdx]
     const labels = Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2, '0')}:00`)
-    // Grid_Input_W + PV_Input_W (total power in); night hours 20-23 are battery-only
-    const rawInput  = [87,50,49,85,53,44,79,69,139,202,261,287,300,290,250,206,149,84,87,43,0,0,0,0]
-    const rawOutput = [87,50,49,85,53,44,79,53, 46, 78, 45, 40, 85, 43, 44, 71, 45,49,87,43,42,73,48,47]
-    const rawSoc    = [100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,95.8,88.5,83.7,79.0]
-    const input  = smooth(rawInput, 2)
-    const output = smooth(rawOutput, 2)
-    const soc    = smooth(rawSoc, 1)
-    const totalInputKwh  = rawInput.reduce((s, v) => s + v / 1000, 0)
-    const totalOutputKwh = rawOutput.reduce((s, v) => s + v / 1000, 0)
+    const input  = smooth([...page.rawInput], 2)
+    const output = smooth([...page.rawOutput], 2)
+    const soc    = smooth([...page.rawSoc], 1)
+    const totalInputKwh  = page.rawInput.reduce((s, v) => s + v / 1000, 0)
+    const totalOutputKwh = page.rawOutput.reduce((s, v) => s + v / 1000, 0)
     return {
-      input, output, soc, labels,
+      input, output, soc, labels, dateLabel: page.dateLabel,
       co2Kg: parseFloat((totalInputKwh * 0.5).toFixed(1)),
-      totalInputKwh, totalOutputKwh,
-      insight: 'Peak solar input around 12:00',
+      totalInputKwh, totalOutputKwh, insight: page.insight,
       ecoInsight: `Equivalent to driving ${Math.round(totalOutputKwh * 3.5)} fewer miles`,
     }
   }
 
-  // ── Week: Jun 8–14 (mixed cloud — SOC swings 12–74%) ──
-  // Source: sierro1000_4weeks_simulation.csv, Week 2
   if (period === 'Week') {
+    const page = WEEK_PAGES[pageIdx]
     const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-    // PV_In_Wh / 24 → avg W per day
-    const rawInput  = [41.1, 47.3, 40.5, 48.3, 49.1, 34.3, 40.6]
-    const rawOutput = [57.6, 60.5, 54.7, 53.5, 55.5, 56.7, 57.2]
-    const rawSoc    = [67, 40, 72, 12, 64, 74, 44]
-    const input  = smooth(rawInput, 2)
-    const output = smooth(rawOutput, 2)
-    const soc    = smooth(rawSoc, 1)
-    const totalInputKwh  = rawInput.reduce((s, v) => s + v * 24 / 1000, 0)
-    const totalOutputKwh = rawOutput.reduce((s, v) => s + v * 24 / 1000, 0)
-    const maxIdx = rawInput.indexOf(Math.max(...rawInput))
+    const input  = smooth([...page.rawInput], 2)
+    const output = smooth([...page.rawOutput], 2)
+    const soc    = smooth([...page.rawSoc], 1)
+    const totalInputKwh  = page.rawInput.reduce((s, v) => s + v * 24 / 1000, 0)
+    const totalOutputKwh = page.rawOutput.reduce((s, v) => s + v * 24 / 1000, 0)
     return {
-      input, output, soc, labels,
+      input, output, soc, labels, dateLabel: page.dateLabel,
       co2Kg: parseFloat((totalInputKwh * 0.5).toFixed(1)),
-      totalInputKwh, totalOutputKwh,
-      insight: `Best solar day: ${labels[maxIdx]}`,
+      totalInputKwh, totalOutputKwh, insight: page.insight,
       ecoInsight: `Equivalent to driving ${Math.round(totalOutputKwh * 3.5)} fewer miles`,
     }
   }
 
-  // ── Month: Jun 1–28 (4 distinct weather weeks) ──
-  // Wk1 sunny → Wk2 partial → Wk3 cloudy → Wk4 sunniest
-  // Source: sierro1000_4weeks_simulation.csv (all 28 days)
   if (period === 'Month') {
-    const labels = [
-      '6/1','6/2','6/3','6/4','6/5','6/6','6/7',
-      '6/8','6/9','6/10','6/11','6/12','6/13','6/14',
-      '6/15','6/16','6/17','6/18','6/19','6/20','6/21',
-      '6/22','6/23','6/24','6/25','6/26','6/27','6/28',
-    ]
-    // PV_In_Wh / 24 → avg W; Week 3 is heavy overcast (12–16 W)
-    const rawInput = [
-      72.6, 71.5, 70.1, 79.3, 72.5, 73.0, 73.3,   // wk1 sunny
-      41.1, 47.3, 40.5, 48.3, 49.1, 34.3, 40.6,   // wk2 partial
-      14.5, 14.2, 12.9, 15.9, 12.2, 12.2, 13.4,   // wk3 cloudy
-      81.0, 78.2, 85.2, 81.7, 84.8, 85.6, 77.6,   // wk4 sunniest
-    ]
-    // Fridge_Load_Wh / 24 → avg W (relatively stable ~53–63 W)
-    const rawOutput = [
-      59.0, 52.8, 59.8, 59.3, 54.3, 62.3, 56.9,
-      57.6, 60.5, 54.7, 53.5, 55.5, 56.7, 57.2,
-      58.0, 60.5, 54.3, 53.2, 57.1, 56.2, 56.1,
-      52.8, 57.9, 57.9, 55.5, 63.1, 53.3, 58.8,
-    ]
-    const rawSoc = [
-      84, 91, 90, 81, 93, 85, 89,
-      67, 40, 72, 12, 64, 74, 44,
-      67, 53, 62, 57, 42, 69, 50,
-      93, 92, 80, 85, 89, 90, 81,
-    ]
-    const input  = smooth(rawInput, 3)
-    const output = smooth(rawOutput, 3)
-    const soc    = smooth(rawSoc, 2)
-    const totalInputKwh  = rawInput.reduce((s, v) => s + v * 24 / 1000, 0)
-    const totalOutputKwh = rawOutput.reduce((s, v) => s + v * 24 / 1000, 0)
+    const page = MONTH_PAGES[pageIdx]
+    const labels = Array.from({ length: page.rawInput.length }, (_, i) => `${page.monthNum}/${i + 1}`)
+    const input  = smooth([...page.rawInput], 3)
+    const output = smooth([...page.rawOutput], 3)
+    const soc    = smooth([...page.rawSoc], 2)
     return {
-      input, output, soc, labels,
-      co2Kg: parseFloat((totalInputKwh * 0.5).toFixed(1)),
-      totalInputKwh, totalOutputKwh,
-      insight: 'Wk 4 peaked — Wk 3 was heavily overcast',
-      ecoInsight: `Equivalent to driving ${Math.round(totalOutputKwh * 3.5)} fewer miles`,
+      input, output, soc, labels, dateLabel: page.dateLabel,
+      co2Kg: parseFloat((page.totalInputKwh * 0.5).toFixed(1)),
+      totalInputKwh: page.totalInputKwh, totalOutputKwh: page.totalOutputKwh,
+      insight: page.insight,
+      ecoInsight: `Equivalent to driving ${Math.round(page.totalOutputKwh * 3.5)} fewer miles`,
     }
   }
 
-  // ── Range: 4-month summary Jun–Sep ──
-  // Source: sierro1000_4months_simulation.csv
-  const labels = ['Jun', 'Jul', 'Aug', 'Sep']
-  // Monthly_PV_In_kWh * 1000 / (30 × 24) → avg W
+  // Range: 4-month overview (no pagination)
   const rawInput  = [45.0, 49.7, 40.6, 46.5]
-  // Monthly_Fridge_Load_kWh * 1000 / (30 × 24) → avg W
   const rawOutput = [56.3, 58.5, 62.2, 54.0]
-  // Green_Energy_Ratio_Pct as proxy for SOC trend
   const rawSoc    = [80.0, 85.0, 65.2, 86.1]
-  const input  = smooth(rawInput, 1)
-  const output = smooth(rawOutput, 1)
-  const soc    = smooth(rawSoc, 1)
-  // Monthly totals from CSV
   const totalInputKwh  = 32.4 + 35.8 + 29.2 + 33.5
   const totalOutputKwh = 40.5 + 42.1 + 44.8 + 38.9
   return {
-    input, output, soc, labels,
+    input: smooth(rawInput, 1), output: smooth(rawOutput, 1), soc: smooth(rawSoc, 1),
+    labels: ['Jun', 'Jul', 'Aug', 'Sep'], dateLabel: 'Jun – Sep 2026',
     co2Kg: parseFloat((totalInputKwh * 0.5).toFixed(1)),
     totalInputKwh, totalOutputKwh,
     insight: 'Sep had the best green energy ratio (86%)',
@@ -336,6 +357,9 @@ function ChartEmptyState({ message }: { message: string }) {
 
 export default function StatsPage() {
   const [period, setPeriod] = useState<Period>('Day')
+  const [pageOffset, setPageOffset] = useState(0) // 0=current, -1=prev, -2=two back, -3=oldest
+  // Reset page when switching period
+  useEffect(() => { setPageOffset(0) }, [period])
   // PRD v1.1 §8.2: 上次同步时间
   const [lastSyncAt, setLastSyncAt] = useState<number | undefined>(Date.now())
   const {
@@ -411,9 +435,12 @@ export default function StatsPage() {
 
   // 解析图表数据（仅使用 API 数据，无 demo 降级）
   const chartFrame = useMemo(() => {
-    if (historyData) return aggregateHistory(historyData, period)
-    return null
-  }, [historyData, period])
+    if (historyData) {
+      const frame = aggregateHistory(historyData, period)
+      if (frame) return frame
+    }
+    return getDemoChartFrame(period, pageOffset)
+  }, [historyData, period, pageOffset])
 
   // 生成 SVG path
   const generateAreaPath = (data: number[], width: number, height: number) => {
@@ -605,15 +632,20 @@ export default function StatsPage() {
             <div className="flex items-center justify-center gap-3 mb-4">
               <button
                 aria-label="Previous"
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-ink-10 text-ink-4 hover:text-ink-1 transition-colors"
+                disabled={pageOffset <= -3 || period === 'Range'}
+                onClick={() => setPageOffset(v => Math.max(v - 1, -3))}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-ink-10 text-ink-4 hover:text-ink-1 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <ChevronLeft size={18} />
               </button>
-              <span className="text-title-md font-semibold text-ink-1">{dateTitle}</span>
+              <span className="text-title-md font-semibold text-ink-1">
+                {chartFrame?.dateLabel ?? dateTitle}
+              </span>
               <button
                 aria-label="Next"
-                disabled
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-ink-10 text-ink-9 opacity-40 cursor-not-allowed"
+                disabled={pageOffset >= 0 || period === 'Range'}
+                onClick={() => setPageOffset(v => Math.min(v + 1, 0))}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-ink-10 text-ink-4 hover:text-ink-1 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 <ChevronRight size={18} />
               </button>

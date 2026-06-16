@@ -18,7 +18,6 @@ import {
 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { usePowerStationStore } from '../stores/powerStationStore'
-import { useConnectionStore } from '../stores/connectionStore'
 import { useDeviceStore } from '../stores/deviceStore'
 import { mapFieldsToRealtime, toggleSleepMode, setWorkMode } from '../api/deviceApi'
 import appVersion from '../version.json'
@@ -43,9 +42,8 @@ const DISPLAY_ICONS = [
 ]
 
 export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
-  const { powerStation, settings, selectedDeviceId, updateDeviceNameById, updateDeviceSpecs, peakShavingSettings } =
+  const { powerStation, selectedDeviceId, updateDeviceNameById, peakShavingSettings } =
     usePowerStationStore()
-  const { bleConnection, serialConnection, activeDataSource } = useConnectionStore()
   const navigate = useNavigate()
   const { id: routeId } = useParams<{ id: string }>()
 
@@ -59,7 +57,23 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
       selectDevice(routeId)
       loadDeviceState(routeId)
     }
-  }, [routeId])
+  }, [routeId, selectDevice, loadDeviceState])
+
+  // Initialize sleepMode from real device state when it loads
+  useEffect(() => {
+    const val = selectedDeviceState?.fields?.sleepMode?.value
+    if (val !== undefined && val !== null) {
+      setSleepMode(val ? 'On' : 'Off')
+    }
+  }, [selectedDeviceState])
+
+  // Initialize workMode from real device state when it loads
+  useEffect(() => {
+    const val = selectedDeviceState?.fields?.workMode?.value
+    if (val === 0 || val === 1 || val === 2) {
+      setWorkMode_(val as 0 | 1 | 2)
+    }
+  }, [selectedDeviceState])
 
   // Realtime fields (battery health / cycles / temp / voltage) for Device Info
   const realtime = useMemo(
@@ -126,6 +140,8 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const handleDeleteDevice = async () => {
     const id = routeId ?? selectedDeviceId
     if (!id) return
+    const numId = Number(id)
+    if (!numId || isNaN(numId)) return
     setDeleting(true)
     try {
       await removeDevice([Number(id)])
