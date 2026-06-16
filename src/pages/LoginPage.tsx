@@ -163,7 +163,7 @@ export default function LoginPage() {
 
         {/* Tab bar */}
         <div className="flex border-b border-ink-9 mb-6">
-          {(['email', 'username'] as Tab[]).map(t => (
+          {(['username', 'email'] as Tab[]).map(t => (
             <button
               key={t}
               onClick={() => switchTab(t)}
