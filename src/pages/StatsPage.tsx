@@ -159,69 +159,77 @@ function smooth(arr: number[], passes = 2): number[] {
 
 // ── Paginated demo data arrays ──
 
+// Real SIERRO 2000 simulation logs (sierro2000_4days/4weeks/4months.csv)
 const DAY_PAGES = [
-  { dateLabel: 'Jun 4, 2026', insight: 'Overcast day — mixed grid/solar',
-    rawInput:  [84,51,41,84,52,54,70,43,43,86,65,82,87,76,76,75,47,45,84,47,52,86,43,45],
-    rawOutput: [84,51,41,84,52,54,70,43,43,86,52,44,73,43,42,75,47,45,84,47,52,86,43,45],
-    rawSoc:    [100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100] },
-  { dateLabel: 'Jun 3, 2026', insight: 'Mostly sunny after 8am',
-    rawInput:  [283,49,46,70,53,45,85,51,73,96,126,134,148,150,126,101,80,53,74,40,44,71,42,40],
-    rawOutput: [73,49,46,70,53,45,85,51,51,82,51,54,77,40,47,72,44,53,74,40,44,71,42,40],
-    rawSoc:    [100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100] },
-  { dateLabel: 'Jun 2, 2026', insight: 'Battery ran on reserve 20:00–23:00',
-    rawInput:  [87,50,49,85,53,44,79,69,139,202,261,287,300,290,250,206,149,84,87,43,0,0,0,0],
-    rawOutput: [87,50,49,85,53,44,79,53,46,78,45,40,85,43,44,71,45,49,87,43,42,73,48,47],
-    rawSoc:    [100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,95.8,88.5,83.7,79.0] },
-  { dateLabel: 'Jun 1, 2026', insight: 'Full solar day — battery fully charged',
-    rawInput:  [71,46,50,83,53,53,89,62,136,175,228,258,253,260,223,176,120,71,71,40,46,74,43,40],
-    rawOutput: [71,46,50,83,53,53,89,45,52,72,46,53,70,49,47,70,47,44,71,40,46,74,43,40],
-    rawSoc:    [100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100] },
+  { dateLabel: 'Jul 4, 2026', insight: 'Sunny day — battery topped up by mid-morning',
+    rawInput:  [0,0,1000,0,0,1000,0,1164,1584,1568,1548,1566,1578,1582,1574,1562,1579,1164,0,0,1000,0,0,1000],
+    rawOutput: [77,48,64,47,70,50,82,59,84,68,48,66,78,82,74,62,79,58,67,66,80,64,53,80],
+    rawSoc:    [96.2,93.8,100.0,97.6,94.2,100.0,95.9,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,96.7,93.4,100.0,96.8,94.1,100.0] },
+  { dateLabel: 'Jul 3, 2026', insight: 'Overcast day — relied on grid top-ups, low solar',
+    rawInput:  [0,0,1000,0,0,1000,0,207,399,565,692,772,800,772,692,565,399,207,0,0,1000,0,0,1000],
+    rawOutput: [67,69,60,56,56,74,57,59,52,77,52,47,65,81,77,65,78,47,60,45,59,78,59,75],
+    rawSoc:    [96.6,93.2,100.0,97.2,94.4,100.0,97.2,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,97.0,94.8,100.0,96.1,93.1,100.0] },
+  { dateLabel: 'Jul 2, 2026', insight: 'Partly cloudy — SOC dipped to 83% overnight',
+    rawInput:  [0,0,1000,0,0,1000,0,517,999,1414,1578,1582,1554,1569,1564,1414,999,517,0,0,0,0,0,1000],
+    rawOutput: [60,74,65,76,74,51,45,60,48,81,78,82,54,69,64,79,80,69,76,48,54,83,77,82],
+    rawSoc:    [97.0,93.3,100.0,96.2,92.5,100.0,97.8,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,96.2,93.8,91.1,87.0,83.1,100.0] },
+  { dateLabel: 'Jul 1, 2026', insight: 'Full solar day — battery fully charged by morning',
+    rawInput:  [0,0,0,1000,0,0,1000,1294,1557,1573,1547,1558,1572,1577,1552,1577,1552,1294,0,0,1000,0,0,1000],
+    rawOutput: [46,51,71,58,58,74,73,50,57,73,47,58,72,77,52,77,52,65,78,83,70,49,62,54],
+    rawSoc:    [97.7,95.2,91.6,100.0,97.1,93.4,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,96.1,92.0,100.0,97.6,94.4,100.0] },
 ]
 
 const WEEK_PAGES = [
-  { dateLabel: 'Jun 22 – 28, 2026', insight: 'Best solar week — 80–94% SOC daily',
-    rawInput:  [81.0, 78.2, 85.2, 81.7, 84.8, 85.6, 77.6],
-    rawOutput: [52.8, 57.9, 57.9, 55.5, 63.1, 53.3, 58.8],
-    rawSoc:    [93, 92, 80, 85, 89, 90, 81] },
-  { dateLabel: 'Jun 15 – 21, 2026', insight: 'Heavy overcast — mostly grid powered',
-    rawInput:  [14.5, 14.2, 12.9, 15.9, 12.2, 12.2, 13.4],
-    rawOutput: [58.0, 60.5, 54.3, 53.2, 57.1, 56.2, 56.1],
-    rawSoc:    [67, 53, 62, 57, 42, 69, 50] },
-  { dateLabel: 'Jun 8 – 14, 2026', insight: 'Mixed cloud — SOC dipped to 12% on Thu',
-    rawInput:  [41.1, 47.3, 40.5, 48.3, 49.1, 34.3, 40.6],
-    rawOutput: [57.6, 60.5, 54.7, 53.5, 55.5, 56.7, 57.2],
-    rawSoc:    [67, 40, 72, 12, 64, 74, 44] },
-  { dateLabel: 'Jun 1 – 7, 2026', insight: 'Steady solar — battery stayed 81–93%',
-    rawInput:  [72.6, 71.5, 70.1, 79.3, 72.5, 73.0, 73.3],
-    rawOutput: [59.0, 52.8, 59.8, 59.3, 54.3, 62.3, 56.9],
-    rawSoc:    [84, 91, 90, 81, 93, 85, 89] },
+  { dateLabel: 'Jul 22 – 28, 2026', insight: 'Best week — steady solar, 90–97% min SOC daily',
+    rawInput:  [3.463, 3.523, 3.461, 3.716, 3.590, 3.654, 3.534],
+    rawOutput: [1.418, 1.514, 1.439, 1.587, 1.525, 1.541, 1.481],
+    rawSoc:    [95, 92, 95, 97, 96, 90, 94] },
+  { dateLabel: 'Jul 15 – 21, 2026', insight: 'Cloudy stretch — solar output nearly halved',
+    rawInput:  [1.676, 1.881, 1.652, 1.638, 1.606, 1.729, 1.684],
+    rawOutput: [1.476, 1.545, 1.450, 1.438, 1.532, 1.529, 1.520],
+    rawSoc:    [84, 91, 96, 80, 97, 75, 93] },
+  { dateLabel: 'Jul 8 – 14, 2026', insight: 'Strong solar week — battery rarely below 91%',
+    rawInput:  [3.636, 3.686, 3.605, 3.505, 3.393, 3.647, 3.685],
+    rawOutput: [1.532, 1.539, 1.459, 1.416, 1.595, 1.544, 1.565],
+    rawSoc:    [95, 93, 95, 93, 91, 97, 97] },
+  { dateLabel: 'Jul 1 – 7, 2026', insight: 'Solid solar week — steady 3.3–3.6 kWh/day input',
+    rawInput:  [3.626, 3.422, 3.520, 3.337, 3.448, 3.489, 3.448],
+    rawOutput: [1.544, 1.293, 1.509, 1.269, 1.328, 1.476, 1.439],
+    rawSoc:    [91, 96, 90, 94, 97, 96, 92] },
 ]
 
+/** Deterministic, smoothly-varying daily series for month charts (no day-level CSV available — only monthly totals) */
+function monthSeries(avgW: number, seed: number): number[] {
+  return Array.from({ length: 30 }, (_, i) =>
+    Math.round(avgW * (1 + 0.18 * Math.sin((i + seed) * 0.7)) * 10) / 10
+  )
+}
+
 const MONTH_PAGES = [
+  { dateLabel: 'October 2026', monthNum: 10,
+    totalInputKwh: 42.6, totalOutputKwh: 42.1,
+    insight: 'Oct steady output — 39.8 kWh solar, low grid use',
+    rawInput:  monthSeries(57.3, 1),
+    rawOutput: monthSeries(56.6, 4),
+    rawSoc:    monthSeries(90, 7) },
   { dateLabel: 'September 2026', monthNum: 9,
-    totalInputKwh: 33.5, totalOutputKwh: 38.9,
-    insight: 'Sep best green ratio (86%) — 33.5 kWh solar',
-    rawInput:  [48.0,46.9,51.1,49.0,50.9,51.4,46.6, 41.1,47.3,40.5,48.3,49.1,34.3,40.6, 43.5,42.6,38.7,47.7,36.6,36.6,40.2, 48.6,46.9,51.1,49.0,50.9,51.4,46.6,48.0,48.0],
-    rawOutput: [53.5,52.5,57.3,55.0,51.3,58.9,53.9, 54.0,56.8,51.3,50.2,52.1,53.2,53.7, 54.5,57.2,51.3,50.2,54.0,53.2,53.0, 49.9,54.7,54.7,52.5,59.7,50.4,55.6,53.5,53.5],
-    rawSoc:    [86,91,90,81,93,85,89, 67,40,72,42,64,74,54, 67,53,62,57,52,69,50, 93,92,80,85,89,90,81,86,86] },
+    totalInputKwh: 45.5, totalOutputKwh: 45.0,
+    insight: 'Sep peak green ratio — 42.0 kWh solar, 3.5 kWh grid',
+    rawInput:  monthSeries(63.2, 2),
+    rawOutput: monthSeries(62.5, 5),
+    rawSoc:    monthSeries(91, 8) },
   { dateLabel: 'August 2026', monthNum: 8,
-    totalInputKwh: 29.2, totalOutputKwh: 44.8,
-    insight: 'Aug heaviest load (44.8 kWh) — lowest solar',
-    rawInput:  [43.4,42.9,42.0,47.6,43.5,43.8,44.0, 24.7,28.4,24.3,29.0,29.5,20.6,24.4, 8.7,8.5,7.7,9.5,7.3,7.3,8.0, 48.6,46.9,51.1,49.0,50.9,51.4,46.6,43.4,43.4,43.4],
-    rawOutput: [64.5,60.1,69.3,66.5,62.0,71.2,65.0, 69.7,73.2,66.1,64.6,63.1,64.6,65.3, 70.1,73.2,65.7,64.3,69.1,68.0,67.8, 63.9,70.1,70.1,67.5,76.5,64.5,71.2,64.5,64.5,64.5],
-    rawSoc:    [72,79,78,69,81,73,77, 55,32,60,5,52,62,36, 55,43,52,47,34,57,42, 81,80,68,73,77,78,69,72,72,72] },
+    totalInputKwh: 49.7, totalOutputKwh: 48.2,
+    insight: 'Aug heaviest grid use (11.2 kWh) — lower solar',
+    rawInput:  monthSeries(66.8, 3),
+    rawOutput: monthSeries(64.8, 6),
+    rawSoc:    monthSeries(88, 9) },
   { dateLabel: 'July 2026', monthNum: 7,
-    totalInputKwh: 35.8, totalOutputKwh: 42.1,
-    insight: 'Jul peak solar (35.8 kWh) — 85% green energy',
-    rawInput:  [79.9,78.7,77.1,87.2,79.8,80.3,80.7, 45.2,52.0,44.6,53.1,54.0,37.7,44.7, 16.0,15.6,14.2,17.5,13.4,13.4,14.7, 89.1,86.0,93.7,89.8,93.3,94.2,85.4,79.9,79.9,79.9],
-    rawOutput: [60.4,56.5,65.1,62.5,58.3,66.9,61.1, 65.5,68.8,62.1,60.7,59.3,60.7,61.4, 65.9,68.8,61.8,60.4,64.9,63.9,63.7, 60.1,65.9,65.9,63.4,71.9,60.6,66.9,60.4,60.4,60.4],
-    rawSoc:    [84,91,90,81,93,85,89, 67,40,72,12,64,74,44, 67,53,62,57,42,69,50, 93,92,80,85,89,90,81,84,84,84] },
-  { dateLabel: 'June 2026', monthNum: 6,
-    totalInputKwh: 32.4, totalOutputKwh: 40.5,
-    insight: 'Jun — Wk4 sunniest, Wk3 heavily overcast',
-    rawInput:  [72.6,71.5,70.1,79.3,72.5,73.0,73.3, 41.1,47.3,40.5,48.3,49.1,34.3,40.6, 14.5,14.2,12.9,15.9,12.2,12.2,13.4, 81.0,78.2,85.2,81.7,84.8,85.6,77.6,72.6,72.6],
-    rawOutput: [59.0,52.8,59.8,59.3,54.3,62.3,56.9, 57.6,60.5,54.7,53.5,55.5,56.7,57.2, 58.0,60.5,54.3,53.2,57.1,56.2,56.1, 52.8,57.9,57.9,55.5,63.1,53.3,58.8,59.0,59.0],
-    rawSoc:    [84,91,90,81,93,85,89, 67,40,72,12,64,74,44, 67,53,62,57,42,69,50, 93,92,80,85,89,90,81,84,84] },
+    totalInputKwh: 46.5, totalOutputKwh: 46.5,
+    insight: 'Jul highest combined input — 46.5 kWh total',
+    rawInput:  monthSeries(62.5, 4),
+    rawOutput: monthSeries(62.5, 7),
+    rawSoc:    monthSeries(92, 10) },
 ]
 
 function getDemoChartFrame(period: Period, pageOffset = 0): ChartFrame {
@@ -253,8 +261,8 @@ function getDemoChartFrame(period: Period, pageOffset = 0): ChartFrame {
     const input  = smooth(page.rawInput, 2)
     const output = smooth(page.rawOutput, 2)
     const soc    = smooth(page.rawSoc, 1)
-    const totalInputKwh  = page.rawInput.reduce((s, v) => s + v * 24 / 1000, 0)
-    const totalOutputKwh = page.rawOutput.reduce((s, v) => s + v * 24 / 1000, 0)
+    const totalInputKwh  = page.rawInput.reduce((s, v) => s + v, 0)
+    const totalOutputKwh = page.rawOutput.reduce((s, v) => s + v, 0)
     return {
       input, output, soc, labels,
       co2Kg: parseFloat((totalInputKwh * 0.5).toFixed(1)),
@@ -286,21 +294,21 @@ function getDemoChartFrame(period: Period, pageOffset = 0): ChartFrame {
     }
   }
 
-  // ── Range: 4-month summary Jun–Sep (no pagination) ──
-  const labels = ['Jun', 'Jul', 'Aug', 'Sep']
-  const rawInput  = [45.0, 49.7, 40.6, 46.5]
-  const rawOutput = [56.3, 58.5, 62.2, 54.0]
-  const rawSoc    = [80.0, 85.0, 65.2, 86.1]
+  // ── Range: 4-month summary Jul–Oct (no pagination) ──
+  const labels = ['Jul', 'Aug', 'Sep', 'Oct']
+  const rawInput  = [46.5, 49.7, 45.5, 42.6]
+  const rawOutput = [46.5, 48.2, 45.0, 42.1]
+  const rawSoc    = [92.0, 88.0, 91.0, 90.0]
   const input  = smooth(rawInput, 1)
   const output = smooth(rawOutput, 1)
   const soc    = smooth(rawSoc, 1)
-  const totalInputKwh  = 130.9
-  const totalOutputKwh = 166.3
+  const totalInputKwh  = rawInput.reduce((s, v) => s + v, 0)
+  const totalOutputKwh = rawOutput.reduce((s, v) => s + v, 0)
   return {
     input, output, soc, labels,
     co2Kg: parseFloat((totalInputKwh * 0.5).toFixed(1)),
     totalInputKwh, totalOutputKwh,
-    insight: 'Sep had the best green energy ratio (86%)',
+    insight: 'Sep had the best green energy ratio — 42.0 kWh solar',
     ecoInsight: `Equivalent to driving ${Math.round(totalOutputKwh * 3.5)} fewer miles`,
   }
 }
