@@ -19,12 +19,14 @@ interface BatteryRingProps {
 export type BatteryState = 'critical' | 'low' | 'warning' | 'normal' | 'good' | 'full' | 'charging' | 'plugged' | 'unknown'
 
 function getBatteryState(percentage: number, isCharging: boolean, isPlugged: boolean): BatteryState {
+  // Fully charged takes priority — a battery at 100% can't still be "charging" even
+  // if net power into it is momentarily positive.
+  if (percentage >= 95) return 'full'
   if (isCharging) return 'charging'
   if (isPlugged) return 'plugged'
   if (percentage <= 5) return 'critical'
   if (percentage <= 15) return 'low'
   if (percentage <= 25) return 'warning'
-  if (percentage >= 95) return 'full'
   return 'normal'
 }
 
@@ -72,14 +74,17 @@ export default function BatteryRing({
   const state = connected ? getBatteryState(safePercent, isCharging, isPlugged) : 'unknown'
   const ringColor = STATE_COLOR[state]
   const stateLabel = connected ? STATE_LABEL[state] : 'Disconnected'
-  const showTime = connected && !isCharging && !isPlugged
+  const isFull = state === 'full'
+  const showTime = connected && !isCharging && !isPlugged && !isFull
 
   // 选择状态图标 (色盲友好, PRD v1.1 §9.1)
-  const StateIcon = isCharging ? Zap : isPlugged ? Plug : safePercent <= 15 ? BatteryWarning : safePercent <= 25 ? AlertTriangle : BatteryMedium
+  const StateIcon = isFull ? BatteryMedium : isCharging ? Zap : isPlugged ? Plug : safePercent <= 15 ? BatteryWarning : safePercent <= 25 ? AlertTriangle : BatteryMedium
 
   // 可访问性标签 (PRD v1.1 §9.1)
   const ariaLabel = !connected
     ? 'Battery disconnected'
+    : isFull
+    ? `Battery full, ${safePercent} percent`
     : isCharging
     ? `Battery charging, ${safePercent} percent, ${timeToFull} until full`
     : isPlugged
