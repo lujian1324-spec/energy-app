@@ -13,14 +13,14 @@ interface Tab {
   id: Metric
   label: string
   Icon: React.FC<{ size?: number; className?: string }>
-  historyKey: 'soc' | 'batteryPower' | 'solarPower' | 'outputPower'
+  historyKey: 'soc' | 'batteryPower' | 'solarPower' | 'outputPower' | 'acPower'
   unit: string
   color: string
 }
 
 const TABS: Tab[] = [
   { id: 'battery', label: 'Battery', Icon: ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}><rect x="2" y="7" width="18" height="10" rx="2" stroke="currentColor" strokeWidth="1.8"/><path d="M20 10h2v4h-2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>, historyKey: 'soc', unit: '%', color: '#FFFFFF' },
-  { id: 'ac', label: 'AC', Icon: PlugZap, historyKey: 'batteryPower', unit: 'W', color: '#01D6BE' },
+  { id: 'ac', label: 'AC', Icon: PlugZap, historyKey: 'acPower', unit: 'W', color: '#01D6BE' },
   { id: 'solar', label: 'Solar', Icon: Sun, historyKey: 'solarPower', unit: 'W', color: '#FFD700' },
   { id: 'output', label: 'Output', Icon: ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}><rect x="5" y="5" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.8"/><path d="M9 12h6M12 9v6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>, historyKey: 'outputPower', unit: 'W', color: '#FF9500' },
 ]
