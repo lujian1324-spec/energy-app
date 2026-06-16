@@ -62,6 +62,7 @@ export const useAuthStore = create<AuthState>()(
           localtest: { password: 'localtest', email: 'localtest@sierro.test' },
           localest:  { password: 'localtest', email: 'localtest@sierro.test' },
           benson:    { password: 'benson1234', email: 'benson8191@gmail.com' },
+          george:    { password: 'sierro1234', email: 'george@sierro.test' },
         }
         const localAccount = localAccounts[u]
         if (localAccount && password === localAccount.password) {
