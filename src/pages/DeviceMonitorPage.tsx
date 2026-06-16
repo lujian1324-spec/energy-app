@@ -27,18 +27,19 @@ const TABS: Tab[] = [
 ]
 
 // ─── SVG Area Chart ───────────────────────────────────────────────────────────
-function AreaChart({ data, color, width = 340, height = 130 }: {
+function AreaChart({ data, color, width = 340, height = 130, domain }: {
   data: number[]
   color: string
   width?: number
   height?: number
+  domain?: [number, number]
 }) {
   if (!data.length) return null
   const pad = { t: 8, b: 2, l: 0, r: 0 }
   const w = width - pad.l - pad.r
   const h = height - pad.t - pad.b
-  const min = Math.min(...data)
-  const max = Math.max(...data)
+  const min = domain ? domain[0] : Math.min(...data)
+  const max = domain ? domain[1] : Math.max(...data)
   const range = max - min || 1
 
   const pts = data.map((v, i) => ({
@@ -120,7 +121,7 @@ export default function DeviceMonitorPage() {
     if (!id) return []
     const tab = TABS.find(t => t.id === activeTab)!
     // Battery tab uses the unified higher-smoothing sample count for all devices
-    const points = activeTab === 'battery' ? 2000 : 2400
+    const points = activeTab === 'battery' ? 20000 : 2400
     return getDemoDayCurve(id, tab.historyKey, points)
   }, [id, activeTab])
 
@@ -303,6 +304,7 @@ export default function DeviceMonitorPage() {
                   color={currentTab.color}
                   width={332}
                   height={130}
+                  domain={activeTab === 'battery' ? [0, 100] : undefined}
                 />
               </div>
             )}
