@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ChevronLeft, ChevronDown, Check, Settings, Bell, Sun, PlugZap } from 'lucide-react'
@@ -27,13 +27,19 @@ const TABS: Tab[] = [
 ]
 
 // ─── SVG Area Chart ───────────────────────────────────────────────────────────
-function AreaChart({ data, color, width = 340, height = 130, domain }: {
+export function AreaChart({ data, color, width = 340, height = 130, domain, unit = '', timeLabels }: {
   data: number[]
   color: string
   width?: number
   height?: number
   domain?: [number, number]
+  unit?: string
+  /** Fixed-clock labels spanning the data (e.g. ['12am', ..., '12am']) for the scrub tooltip's time text. */
+  timeLabels?: string[]
 }) {
+  const svgRef = useRef<SVGSVGElement>(null)
+  const [activeIndex, setActiveIndex] = useState<number | null>(null)
+
   if (!data.length) return null
   const pad = { t: 8, b: 2, l: 0, r: 0 }
   const w = width - pad.l - pad.r
@@ -52,8 +58,45 @@ function AreaChart({ data, color, width = 340, height = 130, domain }: {
 
   const gradId = `grad-${color.replace('#', '')}`
 
+  const updateFromClientX = (clientX: number) => {
+    const svg = svgRef.current
+    if (!svg) return
+    const rect = svg.getBoundingClientRect()
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
+    const idx = Math.round(ratio * (data.length - 1))
+    setActiveIndex(idx)
+  }
+
+  const scrubTime = (idx: number) => {
+    if (!timeLabels || timeLabels.length < 2) return null
+    const ratio = idx / (data.length - 1)
+    const pos = ratio * (timeLabels.length - 1)
+    const lo = Math.floor(pos)
+    const hi = Math.min(timeLabels.length - 1, lo + 1)
+    return pos - lo < 0.5 ? timeLabels[lo] : timeLabels[hi]
+  }
+
+  const active = activeIndex !== null ? pts[activeIndex] : null
+  const activeValue = activeIndex !== null ? data[activeIndex] : null
+  const activeTime = activeIndex !== null ? scrubTime(activeIndex) : null
+  const labelText = activeValue !== null ? `${Number.isInteger(activeValue) ? activeValue : activeValue.toFixed(1)}${unit}` : ''
+  const tooltipW = Math.max(40, labelText.length * 7 + 16)
+  const tooltipX = active ? Math.min(Math.max(active.x - tooltipW / 2, 0), w - tooltipW) : 0
+
   return (
-    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
+    <svg
+      ref={svgRef}
+      width={width}
+      height={height}
+      viewBox={`0 0 ${width} ${height}`}
+      preserveAspectRatio="none"
+      className="touch-none select-none"
+      onPointerDown={e => { e.currentTarget.setPointerCapture(e.pointerId); updateFromClientX(e.clientX) }}
+      onPointerMove={e => { if (e.buttons || e.pointerType !== 'mouse') updateFromClientX(e.clientX) }}
+      onPointerUp={() => setActiveIndex(null)}
+      onPointerLeave={() => setActiveIndex(null)}
+      onPointerCancel={() => setActiveIndex(null)}
+    >
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={color} stopOpacity="0.45" />
@@ -62,6 +105,22 @@ function AreaChart({ data, color, width = 340, height = 130, domain }: {
       </defs>
       <path d={fillPath} fill={`url(#${gradId})`} />
       <path d={linePath} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+
+      {active && (
+        <g>
+          <line x1={active.x} y1={pad.t} x2={active.x} y2={pad.t + h} stroke={color} strokeWidth="1" strokeDasharray="3,3" opacity={0.6} />
+          <circle cx={active.x} cy={active.y} r={4} fill={color} stroke="#141414" strokeWidth="1.5" />
+          <rect x={tooltipX} y={0} width={tooltipW} height={18} rx={4} fill="#000000" opacity={0.85} />
+          <text x={tooltipX + tooltipW / 2} y={12.5} textAnchor="middle" fontSize="10" fontWeight="600" fill="#FFFFFF">
+            {labelText}
+          </text>
+          {activeTime && (
+            <text x={active.x} y={pad.t + h + 14} textAnchor="middle" fontSize="9" fill="#A0A0A5">
+              {activeTime}
+            </text>
+          )}
+        </g>
+      )}
     </svg>
   )
 }
@@ -305,6 +364,8 @@ export default function DeviceMonitorPage() {
                   width={332}
                   height={130}
                   domain={activeTab === 'battery' ? [0, 100] : undefined}
+                  unit={currentTab.unit}
+                  timeLabels={timeLabels}
                 />
               </div>
             )}

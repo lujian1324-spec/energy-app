@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Share2, BarChart3, WifiOff, Zap, ChevronLeft, ChevronRight, Leaf } from 'lucide-react'
 import BatteryRing from '../components/BatteryRing'
@@ -383,6 +383,9 @@ export default function StatsPage() {
   useEffect(() => { setPageOffset(0) }, [period])
   // PRD v1.1 §8.2: 上次同步时间
   const [lastSyncAt, setLastSyncAt] = useState<number | undefined>(Date.now())
+  // Scrub tooltip on the Input vs. Output line chart
+  const chartSvgRef = useRef<SVGSVGElement>(null)
+  const [scrubIndex, setScrubIndex] = useState<number | null>(null)
   const {
     devices,
     selectedDeviceId,
@@ -479,6 +482,28 @@ export default function StatsPage() {
     const areaPath = `${linePath} L ${points[points.length - 1].x} ${height} L ${points[0].x} ${height} Z`
 
     return { linePath, areaPath }
+  }
+
+  // Same scaling as generateAreaPath, but also exposes the raw point coordinates
+  // (needed to position the scrub tooltip's dots/guide line).
+  const generateAreaPathWithPoints = (data: number[], width: number, height: number) => {
+    const max = Math.max(...data, 1)
+    const padding = 4
+    const usableWidth = width - padding * 2
+    const usableHeight = height - padding * 2
+    const points = data.map((val, i) => ({
+      x: padding + (i / (data.length - 1)) * usableWidth,
+      y: padding + usableHeight - (val / max) * usableHeight,
+    }))
+    return { points }
+  }
+
+  const updateScrubFromClientX = (clientX: number) => {
+    const svg = chartSvgRef.current
+    if (!svg || !chartFrame) return
+    const rect = svg.getBoundingClientRect()
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
+    setScrubIndex(Math.round(ratio * (chartFrame.input.length - 1)))
   }
 
   // ═══════════════════════════════════════════════════
@@ -769,7 +794,16 @@ Data source: US EPA eGRID 2024 average emission rate`}
                   ) : (
                     /* Day/Month/Range: Line + Area Chart */
                     <div>
-                      <svg viewBox="0 0 340 160" className="w-full h-[160px]">
+                      <svg
+                        ref={chartSvgRef}
+                        viewBox="0 0 340 160"
+                        className="w-full h-[160px] touch-none select-none"
+                        onPointerDown={e => { e.currentTarget.setPointerCapture(e.pointerId); updateScrubFromClientX(e.clientX) }}
+                        onPointerMove={e => { if (e.buttons || e.pointerType !== 'mouse') updateScrubFromClientX(e.clientX) }}
+                        onPointerUp={() => setScrubIndex(null)}
+                        onPointerLeave={() => setScrubIndex(null)}
+                        onPointerCancel={() => setScrubIndex(null)}
+                      >
                         {/* gridlines */}
                         {[0, 1, 2, 3, 4].map((g) => (
                           <line
@@ -794,6 +828,30 @@ Data source: US EPA eGRID 2024 average emission rate`}
                           const { linePath } = generateAreaPath(chartFrame.input, 340, 160)
                           return (
                             <path d={linePath} fill="none" stroke="#01D6BE" strokeWidth="2.5" strokeDasharray="6 5" strokeLinecap="round" strokeLinejoin="round" />
+                          )
+                        })()}
+
+                        {/* Scrub tooltip */}
+                        {scrubIndex !== null && (() => {
+                          const { points: inputPts } = generateAreaPathWithPoints(chartFrame.input, 340, 160)
+                          const { points: outputPts } = generateAreaPathWithPoints(chartFrame.output, 340, 160)
+                          const inPt = inputPts[scrubIndex]
+                          const outPt = outputPts[scrubIndex]
+                          const inVal = chartFrame.input[scrubIndex]
+                          const outVal = chartFrame.output[scrubIndex]
+                          const text1 = `In ${inVal.toFixed(1)} kWh`
+                          const text2 = `Out ${outVal.toFixed(1)} kWh`
+                          const boxW = Math.max(text1.length, text2.length) * 5.6 + 14
+                          const boxX = Math.min(Math.max(inPt.x - boxW / 2, 2), 340 - boxW - 2)
+                          return (
+                            <g>
+                              <line x1={inPt.x} x2={inPt.x} y1={4} y2={156} stroke="#FFFFFF" strokeWidth="1" strokeDasharray="3,3" opacity={0.4} />
+                              <circle cx={inPt.x} cy={inPt.y} r={4} fill="#01D6BE" stroke="#141414" strokeWidth="1.5" />
+                              <circle cx={outPt.x} cy={outPt.y} r={4} fill="#FF9500" stroke="#141414" strokeWidth="1.5" />
+                              <rect x={boxX} y={4} width={boxW} height={32} rx={5} fill="#000000" opacity={0.85} />
+                              <text x={boxX + boxW / 2} y={16} textAnchor="middle" fontSize="9" fontWeight="600" fill="#01D6BE">{text1}</text>
+                              <text x={boxX + boxW / 2} y={28} textAnchor="middle" fontSize="9" fontWeight="600" fill="#FF9500">{text2}</text>
+                            </g>
                           )
                         })()}
                       </svg>
