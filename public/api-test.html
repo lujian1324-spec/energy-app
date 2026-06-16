@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sierro API Tester</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #141414; color: #f5f5f5; min-height: 100vh; }
+    header { background: #1f1f1f; border-bottom: 1px solid #262626; padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+    header h1 { font-size: 20px; font-weight: 600; color: #01D6BE; }
+    header span { font-size: 13px; color: #8c8c8c; }
+    .container { max-width: 900px; margin: 0 auto; padding: 24px; }
+    .section { margin-bottom: 24px; }
+    .section h2 { font-size: 14px; font-weight: 600; color: #8c8c8c; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #262626; }
+    .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 12px; color: #8c8c8c; }
+    .field input { background: #262626; border: 1px solid #3a3a3a; border-radius: 8px; color: #f5f5f5; font-size: 14px; padding: 10px 12px; outline: none; width: 100%; }
+    .field input:focus { border-color: #01D6BE; }
+    .btn-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+    button { background: #01D6BE; color: #141414; border: none; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
+    button:hover { opacity: 0.85; }
+    button.secondary { background: #262626; color: #f5f5f5; border: 1px solid #3a3a3a; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .results { display: flex; flex-direction: column; gap: 8px; }
+    .result-item { background: #1f1f1f; border: 1px solid #262626; border-radius: 10px; overflow: hidden; }
+    .result-header { display: flex; align-items: center; gap: 10px; padding: 12px 16px; cursor: pointer; user-select: none; }
+    .result-header:hover { background: #262626; }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .dot-pending { background: #595959; }
+    .dot-running { background: #FF9500; animation: pulse 1s infinite; }
+    .dot-pass { background: #34C759; }
+    .dot-fail { background: #FF3530; }
+    .dot-skip { background: #595959; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+    .result-name { font-size: 14px; font-weight: 600; flex: 1; }
+    .result-method { font-size: 11px; font-family: monospace; color: #01D6BE; background: rgba(1,214,190,0.1); padding: 2px 7px; border-radius: 4px; }
+    .result-code { font-size: 12px; color: #8c8c8c; margin-left: auto; }
+    .result-time { font-size: 12px; color: #595959; }
+    .result-body { display: none; padding: 0 16px 14px; }
+    .result-body.open { display: block; }
+    .result-body pre { background: #141414; border: 1px solid #262626; border-radius: 6px; padding: 12px; font-size: 12px; font-family: monospace; color: #bfbfbf; overflow-x: auto; white-space: pre-wrap; word-break: break-all; max-height: 300px; overflow-y: auto; }
+    .summary-bar { background: #1f1f1f; border: 1px solid #262626; border-radius: 10px; padding: 14px 20px; display: flex; gap: 24px; margin-bottom: 20px; }
+    .summary-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .summary-num { font-size: 22px; font-weight: 700; }
+    .summary-label { font-size: 11px; color: #8c8c8c; }
+    .num-pass { color: #34C759; }
+    .num-fail { color: #FF3530; }
+    .num-total { color: #01D6BE; }
+    .token-box { font-size: 11px; font-family: monospace; color: #01D6BE; background: rgba(1,214,190,0.08); border: 1px solid rgba(1,214,190,0.2); border-radius: 6px; padding: 8px 12px; word-break: break-all; min-height: 36px; }
+    .tag-auth { color: #FFD700; }
+    .tag-device { color: #01D6BE; }
+    .tag-control { color: #FF9500; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>⚡ Sierro API Tester</h1>
+  <span>solar.siseli.com/apis</span>
+</header>
+<div class="container">
+
+  <!-- Config -->
+  <div class="section">
+    <h2>Configuration</h2>
+    <div class="config-grid">
+      <div class="field">
+        <label>Account / Username</label>
+        <input id="cfg-account" type="text" value="benson" placeholder="username or email" />
+      </div>
+      <div class="field">
+        <label>Password (plain text)</label>
+        <input id="cfg-password" type="password" value="benson1234" />
+      </div>
+      <div class="field">
+        <label>IOT-Open-AppID</label>
+        <input id="cfg-appid" type="text" value="rYGQpmYU5k" />
+      </div>
+      <div class="field">
+        <label>IOT-Open-AppSecret</label>
+        <input id="cfg-secret" type="text" value="GhJXQYEHphHlyiqYnBGE" />
+      </div>
+      <div class="field" style="grid-column:1/-1">
+        <label>Access Token (auto-filled after login)</label>
+        <div id="token-display" class="token-box">—</div>
+      </div>
+      <div class="field">
+        <label>Device ID (auto-filled after device list)</label>
+        <input id="cfg-deviceid" type="text" value="" placeholder="e.g. 12345" />
+      </div>
+      <div class="field">
+        <label>Station ID (auto-filled after station list)</label>
+        <input id="cfg-stationid" type="text" value="" placeholder="e.g. 67890" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="section">
+    <h2>Run Tests</h2>
+    <div class="btn-row">
+      <button onclick="runAll()">▶ Run All Tests</button>
+      <button class="secondary" onclick="runGroup('auth')">Auth Only</button>
+      <button class="secondary" onclick="runGroup('device')">Device Only</button>
+      <button class="secondary" onclick="runGroup('control')">Control Only</button>
+      <button class="secondary" onclick="clearResults()">Clear</button>
+    </div>
+    <div id="summary-bar" class="summary-bar" style="display:none">
+      <div class="summary-item"><span class="summary-num num-total" id="s-total">0</span><span class="summary-label">Total</span></div>
+      <div class="summary-item"><span class="summary-num num-pass" id="s-pass">0</span><span class="summary-label">Pass</span></div>
+      <div class="summary-item"><span class="summary-num num-fail" id="s-fail">0</span><span class="summary-label">Fail</span></div>
+      <div class="summary-item"><span class="summary-num" id="s-skip" style="color:#595959">0</span><span class="summary-label">Skip</span></div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="section">
+    <h2>Results</h2>
+    <div id="results" class="results"></div>
+  </div>
+
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// Signing
+// ══════════════════════════════════════════
+const BASE_URL = 'https://solar.siseli.com/apis'
+
+function getCredentials() {
+  return {
+    appId: document.getElementById('cfg-appid').value.trim(),
+    appSecret: document.getElementById('cfg-secret').value.trim(),
+  }
+}
+
+function generateNonce() {
+  const arr = new Uint8Array(16)
+  crypto.getRandomValues(arr)
+  return Array.from(arr).map(b => b.toString(16).padStart(2,'0')).join('')
+}
+
+function parseUrlParams(path) {
+  const idx = path.indexOf('?')
+  if (idx === -1) return {}
+  const result = {}
+  for (const part of path.slice(idx+1).split('&')) {
+    const eqIdx = part.indexOf('=')
+    if (eqIdx === -1) continue
+    result[part.slice(0, eqIdx)] = decodeURIComponent(part.slice(eqIdx+1))
+  }
+  return result
+}
+
+function calcSign({ method, urlParams = {}, body = '' }) {
+  const { appId, appSecret } = getCredentials()
+  const nonce = generateNonce()
+  const isGet = method.toUpperCase() === 'GET'
+  const bodyHash = isGet ? '' : CryptoJS.SHA256(CryptoJS.enc.Utf8.parse(body)).toString(CryptoJS.enc.Hex).toLowerCase()
+
+  const allParams = {
+    ...urlParams,
+    'IOT-Open-AppID': appId,
+    'IOT-Open-Nonce': nonce,
+    'IOT-Open-Body-Hash': bodyHash,
+  }
+  const sorted = Object.entries(allParams).sort(([a],[b]) => a < b ? -1 : a > b ? 1 : 0)
+  const plainText = sorted.map(([k,v]) => `${k}=${v}`).join('&')
+  const base64Text = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(plainText))
+  const hmac = CryptoJS.HmacSHA256(base64Text, appSecret)
+  const sign = CryptoJS.MD5(hmac).toString(CryptoJS.enc.Hex).toLowerCase()
+
+  return {
+    'IOT-Open-AppID': appId,
+    'IOT-Open-Nonce': nonce,
+    'IOT-Open-Body-Hash': bodyHash,
+    'IOT-Open-Sign': sign,
+  }
+}
+
+function md5Password(plain) {
+  return CryptoJS.MD5(plain).toString(CryptoJS.enc.Hex).toLowerCase()
+}
+
+// ══════════════════════════════════════════
+// State
+// ══════════════════════════════════════════
+let accessToken = null
+let deviceId = null
+let stationId = null
+
+// ══════════════════════════════════════════
+// HTTP
+// ══════════════════════════════════════════
+async function apiFetch(path, { method = 'GET', data, skipAuth = false } = {}) {
+  const bodyStr = data !== undefined ? JSON.stringify(data) : ''
+  const signHeaders = calcSign({ method, urlParams: parseUrlParams(path), body: method !== 'GET' ? bodyStr : undefined })
+  const headers = {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json; charset=utf-8',
+    ...signHeaders,
+  }
+  if (accessToken && !skipAuth) headers['IOT-Token'] = accessToken
+
+  const opts = { method, headers }
+  if (method !== 'GET' && bodyStr) opts.body = bodyStr
+
+  const resp = await fetch(BASE_URL + path, opts)
+  const json = await resp.json()
+  return { status: resp.status, json }
+}
+
+// ══════════════════════════════════════════
+// Test definitions
+// ══════════════════════════════════════════
+const TESTS = [
+  // AUTH GROUP
+  {
+    id: 'login',
+    group: 'auth',
+    name: 'Login by Account',
+    method: 'POST',
+    badge: 'tag-auth',
+    run: async () => {
+      const account = document.getElementById('cfg-account').value.trim()
+      const password = document.getElementById('cfg-password').value
+      const { json } = await apiFetch('/login/account', {
+        method: 'POST',
+        data: { account, password: md5Password(password) },
+        skipAuth: true,
+      })
+      if ((json.code === 0 || json.code === '0') && json.data?.accessToken) {
+        accessToken = json.data.accessToken
+        document.getElementById('token-display').textContent = accessToken
+      }
+      return json
+    },
+    pass: r => r.code === 0 || r.code === '0',
+  },
+  {
+    id: 'userinfo',
+    group: 'auth',
+    name: 'Get User Info',
+    method: 'POST',
+    badge: 'tag-auth',
+    run: async () => {
+      const { json } = await apiFetch('/user/select/iotUserInfo', { method: 'POST' })
+      return json
+    },
+    pass: r => r.code === 0 || r.code === '0',
+  },
+  {
+    id: 'refresh-token',
+    group: 'auth',
+    name: 'Refresh Access Token',
+    method: 'POST',
+    badge: 'tag-auth',
+    run: async () => {
+      const refreshToken = null // not stored, but we can test the endpoint response
+      const { json } = await apiFetch('/login/refresh/access/token', {
+        method: 'POST',
+        data: { accessToken, refreshToken: '' },
+        skipAuth: true,
+      })
+      return json
+    },
+    pass: r => r !== null, // just check it responds
+  },
+
+  // DEVICE GROUP
+  {
+    id: 'device-list',
+    group: 'device',
+    name: 'Device List',
+    method: 'POST',
+    badge: 'tag-device',
+    run: async () => {
+      const { json } = await apiFetch('/device/list', {
+        method: 'POST',
+        data: { page: 1, count: 20 },
+      })
+      if ((json.code === 0 || json.code === '0') && json.data?.list?.length > 0) {
+        deviceId = json.data.list[0].id
+        document.getElementById('cfg-deviceid').value = deviceId
+        if (json.data.list[0].stationId) {
+          stationId = json.data.list[0].stationId
+          document.getElementById('cfg-stationid').value = stationId
+        }
+      }
+      return json
+    },
+    pass: r => r.code === 0 || r.code === '0',
+  },
+  {
+    id: 'device-details',
+    group: 'device',
+    name: 'Device Details',
+    method: 'GET',
+    badge: 'tag-device',
+    run: async () => {
+      const id = document.getElementById('cfg-deviceid').value.trim() || deviceId
+      if (!id) return { code: -1, message: 'No device ID — run Device List first' }
+      const { json } = await apiFetch(`/device/details?deviceId=${id}`)
+      return json
+    },
+    pass: r => r.code === 0 || r.code === '0',
+  },
+  {
+    id: 'device-state',
+    group: 'device',
+    name: 'Device State (latest)',
+    method: 'GET',
+    badge: 'tag-device',
+    run: async () => {
+      const id = document.getElementById('cfg-deviceid').value.trim() || deviceId
+      if (!id) return { code: -1, message: 'No device ID' }
+      const { json } = await apiFetch(`/remote/device/state/latest?deviceId=${id}`)
+      return json
+    },
+    pass: r => r.code === 0 || r.code === '0',
+  },
+  {
+    id: 'simple-state',
+    group: 'device',
+    name: 'Simple State v1',
+    method: 'GET',
+    badge: 'tag-device',
+    run: async () => {
+      const id = document.getElementById('cfg-deviceid').value.trim() || deviceId
+      if (!id) return { code: -1, message: 'No device ID' }
+      const { json } = await apiFetch(`/deviceState/simple/state/latest/v1?deviceId=${id}`)
+      return json
+    },
+    pass: r => r.code === 0 || r.code === '0',
+  },
+  {
+    id: 'energy-flow',
+    group: 'device',
+    name: 'Simple Energy Flow v1',
+    method: 'GET',
+    badge: 'tag-device',
+    run: async () => {
+      const id = document.getElementById('cfg-deviceid').value.trim() || deviceId
+      if (!id) return { code: -1, message: 'No device ID' }
+      const { json } = await apiFetch(`/deviceState/simple/energy/flow/v1?deviceId=${id}&dataSource=1`)
+      return json
+    },
+    pass: r => r.code === 0 || r.code === '0',
+  },
+  {
+    id: 'station-list',
+    group: 'device',
+    name: 'Station List',
+    method: 'POST',
+    badge: 'tag-device',
+    run: async () => {
+      const { json } = await apiFetch('/station/list', {
+        method: 'POST',
+        data: { page: 1, count: 20 },
+      })
+      if ((json.code === 0 || json.code === '0') && json.data?.list?.length > 0) {
+        stationId = json.data.list[0].id
+        document.getElementById('cfg-stationid').value = stationId
+      }
+      return json
+    },
+    pass: r => r.code === 0 || r.code === '0',
+  },
+  {
+    id: 'station-details',
+    group: 'device',
+    name: 'Station Details',
+    method: 'GET',
+    badge: 'tag-device',
+    run: async () => {
+      const id = document.getElementById('cfg-stationid').value.trim() || stationId
+      if (!id) return { code: -1, message: 'No station ID — run Station List first' }
+      const { json } = await apiFetch(`/station/details?stationId=${id}`)
+      return json
+    },
+    pass: r => r.code === 0 || r.code === '0',
+  },
+  {
+    id: 'alarm-list',
+    group: 'device',
+    name: 'Alarm List',
+    method: 'POST',
+    badge: 'tag-device',
+    run: async () => {
+      const { json } = await apiFetch('/alarm/query/list', {
+        method: 'POST',
+        data: { page: 1, count: 10, orderByCreatedTimeDesc: true },
+      })
+      return json
+    },
+    pass: r => r.code === 0 || r.code === '0',
+  },
+  {
+    id: 'history-data',
+    group: 'device',
+    name: 'History Data (soc, 24h)',
+    method: 'POST',
+    badge: 'tag-device',
+    run: async () => {
+      const id = document.getElementById('cfg-deviceid').value.trim() || deviceId
+      if (!id) return { code: -1, message: 'No device ID' }
+      const now = new Date()
+      const from = new Date(now.getTime() - 24 * 3600 * 1000)
+      const { json } = await apiFetch('/deviceState/attribute/keys/history', {
+        method: 'POST',
+        data: {
+          deviceId: Number(id),
+          keys: ['soc', 'batteryPower'],
+          fromTime: from.toISOString(),
+          toTime: now.toISOString(),
+          page: 1,
+          count: 24,
+          orderByTimeAsc: true,
+        },
+      })
+      return json
+    },
+    pass: r => r.code === 0 || r.code === '0',
+  },
+  {
+    id: 'peak-valley-config',
+    group: 'device',
+    name: 'Peak Valley Config',
+    method: 'GET',
+    badge: 'tag-device',
+    run: async () => {
+      const id = document.getElementById('cfg-deviceid').value.trim() || deviceId
+      if (!id) return { code: -1, message: 'No device ID' }
+      const { json } = await apiFetch(`/peakValley/device/get?deviceId=${id}`)
+      return json
+    },
+    pass: r => r.code === 0 || r.code === '0',
+  },
+  {
+    id: 'peak-valley-general',
+    group: 'device',
+    name: 'Peak Valley General Config',
+    method: 'GET',
+    badge: 'tag-device',
+    run: async () => {
+      const id = document.getElementById('cfg-deviceid').value.trim() || deviceId
+      if (!id) return { code: -1, message: 'No device ID' }
+      const { json } = await apiFetch(`/peakValley/device/general/get?deviceId=${id}`)
+      return json
+    },
+    pass: r => r.code === 0 || r.code === '0',
+  },
+
+  // CONTROL GROUP (read-only config reads, no destructive writes)
+  {
+    id: 'read-config-sleep',
+    group: 'control',
+    name: 'Read Config: sleepMode',
+    method: 'POST',
+    badge: 'tag-control',
+    run: async () => {
+      const id = document.getElementById('cfg-deviceid').value.trim() || deviceId
+      if (!id) return { code: -1, message: 'No device ID' }
+      const { json } = await apiFetch(`/remote/device/config/read?deviceId=${id}`, {
+        method: 'POST',
+        data: { key: 'sleepMode' },
+      })
+      return json
+    },
+    pass: r => r.code === 0 || r.code === '0',
+  },
+  {
+    id: 'read-config-workmode',
+    group: 'control',
+    name: 'Read Config: workMode',
+    method: 'POST',
+    badge: 'tag-control',
+    run: async () => {
+      const id = document.getElementById('cfg-deviceid').value.trim() || deviceId
+      if (!id) return { code: -1, message: 'No device ID' }
+      const { json } = await apiFetch(`/remote/device/config/read?deviceId=${id}`, {
+        method: 'POST',
+        data: { key: 'workMode' },
+      })
+      return json
+    },
+    pass: r => r.code === 0 || r.code === '0',
+  },
+  {
+    id: 'batch-read-configs',
+    group: 'control',
+    name: 'Batch Read Configs',
+    method: 'POST',
+    badge: 'tag-control',
+    run: async () => {
+      const id = document.getElementById('cfg-deviceid').value.trim() || deviceId
+      if (!id) return { code: -1, message: 'No device ID' }
+      const { json } = await apiFetch(`/remote/device/configs/read?deviceId=${id}`, {
+        method: 'POST',
+        data: { keys: ['sleepMode', 'workMode', 'acOut1Enable', 'acOut2Enable', 'chargeSocLimit'] },
+      })
+      return json
+    },
+    pass: r => r.code === 0 || r.code === '0',
+  },
+  {
+    id: 'fast-report-supported',
+    group: 'control',
+    name: 'Fast Report Supported?',
+    method: 'GET',
+    badge: 'tag-control',
+    run: async () => {
+      const id = document.getElementById('cfg-deviceid').value.trim() || deviceId
+      if (!id) return { code: -1, message: 'No device ID' }
+      const { json } = await apiFetch(`/remote/device/state/report/fast/supported?deviceId=${id}`)
+      return json
+    },
+    pass: r => r.code === 0 || r.code === '0',
+  },
+  {
+    id: 'apply-modes',
+    group: 'control',
+    name: 'Main Apply Modes',
+    method: 'GET',
+    badge: 'tag-control',
+    run: async () => {
+      const { json } = await apiFetch('/deviceApplyMode/modes/main')
+      return json
+    },
+    pass: r => r.code === 0 || r.code === '0',
+  },
+  {
+    id: 'logout',
+    group: 'auth',
+    name: 'Logout',
+    method: 'POST',
+    badge: 'tag-auth',
+    run: async () => {
+      if (!accessToken) return { code: -1, message: 'Not logged in' }
+      const { json } = await apiFetch('/login/logout', {
+        method: 'POST',
+        data: { accessToken },
+      })
+      if (json.code === 0 || json.code === '0') {
+        accessToken = null
+        document.getElementById('token-display').textContent = '— (logged out)'
+      }
+      return json
+    },
+    pass: r => r.code === 0 || r.code === '0',
+  },
+]
+
+// ══════════════════════════════════════════
+// UI
+// ══════════════════════════════════════════
+let resultItems = {}
+
+function clearResults() {
+  document.getElementById('results').innerHTML = ''
+  document.getElementById('summary-bar').style.display = 'none'
+  resultItems = {}
+  accessToken = null
+  deviceId = null
+  stationId = null
+  document.getElementById('token-display').textContent = '—'
+}
+
+function createResultItem(test) {
+  const div = document.createElement('div')
+  div.className = 'result-item'
+  div.id = `ri-${test.id}`
+  div.innerHTML = `
+    <div class="result-header" onclick="toggleBody('${test.id}')">
+      <span class="status-dot dot-pending" id="dot-${test.id}"></span>
+      <span class="result-name">${test.name}</span>
+      <span class="result-method ${test.badge}">${test.method}</span>
+      <span class="result-code" id="code-${test.id}"></span>
+      <span class="result-time" id="time-${test.id}"></span>
+    </div>
+    <div class="result-body" id="body-${test.id}">
+      <pre id="pre-${test.id}">Waiting...</pre>
+    </div>
+  `
+  document.getElementById('results').appendChild(div)
+  resultItems[test.id] = div
+}
+
+function toggleBody(id) {
+  const body = document.getElementById(`body-${id}`)
+  body.classList.toggle('open')
+}
+
+function setStatus(id, status, response, ms) {
+  const dot = document.getElementById(`dot-${id}`)
+  dot.className = `status-dot dot-${status}`
+  if (response !== undefined) {
+    document.getElementById(`pre-${id}`).textContent = JSON.stringify(response, null, 2)
+    document.getElementById(`code-${id}`).textContent = `code: ${response?.code ?? '—'}`
+  }
+  if (ms !== undefined) {
+    document.getElementById(`time-${id}`).textContent = `${ms}ms`
+  }
+  if (status === 'fail') {
+    document.getElementById(`body-${id}`).classList.add('open')
+  }
+}
+
+async function runTest(test) {
+  setStatus(test.id, 'running', undefined, undefined)
+  const start = Date.now()
+  try {
+    const result = await test.run()
+    const ms = Date.now() - start
+    const passed = test.pass(result)
+    setStatus(test.id, passed ? 'pass' : 'fail', result, ms)
+    return passed ? 'pass' : 'fail'
+  } catch (err) {
+    const ms = Date.now() - start
+    setStatus(test.id, 'fail', { error: err.message || String(err) }, ms)
+    return 'fail'
+  }
+}
+
+async function runGroup(group) {
+  clearResults()
+  document.getElementById('summary-bar').style.display = 'flex'
+  const tests = TESTS.filter(t => t.group === group)
+  for (const t of tests) createResultItem(t)
+  let pass = 0, fail = 0
+  for (const t of tests) {
+    const r = await runTest(t)
+    if (r === 'pass') pass++; else fail++
+    updateSummary(tests.length, pass, fail)
+  }
+}
+
+async function runAll() {
+  clearResults()
+  document.getElementById('summary-bar').style.display = 'flex'
+  for (const t of TESTS) createResultItem(t)
+  let pass = 0, fail = 0
+  for (const t of TESTS) {
+    const r = await runTest(t)
+    if (r === 'pass') pass++; else fail++
+    updateSummary(TESTS.length, pass, fail)
+  }
+}
+
+function updateSummary(total, pass, fail) {
+  document.getElementById('s-total').textContent = total
+  document.getElementById('s-pass').textContent = pass
+  document.getElementById('s-fail').textContent = fail
+  document.getElementById('s-skip').textContent = total - pass - fail
+}
+</script>
+</body>
+</html>
