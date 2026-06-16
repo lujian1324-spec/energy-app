@@ -151,7 +151,8 @@ export default function SmartSchedulePage() {
       const config = mapSettingsToGeneralConfig(Number(selectedDeviceId), peakShavingSettings)
       await savePeakValleyGeneral(config)
     } catch { /* noop */ }
-  }, [selectedDeviceId, peakShavingSettings, savePeakValleyGeneral])
+    navigate(-1)
+  }, [selectedDeviceId, peakShavingSettings, savePeakValleyGeneral, navigate])
 
   const handleScheduleChanged = useCallback(() => {
     if (selectedDeviceId && apiConfigLoaded) {

@@ -42,7 +42,7 @@ const DISPLAY_ICONS = [
 ]
 
 export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
-  const { powerStation, settings, selectedDeviceId, updateDeviceNameById, updateDeviceSpecs } =
+  const { powerStation, settings, selectedDeviceId, updateDeviceNameById, updateDeviceSpecs, peakShavingSettings } =
     usePowerStationStore()
   const { bleConnection, serialConnection, activeDataSource } = useConnectionStore()
   const navigate = useNavigate()
@@ -437,7 +437,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
         {/* Smart Schedule */}
         <SettingsRow
           label="Smart Schedule"
-          value="Off"
+          value={peakShavingSettings?.enabled ? 'On' : 'Off'}
           onPress={() => navigate('/smart-schedule')}
         />
 
