@@ -5,6 +5,7 @@ import {
   ChevronDown,
   Check,
   X,
+  Loader2,
   Battery,
   Zap,
   Refrigerator,
@@ -49,7 +50,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const { id: routeId } = useParams<{ id: string }>()
 
   // ── Real device data (useDeviceStore) — used when mounted as a route ──
-  const { devices, selectedDeviceState, selectDevice, loadDeviceState, renameDeviceLocal } = useDeviceStore()
+  const { devices, selectedDeviceState, selectDevice, loadDeviceState, renameDeviceLocal, removeDevice } = useDeviceStore()
   const realDevice = devices.find(d => String(d.id) === routeId)
 
   // Standalone route: ensure the real device + its realtime state are loaded
@@ -80,6 +81,8 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const [batteryPriority] = useState('Backup Mode')
   const [selectedIcon, setSelectedIcon] = useState('zap')
   const [pendingIcon, setPendingIcon] = useState('zap')
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   // ─── Helpers ─────────────────────────────────────────────────────────────
 
@@ -112,6 +115,18 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const handleSaveIcon = () => {
     setSelectedIcon(pendingIcon)
     setScreen('main')
+  }
+
+  const handleDeleteDevice = async () => {
+    const id = routeId ?? selectedDeviceId
+    if (!id) return
+    setDeleting(true)
+    try {
+      await removeDevice([Number(id)])
+    } catch { /* noop */ }
+    setDeleting(false)
+    setShowDeleteConfirm(false)
+    handleBack()
   }
 
   const CurrentIconComp =
@@ -444,15 +459,43 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
         {/* Delete Device */}
         <div className="mt-4">
           <button
-            onClick={() => {
-              // Confirm before deleting
-            }}
+            onClick={() => setShowDeleteConfirm(true)}
             className="w-full rounded-l bg-[#262626] px-4 py-4 text-body-lg font-semibold text-[#FF3530] active:opacity-70 transition-opacity"
           >
             Delete Device
           </button>
         </div>
       </div>
+
+      {/* Delete Confirm Dialog */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60 px-4 pb-8">
+          <div className="w-full max-w-sm bg-[#1F1F1F] rounded-xl overflow-hidden">
+            <div className="px-6 pt-6 pb-4 text-center">
+              <p className="text-title-md font-semibold text-white mb-2">Delete Device</p>
+              <p className="text-body-md text-[#A0A0A5]">
+                Are you sure you want to delete <span className="text-white font-semibold">{deviceName}</span>? This action cannot be undone.
+              </p>
+            </div>
+            <div className="border-t border-white/10 flex">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deleting}
+                className="flex-1 py-4 text-body-lg text-white border-r border-white/10 active:bg-white/5"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteDevice}
+                disabled={deleting}
+                className="flex-1 py-4 text-body-lg font-semibold text-[#FF3530] active:bg-white/5 flex items-center justify-center gap-2"
+              >
+                {deleting ? <Loader2 size={16} className="animate-spin text-[#FF3530]" /> : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
