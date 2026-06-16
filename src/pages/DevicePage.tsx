@@ -126,9 +126,11 @@ export default function DevicePage() {
   // ── 加载设备实时状态（每个设备） ──
   const fetchDeviceRealtime = useCallback(async (deviceId: number | string) => {
     const idStr = String(deviceId)
+    // Keep the previous fields/raw while refreshing so the battery icon doesn't
+    // briefly flash 0% on every periodic re-fetch — only flip the loading flag.
     setRealtimeCache(prev => ({
       ...prev,
-      [idStr]: { ...prev[idStr], fields: {}, raw: {}, loading: true, lastUpdated: 0 },
+      [idStr]: { ...prev[idStr], loading: true },
     }))
     try {
       await loadDeviceState(deviceId)
@@ -262,11 +264,20 @@ export default function DevicePage() {
   })
 
   // ── BatteryTag 电量标签（横式电池 + 充电闪电 + 百分比 / Disconnected） ──
-  const BatteryTag = ({ level, connected, charging }: { level: number; connected: boolean; charging: boolean }) => {
+  const BatteryTag = ({ level, connected, charging, unknown }: { level: number; connected: boolean; charging: boolean; unknown?: boolean }) => {
     if (!connected) {
       return (
         <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-[#4B1512] text-[#FF3530] text-body-md font-semibold">
           Disconnected
+        </span>
+      )
+    }
+    // No realtime data fetched yet — show a neutral placeholder instead of a misleading 0%.
+    if (unknown) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#3A3A3A]">
+          <span className="w-[22px] h-[12px] rounded-[3px] border-s animate-pulse" style={{ borderColor: '#8C8C8C' }} />
+          <span className="text-body-md font-semibold text-[#8C8C8C]">--%</span>
         </span>
       )
     }
@@ -429,7 +440,9 @@ export default function DevicePage() {
           /* Device Card List (newest on top — devices[0] assumed newest) */
           <div className="flex flex-col gap-3">
             {devices.map((device, index) => {
-              const soc = getDeviceNum(device.id, 'soc') ?? 0
+              const socRaw = getDeviceNum(device.id, 'soc')
+              const soc = socRaw ?? 0
+              const socKnown = socRaw !== null
               const batteryPower = getDeviceNum(device.id, 'batteryPower')
               const isCharging = batteryPower !== null && batteryPower > 0
               const connected = device.isOnline
@@ -457,7 +470,7 @@ export default function DevicePage() {
                     ) : (
                       <span className="text-[28px] leading-none">{getDeviceIcon(device.deviceSortKey)}</span>
                     )}
-                    <BatteryTag level={soc} connected={connected} charging={isCharging} />
+                    <BatteryTag level={soc} unknown={!socKnown} connected={connected} charging={isCharging} />
                   </div>
 
                   {/* Name (up to 2 lines, then ...) */}
