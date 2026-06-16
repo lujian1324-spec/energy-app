@@ -64,6 +64,7 @@ function SessionLoadingScreen() {
 function AppInner() {
   const location = useLocation()
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
+  const isGuest = useAuthStore(s => s.isGuest)
   const sessionReady = useAuthStore(s => s.sessionReady)
   const restoreSession = useAuthStore(s => s.restoreSession)
   useRealtimeSimulator()
@@ -163,13 +164,19 @@ function AppInner() {
               <Route path="/devices" element={<RequireAuth><DevicePage /></RequireAuth>} />
               <Route path="/insights" element={<RequireAuth><StatsPage /></RequireAuth>} />
               <Route path="/setting" element={<RequireAuth><SettingPage /></RequireAuth>} />
-              {/* 默认进入 devices */}
-              <Route path="/" element={<Navigate to="/devices" replace />} />
+              {/* 首次进入默认登录页，已登录/游客模式则进入 devices */}
+              <Route
+                path="/"
+                element={<Navigate to={isAuthenticated || isGuest ? '/devices' : '/login'} replace />}
+              />
               {/* 旧路由重定向到新路由（向后兼容） */}
               <Route path="/stats" element={<Navigate to="/insights" replace />} />
               <Route path="/settings" element={<Navigate to="/setting" replace />} />
               {/* 未匹配路径重定向 */}
-              <Route path="*" element={<Navigate to="/devices" replace />} />
+              <Route
+                path="*"
+                element={<Navigate to={isAuthenticated || isGuest ? '/devices' : '/login'} replace />}
+              />
             </Routes>
           </motion.div>
         </AnimatePresence>
