@@ -326,6 +326,39 @@ export async function updateUserInfo(data: Partial<UserInfo>): Promise<ApiRespon
   return api.post<unknown>('/user/update/iotUserInfo', data)
 }
 
+/** 更新用户邮箱（需先通过 sendEmailCaptcha 获取 iotCaptchaId） */
+export async function updateUserEmail(
+  email: string,
+  iotCaptchaId: string,
+  verifyCode: string
+): Promise<ApiResponse<unknown>> {
+  return api.post<unknown>('/user/update/iotUserEmail', {
+    email,
+    captchaId: iotCaptchaId,
+    verifyCode,
+  })
+}
+
+/** 发送手机验证码用于修改手机号 */
+export async function sendCellphoneUpdateVerify(
+  cellphone: string
+): Promise<ApiResponse<SendCaptchaResponse>> {
+  return api.post<SendCaptchaResponse>('/user/update/cellphoneVerify', { cellphone })
+}
+
+/** 修改手机号 */
+export async function updateUserCellphone(
+  cellphone: string,
+  iotCaptchaId: string,
+  verifyCode: string
+): Promise<ApiResponse<unknown>> {
+  return api.post<unknown>('/user/update/iotUserCellphone', {
+    cellphone,
+    captchaId: iotCaptchaId,
+    verifyCode,
+  })
+}
+
 /** 修改密码 */
 export async function updatePassword(
   oldPlainPassword: string,

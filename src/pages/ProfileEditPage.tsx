@@ -8,11 +8,20 @@ import {
   Check,
   X,
   ChevronRight,
+  Hash,
 } from 'lucide-react'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useAuthStore } from '../stores/authStore'
 import { saveUserProfile, getUserProfile } from '../db/powerflowDB'
 import { toast } from '../components/Toast'
+import {
+  fetchUserInfo,
+  updateUserInfo,
+  updateUserEmail,
+  updatePassword,
+  sendEmailCaptcha,
+} from '../api/authApi'
+import { Lock, Eye, EyeOff } from 'lucide-react'
 import type { UserProfile } from '../types/protocol'
 
 interface ProfileEditPageProps {
@@ -31,12 +40,31 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
     memberSince: new Date().toISOString().slice(0, 10),
   })
 
+  // 用户 ID（从服务端获取）
+  const [userId, setUserId] = useState<number | null>(null)
+
   // 加载状态
   const [isLoading, setIsLoading] = useState(true)
 
   // 编辑状态
   const [editingField, setEditingField] = useState<string | null>(null)
   const [tempValue, setTempValue] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+  const [fieldError, setFieldError] = useState('')
+
+  // Email OTP flow
+  const [emailOtpSent, setEmailOtpSent] = useState(false)
+  const [emailCaptchaId, setEmailCaptchaId] = useState('')
+  const [emailOtpCode, setEmailOtpCode] = useState('')
+  const [emailCooldown, setEmailCooldown] = useState(0)
+
+  // Password change
+  const [oldPassword, setOldPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showOldPwd, setShowOldPwd] = useState(false)
+  const [showNewPwd, setShowNewPwd] = useState(false)
+  const [showConfirmPwd, setShowConfirmPwd] = useState(false)
 
   // "..." dropdown menu
   const [showMenu, setShowMenu] = useState(false)
@@ -59,6 +87,19 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
         const savedProfile = await getUserProfile()
         if (savedProfile) {
           setProfile(savedProfile)
+        }
+        // Fetch live user info from server
+        const apiResult = await fetchUserInfo()
+        if (apiResult.code === 0 || apiResult.code === '0') {
+          const u = apiResult.data
+          if (u) {
+            setUserId(u.userId ?? null)
+            setProfile(prev => ({
+              ...prev,
+              name: u.nickname ?? u.account ?? prev.name,
+              email: u.email ?? prev.email,
+            }))
+          }
         }
       } catch (error) {
         console.error('Failed to load user profile:', error)
@@ -84,21 +125,74 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
   const handleEdit = (field: string, currentValue: string) => {
     setEditingField(field)
     setTempValue(currentValue)
+    setFieldError('')
+    setEmailOtpSent(false)
+    setEmailOtpCode('')
+    setEmailCaptchaId('')
+    setEmailCooldown(0)
+    setOldPassword('')
+    setNewPassword('')
+    setConfirmPassword('')
   }
 
   const handleSave = async () => {
-    if (editingField) {
-      const newProfile = { ...profile, [editingField]: tempValue }
-      setProfile(newProfile)
-      await persistProfile(newProfile)
+    if (!editingField) return
+    setIsSaving(true)
+    setFieldError('')
+    try {
+      if (editingField === 'name') {
+        const r = await updateUserInfo({ nickname: tempValue })
+        if (r.code !== 0 && r.code !== '0') throw new Error(r.message ?? 'Failed')
+        const newProfile = { ...profile, name: tempValue }
+        setProfile(newProfile)
+        await persistProfile(newProfile)
+        toast.success('Name updated')
+
+      } else if (editingField === 'email') {
+        if (!emailOtpSent) {
+          // Step 1: send OTP
+          const r = await sendEmailCaptcha(tempValue, '4')
+          if (r.code !== 0 && r.code !== '0') throw new Error(r.message ?? 'Failed to send code')
+          setEmailCaptchaId(r.data?.iotCaptchaId ?? '')
+          setEmailOtpSent(true)
+          setEmailCooldown(60)
+          const timer = setInterval(() => {
+            setEmailCooldown(c => { if (c <= 1) { clearInterval(timer); return 0 } return c - 1 })
+          }, 1000)
+          return // stay on screen, wait for OTP
+        } else {
+          // Step 2: submit OTP
+          if (emailOtpCode.length < 4) { setFieldError('Enter the verification code'); return }
+          const r = await updateUserEmail(tempValue, emailCaptchaId, emailOtpCode)
+          if (r.code !== 0 && r.code !== '0') throw new Error(r.message ?? 'Failed')
+          const newProfile = { ...profile, email: tempValue }
+          setProfile(newProfile)
+          await persistProfile(newProfile)
+          toast.success('Email updated')
+        }
+
+      } else if (editingField === 'password') {
+        if (!oldPassword) { setFieldError('Enter your current password'); return }
+        if (newPassword.length < 6) { setFieldError('New password must be at least 6 characters'); return }
+        if (newPassword !== confirmPassword) { setFieldError('Passwords do not match'); return }
+        const r = await updatePassword(oldPassword, newPassword)
+        if (r.code !== 0 && r.code !== '0') throw new Error(r.message ?? 'Failed')
+        toast.success('Password updated')
+      }
+
       setEditingField(null)
       setTempValue('')
+    } catch (err: unknown) {
+      setFieldError(err instanceof Error ? err.message : 'Update failed')
+    } finally {
+      setIsSaving(false)
     }
   }
 
   const handleCancel = () => {
     setEditingField(null)
     setTempValue('')
+    setFieldError('')
   }
 
   const handleAvatarClick = () => {
@@ -154,7 +248,9 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
 
   // If editing a field, show sub-screen
   if (editingField) {
-    const isEmail = editingField === 'email'
+    const titleMap: Record<string, string> = { name: 'Name', email: 'Linked Email', password: 'Change Password' }
+    const title = titleMap[editingField] ?? editingField
+
     return (
       <motion.div
         initial={{ opacity: 0, x: '100%' }}
@@ -171,49 +267,148 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
           >
             <ChevronLeft size={20} className="text-white" />
           </button>
-          <span className="text-title-lg font-semibold text-white">
-            {isEmail ? 'Linked Email' : 'Name'}
-          </span>
-          <button
-            onClick={handleSave}
-            className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center"
-          >
-            <Check size={18} className="text-[#01D6BE]" />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-4 pt-6">
-          <div className="bg-[#262626] rounded-l overflow-hidden mb-4">
-            <div className="flex items-center gap-3 px-4 py-3 border-b border-white/5">
-              {isEmail ? (
-                <Mail size={16} className="text-[#A0A0A5] flex-shrink-0" />
-              ) : (
-                <User size={16} className="text-[#A0A0A5] flex-shrink-0" />
-              )}
-              <input
-                type={isEmail ? 'email' : 'text'}
-                value={tempValue}
-                onChange={(e) => setTempValue(e.target.value)}
-                placeholder={isEmail ? 'Enter your email' : 'Enter your name'}
-                autoFocus
-                className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#636366] focus:outline-none"
-              />
-              {tempValue.length > 0 && (
-                <button onClick={() => setTempValue('')}>
-                  <X size={16} className="text-[#636366]" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {isEmail && (
+          <span className="text-title-lg font-semibold text-white">{title}</span>
+          {editingField !== 'email' && editingField !== 'password' ? (
             <button
               onClick={handleSave}
-              className="w-full h-12 rounded-full bg-[#01D6BE] text-black font-semibold text-body-md"
+              disabled={isSaving}
+              className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center disabled:opacity-40"
             >
-              Verify New Email
+              <Check size={18} className="text-[#01D6BE]" />
             </button>
+          ) : (
+            <div className="w-10" />
           )}
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-4 pt-6 space-y-4">
+
+          {/* ── NAME ── */}
+          {editingField === 'name' && (
+            <div className="bg-[#262626] rounded-l overflow-hidden">
+              <div className="flex items-center gap-3 px-4 py-3">
+                <User size={16} className="text-[#A0A0A5] flex-shrink-0" />
+                <input
+                  type="text"
+                  value={tempValue}
+                  onChange={(e) => setTempValue(e.target.value)}
+                  placeholder="Enter your name"
+                  autoFocus
+                  className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#636366] focus:outline-none"
+                />
+                {tempValue.length > 0 && (
+                  <button onClick={() => setTempValue('')}><X size={16} className="text-[#636366]" /></button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── EMAIL ── */}
+          {editingField === 'email' && (
+            <>
+              <div className="bg-[#262626] rounded-l overflow-hidden">
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <Mail size={16} className="text-[#A0A0A5] flex-shrink-0" />
+                  <input
+                    type="email"
+                    value={tempValue}
+                    onChange={(e) => { setTempValue(e.target.value); setEmailOtpSent(false) }}
+                    placeholder="New email address"
+                    autoFocus
+                    disabled={emailOtpSent}
+                    className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#636366] focus:outline-none disabled:opacity-60"
+                  />
+                </div>
+              </div>
+              {emailOtpSent && (
+                <div className="bg-[#262626] rounded-l overflow-hidden">
+                  <div className="flex items-center gap-3 px-4 py-3">
+                    <Mail size={16} className="text-[#A0A0A5] flex-shrink-0" />
+                    <input
+                      type="text"
+                      value={emailOtpCode}
+                      onChange={(e) => setEmailOtpCode(e.target.value)}
+                      placeholder="Verification code"
+                      autoFocus
+                      maxLength={8}
+                      className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#636366] focus:outline-none"
+                    />
+                  </div>
+                </div>
+              )}
+              <button
+                onClick={handleSave}
+                disabled={isSaving || (!emailOtpSent && !tempValue)}
+                className="w-full h-12 rounded-full bg-[#01D6BE] text-black font-semibold text-body-md disabled:opacity-40"
+              >
+                {isSaving ? 'Please wait…' : emailOtpSent ? 'Confirm Update' : emailCooldown > 0 ? `Resend (${emailCooldown}s)` : 'Send Verification Code'}
+              </button>
+            </>
+          )}
+
+          {/* ── PASSWORD ── */}
+          {editingField === 'password' && (
+            <>
+              {/* Old password */}
+              <div className="bg-[#262626] rounded-l overflow-hidden">
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <Lock size={16} className="text-[#A0A0A5] flex-shrink-0" />
+                  <input
+                    type={showOldPwd ? 'text' : 'password'}
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
+                    placeholder="Current password"
+                    autoFocus
+                    className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#636366] focus:outline-none"
+                  />
+                  <button onClick={() => setShowOldPwd(v => !v)}>
+                    {showOldPwd ? <EyeOff size={16} className="text-[#636366]" /> : <Eye size={16} className="text-[#636366]" />}
+                  </button>
+                </div>
+              </div>
+              {/* New password */}
+              <div className="bg-[#262626] rounded-l overflow-hidden">
+                <div className="flex items-center gap-3 px-4 py-3 border-b border-white/5">
+                  <Lock size={16} className="text-[#A0A0A5] flex-shrink-0" />
+                  <input
+                    type={showNewPwd ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="New password (6–32 chars)"
+                    className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#636366] focus:outline-none"
+                  />
+                  <button onClick={() => setShowNewPwd(v => !v)}>
+                    {showNewPwd ? <EyeOff size={16} className="text-[#636366]" /> : <Eye size={16} className="text-[#636366]" />}
+                  </button>
+                </div>
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <Lock size={16} className="text-[#A0A0A5] flex-shrink-0" />
+                  <input
+                    type={showConfirmPwd ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm new password"
+                    className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#636366] focus:outline-none"
+                  />
+                  <button onClick={() => setShowConfirmPwd(v => !v)}>
+                    {showConfirmPwd ? <EyeOff size={16} className="text-[#636366]" /> : <Eye size={16} className="text-[#636366]" />}
+                  </button>
+                </div>
+              </div>
+              <button
+                onClick={handleSave}
+                disabled={isSaving || !oldPassword || !newPassword || !confirmPassword}
+                className="w-full h-12 rounded-full bg-[#01D6BE] text-black font-semibold text-body-md disabled:opacity-40"
+              >
+                {isSaving ? 'Updating…' : 'Update Password'}
+              </button>
+            </>
+          )}
+
+          {/* Error message */}
+          {fieldError ? (
+            <p className="text-danger text-body-md text-center">{fieldError}</p>
+          ) : null}
         </div>
       </motion.div>
     )
@@ -335,11 +530,33 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
           {/* Linked Email row */}
           <button
             onClick={() => handleEdit('email', profile.email)}
-            className="w-full flex items-center gap-3 px-4 py-4 text-left"
+            className="w-full flex items-center gap-3 px-4 py-4 border-b border-white/5 text-left"
           >
             <Mail size={18} className="text-[#A0A0A5] flex-shrink-0" />
             <span className="text-body-md text-white flex-1">Linked Email</span>
             <span className="text-body-md text-[#A0A0A5] truncate max-w-[140px]">{profile.email}</span>
+            <ChevronRight size={16} className="text-[#636366] flex-shrink-0" />
+          </button>
+
+          {/* User ID row (read-only) */}
+          {userId !== null && (
+            <div className="w-full flex items-center gap-3 px-4 py-4 border-t border-white/5">
+              <Hash size={18} className="text-[#A0A0A5] flex-shrink-0" />
+              <span className="text-body-md text-white flex-1">User ID</span>
+              <span className="text-body-md text-[#A0A0A5]">#{userId}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Security section */}
+        <p className="text-body-md font-semibold text-white mt-5 mb-2">Security</p>
+        <div className="bg-[#262626] rounded-l overflow-hidden">
+          <button
+            onClick={() => handleEdit('password', '')}
+            className="w-full flex items-center gap-3 px-4 py-4 text-left"
+          >
+            <Lock size={18} className="text-[#A0A0A5] flex-shrink-0" />
+            <span className="text-body-md text-white flex-1">Change Password</span>
             <ChevronRight size={16} className="text-[#636366] flex-shrink-0" />
           </button>
         </div>
