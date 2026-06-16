@@ -154,9 +154,7 @@ export default function LoginPage() {
                 fontSize="64"
                 fontWeight="200"
                 letterSpacing="18"
-                fill="none"
-                stroke="white"
-                strokeWidth="1.2"
+                fill="white"
               >SIERRO</text>
             </svg>
           </div>
