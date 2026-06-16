@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ChevronLeft, ChevronDown, Check, Settings, Bell, Zap, Sun, PlugZap } from 'lucide-react'
+import { ChevronLeft, ChevronDown, Check, Settings, Bell, Zap, Sun, PlugZap, ArrowUpRight } from 'lucide-react'
 import BatteryRing from '../components/BatteryRing'
 import { useDeviceStore } from '../stores/deviceStore'
 import { mapFieldsToRealtime } from '../api/deviceApi'
