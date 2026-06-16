@@ -234,7 +234,7 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
           batteryTemp: makeField('batteryTemp', 'Battery Temp', 28.5, '°C', 'battery'),
           batteryHealth: makeField('batteryHealth', 'Battery Health', 98, '%', 'battery'),
           batteryCycles: makeField('batteryCycles', 'Cycles', 286, '', 'battery'),
-          acPower: makeField('acPower', 'AC Power', 45, 'W', 'ac'),
+          acPower: makeField('acPower', 'AC Power', 400, 'W', 'ac'),
           solarPower: makeField('solarPower', 'Solar Power', 0, 'W', 'solar'),
           gridPower: makeField('gridPower', 'Grid Power', 0, 'W', 'grid'),
           outputPower: makeField('outputPower', 'Output Power', 45, 'W', 'output'),
@@ -266,7 +266,7 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
         firingAlarms: [],
       }
 
-    case 10002: // SIERRO 2000 — AC input 1000W, Solar 0W, output 231W
+    case 10002: // SIERRO 2000 — AC input 80W, Solar 0W, output 231W
       return {
         deviceId: '10002',
         dtuID: device.dtuDtuid,
@@ -282,7 +282,7 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
           batteryTemp: makeField('batteryTemp', 'Battery Temp', 31.2, '°C', 'battery'),
           batteryHealth: makeField('batteryHealth', 'Battery Health', 100, '%', 'battery'),
           batteryCycles: makeField('batteryCycles', 'Cycles', 48, '', 'battery'),
-          acPower: makeField('acPower', 'AC Power', 1000, 'W', 'ac'),
+          acPower: makeField('acPower', 'AC Power', 80, 'W', 'ac'),
           solarPower: makeField('solarPower', 'Solar Power', 0, 'W', 'solar'),
           gridPower: makeField('gridPower', 'Grid Power', 0, 'W', 'grid'),
           outputPower: makeField('outputPower', 'Output Power', 80, 'W', 'output'),
@@ -388,7 +388,7 @@ export function getDemoEnergyFlow(deviceId: string | number): { code: number; me
     ctFlow: null,
   }
 
-  if (numericId === 10001) { // SIERRO 1000 — AC 45W in, 0W solar, 45W out, 50W charging battery, SoC 95%
+  if (numericId === 10001) { // SIERRO 1000 — AC 400W in, 0W solar, 45W out, 50W charging battery, SoC 95%
     return {
       code: 0,
       message: 'success',
@@ -404,12 +404,12 @@ export function getDemoEnergyFlow(deviceId: string | number): { code: number; me
         pvPanelFlow: makeFlowNode('pvPanel', 'Solar Panel', 'icon_solar', 0),
         batteryFlow: makeFlowNode('battery', 'Battery', 'icon_battery', 50),
         loadFlow: makeFlowNode('load', 'Load', 'icon_load', 45),
-        gridFlow: makeFlowNode('grid', 'Grid', 'icon_grid', 45),
+        gridFlow: makeFlowNode('grid', 'Grid', 'icon_grid', 400),
       },
     }
   }
 
-  if (numericId === 10002) { // SIERRO 2000 — AC 1000W in, 0W solar, 80W out, 920W charging battery, SoC 100%
+  if (numericId === 10002) { // SIERRO 2000 — AC 80W in, 0W solar, 80W out, 920W charging battery, SoC 100%
     return {
       code: 0,
       message: 'success',
@@ -425,7 +425,7 @@ export function getDemoEnergyFlow(deviceId: string | number): { code: number; me
         pvPanelFlow: makeFlowNode('pvPanel', 'Solar Panel', 'icon_solar', 0),
         batteryFlow: makeFlowNode('battery', 'Battery', 'icon_battery', 920),
         loadFlow: makeFlowNode('load', 'Load', 'icon_load', 80),
-        gridFlow: makeFlowNode('grid', 'Grid', 'icon_grid', 1000),
+        gridFlow: makeFlowNode('grid', 'Grid', 'icon_grid', 80),
       },
     }
   }
