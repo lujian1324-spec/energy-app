@@ -511,7 +511,9 @@ export function getDemoDayCurve(
   let smoothed = smoothOnce(raw)
   if (key === 'soc') smoothed = smoothOnce(smoothed)
 
-  return smoothed.map(v => key === 'soc' ? Math.round(Math.max(0, Math.min(100, v))) : Math.round(Math.max(0, v)))
+  // SoC keeps fractional precision — rounding to whole percents at this many
+  // sample points renders as a visible staircase instead of a smooth curve.
+  return smoothed.map(v => key === 'soc' ? Math.max(0, Math.min(100, v)) : Math.round(Math.max(0, v)))
 }
 
 export function getDemoHistoryData(
