@@ -95,10 +95,10 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const [sleepFrom, setSleepFrom] = useState('22:00')
   const [sleepTo, setSleepTo] = useState('09:00')
   const [showWorkModeMenu, setShowWorkModeMenu] = useState(false)
-  const WORK_MODES: { label: string; value: 0 | 1 | 2 }[] = [
-    { label: 'Normal Mode', value: 0 },
-    { label: 'Backup Mode', value: 1 },
-    { label: 'ECO Mode', value: 2 },
+  const [workModeDraft, setWorkModeDraft] = useState<0 | 1 | 2>(1)
+  const WORK_MODES: { label: string; desc: string; value: 0 | 1 | 2 }[] = [
+    { label: 'Backup', desc: 'Reserve 100% for backup', value: 1 },
+    { label: 'Savings', desc: 'Reserve 60% for backup', value: 2 },
   ]
   const [workMode, setWorkMode_] = useState<0 | 1 | 2>(1)
   const [selectedIcon, setSelectedIcon] = useState('zap')
@@ -561,39 +561,14 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
         />
 
         {/* Battery Priority */}
-        <div className="relative mb-2">
-          <div
-            onClick={() => setShowWorkModeMenu(v => !v)}
-            className="rounded-l bg-[#262626] px-4 py-4 flex items-center justify-between cursor-pointer active:opacity-70 transition-opacity"
-          >
-            <span className="text-body-lg text-white">Battery Priority</span>
-            <div className="flex items-center gap-2">
-              <span className="text-body-md text-[#A0A0A5]">{WORK_MODES.find(m => m.value === workMode)?.label ?? 'Backup Mode'}</span>
-              <ChevronDown size={18} className={`text-[#A0A0A5] transition-transform ${showWorkModeMenu ? 'rotate-180' : ''}`} />
-            </div>
-          </div>
-          {showWorkModeMenu && (
-            <div className="absolute left-0 right-0 mt-1 z-10 rounded-l bg-[#262626] border border-white/10 overflow-hidden shadow-xl">
-              {WORK_MODES.map(m => (
-                <button
-                  key={m.value}
-                  onClick={async () => {
-                    setWorkMode_(m.value)
-                    setShowWorkModeMenu(false)
-                    const deviceId = routeId ?? selectedDeviceId
-                    if (deviceId) {
-                      try { await setWorkMode(deviceId, m.value) } catch { /* noop */ }
-                    }
-                  }}
-                  className="w-full px-4 py-3.5 flex items-center justify-between border-b border-white/5 last:border-0 active:bg-white/5"
-                >
-                  <span className={`text-body-md ${workMode === m.value ? 'text-[#01D6BE] font-semibold' : 'text-white'}`}>{m.label}</span>
-                  {workMode === m.value && <Check size={16} className="text-[#01D6BE]" />}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        <SettingsRow
+          label="Battery Priority"
+          value={WORK_MODES.find(m => m.value === workMode)?.label ?? 'Backup'}
+          onPress={() => {
+            setWorkModeDraft(workMode === 2 ? 2 : 1)
+            setShowWorkModeMenu(true)
+          }}
+        />
 
         {/* Smart Schedule */}
         <SettingsRow
@@ -612,6 +587,77 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           </button>
         </div>
       </div>
+
+      {/* Battery Priority Bottom Sheet */}
+      {showWorkModeMenu && (
+        <div
+          className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60"
+          onClick={() => setShowWorkModeMenu(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full bg-[#1F1F1F] rounded-t-2xl overflow-hidden pb-8"
+          >
+            {/* Drag handle */}
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 rounded-full bg-white/20" />
+            </div>
+
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 pt-3 pb-2">
+              <span className="text-title-md font-semibold text-white flex-1 text-center">
+                Select Battery Priority
+              </span>
+              <button
+                onClick={() => setShowWorkModeMenu(false)}
+                className="absolute right-4 w-9 h-9 rounded-full bg-[#3A3A3C] flex items-center justify-center"
+              >
+                <X size={16} className="text-white" />
+              </button>
+            </div>
+
+            <div className="px-4 pt-4 space-y-3">
+              {WORK_MODES.map(m => {
+                const selected = workModeDraft === m.value
+                return (
+                  <button
+                    key={m.value}
+                    onClick={() => setWorkModeDraft(m.value)}
+                    className={`w-full rounded-l border px-4 py-4 text-center transition-colors ${
+                      selected
+                        ? 'border-[#01D6BE] bg-[#01D6BE]/15'
+                        : 'border-white/15 bg-transparent'
+                    }`}
+                  >
+                    <p className={`text-title-md font-semibold ${selected ? 'text-white' : 'text-[#8C8C8C]'}`}>
+                      {m.label}
+                    </p>
+                    <p className={`text-body-md mt-0.5 ${selected ? 'text-[#D9D9D9]' : 'text-[#636366]'}`}>
+                      {m.desc}
+                    </p>
+                  </button>
+                )
+              })}
+            </div>
+
+            <div className="px-4 pt-5">
+              <button
+                onClick={async () => {
+                  setWorkMode_(workModeDraft)
+                  setShowWorkModeMenu(false)
+                  const deviceId = routeId ?? selectedDeviceId
+                  if (deviceId) {
+                    try { await setWorkMode(deviceId, workModeDraft) } catch { /* noop */ }
+                  }
+                }}
+                className="w-full h-12 rounded-l bg-[#01D6BE] text-black font-semibold text-body-lg active:scale-95 transition-transform"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirm Dialog */}
       {showDeleteConfirm && (

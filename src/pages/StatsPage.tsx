@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Share2, BarChart3, WifiOff, Zap, ChevronLeft, ChevronRight, Leaf } from 'lucide-react'
 import BatteryRing from '../components/BatteryRing'
-import { DataSourceTag, LastSync, SampleRate, CalcAudit, type DataSource } from '../components/DataTrust'
+import { LastSync, SampleRate, CalcAudit, type DataSource } from '../components/DataTrust'
 import { useDeviceStore } from '../stores/deviceStore'
 import { mapFieldsToRealtime, type HistoryDataResponse } from '../api/deviceApi'
 
@@ -579,7 +579,6 @@ export default function StatsPage() {
           <h1 className="text-display font-display text-ink-1 leading-none">Insights</h1>
           {/* PRD v1.1 §8: 数据来源 + 同步时间 */}
           <div className="flex items-center gap-2 mt-2">
-            <DataSourceTag source={useDemo ? 'demo' : 'cloud'} />
             <LastSync lastSyncAt={lastSyncAt} />
           </div>
         </div>
