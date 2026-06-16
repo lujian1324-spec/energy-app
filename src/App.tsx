@@ -13,6 +13,7 @@ import TermsPage from './pages/TermsPage'
 import PrivacyPage from './pages/PrivacyPage'
 import SmartSchedulePage from './pages/SmartSchedulePage'
 import NotificationsPage from './pages/NotificationsPage'
+import OnboardingPage from './pages/OnboardingPage'
 import { useRealtimeSimulator } from './hooks/useRealtimeSimulator'
 import { useAuthStore } from './stores/authStore'
 import { ToastContainer, useToast } from './components/Toast'
@@ -102,7 +103,7 @@ function AppInner() {
   }
 
   // 设备详情页 & Smart Schedule 页 & 通知页单独渲染，不包含底部导航
-  if (location.pathname.startsWith('/device/') || location.pathname === '/smart-schedule' || location.pathname === '/notifications' || location.pathname.startsWith('/profile')) {
+  if (location.pathname.startsWith('/device/') || location.pathname === '/smart-schedule' || location.pathname === '/notifications' || location.pathname === '/onboarding' || location.pathname.startsWith('/profile')) {
     return (
       <div className="h-full w-full bg-bg-base flex flex-col overflow-hidden">
         <div className="flex-1 overflow-hidden relative">
@@ -119,6 +120,7 @@ function AppInner() {
                 <Route path="/device/:id" element={<RequireAuth><OverviewPage /></RequireAuth>} />
                 <Route path="/smart-schedule" element={<RequireAuth><SmartSchedulePage /></RequireAuth>} />
                 <Route path="/notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
+                <Route path="/onboarding" element={<RequireAuth><OnboardingPage /></RequireAuth>} />
               </Routes>
             </motion.div>
           </AnimatePresence>
