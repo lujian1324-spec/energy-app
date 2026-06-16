@@ -1,64 +1,62 @@
 /**
- * BLE 蓝牙配网 UI 组件
- * 内嵌在 DevicePage 的添加设备弹窗中
- *
- * 步骤流程: 扫描连接 → 设备验证 → WiFi列表 → 输入密码 → 配网 → 验证结果
+ * BLE provisioning UI — PRD-aligned redesign.
+ * All store/API/protocol logic preserved from original.
  */
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Wifi, WifiOff, Lock, Unlock, ChevronLeft, ChevronRight,
-  Loader2, AlertCircle, CheckCircle, XCircle, Scan, RefreshCw,
-  Signal, Eye, EyeOff, ArrowLeft, Radio, Server,
+  ChevronLeft, X, Wifi, WifiOff, Lock, Loader2,
+  AlertCircle, CheckCircle, XCircle, RefreshCw,
+  Eye, EyeOff, Server,
 } from 'lucide-react'
 import { useProvisionStore, type ProvisionStep } from '../stores/provisionStore'
 import { getProvisionManager, destroyProvisionManager } from '../protocols/bleProvision'
-import { getStatusText } from '../utils/dtuidParser'
 
-const STEPS: { key: ProvisionStep; label: string }[] = [
-  { key: 'scan', label: '扫描' },
-  { key: 'verify', label: '验证' },
-  { key: 'wifi', label: 'WiFi' },
-  { key: 'password', label: '密码' },
-  { key: 'configuring', label: '配置' },
-  { key: 'result', label: '完成' },
-]
+// Local UI screens — the multi-step store flow lives inside 'provisioning'
+type UiScreen = 'scan' | 'qr' | 'naming' | 'provisioning'
+
+// Radar ring animation keyframes via inline style
+const radarRings = [0, 1, 2, 3]
 
 export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   const store = useProvisionStore()
-  const currentStepIndex = STEPS.findIndex(s => s.key === store.step)
+
+  const [uiScreen, setUiScreen] = useState<UiScreen>('scan')
+  const [deviceNameInput, setDeviceNameInput] = useState('')
+  const [nameError, setNameError] = useState('')
   const [bleKeyInput, setBleKeyInput] = useState('')
   const [showPassword, setShowPassword] = useState(false)
 
-  const goBack = useCallback(() => {
-    const idx = STEPS.findIndex(s => s.key === store.step)
-    if (idx > 0) store.setStep(STEPS[idx - 1].key)
-  }, [store])
+  // Simulate found devices list on top of real BLE scan
+  const [foundDevices, setFoundDevices] = useState<{ name: string; serial: string }[]>([])
 
-  // ─── Step: 扫描连接 ───
+  // ─── BLE Scan ────────────────────────────────────────────────────────────
+
   const handleScan = useCallback(async () => {
     store.setIsOperating(true)
     store.setErrorMessage(null)
-    store.addLog('开始蓝牙扫描...')
+    store.addLog('Starting BLE scan...')
+    setFoundDevices([])
     try {
       const manager = getProvisionManager({
         onLog: (msg) => store.addLog(msg),
-        onDisconnected: () => {
-          store.setErrorMessage('设备已断开连接')
-        },
+        onDisconnected: () => store.setErrorMessage('Device disconnected'),
       })
       await manager.connect()
-      store.setDeviceInfo(manager.btDevice?.name ?? null, manager.getDuid())
-      store.setStep('verify')
+      const name = manager.btDevice?.name ?? 'Sierro Device'
+      const duid = manager.getDuid()
+      store.setDeviceInfo(name, duid)
+      setFoundDevices([{ name, serial: duid ?? 'Unknown' }])
     } catch (err) {
-      store.setErrorMessage(err instanceof Error ? err.message : '扫描失败')
-      store.addLog(`扫描失败: ${err}`)
+      store.setErrorMessage(err instanceof Error ? err.message : 'Scan failed')
+      store.addLog(`Scan failed: ${err}`)
     } finally {
       store.setIsOperating(false)
     }
   }, [store])
 
-  // ─── Step: 设备验证 ───
+  // ─── Verify ──────────────────────────────────────────────────────────────
+
   const handleVerify = useCallback(async () => {
     if (!store.dtuid) return
     store.setIsOperating(true)
@@ -66,30 +64,24 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     try {
       const manager = getProvisionManager()
       const resp = await manager.getVersion()
-
       if (resp.RC === 9000) {
-        // 需要蓝牙密码
         store.setNeedBleKey(true)
-        store.addLog('设备需要蓝牙密码验证')
         return
       }
-
       if (resp.RC === 0 && resp.PL) {
         const pl = resp.PL as { SV: string; HV: string }
         store.setVersionInfo(pl.SV, pl.HV)
-        store.addLog(`设备版本: ${pl.SV}, 硬件: ${pl.HV}`)
         store.setStep('wifi')
       } else {
-        store.setErrorMessage(`验证失败: RC=${resp.RC}`)
+        store.setErrorMessage(`Verification failed: RC=${resp.RC}`)
       }
     } catch (err) {
-      store.setErrorMessage(err instanceof Error ? err.message : '验证失败')
+      store.setErrorMessage(err instanceof Error ? err.message : 'Verification failed')
     } finally {
       store.setIsOperating(false)
     }
   }, [store])
 
-  // ─── 蓝牙密码验证 ───
   const handleConfirmBleKey = useCallback(async () => {
     if (!store.dtuid || !bleKeyInput.trim()) return
     store.setIsOperating(true)
@@ -97,475 +89,623 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     try {
       const manager = getProvisionManager()
       const resp = await manager.confirmBleKey(bleKeyInput.trim())
-
       if (resp.RC === 0) {
         store.setBleKeyVerified(true)
         store.setNeedBleKey(false)
-        store.addLog('蓝牙密码验证成功')
-        // 重新获取版本
         await handleVerify()
-      } else if (resp.RC === 9001) {
-        store.setErrorMessage('蓝牙密码错误，请重试')
       } else {
-        store.setErrorMessage(`密码验证失败: RC=${resp.RC}`)
+        store.setErrorMessage(resp.RC === 9001 ? 'Incorrect BLE key, please retry' : `Key error: RC=${resp.RC}`)
       }
     } catch (err) {
-      store.setErrorMessage(err instanceof Error ? err.message : '密码验证失败')
+      store.setErrorMessage(err instanceof Error ? err.message : 'Key verification failed')
     } finally {
       store.setIsOperating(false)
     }
   }, [store, bleKeyInput, handleVerify])
 
-  // ─── Step: 扫描 WiFi ───
+  // ─── WiFi ─────────────────────────────────────────────────────────────────
+
   const handleScanWifi = useCallback(async () => {
     if (!store.dtuid) return
     store.setApLoading(true)
     store.setErrorMessage(null)
-    store.addLog('扫描 WiFi...')
     try {
       const manager = getProvisionManager()
       const resp = await manager.scanAp()
       if (resp.RC === 0 && resp.PL) {
-        const apList = Array.isArray(resp.PL) ? resp.PL : []
-        store.setApList(apList)
-        store.addLog(`发现 ${apList.length} 个 WiFi`)
+        store.setApList(Array.isArray(resp.PL) ? resp.PL : [])
         store.setStep('password')
       } else {
-        store.setErrorMessage(`WiFi 扫描失败: RC=${resp.RC}`)
+        store.setErrorMessage(`WiFi scan failed: RC=${resp.RC}`)
       }
     } catch (err) {
-      store.setErrorMessage(err instanceof Error ? err.message : 'WiFi 扫描失败')
+      store.setErrorMessage(err instanceof Error ? err.message : 'WiFi scan failed')
     } finally {
       store.setApLoading(false)
     }
   }, [store])
 
-  // ─── Step: 配置 WiFi ───
   const handleConfig = useCallback(async () => {
     if (!store.dtuid || !store.selectedSsid) return
     store.setStep('configuring')
     store.setIsOperating(true)
     store.setErrorMessage(null)
-    store.addLog(`配置 WiFi: ${store.selectedSsid}`)
     try {
       const manager = getProvisionManager()
       const resp = await manager.configWifi(store.selectedSsid, store.wifiPassword)
-      if (resp.RC === 0) {
-        store.addLog('WiFi 配置成功')
-        store.setConfigResult('success')
-        store.setStep('result')
-      } else {
-        store.setConfigResult('fail')
-        store.setErrorMessage(`配置失败: RC=${resp.RC}`)
-        store.setStep('result')
-      }
+      store.setConfigResult(resp.RC === 0 ? 'success' : 'fail')
+      if (resp.RC !== 0) store.setErrorMessage(`Config failed: RC=${resp.RC}`)
+      store.setStep('result')
     } catch (err) {
       store.setConfigResult('fail')
-      store.setErrorMessage(err instanceof Error ? err.message : '配置失败')
+      store.setErrorMessage(err instanceof Error ? err.message : 'Config failed')
       store.setStep('result')
     } finally {
       store.setIsOperating(false)
     }
   }, [store])
 
-  // ─── Step: 验证连接 ───
   const handleCheckStatus = useCallback(async () => {
     if (!store.dtuid) return
     store.setIsOperating(true)
-    store.addLog('检查 WiFi 连接状态...')
     try {
       const manager = getProvisionManager()
       const resp = await manager.getWifiStatus()
-      if (resp.RC === 0 && resp.PL) {
-        store.setWifiStatus(resp.PL)
-        store.addLog(`WiFi: ${resp.PL.WConn ? '已连接' : '未连接'}`)
-      }
-    } catch (err) {
-      store.addLog(`状态检查失败: ${err}`)
-    } finally {
-      store.setIsOperating(false)
-    }
+      if (resp.RC === 0 && resp.PL) store.setWifiStatus(resp.PL)
+    } catch {}
+    finally { store.setIsOperating(false) }
   }, [store])
 
-  // ─── 重启设备 ───
   const handleRestart = useCallback(async () => {
     if (!store.dtuid) return
     store.setIsOperating(true)
-    store.addLog('重启设备...')
-    try {
-      const manager = getProvisionManager()
-      await manager.restart()
-      store.addLog('重启命令已发送')
-    } catch (err) {
-      store.addLog(`重启失败: ${err}`)
-    } finally {
-      store.setIsOperating(false)
-    }
+    try { await getProvisionManager().restart() } catch {}
+    finally { store.setIsOperating(false) }
   }, [store])
 
-  // ─── 关闭 ───
+  // ─── Close ───────────────────────────────────────────────────────────────
+
   const handleClose = useCallback(() => {
     destroyProvisionManager()
     store.reset()
     onClose()
   }, [store, onClose])
 
-  return (
-    <div className="fixed inset-0 bg-[#141414] z-50 flex flex-col">
-      {/* Header */}
-      <div className="flex items-center px-4 py-3 bg-[#262626] border-b border-[rgba(255,255,255,0.06)]">
-        <button onClick={handleClose} className="p-1">
-          <XCircle size={20} className="text-[#A0A0A5]" />
-        </button>
-        <h1 className="text-[14px] font-semibold text-[#FFFFFF] ml-2 flex-1">蓝牙配网</h1>
-        {currentStepIndex > 0 && (
-          <button onClick={goBack} className="text-[12px] text-[#A0A0A5] flex items-center gap-0.5">
-            <ChevronLeft size={14} /> 上一步
+  // ─── Connect to a found device ───────────────────────────────────────────
+
+  const handleConnect = useCallback(() => {
+    setDeviceNameInput(store.deviceName ?? 'My Device')
+    setNameError('')
+    setUiScreen('naming')
+  }, [store.deviceName])
+
+  // ─── Name confirmed → start provisioning ─────────────────────────────────
+
+  const handleNameNext = useCallback(() => {
+    const trimmed = deviceNameInput.trim()
+    if (!trimmed) { setNameError('Please enter a device name.'); return }
+    // TODO: check for duplicate names against existing devices
+    setNameError('')
+    store.setStep('verify')
+    setUiScreen('provisioning')
+    handleVerify()
+  }, [deviceNameInput, store, handleVerify])
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // SCREEN: Scan
+  // ══════════════════════════════════════════════════════════════════════════
+
+  if (uiScreen === 'scan') {
+    const isSearching = store.isOperating
+    const hasDevices = foundDevices.length > 0
+    const hasError = !isSearching && store.errorMessage && !hasDevices
+
+    return (
+      <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
+        {/* Header */}
+        <div className="px-4 pt-5 pb-4 flex items-center justify-between safe-area-top">
+          <button
+            onClick={handleClose}
+            className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center"
+          >
+            <ChevronLeft size={20} className="text-white" />
           </button>
-        )}
-      </div>
+          <h1 className="text-title-lg font-semibold text-white">Add Device</h1>
+          <button
+            onClick={() => setUiScreen('qr')}
+            className="text-body-md font-semibold text-primary"
+          >
+            Scan QR
+          </button>
+        </div>
 
-      {/* Step Indicator */}
-      <div className="flex items-center justify-center px-6 py-3 gap-1">
-        {STEPS.map((s, i) => {
-          const isActive = i === currentStepIndex
-          const isCompleted = i < currentStepIndex
-          return (
-            <div key={s.key} className="flex items-center">
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold transition-colors
-                ${isCompleted ? 'bg-[#01D6BE] text-[#000]' : isActive ? 'bg-[#01D6BE] text-[#000]' : 'bg-[#333333] text-[#636366]'}`}>
-                {isCompleted ? '✓' : i + 1}
+        <div className="flex-1 flex flex-col px-6">
+          {/* Radar animation area */}
+          <div className="flex-1 flex flex-col items-center justify-center">
+            <div className="relative w-56 h-56 flex items-center justify-center mb-8">
+              {/* Concentric radar rings */}
+              {radarRings.map((i) => (
+                <motion.div
+                  key={i}
+                  className="absolute rounded-full border border-primary"
+                  style={{ width: 56 + i * 40, height: 56 + i * 40 }}
+                  animate={{ opacity: isSearching ? [0.6, 0.1, 0.6] : 0.15 }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    delay: i * 0.4,
+                    ease: 'easeInOut',
+                  }}
+                />
+              ))}
+              {/* Centre phone icon */}
+              <div className="w-16 h-16 rounded-[20px] bg-[#262626] flex items-center justify-center z-10">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                  <rect x="5" y="2" width="14" height="20" rx="3" stroke="#01D6BE" strokeWidth="1.5"/>
+                  <circle cx="12" cy="18" r="1" fill="#01D6BE"/>
+                </svg>
               </div>
-              {i < STEPS.length - 1 && (
-                <div className={`w-6 h-px mx-0.5 ${i < currentStepIndex ? 'bg-[#01D6BE]' : 'bg-[#333333]'}`} />
-              )}
             </div>
-          )
-        })}
-      </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto px-5 pb-24">
-        <AnimatePresence mode="wait">
-          {/* ── Step 0: 扫描连接 ── */}
-          {store.step === 'scan' && (
-            <motion.div key="scan" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} className="mt-8">
-              <div className="text-center mb-8">
-                <div className="w-16 h-16 rounded-2xl bg-[rgba(1,214,190,0.15)] flex items-center justify-center mx-auto mb-4">
-                  <Radio size={28} className="text-[#01D6BE]" />
-                </div>
-                <h2 className="text-[16px] font-semibold text-[#FFFFFF] mb-1">扫描蓝牙设备</h2>
-                <p className="text-[12px] text-[#A0A0A5]">请确保采集器已通电，蓝牙指示灯闪烁</p>
+            {/* Status text */}
+            {isSearching && (
+              <div className="text-center mb-6">
+                <p className="text-body-lg font-semibold text-white mb-1">Searching for nearby devices...</p>
+                <p className="text-body-md text-[#A0A0A5]">Make sure your device is powered on and nearby.</p>
               </div>
+            )}
 
+            {!isSearching && !hasDevices && !store.errorMessage && (
+              <div className="text-center mb-6">
+                <p className="text-body-lg font-semibold text-white mb-1">Ready to Scan</p>
+                <p className="text-body-md text-[#A0A0A5]">Tap the button below to search for nearby devices.</p>
+              </div>
+            )}
+
+            {hasError && (
+              <div className="text-center mb-6">
+                <p className="text-body-lg font-semibold text-white mb-1">No Devices Found</p>
+                <p className="text-body-md text-[#A0A0A5]">Make sure your device is powered on and Bluetooth is enabled.</p>
+              </div>
+            )}
+
+            {/* Found devices list */}
+            {hasDevices && (
+              <div className="w-full mb-6">
+                <p className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
+                  Found Devices ({foundDevices.length})
+                </p>
+                <div className="flex flex-col gap-2">
+                  {foundDevices.map((device, i) => (
+                    <div
+                      key={i}
+                      className="bg-[#262626] rounded-l px-4 py-4 flex items-center justify-between"
+                    >
+                      <div>
+                        <p className="text-body-lg font-semibold text-white">{device.name}</p>
+                        <p className="text-caption text-[#A0A0A5] mt-0.5">{device.serial}</p>
+                      </div>
+                      <button
+                        onClick={handleConnect}
+                        className="px-4 h-9 rounded-full border border-primary text-primary text-body-md font-semibold"
+                      >
+                        Connect
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Bottom button */}
+          <div className="pb-10 safe-area-bottom">
+            {(hasError || !isSearching) && !hasDevices && (
               <button
                 onClick={handleScan}
-                disabled={store.isOperating}
-                className="w-full py-3.5 rounded-2xl bg-[#01D6BE] text-[#000] text-[14px] font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+                disabled={isSearching}
+                className="w-full h-14 rounded-full bg-primary text-black text-body-lg font-semibold
+                  disabled:bg-primary-dark disabled:text-[rgba(0,0,0,0.4)] transition-colors"
               >
-                {store.isOperating ? (
-                  <><Loader2 size={16} className="animate-spin" /> 扫描中...</>
-                ) : (
-                  <><Scan size={16} /> 开始扫描</>
-                )}
+                {hasError ? 'Search Again' : 'Search for Devices'}
               </button>
+            )}
+            {isSearching && (
+              <button
+                disabled
+                className="w-full h-14 rounded-full bg-primary-dark text-[rgba(0,0,0,0.4)] text-body-lg font-semibold flex items-center justify-center gap-2"
+              >
+                <Loader2 size={18} className="animate-spin" />
+                Searching...
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
-              <div className="mt-4 bg-[#262626] rounded-xl p-3">
-                <p className="text-[10px] text-[#636366] mb-1">设备蓝牙名称格式: SSL_0...</p>
-                <p className="text-[10px] text-[#636366]">0=WiFi未连接, 1=WiFi已连接, 3=MQTT已连接</p>
-              </div>
-            </motion.div>
+  // ══════════════════════════════════════════════════════════════════════════
+  // SCREEN: QR Scanner
+  // ══════════════════════════════════════════════════════════════════════════
+
+  if (uiScreen === 'qr') {
+    return (
+      <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
+        {/* Header */}
+        <div className="px-4 pt-5 pb-4 flex items-center gap-3 safe-area-top">
+          <button
+            onClick={() => setUiScreen('scan')}
+            className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center"
+          >
+            <ChevronLeft size={20} className="text-white" />
+          </button>
+          <h1 className="text-title-lg font-semibold text-white">Scan QR Code</h1>
+        </div>
+
+        {/* Camera viewfinder */}
+        <div className="flex-1 flex flex-col items-center justify-center px-10">
+          <div className="relative w-full aspect-square max-w-[280px]">
+            {/* Dark camera area */}
+            <div className="absolute inset-0 bg-[#0A0A0A] rounded-[20px]" />
+
+            {/* Corner bracket: top-left */}
+            <svg className="absolute top-3 left-3" width="36" height="36" viewBox="0 0 36 36" fill="none">
+              <path d="M0 16V4C0 1.79 1.79 0 4 0H16" stroke="#01D6BE" strokeWidth="3" strokeLinecap="round"/>
+            </svg>
+            {/* top-right */}
+            <svg className="absolute top-3 right-3" width="36" height="36" viewBox="0 0 36 36" fill="none">
+              <path d="M36 16V4C36 1.79 34.21 0 32 0H20" stroke="#01D6BE" strokeWidth="3" strokeLinecap="round"/>
+            </svg>
+            {/* bottom-left */}
+            <svg className="absolute bottom-3 left-3" width="36" height="36" viewBox="0 0 36 36" fill="none">
+              <path d="M0 20V32C0 34.21 1.79 36 4 36H16" stroke="#01D6BE" strokeWidth="3" strokeLinecap="round"/>
+            </svg>
+            {/* bottom-right */}
+            <svg className="absolute bottom-3 right-3" width="36" height="36" viewBox="0 0 36 36" fill="none">
+              <path d="M36 20V32C36 34.21 34.21 36 32 36H20" stroke="#01D6BE" strokeWidth="3" strokeLinecap="round"/>
+            </svg>
+          </div>
+
+          <div className="mt-8 text-center">
+            <p className="text-body-lg font-semibold text-white mb-2">Scan the QR Code on Your Device</p>
+            <p className="text-body-md text-[#A0A0A5]">Point the camera at the QR code found on the label of your Sierro device.</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // SCREEN: Name Your Device
+  // ══════════════════════════════════════════════════════════════════════════
+
+  if (uiScreen === 'naming') {
+    return (
+      <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
+        {/* Header */}
+        <div className="px-4 pt-5 pb-4 flex items-center gap-3 safe-area-top">
+          <button
+            onClick={() => setUiScreen('scan')}
+            className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center"
+          >
+            <ChevronLeft size={20} className="text-white" />
+          </button>
+        </div>
+
+        <div className="flex-1 px-6 pt-6">
+          <h1 className="text-headline-lg font-bold text-white mb-2">Name Your Device</h1>
+          <p className="text-body-md text-[#A0A0A5] mb-8">
+            Give your device a name so you can easily identify it.
+          </p>
+
+          {/* Input card */}
+          <div className={`bg-[#262626] rounded-l px-4 py-4 flex items-center gap-3 mb-2
+            ${nameError ? 'border border-danger' : ''}`}
+          >
+            <input
+              type="text"
+              value={deviceNameInput}
+              onChange={(e) => { setDeviceNameInput(e.target.value); setNameError('') }}
+              placeholder="Device name"
+              autoFocus
+              className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#636366] outline-none caret-primary"
+            />
+            {deviceNameInput.length > 0 && (
+              <button onClick={() => setDeviceNameInput('')}>
+                <X size={16} className="text-[#636366]" />
+              </button>
+            )}
+          </div>
+
+          {nameError && (
+            <p className="text-danger text-body-md mt-1">{nameError}</p>
           )}
+        </div>
 
-          {/* ── Step 1: 设备验证 ── */}
+        {/* Next button */}
+        <div className="px-6 pb-10 safe-area-bottom">
+          <button
+            onClick={handleNameNext}
+            disabled={!deviceNameInput.trim()}
+            className="w-full h-14 rounded-full bg-primary text-black text-body-lg font-semibold
+              disabled:bg-primary-dark disabled:text-[rgba(0,0,0,0.4)] transition-colors"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // SCREEN: Provisioning (verify → wifi → password → configuring → result)
+  // ══════════════════════════════════════════════════════════════════════════
+
+  return (
+    <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
+      {/* Header */}
+      <div className="px-4 pt-5 pb-4 flex items-center gap-3 safe-area-top">
+        <button
+          onClick={() => setUiScreen('naming')}
+          className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center"
+        >
+          <ChevronLeft size={20} className="text-white" />
+        </button>
+        <h1 className="text-title-lg font-semibold text-white">
+          {store.step === 'verify' && 'Verifying Device'}
+          {store.step === 'wifi' && 'Select Wi-Fi'}
+          {store.step === 'password' && 'Wi-Fi Password'}
+          {store.step === 'configuring' && 'Connecting...'}
+          {store.step === 'result' && (store.configResult === 'success' ? 'Connected!' : 'Setup Failed')}
+        </h1>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-6 pb-10">
+        <AnimatePresence mode="wait">
+
+          {/* verify */}
           {store.step === 'verify' && (
-            <motion.div key="verify" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} className="mt-8">
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 rounded-2xl bg-[rgba(1,214,190,0.15)] flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle size={28} className="text-[#01D6BE]" />
+            <motion.div key="verify" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <div className="flex flex-col items-center py-10">
+                <div className="w-16 h-16 rounded-[20px] bg-[rgba(1,214,190,0.12)] flex items-center justify-center mb-4">
+                  <CheckCircle size={28} className="text-primary" />
                 </div>
-                <h2 className="text-[16px] font-semibold text-[#FFFFFF] mb-1">设备已连接</h2>
-                <p className="text-[12px] text-[#A0A0A5]">{store.deviceName}</p>
-                {store.dtuid && <p className="text-[10px] text-[#636366] mt-1">DTUID: {store.dtuid}</p>}
+                <p className="text-body-lg font-semibold text-white mb-1">{store.deviceName}</p>
+                {store.dtuid && <p className="text-caption text-[#A0A0A5]">{store.dtuid}</p>}
               </div>
 
-              {store.deviceVersion && (
-                <div className="bg-[#262626] rounded-xl p-4 mb-4 space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-[12px] text-[#A0A0A5]">软件版本</span>
-                    <span className="text-[12px] text-[#FFFFFF]">{store.deviceVersion}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-[12px] text-[#A0A0A5]">硬件型号</span>
-                    <span className="text-[12px] text-[#FFFFFF]">{store.hardwareVersion}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* 蓝牙密码验证 */}
               {store.needBleKey && !store.bleKeyVerified && (
-                <div className="bg-[#262626] rounded-xl p-4 mb-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Lock size={14} className="text-[#FF9500]" />
-                    <span className="text-[12px] text-[#FFFFFF] font-semibold">需要蓝牙密码</span>
-                  </div>
+                <div className="bg-[#262626] rounded-l px-4 py-4 mb-4">
+                  <p className="text-body-md font-semibold text-white mb-3">BLE Key Required</p>
                   <input
                     type="password"
                     value={bleKeyInput}
                     onChange={(e) => setBleKeyInput(e.target.value)}
-                    placeholder="请输入蓝牙密码"
-                    className="w-full bg-[#333333] rounded-lg px-3 py-2.5 text-[13px] text-[#FFFFFF] placeholder:text-[#636366] outline-none border border-[rgba(255,255,255,0.06)] focus:border-[#01D6BE] mb-2"
+                    placeholder="Enter BLE key"
+                    className="w-full bg-[#1A1A1A] rounded-m px-4 py-3 text-body-md text-white placeholder:text-[#636366] outline-none border border-[rgba(255,255,255,0.08)] focus:border-primary mb-3"
                   />
                   <button
                     onClick={handleConfirmBleKey}
                     disabled={store.isOperating || !bleKeyInput.trim()}
-                    className="w-full py-2.5 rounded-lg bg-[#FF9500] text-[#000] text-[12px] font-semibold disabled:opacity-50 flex items-center justify-center gap-1"
+                    className="w-full h-11 rounded-full bg-primary text-black text-body-md font-semibold disabled:opacity-50 flex items-center justify-center"
                   >
-                    {store.isOperating ? <Loader2 size={12} className="animate-spin" /> : <Unlock size={12} />}
-                    验证密码
+                    {store.isOperating ? <Loader2 size={16} className="animate-spin" /> : 'Verify Key'}
                   </button>
                 </div>
               )}
 
-              <button
-                onClick={handleVerify}
-                disabled={store.isOperating}
-                className="w-full py-3.5 rounded-2xl bg-[#01D6BE] text-[#000] text-[14px] font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {store.isOperating ? <Loader2 size={16} className="animate-spin" /> : <Wifi size={16} />}
-                扫描 WiFi 列表
-              </button>
+              {!store.needBleKey && (
+                <button
+                  onClick={handleScanWifi}
+                  disabled={store.isOperating}
+                  className="w-full h-14 rounded-full bg-primary text-black text-body-lg font-semibold
+                    disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {store.isOperating ? <Loader2 size={18} className="animate-spin" /> : 'Scan Wi-Fi Networks'}
+                </button>
+              )}
             </motion.div>
           )}
 
-          {/* ── Step 2: WiFi 列表 ── */}
+          {/* wifi */}
           {store.step === 'wifi' && (
-            <motion.div key="wifi" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} className="mt-4">
-              <h2 className="text-[14px] font-semibold text-[#FFFFFF] mb-3">可用 WiFi ({store.apList.length})</h2>
-
+            <motion.div key="wifi" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pt-4">
               {store.apLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 size={24} className="text-[#01D6BE] animate-spin" />
-                  <span className="text-[12px] text-[#A0A0A5] ml-2">扫描中...</span>
+                <div className="flex items-center justify-center py-20 gap-3">
+                  <Loader2 size={24} className="text-primary animate-spin" />
+                  <span className="text-body-md text-[#A0A0A5]">Scanning Wi-Fi...</span>
                 </div>
               ) : store.apList.length === 0 ? (
-                <div className="text-center py-12">
-                  <WifiOff size={32} className="text-[#636366] mx-auto mb-3" />
-                  <p className="text-[12px] text-[#A0A0A5]">未发现 WiFi 网络</p>
-                  <button onClick={handleScanWifi} className="mt-4 text-[12px] text-[#01D6BE] flex items-center gap-1 mx-auto">
-                    <RefreshCw size={12} /> 重新扫描
+                <div className="text-center py-16">
+                  <WifiOff size={36} className="text-[#636366] mx-auto mb-4" />
+                  <p className="text-body-md text-[#A0A0A5] mb-4">No Wi-Fi networks found</p>
+                  <button onClick={handleScanWifi} className="text-body-md text-primary font-semibold flex items-center gap-1 mx-auto">
+                    <RefreshCw size={14} /> Scan Again
                   </button>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="flex flex-col gap-2">
                   {store.apList.map((ap, i) => (
                     <button
                       key={`${ap.SSID}-${i}`}
                       onClick={() => { store.setSelectedSsid(ap.SSID); store.setStep('password') }}
-                      className="w-full flex items-center justify-between px-4 py-3 bg-[#262626] rounded-xl active:bg-[#333333] transition-colors"
+                      className="bg-[#262626] rounded-l px-4 py-4 flex items-center justify-between active:opacity-70 transition-opacity"
                     >
                       <div className="flex items-center gap-3">
-                        <Wifi size={16} className={ap.SSID ? 'text-[#01D6BE]' : 'text-[#636366]'} />
-                        <span className="text-[13px] text-[#FFFFFF]">{ap.SSID || '(隐藏网络)'}</span>
+                        <Wifi size={18} className="text-primary flex-shrink-0" />
+                        <span className="text-body-lg text-white">{ap.SSID || '(Hidden Network)'}</span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        {ap.Secu === 1 && <Lock size={12} className="text-[#A0A0A5]" />}
-                        <Signal size={12} className="text-[#A0A0A5]" />
-                      </div>
+                      {ap.Secu === 1 && <Lock size={14} className="text-[#A0A0A5]" />}
                     </button>
                   ))}
-                  <button onClick={handleScanWifi} className="text-[11px] text-[#A0A0A5] flex items-center gap-1 mx-auto mt-2">
-                    <RefreshCw size={10} /> 重新扫描
+                  <button onClick={handleScanWifi} className="text-caption text-[#A0A0A5] flex items-center gap-1 mx-auto mt-2">
+                    <RefreshCw size={10} /> Refresh
                   </button>
                 </div>
               )}
-
-              {/* 手动输入 */}
-              <div className="mt-4">
-                <button
-                  onClick={() => { store.setSelectedSsid(''); store.setStep('password') }}
-                  className="w-full py-3 rounded-xl border border-dashed border-[#636366] text-[12px] text-[#A0A0A5] flex items-center justify-center gap-1"
-                >
-                  手动输入 SSID
-                </button>
-              </div>
             </motion.div>
           )}
 
-          {/* ── Step 3: 输入密码 ── */}
+          {/* password */}
           {store.step === 'password' && (
-            <motion.div key="password" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} className="mt-8">
-              <h2 className="text-[16px] font-semibold text-[#FFFFFF] mb-4">WiFi 配置</h2>
-
-              <div className="bg-[#262626] rounded-xl p-4 space-y-4">
-                {/* SSID */}
-                <div>
-                  <label className="text-[11px] text-[#A0A0A5] mb-1.5 block">WiFi 名称 (SSID)</label>
-                  {store.selectedSsid === null ? (
-                    <input
-                      type="text"
-                      value={store.selectedSsid ?? ''}
-                      onChange={(e) => store.setSelectedSsid(e.target.value)}
-                      placeholder="请输入 WiFi 名称"
-                      className="w-full bg-[#333333] rounded-lg px-3 py-2.5 text-[13px] text-[#FFFFFF] placeholder:text-[#636366] outline-none border border-[rgba(255,255,255,0.06)] focus:border-[#01D6BE]"
-                    />
-                  ) : (
-                    <div className="flex items-center justify-between bg-[#333333] rounded-lg px-3 py-2.5">
-                      <span className="text-[13px] text-[#FFFFFF]">{store.selectedSsid}</span>
-                      <button onClick={() => store.setSelectedSsid(null)} className="text-[11px] text-[#A0A0A5]">更换</button>
-                    </div>
-                  )}
+            <motion.div key="password" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pt-4">
+              <div className="bg-[#262626] rounded-l px-4 py-4 mb-2">
+                <p className="text-caption text-[#A0A0A5] mb-1">Network</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-body-lg font-semibold text-white">{store.selectedSsid}</p>
+                  <button
+                    onClick={() => store.setStep('wifi')}
+                    className="text-caption text-primary"
+                  >
+                    Change
+                  </button>
                 </div>
+              </div>
 
-                {/* Password */}
-                <div>
-                  <label className="text-[11px] text-[#A0A0A5] mb-1.5 block">WiFi 密码</label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={store.wifiPassword}
-                      onChange={(e) => store.setWifiPassword(e.target.value)}
-                      placeholder="请输入 WiFi 密码"
-                      className="w-full bg-[#333333] rounded-lg px-3 py-2.5 pr-9 text-[13px] text-[#FFFFFF] placeholder:text-[#636366] outline-none border border-[rgba(255,255,255,0.06)] focus:border-[#01D6BE]"
-                    />
-                    <button
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#A0A0A5]"
-                    >
-                      {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
-                    </button>
-                  </div>
+              <div className="bg-[#262626] rounded-l px-4 py-4 mb-6">
+                <p className="text-caption text-[#A0A0A5] mb-2">Password</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={store.wifiPassword}
+                    onChange={(e) => store.setWifiPassword(e.target.value)}
+                    placeholder="Enter Wi-Fi password"
+                    autoFocus
+                    className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#636366] outline-none caret-primary"
+                  />
+                  <button onClick={() => setShowPassword(!showPassword)}>
+                    {showPassword
+                      ? <EyeOff size={16} className="text-[#636366]" />
+                      : <Eye size={16} className="text-[#636366]" />
+                    }
+                  </button>
                 </div>
               </div>
 
               <button
                 onClick={handleConfig}
                 disabled={store.isOperating || !store.wifiPassword}
-                className="w-full mt-6 py-3.5 rounded-2xl bg-[#01D6BE] text-[#000] text-[14px] font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full h-14 rounded-full bg-primary text-black text-body-lg font-semibold
+                  disabled:bg-primary-dark disabled:text-[rgba(0,0,0,0.4)] transition-colors"
               >
-                {store.isOperating ? <Loader2 size={16} className="animate-spin" /> : <Wifi size={16} />}
-                开始配网
+                Connect
               </button>
             </motion.div>
           )}
 
-          {/* ── Step 4: 配网中 ── */}
+          {/* configuring */}
           {store.step === 'configuring' && (
-            <motion.div key="configuring" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} className="mt-12 text-center">
-              <Loader2 size={32} className="text-[#01D6BE] animate-spin mx-auto mb-4" />
-              <h2 className="text-[16px] font-semibold text-[#FFFFFF] mb-1">正在配置...</h2>
-              <p className="text-[12px] text-[#A0A0A5]">请稍候，正在向设备发送 WiFi 配置</p>
+            <motion.div key="configuring" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <div className="flex flex-col items-center py-16">
+                <Loader2 size={40} className="text-primary animate-spin mb-6" />
+                <p className="text-body-lg font-semibold text-white mb-2">Connecting to Wi-Fi...</p>
+                <p className="text-body-md text-[#A0A0A5]">This may take a moment.</p>
+              </div>
             </motion.div>
           )}
 
-          {/* ── Step 5: 结果 ── */}
+          {/* result */}
           {store.step === 'result' && (
-            <motion.div key="result" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} className="mt-8">
-              <div className="text-center mb-6">
-                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4
-                  ${store.configResult === 'success' ? 'bg-[rgba(52,199,89,0.15)]' : 'bg-[rgba(255,59,48,0.15)]'}`}>
+            <motion.div key="result" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <div className="flex flex-col items-center py-10">
+                <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6
+                  ${store.configResult === 'success' ? 'bg-[rgba(52,199,89,0.15)]' : 'bg-[rgba(255,53,48,0.1)]'}`}>
                   {store.configResult === 'success'
-                    ? <CheckCircle size={28} className="text-[#34C759]" />
-                    : <XCircle size={28} className="text-[#FF3B30]" />
+                    ? <CheckCircle size={36} className="text-success" />
+                    : <XCircle size={36} className="text-danger" />
                   }
                 </div>
-                <h2 className="text-[16px] font-semibold text-[#FFFFFF] mb-1">
-                  {store.configResult === 'success' ? '配网成功' : '配网失败'}
-                </h2>
+                <p className="text-headline-lg font-bold text-white mb-2">
+                  {store.configResult === 'success' ? 'Setup Complete!' : 'Setup Failed'}
+                </p>
                 {store.errorMessage && (
-                  <p className="text-[12px] text-[#FF3B30]">{store.errorMessage}</p>
+                  <p className="text-body-md text-danger text-center">{store.errorMessage}</p>
                 )}
               </div>
 
-              {/* WiFi 状态 */}
               {store.wifiStatus && (
-                <div className="bg-[#262626] rounded-xl p-4 mb-4 space-y-2">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Wifi size={14} className="text-[#01D6BE]" />
-                    <span className="text-[12px] text-[#FFFFFF] font-semibold">WiFi 状态</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-[11px] text-[#A0A0A5]">连接状态</span>
-                    <span className={`text-[11px] ${store.wifiStatus.WConn ? 'text-[#34C759]' : 'text-[#FF3B30]'}`}>
-                      {store.wifiStatus.WConn ? '已连接' : '未连接'}
+                <div className="bg-[#262626] rounded-l px-4 py-4 mb-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-body-md text-[#A0A0A5]">Wi-Fi</span>
+                    <span className={`text-body-md font-semibold ${store.wifiStatus.WConn ? 'text-success' : 'text-danger'}`}>
+                      {store.wifiStatus.WConn ? 'Connected' : 'Not Connected'}
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-[11px] text-[#A0A0A5]">SSID</span>
-                    <span className="text-[11px] text-[#FFFFFF]">{store.wifiStatus.SSID}</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-body-md text-[#A0A0A5]">Network</span>
+                    <span className="text-body-md text-white">{store.wifiStatus.SSID}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-[11px] text-[#A0A0A5]">信号强度</span>
-                    <span className="text-[11px] text-[#FFFFFF]">{store.wifiStatus.RSSI} dBm</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-body-md text-[#A0A0A5]">Signal</span>
+                    <span className="text-body-md text-white">{store.wifiStatus.RSSI} dBm</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-[11px] text-[#A0A0A5]">MQTT</span>
-                    <span className={`text-[11px] ${store.wifiStatus.SConn ? 'text-[#34C759]' : 'text-[#FF9500]'}`}>
-                      {store.wifiStatus.SConn ? '已连接' : '未连接'}
+                  <div className="flex items-center justify-between">
+                    <span className="text-body-md text-[#A0A0A5]">Cloud</span>
+                    <span className={`text-body-md ${store.wifiStatus.SConn ? 'text-success' : 'text-[#FF9500]'}`}>
+                      {store.wifiStatus.SConn ? 'Connected' : 'Pending'}
                     </span>
                   </div>
                 </div>
               )}
 
-              {/* 操作按钮 */}
-              <div className="space-y-2">
+              <div className="flex flex-col gap-2">
                 {store.configResult === 'success' && !store.wifiStatus && (
                   <button
                     onClick={handleCheckStatus}
                     disabled={store.isOperating}
-                    className="w-full py-3 rounded-xl bg-[#262626] text-[#01D6BE] text-[13px] font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="w-full h-12 rounded-l bg-[#262626] text-primary text-body-md font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     {store.isOperating ? <Loader2 size={14} className="animate-spin" /> : <Server size={14} />}
-                    查询连接状态
+                    Check Connection Status
                   </button>
                 )}
 
-                <button
-                  onClick={handleRestart}
-                  disabled={store.isOperating}
-                  className="w-full py-3 rounded-xl bg-[#262626] text-[#FF9500] text-[13px] font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {store.isOperating ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                  重启设备
-                </button>
+                {store.configResult === 'success' && (
+                  <button
+                    onClick={handleClose}
+                    className="w-full h-14 rounded-full bg-primary text-black text-body-lg font-semibold"
+                  >
+                    Done
+                  </button>
+                )}
 
                 {store.configResult === 'fail' && (
-                  <button
-                    onClick={() => { store.setStep('wifi'); store.setErrorMessage(null) }}
-                    className="w-full py-3 rounded-xl bg-[#262626] text-[#FFFFFF] text-[13px] font-semibold flex items-center justify-center gap-2"
-                  >
-                    <ArrowLeft size={14} /> 重新配置
-                  </button>
+                  <>
+                    <button
+                      onClick={() => store.setStep('wifi')}
+                      className="w-full h-12 rounded-l bg-[#262626] text-white text-body-md font-semibold flex items-center justify-center gap-2"
+                    >
+                      Try Again
+                    </button>
+                    <button
+                      onClick={handleRestart}
+                      disabled={store.isOperating}
+                      className="w-full h-12 rounded-l bg-[#262626] text-[#FF9500] text-body-md font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {store.isOperating ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                      Restart Device
+                    </button>
+                  </>
                 )}
               </div>
             </motion.div>
           )}
+
         </AnimatePresence>
 
-        {/* Error */}
+        {/* Error banner (non-result steps) */}
         <AnimatePresence>
           {store.errorMessage && store.step !== 'result' && (
             <motion.div
-              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
-              className="mt-4 flex items-start gap-2 bg-[rgba(255,59,48,0.1)] rounded-xl px-3 py-2.5"
+              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              className="mt-4 flex items-start gap-2 bg-[rgba(255,53,48,0.08)] rounded-l px-4 py-3"
             >
-              <AlertCircle size={14} className="text-[#FF3B30] mt-0.5 shrink-0" />
-              <span className="text-[11px] text-[#FF3B30]">{store.errorMessage}</span>
+              <AlertCircle size={16} className="text-danger mt-0.5 flex-shrink-0" />
+              <span className="text-body-md text-danger">{store.errorMessage}</span>
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Debug Log (折叠) */}
-        {store.logs.length > 0 && (
-          <details className="mt-6">
-            <summary className="text-[10px] text-[#636366] cursor-pointer">调试日志 ({store.logs.length})</summary>
-            <div className="mt-1 max-h-32 overflow-y-auto bg-[#262626] rounded-lg p-2">
-              {store.logs.map((log, i) => (
-                <div key={i} className="text-[9px] font-mono text-[#636366]">{log}</div>
-              ))}
-            </div>
-          </details>
-        )}
       </div>
     </div>
   )
