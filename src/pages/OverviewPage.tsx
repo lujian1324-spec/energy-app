@@ -374,16 +374,25 @@ export default function OverviewPage() {
           {/* Center: Device dropdown (from real API devices) */}
           <div className="relative flex-1 flex justify-center" ref={dropdownRef}>
             <button
-              onClick={() => setShowDeviceDropdown(!showDeviceDropdown)}
-              className="flex items-center gap-2"
+              onClick={() => devices.length > 1 && setShowDeviceDropdown(!showDeviceDropdown)}
+              className="flex flex-col items-center"
             >
-              <h2 className="text-[16px] font-bold text-[#FFFFFF] tracking-wide max-w-[180px] truncate">
-                {deviceName}
-              </h2>
-              <ChevronDown
-                size={16}
-                className={`text-[#A0A0A5] transition-transform duration-200 ${showDeviceDropdown ? 'rotate-180' : ''}`}
-              />
+              <div className="flex items-center gap-1.5">
+                <h2 className="text-[18px] font-bold text-[#FFFFFF] max-w-[180px] truncate">
+                  {deviceName}
+                </h2>
+                {/* PRD §4.1.2: chevron only when multiple devices */}
+                {devices.length > 1 && (
+                  <ChevronDown
+                    size={16}
+                    className={`text-[#FFFFFF] transition-transform duration-200 ${showDeviceDropdown ? 'rotate-180' : ''}`}
+                  />
+                )}
+              </div>
+              {/* PRD §4.1.1: Connected / Disconnected subtitle under device name */}
+              <span className={`text-[12px] mt-0.5 ${isOnline ? 'text-[#A0A0A5]' : 'text-[#FF3530]'}`}>
+                {isOnline ? 'Connected' : 'Disconnected'}
+              </span>
             </button>
 
             {/* Dropdown - real device list */}
@@ -471,73 +480,13 @@ export default function OverviewPage() {
           </div>
         ) : (
           <>
-            {/* Connected / Disconnected status badge */}
-            <div className="mx-5 mb-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {isOnline ? (
-                  <span className="text-[10px] px-2.5 py-1 rounded-full bg-[rgba(1,214,190,0.12)] text-[#01D6BE] font-semibold flex items-center gap-1">
-                    <Wifi size={10} /> Connected
-                  </span>
-                ) : (
-                  <span className="text-[10px] px-2.5 py-1 rounded-full bg-[rgba(255,59,48,0.12)] text-[#FF3B30] font-semibold flex items-center gap-1">
-                    <WifiOff size={10} /> Disconnected
-                  </span>
-                )}
-                {deviceModel && (
-                  <span className="text-[11px] text-[#636366]">· {deviceModel}</span>
-                )}
-                {/* PRD v1.1 §8.1: 数据来源标签 */}
-                <DataSourceTag source={dataSource} className="ml-1" />
-              </div>
-              <button
-                onClick={handleRefresh}
-                disabled={stateLoading}
-                className="text-[11px] text-[#A0A0A5] flex items-center gap-1 hover:text-[#01D6BE] transition-colors"
-              >
-                <RefreshCw size={11} className={stateLoading ? 'animate-spin' : ''} />
-                Refresh
-              </button>
-            </div>
-
-            {/* Battery Hero - with real data */}
+            {/* Battery Hero — PRD §4.1.1: ring + Input/Output only */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="mx-5 mb-4 bg-[#262626] rounded-[24px] p-5"
             >
-              {/* Energy Flow Summary Bar */}
-              {energyFlow && (
-                <div className="flex items-center justify-center gap-4 mb-4 text-[10px] text-[#A0A0A5] flex-wrap">
-                  {/* PV Panel */}
-                  <div className={`flex items-center gap-1 ${energyFlow.pvPanelFlow?.isEnabled ? 'text-[#FF9500]' : 'text-[#636366]'}`}>
-                    <Sun size={10} />
-                    <span>PV: {energyFlow.pvPanelFlow?.value?.valueDisplay ?? '--'} {energyFlow.pvPanelFlow?.value?.unit ?? ''}</span>
-                  </div>
-                  <span className="text-[#636366]">|</span>
-                  {/* Grid */}
-                  <div className={`flex items-center gap-1 ${energyFlow.gridFlow?.isEnabled ? 'text-[#01D6BE]' : 'text-[#636366]'}`}>
-                    <Zap size={10} />
-                    <span>Grid: {energyFlow.gridFlow?.value?.valueDisplay ?? '--'} {energyFlow.gridFlow?.value?.unit ?? ''}</span>
-                  </div>
-                  <span className="text-[#636366]">|</span>
-                  {/* Battery */}
-                  <div className={`flex items-center gap-1 ${energyFlow.batteryFlow?.isLight ? 'text-[#34C759]' : 'text-[#A0A0A5]'}`}>
-                    <Battery size={10} />
-                    <span>
-                      Batt: {energyFlow.batteryFlow?.flowDirection === 1 ? '⚡Charge' : energyFlow.batteryFlow?.flowDirection === -1 ? '🔋Discharge' : '—'}
-                      {energyFlow.batteryFlow?.value?.valueDisplay ? ` ${energyFlow.batteryFlow.value.valueDisplay}${energyFlow.batteryFlow.value.unit}` : ''}
-                    </span>
-                  </div>
-                  <span className="text-[#636366]">|</span>
-                  {/* Load */}
-                  <div className={`flex items-center gap-1 ${energyFlow.loadFlow?.isEnabled ? 'text-[#A0A0A5]' : 'text-[#636366]'}`}>
-                    <TrendingUp size={10} />
-                    <span>Load: {energyFlow.loadFlow?.value?.valueDisplay ?? '--'}</span>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex justify-center mb-4">
+              <div className="flex justify-center mb-5">
                 <BatteryRing
                   percentage={soc}
                   isCharging={isCharging}
@@ -545,44 +494,6 @@ export default function OverviewPage() {
                   timeToFull={chargeTimeDisplay ?? '--'}
                   timeRemaining={(remainingTimeDisplay ?? '').replace(' remaining', '') || '--'}
                 />
-              </div>
-
-              {/* Remaining time / Charging info */}
-              <div className="text-center mb-4">
-                {isCharging ? (
-                  <div className="flex flex-col items-center gap-0.5">
-                    <span className="text-[13px] font-semibold text-[#01D6BE]">{chargeTimeDisplay}</span>
-                    <span className="text-[11px] text-[#A0A0A5]">{Math.abs(batteryPower)}W charging</span>
-                  </div>
-                ) : outputPower > 0 ? (
-                  <div className="flex flex-col items-center gap-0.5">
-                    {remainingTimeDisplay && (
-                      <span className="text-[13px] font-semibold text-[#FFFFFF]">{remainingTimeDisplay}</span>
-                    )}
-                    <span className="text-[11px] text-[#A0A0A5]">{outputPower}W output</span>
-                  </div>
-                ) : (
-                  <span className="text-[12px] text-[#A0A0A5]">Idle</span>
-                )}
-              </div>
-
-              {/* Battery / AC / Solar / Output 4 cards */}
-              <div className="grid grid-cols-4 gap-2.5 mb-4 px-0.5">
-                {[
-                  { label: 'Battery', value: `${soc}%`, icon: Battery, color: soc < 20 ? '#FF3B30' : soc < 60 ? '#FF9500' : '#34C759' },
-                  { label: 'AC', value: `${acPower}W`, icon: Zap, color: acPower > 0 ? '#01D6BE' : '#A0A0A5' },
-                  { label: 'Solar', value: `${solarPower}W`, icon: Sun, color: solarPower > 0 ? '#FF9500' : '#A0A0A5' },
-                  { label: 'Output', value: `${outputPower}W`, icon: TrendingUp, color: outputPower > 0 ? '#A0A0A5' : '#636366' },
-                ].map((item) => {
-                  const Icon = item.icon
-                  return (
-                    <div key={item.label} className="bg-[#141414] rounded-[12px] p-2.5 flex flex-col items-center min-w-0">
-                      <Icon size={13} className="mb-1 flex-shrink-0" style={{ color: item.color }} />
-                      <div className="text-[12px] font-bold text-[#FFFFFF] truncate w-full text-center leading-tight">{item.value}</div>
-                      <div className="text-[9px] text-[#A0A0A5] mt-0.5 truncate w-full text-center">{item.label}</div>
-                    </div>
-                  )
-                })}
               </div>
 
               {/* Input (AC + Solar) / Output — PRD §4.1.1 / §4.1.3: three values */}
@@ -850,8 +761,9 @@ export default function OverviewPage() {
               <div className="h-24 relative overflow-hidden mb-3">
                 {!isOnline ? (
                   <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
-                    <span className="text-[13px] font-semibold text-[#A0A0A5]">Device disconnected</span>
-                    <span className="text-[11px] text-[#636366] mt-1">Reconnect the device to view chart data.</span>
+                    <AlertTriangle size={26} className="text-[#FF3530] mb-2" />
+                    <span className="text-[15px] font-bold text-[#FFFFFF]">Device disconnected</span>
+                    <span className="text-[12px] text-[#A0A0A5] mt-1">Reconnect the device to view chart data.</span>
                   </div>
                 ) : (
                   <svg width="100%" height="100%" viewBox="0 0 300 80" preserveAspectRatio="none">
