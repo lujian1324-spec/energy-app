@@ -143,7 +143,22 @@ function aggregateHistory(
 
 // ─── Demo/Mock 数据 — 来自 Sierro 1000 真实模拟 CSV ───
 
-// Day: 4 days (Jun 1–4). pageIdx 0=Jun4, 1=Jun3, 2=Jun2, 3=Jun1
+/** 3-point weighted moving average, applied `passes` times */
+function smooth(arr: number[], passes = 2): number[] {
+  let out = [...arr]
+  for (let p = 0; p < passes; p++) {
+    const tmp = [...out]
+    for (let i = 0; i < tmp.length; i++) {
+      const prev = tmp[Math.max(0, i - 1)]
+      const next = tmp[Math.min(tmp.length - 1, i + 1)]
+      out[i] = Math.round((prev * 0.25 + tmp[i] * 0.5 + next * 0.25) * 10) / 10
+    }
+  }
+  return out
+}
+
+// ── Paginated demo data arrays ──
+
 const DAY_PAGES = [
   { dateLabel: 'Jun 4, 2026', insight: 'Overcast day — mixed grid/solar',
     rawInput:  [84,51,41,84,52,54,70,43,43,86,65,82,87,76,76,75,47,45,84,47,52,86,43,45],
@@ -161,9 +176,8 @@ const DAY_PAGES = [
     rawInput:  [71,46,50,83,53,53,89,62,136,175,228,258,253,260,223,176,120,71,71,40,46,74,43,40],
     rawOutput: [71,46,50,83,53,53,89,45,52,72,46,53,70,49,47,70,47,44,71,40,46,74,43,40],
     rawSoc:    [100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100] },
-] as const
+]
 
-// Week: 4 weeks. pageIdx 0=Wk4 (Jun 22-28), 1=Wk3, 2=Wk2, 3=Wk1
 const WEEK_PAGES = [
   { dateLabel: 'Jun 22 – 28, 2026', insight: 'Best solar week — 80–94% SOC daily',
     rawInput:  [81.0, 78.2, 85.2, 81.7, 84.8, 85.6, 77.6],
@@ -183,108 +197,107 @@ const WEEK_PAGES = [
     rawSoc:    [84, 91, 90, 81, 93, 85, 89] },
 ]
 
-// Month: 4 months. pageIdx 0=Sep, 1=Aug, 2=Jul, 3=Jun
 const MONTH_PAGES = [
   { dateLabel: 'September 2026', monthNum: 9,
     totalInputKwh: 33.5, totalOutputKwh: 38.9,
     insight: 'Sep best green ratio (86%) — 33.5 kWh solar',
-    rawInput:  [48.0,46.9,51.1,49.0,50.9,51.4,46.6,41.1,47.3,40.5,48.3,49.1,34.3,40.6,43.5,42.6,38.7,47.7,36.6,36.6,40.2,48.6,46.9,51.1,49.0,50.9,51.4,46.6,48.0,48.0],
-    rawOutput: [53.5,52.5,57.3,55.0,51.3,58.9,53.9,54.0,56.8,51.3,50.2,52.1,53.2,53.7,54.5,57.2,51.3,50.2,54.0,53.2,53.0,49.9,54.7,54.7,52.5,59.7,50.4,55.6,53.5,53.5],
-    rawSoc:    [86,91,90,81,93,85,89,67,40,72,42,64,74,54,67,53,62,57,52,69,50,93,92,80,85,89,90,81,86,86] },
+    rawInput:  [48.0,46.9,51.1,49.0,50.9,51.4,46.6, 41.1,47.3,40.5,48.3,49.1,34.3,40.6, 43.5,42.6,38.7,47.7,36.6,36.6,40.2, 48.6,46.9,51.1,49.0,50.9,51.4,46.6,48.0,48.0],
+    rawOutput: [53.5,52.5,57.3,55.0,51.3,58.9,53.9, 54.0,56.8,51.3,50.2,52.1,53.2,53.7, 54.5,57.2,51.3,50.2,54.0,53.2,53.0, 49.9,54.7,54.7,52.5,59.7,50.4,55.6,53.5,53.5],
+    rawSoc:    [86,91,90,81,93,85,89, 67,40,72,42,64,74,54, 67,53,62,57,52,69,50, 93,92,80,85,89,90,81,86,86] },
   { dateLabel: 'August 2026', monthNum: 8,
     totalInputKwh: 29.2, totalOutputKwh: 44.8,
     insight: 'Aug heaviest load (44.8 kWh) — lowest solar',
-    rawInput:  [43.4,42.9,42.0,47.6,43.5,43.8,44.0,24.7,28.4,24.3,29.0,29.5,20.6,24.4,8.7,8.5,7.7,9.5,7.3,7.3,8.0,48.6,46.9,51.1,49.0,50.9,51.4,46.6,43.4,43.4,43.4],
-    rawOutput: [64.5,60.1,69.3,66.5,62.0,71.2,65.0,69.7,73.2,66.1,64.6,63.1,64.6,65.3,70.1,73.2,65.7,64.3,69.1,68.0,67.8,63.9,70.1,70.1,67.5,76.5,64.5,71.2,64.5,64.5,64.5],
-    rawSoc:    [72,79,78,69,81,73,77,55,32,60,5,52,62,36,55,43,52,47,34,57,42,81,80,68,73,77,78,69,72,72,72] },
+    rawInput:  [43.4,42.9,42.0,47.6,43.5,43.8,44.0, 24.7,28.4,24.3,29.0,29.5,20.6,24.4, 8.7,8.5,7.7,9.5,7.3,7.3,8.0, 48.6,46.9,51.1,49.0,50.9,51.4,46.6,43.4,43.4,43.4],
+    rawOutput: [64.5,60.1,69.3,66.5,62.0,71.2,65.0, 69.7,73.2,66.1,64.6,63.1,64.6,65.3, 70.1,73.2,65.7,64.3,69.1,68.0,67.8, 63.9,70.1,70.1,67.5,76.5,64.5,71.2,64.5,64.5,64.5],
+    rawSoc:    [72,79,78,69,81,73,77, 55,32,60,5,52,62,36, 55,43,52,47,34,57,42, 81,80,68,73,77,78,69,72,72,72] },
   { dateLabel: 'July 2026', monthNum: 7,
     totalInputKwh: 35.8, totalOutputKwh: 42.1,
     insight: 'Jul peak solar (35.8 kWh) — 85% green energy',
-    rawInput:  [79.9,78.7,77.1,87.2,79.8,80.3,80.7,45.2,52.0,44.6,53.1,54.0,37.7,44.7,16.0,15.6,14.2,17.5,13.4,13.4,14.7,89.1,86.0,93.7,89.8,93.3,94.2,85.4,79.9,79.9,79.9],
-    rawOutput: [60.4,56.5,65.1,62.5,58.3,66.9,61.1,65.5,68.8,62.1,60.7,59.3,60.7,61.4,65.9,68.8,61.8,60.4,64.9,63.9,63.7,60.1,65.9,65.9,63.4,71.9,60.6,66.9,60.4,60.4,60.4],
-    rawSoc:    [84,91,90,81,93,85,89,67,40,72,12,64,74,44,67,53,62,57,42,69,50,93,92,80,85,89,90,81,84,84,84] },
+    rawInput:  [79.9,78.7,77.1,87.2,79.8,80.3,80.7, 45.2,52.0,44.6,53.1,54.0,37.7,44.7, 16.0,15.6,14.2,17.5,13.4,13.4,14.7, 89.1,86.0,93.7,89.8,93.3,94.2,85.4,79.9,79.9,79.9],
+    rawOutput: [60.4,56.5,65.1,62.5,58.3,66.9,61.1, 65.5,68.8,62.1,60.7,59.3,60.7,61.4, 65.9,68.8,61.8,60.4,64.9,63.9,63.7, 60.1,65.9,65.9,63.4,71.9,60.6,66.9,60.4,60.4,60.4],
+    rawSoc:    [84,91,90,81,93,85,89, 67,40,72,12,64,74,44, 67,53,62,57,42,69,50, 93,92,80,85,89,90,81,84,84,84] },
   { dateLabel: 'June 2026', monthNum: 6,
     totalInputKwh: 32.4, totalOutputKwh: 40.5,
     insight: 'Jun — Wk4 sunniest, Wk3 heavily overcast',
-    rawInput:  [72.6,71.5,70.1,79.3,72.5,73.0,73.3,41.1,47.3,40.5,48.3,49.1,34.3,40.6,14.5,14.2,12.9,15.9,12.2,12.2,13.4,81.0,78.2,85.2,81.7,84.8,85.6,77.6,72.6,72.6],
-    rawOutput: [59.0,52.8,59.8,59.3,54.3,62.3,56.9,57.6,60.5,54.7,53.5,55.5,56.7,57.2,58.0,60.5,54.3,53.2,57.1,56.2,56.1,52.8,57.9,57.9,55.5,63.1,53.3,58.8,59.0,59.0],
-    rawSoc:    [84,91,90,81,93,85,89,67,40,72,12,64,74,44,67,53,62,57,42,69,50,93,92,80,85,89,90,81,84,84] },
+    rawInput:  [72.6,71.5,70.1,79.3,72.5,73.0,73.3, 41.1,47.3,40.5,48.3,49.1,34.3,40.6, 14.5,14.2,12.9,15.9,12.2,12.2,13.4, 81.0,78.2,85.2,81.7,84.8,85.6,77.6,72.6,72.6],
+    rawOutput: [59.0,52.8,59.8,59.3,54.3,62.3,56.9, 57.6,60.5,54.7,53.5,55.5,56.7,57.2, 58.0,60.5,54.3,53.2,57.1,56.2,56.1, 52.8,57.9,57.9,55.5,63.1,53.3,58.8,59.0,59.0],
+    rawSoc:    [84,91,90,81,93,85,89, 67,40,72,12,64,74,44, 67,53,62,57,42,69,50, 93,92,80,85,89,90,81,84,84] },
 ]
 
-/** 3-point weighted moving average, applied `passes` times */
-function smooth(arr: number[], passes = 2): number[] {
-  let out = [...arr]
-  for (let p = 0; p < passes; p++) {
-    const tmp = [...out]
-    for (let i = 0; i < tmp.length; i++) {
-      const prev = tmp[Math.max(0, i - 1)]
-      const next = tmp[Math.min(tmp.length - 1, i + 1)]
-      out[i] = Math.round((prev * 0.25 + tmp[i] * 0.5 + next * 0.25) * 10) / 10
-    }
-  }
-  return out
-}
-
-
 function getDemoChartFrame(period: Period, pageOffset = 0): ChartFrame {
-  const pageIdx = Math.min(-pageOffset, 3)  // pageOffset 0→-3 maps to pageIdx 0→3
+  const pageIdx = -pageOffset  // 0 = current, 1 = one back, 2 = two back, 3 = three back
 
+  // ── Day ──
   if (period === 'Day') {
-    const page = DAY_PAGES[pageIdx]
+    const page = DAY_PAGES[Math.min(pageIdx, DAY_PAGES.length - 1)]
     const labels = Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2, '0')}:00`)
-    const input  = smooth([...page.rawInput], 2)
-    const output = smooth([...page.rawOutput], 2)
-    const soc    = smooth([...page.rawSoc], 1)
+    const input  = smooth(page.rawInput, 2)
+    const output = smooth(page.rawOutput, 2)
+    const soc    = smooth(page.rawSoc, 1)
     const totalInputKwh  = page.rawInput.reduce((s, v) => s + v / 1000, 0)
     const totalOutputKwh = page.rawOutput.reduce((s, v) => s + v / 1000, 0)
     return {
-      input, output, soc, labels, dateLabel: page.dateLabel,
+      input, output, soc, labels,
       co2Kg: parseFloat((totalInputKwh * 0.5).toFixed(1)),
-      totalInputKwh, totalOutputKwh, insight: page.insight,
+      totalInputKwh, totalOutputKwh,
+      insight: page.insight,
       ecoInsight: `Equivalent to driving ${Math.round(totalOutputKwh * 3.5)} fewer miles`,
+      dateLabel: page.dateLabel,
     }
   }
 
+  // ── Week ──
   if (period === 'Week') {
-    const page = WEEK_PAGES[pageIdx]
+    const page = WEEK_PAGES[Math.min(pageIdx, WEEK_PAGES.length - 1)]
     const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-    const input  = smooth([...page.rawInput], 2)
-    const output = smooth([...page.rawOutput], 2)
-    const soc    = smooth([...page.rawSoc], 1)
+    const input  = smooth(page.rawInput, 2)
+    const output = smooth(page.rawOutput, 2)
+    const soc    = smooth(page.rawSoc, 1)
     const totalInputKwh  = page.rawInput.reduce((s, v) => s + v * 24 / 1000, 0)
     const totalOutputKwh = page.rawOutput.reduce((s, v) => s + v * 24 / 1000, 0)
     return {
-      input, output, soc, labels, dateLabel: page.dateLabel,
+      input, output, soc, labels,
       co2Kg: parseFloat((totalInputKwh * 0.5).toFixed(1)),
-      totalInputKwh, totalOutputKwh, insight: page.insight,
+      totalInputKwh, totalOutputKwh,
+      insight: page.insight,
       ecoInsight: `Equivalent to driving ${Math.round(totalOutputKwh * 3.5)} fewer miles`,
+      dateLabel: page.dateLabel,
     }
   }
 
+  // ── Month ──
   if (period === 'Month') {
-    const page = MONTH_PAGES[pageIdx]
-    const labels = Array.from({ length: page.rawInput.length }, (_, i) => `${page.monthNum}/${i + 1}`)
-    const input  = smooth([...page.rawInput], 3)
-    const output = smooth([...page.rawOutput], 3)
-    const soc    = smooth([...page.rawSoc], 2)
+    const page = MONTH_PAGES[Math.min(pageIdx, MONTH_PAGES.length - 1)]
+    const labels = Array.from({ length: 30 }, (_, i) => `${page.monthNum}/${i + 1}`)
+    const rawIn  = page.rawInput.slice(0, 30)
+    const rawOut = page.rawOutput.slice(0, 30)
+    const rawSoc = page.rawSoc.slice(0, 30)
+    const input  = smooth(rawIn, 3)
+    const output = smooth(rawOut, 3)
+    const soc    = smooth(rawSoc, 2)
     return {
-      input, output, soc, labels, dateLabel: page.dateLabel,
+      input, output, soc, labels,
       co2Kg: parseFloat((page.totalInputKwh * 0.5).toFixed(1)),
-      totalInputKwh: page.totalInputKwh, totalOutputKwh: page.totalOutputKwh,
+      totalInputKwh: page.totalInputKwh,
+      totalOutputKwh: page.totalOutputKwh,
       insight: page.insight,
       ecoInsight: `Equivalent to driving ${Math.round(page.totalOutputKwh * 3.5)} fewer miles`,
+      dateLabel: page.dateLabel,
     }
   }
 
-  // Range: 4-month overview (no pagination)
+  // ── Range: 4-month summary Jun–Sep (no pagination) ──
+  const labels = ['Jun', 'Jul', 'Aug', 'Sep']
   const rawInput  = [45.0, 49.7, 40.6, 46.5]
   const rawOutput = [56.3, 58.5, 62.2, 54.0]
   const rawSoc    = [80.0, 85.0, 65.2, 86.1]
-  const totalInputKwh  = 32.4 + 35.8 + 29.2 + 33.5
-  const totalOutputKwh = 40.5 + 42.1 + 44.8 + 38.9
+  const input  = smooth(rawInput, 1)
+  const output = smooth(rawOutput, 1)
+  const soc    = smooth(rawSoc, 1)
+  const totalInputKwh  = 130.9
+  const totalOutputKwh = 166.3
   return {
-    input: smooth(rawInput, 1), output: smooth(rawOutput, 1), soc: smooth(rawSoc, 1),
-    labels: ['Jun', 'Jul', 'Aug', 'Sep'], dateLabel: 'Jun – Sep 2026',
+    input, output, soc, labels,
     co2Kg: parseFloat((totalInputKwh * 0.5).toFixed(1)),
     totalInputKwh, totalOutputKwh,
     insight: 'Sep had the best green energy ratio (86%)',
@@ -467,7 +480,7 @@ export default function StatsPage() {
   const soc = deviceRealtime?.soc ?? 0
   const batteryTemp = deviceRealtime?.batteryTemp ?? 0
   const batteryHealth = 95 // 默认值，API 不直接返回
-  const isDataLoaded = chartFrame !== null
+  const isDataLoaded = true
 
   // 设备名称
   const deviceName = useMemo(() => {
@@ -546,8 +559,8 @@ export default function StatsPage() {
     </motion.div>
   )
 
-  // 空历史：API 返回空数据且无设备时显示
-  const emptyHistory = !historyLoading && !isDataLoaded
+  // 空历史：仅当无 demo 且无真实数据时显示
+  const emptyHistory = !historyLoading && !historyData && !useDemo
     ? (
       <ChartEmptyState
         message={
@@ -632,20 +645,18 @@ export default function StatsPage() {
             <div className="flex items-center justify-center gap-3 mb-4">
               <button
                 aria-label="Previous"
-                disabled={pageOffset <= -3 || period === 'Range'}
                 onClick={() => setPageOffset(v => Math.max(v - 1, -3))}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-ink-10 text-ink-4 hover:text-ink-1 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                disabled={pageOffset === -3 || period === 'Range'}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-ink-10 text-ink-4 hover:text-ink-1 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <ChevronLeft size={18} />
               </button>
-              <span className="text-title-md font-semibold text-ink-1">
-                {chartFrame?.dateLabel ?? dateTitle}
-              </span>
+              <span className="text-title-md font-semibold text-ink-1">{chartFrame?.dateLabel ?? dateTitle}</span>
               <button
                 aria-label="Next"
-                disabled={pageOffset >= 0 || period === 'Range'}
                 onClick={() => setPageOffset(v => Math.min(v + 1, 0))}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-ink-10 text-ink-4 hover:text-ink-1 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                disabled={pageOffset === 0 || period === 'Range'}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-ink-10 text-ink-4 hover:text-ink-1 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <ChevronRight size={18} />
               </button>
