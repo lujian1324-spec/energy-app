@@ -454,7 +454,7 @@ export default function OverviewPage() {
           {/* Right: Settings + Bell */}
           <div className="flex items-center gap-2 flex-shrink-0">
             <button
-              onClick={() => navigate('/smart-schedule')}
+              onClick={() => setShowDeviceDetail(true)}
               className="w-9 h-9 rounded-full bg-[#262626] flex items-center justify-center text-[#FFFFFF] hover:bg-[#333333] transition-colors"
             >
               <Settings size={18} />
