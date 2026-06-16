@@ -251,7 +251,7 @@ export default function DeviceMonitorPage() {
             <div className="flex items-center gap-1 mb-2">
               <p className="text-label text-[#A0A0A5] flex-1">Input</p>
               <span className="w-4 flex-shrink-0" />
-              <p className="text-label text-[#A0A0A5] flex-1">Output</p>
+              <p className="text-label text-[#A0A0A5] flex-1 text-right">Output</p>
             </div>
             <div className="grid grid-cols-[1fr_16px_1fr_1fr] gap-2 items-stretch">
               <div className="bg-[#1F1F1F] rounded-m px-3 py-3 text-center flex flex-col items-center justify-center">
@@ -274,7 +274,7 @@ export default function DeviceMonitorPage() {
                   <span className="text-title-md font-semibold text-white">{fmtW(outputPower)}</span>
                   <span className="text-label text-[#A0A0A5]">w</span>
                 </div>
-                <p className="text-tiny text-[#636366] mt-0.5">DC</p>
+                <p className="text-tiny text-[#636366] mt-0.5">AC</p>
               </div>
             </div>
           </div>
