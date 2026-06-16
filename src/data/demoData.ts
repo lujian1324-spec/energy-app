@@ -494,7 +494,8 @@ export function getDemoDayCurve(
 
   // Light moving-average smoothing (circular, since the curve wraps 12am→12am) to
   // further reduce any remaining sharp dips/jumps between consecutive hours.
-  const windowRadius = Math.max(1, Math.round(points / 96))
+  // SoC moves slowly relative to power, so it gets a wider smoothing window.
+  const windowRadius = Math.max(1, Math.round(points / 96)) * (key === 'soc' ? 2 : 1)
   const smoothed = raw.map((_, i) => {
     let sum = 0
     let count = 0

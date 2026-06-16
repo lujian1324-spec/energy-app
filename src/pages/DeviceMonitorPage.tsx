@@ -119,7 +119,9 @@ export default function DeviceMonitorPage() {
   const chartData = useMemo(() => {
     if (!id) return []
     const tab = TABS.find(t => t.id === activeTab)!
-    return getDemoDayCurve(id, tab.historyKey, 2400)
+    // Fridge (Sierro 2000) Battery curve uses a dedicated higher-smoothing sample count
+    const points = String(id) === '10002' && activeTab === 'battery' ? 2000 : 2400
+    return getDemoDayCurve(id, tab.historyKey, points)
   }, [id, activeTab])
 
   // Fixed x-axis labels: 12am, 4am, 8am, 12pm, 4pm, 8pm, 12am
