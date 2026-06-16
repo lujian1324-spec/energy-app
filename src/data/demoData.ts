@@ -441,32 +441,59 @@ export function getDemoEnergyFlow(deviceId: string | number): { code: number; me
 // Demo 历史数据（支持 Day / Week / Month 3个月范围）
 // ═══════════════════════════════════════════════════════
 
+// ── Real hourly simulation logs (latest day) — sierro1000_4days_simulation_3.csv / sierro2000_4days.csv ──
+// Grid_Input_W / Grid_W  → AC input
+// PV_Input_W   / PV_W    → Solar input
+// Fridge_Load_W / Load_W → Output
+// Battery_SOC_Pct/SOC_Pct → Battery capacity (%)
+const REAL_HOURLY: Record<number, { grid: number[]; pv: number[]; load: number[]; soc: number[] }> = {
+  10001: { // SIERRO 1000 — Jun 4, 2026
+    grid: [84,51,41,84,52,54,70,25,14,40,0,0,0,0,0,16,4,32,81,47,52,86,43,45],
+    pv:   [0,0,0,0,0,0,0,18,29,46,65,82,87,76,76,59,43,13,3,0,0,0,0,0],
+    load: [84,51,41,84,52,54,70,43,43,86,52,44,73,43,42,75,47,45,84,47,52,86,43,45],
+    soc:  [100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100],
+  },
+  10002: { // SIERRO 2000 — Jul 4, 2026
+    grid: [0,0,1000,0,0,1000,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1000,0,0,1000],
+    pv:   [0,0,0,0,0,0,0,1164,1584,1568,1548,1566,1578,1582,1574,1562,1579,1164,0,0,0,0,0,0],
+    load: [77,48,64,47,70,50,82,59,84,68,48,66,78,82,74,62,79,58,67,66,80,64,53,80],
+    soc:  [96.2,93.8,100.0,97.6,94.2,100.0,95.9,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,96.7,93.4,100.0,96.8,94.1,100.0],
+  },
+}
+
+/**
+ * Fixed 0am→24pm day curve (not anchored to "now") for the Real-Time Power
+ * chart, whose x-axis ticks are fixed at 0/4/8/12/16/20/24.
+ */
+export function getDemoDayCurve(
+  deviceId: string | number,
+  key: 'acPower' | 'solarPower' | 'outputPower' | 'soc',
+  points = 96
+): number[] {
+  const numericId = typeof deviceId === 'string' ? parseInt(deviceId) : deviceId
+  const real = REAL_HOURLY[numericId]
+  if (!real) return Array(points).fill(0)
+
+  const arr = key === 'acPower' ? real.grid : key === 'solarPower' ? real.pv : key === 'outputPower' ? real.load : real.soc
+
+  const result: number[] = []
+  for (let i = 0; i < points; i++) {
+    const hourFloat = (i / (points - 1)) * 24
+    const h0 = Math.floor(hourFloat) % 24
+    const h1 = (h0 + 1) % 24
+    const frac = hourFloat - Math.floor(hourFloat)
+    const v = arr[h0] * (1 - frac) + arr[h1] * frac
+    result.push(key === 'soc' ? Math.round(Math.max(0, Math.min(100, v))) : Math.round(Math.max(0, v)))
+  }
+  return result
+}
+
 export function getDemoHistoryData(
   deviceId: string | number,
   hours = 24
 ): { code: number; message: string; data: HistoryDataResponse } {
   const now = Date.now()
   const numericId = typeof deviceId === 'string' ? parseInt(deviceId) : deviceId
-
-  // ── Real hourly simulation logs (latest day) — sierro1000_4days_simulation_3.csv / sierro2000_4days.csv ──
-  // Grid_Input_W / Grid_W  → AC input
-  // PV_Input_W   / PV_W    → Solar input
-  // Fridge_Load_W / Load_W → Output
-  // Battery_SOC_Pct/SOC_Pct → Battery capacity (%)
-  const REAL_HOURLY: Record<number, { grid: number[]; pv: number[]; load: number[]; soc: number[] }> = {
-    10001: { // SIERRO 1000 — Jun 4, 2026
-      grid: [84,51,41,84,52,54,70,25,14,40,0,0,0,0,0,16,4,32,81,47,52,86,43,45],
-      pv:   [0,0,0,0,0,0,0,18,29,46,65,82,87,76,76,59,43,13,3,0,0,0,0,0],
-      load: [84,51,41,84,52,54,70,43,43,86,52,44,73,43,42,75,47,45,84,47,52,86,43,45],
-      soc:  [100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100],
-    },
-    10002: { // SIERRO 2000 — Jul 4, 2026
-      grid: [0,0,1000,0,0,1000,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1000,0,0,1000],
-      pv:   [0,0,0,0,0,0,0,1164,1584,1568,1548,1566,1578,1582,1574,1562,1579,1164,0,0,0,0,0,0],
-      load: [77,48,64,47,70,50,82,59,84,68,48,66,78,82,74,62,79,58,67,66,80,64,53,80],
-      soc:  [96.2,93.8,100.0,97.6,94.2,100.0,95.9,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,100.0,96.7,93.4,100.0,96.8,94.1,100.0],
-    },
-  }
 
   const soc: Array<{ time: string; value: number }> = []
   const solarPower: Array<{ time: string; value: number }> = []

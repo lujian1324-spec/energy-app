@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronDown, Check, Settings, Bell, Sun, PlugZap } from 'l
 import BatteryRing from '../components/BatteryRing'
 import { useDeviceStore } from '../stores/deviceStore'
 import { mapFieldsToRealtime } from '../api/deviceApi'
+import { getDemoDayCurve } from '../data/demoData'
 
 // ─── Chart metric tabs ────────────────────────────────────────────────────────
 type Metric = 'battery' | 'ac' | 'solar' | 'output'
@@ -74,7 +75,6 @@ export default function DeviceMonitorPage() {
   const {
     devices,
     selectedDeviceState,
-    historyData,
     historyLoading,
     selectDevice,
     loadDeviceState,
@@ -115,28 +115,15 @@ export default function DeviceMonitorPage() {
     ? `${Math.floor(remainMinutes / 60)}h ${remainMinutes % 60}m remaining`
     : isCharging ? 'Charging' : '--'
 
-  // Chart data from history
+  // Real-Time Power chart: fixed 0am→24pm day curve (x-axis ticks fixed at 0/4/8/12/16/20/24h)
   const chartData = useMemo(() => {
-    if (!historyData) return []
+    if (!id) return []
     const tab = TABS.find(t => t.id === activeTab)!
-    const series = historyData[tab.historyKey]
-    if (!series || !series.length) return []
-    return series.map(p => p.value)
-  }, [historyData, activeTab])
+    return getDemoDayCurve(id, tab.historyKey, 96)
+  }, [id, activeTab])
 
-  // Time labels: pick ~7 evenly spaced
-  const timeLabels = useMemo(() => {
-    if (!historyData?.soc?.length) return []
-    const pts = historyData.soc
-    const step = Math.floor(pts.length / 6)
-    const indices = [0, step, step * 2, step * 3, step * 4, step * 5, pts.length - 1]
-    return indices.map(i => {
-      const d = new Date(pts[Math.min(i, pts.length - 1)].time)
-      const h = d.getHours()
-      const label = h === 0 ? '12am' : h < 12 ? `${h}am` : h === 12 ? '12pm' : `${h - 12}pm`
-      return label
-    })
-  }, [historyData])
+  // Fixed x-axis labels: 12am, 4am, 8am, 12pm, 4pm, 8pm, 12am
+  const timeLabels = useMemo(() => ['12am', '4am', '8am', '12pm', '4pm', '8pm', '12am'], [])
 
   // Current value badge
   const currentTab = TABS.find(t => t.id === activeTab)!
