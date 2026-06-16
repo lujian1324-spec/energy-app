@@ -56,6 +56,21 @@ export const useAuthStore = create<AuthState>()(
       login: async (username: string, password: string) => {
         set({ loading: true, error: null })
 
+        // 本地测试账号：跳过后端，直接进入 demo 模式（展示演示数据）
+        const u = username.trim().toLowerCase()
+        if ((u === 'localtest' || u === 'localest') && password === 'localtest') {
+          useDeviceStore.getState().loadDemoDevices()
+          set({
+            isAuthenticated: true,
+            isGuest: false,
+            user: { account: 'localtest', email: 'localtest@sierro.test' } as LoginData,
+            loading: false,
+            error: null,
+            sessionReady: true,
+          })
+          return true
+        }
+
         try {
           const result = await loginByAccount(username, password)
 
