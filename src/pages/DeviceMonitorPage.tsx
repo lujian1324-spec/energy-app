@@ -119,8 +119,8 @@ export default function DeviceMonitorPage() {
   const chartData = useMemo(() => {
     if (!id) return []
     const tab = TABS.find(t => t.id === activeTab)!
-    // Fridge (Sierro 2000) Battery curve uses a dedicated higher-smoothing sample count
-    const points = String(id) === '10002' && activeTab === 'battery' ? 2000 : 2400
+    // Battery tab uses the unified higher-smoothing sample count for all devices
+    const points = activeTab === 'battery' ? 2000 : 2400
     return getDemoDayCurve(id, tab.historyKey, points)
   }, [id, activeTab])
 

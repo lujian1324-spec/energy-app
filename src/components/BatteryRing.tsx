@@ -19,14 +19,16 @@ interface BatteryRingProps {
 export type BatteryState = 'critical' | 'low' | 'warning' | 'normal' | 'good' | 'full' | 'charging' | 'plugged' | 'unknown'
 
 function getBatteryState(percentage: number, isCharging: boolean, isPlugged: boolean): BatteryState {
-  // Fully charged takes priority — a battery at 100% can't still be "charging" even
-  // if net power into it is momentarily positive.
-  if (percentage >= 95) return 'full'
+  // At the literal cap (>=99%) a battery can't still be "charging" even if net
+  // power into it is momentarily positive — show Full. Below that, an actively
+  // charging battery (e.g. 95% rising toward 100%) should still show Charging.
+  if (percentage >= 99) return 'full'
   if (isCharging) return 'charging'
   if (isPlugged) return 'plugged'
   if (percentage <= 5) return 'critical'
   if (percentage <= 15) return 'low'
   if (percentage <= 25) return 'warning'
+  if (percentage >= 95) return 'full'
   return 'normal'
 }
 

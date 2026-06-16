@@ -228,7 +228,7 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
         gatherProtocolVersionCode: '2.1',
         fields: {
           soc: makeField('soc', 'State of Charge', 95, '%', 'battery'),
-          batteryPower: makeField('batteryPower', 'Battery Power', 0, 'W', 'battery'),
+          batteryPower: makeField('batteryPower', 'Battery Power', 50, 'W', 'battery'),
           batteryVoltage: makeField('batteryVoltage', 'Battery Voltage', 3.2, 'V', 'battery'),
           batteryCurrent: makeField('batteryCurrent', 'Battery Current', 72.5, 'A', 'battery'),
           batteryTemp: makeField('batteryTemp', 'Battery Temp', 28.5, '°C', 'battery'),
@@ -259,7 +259,7 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
             category: 'battery',
             stateItems: [
               { ...makeField('soc', 'SoC', 95, '%', 'battery'), isHidden: false, nameDisplay: 'State of Charge' },
-              { ...makeField('batteryPower', 'Power', 0, 'W', 'battery'), isHidden: false, nameDisplay: 'Battery Power' },
+              { ...makeField('batteryPower', 'Power', 50, 'W', 'battery'), isHidden: false, nameDisplay: 'Battery Power' },
             ],
           },
         ],
@@ -388,7 +388,7 @@ export function getDemoEnergyFlow(deviceId: string | number): { code: number; me
     ctFlow: null,
   }
 
-  if (numericId === 10001) { // SIERRO 1000 — AC 45W in, 0W solar, 45W out, 0W battery, SoC 95%
+  if (numericId === 10001) { // SIERRO 1000 — AC 45W in, 0W solar, 45W out, 50W charging battery, SoC 95%
     return {
       code: 0,
       message: 'success',
@@ -402,7 +402,7 @@ export function getDemoEnergyFlow(deviceId: string | number): { code: number; me
           groups: [],
         },
         pvPanelFlow: makeFlowNode('pvPanel', 'Solar Panel', 'icon_solar', 0),
-        batteryFlow: makeFlowNode('battery', 'Battery', 'icon_battery', 0),
+        batteryFlow: makeFlowNode('battery', 'Battery', 'icon_battery', 50),
         loadFlow: makeFlowNode('load', 'Load', 'icon_load', 45),
         gridFlow: makeFlowNode('grid', 'Grid', 'icon_grid', 45),
       },
