@@ -1,22 +1,19 @@
-import { useState, useRef } from 'react'
-import { motion } from 'framer-motion'
-import { 
-  Battery, 
-  Zap, 
-  Thermometer, 
-  RefreshCw,
+import { useState } from 'react'
+import {
   ChevronLeft,
-  Wifi,
-  Bluetooth,
-  Usb,
-  Calendar,
-  Hash,
-  Shield,
-  Award,
-  Pencil,
-  Check,
+  ChevronRight,
   X,
+  Battery,
+  Zap,
+  Refrigerator,
+  Server,
+  Lamp,
+  Fish,
+  PlugZap,
+  Wifi,
+  BookOpen,
 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useConnectionStore } from '../stores/connectionStore'
 import appVersion from '../version.json'
@@ -25,673 +22,329 @@ interface DeviceDetailPageProps {
   onBack: () => void
 }
 
-// 规格字段配置
-interface SpecField {
-  key: keyof typeof initialSpecs;
-  icon: typeof Battery;
-  label: string;
-  color: string;
-}
+type Screen = 'main' | 'editName' | 'displayIcon' | 'deviceInfo'
 
-const initialSpecs = {
-  batteryCapacity: '',
-  batteryType: '',
-  maxOutputPower: '',
-  maxOutputSurge: '',
-  outputType: '',
-  maxChargePower: '',
-  chargeMode: '',
-  chargeTime: '',
-  operatingTemp: '',
-  optimalTemp: '',
-}
+const DISPLAY_ICONS = [
+  { id: 'zap', Icon: Zap, label: 'Power Station' },
+  { id: 'refrigerator', Icon: Refrigerator, label: 'Refrigerator' },
+  { id: 'server', Icon: Server, label: 'Server' },
+  { id: 'lamp', Icon: Lamp, label: 'Lamp' },
+  { id: 'fish', Icon: Fish, label: 'Aquarium' },
+  { id: 'plugzap', Icon: PlugZap, label: 'EV Charger' },
+  { id: 'wifi', Icon: Wifi, label: 'Router' },
+  { id: 'cpap', Icon: BookOpen, label: 'CPAP' },
+]
 
 export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
-  const { powerStation, settings, selectedDeviceId, updateDeviceNameById, updateDeviceSpecs } = usePowerStationStore()
+  const { powerStation, settings, selectedDeviceId, updateDeviceNameById, updateDeviceSpecs } =
+    usePowerStationStore()
   const { bleConnection, serialConnection, activeDataSource } = useConnectionStore()
-  
-  // 设备名称编辑状态
-  const [isEditingName, setIsEditingName] = useState(false)
+  const navigate = useNavigate()
+
+  const [screen, setScreen] = useState<Screen>('main')
   const [editName, setEditName] = useState(powerStation.name)
-  const nameInputRef = useRef<HTMLInputElement>(null)
+  const [sleepMode, setSleepMode] = useState<'Off' | 'On'>('Off')
+  const [batteryPriority] = useState('Backup Mode')
+  const [selectedIcon, setSelectedIcon] = useState('zap')
+  const [pendingIcon, setPendingIcon] = useState('zap')
 
-  // 规格编辑状态
-  const [editingSpec, setEditingSpec] = useState<string | null>(null)
-  const [editSpecValues, setEditSpecValues] = useState({
-    batteryCapacity: powerStation.specs.batteryCapacity,
-    batteryType: powerStation.specs.batteryType,
-    maxOutputPower: powerStation.specs.maxOutputPower,
-    maxOutputSurge: powerStation.specs.maxOutputSurge,
-    outputType: powerStation.specs.outputType,
-    maxChargePower: powerStation.specs.maxChargePower,
-    chargeMode: powerStation.specs.chargeMode,
-    chargeTime: powerStation.specs.chargeTime,
-    operatingTemp: powerStation.specs.operatingTemp,
-    optimalTemp: powerStation.specs.optimalTemp,
-  })
+  // ─── Helpers ─────────────────────────────────────────────────────────────
 
-  const deviceSpecs = [
-    { 
-      icon: Battery, 
-      label: 'Battery Capacity', 
-      value: powerStation.specs.batteryCapacity, 
-      desc: powerStation.specs.batteryType,
-      color: '#01D6BE',
-      editKeys: ['batteryCapacity', 'batteryType']
-    },
-    { 
-      icon: Zap, 
-      label: 'Max Output Power', 
-      value: powerStation.specs.maxOutputPower, 
-      desc: `Surge ${powerStation.specs.maxOutputSurge}`,
-      subDesc: powerStation.specs.outputType,
-      color: '#34C759',
-      editKeys: ['maxOutputPower', 'maxOutputSurge', 'outputType']
-    },
-    { 
-      icon: Zap, 
-      label: 'Max Charge Power', 
-      value: powerStation.specs.maxChargePower, 
-      desc: powerStation.specs.chargeMode,
-      subDesc: powerStation.specs.chargeTime,
-      color: '#FF9500',
-      editKeys: ['maxChargePower', 'chargeMode', 'chargeTime']
-    },
-    { 
-      icon: Thermometer, 
-      label: 'Operating Temp', 
-      value: powerStation.specs.operatingTemp, 
-      desc: `Current: ${powerStation.temperature}°C`,
-      subDesc: `Optimal: ${powerStation.specs.optimalTemp}`,
-      color: '#A855F7',
-      editKeys: ['operatingTemp', 'optimalTemp']
-    },
-  ]
-
-  const deviceStatus = [
-    { 
-      icon: RefreshCw, 
-      label: 'Charge Cycles', 
-      value: `${powerStation.cycleCount}`, 
-      desc: 'Total charge cycles completed',
-      color: '#01D6BE' 
-    },
-    { 
-      icon: Calendar, 
-      label: 'Manufactured', 
-      value: '2024-01', 
-      desc: 'Serial: SR-1000-8842',
-      color: '#A0A0A5' 
-    },
-    { 
-      icon: Hash, 
-      label: 'Firmware Version', 
-      value: `v${appVersion.version}`, 
-      desc: `Build ${appVersion.build}`,
-      color: '#A0A0A5' 
-    },
-  ]
-
-  const connectionStatus = [
-    {
-      icon: Bluetooth,
-      label: 'Bluetooth BLE',
-      status: bleConnection.status === 'connected' ? 'Connected' : 'Disconnected',
-      detail: bleConnection.status === 'connected' 
-        ? `${bleConnection.deviceName ?? 'Device'} · ${bleConnection.rssi ? `${bleConnection.rssi} dBm` : 'Active'}`
-        : 'Tap to connect in Settings',
-      color: bleConnection.status === 'connected' ? '#01D6BE' : '#636366',
-    },
-    {
-      icon: Usb,
-      label: 'Serial · Modbus',
-      status: serialConnection.status === 'connected' ? 'Connected' : 'Disconnected',
-      detail: serialConnection.status === 'connected'
-        ? 'RS485 · 9600 bps · 8N1'
-        : 'Tap to connect in Settings',
-      color: serialConnection.status === 'connected' ? '#A855F7' : '#636366',
-    },
-    {
-      icon: Wifi,
-      label: 'Wi-Fi',
-      status: 'Connected',
-      detail: 'HomeNetwork · 5GHz',
-      color: '#34C759',
-    },
-  ]
-
-  // 处理开始编辑设备名称
-  const handleStartEditName = () => {
-    setEditName(powerStation.name)
-    setIsEditingName(true)
-    setTimeout(() => nameInputRef.current?.focus(), 100)
-  }
-
-  // 处理保存设备名称
   const handleSaveName = () => {
-    const trimmedName = editName.trim()
-    if (trimmedName && trimmedName !== powerStation.name && selectedDeviceId) {
-      updateDeviceNameById(selectedDeviceId, trimmedName)
+    const trimmed = editName.trim()
+    if (trimmed && selectedDeviceId) {
+      updateDeviceNameById(selectedDeviceId, trimmed)
     }
-    setIsEditingName(false)
+    setScreen('main')
   }
 
-  // 处理取消编辑
-  const handleCancelEditName = () => {
-    setEditName(powerStation.name)
-    setIsEditingName(false)
+  const handleSaveIcon = () => {
+    setSelectedIcon(pendingIcon)
+    setScreen('main')
   }
 
-  // 处理输入框键盘事件
-  const handleNameKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSaveName()
-    } else if (e.key === 'Escape') {
-      handleCancelEditName()
-    }
+  const CurrentIconComp =
+    DISPLAY_ICONS.find((i) => i.id === selectedIcon)?.Icon ?? Battery
+
+  // ─── Back button (shared) ─────────────────────────────────────────────────
+
+  const BackBtn = ({ to }: { to: Screen | 'parent' }) => (
+    <button
+      onClick={() => (to === 'parent' ? onBack() : setScreen(to as Screen))}
+      className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center active:scale-95 transition-transform flex-shrink-0"
+    >
+      <ChevronLeft size={20} className="text-white" />
+    </button>
+  )
+
+  // ─── Info row (Device Info screen) ───────────────────────────────────────
+
+  const InfoRow = ({ label, value }: { label: string; value: string }) => (
+    <div className="flex items-center justify-between px-4 py-4 border-b border-white/5 last:border-0">
+      <span className="text-body-md text-[#A0A0A5]">{label}</span>
+      <span className="text-body-md text-white">{value}</span>
+    </div>
+  )
+
+  // ─── Settings row (main screen) ───────────────────────────────────────────
+
+  const SettingsRow = ({
+    label,
+    value,
+    preview,
+    onPress,
+  }: {
+    label: string
+    value?: string
+    preview?: React.ReactNode
+    onPress: () => void
+  }) => (
+    <div
+      onClick={onPress}
+      className="rounded-l bg-[#262626] mb-2 px-4 py-4 flex items-center justify-between cursor-pointer active:opacity-70 transition-opacity"
+    >
+      <span className="text-body-lg text-white">{label}</span>
+      <div className="flex items-center gap-2">
+        {preview}
+        {value !== undefined && (
+          <span className="text-body-md text-[#A0A0A5]">{value}</span>
+        )}
+        <ChevronRight size={18} className="text-[#A0A0A5]" />
+      </div>
+    </div>
+  )
+
+  // ═════════════════════════════════════════════════════════════════════════
+  // SCREEN: Edit Name
+  // ═════════════════════════════════════════════════════════════════════════
+
+  if (screen === 'editName') {
+    return (
+      <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
+        {/* Header */}
+        <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative">
+          <BackBtn to="main" />
+          <h1 className="text-title-lg font-semibold text-white absolute left-1/2 -translate-x-1/2">
+            Device Name
+          </h1>
+          <button
+            onClick={handleSaveName}
+            className="ml-auto text-body-lg font-semibold text-[#01D6BE]"
+          >
+            Save
+          </button>
+        </div>
+
+        {/* Input */}
+        <div className="px-4 pt-4">
+          <div className="rounded-l bg-[#262626] px-4 py-4 flex items-center gap-3">
+            <input
+              type="text"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              autoFocus
+              className="flex-1 bg-transparent text-body-lg text-white outline-none caret-[#01D6BE]"
+              placeholder="Device name"
+            />
+            {editName.length > 0 && (
+              <button
+                onClick={() => setEditName('')}
+                className="w-6 h-6 rounded-full bg-[#A0A0A5]/30 flex items-center justify-center"
+              >
+                <X size={14} className="text-[#A0A0A5]" />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    )
   }
 
-  // 处理开始编辑规格
-  const handleStartEditSpec = (label: string) => {
-    setEditSpecValues({
-      batteryCapacity: powerStation.specs.batteryCapacity,
-      batteryType: powerStation.specs.batteryType,
-      maxOutputPower: powerStation.specs.maxOutputPower,
-      maxOutputSurge: powerStation.specs.maxOutputSurge,
-      outputType: powerStation.specs.outputType,
-      maxChargePower: powerStation.specs.maxChargePower,
-      chargeMode: powerStation.specs.chargeMode,
-      chargeTime: powerStation.specs.chargeTime,
-      operatingTemp: powerStation.specs.operatingTemp,
-      optimalTemp: powerStation.specs.optimalTemp,
-    })
-    setEditingSpec(label)
+  // ═════════════════════════════════════════════════════════════════════════
+  // SCREEN: Display Icon
+  // ═════════════════════════════════════════════════════════════════════════
+
+  if (screen === 'displayIcon') {
+    return (
+      <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
+        {/* Header */}
+        <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative">
+          <BackBtn to="main" />
+          <h1 className="text-title-lg font-semibold text-white absolute left-1/2 -translate-x-1/2">
+            Select Display Icon
+          </h1>
+        </div>
+
+        {/* Grid */}
+        <div className="flex-1 px-4 pt-4">
+          <div className="grid grid-cols-4 gap-3">
+            {DISPLAY_ICONS.map(({ id, Icon, label }) => (
+              <button
+                key={id}
+                onClick={() => setPendingIcon(id)}
+                className={`flex flex-col items-center gap-2 py-4 rounded-l transition-colors ${
+                  pendingIcon === id ? 'bg-[#01D6BE]' : 'bg-[#262626]'
+                }`}
+              >
+                <Icon
+                  size={28}
+                  className={pendingIcon === id ? 'text-black' : 'text-[#A0A0A5]'}
+                />
+                <span
+                  className={`text-label ${
+                    pendingIcon === id ? 'text-black font-semibold' : 'text-[#A0A0A5]'
+                  }`}
+                >
+                  {label}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Save button */}
+        <div className="px-4 pb-8 pt-4">
+          <button
+            onClick={handleSaveIcon}
+            className="w-full h-12 rounded-l bg-[#01D6BE] text-black font-semibold text-body-lg active:scale-95 transition-transform"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    )
   }
 
-  // 处理保存规格
-  const handleSaveSpec = () => {
-    updateDeviceSpecs({
-      batteryCapacity: editSpecValues.batteryCapacity,
-      batteryType: editSpecValues.batteryType,
-      maxOutputPower: editSpecValues.maxOutputPower,
-      maxOutputSurge: editSpecValues.maxOutputSurge,
-      outputType: editSpecValues.outputType,
-      maxChargePower: editSpecValues.maxChargePower,
-      chargeMode: editSpecValues.chargeMode,
-      chargeTime: editSpecValues.chargeTime,
-      operatingTemp: editSpecValues.operatingTemp,
-      optimalTemp: editSpecValues.optimalTemp,
-    })
-    setEditingSpec(null)
+  // ═════════════════════════════════════════════════════════════════════════
+  // SCREEN: Device Info
+  // ═════════════════════════════════════════════════════════════════════════
+
+  if (screen === 'deviceInfo') {
+    return (
+      <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
+        {/* Header */}
+        <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative">
+          <BackBtn to="main" />
+          <h1 className="text-title-lg font-semibold text-white absolute left-1/2 -translate-x-1/2">
+            Device Info
+          </h1>
+        </div>
+
+        {/* Info list */}
+        <div className="flex-1 overflow-y-auto px-4 pt-2">
+          <div className="rounded-l bg-[#262626] overflow-hidden">
+            <InfoRow label="Model" value={powerStation.model || 'Sierro 1000'} />
+            <InfoRow
+              label="Serial Number"
+              value={(powerStation as any).serialNumber || 'SNXXXX'}
+            />
+            <InfoRow
+              label="Capacity"
+              value={`${(powerStation.totalWh / 1000).toFixed(1)} kWh`}
+            />
+            <InfoRow label="Battery Type" value="LFP" />
+            <InfoRow
+              label="Charging Power"
+              value={String(powerStation.specs?.maxChargePower || '400W')}
+            />
+            <InfoRow
+              label="Output Power"
+              value={String(powerStation.specs?.maxOutputPower || '500W')}
+            />
+            <InfoRow label="Voltage" value="120V" />
+            <InfoRow label="Frequency" value="60Hz" />
+            <InfoRow label="Battery Health" value="98%" />
+            <InfoRow label="Cycles" value="286" />
+            <InfoRow
+              label="Temperature"
+              value={`${powerStation.temperature || '82.4'}°F`}
+            />
+            <InfoRow label="Wi-Fi Status" value="Connected" />
+          </div>
+        </div>
+      </div>
+    )
   }
 
-  // 处理取消编辑规格
-  const handleCancelEditSpec = () => {
-    setEditingSpec(null)
-  }
-
-  // 处理规格输入变化
-  const handleSpecChange = (key: keyof typeof editSpecValues, value: string) => {
-    setEditSpecValues(prev => ({ ...prev, [key]: value }))
-  }
+  // ═════════════════════════════════════════════════════════════════════════
+  // SCREEN: Main — Device Settings
+  // ═════════════════════════════════════════════════════════════════════════
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: '100%' }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: '100%' }}
-      transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-      className="fixed inset-0 z-50 bg-[#141414] flex flex-col"
-    >
+    <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
       {/* Header */}
-      <div className="px-5 pt-4 pb-4 safe-area-top flex items-center gap-3">
-        <button
-          onClick={onBack}
-          className="w-9 h-9 rounded-full bg-[#262626] flex items-center justify-center
-            active:scale-95 transition-transform"
-        >
-          <ChevronLeft size={20} className="text-[#FFFFFF]" />
-        </button>
-        <div>
-          <h2 className="text-lg font-bold text-[#FFFFFF]">Device Details</h2>
-          <p className="text-xs text-[#A0A0A5]">{powerStation.name}</p>
-        </div>
+      <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative">
+        <BackBtn to="parent" />
+        <h1 className="text-title-lg font-semibold text-white absolute left-1/2 -translate-x-1/2">
+          Device Settings
+        </h1>
       </div>
 
-      {/* 可滚动内容 */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide px-5 pb-6">
-        {/* 设备图标和名称 */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="flex flex-col items-center py-6"
-        >
-          <div className="w-20 h-20 rounded-[24px] bg-[#262626] border border-[rgba(1,214,190,0.2)]
-            flex items-center justify-center mb-4">
-            <Battery size={36} className="text-[#01D6BE]" />
-          </div>
-          
-          {/* 可编辑的设备名称 */}
-          <div className="flex items-center gap-2">
-            {isEditingName ? (
-              <div className="flex items-center gap-2">
-                <input
-                  ref={nameInputRef}
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  onKeyDown={handleNameKeyDown}
-                  onBlur={handleSaveName}
-                  className="text-xl font-bold text-[#FFFFFF] tracking-wide bg-transparent border-b-2 border-[#01D6BE] outline-none w-[180px] text-center"
-                  maxLength={20}
-                />
-                <button 
-                  onClick={handleSaveName}
-                  className="w-7 h-7 rounded-full bg-[#01D6BE] flex items-center justify-center"
-                >
-                  <Check size={14} className="text-[#000000]" />
-                </button>
-                <button 
-                  onClick={handleCancelEditName}
-                  className="w-7 h-7 rounded-full bg-[#333333] flex items-center justify-center"
-                >
-                  <X size={14} className="text-[#A0A0A5]" />
-                </button>
-              </div>
-            ) : (
-              <>
-                <h3 className="text-xl font-bold text-[#FFFFFF]">{powerStation.name}</h3>
-                <button 
-                  onClick={handleStartEditName}
-                  className="w-7 h-7 rounded-full bg-[#262626] flex items-center justify-center hover:bg-[#333333] transition-colors"
-                >
-                  <Pencil size={14} className="text-[#A0A0A5]" />
-                </button>
-              </>
-            )}
-          </div>
-          <p className="text-sm text-[#A0A0A5] mt-1">Sierro 1000 Portable Power Station</p>
-          
-          {/* 状态标签 */}
-          <div className="flex gap-2 mt-3">
-            <span className={`text-[10px] px-2.5 py-1 rounded-full font-medium border
-              ${activeDataSource === 'bluetooth'
-                ? 'bg-[rgba(1,214,190,0.12)] text-[#01D6BE] border-[rgba(1,214,190,0.3)]'
-                : activeDataSource === 'serial'
-                ? 'bg-[rgba(168,85,247,0.12)] text-[#A855F7] border-[rgba(168,85,247,0.3)]'
-                : 'bg-[rgba(52,199,89,0.08)] text-[#34C759] border-[rgba(52,199,89,0.2)]'}`}>
-              {activeDataSource === 'bluetooth' ? '● BLE Connected'
-                : activeDataSource === 'serial' ? '● Serial Connected'
-                : '◎ Simulator Mode'}
-            </span>
-            {settings.founderBadge && (
-              <span className="text-[10px] px-2.5 py-1 rounded-full font-medium border
-                bg-[rgba(255,215,0,0.12)] text-[#FFD700] border-[rgba(255,215,0,0.3)]
-                flex items-center gap-1">
-                <Award size={10} />
-                Founding Member {settings.founderBadgeNumber !== undefined ? `#${settings.founderBadgeNumber}` : ''}
-              </span>
-            )}
-          </div>
-        </motion.div>
+      {/* Scrollable list */}
+      <div className="flex-1 overflow-y-auto px-4 pt-2 pb-8">
+        {/* Device Name */}
+        <SettingsRow
+          label="Device Name"
+          value={powerStation.name}
+          onPress={() => {
+            setEditName(powerStation.name)
+            setScreen('editName')
+          }}
+        />
 
-        {/* 设备规格 */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mb-5"
-        >
-          <div className="flex items-center justify-between mb-3 px-1">
-            <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase">
-              Specifications
+        {/* Display Icon */}
+        <SettingsRow
+          label="Display Icon"
+          preview={
+            <div className="w-7 h-7 rounded-m bg-[#01D6BE]/10 flex items-center justify-center">
+              <CurrentIconComp size={16} className="text-[#01D6BE]" />
             </div>
-            <div className="text-[10px] text-[#636366]">Tap to edit</div>
-          </div>
-          <div className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden">
-            {deviceSpecs.map((item, i) => {
-              const Icon = item.icon
-              const isEditing = editingSpec === item.label
-              return (
-                <div 
-                  key={item.label}
-                  onClick={() => !isEditing && handleStartEditSpec(item.label)}
-                  className={`flex items-start gap-3 px-4 py-4 cursor-pointer hover:bg-[rgba(255,255,255,0.02)] transition-colors
-                    ${i !== deviceSpecs.length - 1 ? 'border-b border-[rgba(1,214,190,0.08)]' : ''}`}
-                >
-                  <div 
-                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ 
-                      backgroundColor: `${item.color}15`,
-                      color: item.color 
-                    }}
-                  >
-                    <Icon size={18} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    {isEditing ? (
-                      // 编辑模式
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="text-[12px] text-[#A0A0A5]">{item.label}</div>
-                          <div className="flex items-center gap-1">
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); handleSaveSpec(); }}
-                              className="w-6 h-6 rounded-full bg-[#01D6BE] flex items-center justify-center"
-                            >
-                              <Check size={12} className="text-[#000000]" />
-                            </button>
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); handleCancelEditSpec(); }}
-                              className="w-6 h-6 rounded-full bg-[#333333] flex items-center justify-center"
-                            >
-                              <X size={12} className="text-[#A0A0A5]" />
-                            </button>
-                          </div>
-                        </div>
-                        {item.editKeys?.map((key) => (
-                          <input
-                            key={key}
-                            type="text"
-                            value={editSpecValues[key as keyof typeof editSpecValues]}
-                            onChange={(e) => handleSpecChange(key as keyof typeof editSpecValues, e.target.value)}
-                            onClick={(e) => e.stopPropagation()}
-                            className="w-full text-[12px] bg-[#333333] border border-[#3C3C3E] rounded-md px-2 py-1 text-[#FFFFFF] outline-none focus:border-[#01D6BE]"
-                            placeholder={key}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      // 显示模式
-                      <>
-                        <div className="flex items-center justify-between mb-0.5">
-                          <div className="text-[12px] text-[#A0A0A5]">{item.label}</div>
-                          <div className="text-[14px] font-bold text-[#FFFFFF]">{item.value}</div>
-                        </div>
-                        <div className="text-[11px] text-[#FFFFFF] font-medium">{item.desc}</div>
-                        {item.subDesc && <div className="text-[10px] text-[#636366] mt-0.5">{item.subDesc}</div>}
-                      </>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </motion.div>
+          }
+          onPress={() => {
+            setPendingIcon(selectedIcon)
+            setScreen('displayIcon')
+          }}
+        />
 
-        {/* 设备状态 */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="mb-5"
-        >
-          <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
-            Device Status
-          </div>
-          <div className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden">
-            {deviceStatus.map((item, i) => {
-              const Icon = item.icon
-              return (
-                <div 
-                  key={item.label}
-                  className={`flex items-center gap-3 px-4 py-3.5 
-                    ${i !== deviceStatus.length - 1 ? 'border-b border-[rgba(1,214,190,0.08)]' : ''}`}
-                >
-                  <div 
-                    className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={{ 
-                      backgroundColor: `${item.color}15`,
-                      color: item.color 
-                    }}
-                  >
-                    <Icon size={16} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[13px] font-semibold text-[#FFFFFF]">{item.label}</div>
-                    <div className="text-[11px] text-[#A0A0A5] mt-0.5">{item.desc}</div>
-                  </div>
-                  <div className="text-[13px] font-semibold" style={{ color: item.color }}>
-                    {item.value}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </motion.div>
+        {/* Device Info */}
+        <SettingsRow
+          label="Device Info"
+          onPress={() => setScreen('deviceInfo')}
+        />
 
-        {/* PRD v1.1 §4.3: Display Icon 编辑 */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.32 }}
-          className="mb-5"
-        >
-          <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
-            Display Icon
-          </div>
-          <div className="bg-[#262626] rounded-[20px] p-4">
-            <div className="grid grid-cols-5 gap-2">
-              {['#01D6BE', '#34C759', '#FF9500', '#FF3B30', '#FFD700', '#AF52DE', '#5AC8FA', '#007AFF', '#8E8E93', '#FFFFFF'].map((color) => (
-                <button
-                  key={color}
-                  onClick={() => {
-                    // PRD: 更新设备图标颜色
-                    const updatedSettings = { ...settings, deviceIconColor: color }
-                    // 这里需要更新 store
-                  }}
-                  className={`w-10 h-10 rounded-full transition-transform hover:scale-110 ${
-                    settings.deviceIconColor === color ? 'ring-2 ring-[#FFFFFF] ring-offset-2 ring-offset-[#262626]' : ''
-                  }`}
-                  style={{ backgroundColor: color }}
-                  aria-label={`Set icon color to ${color}`}
-                />
-              ))}
-            </div>
-          </div>
-        </motion.div>
+        {/* Sleep Mode */}
+        <SettingsRow
+          label="Sleep Mode"
+          value={sleepMode}
+          onPress={() => setSleepMode((prev) => (prev === 'Off' ? 'On' : 'Off'))}
+        />
 
-        {/* PRD v1.1 §4.3: Sleep Mode + Battery Mode */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.34 }}
-          className="mb-5"
-        >
-          <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
-            Device Settings
-          </div>
-          <div className="bg-[#262626] rounded-[20px] overflow-hidden">
-            {/* Sleep Mode */}
-            <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[rgba(255,255,255,0.06)]">
-              <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 bg-[rgba(1,214,190,0.1)]">
-                <Battery size={16} className="text-[#01D6BE]" />
-              </div>
-              <div className="flex-1">
-                <div className="text-[13px] font-semibold text-[#FFFFFF]">Sleep Mode</div>
-                <div className="text-[11px] text-[#A0A0A5]">Turn off display to save energy</div>
-              </div>
-              <button
-                onClick={() => {
-                  // PRD: 切换 Sleep Mode
-                  // API: /remote/device/config/write
-                }}
-                className={`w-12 h-7 rounded-full transition-colors relative
-                  ${settings.sleepMode ? 'bg-[#01D6BE]' : 'bg-[#636366]'}`}
-                aria-label="Toggle Sleep Mode"
-              >
-                <div
-                  className="w-5 h-5 rounded-full bg-[#FFFFFF] absolute top-1 transition-left"
-                  style={{ left: settings.sleepMode ? '26px' : '4px' }}
-                />
-              </button>
-            </div>
+        {/* Battery Priority */}
+        <SettingsRow
+          label="Battery Priority"
+          value={batteryPriority}
+          onPress={() => {}}
+        />
 
-            {/* Battery Mode */}
-            <div className="px-4 py-3.5 border-b border-[rgba(255,255,255,0.06)]">
-              <div className="text-[13px] font-semibold text-[#FFFFFF] mb-3">Battery Mode</div>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { value: 0, label: 'Normal', desc: 'Standard operation' },
-                  { value: 1, label: 'Backup', desc: 'Reserve for outage' },
-                  { value: 2, label: 'Eco', desc: 'Extend lifespan' },
-                ].map((mode) => (
-                  <button
-                    key={mode.value}
-                    onClick={() => {
-                      // PRD: 切换 Battery Mode
-                      // API: /remote/device/config/write, key: workMode
-                    }}
-                    className={`p-3 rounded-[14px] text-center transition-colors
-                      ${settings.batteryMode === mode.value
-                        ? 'bg-[rgba(1,214,190,0.15)] border border-[#01D6BE]'
-                        : 'bg-[#333333] border border-transparent'
-                      }`}
-                  >
-                    <div className={`text-[12px] font-semibold ${settings.batteryMode === mode.value ? 'text-[#01D6BE]' : 'text-[#FFFFFF]'}`}>
-                      {mode.label}
-                    </div>
-                    <div className="text-[10px] text-[#636366] mt-0.5">{mode.desc}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
+        {/* Smart Schedule */}
+        <SettingsRow
+          label="Smart Schedule"
+          value="Off"
+          onPress={() => navigate('/smart-schedule')}
+        />
 
-            {/* Smart Schedule Entry */}
-            <div
-              onClick={() => window.location.href = '/smart-schedule'}
-              className="flex items-center gap-3 px-4 py-3.5 cursor-pointer hover:bg-[#333333] transition-colors"
-            >
-              <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 bg-[rgba(1,214,190,0.1)]">
-                <Calendar size={16} className="text-[#01D6BE]" />
-              </div>
-              <div className="flex-1">
-                <div className="text-[13px] font-semibold text-[#FFFFFF]">Smart Schedule</div>
-                <div className="text-[11px] text-[#A0A0A5]">Manage peak shaving schedule</div>
-              </div>
-              <ChevronLeft size={18} className="text-[#636366] rotate-180" />
-            </div>
-          </div>
-        </motion.div>
-
-        {/* PRD v1.1 §4.3: Factory Reset */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.36 }}
-          className="mb-5"
-        >
-          <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
-            Danger Zone
-          </div>
-          <div className="bg-[#262626] rounded-[20px] p-4">
-            <button
-              onClick={() => {
-                // PRD: 弹出二次确认对话框
-                if (window.confirm('Are you sure you want to reset this device to factory settings? This action cannot be undone.')) {
-                  // API: /remote/device/config/write or specific factory reset endpoint
-                  console.log('Factory reset triggered')
-                }
-              }}
-              className="w-full h-11 rounded-[14px] bg-[rgba(255,59,48,0.1)] text-[#FF3B30] text-[13px] font-semibold
-                border border-[rgba(255,59,48,0.3)]
-                hover:bg-[rgba(255,59,48,0.2)] transition-colors"
-            >
-              Factory Reset
-            </button>
-            <p className="text-[10px] text-[#636366] mt-2 text-center">
-              This will erase all settings and restore factory defaults
-            </p>
-          </div>
-        </motion.div>
-
-        {/* 连接状态 */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="mb-5"
-        >
-          <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
-            Connection Status
-          </div>
-          <div className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden">
-            {connectionStatus.map((item, i) => {
-              const Icon = item.icon
-              return (
-                <div 
-                  key={item.label}
-                  className={`flex items-center gap-3 px-4 py-3.5 
-                    ${i !== connectionStatus.length - 1 ? 'border-b border-[rgba(1,214,190,0.08)]' : ''}`}
-                >
-                  <div 
-                    className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-                    style={{ 
-                      backgroundColor: `${item.color}15`,
-                      color: item.color 
-                    }}
-                  >
-                    <Icon size={16} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[13px] font-semibold text-[#FFFFFF]">{item.label}</div>
-                    <div className="text-[11px] text-[#A0A0A5] mt-0.5">{item.detail}</div>
-                  </div>
-                  <div 
-                    className="text-[11px] px-2 py-0.5 rounded-full font-medium"
-                    style={{ 
-                      backgroundColor: `${item.color}15`,
-                      color: item.color 
-                    }}
-                  >
-                    {item.status}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </motion.div>
-
-        {/* 安全信息 */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="mb-5"
-        >
-          <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
-            Safety & Certifications
-          </div>
-          <div className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-[20px] p-4">
-            <div className="flex items-start gap-3 mb-3">
-              <div className="w-9 h-9 rounded-lg bg-[rgba(52,199,89,0.1)] flex items-center justify-center flex-shrink-0">
-                <Shield size={16} className="text-[#34C759]" />
-              </div>
-              <div>
-                <div className="text-[13px] font-semibold text-[#FFFFFF]">Safety Certified</div>
-                <div className="text-[11px] text-[#A0A0A5]">UL2743, CE, FCC, PSE, RoHS</div>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {['BMS Protection', 'Overcharge Protection', 'Short Circuit Protection', 'Temperature Control'].map((tag) => (
-                <span 
-                  key={tag} 
-                  className="text-[10px] px-2 py-1 rounded-full bg-[rgba(255,255,255,0.05)] text-[#A0A0A5]"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
-        </motion.div>
-
-        {/* 底部信息 */}
-        <div className="text-center pt-4 text-[11px] text-[#636366]">
-          <div>Sierro Inc.</div>
-          <div className="mt-1">Made with precision in Shenzhen</div>
+        {/* Delete Device */}
+        <div className="mt-4">
+          <button
+            onClick={() => {
+              // Confirm before deleting
+            }}
+            className="w-full rounded-l bg-[#262626] px-4 py-4 text-body-lg font-semibold text-[#FF3530] active:opacity-70 transition-opacity"
+          >
+            Delete Device
+          </button>
         </div>
       </div>
-    </motion.div>
+    </div>
   )
 }
