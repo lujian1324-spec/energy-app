@@ -451,15 +451,15 @@ const REAL_HOURLY: Record<number, { grid: number[]; pv: number[]; load: number[]
     grid: [84,51,41,84,52,54,70,25,14,40,0,0,0,0,0,16,4,32,81,47,52,86,43,45],
     pv:   [0,0,0,0,0,0,0,18,29,46,65,82,87,76,76,59,43,13,3,0,0,0,0,0],
     load: [84,51,41,84,52,54,70,43,43,86,52,44,73,43,42,75,47,45,84,47,52,86,43,45],
-    // 90% → 100% (charging) → 95% (discharging) repeating every 12h
-    soc:  [90,92,94,96,98,100,99,98,97,96,95.5,95, 90,92,94,96,98,100,99,98,97,96,95.5,95],
+    // Wavy oscillation overnight/evening, flat full plateau through midday (8am-4pm)
+    soc:  [60,95,65,90,60,98,70,100,100,100,100,100,100,100,100,100,95,65,92,58,96,62,90,65],
   },
   10002: { // SIERRO 2000 — Jul 4, 2026
     grid: [0,0,1000,0,0,1000,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1000,0,0,1000],
     pv:   [0,0,0,0,0,0,0,1164,1584,1568,1548,1566,1578,1582,1574,1562,1579,1164,0,0,0,0,0,0],
     load: [77,48,64,47,70,50,82,59,84,68,48,66,78,82,74,62,79,58,67,66,80,64,53,80],
-    // NAS and Fridge share the same battery statistics (90% -> 100% -> 95% every 12h)
-    soc:  [90,92,94,96,98,100,99,98,97,96,95.5,95, 90,92,94,96,98,100,99,98,97,96,95.5,95],
+    // NAS and Fridge share the same battery curve shape
+    soc:  [60,95,65,90,60,98,70,100,100,100,100,100,100,100,100,100,95,65,92,58,96,62,90,65],
   },
 }
 
@@ -493,23 +493,20 @@ export function getDemoDayCurve(
     raw.push(v)
   }
 
-  // Moving-average smoothing (circular, since the curve wraps 12am→12am) to
-  // further reduce any remaining sharp dips/jumps between consecutive hours.
-  // SoC moves slowly relative to power, so it gets a much wider window and a
-  // second smoothing pass for an extra-smooth curve.
-  const windowRadius = Math.max(1, Math.round(points / 96)) * (key === 'soc' ? 4 : 1)
-  const smoothOnce = (input: number[]) => input.map((_, i) => {
+  // Moving-average smoothing (circular, since the curve wraps 12am→12am) — just
+  // enough to round off the cosine-interpolation kinks without flattening the
+  // intended hour-to-hour waveform (the SoC curve has fast oscillations here).
+  const windowRadius = Math.max(1, Math.round(points / 2000))
+  const smoothed = raw.map((_, i) => {
     let sum = 0
     let count = 0
     for (let o = -windowRadius; o <= windowRadius; o++) {
-      const idx = (i + o + input.length) % input.length
-      sum += input[idx]
+      const idx = (i + o + raw.length) % raw.length
+      sum += raw[idx]
       count++
     }
     return sum / count
   })
-  let smoothed = smoothOnce(raw)
-  if (key === 'soc') smoothed = smoothOnce(smoothed)
 
   // SoC keeps fractional precision — rounding to whole percents at this many
   // sample points renders as a visible staircase instead of a smooth curve.
