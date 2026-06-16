@@ -144,7 +144,22 @@ export default function LoginPage() {
       <div className="flex-1 flex flex-col justify-center">
         {/* Brand */}
         <div className="text-center mb-10">
-          <h1 className="font-display text-display text-ink-1">Sierro</h1>
+          <div className="flex justify-center mb-2">
+            <svg viewBox="0 0 460 72" className="h-12 w-auto" xmlns="http://www.w3.org/2000/svg">
+              <text
+                x="50%"
+                y="56"
+                textAnchor="middle"
+                fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif"
+                fontSize="64"
+                fontWeight="200"
+                letterSpacing="18"
+                fill="none"
+                stroke="white"
+                strokeWidth="1.2"
+              >SIERRO</text>
+            </svg>
+          </div>
           <p className="text-body-md text-ink-7 mt-2">Smart Energy Management</p>
         </div>
 
