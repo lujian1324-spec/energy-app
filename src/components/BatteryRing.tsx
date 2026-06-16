@@ -34,7 +34,7 @@ const STATE_COLOR: Record<BatteryState, string> = {
   warning: '#FF9500',
   normal: '#01D6BE',
   good: '#01D6BE',
-  full: '#34C759',
+  full: '#01D6BE',
   charging: '#01D6BE',
   plugged: '#01D6BE',
   unknown: '#636366',

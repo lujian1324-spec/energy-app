@@ -464,11 +464,14 @@ const REAL_HOURLY: Record<number, { grid: number[]; pv: number[]; load: number[]
 /**
  * Fixed 0am→24pm day curve (not anchored to "now") for the Real-Time Power
  * chart, whose x-axis ticks are fixed at 0/4/8/12/16/20/24.
+ * Uses cosine (ease) interpolation between hourly readings plus a light
+ * moving-average smoothing pass so hour-to-hour jumps don't render as
+ * sharp cliffs once the curve is sampled at high resolution.
  */
 export function getDemoDayCurve(
   deviceId: string | number,
   key: 'acPower' | 'solarPower' | 'outputPower' | 'soc',
-  points = 96
+  points = 480
 ): number[] {
   const numericId = typeof deviceId === 'string' ? parseInt(deviceId) : deviceId
   const real = REAL_HOURLY[numericId]
@@ -476,16 +479,33 @@ export function getDemoDayCurve(
 
   const arr = key === 'acPower' ? real.grid : key === 'solarPower' ? real.pv : key === 'outputPower' ? real.load : real.soc
 
-  const result: number[] = []
+  const raw: number[] = []
   for (let i = 0; i < points; i++) {
     const hourFloat = (i / (points - 1)) * 24
     const h0 = Math.floor(hourFloat) % 24
     const h1 = (h0 + 1) % 24
     const frac = hourFloat - Math.floor(hourFloat)
-    const v = arr[h0] * (1 - frac) + arr[h1] * frac
-    result.push(key === 'soc' ? Math.round(Math.max(0, Math.min(100, v))) : Math.round(Math.max(0, v)))
+    // Cosine easing instead of linear — softens the transition around each hourly reading.
+    const eased = (1 - Math.cos(frac * Math.PI)) / 2
+    const v = arr[h0] * (1 - eased) + arr[h1] * eased
+    raw.push(v)
   }
-  return result
+
+  // Light moving-average smoothing (circular, since the curve wraps 12am→12am) to
+  // further reduce any remaining sharp dips/jumps between consecutive hours.
+  const windowRadius = Math.max(1, Math.round(points / 96))
+  const smoothed = raw.map((_, i) => {
+    let sum = 0
+    let count = 0
+    for (let o = -windowRadius; o <= windowRadius; o++) {
+      const idx = (i + o + raw.length) % raw.length
+      sum += raw[idx]
+      count++
+    }
+    return sum / count
+  })
+
+  return smoothed.map(v => key === 'soc' ? Math.round(Math.max(0, Math.min(100, v))) : Math.round(Math.max(0, v)))
 }
 
 export function getDemoHistoryData(
