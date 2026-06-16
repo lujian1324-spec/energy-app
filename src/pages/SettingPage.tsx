@@ -76,8 +76,13 @@ export default function SettingPage() {
 
   const handleSupportSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    const subject = encodeURIComponent('Sierro App Feedback')
+    const body = encodeURIComponent(
+      `From: ${supportEmail}\n\n${supportMessage}`
+    )
+    window.open(`mailto:jason@sierro.us?subject=${subject}&body=${body}`, '_blank')
     setSupportSubmitted(true)
-    setTimeout(() => { setShowSupport(false); setSupportEmail(''); setSupportMessage(''); setSupportSubmitted(false) }, 1500)
+    setTimeout(() => { setShowSupport(false); setSupportEmail(''); setSupportMessage(''); setSupportSubmitted(false) }, 2000)
   }
 
   const handleFounderSubmit = (e: React.FormEvent) => {
