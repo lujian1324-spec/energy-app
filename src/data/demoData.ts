@@ -492,20 +492,23 @@ export function getDemoDayCurve(
     raw.push(v)
   }
 
-  // Light moving-average smoothing (circular, since the curve wraps 12am→12am) to
+  // Moving-average smoothing (circular, since the curve wraps 12am→12am) to
   // further reduce any remaining sharp dips/jumps between consecutive hours.
-  // SoC moves slowly relative to power, so it gets a wider smoothing window.
-  const windowRadius = Math.max(1, Math.round(points / 96)) * (key === 'soc' ? 2 : 1)
-  const smoothed = raw.map((_, i) => {
+  // SoC moves slowly relative to power, so it gets a much wider window and a
+  // second smoothing pass for an extra-smooth curve.
+  const windowRadius = Math.max(1, Math.round(points / 96)) * (key === 'soc' ? 4 : 1)
+  const smoothOnce = (input: number[]) => input.map((_, i) => {
     let sum = 0
     let count = 0
     for (let o = -windowRadius; o <= windowRadius; o++) {
-      const idx = (i + o + raw.length) % raw.length
-      sum += raw[idx]
+      const idx = (i + o + input.length) % input.length
+      sum += input[idx]
       count++
     }
     return sum / count
   })
+  let smoothed = smoothOnce(raw)
+  if (key === 'soc') smoothed = smoothOnce(smoothed)
 
   return smoothed.map(v => key === 'soc' ? Math.round(Math.max(0, Math.min(100, v))) : Math.round(Math.max(0, v)))
 }
