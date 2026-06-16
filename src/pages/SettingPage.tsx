@@ -1,10 +1,17 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useEffect } from 'react'
+import emailjs from '@emailjs/browser'
+
+// ── EmailJS config ── fill in your credentials from emailjs.com ──
+const EMAILJS_SERVICE_ID  = 'YOUR_SERVICE_ID'
+const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID'
+const EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   Bell,
   X,
   Send,
+  Loader2,
   CheckCircle,
   FileText,
   Headphones,
@@ -74,15 +81,36 @@ export default function SettingPage() {
     getUserProfile().then(p => { if (p) setUserProfile(p) }).catch(err => console.error('[SettingPage] getUserProfile failed:', err))
   }, [])
 
-  const handleSupportSubmit = (e: React.FormEvent) => {
+  const [supportSending, setSupportSending] = useState(false)
+  const [supportError, setSupportError] = useState('')
+
+  const handleSupportSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    const subject = encodeURIComponent('Sierro App Feedback')
-    const body = encodeURIComponent(
-      `From: ${supportEmail}\n\n${supportMessage}`
-    )
-    window.open(`mailto:jason@sierro.us?subject=${subject}&body=${body}`, '_blank')
-    setSupportSubmitted(true)
-    setTimeout(() => { setShowSupport(false); setSupportEmail(''); setSupportMessage(''); setSupportSubmitted(false) }, 2000)
+    setSupportSending(true)
+    setSupportError('')
+    try {
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        {
+          from_email: supportEmail,
+          message: supportMessage,
+          to_email: 'jason@sierro.us',
+        },
+        EMAILJS_PUBLIC_KEY
+      )
+      setSupportSubmitted(true)
+      setTimeout(() => {
+        setShowSupport(false)
+        setSupportEmail('')
+        setSupportMessage('')
+        setSupportSubmitted(false)
+      }, 2000)
+    } catch {
+      setSupportError('Failed to send. Please try again.')
+    } finally {
+      setSupportSending(false)
+    }
   }
 
   const handleFounderSubmit = (e: React.FormEvent) => {
@@ -433,8 +461,12 @@ export default function SettingPage() {
                       <textarea required value={supportMessage} onChange={e => setSupportMessage(e.target.value)} placeholder="Describe your issue or suggestion..." rows={4}
                         className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-[rgba(1,214,190,0.15)] text-[#FFFFFF] text-[13px] placeholder:text-[#636366] resize-none focus:outline-none focus:border-[rgba(1,214,190,0.4)] transition-colors" />
                     </div>
-                    <button type="submit" className="w-full py-3.5 rounded-xl bg-[rgba(255,149,0,0.12)] text-[#FF9500] font-semibold text-[13px] flex items-center justify-center gap-2 active:scale-95 transition-transform border border-[rgba(255,149,0,0.2)]">
-                      <Send size={16} />Submit Feedback
+                    {supportError && (
+                      <p className="text-[12px] text-[#FF3530] text-center">{supportError}</p>
+                    )}
+                    <button type="submit" disabled={supportSending} className="w-full py-3.5 rounded-xl bg-[rgba(255,149,0,0.12)] text-[#FF9500] font-semibold text-[13px] flex items-center justify-center gap-2 active:scale-95 transition-transform border border-[rgba(255,149,0,0.2)] disabled:opacity-50">
+                      {supportSending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                      {supportSending ? 'Sending...' : 'Submit Feedback'}
                     </button>
                   </form>
                 )}
