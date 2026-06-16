@@ -325,6 +325,30 @@ export default function OverviewPage() {
 
   const currentChartData = powerChartData[powerDataSource]
 
+  // ─── Real-time rolling power buffer (last 30 readings) for the chart ───
+  const [powerHistory, setPowerHistory] = useState<
+    { battery: number; ac: number; solar: number; output: number }[]
+  >([])
+  useEffect(() => {
+    if (!isOnline) { setPowerHistory([]); return }
+    setPowerHistory(prev =>
+      [...prev, { battery: batteryPower, ac: acPower, solar: solarPower, output: outputPower }].slice(-30)
+    )
+  }, [batteryPower, acPower, solarPower, outputPower, isOnline])
+
+  // Build SVG points (viewBox 0 0 300 80) from the buffered series
+  const chartSeries = powerHistory.map(p => p[powerDataSource])
+  const chartMax = Math.max(...chartSeries, 1)
+  const chartPts = chartSeries.length >= 2
+    ? chartSeries.map((v, i) => {
+        const x = (i / (chartSeries.length - 1)) * 300
+        const y = 75 - (v / chartMax) * 70
+        return [x, y] as const
+      })
+    : []
+  const chartLinePoints = chartPts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ')
+  const chartAreaPoints = chartPts.length ? `${chartLinePoints} 300,80 0,80` : ''
+
   return (
     <div className={`h-full flex flex-col bg-[#141414] overflow-hidden relative pt-6 ${isDemoMode ? 'demo-mode' : ''}`}>
       {/* PRD v1.1 §8.2: DEMO MODE 顶部黄色横幅 */}
@@ -517,7 +541,9 @@ export default function OverviewPage() {
                 <BatteryRing
                   percentage={soc}
                   isCharging={isCharging}
+                  connected={isOnline}
                   timeToFull={chargeTimeDisplay ?? '--'}
+                  timeRemaining={(remainingTimeDisplay ?? '').replace(' remaining', '') || '--'}
                 />
               </div>
 
@@ -559,21 +585,36 @@ export default function OverviewPage() {
                 })}
               </div>
 
-              {/* Input / Output power labels */}
-              <div className="flex justify-center gap-4">
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[rgba(1,214,190,0.15)] border border-[rgba(1,214,190,0.3)]">
-                  <TrendingDown size={13} className="text-[#01D6BE]" />
-                  <span className="text-[11px] text-[#01D6BE]">Input</span>
-                  <span className="text-[12px] font-semibold text-[#01D6BE]">
-                    {inputPower}W
-                  </span>
+              {/* Input (AC + Solar) / Output — PRD §4.1.1 / §4.1.3: three values */}
+              <div className="flex items-stretch justify-center gap-3">
+                {/* Input block: AC + Solar */}
+                <div className="flex-1 max-w-[180px] rounded-[16px] bg-[rgba(1,214,190,0.10)] border border-[rgba(1,214,190,0.25)] px-3 py-2">
+                  <div className="flex items-center gap-1 mb-1.5">
+                    <TrendingDown size={12} className="text-[#01D6BE]" />
+                    <span className="text-[11px] font-medium text-[#01D6BE]">Input</span>
+                  </div>
+                  <div className="flex items-center justify-around">
+                    <div className="flex flex-col items-center">
+                      <span className="text-[13px] font-bold text-[#FFFFFF]">{isOnline ? `${acPower}W` : '-'}</span>
+                      <span className="text-[9px] text-[#A0A0A5] mt-0.5">AC</span>
+                    </div>
+                    <span className="text-[#01D6BE] text-[13px] font-semibold px-1">+</span>
+                    <div className="flex flex-col items-center">
+                      <span className="text-[13px] font-bold text-[#FFFFFF]">{isOnline ? `${solarPower}W` : '-'}</span>
+                      <span className="text-[9px] text-[#FF9500] mt-0.5">Solar</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#333333]">
-                  <TrendingUp size={13} className="text-[#A0A0A5]" />
-                  <span className="text-[11px] text-[#A0A0A5]">Output</span>
-                  <span className="text-[12px] font-semibold text-[#A0A0A5]">
-                    {outputPower}W
-                  </span>
+                {/* Output block */}
+                <div className="flex-1 max-w-[120px] rounded-[16px] bg-[#333333] px-3 py-2">
+                  <div className="flex items-center gap-1 mb-1.5">
+                    <TrendingUp size={12} className="text-[#A0A0A5]" />
+                    <span className="text-[11px] font-medium text-[#A0A0A5]">Output</span>
+                  </div>
+                  <div className="flex flex-col items-center justify-center">
+                    <span className="text-[13px] font-bold text-[#FFFFFF]">{isOnline ? `${outputPower}W` : '-'}</span>
+                    <span className="text-[9px] text-[#A0A0A5] mt-0.5">Load</span>
+                  </div>
                 </div>
               </div>
 
@@ -792,47 +833,60 @@ export default function OverviewPage() {
               <div className="flex items-center justify-between mb-3">
                 <span className="text-[13px] font-semibold text-[#FFFFFF]">Real-Time Power</span>
                 <motion.span
-                  key={currentChartData.value}
+                  key={isOnline ? currentChartData.value : 'offline'}
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   className="text-[11px] px-2 py-0.5 rounded-full font-semibold"
                   style={{
-                    backgroundColor: `${currentChartData.color}26`,
-                    color: currentChartData.color
+                    backgroundColor: isOnline ? `${currentChartData.color}26` : 'rgba(160,160,165,0.15)',
+                    color: isOnline ? currentChartData.color : '#A0A0A5'
                   }}
                 >
-                  {currentChartData.value}W
+                  {isOnline ? `${currentChartData.value}W` : '-'}
                 </motion.span>
               </div>
 
-              {/* Chart area (SVG placeholder - shows flat line when no historical data) */}
+              {/* Chart area — PRD §4.1.2: Disconnected shows guidance text */}
               <div className="h-24 relative overflow-hidden mb-3">
-                <svg width="100%" height="100%" viewBox="0 0 300 80" preserveAspectRatio="none">
-                  <line x1="0" y1="20" x2="300" y2="20" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-                  <line x1="0" y1="40" x2="300" y2="40" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-                  <line x1="0" y1="60" x2="300" y2="60" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-                  <motion.polyline
-                    key={`line-${powerDataSource}`}
-                    initial={{ pathLength: 0, opacity: 0 }}
-                    animate={{ pathLength: 1, opacity: 1 }}
-                    transition={{ duration: 0.5 }}
-                    points="0,50 30,42 60,45 90,35 120,40 150,28 180,38 210,32 240,36 270,30 300,34"
-                    fill="none"
-                    stroke={currentChartData.color}
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <motion.polygon
-                    key={`fill-${powerDataSource}`}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.3 }}
-                    points="0,50 30,42 60,45 90,35 120,40 150,28 180,38 210,32 240,36 270,30 300,34 300,80 0,80"
-                    fill={currentChartData.color}
-                    fillOpacity="0.1"
-                  />
-                </svg>
+                {!isOnline ? (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
+                    <span className="text-[13px] font-semibold text-[#A0A0A5]">Device disconnected</span>
+                    <span className="text-[11px] text-[#636366] mt-1">Reconnect the device to view chart data.</span>
+                  </div>
+                ) : (
+                  <svg width="100%" height="100%" viewBox="0 0 300 80" preserveAspectRatio="none">
+                    <line x1="0" y1="20" x2="300" y2="20" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+                    <line x1="0" y1="40" x2="300" y2="40" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+                    <line x1="0" y1="60" x2="300" y2="60" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+                    {chartPts.length >= 2 ? (
+                      <>
+                        <motion.polyline
+                          key={`line-${powerDataSource}`}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ duration: 0.5 }}
+                          points={chartLinePoints}
+                          fill="none"
+                          stroke={currentChartData.color}
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <motion.polygon
+                          key={`fill-${powerDataSource}`}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ duration: 0.3 }}
+                          points={chartAreaPoints}
+                          fill={currentChartData.color}
+                          fillOpacity="0.1"
+                        />
+                      </>
+                    ) : (
+                      <line x1="0" y1="70" x2="300" y2="70" stroke={currentChartData.color} strokeWidth="2" strokeLinecap="round" />
+                    )}
+                  </svg>
+                )}
               </div>
 
               {/* PRD v1.1 §8.2: 采样率标注 */}

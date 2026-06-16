@@ -7,6 +7,7 @@ interface BatteryRingProps {
   strokeWidth?: number
   isCharging?: boolean
   isPlugged?: boolean
+  connected?: boolean
   timeToFull?: string
   timeRemaining?: string
   uid?: string
@@ -57,6 +58,7 @@ export default function BatteryRing({
   strokeWidth = 10,
   isCharging = false,
   isPlugged = false,
+  connected = true,
   timeToFull = '1h 24m',
   timeRemaining = '4h 30m',
   uid = 'default',
@@ -64,18 +66,21 @@ export default function BatteryRing({
   const radius = (size - strokeWidth) / 2
   const circumference = 2 * Math.PI * radius
   const safePercent = Math.max(0, Math.min(100, percentage))
-  const safeDashoffset = circumference - (safePercent / 100) * circumference
+  // PRD §5.1: Disconnected → grey ring, no progress, "-" / "Disconnected"
+  const safeDashoffset = connected ? circumference - (safePercent / 100) * circumference : circumference
 
-  const state = getBatteryState(safePercent, isCharging, isPlugged)
+  const state = connected ? getBatteryState(safePercent, isCharging, isPlugged) : 'unknown'
   const ringColor = STATE_COLOR[state]
-  const stateLabel = STATE_LABEL[state]
-  const showTime = !isCharging && !isPlugged
+  const stateLabel = connected ? STATE_LABEL[state] : 'Disconnected'
+  const showTime = connected && !isCharging && !isPlugged
 
   // 选择状态图标 (色盲友好, PRD v1.1 §9.1)
   const StateIcon = isCharging ? Zap : isPlugged ? Plug : safePercent <= 15 ? BatteryWarning : safePercent <= 25 ? AlertTriangle : BatteryMedium
 
   // 可访问性标签 (PRD v1.1 §9.1)
-  const ariaLabel = isCharging
+  const ariaLabel = !connected
+    ? 'Battery disconnected'
+    : isCharging
     ? `Battery charging, ${safePercent} percent, ${timeToFull} until full`
     : isPlugged
       ? `Battery plugged in, ${safePercent} percent`
@@ -125,9 +130,13 @@ export default function BatteryRing({
 
       {/* 中心内容 */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        {/* 电量百分比 */}
+        {/* 电量百分比 — Disconnected/0 显示 - (PRD §5.1) */}
         <div className="text-[40px] font-extrabold text-[#FFFFFF] leading-none tracking-tight">
-          {safePercent}<span className="text-lg font-medium text-[#A0A0A5]">%</span>
+          {connected ? (
+            <>{safePercent}<span className="text-lg font-medium text-[#A0A0A5]">%</span></>
+          ) : (
+            <span className="text-[#636366]">-</span>
+          )}
         </div>
 
         {/* 状态标签 / 时间 */}
