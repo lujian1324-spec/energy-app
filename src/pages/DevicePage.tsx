@@ -72,7 +72,6 @@ export default function DevicePage() {
     loadDeviceState,
     selectedDeviceState,
     stateLoading,
-    deviceStates,
   } = useDeviceStore()
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
   const isGuest = useAuthStore(s => s.isGuest)
@@ -89,21 +88,8 @@ export default function DevicePage() {
   // 设备电源开关本地状态（仅 UI；不触发 API）
   const [powerStates, setPowerStates] = useState<Record<string, boolean>>({})
 
-  // realtimeCache 现在来自持久化的 deviceStore.deviceStates，
-  // 把它映射成 DevicePage 原有的 { fields, raw, loading, lastUpdated } 格式
-  const realtimeCache = useMemo<DeviceRealtimeCache>(() => {
-    const out: DeviceRealtimeCache = {}
-    for (const [id, state] of Object.entries(deviceStates)) {
-      out[id] = {
-        fields: state.fields,
-        raw: mapFieldsToRealtime(state.fields),
-        loading: false,
-        lastUpdated: Date.now(),
-      }
-    }
-    return out
-  }, [deviceStates])
-
+  // 设备实时状态缓存
+  const [realtimeCache, setRealtimeCache] = useState<DeviceRealtimeCache>({})
   const [refreshingId, setRefreshingId] = useState<string | null>(null)
 
   // 设备参数详情 modal
@@ -137,21 +123,57 @@ export default function DevicePage() {
     fetchDevices()
   }, [fetchDevices])
 
-  // ── 加载设备实时状态（写入 deviceStore，由 realtimeCache useMemo 自动更新视图） ──
+  // ── 加载设备实时状态（每个设备） ──
   const fetchDeviceRealtime = useCallback(async (deviceId: number | string) => {
+    const idStr = String(deviceId)
+    // Keep the previous fields/raw while refreshing so the battery icon doesn't
+    // briefly flash 0% on every periodic re-fetch — only flip the loading flag.
+    setRealtimeCache(prev => ({
+      ...prev,
+      [idStr]: { ...prev[idStr], loading: true },
+    }))
     try {
       await loadDeviceState(deviceId)
     } catch {
-      // 静默失败：保留上一次已持久化的数据，不清空
+      setRealtimeCache(prev => ({
+        ...prev,
+        [idStr]: { ...prev[idStr], loading: false },
+      }))
     }
   }, [loadDeviceState])
 
-  // 页面加载后为每个设备刷新实时状态（demo 模式下 store 已有缓存，这里只做后台更新）
+  // 监听 selectedDeviceState 变化并更新缓存
+  const prevSelectedIdRef = useRef<string | null>(null)
   useEffect(() => {
-    if (devices.length > 0 && (isAuthenticated || isGuest)) {
-      devices.forEach(d => { fetchDeviceRealtime(d.id) })
+    const currentId = useDeviceStore.getState().selectedDeviceId
+    if (!currentId) return
+
+    // 新的设备状态数据到来
+    if (selectedDeviceState && selectedDeviceState.deviceId) {
+      const idStr = String(selectedDeviceState.deviceId)
+      const mapped = mapFieldsToRealtime(selectedDeviceState.fields)
+      setRealtimeCache(prev => ({
+        ...prev,
+        [idStr]: {
+          fields: selectedDeviceState.fields,
+          raw: mapped,
+          loading: false,
+          lastUpdated: Date.now(),
+        },
+      }))
     }
-  }, [devices, isAuthenticated, isGuest])
+  }, [selectedDeviceState])
+
+  // 页面加载后为每个设备获取实时状态
+  useEffect(() => {
+    if (devices.length > 0 && isAuthenticated) {
+      devices.forEach(d => {
+        if (!realtimeCache[String(d.id)] || Date.now() - (realtimeCache[String(d.id)]?.lastUpdated ?? 0) > 60000) {
+          fetchDeviceRealtime(d.id)
+        }
+      })
+    }
+  }, [devices, isAuthenticated])
 
   // ── 刷新单个设备 ──
   const handleRefreshDevice = async (deviceId: number, e: React.MouseEvent) => {
