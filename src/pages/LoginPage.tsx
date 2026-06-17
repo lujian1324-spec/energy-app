@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { Loader2, X } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import { sendEmailCaptcha, loginByEmail } from '../api/authApi'
+import sierroLogo from '../assets/sierro-logo.jpeg'
 
 type Tab = 'email' | 'username'
 
@@ -145,18 +146,7 @@ export default function LoginPage() {
         {/* Brand */}
         <div className="text-center mb-10">
           <div className="flex justify-center mb-2">
-            <svg viewBox="0 0 460 72" className="h-12 w-auto" xmlns="http://www.w3.org/2000/svg">
-              <text
-                x="50%"
-                y="56"
-                textAnchor="middle"
-                fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif"
-                fontSize="64"
-                fontWeight="200"
-                letterSpacing="18"
-                fill="white"
-              >SIERRO</text>
-            </svg>
+            <img src={sierroLogo} alt="SIERRO" className="h-12 w-auto object-contain" />
           </div>
           <p className="text-body-md text-ink-7 mt-2">Smart Energy Management</p>
         </div>
