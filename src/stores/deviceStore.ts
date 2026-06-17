@@ -72,6 +72,9 @@ interface DeviceStoreState {
   selectedDeviceState: DeviceStateResponse | null
   stateLoading: boolean
 
+  // 所有设备实时状态缓存（按 deviceId 索引，持久化避免刷新后清空）
+  deviceStates: Record<string, DeviceStateResponse>
+
   // 电站列表
   stations: StationItem[]
   stationTotal: number
@@ -154,6 +157,7 @@ export const useDeviceStore = create<DeviceStoreState>()(
       selectedDeviceDetails: null,
       selectedDeviceState: null,
       stateLoading: false,
+      deviceStates: {},
 
       stations: [],
       stationTotal: 0,
@@ -221,11 +225,16 @@ export const useDeviceStore = create<DeviceStoreState>()(
       // ─── 设备实时状态 ───
 
       loadDeviceState: async (deviceId) => {
+        const idStr = String(deviceId)
         // Demo 模式：返回模拟设备状态
         if (get().isDemoMode) {
           const state = getDemoDeviceState(deviceId)
           if (state) {
-            set({ selectedDeviceState: state, stateLoading: false })
+            set(s => ({
+              selectedDeviceState: state,
+              stateLoading: false,
+              deviceStates: { ...s.deviceStates, [idStr]: state },
+            }))
           }
           return
         }
@@ -236,7 +245,11 @@ export const useDeviceStore = create<DeviceStoreState>()(
           const result = await fetchDeviceState(deviceId)
           if (seq !== stateRequestSeq) return
           if ((result.code === 0 || result.code === '0') && result.data) {
-            set({ selectedDeviceState: result.data, stateLoading: false })
+            set(s => ({
+              selectedDeviceState: result.data,
+              stateLoading: false,
+              deviceStates: { ...s.deviceStates, [idStr]: result.data },
+            }))
           } else {
             set({ stateLoading: false })
           }
@@ -546,18 +559,25 @@ export const useDeviceStore = create<DeviceStoreState>()(
 
       // ─── Demo 模式：加载 demo 设备列表 ───
       loadDemoDevices: () => {
+        // 预填充所有 demo 设备的实时状态，持久化到 localStorage，
+        // 避免刷新/重新导航后列表电量出现 0% / --% 占位符。
+        const allStates: Record<string, DeviceStateResponse> = {}
+        for (const d of demoDevices) {
+          const s = getDemoDeviceState(d.id)
+          if (s) allStates[String(d.id)] = s
+        }
         set({
           isDemoMode: true,
           devices: demoDevices,
           deviceTotal: demoDevices.length,
           deviceLoading: false,
-          // 自动选中第一个设备
           selectedDeviceId: '10001',
+          deviceStates: allStates,
         })
         // 加载第一个设备的状态和能量流动
         const firstDevice = demoDevices[0]
         if (firstDevice) {
-          const state = getDemoDeviceState(firstDevice.id)
+          const state = allStates[String(firstDevice.id)]
           if (state) {
             set({ selectedDeviceState: state, stateLoading: false })
           }
@@ -594,11 +614,11 @@ export const useDeviceStore = create<DeviceStoreState>()(
       name: 'powerflow-device-store',
       partialize: (state) => ({
         selectedDeviceId: state.selectedDeviceId,
-        // 设备列表本地缓存：避免每次重新打开 App 时设备列表先短暂清空再请求，
-        // 也避免在网络请求完成前误显示“No devices yet / Add Device”空状态。
         devices: state.devices,
         deviceTotal: state.deviceTotal,
         isDemoMode: state.isDemoMode,
+        // 设备实时状态缓存：持久化后列表电量不会在刷新/重新导航后清零
+        deviceStates: state.deviceStates,
       }),
     }
   )
