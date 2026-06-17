@@ -35,7 +35,7 @@ export const demoDevices: DeviceListItem[] = [
     dtuDtuid: 'SIERRO-DEMO-001',
     dtuName: 'SIERRO DTU-001',
     isOnline: true,
-    isAlarmed: false,
+    isAlarmed: true,
     isPined: true,
     isPeakValleyEnabled: true,
     isUpgrading: false,
@@ -263,7 +263,15 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
             ],
           },
         ],
-        firingAlarms: [],
+        firingAlarms: [
+          {
+            alarmId: 'DEMO-ALARM-001',
+            alarmCode: 'LOW_BATTERY_WIFI_ROUTER',
+            alarmMessage: 'WiFi Router Battery Below 10%, estimated remaining time 20mins',
+            severity: 'major',
+            timestamp: new Date(Date.now() - 4 * 60 * 1000).toISOString(),
+          },
+        ],
       }
 
     case 10002: // SIERRO 2000 — AC input 80W, Solar 0W, output 231W
