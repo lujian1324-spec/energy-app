@@ -33,6 +33,7 @@ import { useAuthStore } from '../stores/authStore'
 import sierro1000Img from '../assets/sierro-1000.webp'
 import { mapFieldsToRealtime } from '../api/deviceApi'
 import type { DeviceListItem, DeviceStateField } from '../api/deviceApi'
+import { getDemoDeviceState } from '../data/demoData'
 
 // BLE device type
 interface BleDevice {
@@ -72,6 +73,7 @@ export default function DevicePage() {
     loadDeviceState,
     selectedDeviceState,
     stateLoading,
+    isDemoMode,
   } = useDeviceStore()
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
   const isGuest = useAuthStore(s => s.isGuest)
@@ -88,8 +90,24 @@ export default function DevicePage() {
   // 设备电源开关本地状态（仅 UI；不触发 API）
   const [powerStates, setPowerStates] = useState<Record<string, boolean>>({})
 
-  // 设备实时状态缓存
-  const [realtimeCache, setRealtimeCache] = useState<DeviceRealtimeCache>({})
+  // 设备实时状态缓存 — demo 模式下用 getDemoDeviceState 同步预填，避免加载前显示 0% / --%
+  const [realtimeCache, setRealtimeCache] = useState<DeviceRealtimeCache>(() => {
+    const store = useDeviceStore.getState()
+    if (!store.isDemoMode) return {}
+    const seed: DeviceRealtimeCache = {}
+    for (const d of store.devices) {
+      const state = getDemoDeviceState(d.id)
+      if (state) {
+        seed[String(d.id)] = {
+          fields: state.fields,
+          raw: mapFieldsToRealtime(state.fields),
+          loading: false,
+          lastUpdated: Date.now(),
+        }
+      }
+    }
+    return seed
+  })
   const [refreshingId, setRefreshingId] = useState<string | null>(null)
 
   // 设备参数详情 modal
