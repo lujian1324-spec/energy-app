@@ -159,7 +159,7 @@ export default function LoginPage() {
               >SIERRO</text>
             </svg>
           </div>
-          <p className="text-body-md text-ink-7 mt-2">Smart Energy Management</p>
+          <p className="text-body-md text-ink-7 mt-2"></p>
         </div>
 
         {/* Tab bar */}
