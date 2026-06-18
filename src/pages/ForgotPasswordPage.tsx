@@ -128,7 +128,7 @@ export default function ForgotPasswordPage() {
 
             {/* Email */}
             <label className="block text-label text-ink-7 mb-1.5">Email</label>
-            <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-4">
+            <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-1">
               <input
                 type="email"
                 inputMode="email"
@@ -210,7 +210,7 @@ export default function ForgotPasswordPage() {
       </div>
 
       {!success && (
-        <div className="px-6 pb-10 pt-4 safe-area-bottom">
+        <div className="px-6 pb-10 pt-2 safe-area-bottom">
           {step === 'request' ? (
             <button
               onClick={handleSendCode}

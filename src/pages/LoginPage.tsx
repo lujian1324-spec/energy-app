@@ -14,7 +14,7 @@ export default function LoginPage() {
   const navigate = useNavigate()
 
   // ── Tab + shared fields ──
-  const [tab, setTab] = useState<Tab>('email')
+  const [tab, setTab] = useState<Tab>('username')
   const [email, setEmail] = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -181,25 +181,31 @@ export default function LoginPage() {
 
         {/* ── Identifier field ── */}
         {tab === 'email' ? (
-          <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-3">
-            <input
-              type="email"
-              value={email}
-              onChange={e => { setEmail(e.target.value); setError(null) }}
-              placeholder="Email address"
-              autoComplete="email"
-              autoCapitalize="none"
-              autoCorrect="off"
-              className="flex-1 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
-            />
-            {email && (
-              <button onClick={() => setEmail('')} aria-label="Clear email">
-                <X size={16} className="text-ink-7" />
-              </button>
+          <>
+            <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-1 focus-within:ring-2 focus-within:ring-primary transition-shadow">
+              <input
+                type="email"
+                value={email}
+                onChange={e => { setEmail(e.target.value); setError(null) }}
+                placeholder="Email address"
+                autoComplete="email"
+                autoCapitalize="none"
+                autoCorrect="off"
+                className="flex-1 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
+              />
+              {email && (
+                <button onClick={() => setEmail('')} aria-label="Clear email">
+                  <X size={16} className="text-ink-7" />
+                </button>
+              )}
+            </div>
+            {email && !emailValid && (
+              <p className="text-caption text-danger mb-2 px-1">Please enter a valid email address.</p>
             )}
-          </div>
+            {(!email || emailValid) && <div className="mb-2" />}
+          </>
         ) : (
-          <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-3">
+          <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-3 focus-within:ring-2 focus-within:ring-primary transition-shadow">
             <input
               type="text"
               value={username}
@@ -220,7 +226,7 @@ export default function LoginPage() {
 
         {/* ── Password OR verification-code field ── */}
         {tab === 'email' && otpMode ? (
-          <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-3 mb-3">
+          <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-3 mb-3 focus-within:ring-2 focus-within:ring-primary transition-shadow">
             <input
               type="text"
               inputMode="numeric"
@@ -242,7 +248,7 @@ export default function LoginPage() {
             </button>
           </div>
         ) : (
-          <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-3">
+          <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-3 focus-within:ring-2 focus-within:ring-primary transition-shadow">
             <input
               type="password"
               value={password}
