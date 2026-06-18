@@ -68,7 +68,8 @@ export default function ForgotPasswordPage() {
         account.trim() || email.trim(),
         newPassword,
         code.trim(),
-        captchaId ?? undefined
+        captchaId ?? undefined,
+        email.trim() || undefined
       )
       if (result.code === 0 || result.code === '0') {
         setSuccess(true)
