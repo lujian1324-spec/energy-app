@@ -212,7 +212,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     return (
       <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
         {/* Header */}
-        <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative">
+        <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
           <BackBtn to="main" />
           <h1 className="text-title-lg font-semibold text-white absolute left-1/2 -translate-x-1/2">
             Device Name
@@ -302,7 +302,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     return (
       <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
         {/* Header */}
-        <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative">
+        <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
           <BackBtn to="main" />
           <h1 className="text-title-lg font-semibold text-white absolute left-1/2 -translate-x-1/2">
             Select Display Icon
@@ -357,7 +357,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     return (
       <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
         {/* Header */}
-        <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative">
+        <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
           <BackBtn to="main" />
           <h1 className="text-title-lg font-semibold text-white absolute left-1/2 -translate-x-1/2">
             Device Info
@@ -436,7 +436,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     return (
       <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
         {/* Header */}
-        <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative">
+        <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
           <BackBtn to="main" />
           <h1 className="text-title-lg font-semibold text-white absolute left-1/2 -translate-x-1/2">
             Sleep Mode
@@ -511,7 +511,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   return (
     <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
       {/* Header */}
-      <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative">
+      <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
         <BackBtn to="parent" />
         <h1 className="text-title-lg font-semibold text-white absolute left-1/2 -translate-x-1/2">
           Device Settings

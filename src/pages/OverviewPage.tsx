@@ -350,7 +350,7 @@ export default function OverviewPage() {
   const chartAreaPoints = chartPts.length ? `${chartLinePoints} 300,80 0,80` : ''
 
   return (
-    <div className={`h-full flex flex-col bg-[#141414] overflow-hidden relative pt-6 ${isDemoMode ? 'demo-mode' : ''}`}>
+    <div className={`h-full flex flex-col bg-[#141414] overflow-hidden relative pt-6 safe-area-top ${isDemoMode ? 'demo-mode' : ''}`}>
       {/* PRD v1.1 §8.2: DEMO MODE 顶部黄色横幅 */}
       <DemoBanner show={isDemoMode} onRetry={handleRefresh} />
 
