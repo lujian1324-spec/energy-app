@@ -112,7 +112,7 @@ interface DeviceStoreState {
   startRealtimeReport: (deviceId: string | number, clientId: string) => Promise<void>
   stopRealtimeReport: (deviceId: string | number, clientId: string) => Promise<void>
   loadAlarms: (deviceId?: number, page?: number, count?: number, append?: boolean) => Promise<void>
-  dismissAlarm: (alarmId: number) => Promise<void>
+  dismissAlarm: (alarmId: string | number) => Promise<void>
   loadStations: (page?: number, count?: number) => Promise<void>
   createStation: (data: StationAddRequest) => Promise<ApiResponse<unknown>>
   loadPeakValley: (deviceId: string | number) => Promise<PeakValleyBundleResponse | null>
