@@ -130,17 +130,17 @@ export default function PeakShavingPage() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-[#262626] rounded-[20px] p-4 mb-4"
+          className="bg-[#262626] rounded-l p-4 mb-4"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors
-                ${peakShavingSettings.enabled ? 'bg-[rgba(1,214,190,0.15)]' : 'bg-[#333333]'}`}>
-                <Zap size={24} className={peakShavingSettings.enabled ? 'text-[#01D6BE]' : 'text-[#636366]'} />
+                ${peakShavingSettings.enabled ? 'bg-[rgba(1,214,190,0.15)]' : 'bg-[#454545]'}`}>
+                <Zap size={24} className={peakShavingSettings.enabled ? 'text-[#01D6BE]' : 'text-[#8C8C8C]'} />
               </div>
               <div>
-                <div className="text-[15px] font-bold text-[#FFFFFF]">Peak Shaving</div>
-                <div className="text-[12px] text-[#A0A0A5]">
+                <div className="text-body-lg font-bold text-[#FFFFFF]">Peak Shaving</div>
+                <div className="text-[12px] text-[#BFBFBF]">
                   {peakShavingSettings.enabled ? 'Active - Optimizing power usage' : 'Disabled'}
                 </div>
               </div>
@@ -148,7 +148,7 @@ export default function PeakShavingPage() {
             <button
               onClick={() => togglePeakShaving(!peakShavingSettings.enabled)}
               className={`w-14 h-8 rounded-full transition-colors relative
-                ${peakShavingSettings.enabled ? 'bg-[#01D6BE]' : 'bg-[#636366]'}`}
+                ${peakShavingSettings.enabled ? 'bg-[#01D6BE]' : 'bg-[#8C8C8C]'}`}
             >
               <motion.div
                 className="w-6 h-6 rounded-full bg-[#FFFFFF] absolute top-1"
@@ -164,9 +164,9 @@ export default function PeakShavingPage() {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-[#262626] rounded-[20px] p-4 mb-4"
+            className="bg-[#262626] rounded-l p-4 mb-4"
           >
-            <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase mb-3">
+            <div className="text-[11px] font-bold text-[#BFBFBF] tracking-widest uppercase mb-3">
               Current Status
             </div>
             <div className="flex items-center gap-4">
@@ -175,13 +175,13 @@ export default function PeakShavingPage() {
                   currentMode === 'discharge' ? 'bg-[rgba(255,149,0,0.15)]' :
                   currentMode === 'grid' ? 'bg-[rgba(1,214,190,0.15)]' :
                   currentMode === 'battery' ? 'bg-[rgba(255,215,0,0.15)]' :
-                  'bg-[#333333]'}`}>
+                  'bg-[#454545]'}`}>
                 {currentMode === 'charge' && <Battery size={28} className="text-[#34C759]" />}
                 {currentMode === 'discharge' && <Zap size={28} className="text-[#FF9500]" />}
                 {currentMode === 'grid' && <Power size={28} className="text-[#01D6BE]" />}
                 {currentMode === 'battery' && <Battery size={28} className="text-[#FFD700]" />}
-                {currentMode === 'idle' && <Clock size={28} className="text-[#A0A0A5]" />}
-                {currentMode === 'disabled' && <Power size={28} className="text-[#636366]" />}
+                {currentMode === 'idle' && <Clock size={28} className="text-[#BFBFBF]" />}
+                {currentMode === 'disabled' && <Power size={28} className="text-[#8C8C8C]" />}
               </div>
               <div className="flex-1">
                 <div className="text-[18px] font-bold text-[#FFFFFF]">
@@ -192,7 +192,7 @@ export default function PeakShavingPage() {
                    currentMode === 'disabled' ? 'Disabled' :
                    'Idle'}
                 </div>
-                <div className="text-[12px] text-[#A0A0A5]">
+                <div className="text-[12px] text-[#BFBFBF]">
                   Battery: {powerStation.batteryLevel}% • {powerStation.timeToFull}
                 </div>
               </div>
@@ -205,22 +205,22 @@ export default function PeakShavingPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-[#262626] rounded-[20px] p-4 mb-4"
+          className="bg-[#262626] rounded-l p-4 mb-4"
         >
-          <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase mb-3">
+          <div className="text-[11px] font-bold text-[#BFBFBF] tracking-widest uppercase mb-3">
             Estimated Savings
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div className="text-center">
-              <div className="text-[11px] text-[#A0A0A5] mb-1">Daily</div>
+              <div className="text-[11px] text-[#BFBFBF] mb-1">Daily</div>
               <div className="text-[16px] font-bold text-[#01D6BE]">${savings.daily.toFixed(2)}</div>
             </div>
             <div className="text-center border-x border-[rgba(255,255,255,0.05)]">
-              <div className="text-[11px] text-[#A0A0A5] mb-1">Monthly</div>
+              <div className="text-[11px] text-[#BFBFBF] mb-1">Monthly</div>
               <div className="text-[16px] font-bold text-[#01D6BE]">${savings.monthly.toFixed(2)}</div>
             </div>
             <div className="text-center">
-              <div className="text-[11px] text-[#A0A0A5] mb-1">Yearly</div>
+              <div className="text-[11px] text-[#BFBFBF] mb-1">Yearly</div>
               <div className="text-[16px] font-bold text-[#01D6BE]">${savings.yearly.toFixed(2)}</div>
             </div>
           </div>
@@ -233,9 +233,9 @@ export default function PeakShavingPage() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="bg-[#262626] rounded-[20px] p-4 mb-4 overflow-hidden"
+              className="bg-[#262626] rounded-l p-4 mb-4 overflow-hidden"
             >
-              <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase mb-3">
+              <div className="text-[11px] font-bold text-[#BFBFBF] tracking-widest uppercase mb-3">
                 Electricity Price Settings
               </div>
               
@@ -243,8 +243,8 @@ export default function PeakShavingPage() {
                 {/* 高峰电价 */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[13px] text-[#FFFFFF]">Peak Price</span>
-                    <span className="text-[13px] text-[#FF9500]">${peakShavingSettings.peakPrice}/kWh</span>
+                    <span className="text-body-md text-[#FFFFFF]">Peak Price</span>
+                    <span className="text-body-md text-[#FF9500]">${peakShavingSettings.peakPrice}/kWh</span>
                   </div>
                   <input
                     type="range"
@@ -253,15 +253,15 @@ export default function PeakShavingPage() {
                     step="0.1"
                     value={peakShavingSettings.peakPrice}
                     onChange={(e) => updatePeakShavingSettings({ peakPrice: parseFloat(e.target.value) })}
-                    className="w-full h-2 bg-[#333333] rounded-full appearance-none cursor-pointer accent-[#FF9500]"
+                    className="w-full h-2 bg-[#454545] rounded-full appearance-none cursor-pointer accent-[#FF9500]"
                   />
                 </div>
                 
                 {/* 低谷电价 */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[13px] text-[#FFFFFF]">Off-Peak Price</span>
-                    <span className="text-[13px] text-[#34C759]">${peakShavingSettings.offPeakPrice}/kWh</span>
+                    <span className="text-body-md text-[#FFFFFF]">Off-Peak Price</span>
+                    <span className="text-body-md text-[#34C759]">${peakShavingSettings.offPeakPrice}/kWh</span>
                   </div>
                   <input
                     type="range"
@@ -270,36 +270,36 @@ export default function PeakShavingPage() {
                     step="0.1"
                     value={peakShavingSettings.offPeakPrice}
                     onChange={(e) => updatePeakShavingSettings({ offPeakPrice: parseFloat(e.target.value) })}
-                    className="w-full h-2 bg-[#333333] rounded-full appearance-none cursor-pointer accent-[#34C759]"
+                    className="w-full h-2 bg-[#454545] rounded-full appearance-none cursor-pointer accent-[#34C759]"
                   />
                 </div>
 
                 {/* 功率限制 */}
                 <div className="grid grid-cols-2 gap-3 pt-2">
                   <div>
-                    <div className="text-[11px] text-[#A0A0A5] mb-1">Max Charge</div>
-                    <div className="flex items-center gap-2 bg-[#333333] rounded-[12px] px-3 py-2">
+                    <div className="text-[11px] text-[#BFBFBF] mb-1">Max Charge</div>
+                    <div className="flex items-center gap-2 bg-[#454545] rounded-l px-3 py-2">
                       <Battery size={14} className="text-[#34C759]" />
                       <input
                         type="number"
                         value={peakShavingSettings.maxChargePower}
                         onChange={(e) => updatePeakShavingSettings({ maxChargePower: parseInt(e.target.value) || 0 })}
-                        className="bg-transparent text-[13px] text-[#FFFFFF] w-full outline-none"
+                        className="bg-transparent text-body-md text-[#FFFFFF] w-full outline-none"
                       />
-                      <span className="text-[11px] text-[#A0A0A5]">W</span>
+                      <span className="text-[11px] text-[#BFBFBF]">W</span>
                     </div>
                   </div>
                   <div>
-                    <div className="text-[11px] text-[#A0A0A5] mb-1">Max Discharge</div>
-                    <div className="flex items-center gap-2 bg-[#333333] rounded-[12px] px-3 py-2">
+                    <div className="text-[11px] text-[#BFBFBF] mb-1">Max Discharge</div>
+                    <div className="flex items-center gap-2 bg-[#454545] rounded-l px-3 py-2">
                       <Zap size={14} className="text-[#FF9500]" />
                       <input
                         type="number"
                         value={peakShavingSettings.maxDischargePower}
                         onChange={(e) => updatePeakShavingSettings({ maxDischargePower: parseInt(e.target.value) || 0 })}
-                        className="bg-transparent text-[13px] text-[#FFFFFF] w-full outline-none"
+                        className="bg-transparent text-body-md text-[#FFFFFF] w-full outline-none"
                       />
-                      <span className="text-[11px] text-[#A0A0A5]">W</span>
+                      <span className="text-[11px] text-[#BFBFBF]">W</span>
                     </div>
                   </div>
                 </div>
@@ -307,8 +307,8 @@ export default function PeakShavingPage() {
                 {/* 电池限制 */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <div className="text-[11px] text-[#A0A0A5] mb-1">Min Battery</div>
-                    <div className="flex items-center gap-2 bg-[#333333] rounded-[12px] px-3 py-2">
+                    <div className="text-[11px] text-[#BFBFBF] mb-1">Min Battery</div>
+                    <div className="flex items-center gap-2 bg-[#454545] rounded-l px-3 py-2">
                       <Battery size={14} className="text-[#FF3B30]" />
                       <input
                         type="number"
@@ -316,14 +316,14 @@ export default function PeakShavingPage() {
                         max="100"
                         value={peakShavingSettings.minBatteryLevel}
                         onChange={(e) => updatePeakShavingSettings({ minBatteryLevel: parseInt(e.target.value) || 0 })}
-                        className="bg-transparent text-[13px] text-[#FFFFFF] w-full outline-none"
+                        className="bg-transparent text-body-md text-[#FFFFFF] w-full outline-none"
                       />
-                      <span className="text-[11px] text-[#A0A0A5]">%</span>
+                      <span className="text-[11px] text-[#BFBFBF]">%</span>
                     </div>
                   </div>
                   <div>
-                    <div className="text-[11px] text-[#A0A0A5] mb-1">Max Battery</div>
-                    <div className="flex items-center gap-2 bg-[#333333] rounded-[12px] px-3 py-2">
+                    <div className="text-[11px] text-[#BFBFBF] mb-1">Max Battery</div>
+                    <div className="flex items-center gap-2 bg-[#454545] rounded-l px-3 py-2">
                       <Battery size={14} className="text-[#34C759]" />
                       <input
                         type="number"
@@ -331,9 +331,9 @@ export default function PeakShavingPage() {
                         max="100"
                         value={peakShavingSettings.maxBatteryLevel}
                         onChange={(e) => updatePeakShavingSettings({ maxBatteryLevel: parseInt(e.target.value) || 0 })}
-                        className="bg-transparent text-[13px] text-[#FFFFFF] w-full outline-none"
+                        className="bg-transparent text-body-md text-[#FFFFFF] w-full outline-none"
                       />
-                      <span className="text-[11px] text-[#A0A0A5]">%</span>
+                      <span className="text-[11px] text-[#BFBFBF]">%</span>
                     </div>
                   </div>
                 </div>
@@ -345,7 +345,7 @@ export default function PeakShavingPage() {
         {/* 时间段列表 */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-3">
-            <div className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase">
+            <div className="text-[11px] font-bold text-[#BFBFBF] tracking-widest uppercase">
               Schedule
             </div>
             <button
@@ -369,7 +369,7 @@ export default function PeakShavingPage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className={`bg-[#262626] rounded-[16px] overflow-hidden transition-all
+                  className={`bg-[#262626] rounded-l overflow-hidden transition-all
                     ${schedule.enabled ? '' : 'opacity-50'}`}
                 >
                   <div 
@@ -384,7 +384,7 @@ export default function PeakShavingPage() {
                     </div>
                     <div className="flex-1">
                       <div className="text-[14px] font-semibold text-[#FFFFFF]">{schedule.name}</div>
-                      <div className="text-[11px] text-[#A0A0A5]">
+                      <div className="text-[11px] text-[#BFBFBF]">
                         {schedule.startTime} - {schedule.endTime}
                       </div>
                     </div>
@@ -398,7 +398,7 @@ export default function PeakShavingPage() {
                       >
                         {config.label}
                       </span>
-                      {isExpanded ? <ChevronUp size={18} className="text-[#A0A0A5]" /> : <ChevronDown size={18} className="text-[#A0A0A5]" />}
+                      {isExpanded ? <ChevronUp size={18} className="text-[#BFBFBF]" /> : <ChevronDown size={18} className="text-[#BFBFBF]" />}
                     </div>
                   </div>
                   
@@ -417,7 +417,7 @@ export default function PeakShavingPage() {
                               toggleScheduleEnabled(schedule.id, !schedule.enabled)
                             }}
                             className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[12px] font-medium transition-colors
-                              ${schedule.enabled ? 'bg-[#34C759] text-[#000000]' : 'bg-[#636366] text-[#FFFFFF]'}`}
+                              ${schedule.enabled ? 'bg-[#34C759] text-[#000000]' : 'bg-[#8C8C8C] text-[#FFFFFF]'}`}
                           >
                             <Power size={12} />
                             {schedule.enabled ? 'Enabled' : 'Disabled'}
@@ -442,23 +442,23 @@ export default function PeakShavingPage() {
           </div>
 
           {peakShavingSettings.schedules.length === 0 && (
-            <div className="text-center py-8 text-[#636366]">
+            <div className="text-center py-8 text-[#8C8C8C]">
               <Clock size={48} className="mx-auto mb-3 opacity-30" />
-              <p className="text-sm font-medium text-[#A0A0A5]">No schedules</p>
-              <p className="text-[11px] text-[#636366] mt-1">Add a schedule to start peak shaving</p>
+              <p className="text-sm font-medium text-[#BFBFBF]">No schedules</p>
+              <p className="text-[11px] text-[#8C8C8C] mt-1">Add a schedule to start peak shaving</p>
             </div>
           )}
         </div>
 
         {/* 说明文字 */}
-        <div className="bg-[rgba(1,214,190,0.05)] rounded-[16px] p-4 mb-4">
+        <div className="bg-[rgba(1,214,190,0.05)] rounded-l p-4 mb-4">
           <div className="flex items-start gap-3">
             <div className="w-8 h-8 rounded-full bg-[rgba(1,214,190,0.15)] flex items-center justify-center flex-shrink-0">
               <TrendingDown size={16} className="text-[#01D6BE]" />
             </div>
             <div>
-              <div className="text-[13px] font-semibold text-[#FFFFFF] mb-1">How it works</div>
-              <p className="text-[11px] text-[#A0A0A5] leading-relaxed">
+              <div className="text-body-md font-semibold text-[#FFFFFF] mb-1">How it works</div>
+              <p className="text-[11px] text-[#BFBFBF] leading-relaxed">
                 During off-peak hours, the system charges the battery using grid power. 
                 During peak hours, the battery discharges to power your devices, 
                 reducing your electricity costs.
@@ -492,29 +492,29 @@ export default function PeakShavingPage() {
               <div className="space-y-4">
                 {/* 名称 */}
                 <div>
-                  <label className="text-[11px] text-[#A0A0A5] mb-2 block">Schedule Name</label>
+                  <label className="text-[11px] text-[#BFBFBF] mb-2 block">Schedule Name</label>
                   <input
                     type="text"
                     value={newSchedule.name}
                     onChange={(e) => setNewSchedule({ ...newSchedule, name: e.target.value })}
                     placeholder="e.g., Morning Charge"
-                    className="w-full h-11 bg-[#333333] rounded-[14px] px-4 text-[14px] text-[#FFFFFF] placeholder-[#636366] outline-none"
+                    className="w-full h-11 bg-[#454545] rounded-l px-4 text-[14px] text-[#FFFFFF] placeholder-[#8C8C8C] outline-none"
                   />
                 </div>
                 
                 {/* 类型 */}
                 <div>
-                  <label className="text-[11px] text-[#A0A0A5] mb-2 block">Type</label>
+                  <label className="text-[11px] text-[#BFBFBF] mb-2 block">Type</label>
                   <div className="grid grid-cols-2 gap-2">
                     {Object.entries(scheduleTypeConfig).map(([type, config]) => (
                       <button
                         key={type}
                         onClick={() => setNewSchedule({ ...newSchedule, type: type as PeakShavingSchedule['type'] })}
-                        className={`flex items-center gap-2 p-3 rounded-[14px] transition-colors
-                          ${newSchedule.type === type ? 'bg-[#333333] border border-[#01D6BE]' : 'bg-[#333333]'}`}
+                        className={`flex items-center gap-2 p-3 rounded-l transition-colors
+                          ${newSchedule.type === type ? 'bg-[#454545] border border-[#01D6BE]' : 'bg-[#454545]'}`}
                       >
                         <config.icon size={18} style={{ color: config.color }} />
-                        <span className="text-[13px] text-[#FFFFFF]">{config.label}</span>
+                        <span className="text-body-md text-[#FFFFFF]">{config.label}</span>
                       </button>
                     ))}
                   </div>
@@ -523,21 +523,21 @@ export default function PeakShavingPage() {
                 {/* 时间 */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[11px] text-[#A0A0A5] mb-2 block">Start Time</label>
+                    <label className="text-[11px] text-[#BFBFBF] mb-2 block">Start Time</label>
                     <input
                       type="time"
                       value={newSchedule.startTime}
                       onChange={(e) => setNewSchedule({ ...newSchedule, startTime: e.target.value })}
-                      className="w-full h-11 bg-[#333333] rounded-[14px] px-4 text-[14px] text-[#FFFFFF] outline-none"
+                      className="w-full h-11 bg-[#454545] rounded-l px-4 text-[14px] text-[#FFFFFF] outline-none"
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] text-[#A0A0A5] mb-2 block">End Time</label>
+                    <label className="text-[11px] text-[#BFBFBF] mb-2 block">End Time</label>
                     <input
                       type="time"
                       value={newSchedule.endTime}
                       onChange={(e) => setNewSchedule({ ...newSchedule, endTime: e.target.value })}
-                      className="w-full h-11 bg-[#333333] rounded-[14px] px-4 text-[14px] text-[#FFFFFF] outline-none"
+                      className="w-full h-11 bg-[#454545] rounded-l px-4 text-[14px] text-[#FFFFFF] outline-none"
                     />
                   </div>
                 </div>
@@ -546,14 +546,14 @@ export default function PeakShavingPage() {
               <div className="flex gap-3 mt-6">
                 <button
                   onClick={() => setShowAddModal(false)}
-                  className="flex-1 h-11 rounded-[14px] bg-[#333333] text-[#FFFFFF] text-[14px] font-medium"
+                  className="flex-1 h-11 rounded-l bg-[#454545] text-[#FFFFFF] text-[14px] font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleAddSchedule}
                   disabled={!newSchedule.name}
-                  className="flex-1 h-11 rounded-[14px] bg-[#01D6BE] text-[#000000] text-[14px] font-semibold disabled:opacity-50"
+                  className="flex-1 h-11 rounded-l bg-[#01D6BE] text-[#000000] text-[14px] font-semibold disabled:opacity-50"
                 >
                   Add Schedule
                 </button>

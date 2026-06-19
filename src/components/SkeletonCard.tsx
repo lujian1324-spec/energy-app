@@ -6,7 +6,7 @@ function SkeletonBlock({ className }: { className?: string }) {
     <motion.div
       animate={{ opacity: [0.4, 0.7, 0.4] }}
       transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-      className={`bg-[#333333] rounded-lg ${className ?? ''}`}
+      className={`bg-[#454545] rounded-lg ${className ?? ''}`}
     />
   )
 }
@@ -14,9 +14,9 @@ function SkeletonBlock({ className }: { className?: string }) {
 /** 设备卡片骨架屏 */
 export function DeviceCardSkeleton() {
   return (
-    <div className="bg-[#262626] rounded-[20px] p-4 flex items-center gap-3">
+    <div className="bg-[#262626] rounded-l p-4 flex items-center gap-3">
       {/* 图标 */}
-      <SkeletonBlock className="w-11 h-11 rounded-[14px] flex-shrink-0" />
+      <SkeletonBlock className="w-11 h-11 rounded-l flex-shrink-0" />
 
       {/* 文字 */}
       <div className="flex-1 space-y-2">

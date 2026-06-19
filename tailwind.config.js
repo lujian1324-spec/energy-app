@@ -80,7 +80,7 @@ export default {
         // ── Red / Error ──
         danger: {
           light: '#FFEBEA',
-          DEFAULT: '#FF3530',
+          DEFAULT: '#FF3B30',
           hover: '#E6352B',
           active: '#CC2F28',
           dark: '#BF2C24',
@@ -106,10 +106,10 @@ export default {
         accent: '#01D6BE',
         'bg-base': '#141414',   // ink-12
         'bg-card': '#262626',   // ink-10
-        'bg-card2': '#333333',
+        'bg-card2': '#454545',   // ink-9 (was off-palette #333333)
         'txt-primary': '#FFFFFF',
-        'txt-secondary': '#A0A0A5',
-        'txt-muted': '#636366',
+        'txt-secondary': '#BFBFBF', // ink-6 (was off-palette #A0A0A5)
+        'txt-muted': '#8C8C8C',     // ink-7 (was off-palette #636366)
       },
       // ── Border Radius (Figma): s=4 · m=8 · l=12 · xl=100(pill) ──
       // New canonical tokens. Legacy sm/md/lg/xl kept for back-compat;

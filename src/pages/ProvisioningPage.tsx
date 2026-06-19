@@ -241,7 +241,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                 />
               ))}
               {/* Centre phone icon */}
-              <div className="w-16 h-16 rounded-[20px] bg-[#262626] flex items-center justify-center z-10">
+              <div className="w-16 h-16 rounded-l bg-[#262626] flex items-center justify-center z-10">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
                   <rect x="5" y="2" width="14" height="20" rx="3" stroke="#01D6BE" strokeWidth="1.5"/>
                   <circle cx="12" cy="18" r="1" fill="#01D6BE"/>
@@ -253,28 +253,28 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
             {isSearching && (
               <div className="text-center mb-6">
                 <p className="text-body-lg font-semibold text-white mb-1">Searching for nearby devices...</p>
-                <p className="text-body-md text-[#A0A0A5]">Make sure your device is powered on and nearby.</p>
+                <p className="text-body-md text-[#BFBFBF]">Make sure your device is powered on and nearby.</p>
               </div>
             )}
 
             {!isSearching && !hasDevices && !store.errorMessage && (
               <div className="text-center mb-6">
                 <p className="text-body-lg font-semibold text-white mb-1">Ready to Scan</p>
-                <p className="text-body-md text-[#A0A0A5]">Tap the button below to search for nearby devices.</p>
+                <p className="text-body-md text-[#BFBFBF]">Tap the button below to search for nearby devices.</p>
               </div>
             )}
 
             {hasError && (
               <div className="text-center mb-6">
                 <p className="text-body-lg font-semibold text-white mb-1">No Devices Found</p>
-                <p className="text-body-md text-[#A0A0A5]">Make sure your device is powered on and Bluetooth is enabled.</p>
+                <p className="text-body-md text-[#BFBFBF]">Make sure your device is powered on and Bluetooth is enabled.</p>
               </div>
             )}
 
             {/* Found devices list */}
             {hasDevices && (
               <div className="w-full mb-6">
-                <p className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
+                <p className="text-caption font-bold text-[#BFBFBF] tracking-widest uppercase mb-3 px-1">
                   Found Devices ({foundDevices.length})
                 </p>
                 <div className="flex flex-col gap-2">
@@ -285,7 +285,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                     >
                       <div>
                         <p className="text-body-lg font-semibold text-white">{device.name}</p>
-                        <p className="text-caption text-[#A0A0A5] mt-0.5">{device.serial}</p>
+                        <p className="text-caption text-[#BFBFBF] mt-0.5">{device.serial}</p>
                       </div>
                       <button
                         onClick={handleConnect}
@@ -349,7 +349,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
         <div className="flex-1 flex flex-col items-center justify-center px-10">
           <div className="relative w-full aspect-square max-w-[280px]">
             {/* Dark camera area */}
-            <div className="absolute inset-0 bg-[#0A0A0A] rounded-[20px]" />
+            <div className="absolute inset-0 bg-[#0A0A0A] rounded-l" />
 
             {/* Corner bracket: top-left */}
             <svg className="absolute top-3 left-3" width="36" height="36" viewBox="0 0 36 36" fill="none">
@@ -371,7 +371,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
 
           <div className="mt-8 text-center">
             <p className="text-body-lg font-semibold text-white mb-2">Scan the QR Code on Your Device</p>
-            <p className="text-body-md text-[#A0A0A5]">Point the camera at the QR code found on the label of your Sierro device.</p>
+            <p className="text-body-md text-[#BFBFBF]">Point the camera at the QR code found on the label of your Sierro device.</p>
           </div>
         </div>
       </div>
@@ -397,7 +397,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
 
         <div className="flex-1 px-6 pt-6">
           <h1 className="text-headline-lg font-bold text-white mb-2">Name Your Device</h1>
-          <p className="text-body-md text-[#A0A0A5] mb-8">
+          <p className="text-body-md text-[#BFBFBF] mb-8">
             Give your device a name so you can easily identify it.
           </p>
 
@@ -411,11 +411,11 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
               onChange={(e) => { setDeviceNameInput(e.target.value); setNameError('') }}
               placeholder="Device name"
               autoFocus
-              className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#636366] outline-none caret-primary"
+              className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#8C8C8C] outline-none caret-primary"
             />
             {deviceNameInput.length > 0 && (
               <button onClick={() => setDeviceNameInput('')}>
-                <X size={16} className="text-[#636366]" />
+                <X size={16} className="text-[#8C8C8C]" />
               </button>
             )}
           </div>
@@ -470,11 +470,11 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
           {store.step === 'verify' && (
             <motion.div key="verify" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <div className="flex flex-col items-center py-10">
-                <div className="w-16 h-16 rounded-[20px] bg-[rgba(1,214,190,0.12)] flex items-center justify-center mb-4">
+                <div className="w-16 h-16 rounded-l bg-[rgba(1,214,190,0.12)] flex items-center justify-center mb-4">
                   <CheckCircle size={28} className="text-primary" />
                 </div>
                 <p className="text-body-lg font-semibold text-white mb-1">{store.deviceName}</p>
-                {store.dtuid && <p className="text-caption text-[#A0A0A5]">{store.dtuid}</p>}
+                {store.dtuid && <p className="text-caption text-[#BFBFBF]">{store.dtuid}</p>}
               </div>
 
               {store.needBleKey && !store.bleKeyVerified && (
@@ -485,7 +485,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                     value={bleKeyInput}
                     onChange={(e) => setBleKeyInput(e.target.value)}
                     placeholder="Enter BLE key"
-                    className="w-full bg-[#1A1A1A] rounded-m px-4 py-3 text-body-md text-white placeholder:text-[#636366] outline-none border border-[rgba(255,255,255,0.08)] focus:border-primary mb-3"
+                    className="w-full bg-[#1A1A1A] rounded-m px-4 py-3 text-body-md text-white placeholder:text-[#8C8C8C] outline-none border border-[rgba(255,255,255,0.08)] focus:border-primary mb-3"
                   />
                   <button
                     onClick={handleConfirmBleKey}
@@ -516,12 +516,12 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
               {store.apLoading ? (
                 <div className="flex items-center justify-center py-20 gap-3">
                   <Loader2 size={24} className="text-primary animate-spin" />
-                  <span className="text-body-md text-[#A0A0A5]">Scanning Wi-Fi...</span>
+                  <span className="text-body-md text-[#BFBFBF]">Scanning Wi-Fi...</span>
                 </div>
               ) : store.apList.length === 0 ? (
                 <div className="text-center py-16">
-                  <WifiOff size={36} className="text-[#636366] mx-auto mb-4" />
-                  <p className="text-body-md text-[#A0A0A5] mb-4">No Wi-Fi networks found</p>
+                  <WifiOff size={36} className="text-[#8C8C8C] mx-auto mb-4" />
+                  <p className="text-body-md text-[#BFBFBF] mb-4">No Wi-Fi networks found</p>
                   <button onClick={handleScanWifi} className="text-body-md text-primary font-semibold flex items-center gap-1 mx-auto">
                     <RefreshCw size={14} /> Scan Again
                   </button>
@@ -538,10 +538,10 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                         <Wifi size={18} className="text-primary flex-shrink-0" />
                         <span className="text-body-lg text-white">{ap.SSID || '(Hidden Network)'}</span>
                       </div>
-                      {ap.Secu === 1 && <Lock size={14} className="text-[#A0A0A5]" />}
+                      {ap.Secu === 1 && <Lock size={14} className="text-[#BFBFBF]" />}
                     </button>
                   ))}
-                  <button onClick={handleScanWifi} className="text-caption text-[#A0A0A5] flex items-center gap-1 mx-auto mt-2">
+                  <button onClick={handleScanWifi} className="text-caption text-[#BFBFBF] flex items-center gap-1 mx-auto mt-2">
                     <RefreshCw size={10} /> Refresh
                   </button>
                 </div>
@@ -553,7 +553,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
           {store.step === 'password' && (
             <motion.div key="password" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pt-4">
               <div className="bg-[#262626] rounded-l px-4 py-4 mb-2">
-                <p className="text-caption text-[#A0A0A5] mb-1">Network</p>
+                <p className="text-caption text-[#BFBFBF] mb-1">Network</p>
                 <div className="flex items-center justify-between">
                   <p className="text-body-lg font-semibold text-white">{store.selectedSsid}</p>
                   <button
@@ -566,7 +566,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
               </div>
 
               <div className="bg-[#262626] rounded-l px-4 py-4 mb-6">
-                <p className="text-caption text-[#A0A0A5] mb-2">Password</p>
+                <p className="text-caption text-[#BFBFBF] mb-2">Password</p>
                 <div className="flex items-center gap-2">
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -574,12 +574,12 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                     onChange={(e) => store.setWifiPassword(e.target.value)}
                     placeholder="Enter Wi-Fi password"
                     autoFocus
-                    className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#636366] outline-none caret-primary"
+                    className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#8C8C8C] outline-none caret-primary"
                   />
                   <button onClick={() => setShowPassword(!showPassword)}>
                     {showPassword
-                      ? <EyeOff size={16} className="text-[#636366]" />
-                      : <Eye size={16} className="text-[#636366]" />
+                      ? <EyeOff size={16} className="text-[#8C8C8C]" />
+                      : <Eye size={16} className="text-[#8C8C8C]" />
                     }
                   </button>
                 </div>
@@ -602,7 +602,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
               <div className="flex flex-col items-center py-16">
                 <Loader2 size={40} className="text-primary animate-spin mb-6" />
                 <p className="text-body-lg font-semibold text-white mb-2">Connecting to Wi-Fi...</p>
-                <p className="text-body-md text-[#A0A0A5]">This may take a moment.</p>
+                <p className="text-body-md text-[#BFBFBF]">This may take a moment.</p>
               </div>
             </motion.div>
           )}
@@ -629,21 +629,21 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
               {store.wifiStatus && (
                 <div className="bg-[#262626] rounded-l px-4 py-4 mb-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-body-md text-[#A0A0A5]">Wi-Fi</span>
+                    <span className="text-body-md text-[#BFBFBF]">Wi-Fi</span>
                     <span className={`text-body-md font-semibold ${store.wifiStatus.WConn ? 'text-success' : 'text-danger'}`}>
                       {store.wifiStatus.WConn ? 'Connected' : 'Not Connected'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-body-md text-[#A0A0A5]">Network</span>
+                    <span className="text-body-md text-[#BFBFBF]">Network</span>
                     <span className="text-body-md text-white">{store.wifiStatus.SSID}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-body-md text-[#A0A0A5]">Signal</span>
+                    <span className="text-body-md text-[#BFBFBF]">Signal</span>
                     <span className="text-body-md text-white">{store.wifiStatus.RSSI} dBm</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-body-md text-[#A0A0A5]">Cloud</span>
+                    <span className="text-body-md text-[#BFBFBF]">Cloud</span>
                     <span className={`text-body-md ${store.wifiStatus.SConn ? 'text-success' : 'text-[#FF9500]'}`}>
                       {store.wifiStatus.SConn ? 'Connected' : 'Pending'}
                     </span>

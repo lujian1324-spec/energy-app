@@ -671,15 +671,15 @@ export default function StatsPage() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center justify-center py-20 px-8">
             <div className="w-16 h-16 rounded-2xl bg-[#262626] flex items-center justify-center mb-4">
-              <BarChart3 size={32} className="text-[#636366]" />
+              <BarChart3 size={32} className="text-[#8C8C8C]" />
             </div>
             <h3 className="text-[16px] font-bold text-[#FFFFFF] mb-2">No Data Yet</h3>
-            <p className="text-[13px] text-[#A0A0A5] text-center leading-relaxed mb-6">
+            <p className="text-body-md text-[#BFBFBF] text-center leading-relaxed mb-6">
               Connect a device to start tracking energy usage and statistics.
             </p>
             <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#262626] border border-[rgba(255,255,255,0.06)]">
-              <WifiOff size={14} className="text-[#636366]" />
-              <span className="text-[12px] text-[#636366]">No device connected</span>
+              <WifiOff size={14} className="text-[#8C8C8C]" />
+              <span className="text-[12px] text-[#8C8C8C]">No device connected</span>
             </div>
           </motion.div>
         )}
@@ -925,7 +925,7 @@ export default function StatsPage() {
             {/* Battery Health Card */}
             {hasDevice && (
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-[20px] p-4">
+                className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-l p-4">
                 <div className="flex justify-between items-center mb-3">
                   <div className="text-sm font-bold text-[#FFFFFF]">Battery Health</div>
                   <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[rgba(52,199,89,0.12)] text-[#34C759] border border-[rgba(52,199,89,0.25)] text-[10px] font-semibold">Good</div>
@@ -935,21 +935,21 @@ export default function StatsPage() {
                     <BatteryRing percentage={soc} size={160} strokeWidth={18} isCharging={false} uid="stats-page" />
                   </div>
                   <div className="flex-1 grid grid-cols-2 gap-3">
-                    <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-[12px] p-2.5">
+                    <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-l p-2.5">
                       <div className="text-[14px] font-bold text-[#FFFFFF]">{soc}%</div>
-                      <div className="text-[9px] text-[#A0A0A5] mt-0.5">Charge</div>
+                      <div className="text-tiny text-[#BFBFBF] mt-0.5">Charge</div>
                     </div>
-                    <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-[12px] p-2.5">
+                    <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-l p-2.5">
                       <div className="text-[14px] font-bold text-[#34C759]">{batteryTemp > 0 ? `${batteryTemp}°C` : '--'}</div>
-                      <div className="text-[9px] text-[#A0A0A5] mt-0.5">Temp</div>
+                      <div className="text-tiny text-[#BFBFBF] mt-0.5">Temp</div>
                     </div>
-                    <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-[12px] p-2.5">
+                    <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-l p-2.5">
                       <div className="text-[14px] font-bold text-[#01D6BE]">{deviceDays}</div>
-                      <div className="text-[9px] text-[#A0A0A5] mt-0.5">Days</div>
+                      <div className="text-tiny text-[#BFBFBF] mt-0.5">Days</div>
                     </div>
-                    <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-[12px] p-2.5">
+                    <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-l p-2.5">
                       <div className="text-[14px] font-bold text-[#FF9500]">{batteryHealth}%</div>
-                      <div className="text-[9px] text-[#A0A0A5] mt-0.5">Health</div>
+                      <div className="text-tiny text-[#BFBFBF] mt-0.5">Health</div>
                     </div>
                   </div>
                 </div>

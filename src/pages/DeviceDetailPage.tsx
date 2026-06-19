@@ -171,7 +171,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
 
   const InfoRow = ({ label, value }: { label: string; value: string }) => (
     <div className="flex items-center justify-between px-4 py-4 border-b border-white/5 last:border-0">
-      <span className="text-body-md text-[#A0A0A5]">{label}</span>
+      <span className="text-body-md text-[#BFBFBF]">{label}</span>
       <span className="text-body-md text-white">{value}</span>
     </div>
   )
@@ -197,9 +197,9 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
       <div className="flex items-center gap-2">
         {preview}
         {value !== undefined && (
-          <span className="text-body-md text-[#A0A0A5]">{value}</span>
+          <span className="text-body-md text-[#BFBFBF]">{value}</span>
         )}
-        <ChevronRight size={18} className="text-[#A0A0A5]" />
+        <ChevronRight size={18} className="text-[#BFBFBF]" />
       </div>
     </div>
   )
@@ -231,7 +231,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
         {/* Device selector dropdown — pick which device to rename */}
         {devices.length > 1 && (
           <div className="px-4 pt-2">
-            <span className="text-caption text-[#A0A0A5] block mb-2 px-1">Select Device</span>
+            <span className="text-caption text-[#BFBFBF] block mb-2 px-1">Select Device</span>
             <div className="relative">
               <button
                 onClick={() => setShowDeviceDropdown(v => !v)}
@@ -242,7 +242,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 </span>
                 <ChevronDown
                   size={18}
-                  className={`text-[#A0A0A5] transition-transform ${showDeviceDropdown ? 'rotate-180' : ''}`}
+                  className={`text-[#BFBFBF] transition-transform ${showDeviceDropdown ? 'rotate-180' : ''}`}
                 />
               </button>
               {showDeviceDropdown && (
@@ -270,7 +270,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
 
         {/* Input */}
         <div className="px-4 pt-4">
-          <span className="text-caption text-[#A0A0A5] block mb-2 px-1">Name</span>
+          <span className="text-caption text-[#BFBFBF] block mb-2 px-1">Name</span>
           <div className="rounded-l bg-[#262626] px-4 py-4 flex items-center gap-3">
             <input
               type="text"
@@ -283,9 +283,9 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             {editName.length > 0 && (
               <button
                 onClick={() => setEditName('')}
-                className="w-6 h-6 rounded-full bg-[#A0A0A5]/30 flex items-center justify-center"
+                className="w-6 h-6 rounded-full bg-[#BFBFBF]/30 flex items-center justify-center"
               >
-                <X size={14} className="text-[#A0A0A5]" />
+                <X size={14} className="text-[#BFBFBF]" />
               </button>
             )}
           </div>
@@ -322,11 +322,11 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               >
                 <Icon
                   size={28}
-                  className={pendingIcon === id ? 'text-black' : 'text-[#A0A0A5]'}
+                  className={pendingIcon === id ? 'text-black' : 'text-[#BFBFBF]'}
                 />
                 <span
                   className={`text-label ${
-                    pendingIcon === id ? 'text-black font-semibold' : 'text-[#A0A0A5]'
+                    pendingIcon === id ? 'text-black font-semibold' : 'text-[#BFBFBF]'
                   }`}
                 >
                   {label}
@@ -455,7 +455,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-body-lg text-white">Sleep Mode</p>
-                <p className="text-caption text-[#A0A0A5] mt-0.5">Low-noise charging · 150W AC charging limit</p>
+                <p className="text-caption text-[#BFBFBF] mt-0.5">Low-noise charging · 150W AC charging limit</p>
               </div>
               <button
                 onClick={() => setSleepMode(enabled ? 'Off' : 'On')}
@@ -494,7 +494,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                   />
                 </div>
               </div>
-              <p className="text-caption text-[#636366] mt-2 px-1">
+              <p className="text-caption text-[#8C8C8C] mt-2 px-1">
                 Sleep mode active {fmt(sleepFrom)} – {fmt(sleepTo)}
               </p>
             </div>
@@ -581,7 +581,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
         <div className="mt-4">
           <button
             onClick={() => setShowDeleteConfirm(true)}
-            className="w-full rounded-l bg-[#262626] px-4 py-4 text-body-lg font-semibold text-[#FF3530] active:opacity-70 transition-opacity"
+            className="w-full rounded-l bg-[#262626] px-4 py-4 text-body-lg font-semibold text-[#FF3B30] active:opacity-70 transition-opacity"
           >
             Delete Device
           </button>
@@ -632,7 +632,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                     <p className={`text-title-md font-semibold ${selected ? 'text-white' : 'text-[#8C8C8C]'}`}>
                       {m.label}
                     </p>
-                    <p className={`text-body-md mt-0.5 ${selected ? 'text-[#D9D9D9]' : 'text-[#636366]'}`}>
+                    <p className={`text-body-md mt-0.5 ${selected ? 'text-[#D9D9D9]' : 'text-[#8C8C8C]'}`}>
                       {m.desc}
                     </p>
                   </button>
@@ -665,7 +665,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           <div className="w-full max-w-sm bg-[#1F1F1F] rounded-xl overflow-hidden">
             <div className="px-6 pt-6 pb-4 text-center">
               <p className="text-title-md font-semibold text-white mb-2">Delete Device</p>
-              <p className="text-body-md text-[#A0A0A5]">
+              <p className="text-body-md text-[#BFBFBF]">
                 Are you sure you want to delete <span className="text-white font-semibold">{deviceName}</span>? This action cannot be undone.
               </p>
             </div>
@@ -680,9 +680,9 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               <button
                 onClick={handleDeleteDevice}
                 disabled={deleting}
-                className="flex-1 py-4 text-body-lg font-semibold text-[#FF3530] active:bg-white/5 flex items-center justify-center gap-2"
+                className="flex-1 py-4 text-body-lg font-semibold text-[#FF3B30] active:bg-white/5 flex items-center justify-center gap-2"
               >
-                {deleting ? <Loader2 size={16} className="animate-spin text-[#FF3530]" /> : 'Delete'}
+                {deleting ? <Loader2 size={16} className="animate-spin text-[#FF3B30]" /> : 'Delete'}
               </button>
             </div>
           </div>

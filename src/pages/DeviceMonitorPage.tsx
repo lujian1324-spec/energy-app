@@ -115,7 +115,7 @@ export function AreaChart({ data, color, width = 340, height = 130, domain, unit
             {labelText}
           </text>
           {activeTime && (
-            <text x={active.x} y={pad.t + h + 14} textAnchor="middle" fontSize="9" fill="#A0A0A5">
+            <text x={active.x} y={pad.t + h + 14} textAnchor="middle" fontSize="9" fill="#BFBFBF">
               {activeTime}
             </text>
           )}
@@ -267,7 +267,7 @@ export default function DeviceMonitorPage() {
           >
             <Bell size={18} className="text-white" />
             {device?.isAlarmed && (
-              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#FF3530] border-2 border-[#141414]" />
+              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#FF3B30] border-2 border-[#141414]" />
             )}
           </button>
         </div>
@@ -298,32 +298,32 @@ export default function DeviceMonitorPage() {
           {/* Input / Output row — three equal-size value cards */}
           <div>
             <div className="flex items-center gap-1 mb-2">
-              <p className="text-label text-[#A0A0A5] flex-1">Input</p>
+              <p className="text-label text-[#BFBFBF] flex-1">Input</p>
               <span className="w-4 flex-shrink-0" />
-              <p className="text-label text-[#A0A0A5] flex-1 text-right">Output</p>
+              <p className="text-label text-[#BFBFBF] flex-1 text-right">Output</p>
             </div>
             <div className="grid grid-cols-[1fr_16px_1fr_1fr] gap-2 items-stretch">
               <div className="bg-[#1F1F1F] rounded-m px-3 py-3 text-center flex flex-col items-center justify-center">
                 <div>
                   <span className="text-title-md font-semibold text-white">{fmtW(acPower)}</span>
-                  <span className="text-label text-[#A0A0A5]">w</span>
+                  <span className="text-label text-[#BFBFBF]">w</span>
                 </div>
-                <p className="text-tiny text-[#636366] mt-0.5">AC</p>
+                <p className="text-tiny text-[#8C8C8C] mt-0.5">AC</p>
               </div>
-              <span className="text-[#636366] text-body-md font-semibold self-center text-center">+</span>
+              <span className="text-[#8C8C8C] text-body-md font-semibold self-center text-center">+</span>
               <div className="bg-[#1F1F1F] rounded-m px-3 py-3 text-center flex flex-col items-center justify-center">
                 <div>
                   <span className="text-title-md font-semibold text-white">{fmtW(solarPower)}</span>
-                  <span className="text-label text-[#A0A0A5]">w</span>
+                  <span className="text-label text-[#BFBFBF]">w</span>
                 </div>
-                <p className="text-tiny text-[#636366] mt-0.5">Solar</p>
+                <p className="text-tiny text-[#8C8C8C] mt-0.5">Solar</p>
               </div>
               <div className="bg-[#1F1F1F] rounded-m px-3 py-3 text-center flex flex-col items-center justify-center">
                 <div>
                   <span className="text-title-md font-semibold text-white">{fmtW(outputPower)}</span>
-                  <span className="text-label text-[#A0A0A5]">w</span>
+                  <span className="text-label text-[#BFBFBF]">w</span>
                 </div>
-                <p className="text-tiny text-[#636366] mt-0.5">AC</p>
+                <p className="text-tiny text-[#8C8C8C] mt-0.5">AC</p>
               </div>
             </div>
           </div>
@@ -375,7 +375,7 @@ export default function DeviceMonitorPage() {
           {timeLabels.length > 0 && (
             <div className="flex justify-between mt-1 px-1">
               {timeLabels.map((lbl, i) => (
-                <span key={i} className="text-tiny text-[#636366]">{lbl}</span>
+                <span key={i} className="text-tiny text-[#8C8C8C]">{lbl}</span>
               ))}
             </div>
           )}
@@ -394,9 +394,9 @@ export default function DeviceMonitorPage() {
                 >
                   <tab.Icon
                     size={18}
-                    className={active ? 'text-white' : 'text-[#636366]'}
+                    className={active ? 'text-white' : 'text-[#8C8C8C]'}
                   />
-                  <span className={`text-tiny font-medium ${active ? 'text-white' : 'text-[#636366]'}`}>
+                  <span className={`text-tiny font-medium ${active ? 'text-white' : 'text-[#8C8C8C]'}`}>
                     {tab.label}
                   </span>
                 </button>
