@@ -319,28 +319,58 @@ export interface HistoryDataResponse {
 export interface AlarmSearchRequest {
   page: number
   count: number
-  deviceId?: number
-  stationId?: number
-  dtuId?: number
+  deviceId?: string | number
+  stationId?: string | number
+  dtuId?: string | number
   deviceSerialNumber?: string
   certificateDtuID?: string
   fromTime?: string
   toTime?: string
   isProcessed?: boolean
-  level?: string
+  level?: number | string
   orderByCreatedTimeDesc?: boolean
 }
 
 export interface AlarmItem {
-  id: number
-  deviceId: number
+  id: string                        // 告警 ID (Long as string)
+  deviceId: string                  // 设备 ID
   deviceName: string
   deviceSerialNumber: string
-  alarmCode: string
-  alarmMessage: string
-  alarmLevel: string
+  deviceSortKey?: string            // 设备类型标识
+  category?: number                 // 1=设备告警
+  level?: number                    // 2=Medium, 3=High
+  levelDict?: string                // "Medium" / "High"
+  status?: number                   // 0=活跃, 1=已消失, 2=已处理
   isProcessed: boolean
-  createdAt: string
+  processedDict?: string            // "Processed" / "Unprocessed"
+  key?: string                      // 告警键名，如 "lineLoss"
+  name?: string                     // 告警名称(英文)
+  nameI18n?: Record<string, string> // 多语言名称
+  description?: string
+  descriptionI18n?: Record<string, string>
+  firedValue?: string               // 触发时值
+  disappearedValue?: string         // 恢复时值
+  firedTaskNumber?: string
+  disappearedTaskNumber?: string | null
+  firedDtuPayload?: string
+  disappearedDtuPayload?: string | null
+  createdAt: string                 // 触发时间 (UTC ISO)
+  disappearedAt?: string | null     // 恢复时间
+  updateAt?: string | null
+  isRead?: boolean
+  processedByUserId?: string
+  processedByUserAccount?: string
+  stationId?: string
+  stationName?: string
+  dtuId?: string
+  certificateDtuID?: string
+  gatherProtocolNumber?: string
+  ownerUserId?: string
+  ownerUserName?: string
+  // Legacy compat
+  alarmCode?: string                // = key
+  alarmMessage?: string             // = name / description
+  alarmLevel?: string               // = levelDict
   processedAt?: string
 }
 
@@ -754,11 +784,15 @@ export async function fetchLatestAlarm(
   })
 }
 
-/** 忽略/处理告警 */
+/** 忽略/处理告警 — iotAlarmId 必须为数字类型 */
 export async function ignoreAlarm(
-  iotAlarmId: number
+  iotAlarmId: string | number,
+  isProcessed = true
 ): Promise<ApiResponse<unknown>> {
-  return api.post<unknown>('/alarm/update/isProcessed', { iotAlarmId })
+  return api.post<unknown>('/alarm/update/isProcessed', {
+    iotAlarmId: Number(iotAlarmId),
+    isProcessed,
+  })
 }
 
 /** 删除告警 */
