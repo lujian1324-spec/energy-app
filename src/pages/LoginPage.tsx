@@ -182,7 +182,7 @@ export default function LoginPage() {
         {/* ── Identifier field ── */}
         {tab === 'email' ? (
           <>
-            <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-1 focus-within:ring-2 focus-within:ring-primary transition-shadow">
+            <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-1 focus-within:ring-1 focus-within:ring-inset focus-within:ring-primary transition-shadow">
               <input
                 type="email"
                 value={email}
@@ -205,7 +205,7 @@ export default function LoginPage() {
             {(!email || emailValid) && <div className="mb-2" />}
           </>
         ) : (
-          <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-3 focus-within:ring-2 focus-within:ring-primary transition-shadow">
+          <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-3 focus-within:ring-1 focus-within:ring-inset focus-within:ring-primary transition-shadow">
             <input
               type="text"
               value={username}
@@ -226,7 +226,7 @@ export default function LoginPage() {
 
         {/* ── Password OR verification-code field ── */}
         {tab === 'email' && otpMode ? (
-          <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-3 mb-3 focus-within:ring-2 focus-within:ring-primary transition-shadow">
+          <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-3 mb-3 focus-within:ring-1 focus-within:ring-inset focus-within:ring-primary transition-shadow">
             <input
               type="text"
               inputMode="numeric"
@@ -248,7 +248,7 @@ export default function LoginPage() {
             </button>
           </div>
         ) : (
-          <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-3 focus-within:ring-2 focus-within:ring-primary transition-shadow">
+          <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-3 focus-within:ring-1 focus-within:ring-inset focus-within:ring-primary transition-shadow">
             <input
               type="password"
               value={password}
