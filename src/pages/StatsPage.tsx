@@ -30,9 +30,9 @@ function aggregateHistory(
   raw: HistoryDataResponse,
   period: Period
 ): ChartFrame | null {
-  const solar = raw['solarPower'] ?? []
+  const solar = raw['generationPower'] ?? []
   const output = raw['outputPower'] ?? []
-  const socArr = raw['soc'] ?? []
+  const socArr = raw['remainingBatteryCapacity'] ?? []
 
   if (solar.length === 0 && output.length === 0) return null
 
@@ -448,7 +448,7 @@ export default function StatsPage() {
       deviceId,
       fromTime.toISOString(),
       now.toISOString(),
-      ['solarPower', 'outputPower', 'soc', 'batteryTemp'],
+      ['generationPower', 'outputPower', 'remainingBatteryCapacity', 'batteryTemp'],
       count
     )
   }, [deviceId, period, loadHistoryData])

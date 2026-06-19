@@ -480,14 +480,14 @@ const REAL_HOURLY: Record<number, { grid: number[]; pv: number[]; load: number[]
  */
 export function getDemoDayCurve(
   deviceId: string | number,
-  key: 'acPower' | 'solarPower' | 'outputPower' | 'soc',
+  key: 'exchangeChargingPower' | 'generationPower' | 'outputPower' | 'remainingBatteryCapacity',
   points = 480
 ): number[] {
   const numericId = typeof deviceId === 'string' ? parseInt(deviceId) : deviceId
   const real = REAL_HOURLY[numericId]
   if (!real) return Array(points).fill(0)
 
-  const arr = key === 'acPower' ? real.grid : key === 'solarPower' ? real.pv : key === 'outputPower' ? real.load : real.soc
+  const arr = key === 'exchangeChargingPower' ? real.grid : key === 'generationPower' ? real.pv : key === 'outputPower' ? real.load : real.soc
 
   const raw: number[] = []
   for (let i = 0; i < points; i++) {
@@ -518,7 +518,7 @@ export function getDemoDayCurve(
 
   // SoC keeps fractional precision — rounding to whole percents at this many
   // sample points renders as a visible staircase instead of a smooth curve.
-  return smoothed.map(v => key === 'soc' ? Math.max(0, Math.min(100, v)) : Math.round(Math.max(0, v)))
+  return smoothed.map(v => key === 'remainingBatteryCapacity' ? Math.max(0, Math.min(100, v)) : Math.round(Math.max(0, v)))
 }
 
 export function getDemoHistoryData(
@@ -528,12 +528,12 @@ export function getDemoHistoryData(
   const now = Date.now()
   const numericId = typeof deviceId === 'string' ? parseInt(deviceId) : deviceId
 
-  const soc: Array<{ time: string; value: number }> = []
-  const solarPower: Array<{ time: string; value: number }> = []
+  const remainingBatteryCapacity: Array<{ time: string; value: number }> = []
+  const generationPower: Array<{ time: string; value: number }> = []
   const outputPower: Array<{ time: string; value: number }> = []
   const batteryPower: Array<{ time: string; value: number }> = []
   const gridPower: Array<{ time: string; value: number }> = []
-  const acPower: Array<{ time: string; value: number }> = []
+  const exchangeChargingPower: Array<{ time: string; value: number }> = []
 
   // 根据时间范围选择采样间隔：避免数据点过多
   // Day(24h)→5min(288pts), Week(168h)→30min(336pts), Month+(720h+)→2h(360pts)
@@ -562,9 +562,9 @@ export function getDemoHistoryData(
       const loadVal = Math.round(interp(real.load, hour, minute))
       const socVal = Math.round(interp(real.soc, hour, minute))
 
-      soc.push({ time, value: Math.max(0, Math.min(100, socVal)) })
-      acPower.push({ time, value: Math.max(0, gridVal) })
-      solarPower.push({ time, value: Math.max(0, pvVal) })
+      remainingBatteryCapacity.push({ time, value: Math.max(0, Math.min(100, socVal)) })
+      exchangeChargingPower.push({ time, value: Math.max(0, gridVal) })
+      generationPower.push({ time, value: Math.max(0, pvVal) })
       outputPower.push({ time, value: Math.max(0, loadVal) })
       batteryPower.push({ time, value: gridVal + pvVal - loadVal })
       gridPower.push({ time, value: Math.max(0, gridVal) })
@@ -573,7 +573,7 @@ export function getDemoHistoryData(
     return {
       code: 0,
       message: 'success',
-      data: { soc, solarPower, outputPower, batteryPower, gridPower, acPower },
+      data: { remainingBatteryCapacity, generationPower, outputPower, batteryPower, gridPower, exchangeChargingPower },
     }
   }
 
@@ -584,9 +584,9 @@ export function getDemoHistoryData(
   for (let i = totalPoints - 1; i >= 0; i--) {
     const ts = new Date(now - i * intervalMins * 60 * 1000)
     const time = ts.toISOString()
-    soc.push({ time, value: 14 })
-    acPower.push({ time, value: acInput })
-    solarPower.push({ time, value: 0 })
+    remainingBatteryCapacity.push({ time, value: 14 })
+    exchangeChargingPower.push({ time, value: acInput })
+    generationPower.push({ time, value: 0 })
     outputPower.push({ time, value: outputBase })
     batteryPower.push({ time, value: 0 })
     gridPower.push({ time, value: 0 })
@@ -595,7 +595,7 @@ export function getDemoHistoryData(
   return {
     code: 0,
     message: 'success',
-    data: { soc, solarPower, outputPower, batteryPower, gridPower, acPower },
+    data: { remainingBatteryCapacity, generationPower, outputPower, batteryPower, gridPower, exchangeChargingPower },
   }
 }
 
