@@ -7,28 +7,91 @@
  * 与 API 的 DeviceStateField.key 完全对齐
  */
 export interface DeviceRealtimeFields {
-  /** 电池 SOC 百分比 (0-100) */
+  // ── 电量 ──
+  /** 电芯剩余容量百分比 (0-100)，API: remainingBatteryCapacity */
   soc: number
-  /** 电池功率 W（充电正，放电负） */
-  batteryPower: number
-  /** AC 功率 W（输入/输出） */
+  /** 电芯容量 Ah，API: batteryCapacity */
+  batteryCapacity: number
+  /** 电芯电流 A，API: batteryCurrent */
+  batteryCurrent: number
+  /** 电芯充放电循环次数，API: numberOfBatteryUsageCycles */
+  numberOfBatteryUsageCycles: number
+
+  // ── 功率 ──
+  /** 交流充电功率 W，API: exchangeChargingPower */
   acPower: number
-  /** 光伏输入功率 W */
+  /** 光伏充电功率 W，API: generationPower */
   solarPower: number
-  /** 总输出功率 W */
+  /** 交流输出功率 W，API: outputPower */
   outputPower: number
-  /** 电池温度 °C */
+  /** 计算电池功率 W（充正放负），API: batteryCurrent × voltage */
+  batteryPower: number
+
+  // ── 电压 / 频率 ──
+  /** 交流输入电压 V，API: l1AcInputVoltage */
+  acInputVoltage: number
+  /** 交流输入频率 Hz，API: acInputFrequency */
+  acInputFrequency: number
+  /** 交流输出电压 V，API: acOutputVoltage */
+  acOutputVoltage: number
+  /** 交流输出频率 Hz，API: acOutputFrequency */
+  acOutputFrequency: number
+  /** 光伏输入电压 V，API: solarInputVoltage */
+  solarInputVoltage: number
+
+  // ── 温度 ──
+  /** 电芯 1 温度 °C，API: cellTemperature1 */
   batteryTemp: number
-  /** AC 输出 1 使能 */
+  /** 电芯 2 温度 °C，API: cellTemperature2 */
+  cellTemperature2: number
+  /** 电芯 3 温度 °C，API: cellTemperature3 */
+  cellTemperature3: number
+  /** MPPT 散热器温度 °C，API: mpptTemperature */
+  mpptTemperature: number
+  /** DCDC 散热器温度 °C，API: dcdcTemperature */
+  dcdcTemperature: number
+
+  // ── 能量统计 ──
+  /** 光伏当日发电量 kWh，API: pvGeneratedEnergyOfDay */
+  pvGeneratedEnergyOfDay: number
+  /** 光伏累计发电量 kWh，API: totalPVGeneratedEnergy */
+  totalPVGeneratedEnergy: number
+  /** 充电累计时间 分钟，API: accumulatedChargingTime */
+  accumulatedChargingTime: number
+  /** 放电累计时间 分钟，API: accumulatedDischargeTime */
+  accumulatedDischargeTime: number
+
+  // ── 开关状态（布尔，API 返回 "0"/"1" 字符串） ──
+  /** 逆变状态（AC输出1），API: inversionState */
   acOut1Enable: boolean
-  /** AC 输出 2 使能 */
+  /** AC 输出 2 使能，API: acOut2Enable */
   acOut2Enable: boolean
-  /** USB 输出 1 使能 */
+  /** USB 输出 1 使能，API: usbOut1Enable */
   usbOut1Enable: boolean
-  /** 睡眠模式 */
+  /** 光伏充电中，API: photovoltaicCharging */
+  photovoltaicCharging: boolean
+  /** 市电充电中，API: mainsCharging */
+  mainsCharging: boolean
+  /** 交流输出，API: acOutputs */
+  acOutputs: boolean
+  /** 旁路状态，API: bypassStatus */
+  bypassStatus: boolean
+  /** 无负载关机，API: noLoadShutdown */
+  noLoadShutdown: boolean
+  /** 睡眠模式，API: sleepMode */
   sleepMode: boolean
-  /** 工作模式: 0=正常 1=备份 2=节能 */
+
+  // ── 模式 ──
+  /** 工作模式: 0=正常 1=备份 2=节能，API: workMode */
   workMode: 0 | 1 | 2
+
+  // ── 版本 ──
+  /** 硬件版本号，API: hardwareVersion */
+  hardwareVersion: string
+  /** 主控软件版本号，API: softwareVersionNumber */
+  softwareVersionNumber: string
+  /** 逆变软件版本号，API: inverterSoftwareVersionNumber */
+  inverterSoftwareVersionNumber: string
 }
 
 /** 设备告警（来自 firingAlarms） */
@@ -82,28 +145,17 @@ export interface Device {
   /** 最后在线时间（Unix ms） */
   lastOnlineAt?: number
 
-  // ── API 实时状态字段（来自 /remote/device/state/latest） ──
-  /** 精确 SOC 百分比 (0-100)，覆盖 batteryLevel */
-  soc?: number
-  /** 电池功率 W（充电正，放电负） */
+  // ── API 实时状态字段（来自 /remote/device/state/latest，经 mapFieldsToRealtime 映射） ──
+  soc?: number               // remainingBatteryCapacity
   batteryPower?: number
-  /** AC 功率 W */
-  acPower?: number
-  /** 光伏功率 W */
-  solarPower?: number
-  /** 总输出功率 W，覆盖 power */
+  acPower?: number           // exchangeChargingPower
+  solarPower?: number        // generationPower
   outputPower?: number
-  /** 电池温度 °C */
-  batteryTemp?: number
-  /** AC 输出 1 使能，覆盖 isOn */
-  acOut1Enable?: boolean
-  /** AC 输出 2 使能 */
+  batteryTemp?: number       // cellTemperature1
+  acOut1Enable?: boolean     // inversionState
   acOut2Enable?: boolean
-  /** USB 输出 1 使能 */
   usbOut1Enable?: boolean
-  /** 睡眠模式 */
   sleepMode?: boolean
-  /** 工作模式: 0=正常 1=备份 2=节能 */
   workMode?: 0 | 1 | 2
 }
 
