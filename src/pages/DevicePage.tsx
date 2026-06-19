@@ -30,6 +30,7 @@ import {
 } from 'lucide-react'
 import { useDeviceStore } from '../stores/deviceStore'
 import { useAuthStore } from '../stores/authStore'
+import { useNotificationStore } from '../stores/notificationStore'
 import sierro1000Img from '../assets/sierro-1000.webp'
 import { mapFieldsToRealtime } from '../api/deviceApi'
 import type { DeviceListItem, DeviceStateField } from '../api/deviceApi'
@@ -281,6 +282,9 @@ export default function DevicePage() {
     return soc !== null && soc < 30
   })
 
+  // 未读通知红点（查看通知页后清零）
+  const hasUnreadNotifications = useNotificationStore(s => s.unreadCount()) > 0
+
   // ── BatteryTag 电量标签（横式电池 + 充电闪电 + 百分比 / Disconnected） ──
   const BatteryTag = ({ level, connected, charging, unknown }: { level: number; connected: boolean; charging: boolean; unknown?: boolean }) => {
     if (!connected) {
@@ -391,7 +395,7 @@ export default function DevicePage() {
               className="relative w-11 h-11 rounded-full bg-[#262626] flex items-center justify-center text-white hover:bg-[#454545] transition-colors active:scale-95"
             >
               <Bell size={20} />
-              {(lowBatteryDevice || devices.some(d => d.isAlarmed)) && (
+              {(hasUnreadNotifications || lowBatteryDevice || devices.some(d => d.isAlarmed)) && (
                 <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-[#FF3B30] border-2 border-[#141414]" />
               )}
             </button>
