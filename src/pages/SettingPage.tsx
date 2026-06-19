@@ -310,9 +310,12 @@ export default function SettingPage() {
               Terms of Use
             </Link>
           </div>
-          <div className="text-caption text-ink-7">
+          <button
+            onClick={() => navigate('/ble-debug')}
+            className="text-caption text-ink-7 hover:text-ink-5 transition-colors"
+          >
             Sierro App v{appVersion.version} &copy; 2026 Sierro Inc.
-          </div>
+          </button>
         </div>
       </div>
 
