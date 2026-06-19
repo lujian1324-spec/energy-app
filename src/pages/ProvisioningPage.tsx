@@ -37,6 +37,8 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     store.setErrorMessage(null)
     store.addLog('Starting BLE scan...')
     setFoundDevices([])
+    // Always destroy stale singleton before a new scan
+    destroyProvisionManager()
     try {
       const manager = getProvisionManager({
         onLog: (msg) => store.addLog(msg),
