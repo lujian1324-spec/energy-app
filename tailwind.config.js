@@ -118,7 +118,7 @@ export default {
         's': '4px',
         'm': '8px',
         'l': '12px',
-        'pill': '100px',
+        'pill': '100px',  // Figma radius xl = 100 → use rounded-pill
         // legacy (do not use in new code)
         'sm': '8px',
         'md': '14px',
@@ -131,6 +131,12 @@ export default {
         'xs': '0.5px',
         's': '1px',
         'm': '1.3px',
+      },
+      // ── Drop Shadow / Elevation (Figma): x=0 y=0 blur=0, spread s=2.5 m=3 l=4, color black 30% ──
+      boxShadow: {
+        's': '0 0 0 2.5px rgba(0,0,0,0.3)',
+        'm': '0 0 0 3px rgba(0,0,0,0.3)',
+        'l': '0 0 0 4px rgba(0,0,0,0.3)',
       },
       spacing: {
         '1': '4px',
