@@ -9,12 +9,12 @@
  */
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Camera, Bluetooth, HardDrive, ChevronRight, Shield } from 'lucide-react'
+import { Camera, Bluetooth, HardDrive, Bell, ChevronRight, Shield } from 'lucide-react'
 
 const STORAGE_KEY = 'sierro_permissions_asked'
 
 interface Permission {
-  id: 'storage' | 'camera' | 'bluetooth'
+  id: 'storage' | 'notifications' | 'camera' | 'bluetooth'
   Icon: React.FC<{ size?: number; className?: string }>
   title: string
   description: string
@@ -26,6 +26,12 @@ const PERMISSIONS: Permission[] = [
     Icon: HardDrive,
     title: 'Local Storage',
     description: 'Save your profile, avatar, and settings on this device.',
+  },
+  {
+    id: 'notifications',
+    Icon: Bell,
+    title: 'Notifications',
+    description: 'Get alerted instantly when a power outage or device alarm occurs.',
   },
   {
     id: 'camera',
@@ -83,6 +89,14 @@ export default function PermissionsGate({ onDone }: Props) {
   const handleAllow = async () => {
     setStep('asking')
     const r: Record<string, boolean> = { storage: true }
+
+    // Notifications
+    if ('Notification' in window && Notification.permission !== 'denied') {
+      const perm = await Notification.requestPermission()
+      r.notifications = perm === 'granted'
+    } else {
+      r.notifications = Notification.permission === 'granted'
+    }
 
     // Camera
     r.camera = await requestCamera()

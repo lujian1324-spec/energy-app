@@ -45,6 +45,7 @@ import {
 } from '../api/deviceApi'
 import type { ApiResponse } from '../utils/apiClient'
 import { useAuthStore } from './authStore'
+import { checkAndNotifyPowerOutage } from '../utils/powerOutageNotification'
 import {
   demoDevices,
   getDemoDeviceState,
@@ -237,6 +238,15 @@ export const useDeviceStore = create<DeviceStoreState>()(
           if (seq !== stateRequestSeq) return
           if ((result.code === 0 || result.code === '0') && result.data) {
             set({ selectedDeviceState: result.data, stateLoading: false })
+            // Power outage push notification
+            const details = get().selectedDeviceDetails
+            if (details?.isOnline) {
+              checkAndNotifyPowerOutage(
+                details.name,
+                true,
+                result.data.firingAlarms ?? []
+              )
+            }
           } else {
             set({ stateLoading: false })
           }
