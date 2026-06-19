@@ -56,14 +56,31 @@ export class BleProvisionManager {
    * @param dtuid 可选，指定 DTUID 的 base64 后缀进行过滤
    */
   async connect(dtuid?: string): Promise<void> {
-    this.log('扫描蓝牙设备...')
-
-    const filter: RequestDeviceOptions = {
-      optionalServices: [BLE_PROVISION_UUIDS.SERVICE],
-      acceptAllDevices: true,
+    if (!navigator.bluetooth) {
+      throw new Error('Web Bluetooth is not supported in this browser. Use Chrome or Edge on Android/desktop.')
     }
 
-    this.device = await navigator.bluetooth.requestDevice(filter)
+    this.log('扫描蓝牙设备...')
+
+    // Try filtering by name prefix first; fall back to acceptAllDevices
+    let device: BluetoothDevice
+    try {
+      device = await navigator.bluetooth.requestDevice({
+        filters: [{ namePrefix: 'SSL_' }],
+        optionalServices: [BLE_PROVISION_UUIDS.SERVICE],
+      })
+    } catch (prefixErr) {
+      // User cancelled or prefix filter found nothing — open picker to all devices
+      if ((prefixErr as Error).name === 'NotFoundError') {
+        device = await navigator.bluetooth.requestDevice({
+          acceptAllDevices: true,
+          optionalServices: [BLE_PROVISION_UUIDS.SERVICE],
+        })
+      } else {
+        throw prefixErr
+      }
+    }
+    this.device = device
 
     this.device.addEventListener('gattserverdisconnected', this.handleDisconnect)
 

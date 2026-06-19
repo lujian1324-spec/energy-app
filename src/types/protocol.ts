@@ -51,11 +51,11 @@ export const BLE_UUIDS = {
 
 export const BLE_PROVISION_UUIDS = {
   /** 配网服务 Service UUID */
-  SERVICE: '0000FEE7-0000-1000-8000-00805F9B34FB',
+  SERVICE: '0000fee7-0000-1000-8000-00805f9b34fb',
   /** Indication 接收通道（设备→手机应答） */
-  INDICATE_RX: '0000FED6-0000-1000-8000-00805F9B34FB',
+  INDICATE_RX: '0000fed6-0000-1000-8000-00805f9b34fb',
   /** Indication 发送通道（手机→设备命令） */
-  WRITE_TX: '0000FED5-0000-1000-8000-00805F9B34FB',
+  WRITE_TX: '0000fed5-0000-1000-8000-00805f9b34fb',
 } as const
 
 /** BLE 配网 MTU */
