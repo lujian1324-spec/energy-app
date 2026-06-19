@@ -61,52 +61,107 @@ export interface DeviceListRequest {
 }
 
 export interface DeviceListItem {
-  id: number
+  // ── 设备标识 ──
+  id: string                          // Long as string
   name: string
   serialNumber: string
-  model: string
+  isVirtualSerialNumber?: boolean
+  model: string | null
   deviceSortKey: string
   deviceSortLocaleText: string
+  deviceTypeId?: string
+  deviceTypeNumber?: string
+  iconResid: string
+
+  // ── 制造商与协议 ──
+  deviceManufacturerId?: string
+  deviceManufacturerName?: string
+  gatherProtocolId?: string
   gatherProtocolNumber: string
-  gatherProtocolNameDisplay: string
-  softwareVersion: string
-  stationId: number
-  stationName: string
-  dtuId: number
+  gatherProtocolNameDisplay: string | null
+  gatherProtocolInfoMissing?: boolean
+  gatherProtocolVersionId?: string    // 详情独有
+  gatherProtocolVersionCode?: number  // 详情独有
+
+  // ── 采集器/DTU ──
+  dtuId: string                       // Long as string
   dtuDtuid: string
   dtuName: string
+
+  // ── 电站 ──
+  stationId: string                   // Long as string
+  stationName: string
+  stationTimezone: string
+  stationUtcTimezoneOffsetId?: string
+  stationCurrencyCode: string
+  stationCurrencyName?: string
+  stationCurrencyLocaleName?: string
+  stationEnergyIncomePrice: number
+
+  // ── 设备状态 ──
+  state: number                       // 10=Alarm 20=Online 30=Offline 40=Fault
+  stateDict: string                   // "Alarm" / "Online" / "Offline"
   isOnline: boolean
   isAlarmed: boolean
   isPined: boolean
-  isPeakValleyEnabled: boolean
   isUpgrading: boolean
-  isFirmwareUpgradeEnabled: boolean
   isExternalDevice: boolean
   isMainMasterDevice: boolean
-  applyMode: number
-  state: string
-  stateDict: string
-  producingPower: number
+
+  // ── 功率与发电量 ──
+  applyMode: string
+  producingPower: number | null
+  nonNullableProducingPower?: number
   ratedPower: number
   dailyProducedQuantity: number
+  dailyProducedTime?: number
   totalProducedQuantity: number
-  installedAt: string
+  totalProducedQuantityExcludeToday?: number
+  summaryProperty: Record<string, unknown>
+  extraProperty: Record<string, unknown>
+  todayPvGenerationReadDirectly?: number | null
+  totalPvGenerationReadDirectly?: number | null
+  loadPowerReadDirectly?: number | null
+
+  // ── 时间 ──
+  installedAt: string | null
   lastDataAt: string
   lastOnlineAt: string
   lastOfflineAt: string
-  place: string
-  iconResid: string
-  ownerUserId: number
+  createdAt?: string
+  updateAt?: string
+  installVendor?: string | null
+  place: string | null
+
+  // ── 用户/审计 ──
+  ownerUserId: string                 // Long as string
   ownerUserName: string
-  stationTimezone: string
-  stationCurrencyCode: string
-  stationEnergyIncomePrice: number
-  co2EmissionReduction: number
-  noxEmissionReduction: number
-  so2EmissionReduction: number
+  createdByUserId?: string
+  createdByUserAccount?: string
+  updateByUserId?: string
+  updateByUserAccount?: string
+  isDeleted?: boolean
+
+  // ── 功能开关 ──
+  isExternalLoadDevice?: boolean
+  isShowPvGenerationReadDirectly?: boolean
+  readDirectlyAssginBit?: number
+  pinedOrderNumber?: number | null
+  isPeakValleyEnabled?: boolean       // 详情独有
+  isTimeSyncEnabled?: boolean         // 详情独有
+  isExternalLoadDeviceSupported?: boolean // 详情独有
+  isFirmwareUpgradeEnabled?: boolean  // 详情独有
+  peakValleyAttributeGroupKey?: string // 详情独有
+
+  // ── 环保指标 ──
   savingStandardCarbon: number
-  extraProperty: Record<string, unknown>
-  summaryProperty: Record<string, unknown>
+  co2EmissionReduction: number
+  so2EmissionReduction: number
+  noxEmissionReduction: number
+
+  // ── 其他 ──
+  softwareVersion: string | null
+  deviceUpgradeId?: string | null
 }
 
 export interface DeviceListResponse {
@@ -603,11 +658,16 @@ export async function addDeviceWithStation(
   return api.post<unknown>('/device/add/single/addStationTogether', data)
 }
 
-/** 删除设备（解绑/登出） */
+/** 删除设备（解绑）— 参数为单个 id（非数组） */
 export async function deleteDevice(
-  ids: number[]
+  id: string | number
 ): Promise<ApiResponse<unknown>> {
-  return api.post<unknown>('/device/delete', { ids })
+  return api.post<unknown>('/device/delete', { id: Number(id) })
+}
+
+/** 设备状态统计 — state: 10=Alarm 20=Online 30=Offline 40=Fault */
+export async function fetchDeviceStateCount(): Promise<ApiResponse<Array<{ state: number; count: number; stateDict: string }>>> {
+  return api.get('/device/state/count')
 }
 
 /** 更新设备信息 */
