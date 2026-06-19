@@ -46,3 +46,4 @@ api-test-*.json
 api-test-*.md
 browser-login.mjs
 dist-*/
+test_api.py
