@@ -80,7 +80,7 @@ export default {
         // ── Red / Error ──
         danger: {
           light: '#FFEBEA',
-          DEFAULT: '#FF3530',
+          DEFAULT: '#FF3B30',
           hover: '#E6352B',
           active: '#CC2F28',
           dark: '#BF2C24',
@@ -106,10 +106,10 @@ export default {
         accent: '#01D6BE',
         'bg-base': '#141414',   // ink-12
         'bg-card': '#262626',   // ink-10
-        'bg-card2': '#333333',
+        'bg-card2': '#454545',   // ink-9 (was off-palette #333333)
         'txt-primary': '#FFFFFF',
-        'txt-secondary': '#A0A0A5',
-        'txt-muted': '#636366',
+        'txt-secondary': '#BFBFBF', // ink-6 (was off-palette #A0A0A5)
+        'txt-muted': '#8C8C8C',     // ink-7 (was off-palette #636366)
       },
       // ── Border Radius (Figma): s=4 · m=8 · l=12 · xl=100(pill) ──
       // New canonical tokens. Legacy sm/md/lg/xl kept for back-compat;
@@ -118,7 +118,7 @@ export default {
         's': '4px',
         'm': '8px',
         'l': '12px',
-        'pill': '100px',
+        'pill': '100px',  // Figma radius xl = 100 → use rounded-pill
         // legacy (do not use in new code)
         'sm': '8px',
         'md': '14px',
@@ -131,6 +131,12 @@ export default {
         'xs': '0.5px',
         's': '1px',
         'm': '1.3px',
+      },
+      // ── Drop Shadow / Elevation (Figma): x=0 y=0 blur=0, spread s=2.5 m=3 l=4, color black 30% ──
+      boxShadow: {
+        's': '0 0 0 2.5px rgba(0,0,0,0.3)',
+        'm': '0 0 0 3px rgba(0,0,0,0.3)',
+        'l': '0 0 0 4px rgba(0,0,0,0.3)',
       },
       spacing: {
         '1': '4px',

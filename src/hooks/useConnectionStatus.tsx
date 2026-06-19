@@ -106,11 +106,11 @@ export function useConnectionStatus(opts: UseConnectionStatusOptions = {}) {
     } else if (activeDataSource === 'simulator') {
       health = 'unknown'
       statusLabel = 'Demo Mode'
-      statusColor = '#A0A0A5'  // Text Secondary
+      statusColor = '#BFBFBF'  // Text Secondary
     } else {
       health = 'unknown'
       statusLabel = 'Disconnected'
-      statusColor = '#636366'  // Text Muted
+      statusColor = '#8C8C8C'  // Text Muted
     }
 
     return {

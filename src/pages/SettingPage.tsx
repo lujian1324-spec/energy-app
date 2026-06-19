@@ -335,59 +335,59 @@ export default function SettingPage() {
 
             <div className="flex-1 overflow-y-auto scrollbar-hide px-5 pb-4">
               {/* Personal Info */}
-              <div className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden mb-4">
+              <div className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-l overflow-hidden mb-4">
                 <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[rgba(1,214,190,0.06)] cursor-pointer"
                   onClick={() => { setShowManageAccount(false); setShowProfileEdit(true) }}>
                   <div className="w-9 h-9 rounded-lg bg-[rgba(255,255,255,0.06)] flex items-center justify-center">
                     <User size={16} className="text-[#FFFFFF]" />
                   </div>
                   <div className="flex-1">
-                    <div className="text-[13px] font-semibold text-[#FFFFFF]">Personal Info</div>
-                    <div className="text-[11px] text-[#A0A0A5] mt-0.5">{userProfile.name}</div>
+                    <div className="text-body-md font-semibold text-[#FFFFFF]">Personal Info</div>
+                    <div className="text-[11px] text-[#BFBFBF] mt-0.5">{userProfile.name}</div>
                   </div>
-                  <ChevronRight size={16} className="text-[#636366]" />
+                  <ChevronRight size={16} className="text-[#8C8C8C]" />
                 </div>
                 <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[rgba(1,214,190,0.06)]">
                   <div className="w-9 h-9 rounded-lg bg-[rgba(255,255,255,0.06)] flex items-center justify-center">
                     <Mail size={16} className="text-[#FFFFFF]" />
                   </div>
                   <div className="flex-1">
-                    <div className="text-[13px] font-semibold text-[#FFFFFF]">Account</div>
-                    <div className="text-[11px] text-[#A0A0A5] mt-0.5">{authUser?.account || userProfile.email}</div>
+                    <div className="text-body-md font-semibold text-[#FFFFFF]">Account</div>
+                    <div className="text-[11px] text-[#BFBFBF] mt-0.5">{authUser?.account || userProfile.email}</div>
                   </div>
                 </div>
                 <div className="px-4 py-3 border-b border-[rgba(1,214,190,0.06)]">
-                  <span className="text-[11px] font-bold text-[#A0A0A5] tracking-widest uppercase">Link Accounts</span>
+                  <span className="text-[11px] font-bold text-[#BFBFBF] tracking-widest uppercase">Link Accounts</span>
                 </div>
                 <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[rgba(1,214,190,0.06)]">
                   <div className="w-9 h-9 rounded-lg bg-[rgba(255,255,255,0.06)] flex items-center justify-center">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#A0A0A5"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09z"/></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#BFBFBF"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09z"/></svg>
                   </div>
                   <div className="flex-1">
-                    <div className="text-[13px] font-semibold text-[#FFFFFF]">Apple</div>
+                    <div className="text-body-md font-semibold text-[#FFFFFF]">Apple</div>
                   </div>
                   <span className="text-[12px] text-[#FF3B30]">Unlink</span>
                 </div>
                 <div className="flex items-center gap-3 px-4 py-3.5">
                   <div className="w-9 h-9 rounded-lg bg-[rgba(255,255,255,0.06)] flex items-center justify-center">
-                    <svg width="16" height="16" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#A0A0A5"/></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#BFBFBF"/></svg>
                   </div>
                   <div className="flex-1">
-                    <div className="text-[13px] font-semibold text-[#FFFFFF]">Google</div>
+                    <div className="text-body-md font-semibold text-[#FFFFFF]">Google</div>
                   </div>
                   <span className="text-[12px] text-[#01D6BE]">Link</span>
                 </div>
               </div>
 
               {/* Actions */}
-              <div className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-[20px] overflow-hidden mb-4">
+              <div className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-l overflow-hidden mb-4">
                 {isGuest ? (
                   <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[rgba(1,214,190,0.06)] cursor-pointer"
                     onClick={() => { setShowManageAccount(false); navigate('/login') }}>
                     <div className="w-9 h-9 rounded-lg bg-[rgba(1,214,190,0.12)] flex items-center justify-center">
                       <User size={16} className="text-[#01D6BE]" />
                     </div>
-                    <div className="flex-1 text-[13px] font-semibold text-[#01D6BE]">Sign In</div>
+                    <div className="flex-1 text-body-md font-semibold text-[#01D6BE]">Sign In</div>
                     <ChevronRight size={16} className="text-[#01D6BE]" />
                   </div>
                 ) : (
@@ -396,8 +396,8 @@ export default function SettingPage() {
                     <div className="w-9 h-9 rounded-lg bg-[rgba(255,255,255,0.06)] flex items-center justify-center">
                       <LogOut size={16} className="text-[#FFFFFF]" />
                     </div>
-                    <div className="flex-1 text-[13px] font-semibold text-[#FFFFFF]">Sign out</div>
-                    <ChevronRight size={16} className="text-[#636366]" />
+                    <div className="flex-1 text-body-md font-semibold text-[#FFFFFF]">Sign out</div>
+                    <ChevronRight size={16} className="text-[#8C8C8C]" />
                   </div>
                 )}
                 <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[rgba(1,214,190,0.06)] cursor-pointer"
@@ -405,14 +405,14 @@ export default function SettingPage() {
                   <div className="w-9 h-9 rounded-lg bg-[rgba(255,255,255,0.06)] flex items-center justify-center">
                     <RotateCcw size={16} className="text-[#FFFFFF]" />
                   </div>
-                  <div className="flex-1 text-[13px] font-semibold text-[#FFFFFF]">Reset App</div>
-                  <ChevronRight size={16} className="text-[#636366]" />
+                  <div className="flex-1 text-body-md font-semibold text-[#FFFFFF]">Reset App</div>
+                  <ChevronRight size={16} className="text-[#8C8C8C]" />
                 </div>
                 <div className="flex items-center gap-3 px-4 py-3.5 cursor-pointer">
                   <div className="w-9 h-9 rounded-lg bg-[rgba(255,59,48,0.08)] flex items-center justify-center">
                     <Trash2 size={16} className="text-[#FF3B30]" />
                   </div>
-                  <div className="flex-1 text-[13px] font-semibold text-[#FF3B30]">Delete Account</div>
+                  <div className="flex-1 text-body-md font-semibold text-[#FF3B30]">Delete Account</div>
                   <ChevronRight size={16} className="text-[#FF3B30]" />
                 </div>
               </div>
@@ -438,10 +438,10 @@ export default function SettingPage() {
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-[#FFFFFF]">Feedback</h3>
-                    <p className="text-[11px] text-[#A0A0A5]">We'd love to hear from you</p>
+                    <p className="text-[11px] text-[#BFBFBF]">We'd love to hear from you</p>
                   </div>
                 </div>
-                <button onClick={() => setShowSupport(false)} className="p-2 rounded-full hover:bg-[rgba(255,255,255,0.05)]"><X size={20} className="text-[#A0A0A5]" /></button>
+                <button onClick={() => setShowSupport(false)} className="p-2 rounded-full hover:bg-[rgba(255,255,255,0.05)]"><X size={20} className="text-[#BFBFBF]" /></button>
               </div>
               <div className="p-5">
                 {supportSubmitted ? (
@@ -449,25 +449,25 @@ export default function SettingPage() {
                     <div className="w-16 h-16 rounded-full bg-[rgba(52,199,89,0.1)] flex items-center justify-center mx-auto mb-4">
                       <CheckCircle size={32} className="text-[#34C759]" />
                     </div>
-                    <h4 className="text-[15px] font-bold text-[#FFFFFF] mb-2">Feedback Submitted!</h4>
-                    <p className="text-[12px] text-[#A0A0A5]">We will get back to you within 24 hours.</p>
+                    <h4 className="text-body-lg font-bold text-[#FFFFFF] mb-2">Feedback Submitted!</h4>
+                    <p className="text-[12px] text-[#BFBFBF]">We will get back to you within 24 hours.</p>
                   </motion.div>
                 ) : (
                   <form onSubmit={handleSupportSubmit} className="space-y-4">
                     <div>
-                      <label className="text-[12px] font-semibold text-[#A0A0A5] mb-2 flex items-center gap-2"><Mail size={14} />Your Email</label>
+                      <label className="text-[12px] font-semibold text-[#BFBFBF] mb-2 flex items-center gap-2"><Mail size={14} />Your Email</label>
                       <input type="email" required value={supportEmail} onChange={e => setSupportEmail(e.target.value)} placeholder="you@example.com"
-                        className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-[rgba(1,214,190,0.15)] text-[#FFFFFF] text-[13px] placeholder:text-[#636366] focus:outline-none focus:border-[rgba(1,214,190,0.4)] transition-colors" />
+                        className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-[rgba(1,214,190,0.15)] text-[#FFFFFF] text-body-md placeholder:text-[#8C8C8C] focus:outline-none focus:border-[rgba(1,214,190,0.4)] transition-colors" />
                     </div>
                     <div>
-                      <label className="text-[12px] font-semibold text-[#A0A0A5] mb-2 flex items-center gap-2"><FileText size={14} />Your Feedback</label>
+                      <label className="text-[12px] font-semibold text-[#BFBFBF] mb-2 flex items-center gap-2"><FileText size={14} />Your Feedback</label>
                       <textarea required value={supportMessage} onChange={e => setSupportMessage(e.target.value)} placeholder="Describe your issue or suggestion..." rows={4}
-                        className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-[rgba(1,214,190,0.15)] text-[#FFFFFF] text-[13px] placeholder:text-[#636366] resize-none focus:outline-none focus:border-[rgba(1,214,190,0.4)] transition-colors" />
+                        className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-[rgba(1,214,190,0.15)] text-[#FFFFFF] text-body-md placeholder:text-[#8C8C8C] resize-none focus:outline-none focus:border-[rgba(1,214,190,0.4)] transition-colors" />
                     </div>
                     {supportError && (
-                      <p className="text-[12px] text-[#FF3530] text-center">{supportError}</p>
+                      <p className="text-[12px] text-[#FF3B30] text-center">{supportError}</p>
                     )}
-                    <button type="submit" disabled={supportSending} className="w-full py-3.5 rounded-xl bg-[rgba(255,149,0,0.12)] text-[#FF9500] font-semibold text-[13px] flex items-center justify-center gap-2 active:scale-95 transition-transform border border-[rgba(255,149,0,0.2)] disabled:opacity-50">
+                    <button type="submit" disabled={supportSending} className="w-full py-3.5 rounded-xl bg-[rgba(255,149,0,0.12)] text-[#FF9500] font-semibold text-body-md flex items-center justify-center gap-2 active:scale-95 transition-transform border border-[rgba(255,149,0,0.2)] disabled:opacity-50">
                       {supportSending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                       {supportSending ? 'Sending...' : 'Submit Feedback'}
                     </button>
@@ -495,11 +495,11 @@ export default function SettingPage() {
                     <RotateCcw size={24} className="text-[#FF3B30]" />
                   </div>
                   <h3 className="text-base font-bold text-[#FFFFFF] mb-2">Reset App</h3>
-                  <p className="text-[13px] text-[#A0A0A5]">All settings, device configurations, and membership data will be permanently deleted.</p>
+                  <p className="text-body-md text-[#BFBFBF]">All settings, device configurations, and membership data will be permanently deleted.</p>
                 </div>
                 <div className="flex gap-3">
-                  <button onClick={() => setShowResetConfirm(false)} className="flex-1 py-3 rounded-xl bg-[rgba(255,255,255,0.06)] text-[#FFFFFF] font-semibold text-[13px]">Cancel</button>
-                  <button onClick={() => { resetAll(); setShowResetConfirm(false) }} className="flex-1 py-3 rounded-xl bg-[rgba(255,59,48,0.15)] text-[#FF3B30] font-semibold text-[13px] border border-[rgba(255,59,48,0.3)]">Reset</button>
+                  <button onClick={() => setShowResetConfirm(false)} className="flex-1 py-3 rounded-xl bg-[rgba(255,255,255,0.06)] text-[#FFFFFF] font-semibold text-body-md">Cancel</button>
+                  <button onClick={() => { resetAll(); setShowResetConfirm(false) }} className="flex-1 py-3 rounded-xl bg-[rgba(255,59,48,0.15)] text-[#FF3B30] font-semibold text-body-md border border-[rgba(255,59,48,0.3)]">Reset</button>
                 </div>
               </div>
             </motion.div>
@@ -522,22 +522,22 @@ export default function SettingPage() {
                   <div className="w-10 h-10 rounded-xl bg-[rgba(255,215,0,0.1)] flex items-center justify-center"><Crown size={20} className="text-[#FFD700]" /></div>
                   <div>
                     <h3 className="text-base font-bold text-[#FFFFFF]">Founder Badge</h3>
-                    <p className="text-[11px] text-[#A0A0A5]">Unlock exclusive benefits</p>
+                    <p className="text-[11px] text-[#BFBFBF]">Unlock exclusive benefits</p>
                   </div>
                 </div>
-                <button onClick={() => setShowFounderModal(false)} className="p-2 rounded-full hover:bg-[rgba(255,255,255,0.05)]"><X size={20} className="text-[#A0A0A5]" /></button>
+                <button onClick={() => setShowFounderModal(false)} className="p-2 rounded-full hover:bg-[rgba(255,255,255,0.05)]"><X size={20} className="text-[#BFBFBF]" /></button>
               </div>
               <div className="p-5">
                 {founderSuccess ? (
                   <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-8">
                     <div className="w-16 h-16 rounded-full bg-[rgba(255,215,0,0.15)] flex items-center justify-center mx-auto mb-4"><Crown size={32} className="text-[#FFD700]" /></div>
-                    <h4 className="text-[15px] font-bold text-[#FFD700] mb-2">Welcome, Founding Member!</h4>
-                    <p className="text-[12px] text-[#A0A0A5]">Your exclusive benefits are now active.</p>
+                    <h4 className="text-body-lg font-bold text-[#FFD700] mb-2">Welcome, Founding Member!</h4>
+                    <p className="text-[12px] text-[#BFBFBF]">Your exclusive benefits are now active.</p>
                   </motion.div>
                 ) : (
                   <>
                     <div className="mb-5">
-                      <p className="text-[12px] text-[#A0A0A5] mb-3">Founding Members enjoy:</p>
+                      <p className="text-[12px] text-[#BFBFBF] mb-3">Founding Members enjoy:</p>
                       <div className="grid grid-cols-2 gap-2">
                         {founderBenefits.map(b => { const Icon = b.icon; return (
                           <div key={b.label} className="flex items-center gap-2 bg-[rgba(255,215,0,0.05)] rounded-lg p-2">
@@ -548,12 +548,12 @@ export default function SettingPage() {
                     </div>
                     <form onSubmit={handleFounderSubmit} className="space-y-4">
                       <div>
-                        <label className="text-[12px] font-semibold text-[#A0A0A5] mb-2 flex items-center gap-2"><Sparkles size={14} />Enter Code</label>
+                        <label className="text-[12px] font-semibold text-[#BFBFBF] mb-2 flex items-center gap-2"><Sparkles size={14} />Enter Code</label>
                         <input type="text" required value={founderCode} onChange={e => setFounderCode(e.target.value)} placeholder="e.g., FOUNDER2024"
-                          className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-[rgba(255,215,0,0.2)] text-[#FFFFFF] text-[13px] placeholder:text-[#636366] uppercase focus:outline-none focus:border-[rgba(255,215,0,0.5)] transition-colors" />
+                          className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-[rgba(255,215,0,0.2)] text-[#FFFFFF] text-body-md placeholder:text-[#8C8C8C] uppercase focus:outline-none focus:border-[rgba(255,215,0,0.5)] transition-colors" />
                       </div>
                       {founderMessage && <div className={`text-[11px] text-center ${founderSuccess ? 'text-[#34C759]' : 'text-[#FF3B30]'}`}>{founderMessage}</div>}
-                      <button type="submit" className="w-full py-3.5 rounded-xl bg-[rgba(255,215,0,0.12)] text-[#FFD700] font-semibold text-[13px] flex items-center justify-center gap-2 active:scale-95 transition-transform border border-[rgba(255,215,0,0.25)]">
+                      <button type="submit" className="w-full py-3.5 rounded-xl bg-[rgba(255,215,0,0.12)] text-[#FFD700] font-semibold text-body-md flex items-center justify-center gap-2 active:scale-95 transition-transform border border-[rgba(255,215,0,0.25)]">
                         <Crown size={16} />Activate Badge
                       </button>
                     </form>

@@ -298,7 +298,7 @@ const ACCENT = "#01D6BE";
 const ORANGE = "#FF9500";
 const RED = "#FF3B30";
 const GOLD = "#FFD700";
-const SUB = "#A0A0A5";
+const SUB = "#BFBFBF";
 const LINE = "#3A3A3C";
 
 const ICONS = {
@@ -362,7 +362,7 @@ const Row = ({ title, sub, value, onClick, danger, right, first, last }) => (
       borderBottom: last ? "none" : `1px solid ${BG}`,
     }}>
     <div className="min-w-0 pr-3">
-      <div className="text-[15px] font-medium truncate" style={{ color: danger ? RED : "#fff" }}>{title}</div>
+      <div className="text-body-lg font-medium truncate" style={{ color: danger ? RED : "#fff" }}>{title}</div>
       {sub && <div className="text-xs mt-0.5" style={{ color: SUB }}>{sub}</div>}
     </div>
     <div className="flex items-center gap-1.5 shrink-0">
@@ -393,7 +393,7 @@ const Toast = ({ toast, onClose }) => {
       <div className="flex items-center gap-2 rounded-xl px-3 py-2.5"
         style={{ background: s.bg, border: `1px solid ${s.border}` }}>
         {s.icon}
-        <span className="flex-1 text-[13px] text-white">{toast.msg}</span>
+        <span className="flex-1 text-body-md text-white">{toast.msg}</span>
         <button onClick={onClose}><X size={15} color="#fff" /></button>
       </div>
     </div>
@@ -405,8 +405,8 @@ const Dialog = ({ open, title, body, cancel = "Cancel", confirm, danger, onCance
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center px-8" style={{ background: "rgba(0,0,0,.6)" }}>
       <div className="w-full rounded-2xl p-4" style={{ background: "#2C2C2E" }}>
-        <div className="text-[15px] font-semibold text-white">{title}</div>
-        <div className="text-[13px] mt-1.5 leading-snug" style={{ color: SUB }}>{body}</div>
+        <div className="text-body-lg font-semibold text-white">{title}</div>
+        <div className="text-body-md mt-1.5 leading-snug" style={{ color: SUB }}>{body}</div>
         <div className="flex gap-2.5 mt-4">
           <button onClick={onCancel} className="flex-1 rounded-lg py-2.5 text-sm font-medium text-white" style={{ background: "#48484A" }}>{cancel}</button>
           <button onClick={onConfirm} className="flex-1 rounded-lg py-2.5 text-sm font-semibold"
@@ -472,7 +472,7 @@ const BatteryTag = ({ level, charging, connected }) => {
   return (
     <span className="flex items-center gap-1.5 text-[11px] font-semibold px-2 py-1 rounded-md" style={{ background: "#1A1A1A", color: "#fff" }}>
       <span className="relative flex items-center">
-        <span className="relative rounded-[3px] flex items-center" style={{ width: 22, height: 11, border: `1.5px solid ${SUB}`, padding: 1 }}>
+        <span className="relative rounded-s flex items-center" style={{ width: 22, height: 11, border: `1.5px solid ${SUB}`, padding: 1 }}>
           <span className="rounded-[1.5px] h-full" style={{ width: `${level}%`, background: col }} />
           {charging && <Zap size={8} color="#fff" fill="#fff" className="absolute left-1/2 -translate-x-1/2" />}
         </span>
@@ -611,7 +611,7 @@ const AuthFlow = ({ onDone }) => {
     <button onClick={onClick}
       className="w-full flex items-center gap-3 rounded-xl px-4 py-3.5 active:opacity-70"
       style={{ background: CARD }}>
-      {icon}<span className="text-[15px] font-medium text-white">{label}</span>
+      {icon}<span className="text-body-lg font-medium text-white">{label}</span>
     </button>
   );
 
@@ -629,7 +629,7 @@ const AuthFlow = ({ onDone }) => {
         className="w-full flex items-center gap-3 rounded-xl px-4 py-3.5 active:opacity-80 mb-3"
         style={{ background: ACCENT }}>
         <User size={18} color="#062B26" />
-        <span className="text-[15px] font-semibold" style={{ color: "#062B26" }}>Sign in with Account</span>
+        <span className="text-body-lg font-semibold" style={{ color: "#062B26" }}>Sign in with Account</span>
       </button>
 
       {/* 备选：邮箱验证码登录 */}
@@ -655,7 +655,7 @@ const AuthFlow = ({ onDone }) => {
       <TopBar onBack={() => { setStep("login"); setApiError(""); setPassword(""); }} />
       <div className="px-5 flex-1">
         <h1 className="text-[22px] font-bold text-white text-center">Sign in</h1>
-        <p className="text-[13px] text-center mt-1 mb-6" style={{ color: SUB }}>
+        <p className="text-body-md text-center mt-1 mb-6" style={{ color: SUB }}>
           Enter your account and password.
         </p>
 
@@ -667,7 +667,7 @@ const AuthFlow = ({ onDone }) => {
           <input value={email} autoFocus
             onChange={(e) => { setEmail(e.target.value); setEmailErr(false); setApiError(""); }}
             placeholder="Account or email" type="text" autoCapitalize="none" autoCorrect="off"
-            className="flex-1 bg-transparent outline-none text-[15px] text-white placeholder:text-neutral-500" />
+            className="flex-1 bg-transparent outline-none text-body-lg text-white placeholder:text-neutral-500" />
           {email && <button onClick={() => setEmail("")}><CircleX size={16} color={SUB} /></button>}
         </div>
 
@@ -675,12 +675,12 @@ const AuthFlow = ({ onDone }) => {
         <label className="text-[12px] font-medium block mb-1.5 px-1" style={{ color: SUB }}>Password</label>
         <div className="rounded-xl px-4 py-3.5 flex items-center"
           style={{ background: CARD, border: apiError ? `1px solid ${RED}` : "1px solid transparent" }}>
-          <span className="mr-2.5 shrink-0 text-[15px]" style={{ color: SUB }}>🔒</span>
+          <span className="mr-2.5 shrink-0 text-body-lg" style={{ color: SUB }}>🔒</span>
           <input value={password}
             onChange={(e) => { setPassword(e.target.value); setApiError(""); }}
             onKeyDown={(e) => { if (e.key === "Enter" && email.trim() && password.trim() && !apiLoading) doApiLogin(); }}
             placeholder="Password" type={showPwd ? "text" : "password"}
-            className="flex-1 bg-transparent outline-none text-[15px] text-white placeholder:text-neutral-500" />
+            className="flex-1 bg-transparent outline-none text-body-lg text-white placeholder:text-neutral-500" />
           <button onClick={() => setShowPwd(v => !v)} className="ml-2 shrink-0">
             <span className="text-[11px] font-medium" style={{ color: SUB }}>{showPwd ? "Hide" : "Show"}</span>
           </button>
@@ -730,7 +730,7 @@ const AuthFlow = ({ onDone }) => {
       <TopBar onBack={() => { setStep("login"); setApiError(""); }} />
       <div className="px-5 flex-1">
         <h1 className="text-[22px] font-bold text-white text-center">Enter your email</h1>
-        <p className="text-[13px] text-center mt-1 mb-6" style={{ color: SUB }}>
+        <p className="text-body-md text-center mt-1 mb-6" style={{ color: SUB }}>
           We'll send a verification code to your email.
         </p>
         <div className="rounded-xl px-4 py-3.5 flex items-center"
@@ -740,7 +740,7 @@ const AuthFlow = ({ onDone }) => {
             onChange={(e) => { setEmail(e.target.value); setEmailErr(false); setApiError(""); }}
             onKeyDown={(e) => { if (e.key === "Enter" && !sending) doSendEmailCaptcha(); }}
             placeholder="name@example.com"
-            className="flex-1 bg-transparent outline-none text-[15px] text-white placeholder:text-neutral-500" />
+            className="flex-1 bg-transparent outline-none text-body-lg text-white placeholder:text-neutral-500" />
           {email && <button onClick={() => setEmail("")}><CircleX size={16} color={SUB} /></button>}
         </div>
         {emailErr && <p className="text-[11px] mt-1.5" style={{ color: RED }}>Please enter a valid email address.</p>}
@@ -765,7 +765,7 @@ const AuthFlow = ({ onDone }) => {
       <TopBar onBack={() => { setStep("email"); setApiError(""); }} />
       <div className="px-5 flex-1">
         <h1 className="text-[22px] font-bold text-white text-center">Enter verification code</h1>
-        <p className="text-[13px] text-center mt-1 mb-6" style={{ color: SUB }}>
+        <p className="text-body-md text-center mt-1 mb-6" style={{ color: SUB }}>
           We sent a 6-digit verification code to<br /><b className="text-white">{email}</b>
         </p>
         <div className="relative">
@@ -801,14 +801,14 @@ const AuthFlow = ({ onDone }) => {
       <TopBar onBack={() => { setStep("account"); setApiError(""); }} />
       <div className="px-5 flex-1 overflow-y-auto">
         <h1 className="text-[22px] font-bold text-white text-center">Create account</h1>
-        <p className="text-[13px] text-center mt-1 mb-6" style={{ color: SUB }}>
+        <p className="text-body-md text-center mt-1 mb-6" style={{ color: SUB }}>
           Register with your email and a password.
         </p>
         <label className="text-[12px] font-medium block mb-1.5 px-1" style={{ color: SUB }}>Account name</label>
         <div className="rounded-xl px-4 py-3.5 flex items-center mb-4" style={{ background: CARD }}>
           <User size={16} color={SUB} className="mr-2.5 shrink-0" />
           <input value={name} autoFocus onChange={(e) => setName(e.target.value)} placeholder="Choose an account name"
-            autoCapitalize="none" className="flex-1 bg-transparent outline-none text-[15px] text-white placeholder:text-neutral-500" />
+            autoCapitalize="none" className="flex-1 bg-transparent outline-none text-body-lg text-white placeholder:text-neutral-500" />
         </div>
         <label className="text-[12px] font-medium block mb-1.5 px-1" style={{ color: SUB }}>Email</label>
         <div className="rounded-xl px-4 py-3.5 flex items-center mb-4"
@@ -816,14 +816,14 @@ const AuthFlow = ({ onDone }) => {
           <Mail size={16} color={SUB} className="mr-2.5 shrink-0" />
           <input value={email} type="email" autoCapitalize="none"
             onChange={(e) => { setEmail(e.target.value); setEmailErr(false); }} placeholder="name@example.com"
-            className="flex-1 bg-transparent outline-none text-[15px] text-white placeholder:text-neutral-500" />
+            className="flex-1 bg-transparent outline-none text-body-lg text-white placeholder:text-neutral-500" />
         </div>
         <label className="text-[12px] font-medium block mb-1.5 px-1" style={{ color: SUB }}>Password</label>
         <div className="rounded-xl px-4 py-3.5 flex items-center" style={{ background: CARD }}>
-          <span className="mr-2.5 shrink-0 text-[15px]" style={{ color: SUB }}>🔒</span>
+          <span className="mr-2.5 shrink-0 text-body-lg" style={{ color: SUB }}>🔒</span>
           <input value={password} type={showPwd ? "text" : "password"}
             onChange={(e) => { setPassword(e.target.value); setApiError(""); }} placeholder="Create a password"
-            className="flex-1 bg-transparent outline-none text-[15px] text-white placeholder:text-neutral-500" />
+            className="flex-1 bg-transparent outline-none text-body-lg text-white placeholder:text-neutral-500" />
           <button onClick={() => setShowPwd(v => !v)} className="ml-2 shrink-0">
             <span className="text-[11px] font-medium" style={{ color: SUB }}>{showPwd ? "Hide" : "Show"}</span>
           </button>
@@ -863,7 +863,7 @@ const AuthFlow = ({ onDone }) => {
       <TopBar onBack={() => { setStep("account"); setApiError(""); }} />
       <div className="px-5 flex-1">
         <h1 className="text-[22px] font-bold text-white text-center">Reset password</h1>
-        <p className="text-[13px] text-center mt-1 mb-6" style={{ color: SUB }}>
+        <p className="text-body-md text-center mt-1 mb-6" style={{ color: SUB }}>
           Enter your account and a new password.
         </p>
         <label className="text-[12px] font-medium block mb-1.5 px-1" style={{ color: SUB }}>Account</label>
@@ -871,14 +871,14 @@ const AuthFlow = ({ onDone }) => {
           <User size={16} color={SUB} className="mr-2.5 shrink-0" />
           <input value={email} autoFocus onChange={(e) => { setEmail(e.target.value); setApiError(""); }}
             placeholder="Account or email" autoCapitalize="none"
-            className="flex-1 bg-transparent outline-none text-[15px] text-white placeholder:text-neutral-500" />
+            className="flex-1 bg-transparent outline-none text-body-lg text-white placeholder:text-neutral-500" />
         </div>
         <label className="text-[12px] font-medium block mb-1.5 px-1" style={{ color: SUB }}>New password</label>
         <div className="rounded-xl px-4 py-3.5 flex items-center" style={{ background: CARD }}>
-          <span className="mr-2.5 shrink-0 text-[15px]" style={{ color: SUB }}>🔒</span>
+          <span className="mr-2.5 shrink-0 text-body-lg" style={{ color: SUB }}>🔒</span>
           <input value={password} type={showPwd ? "text" : "password"}
             onChange={(e) => { setPassword(e.target.value); setApiError(""); }} placeholder="New password"
-            className="flex-1 bg-transparent outline-none text-[15px] text-white placeholder:text-neutral-500" />
+            className="flex-1 bg-transparent outline-none text-body-lg text-white placeholder:text-neutral-500" />
           <button onClick={() => setShowPwd(v => !v)} className="ml-2 shrink-0">
             <span className="text-[11px] font-medium" style={{ color: SUB }}>{showPwd ? "Hide" : "Show"}</span>
           </button>
@@ -913,10 +913,10 @@ const AuthFlow = ({ onDone }) => {
       <TopBar onBack={() => setStep("login")} />
       <div className="px-5 flex-1">
         <h1 className="text-[22px] font-bold text-white text-center">What should we call you?</h1>
-        <p className="text-[13px] text-center mt-1 mb-6" style={{ color: SUB }}>Help personalize your Sierro experience.</p>
+        <p className="text-body-md text-center mt-1 mb-6" style={{ color: SUB }}>Help personalize your Sierro experience.</p>
         <div className="rounded-xl px-4 py-3.5 flex items-center" style={{ background: CARD }}>
           <input value={name} autoFocus onChange={(e) => setName(e.target.value)} placeholder="Your name"
-            className="flex-1 bg-transparent outline-none text-[15px] text-white placeholder:text-neutral-500" />
+            className="flex-1 bg-transparent outline-none text-body-lg text-white placeholder:text-neutral-500" />
           {name && <button onClick={() => setName("")}><CircleX size={16} color={SUB} /></button>}
         </div>
       </div>
@@ -935,7 +935,7 @@ const AuthFlow = ({ onDone }) => {
       </div>
       <div className="px-5 flex-1 flex flex-col items-center">
         <h1 className="text-[22px] font-bold text-white text-center">Add Your First Device</h1>
-        <p className="text-[13px] text-center mt-1" style={{ color: SUB }}>Connect your first Sierro device to monitor battery status and stay prepared during power outages.</p>
+        <p className="text-body-md text-center mt-1" style={{ color: SUB }}>Connect your first Sierro device to monitor battery status and stay prepared during power outages.</p>
         <div className="flex-1 flex items-center">
           <div className="rounded-2xl flex items-center justify-center" style={{ width: 140, height: 140, background: "#3A3A3C" }}>
             <Zap size={44} color="#5A5A5E" />
@@ -984,11 +984,11 @@ const AddDeviceFlow = ({ onClose, onAdded, existingNames, firstTime }) => {
       <TopBar onBack={onClose} />
       <div className="px-6 flex-1">
         <h1 className="text-[22px] font-bold text-white text-center">Before We Get Started</h1>
-        <p className="text-[13px] text-center mt-1 mb-8" style={{ color: SUB }}>To connect your Sierro device, we'll need:</p>
+        <p className="text-body-md text-center mt-1 mb-8" style={{ color: SUB }}>To connect your Sierro device, we'll need:</p>
         {[[Bluetooth, "Bluetooth", "Find and connect nearby devices."], [Globe, "Local Network", "Connect your device to your home network."]].map(([I, t, s]) => (
           <div key={t} className="flex items-center gap-3.5 py-3.5">
             <span className="rounded-full flex items-center justify-center" style={{ width: 40, height: 40, background: CARD }}><I size={18} color={ACCENT} /></span>
-            <div><div className="text-[15px] font-medium text-white">{t}</div><div className="text-xs mt-0.5" style={{ color: SUB }}>{s}</div></div>
+            <div><div className="text-body-lg font-medium text-white">{t}</div><div className="text-xs mt-0.5" style={{ color: SUB }}>{s}</div></div>
           </div>
         ))}
       </div>
@@ -1002,7 +1002,7 @@ const AddDeviceFlow = ({ onClose, onAdded, existingNames, firstTime }) => {
         <div className="w-20"><IconBtn icon={ChevronLeft} onClick={onClose} /></div>
         <div className="flex-1 text-center text-[16px] font-semibold text-white">Add Device</div>
         <div className="w-20 text-right">
-          <button className="text-[13px] font-medium" style={{ color: ACCENT }} onClick={() => setStep("qrscan")}>Scan QR</button>
+          <button className="text-body-md font-medium" style={{ color: ACCENT }} onClick={() => setStep("qrscan")}>Scan QR</button>
         </div>
       </div>
       <div className="px-5 flex-1 overflow-y-auto pb-6">
@@ -1013,7 +1013,7 @@ const AddDeviceFlow = ({ onClose, onAdded, existingNames, firstTime }) => {
         <Radar />
         {found.length > 0 && (
           <div>
-            <div className="text-[13px] font-semibold text-white mb-2">Found Devices ({found.length})</div>
+            <div className="text-body-md font-semibold text-white mb-2">Found Devices ({found.length})</div>
             {found.map((d) => (
               <div key={d.serial} className="flex items-center justify-between rounded-xl px-4 py-3 mb-2.5" style={{ background: CARD }}>
                 <div><div className="text-[14px] font-medium text-white">{d.model}</div><div className="text-[11px]" style={{ color: SUB }}>{d.serial}</div></div>
@@ -1051,7 +1051,7 @@ const AddDeviceFlow = ({ onClose, onAdded, existingNames, firstTime }) => {
         </div>
         <h2 className="text-[18px] font-bold text-white mt-10">Scan the QR Code on Your Device</h2>
         <p className="text-[12px] text-center mt-1.5" style={{ color: SUB }}>The QR code is located on the side of your Sierro device near the power outlet.</p>
-        <button className="mt-6 text-[13px] font-medium" style={{ color: ACCENT }}
+        <button className="mt-6 text-body-md font-medium" style={{ color: ACCENT }}
           onClick={() => { setPicked({ model: "Sierro 1000", serial: "SNQR88X" }); setStep("confirm"); }}>
           Simulate scan success
         </button>
@@ -1064,7 +1064,7 @@ const AddDeviceFlow = ({ onClose, onAdded, existingNames, firstTime }) => {
       <TopBar onBack={() => setStep("qrscan")} />
       <div className="px-5 flex-1">
         <h1 className="text-[22px] font-bold text-white text-center">Device Ready to Connect</h1>
-        <p className="text-[13px] text-center mt-1 mb-6" style={{ color: SUB }}>We identified your Sierro device. Review the details below before connecting.</p>
+        <p className="text-body-md text-center mt-1 mb-6" style={{ color: SUB }}>We identified your Sierro device. Review the details below before connecting.</p>
         <div className="flex justify-center my-6">
           <div className="rounded-xl flex items-center justify-center" style={{ width: 90, height: 130, background: "#E8E8E8" }}>
             <Zap size={26} color={ACCENT} />
@@ -1077,8 +1077,8 @@ const AddDeviceFlow = ({ onClose, onAdded, existingNames, firstTime }) => {
         ))}
       </div>
       <div className="px-5 pb-8 flex gap-3">
-        <button onClick={() => setStep("qrscan")} className="flex-1 rounded-xl py-3.5 text-[15px] font-semibold" style={{ border: `1px solid ${ACCENT}`, color: ACCENT }}>Rescan</button>
-        <button onClick={() => setStep("name")} className="flex-1 rounded-xl py-3.5 text-[15px] font-semibold" style={{ background: ACCENT, color: "#062B26" }}>Connect Device</button>
+        <button onClick={() => setStep("qrscan")} className="flex-1 rounded-xl py-3.5 text-body-lg font-semibold" style={{ border: `1px solid ${ACCENT}`, color: ACCENT }}>Rescan</button>
+        <button onClick={() => setStep("name")} className="flex-1 rounded-xl py-3.5 text-body-lg font-semibold" style={{ background: ACCENT, color: "#062B26" }}>Connect Device</button>
       </div>
     </div>
   );
@@ -1088,11 +1088,11 @@ const AddDeviceFlow = ({ onClose, onAdded, existingNames, firstTime }) => {
       <TopBar onBack={() => setStep("scan")} />
       <div className="px-5 flex-1">
         <h1 className="text-[22px] font-bold text-white text-center">Name Your Device</h1>
-        <p className="text-[13px] text-center mt-1 mb-6" style={{ color: SUB }}>Choose a name to help identify this device in the app.</p>
+        <p className="text-body-md text-center mt-1 mb-6" style={{ color: SUB }}>Choose a name to help identify this device in the app.</p>
         <div className="rounded-xl px-4 py-3.5 flex items-center" style={{ background: CARD, border: nameErr ? `1px solid ${RED}` : "1px solid transparent" }}>
           <input value={name} autoFocus placeholder="Enter device name"
             onChange={(e) => { setName(e.target.value); setNameErr(false); }}
-            className="flex-1 bg-transparent outline-none text-[15px] text-white placeholder:text-neutral-500" />
+            className="flex-1 bg-transparent outline-none text-body-lg text-white placeholder:text-neutral-500" />
           {name && <button onClick={() => setName("")}><CircleX size={16} color={SUB} /></button>}
         </div>
         {nameErr && <p className="text-[11px] mt-1.5" style={{ color: RED }}>Device name already exists.</p>}
@@ -1112,7 +1112,7 @@ const AddDeviceFlow = ({ onClose, onAdded, existingNames, firstTime }) => {
       <TopBar onBack={() => setStep("name")} />
       <div className="px-5 flex-1">
         <h1 className="text-[22px] font-bold text-white text-center">Choose an Icon</h1>
-        <p className="text-[13px] text-center mt-1 mb-7" style={{ color: SUB }}>Select an icon that best represents this device.</p>
+        <p className="text-body-md text-center mt-1 mb-7" style={{ color: SUB }}>Select an icon that best represents this device.</p>
         <div className="grid grid-cols-4 gap-3.5">
           {ICON_KEYS.map((k) => {
             const I = ICONS[k], sel = icon === k;
@@ -1150,7 +1150,7 @@ const DevicePage = ({ devices, toggleDevice, openOverview, openAdd, notification
           <div className="flex items-start gap-2.5 rounded-xl px-3.5 py-3 mb-3" style={{ background: "#3E1512", border: "1px solid #6E2620" }}>
             <BatteryLow size={16} color={RED} className="mt-0.5 shrink-0" />
             <div className="flex-1">
-              <div className="text-[13px] font-semibold text-white">{banner.title}</div>
+              <div className="text-body-md font-semibold text-white">{banner.title}</div>
               <div className="text-[12px] mt-0.5" style={{ color: "#E8B4AF" }}>{banner.body}</div>
             </div>
             <button onClick={dismissBanner}><X size={15} color="#fff" /></button>
@@ -1176,7 +1176,7 @@ const DevicePage = ({ devices, toggleDevice, openOverview, openAdd, notification
               </div>
               <div className="flex items-end justify-between mt-3">
                 <div className="min-w-0 pr-3">
-                  <div className="text-[15px] font-semibold text-white leading-snug" style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{d.name}</div>
+                  <div className="text-body-lg font-semibold text-white leading-snug" style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{d.name}</div>
                   <div className="text-[12px] mt-1" style={{ color: SUB }}>{d.model}</div>
                 </div>
                 <Toggle on={d.on} disabled={!d.connected} onChange={() => toggleDevice(d.id)} />
@@ -1201,7 +1201,7 @@ const NotificationsPage = ({ onBack, notifications, markRead, remove }) => {
         {notifications.length === 0 ? (
           <div className="flex flex-col items-center pt-24">
             <div className="rounded-xl" style={{ width: 100, height: 130, background: "#3A3A3C" }} />
-            <div className="text-[15px] font-semibold text-white mt-6">No notifications yet</div>
+            <div className="text-body-lg font-semibold text-white mt-6">No notifications yet</div>
             <p className="text-[12px] text-center mt-1" style={{ color: SUB, maxWidth: 240 }}>You'll see battery alerts, power outage notifications, and device updates here.</p>
           </div>
         ) : notifications.map((n) => {
@@ -1220,7 +1220,7 @@ const NotificationsPage = ({ onBack, notifications, markRead, remove }) => {
                 </span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-[13px] font-semibold text-white truncate">{n.title}</span>
+                    <span className="text-body-md font-semibold text-white truncate">{n.title}</span>
                     {!n.read && <span className="rounded-full shrink-0" style={{ width: 7, height: 7, background: RED }} />}
                     <span className="ml-auto text-[11px] shrink-0" style={{ color: SUB }}>{n.time}</span>
                   </div>
@@ -1264,7 +1264,7 @@ const OverviewPage = ({ device, devices, switchDevice, onBack, openSettings, ope
               {devices.map((x) => (
                 <button key={x.id} onClick={() => { switchDevice(x.id); setDropOpen(false); }}
                   className="w-full flex items-center justify-between px-3.5 py-3 text-left" style={{ borderBottom: "1px solid #3A3A3C" }}>
-                  <span className="text-[13px] text-white truncate">{x.name}</span>
+                  <span className="text-body-md text-white truncate">{x.name}</span>
                   <span className="rounded-full shrink-0" style={{ width: 7, height: 7, background: x.connected ? ACCENT : "#5A5A5E" }} />
                 </button>
               ))}
@@ -1307,11 +1307,11 @@ const OverviewPage = ({ device, devices, switchDevice, onBack, openSettings, ope
               <div className="flex items-center gap-1.5">
                 {[["AC", d.ac], ["Solar", d.solar]].map(([k, v], i) => (
                   <React.Fragment key={k}>
-                    {i > 0 && <span className="text-[13px]" style={{ color: SUB }}>+</span>}
+                    {i > 0 && <span className="text-body-md" style={{ color: SUB }}>+</span>}
                     <span className="rounded-lg px-2.5 py-1.5 text-center" style={{ background: "#2C2C2E" }}>
                       <span className="text-[14px] font-semibold text-white">{conn ? v : "-"}</span>
                       <span className="text-[10px]" style={{ color: SUB }}>{conn ? "W" : ""}</span>
-                      <div className="text-[9px]" style={{ color: SUB }}>{k}</div>
+                      <div className="text-tiny" style={{ color: SUB }}>{k}</div>
                     </span>
                   </React.Fragment>
                 ))}
@@ -1322,7 +1322,7 @@ const OverviewPage = ({ device, devices, switchDevice, onBack, openSettings, ope
               <span className="rounded-lg px-2.5 py-1.5 inline-block" style={{ background: "#2C2C2E" }}>
                 <span className="text-[14px] font-semibold text-white">{conn ? d.output : "-"}</span>
                 <span className="text-[10px]" style={{ color: SUB }}>{conn ? "W" : ""}</span>
-                <div className="text-[9px]" style={{ color: SUB }}>&nbsp;</div>
+                <div className="text-tiny" style={{ color: SUB }}>&nbsp;</div>
               </span>
             </div>
           </div>
@@ -1498,7 +1498,7 @@ const SmartSchedulePage = ({ onBack, device, schedule, setSchedule, showToast })
       <div className="text-[10px]" style={{ color: SUB }}>{label}</div>
       <div className="flex items-baseline gap-1 mt-0.5">
         <input type="number" value={draft.params[k]} onChange={(e) => setDraft({ ...draft, params: { ...draft.params, [k]: e.target.value } })}
-          className="bg-transparent outline-none text-[15px] font-semibold text-white w-16" />
+          className="bg-transparent outline-none text-body-lg font-semibold text-white w-16" />
         <span className="text-[10px]" style={{ color: SUB }}>{unit}</span>
       </div>
     </div>
@@ -1526,7 +1526,7 @@ const SmartSchedulePage = ({ onBack, device, schedule, setSchedule, showToast })
       </div>
       <div className="flex-1 overflow-y-auto px-4 pb-28">
         <div className="flex items-center justify-between rounded-xl px-4 py-3.5" style={{ background: CARD }}>
-          <span className="text-[15px] font-medium text-white">{editing ? "Smart Schedule" : "Schedule"}</span>
+          <span className="text-body-lg font-medium text-white">{editing ? "Smart Schedule" : "Schedule"}</span>
           <Toggle on={editing ? draft.on : s.on} onChange={(v) => {
             if (editing) setDraft({ ...draft, on: v });
             else if (v && !s.configured) { setSchedule({ ...s, on: true }); startEdit(); }
@@ -1538,12 +1538,12 @@ const SmartSchedulePage = ({ onBack, device, schedule, setSchedule, showToast })
           <>
             {!editing && (
               <div className="mt-4">
-                <div className="text-[13px] font-semibold text-white mb-2">Estimated Savings</div>
+                <div className="text-body-md font-semibold text-white mb-2">Estimated Savings</div>
                 <div className="flex gap-2">
                   {[["Daily", sv?.d], ["Monthly", sv?.m], ["Yearly", sv?.y]].map(([k, v]) => (
                     <div key={k} className="flex-1 rounded-xl px-3 py-2.5" style={{ background: CARD }}>
                       <div className="text-[10px]" style={{ color: SUB }}>{k}</div>
-                      <div className="text-[15px] font-semibold text-white mt-0.5">{v == null ? "-" : `$${v.toFixed(2)}`}</div>
+                      <div className="text-body-lg font-semibold text-white mt-0.5">{v == null ? "-" : `$${v.toFixed(2)}`}</div>
                     </div>
                   ))}
                 </div>
@@ -1570,14 +1570,14 @@ const SmartSchedulePage = ({ onBack, device, schedule, setSchedule, showToast })
             {editing && (
               <>
                 <div className="flex items-center justify-between mt-6 mb-2">
-                  <span className="text-[13px] font-semibold text-white">Price</span>
+                  <span className="text-body-md font-semibold text-white">Price</span>
                   <button className="text-[11px] font-medium" style={{ color: ACCENT }}>Add Part-Peak Price</button>
                 </div>
                 {[["Peak Price", "peakPrice"], ["Off-Peak Price", "offPrice"]].map(([label, k]) => (
                   <div key={k} className="flex items-center justify-between rounded-xl px-4 py-3 mb-2" style={{ background: CARD }}>
-                    <span className="text-[13px] text-white">{label}</span>
+                    <span className="text-body-md text-white">{label}</span>
                     <span className="flex items-baseline gap-1">
-                      <span className="text-[13px]" style={{ color: SUB }}>$</span>
+                      <span className="text-body-md" style={{ color: SUB }}>$</span>
                       <input type="number" step="0.01" placeholder="0.00" value={draft[k]}
                         onChange={(e) => setDraft({ ...draft, [k]: e.target.value })}
                         className="bg-transparent outline-none text-right text-[14px] font-semibold text-white w-16" />
@@ -1586,7 +1586,7 @@ const SmartSchedulePage = ({ onBack, device, schedule, setSchedule, showToast })
                   </div>
                 ))}
                 <div className="flex items-center justify-between mt-5 mb-2">
-                  <span className="text-[13px] font-semibold text-white">Parameters</span>
+                  <span className="text-body-md font-semibold text-white">Parameters</span>
                   <button className="text-[11px] font-medium" style={{ color: ACCENT }}
                     onClick={() => setDraft({ ...draft, params: { maxCharge: 400, maxDischarge: 500, minSoc: 0, maxSoc: 100 } })}>Optimize</button>
                 </div>
@@ -1596,7 +1596,7 @@ const SmartSchedulePage = ({ onBack, device, schedule, setSchedule, showToast })
                   <Num label="Min SOC" k="minSoc" unit="%" />
                   <Num label="Max SOC" k="maxSoc" unit="%" />
                 </div>
-                <div className="text-[13px] font-semibold text-white mt-5 mb-2">Estimated Savings</div>
+                <div className="text-body-md font-semibold text-white mt-5 mb-2">Estimated Savings</div>
                 <div className="flex gap-2">
                   {[["Daily", sv?.d], ["Monthly", sv?.m], ["Yearly", sv?.y]].map(([k, v]) => (
                     <div key={k} className="flex-1 rounded-xl px-3 py-2.5" style={{ background: CARD }}>
@@ -1667,7 +1667,7 @@ const DeviceSettingsPage = ({ onBack, device, update, removeDevice, showToast, o
       <div className="px-5">
         <div className="rounded-xl px-4 py-3.5 flex items-center" style={{ background: CARD }}>
           <input value={nameDraft} autoFocus onChange={(e) => setNameDraft(e.target.value)}
-            className="flex-1 bg-transparent outline-none text-[15px] text-white" />
+            className="flex-1 bg-transparent outline-none text-body-lg text-white" />
           {nameDraft && <button onClick={() => setNameDraft("")}><CircleX size={16} color={SUB} /></button>}
         </div>
       </div>
@@ -1686,7 +1686,7 @@ const DeviceSettingsPage = ({ onBack, device, update, removeDevice, showToast, o
             {rows.map(([k, v], i) => (
               <div key={k} className="flex items-center justify-between px-4 py-3.5"
                 style={{ background: CARD, borderBottom: i < rows.length - 1 ? `1px solid ${BG}` : "none" }}>
-                <span className="text-[14px] text-white">{k}</span><span className="text-[13px]" style={{ color: SUB }}>{v}</span>
+                <span className="text-[14px] text-white">{k}</span><span className="text-body-md" style={{ color: SUB }}>{v}</span>
               </div>
             ))}
           </div>
@@ -1710,17 +1710,17 @@ const DeviceSettingsPage = ({ onBack, device, update, removeDevice, showToast, o
         </div>
         <div className="px-4">
           <div className="flex items-center justify-between rounded-xl px-4 py-3.5" style={{ background: CARD }}>
-            <div><div className="text-[15px] font-medium text-white">Sleep Mode</div><div className="text-[11px] mt-0.5" style={{ color: SUB }}>Low power standby · 5W output</div></div>
+            <div><div className="text-body-lg font-medium text-white">Sleep Mode</div><div className="text-[11px] mt-0.5" style={{ color: SUB }}>Low power standby · 5W output</div></div>
             <Toggle on={sd.on} onChange={(v) => setSleepDraft({ ...sd, on: v })} />
           </div>
           {sd.on && (
             <>
-              <div className="text-[13px] font-semibold text-white mt-5 mb-2">Time</div>
+              <div className="text-body-md font-semibold text-white mt-5 mb-2">Time</div>
               {[["From", "from"], ["To", "to"]].map(([label, k]) => (
                 <div key={k} className="flex items-center justify-between rounded-xl px-4 py-3 mb-2" style={{ background: CARD }}>
                   <span className="text-[14px] text-white">{label}</span>
                   <input type="time" value={sd[k]} onChange={(e) => setSleepDraft({ ...sd, [k]: e.target.value })}
-                    className="rounded-lg px-2.5 py-1.5 text-[13px] font-semibold outline-none"
+                    className="rounded-lg px-2.5 py-1.5 text-body-md font-semibold outline-none"
                     style={{ background: "#3A3A3C", color: k === "from" ? ACCENT : "#fff", colorScheme: "dark", border: "none" }} />
                 </div>
               ))}
@@ -1842,7 +1842,7 @@ const InsightsPage = ({ devices, openShare }) => {
             <div className="flex items-baseline gap-1.5">
               <Zap size={18} color={ACCENT} fill={ACCENT} />
               <span className="text-[34px] font-bold text-white">128</span>
-              <span className="text-[13px]" style={{ color: SUB }}>Days</span>
+              <span className="text-body-md" style={{ color: SUB }}>Days</span>
             </div>
             <span className="text-[11px]" style={{ color: SUB }}>Reliable backup power since Jan 2026</span>
           </div>
@@ -1877,7 +1877,7 @@ const InsightsPage = ({ devices, openShare }) => {
           <div className="rounded-2xl p-4" style={{ background: CARD2 }}>
             <div className="flex items-center justify-between mb-1">
               <div>
-                <div className="text-[13px] font-semibold text-white">Input vs. Output</div>
+                <div className="text-body-md font-semibold text-white">Input vs. Output</div>
                 <div className="text-[10px]" style={{ color: SUB }}>{period === "Week" ? "Highest usage recorded on Wednesday" : "Output peaked at 2pm"}</div>
               </div>
               <div className="flex gap-2.5 text-[10px]" style={{ color: SUB }}>
@@ -1910,7 +1910,7 @@ const InsightsPage = ({ devices, openShare }) => {
                 </>
               )}
             </svg>
-            <div className="flex justify-between text-[9px] px-1 mt-1.5" style={{ color: SUB }}>
+            <div className="flex justify-between text-tiny px-1 mt-1.5" style={{ color: SUB }}>
               {xlabels.map((t) => <span key={t}>{t}</span>)}
             </div>
           </div>
@@ -1923,7 +1923,7 @@ const InsightsPage = ({ devices, openShare }) => {
             <span className="text-[14px] text-white">{label}</span>
             <input type="date" value={rangeDraft[k]} min="2026-01-01" max="2026-06-13"
               onChange={(e) => { setRangeDraft({ ...rangeDraft, [k]: e.target.value }); setRangeErr(""); }}
-              className="rounded-lg px-2.5 py-1.5 text-[13px] font-semibold outline-none"
+              className="rounded-lg px-2.5 py-1.5 text-body-md font-semibold outline-none"
               style={{ background: "#3A3A3C", color: "#fff", colorScheme: "dark", border: "none" }} />
           </div>
         ))}
@@ -1984,12 +1984,12 @@ const NotifSettingPage = ({ kind, onBack, cfg, save }) => {
       </div>
       <div className="px-4">
         <div className="flex items-center justify-between rounded-xl px-4 py-3.5" style={{ background: CARD }}>
-          <div><div className="text-[15px] font-medium text-white">{meta[0]}</div><div className="text-[11px] mt-0.5" style={{ color: SUB }}>{meta[1]}</div></div>
+          <div><div className="text-body-lg font-medium text-white">{meta[0]}</div><div className="text-[11px] mt-0.5" style={{ color: SUB }}>{meta[1]}</div></div>
           <Toggle on={draft.on} onChange={(v) => setDraft({ ...draft, on: v })} />
         </div>
         {kind === "low" && draft.on && (
           <>
-            <div className="text-[13px] font-semibold text-white mt-5 mb-2">Battery Threshold</div>
+            <div className="text-body-md font-semibold text-white mt-5 mb-2">Battery Threshold</div>
             <div className="rounded-xl overflow-hidden">
               {[30, 20, 10].map((t, i) => (
                 <button key={t} onClick={() => setDraft({ ...draft, threshold: t })}
@@ -2020,7 +2020,7 @@ const SettingPage = ({ user, notifCfg, openSub, openProfile, openFeedback, onExp
           <span className="text-[12px] flex items-center gap-0.5" style={{ color: SUB }}>Manage my account <ChevronRight size={12} /></span>
         </div>
       </button>
-      <div className="text-[13px] font-semibold text-white mb-2">Push Notifications</div>
+      <div className="text-body-md font-semibold text-white mb-2">Push Notifications</div>
       <div className="rounded-xl overflow-hidden mb-6">
         {[["outage", PowerOff, "Power Outage", "Get alerted during outages"],
           ["low", BatteryLow, "Low Battery", notifCfg.low.on ? `Get alerted when battery falls below ${notifCfg.low.threshold}%` : "Get notified when battery gets low"],
@@ -2037,7 +2037,7 @@ const SettingPage = ({ user, notifCfg, openSub, openProfile, openFeedback, onExp
           </button>
         ))}
       </div>
-      <div className="text-[13px] font-semibold text-white mb-2">Support</div>
+      <div className="text-body-md font-semibold text-white mb-2">Support</div>
       <div className="rounded-xl overflow-hidden mb-7">
         <button onClick={openFeedback} className="w-full flex items-center gap-3 px-4 py-3.5 text-left" style={{ background: CARD, borderBottom: `1px solid ${BG}` }}>
           <span className="rounded-full flex items-center justify-center shrink-0" style={{ width: 32, height: 32, background: "#1A1A1A" }}><MessageSquareText size={14} color="#fff" /></span>
@@ -2078,7 +2078,7 @@ const ProfilePage = ({ onBack, user, setUser, showToast, signOut }) => {
       <div className="px-5 flex-1">
         <div className="rounded-xl px-4 py-3.5 flex items-center" style={{ background: CARD, border: err ? `1px solid ${RED}` : "1px solid transparent" }}>
           <input value={value} autoFocus type={type || "text"} onChange={(e) => setValue(e.target.value)}
-            className="flex-1 bg-transparent outline-none text-[15px] text-white" />
+            className="flex-1 bg-transparent outline-none text-body-lg text-white" />
           {value && <button onClick={() => setValue("")}><CircleX size={16} color={SUB} /></button>}
         </div>
         {err && <p className="text-[11px] mt-1.5" style={{ color: RED }}>{errMsg}</p>}
@@ -2099,7 +2099,7 @@ const ProfilePage = ({ onBack, user, setUser, showToast, signOut }) => {
       <TopBar onBack={() => setPage("email")} />
       <div className="px-5 flex-1">
         <h1 className="text-[22px] font-bold text-white text-center">Enter verification code</h1>
-        <p className="text-[13px] text-center mt-1 mb-6" style={{ color: SUB }}>We sent a 6-digit verification code to<br /><b className="text-white">{emailDraft}</b></p>
+        <p className="text-body-md text-center mt-1 mb-6" style={{ color: SUB }}>We sent a 6-digit verification code to<br /><b className="text-white">{emailDraft}</b></p>
         <div className="relative">
           <div className="flex gap-2 justify-center">
             {[0, 1, 2, 3, 4, 5].map((i) => (
@@ -2126,8 +2126,8 @@ const ProfilePage = ({ onBack, user, setUser, showToast, signOut }) => {
           <IconBtn icon={MoreHorizontal} onClick={() => setMenu(!menu)} />
           {menu && (
             <div className="absolute top-11 right-0 z-40 rounded-xl overflow-hidden w-44" style={{ background: "#3A3A3C", boxShadow: "0 10px 30px rgba(0,0,0,.5)" }}>
-              <button onClick={() => { setMenu(false); setDialog("signout"); }} className="w-full text-left px-4 py-3 text-[13px] text-white" style={{ borderBottom: "1px solid #48484A" }}>Sign out</button>
-              <button onClick={() => { setMenu(false); setDialog("delete"); }} className="w-full text-left px-4 py-3 text-[13px]" style={{ color: RED }}>Delete Account</button>
+              <button onClick={() => { setMenu(false); setDialog("signout"); }} className="w-full text-left px-4 py-3 text-body-md text-white" style={{ borderBottom: "1px solid #48484A" }}>Sign out</button>
+              <button onClick={() => { setMenu(false); setDialog("delete"); }} className="w-full text-left px-4 py-3 text-body-md" style={{ color: RED }}>Delete Account</button>
             </div>
           )}
         </div>
@@ -2143,14 +2143,14 @@ const ProfilePage = ({ onBack, user, setUser, showToast, signOut }) => {
           }} />
           {user.founder && <div className="mt-2.5"><FounderTag n={user.founder} /></div>}
         </div>
-        <div className="text-[13px] font-semibold text-white mb-2">Personal Info</div>
+        <div className="text-body-md font-semibold text-white mb-2">Personal Info</div>
         <div className="rounded-xl overflow-hidden mb-6">
           <Row first title="Name" value={user.name} onClick={() => { setNameDraft(user.name); setPage("name"); }}
             right={<span className="flex items-center gap-1.5"><span className="text-sm truncate max-w-[120px]" style={{ color: SUB }}>{user.name}</span><ChevronRight size={16} color={SUB} /></span>} />
           <Row last title="Linked Email" onClick={() => { setEmailDraft(user.email); setPage("email"); }}
             right={<span className="flex items-center gap-1.5"><span className="text-sm truncate max-w-[140px]" style={{ color: SUB }}>{user.email}</span><ChevronRight size={16} color={SUB} /></span>} />
         </div>
-        <div className="text-[13px] font-semibold text-white mb-2">Link Accounts</div>
+        <div className="text-body-md font-semibold text-white mb-2">Link Accounts</div>
         <div className="rounded-xl overflow-hidden mb-5">
           {[["Google", google, setGoogle], ["Apple", apple, setApple]].map(([t, linked, set], i) => (
             <div key={t} className="flex items-center justify-between px-4 py-3.5" style={{ background: CARD, borderBottom: i === 0 ? `1px solid ${BG}` : "none" }}>
@@ -2293,7 +2293,7 @@ export default function SierroEnergyApp() {
     <div className="w-full flex justify-center" style={{ background: "#000", minHeight: "100vh" }}>
       <div className="relative w-full max-w-md flex flex-col items-center justify-center overflow-hidden" style={{ background: BG, height: "100vh", maxHeight: 880 }}>
         <Zap size={40} color={ACCENT} fill={ACCENT} className="animate-pulse" />
-        <div className="text-[13px] mt-4" style={{ color: SUB }}>Loading…</div>
+        <div className="text-body-md mt-4" style={{ color: SUB }}>Loading…</div>
       </div>
     </div>
   );

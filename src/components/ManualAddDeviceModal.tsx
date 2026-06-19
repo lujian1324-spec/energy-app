@@ -112,7 +112,7 @@ export default function ManualAddDeviceModal({ onClose }: Props) {
           </h3>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-[#333333] flex items-center justify-center text-[#A0A0A5]"
+            className="w-8 h-8 rounded-full bg-[#454545] flex items-center justify-center text-[#BFBFBF]"
           >
             <X size={18} />
           </button>
@@ -121,7 +121,7 @@ export default function ManualAddDeviceModal({ onClose }: Props) {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* 设备名称 */}
           <div>
-            <label className="text-[11px] font-semibold text-[#A0A0A5] mb-1.5 block">
+            <label className="text-[11px] font-semibold text-[#BFBFBF] mb-1.5 block">
               Device Name *
             </label>
             <input
@@ -130,14 +130,14 @@ export default function ManualAddDeviceModal({ onClose }: Props) {
               onChange={e => { setDeviceName(e.target.value); setError(null) }}
               placeholder="e.g. Sierro 1000"
               className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-[rgba(1,214,190,0.15)]
-                text-[#FFFFFF] text-[14px] placeholder:text-[#636366]
+                text-[#FFFFFF] text-[14px] placeholder:text-[#8C8C8C]
                 focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
             />
           </div>
 
           {/* 序列号 */}
           <div>
-            <label className="text-[11px] font-semibold text-[#A0A0A5] mb-1.5 block">
+            <label className="text-[11px] font-semibold text-[#BFBFBF] mb-1.5 block">
               Serial Number (SN)
             </label>
             <input
@@ -146,14 +146,14 @@ export default function ManualAddDeviceModal({ onClose }: Props) {
               onChange={e => { setSerialNumber(e.target.value); setError(null) }}
               placeholder="e.g. 999256001232612"
               className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-[rgba(1,214,190,0.15)]
-                text-[#FFFFFF] text-[14px] placeholder:text-[#636366]
+                text-[#FFFFFF] text-[14px] placeholder:text-[#8C8C8C]
                 focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
             />
           </div>
 
           {/* DTU ID */}
           <div>
-            <label className="text-[11px] font-semibold text-[#A0A0A5] mb-1.5 block">
+            <label className="text-[11px] font-semibold text-[#BFBFBF] mb-1.5 block">
               DTU ID (Data Logger)
             </label>
             <input
@@ -162,7 +162,7 @@ export default function ManualAddDeviceModal({ onClose }: Props) {
               onChange={e => { setDtuDtuid(e.target.value); setError(null) }}
               placeholder="e.g. DTU serial number"
               className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-[rgba(1,214,190,0.15)]
-                text-[#FFFFFF] text-[14px] placeholder:text-[#636366]
+                text-[#FFFFFF] text-[14px] placeholder:text-[#8C8C8C]
                 focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
             />
           </div>
@@ -170,7 +170,7 @@ export default function ManualAddDeviceModal({ onClose }: Props) {
           {/* 选择电站（如果有） */}
           {stations.length > 0 && (
             <div>
-              <label className="text-[11px] font-semibold text-[#A0A0A5] mb-1.5 block">
+              <label className="text-[11px] font-semibold text-[#BFBFBF] mb-1.5 block">
                 Station
               </label>
               <select
@@ -196,7 +196,7 @@ export default function ManualAddDeviceModal({ onClose }: Props) {
           {/* 新电站名称 */}
           {createNewStation && (
             <div>
-              <label className="text-[11px] font-semibold text-[#A0A0A5] mb-1.5 block">
+              <label className="text-[11px] font-semibold text-[#BFBFBF] mb-1.5 block">
                 New Station Name
               </label>
               <input
@@ -205,7 +205,7 @@ export default function ManualAddDeviceModal({ onClose }: Props) {
                 onChange={e => setNewStationName(e.target.value)}
                 placeholder="e.g. Home Solar Station"
                 className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-[rgba(1,214,190,0.15)]
-                  text-[#FFFFFF] text-[14px] placeholder:text-[#636366]
+                  text-[#FFFFFF] text-[14px] placeholder:text-[#8C8C8C]
                   focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
               />
             </div>

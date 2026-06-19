@@ -133,7 +133,7 @@ export default function PermissionsGate({ onDone }: Props) {
             <h1 className="text-headline-lg font-bold text-white text-center mb-2">
               App Permissions
             </h1>
-            <p className="text-body-md text-[#A0A0A5] text-center mb-10 max-w-[280px] leading-relaxed">
+            <p className="text-body-md text-[#BFBFBF] text-center mb-10 max-w-[280px] leading-relaxed">
               Sierro needs a few permissions to give you the full experience.
             </p>
 
@@ -141,12 +141,12 @@ export default function PermissionsGate({ onDone }: Props) {
             <div className="w-full space-y-3 mb-10">
               {PERMISSIONS.map(({ id, Icon, title, description }) => (
                 <div key={id} className="flex items-start gap-4 bg-[#262626] rounded-l px-4 py-4">
-                  <div className="w-10 h-10 rounded-[12px] bg-[rgba(1,214,190,0.1)] flex items-center justify-center flex-shrink-0">
+                  <div className="w-10 h-10 rounded-l bg-[rgba(1,214,190,0.1)] flex items-center justify-center flex-shrink-0">
                     <Icon size={20} className="text-[#01D6BE]" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-body-lg font-semibold text-white">{title}</p>
-                    <p className="text-body-md text-[#A0A0A5] mt-0.5 leading-snug">{description}</p>
+                    <p className="text-body-md text-[#BFBFBF] mt-0.5 leading-snug">{description}</p>
                   </div>
                 </div>
               ))}
@@ -162,8 +162,8 @@ export default function PermissionsGate({ onDone }: Props) {
             className="flex flex-col items-center justify-center flex-1 gap-4"
           >
             <div className="w-12 h-12 rounded-full border-2 border-[#01D6BE] border-t-transparent animate-spin" />
-            <p className="text-body-lg text-[#A0A0A5]">Requesting permissions…</p>
-            <p className="text-caption text-[#636366] text-center max-w-[220px]">
+            <p className="text-body-lg text-[#BFBFBF]">Requesting permissions…</p>
+            <p className="text-caption text-[#8C8C8C] text-center max-w-[220px]">
               Please respond to any system prompts that appear.
             </p>
           </motion.div>
@@ -180,14 +180,14 @@ export default function PermissionsGate({ onDone }: Props) {
               <Shield size={40} className="text-[#34C759]" />
             </div>
             <h1 className="text-headline-lg font-bold text-white text-center mb-2">All Set</h1>
-            <p className="text-body-md text-[#A0A0A5] text-center mb-10 max-w-[260px] leading-relaxed">
+            <p className="text-body-md text-[#BFBFBF] text-center mb-10 max-w-[260px] leading-relaxed">
               You can always update permissions in your device Settings app.
             </p>
 
             <div className="w-full space-y-3 mb-10">
               {PERMISSIONS.map(({ id, Icon, title }) => (
                 <div key={id} className="flex items-center gap-4 bg-[#262626] rounded-l px-4 py-3.5">
-                  <div className="w-9 h-9 rounded-[10px] bg-[rgba(1,214,190,0.08)] flex items-center justify-center flex-shrink-0">
+                  <div className="w-9 h-9 rounded-m bg-[rgba(1,214,190,0.08)] flex items-center justify-center flex-shrink-0">
                     <Icon size={18} className="text-[#01D6BE]" />
                   </div>
                   <span className="flex-1 text-body-md font-medium text-white">{title}</span>
@@ -217,7 +217,7 @@ export default function PermissionsGate({ onDone }: Props) {
             </button>
             <button
               onClick={handleSkip}
-              className="w-full h-12 text-body-md text-[#636366] active:opacity-70"
+              className="w-full h-12 text-body-md text-[#8C8C8C] active:opacity-70"
             >
               Skip for now
             </button>

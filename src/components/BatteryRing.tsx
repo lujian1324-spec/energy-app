@@ -41,7 +41,7 @@ const STATE_COLOR: Record<BatteryState, string> = {
   full: '#01D6BE',
   charging: '#01D6BE',
   plugged: '#01D6BE',
-  unknown: '#636366',
+  unknown: '#8C8C8C',
 }
 
 const STATE_LABEL: Record<BatteryState, string> = {
@@ -115,7 +115,7 @@ export default function BatteryRing({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#333333"
+          stroke="#454545"
           strokeWidth={strokeWidth}
         />
 
@@ -138,11 +138,11 @@ export default function BatteryRing({
       {/* 中心内容 */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         {/* 电量百分比 — Disconnected/0 显示 - (PRD §5.1) */}
-        <div className="text-[40px] font-extrabold text-[#FFFFFF] leading-none tracking-tight">
+        <div className="text-headline-xl font-extrabold text-[#FFFFFF] leading-none tracking-tight">
           {connected ? (
-            <>{safePercent}<span className="text-lg font-medium text-[#A0A0A5]">%</span></>
+            <>{safePercent}<span className="text-lg font-medium text-[#BFBFBF]">%</span></>
           ) : (
-            <span className="text-[#636366]">-</span>
+            <span className="text-[#8C8C8C]">-</span>
           )}
         </div>
 
@@ -158,11 +158,11 @@ export default function BatteryRing({
             </span>
           </div>
         ) : showTime ? (
-          <div className="text-[10px] text-[#A0A0A5] mt-1 tracking-wide" aria-hidden="true">
+          <div className="text-[10px] text-[#BFBFBF] mt-1 tracking-wide" aria-hidden="true">
             {timeRemaining} remaining
           </div>
         ) : isCharging ? (
-          <div className="text-[10px] text-[#A0A0A5] mt-1 tracking-wide" aria-hidden="true">
+          <div className="text-[10px] text-[#BFBFBF] mt-1 tracking-wide" aria-hidden="true">
             {timeToFull} to full
           </div>
         ) : null}

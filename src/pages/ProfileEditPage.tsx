@@ -287,17 +287,17 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
           {editingField === 'name' && (
             <div className="bg-[#262626] rounded-l overflow-hidden">
               <div className="flex items-center gap-3 px-4 py-3">
-                <User size={16} className="text-[#A0A0A5] flex-shrink-0" />
+                <User size={16} className="text-[#BFBFBF] flex-shrink-0" />
                 <input
                   type="text"
                   value={tempValue}
                   onChange={(e) => setTempValue(e.target.value)}
                   placeholder="Enter your name"
                   autoFocus
-                  className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#636366] focus:outline-none"
+                  className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#8C8C8C] focus:outline-none"
                 />
                 {tempValue.length > 0 && (
-                  <button onClick={() => setTempValue('')}><X size={16} className="text-[#636366]" /></button>
+                  <button onClick={() => setTempValue('')}><X size={16} className="text-[#8C8C8C]" /></button>
                 )}
               </div>
             </div>
@@ -308,7 +308,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
             <>
               <div className="bg-[#262626] rounded-l overflow-hidden">
                 <div className="flex items-center gap-3 px-4 py-3">
-                  <Mail size={16} className="text-[#A0A0A5] flex-shrink-0" />
+                  <Mail size={16} className="text-[#BFBFBF] flex-shrink-0" />
                   <input
                     type="email"
                     value={tempValue}
@@ -316,14 +316,14 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
                     placeholder="New email address"
                     autoFocus
                     disabled={emailOtpSent}
-                    className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#636366] focus:outline-none disabled:opacity-60"
+                    className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#8C8C8C] focus:outline-none disabled:opacity-60"
                   />
                 </div>
               </div>
               {emailOtpSent && (
                 <div className="bg-[#262626] rounded-l overflow-hidden">
                   <div className="flex items-center gap-3 px-4 py-3">
-                    <Mail size={16} className="text-[#A0A0A5] flex-shrink-0" />
+                    <Mail size={16} className="text-[#BFBFBF] flex-shrink-0" />
                     <input
                       type="text"
                       value={emailOtpCode}
@@ -331,7 +331,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
                       placeholder="Verification code"
                       autoFocus
                       maxLength={8}
-                      className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#636366] focus:outline-none"
+                      className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#8C8C8C] focus:outline-none"
                     />
                   </div>
                 </div>
@@ -352,46 +352,46 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
               {/* Old password */}
               <div className="bg-[#262626] rounded-l overflow-hidden">
                 <div className="flex items-center gap-3 px-4 py-3">
-                  <Lock size={16} className="text-[#A0A0A5] flex-shrink-0" />
+                  <Lock size={16} className="text-[#BFBFBF] flex-shrink-0" />
                   <input
                     type={showOldPwd ? 'text' : 'password'}
                     value={oldPassword}
                     onChange={(e) => setOldPassword(e.target.value)}
                     placeholder="Current password"
                     autoFocus
-                    className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#636366] focus:outline-none"
+                    className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#8C8C8C] focus:outline-none"
                   />
                   <button onClick={() => setShowOldPwd(v => !v)}>
-                    {showOldPwd ? <EyeOff size={16} className="text-[#636366]" /> : <Eye size={16} className="text-[#636366]" />}
+                    {showOldPwd ? <EyeOff size={16} className="text-[#8C8C8C]" /> : <Eye size={16} className="text-[#8C8C8C]" />}
                   </button>
                 </div>
               </div>
               {/* New password */}
               <div className="bg-[#262626] rounded-l overflow-hidden">
                 <div className="flex items-center gap-3 px-4 py-3 border-b border-white/5">
-                  <Lock size={16} className="text-[#A0A0A5] flex-shrink-0" />
+                  <Lock size={16} className="text-[#BFBFBF] flex-shrink-0" />
                   <input
                     type={showNewPwd ? 'text' : 'password'}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="New password (6–32 chars)"
-                    className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#636366] focus:outline-none"
+                    className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#8C8C8C] focus:outline-none"
                   />
                   <button onClick={() => setShowNewPwd(v => !v)}>
-                    {showNewPwd ? <EyeOff size={16} className="text-[#636366]" /> : <Eye size={16} className="text-[#636366]" />}
+                    {showNewPwd ? <EyeOff size={16} className="text-[#8C8C8C]" /> : <Eye size={16} className="text-[#8C8C8C]" />}
                   </button>
                 </div>
                 <div className="flex items-center gap-3 px-4 py-3">
-                  <Lock size={16} className="text-[#A0A0A5] flex-shrink-0" />
+                  <Lock size={16} className="text-[#BFBFBF] flex-shrink-0" />
                   <input
                     type={showConfirmPwd ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Confirm new password"
-                    className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#636366] focus:outline-none"
+                    className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#8C8C8C] focus:outline-none"
                   />
                   <button onClick={() => setShowConfirmPwd(v => !v)}>
-                    {showConfirmPwd ? <EyeOff size={16} className="text-[#636366]" /> : <Eye size={16} className="text-[#636366]" />}
+                    {showConfirmPwd ? <EyeOff size={16} className="text-[#8C8C8C]" /> : <Eye size={16} className="text-[#8C8C8C]" />}
                   </button>
                 </div>
               </div>
@@ -461,7 +461,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
                 <div className="border-t border-white/10" />
                 <button
                   onClick={handleDeleteAccount}
-                  className="w-full text-left px-4 py-3 text-body-md text-[#FF3530] hover:bg-white/5 transition-colors"
+                  className="w-full text-left px-4 py-3 text-body-md text-[#FF3B30] hover:bg-white/5 transition-colors"
                 >
                   Delete Account
                 </button>
@@ -487,7 +487,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <User size={40} className="text-[#A0A0A5]" />
+                <User size={40} className="text-[#BFBFBF]" />
               )}
             </div>
             {/* Pencil edit overlay bottom-right */}
@@ -521,10 +521,10 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
             onClick={() => handleEdit('name', profile.name)}
             className="w-full flex items-center gap-3 px-4 py-4 border-b border-white/5 text-left"
           >
-            <User size={18} className="text-[#A0A0A5] flex-shrink-0" />
+            <User size={18} className="text-[#BFBFBF] flex-shrink-0" />
             <span className="text-body-md text-white flex-1">Name</span>
-            <span className="text-body-md text-[#A0A0A5] truncate max-w-[140px]">{profile.name}</span>
-            <ChevronRight size={16} className="text-[#636366] flex-shrink-0" />
+            <span className="text-body-md text-[#BFBFBF] truncate max-w-[140px]">{profile.name}</span>
+            <ChevronRight size={16} className="text-[#8C8C8C] flex-shrink-0" />
           </button>
 
           {/* Linked Email row */}
@@ -532,18 +532,18 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
             onClick={() => handleEdit('email', profile.email)}
             className="w-full flex items-center gap-3 px-4 py-4 border-b border-white/5 text-left"
           >
-            <Mail size={18} className="text-[#A0A0A5] flex-shrink-0" />
+            <Mail size={18} className="text-[#BFBFBF] flex-shrink-0" />
             <span className="text-body-md text-white flex-1">Linked Email</span>
-            <span className="text-body-md text-[#A0A0A5] truncate max-w-[140px]">{profile.email}</span>
-            <ChevronRight size={16} className="text-[#636366] flex-shrink-0" />
+            <span className="text-body-md text-[#BFBFBF] truncate max-w-[140px]">{profile.email}</span>
+            <ChevronRight size={16} className="text-[#8C8C8C] flex-shrink-0" />
           </button>
 
           {/* User ID row (read-only) */}
           {userId !== null && (
             <div className="w-full flex items-center gap-3 px-4 py-4 border-t border-white/5">
-              <Hash size={18} className="text-[#A0A0A5] flex-shrink-0" />
+              <Hash size={18} className="text-[#BFBFBF] flex-shrink-0" />
               <span className="text-body-md text-white flex-1">User ID</span>
-              <span className="text-body-md text-[#A0A0A5]">#{userId}</span>
+              <span className="text-body-md text-[#BFBFBF]">#{userId}</span>
             </div>
           )}
         </div>
@@ -555,9 +555,9 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
             onClick={() => handleEdit('password', '')}
             className="w-full flex items-center gap-3 px-4 py-4 text-left"
           >
-            <Lock size={18} className="text-[#A0A0A5] flex-shrink-0" />
+            <Lock size={18} className="text-[#BFBFBF] flex-shrink-0" />
             <span className="text-body-md text-white flex-1">Change Password</span>
-            <ChevronRight size={16} className="text-[#636366] flex-shrink-0" />
+            <ChevronRight size={16} className="text-[#8C8C8C] flex-shrink-0" />
           </button>
         </div>
 
@@ -573,7 +573,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
               <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
             </svg>
             <span className="text-body-md text-white flex-1">Google</span>
-            <span className="text-body-md text-[#A0A0A5] mr-2">Not linked</span>
+            <span className="text-body-md text-[#BFBFBF] mr-2">Not linked</span>
             <button
               onClick={() => alert('Google login not implemented yet')}
               className="h-8 px-4 rounded-full bg-[#01D6BE] text-black text-label font-semibold"
@@ -588,7 +588,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
               <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
             </svg>
             <span className="text-body-md text-white flex-1">Apple</span>
-            <span className="text-body-md text-[#A0A0A5] mr-2">Not linked</span>
+            <span className="text-body-md text-[#BFBFBF] mr-2">Not linked</span>
             <button
               onClick={() => alert('Apple login not implemented yet')}
               className="h-8 px-4 rounded-full border border-[#01D6BE] text-[#01D6BE] text-label font-semibold"
@@ -600,7 +600,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
 
         {/* Footer: founder code */}
         {!settings.founderBadge && (
-          <p className="mt-6 text-center text-caption text-[#A0A0A5]">
+          <p className="mt-6 text-center text-caption text-[#BFBFBF]">
             Have a founder code?{' '}
             <button
               onClick={() => { setFounderCode(''); setFounderError(''); setShowRedeem(true) }}
@@ -640,25 +640,25 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
                   onClick={() => setShowRedeem(false)}
                   className="w-8 h-8 rounded-full bg-[#3A3A3A] flex items-center justify-center flex-shrink-0"
                 >
-                  <X size={16} className="text-[#A0A0A5]" />
+                  <X size={16} className="text-[#BFBFBF]" />
                 </button>
               </div>
 
               {/* Activation Code input */}
-              <div className={`rounded-m border px-4 pt-2.5 pb-3 mb-4 ${founderError ? 'border-[#FF3530]' : 'border-[#4A4A4A]'}`}>
-                <label className="text-label text-[#A0A0A5]">Activation Code</label>
+              <div className={`rounded-m border px-4 pt-2.5 pb-3 mb-4 ${founderError ? 'border-[#FF3B30]' : 'border-[#4A4A4A]'}`}>
+                <label className="text-label text-[#BFBFBF]">Activation Code</label>
                 <input
                   type="text"
                   value={founderCode}
                   onChange={(e) => { setFounderCode(e.target.value); setFounderError('') }}
                   placeholder="Enter your code"
                   autoFocus
-                  className="w-full bg-transparent text-title-md text-white placeholder:text-[#636366] focus:outline-none mt-0.5"
+                  className="w-full bg-transparent text-title-md text-white placeholder:text-[#8C8C8C] focus:outline-none mt-0.5"
                 />
               </div>
 
               {founderError && (
-                <p className="text-body-md text-[#FF3530] mb-3 -mt-1">{founderError}</p>
+                <p className="text-body-md text-[#FF3B30] mb-3 -mt-1">{founderError}</p>
               )}
 
               {/* Activate button */}
@@ -690,12 +690,12 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
               exit={{ opacity: 0, scale: 0.92 }}
               transition={{ type: 'spring', damping: 24, stiffness: 320 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-[340px] bg-[#262626] rounded-[20px] px-6 pt-6 pb-5"
+              className="w-full max-w-[340px] bg-[#262626] rounded-l px-6 pt-6 pb-5"
             >
               <h3 className="text-headline-md font-bold text-white text-center mb-2">
                 {confirmAction === 'signout' ? 'Sign out?' : 'Delete Account?'}
               </h3>
-              <p className="text-body-md text-[#A0A0A5] text-center mb-6 leading-snug">
+              <p className="text-body-md text-[#BFBFBF] text-center mb-6 leading-snug">
                 {confirmAction === 'signout'
                   ? "You'll need to sign in again to access your account."
                   : 'This will permanently delete your account and all data. This action cannot be undone.'}
@@ -712,7 +712,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
                   className={`flex-1 h-12 rounded-m font-semibold text-body-lg active:scale-95 transition-transform ${
                     confirmAction === 'signout'
                       ? 'bg-[#01D6BE] text-black'
-                      : 'bg-[#FF3530] text-white'
+                      : 'bg-[#FF3B30] text-white'
                   }`}
                 >
                   {confirmAction === 'signout' ? 'Sign Out' : 'Delete'}

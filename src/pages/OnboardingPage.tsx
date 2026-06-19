@@ -63,7 +63,7 @@ export default function OnboardingPage() {
         <div className="px-4 pt-5 flex justify-end safe-area-top">
           <button
             onClick={finish}
-            className="text-body-md text-[#A0A0A5] active:opacity-70"
+            className="text-body-md text-[#BFBFBF] active:opacity-70"
           >
             Skip for now
           </button>
@@ -79,7 +79,7 @@ export default function OnboardingPage() {
           </div>
 
           <h1 className="text-headline-lg font-bold text-white mb-3">Add your first device</h1>
-          <p className="text-body-lg text-[#A0A0A5] max-w-[300px]">
+          <p className="text-body-lg text-[#BFBFBF] max-w-[300px]">
             Connect a Sierro device to start monitoring power, battery, and savings in real time.
           </p>
         </div>
@@ -104,7 +104,7 @@ export default function OnboardingPage() {
 
       <div className="flex-1 px-6 pt-10">
         <h1 className="text-headline-lg font-bold text-white mb-2">What should we call you?</h1>
-        <p className="text-body-md text-[#A0A0A5] mb-8">
+        <p className="text-body-md text-[#BFBFBF] mb-8">
           This is how you'll appear in the Sierro app.
         </p>
 
@@ -116,11 +116,11 @@ export default function OnboardingPage() {
             onChange={(e) => setName(e.target.value)}
             placeholder="Your name"
             autoFocus
-            className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#636366] outline-none caret-primary"
+            className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#8C8C8C] outline-none caret-primary"
           />
           {name.length > 0 && (
             <button onClick={() => setName('')}>
-              <X size={16} className="text-[#636366]" />
+              <X size={16} className="text-[#8C8C8C]" />
             </button>
           )}
         </div>
