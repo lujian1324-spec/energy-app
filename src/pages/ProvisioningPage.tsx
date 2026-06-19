@@ -8,12 +8,25 @@ import {
   ChevronLeft, X, Wifi, WifiOff, Lock, Loader2,
   AlertCircle, CheckCircle, XCircle, RefreshCw,
   Eye, EyeOff, Server,
+  Zap, Refrigerator, Lamp, Car, Plug, Fan, BedDouble,
 } from 'lucide-react'
 import { useProvisionStore, type ProvisionStep } from '../stores/provisionStore'
 import { getProvisionManager, destroyProvisionManager } from '../protocols/bleProvision'
 
 // Local UI screens — the multi-step store flow lives inside 'provisioning'
-type UiScreen = 'scan' | 'qr' | 'naming' | 'provisioning'
+type UiScreen = 'scan' | 'qr' | 'naming' | 'icon' | 'provisioning'
+
+// Device icon choices (Figma "Choose an Icon")
+const DEVICE_ICONS = [
+  { id: 'power', Icon: Zap },
+  { id: 'fridge', Icon: Refrigerator },
+  { id: 'server', Icon: Server as typeof Zap },
+  { id: 'lamp', Icon: Lamp },
+  { id: 'car', Icon: Car },
+  { id: 'plug', Icon: Plug },
+  { id: 'fan', Icon: Fan },
+  { id: 'bed', Icon: BedDouble },
+] as const
 
 // Radar ring animation keyframes via inline style
 const radarRings = [0, 1, 2, 3]
@@ -26,6 +39,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   const [nameError, setNameError] = useState('')
   const [bleKeyInput, setBleKeyInput] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [selectedIcon, setSelectedIcon] = useState<string>('power')
 
   // Simulate found devices list on top of real BLE scan
   const [foundDevices, setFoundDevices] = useState<{ name: string; serial: string }[]>([])
@@ -188,10 +202,16 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     if (!trimmed) { setNameError('Please enter a device name.'); return }
     // TODO: check for duplicate names against existing devices
     setNameError('')
+    setUiScreen('icon')
+  }, [deviceNameInput])
+
+  // ─── Icon chosen → start provisioning ─────────────────────────────────────
+
+  const handleIconNext = useCallback(() => {
     store.setStep('verify')
     setUiScreen('provisioning')
     handleVerify()
-  }, [deviceNameInput, store, handleVerify])
+  }, [store, handleVerify])
 
   // ══════════════════════════════════════════════════════════════════════════
   // SCREEN: Scan
@@ -434,6 +454,61 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
               disabled:bg-primary-dark disabled:text-[rgba(0,0,0,0.4)] transition-colors"
           >
             Next
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // SCREEN: Choose an Icon
+  // ══════════════════════════════════════════════════════════════════════════
+
+  if (uiScreen === 'icon') {
+    return (
+      <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
+        {/* Header */}
+        <div className="px-4 pt-5 pb-4 flex items-center gap-3 safe-area-top">
+          <button
+            onClick={() => setUiScreen('naming')}
+            className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center"
+          >
+            <ChevronLeft size={20} className="text-white" />
+          </button>
+        </div>
+
+        <div className="flex-1 px-6 pt-6">
+          <h1 className="text-headline-lg font-bold text-white mb-2 text-center">Choose an Icon</h1>
+          <p className="text-body-md text-ink-6 mb-8 text-center">
+            Select an icon that best represents this device.
+          </p>
+
+          {/* Icon grid (4 columns) */}
+          <div className="grid grid-cols-4 gap-3">
+            {DEVICE_ICONS.map(({ id, Icon }) => {
+              const active = selectedIcon === id
+              return (
+                <button
+                  key={id}
+                  onClick={() => setSelectedIcon(id)}
+                  className={`aspect-square rounded-l flex items-center justify-center transition-all active:scale-95
+                    ${active ? 'bg-primary text-ink-13' : 'bg-ink-10 text-ink-4'}`}
+                >
+                  <Icon size={26} />
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Finish button */}
+        <div className="px-6 pb-10 safe-area-bottom">
+          <button
+            onClick={handleIconNext}
+            className="w-full h-14 rounded-full bg-primary text-black text-body-lg font-semibold
+              disabled:bg-primary-dark disabled:text-[rgba(0,0,0,0.4)] transition-colors"
+          >
+            Finish
           </button>
         </div>
       </div>
