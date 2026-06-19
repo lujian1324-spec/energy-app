@@ -216,7 +216,9 @@ export interface DeviceStateResponse {
 // ─── API 字段 → Device 实时状态映射类型 ───
 import type { DeviceRealtimeFields, DeviceAlert } from '../types'
 
-/** 将 API fields Record<string, DeviceStateField> 映射为 DeviceRealtimeFields */
+/** 将 API fields Record<string, DeviceStateField> 映射为 DeviceRealtimeFields
+ *  字段 key 来自 /remote/device/state/latest 实测值
+ */
 export function mapFieldsToRealtime(
   fields: Record<string, DeviceStateField>
 ): Partial<DeviceRealtimeFields> {
@@ -226,10 +228,14 @@ export function mapFieldsToRealtime(
     const v = Number(f.value)
     return isNaN(v) ? undefined : v
   }
+  // API 返回布尔字段为 "0"/"1" 字符串
   const getBool = (key: string): boolean | undefined => {
     const f = fields[key]
     if (!f) return undefined
-    return Boolean(f.value)
+    const v = f.value
+    if (v === '1' || v === 1 || v === true) return true
+    if (v === '0' || v === 0 || v === false) return false
+    return Boolean(v)
   }
   const getInt = (key: string): 0 | 1 | 2 | undefined => {
     const v = getNum(key)
@@ -237,19 +243,63 @@ export function mapFieldsToRealtime(
     if (v === 0 || v === 1 || v === 2) return v
     return undefined
   }
+  const getStr = (key: string): string | undefined => {
+    const f = fields[key]
+    if (!f) return undefined
+    return String(f.value ?? '')
+  }
 
   return {
-    soc: getNum('soc'),
-    batteryPower: getNum('batteryPower'),
-    acPower: getNum('acPower'),
-    solarPower: getNum('solarPower'),
+    // 电量 — API: remainingBatteryCapacity
+    soc: getNum('remainingBatteryCapacity'),
+    batteryCapacity: getNum('batteryCapacity'),
+    batteryCurrent: getNum('batteryCurrent'),
+    numberOfBatteryUsageCycles: getNum('numberOfBatteryUsageCycles'),
+
+    // 功率 — API: exchangeChargingPower / generationPower / outputPower
+    acPower: getNum('exchangeChargingPower'),
+    solarPower: getNum('generationPower'),
     outputPower: getNum('outputPower'),
-    batteryTemp: getNum('batteryTemp'),
-    acOut1Enable: getBool('acOut1Enable'),
+    batteryPower: getNum('batteryPower'),
+
+    // 电压 / 频率
+    acInputVoltage: getNum('l1AcInputVoltage'),
+    acInputFrequency: getNum('acInputFrequency'),
+    acOutputVoltage: getNum('acOutputVoltage'),
+    acOutputFrequency: getNum('acOutputFrequency'),
+    solarInputVoltage: getNum('solarInputVoltage'),
+
+    // 温度 — API: cellTemperature1/2/3, mpptTemperature, dcdcTemperature
+    batteryTemp: getNum('cellTemperature1'),
+    cellTemperature2: getNum('cellTemperature2'),
+    cellTemperature3: getNum('cellTemperature3'),
+    mpptTemperature: getNum('mpptTemperature'),
+    dcdcTemperature: getNum('dcdcTemperature'),
+
+    // 能量统计
+    pvGeneratedEnergyOfDay: getNum('pvGeneratedEnergyOfDay'),
+    totalPVGeneratedEnergy: getNum('totalPVGeneratedEnergy'),
+    accumulatedChargingTime: getNum('accumulatedChargingTime'),
+    accumulatedDischargeTime: getNum('accumulatedDischargeTime'),
+
+    // 开关状态 — API 返回 "0"/"1" 字符串
+    acOut1Enable: getBool('inversionState'),  // 逆变状态 = AC输出1
     acOut2Enable: getBool('acOut2Enable'),
     usbOut1Enable: getBool('usbOut1Enable'),
+    photovoltaicCharging: getBool('photovoltaicCharging'),
+    mainsCharging: getBool('mainsCharging'),
+    acOutputs: getBool('acOutputs'),
+    bypassStatus: getBool('bypassStatus'),
+    noLoadShutdown: getBool('noLoadShutdown'),
     sleepMode: getBool('sleepMode'),
+
+    // 模式
     workMode: getInt('workMode'),
+
+    // 版本
+    hardwareVersion: getStr('hardwareVersion'),
+    softwareVersionNumber: getStr('softwareVersionNumber'),
+    inverterSoftwareVersionNumber: getStr('inverterSoftwareVersionNumber'),
   }
 }
 
