@@ -161,7 +161,7 @@ export default function RegisterPage() {
             className="shrink-0 text-label font-semibold text-primary disabled:text-ink-7 transition-colors flex items-center gap-1"
           >
             {sending ? <Loader2 size={14} className="animate-spin" /> : null}
-            {countdown > 0 ? `Resend (${countdown})` : 'Obtain Verification Code'}
+            {countdown > 0 ? `Resend (${countdown})` : 'Obtain Code'}
           </button>
         </div>
 
