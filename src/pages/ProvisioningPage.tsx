@@ -11,6 +11,7 @@ import {
   Zap, Refrigerator, Lamp, Car, Plug, Fan, BedDouble,
 } from 'lucide-react'
 import jsQR from 'jsqr'
+import { toast } from '../components/Toast'
 import { useProvisionStore, type ProvisionStep } from '../stores/provisionStore'
 import { getProvisionManager, destroyProvisionManager } from '../protocols/bleProvision'
 
@@ -210,8 +211,10 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
       store.setDeviceInfo(name, duid)
       setFoundDevices([{ name, serial: duid ?? 'Unknown' }])
     } catch (err) {
-      store.setErrorMessage(err instanceof Error ? err.message : 'Scan failed')
+      const msg = err instanceof Error ? err.message : 'Scan failed'
+      store.setErrorMessage(msg)
       store.addLog(`Scan failed: ${err}`)
+      toast.error(msg)
     } finally {
       store.setIsOperating(false)
     }
