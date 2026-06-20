@@ -112,7 +112,7 @@ export default function ForgotPasswordPage() {
           <>
             {/* Account (optional) */}
             <label className="block text-label text-ink-7 mb-1.5">Account (optional)</label>
-            <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-4">
+            <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-4 focus-within:ring-1 focus-within:ring-inset focus-within:ring-primary transition-shadow">
               <input
                 type="text"
                 value={account}
@@ -129,7 +129,7 @@ export default function ForgotPasswordPage() {
 
             {/* Email */}
             <label className="block text-label text-ink-7 mb-1.5">Email</label>
-            <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-1">
+            <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-1 focus-within:ring-1 focus-within:ring-inset focus-within:ring-primary transition-shadow">
               <input
                 type="email"
                 inputMode="email"
@@ -151,7 +151,7 @@ export default function ForgotPasswordPage() {
           <>
             {/* Verification Code */}
             <label className="block text-label text-ink-7 mb-1.5">Verification Code</label>
-            <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-3 mb-4">
+            <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-3 mb-4 focus-within:ring-1 focus-within:ring-inset focus-within:ring-primary transition-shadow">
               <input
                 type="text"
                 inputMode="numeric"
@@ -174,7 +174,7 @@ export default function ForgotPasswordPage() {
 
             {/* New Password */}
             <label className="block text-label text-ink-7 mb-1.5">New Password</label>
-            <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-1">
+            <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-1 focus-within:ring-1 focus-within:ring-inset focus-within:ring-primary transition-shadow">
               <input
                 type="password"
                 value={newPassword}
@@ -190,7 +190,7 @@ export default function ForgotPasswordPage() {
 
             {/* Confirm Password */}
             <label className="block text-label text-ink-7 mb-1.5">Confirm Password</label>
-            <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-1">
+            <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-1 focus-within:ring-1 focus-within:ring-inset focus-within:ring-primary transition-shadow">
               <input
                 type="password"
                 value={confirmPassword}
