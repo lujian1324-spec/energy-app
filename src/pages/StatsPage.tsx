@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Share2, BarChart3, WifiOff, Zap, ChevronLeft, ChevronRight, Leaf } from 'lucide-react'
+import html2canvas from 'html2canvas'
 import BatteryRing from '../components/BatteryRing'
 import { LastSync, SampleRate, CalcAudit, type DataSource } from '../components/DataTrust'
 import { useDeviceStore } from '../stores/deviceStore'
@@ -233,7 +234,7 @@ function aggregateHistory(raw: HistoryDataResponse, period: Period): ChartFrame 
 
   let entries: [string, { solar: number[]; output: number[]; soc: number[] }][]
   if (period === 'Week') {
-    const dayOrder = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    const dayOrder = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
     entries = [...byTime.entries()].sort(([a], [b]) => dayOrder.indexOf(a) - dayOrder.indexOf(b))
   } else {
     entries = [...byTime.entries()].sort()
@@ -360,7 +361,7 @@ function getDemoChartFrame(period: Period, pageOffset = 0): ChartFrame {
 
   if (period === 'Week') {
     const page = WEEK_PAGES[Math.min(pageIdx, WEEK_PAGES.length - 1)]
-    const labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    const labels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
     const input = smooth(page.rawInput, 2)
     const output = smooth(page.rawOutput, 2)
     const soc = smooth(page.rawSoc, 1)
@@ -448,6 +449,8 @@ function ChartEmptyState({ message }: { message: string }) {
 
 export default function StatsPage() {
   const [period, setPeriod] = useState<Period>('Day')
+  const [sharing, setSharing] = useState(false)
+  const shareRef = useRef<HTMLDivElement>(null)
 
   // ── Date picker state ──
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
@@ -654,11 +657,40 @@ export default function StatsPage() {
         </div>
         <button
           aria-label="Share"
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-ink-10 text-ink-6 hover:text-primary transition-colors"
-          onClick={() => {
-            if (navigator.share && chartFrame) {
-              navigator.share({ title: 'Sierro Energy Stats', text: `CO2 Reduced: ${chartFrame.co2Kg} kg`, url: window.location.href })
-                .catch(err => console.error('[StatsPage] Share failed:', err))
+          disabled={sharing}
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-ink-10 text-ink-6 hover:text-primary transition-colors disabled:opacity-50"
+          onClick={async () => {
+            if (!shareRef.current || sharing) return
+            setSharing(true)
+            try {
+              const canvas = await html2canvas(shareRef.current, {
+                backgroundColor: '#141414',
+                scale: 2,
+                useCORS: true,
+                logging: false,
+              })
+              // Watermark
+              const ctx = canvas.getContext('2d')!
+              ctx.fillStyle = 'rgba(255,255,255,0.35)'
+              ctx.font = `bold ${14 * 2}px Inter, sans-serif`
+              ctx.textAlign = 'right'
+              ctx.fillText('Sierro Energy', canvas.width - 24, canvas.height - 24)
+
+              const blob = await new Promise<Blob | null>(res => canvas.toBlob(res, 'image/png'))
+              if (!blob) return
+              const file = new File([blob], 'sierro-insights.png', { type: 'image/png' })
+              if (navigator.canShare?.({ files: [file] })) {
+                await navigator.share({ files: [file], title: 'Sierro Energy Insights' })
+              } else {
+                const url = URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url; a.download = 'sierro-insights.png'; a.click()
+                URL.revokeObjectURL(url)
+              }
+            } catch (err) {
+              console.error('[StatsPage] Share failed:', err)
+            } finally {
+              setSharing(false)
             }
           }}
         >
@@ -666,7 +698,7 @@ export default function StatsPage() {
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pb-4">
+      <div ref={shareRef} className="flex-1 overflow-y-auto scrollbar-hide px-4 pb-4">
         {!hasDevice && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center justify-center py-20 px-8">

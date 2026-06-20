@@ -2,7 +2,7 @@
  * BLE provisioning UI — PRD-aligned redesign.
  * All store/API/protocol logic preserved from original.
  */
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ChevronLeft, X, Wifi, WifiOff, Lock, Loader2,
@@ -10,6 +10,7 @@ import {
   Eye, EyeOff, Server,
   Zap, Refrigerator, Lamp, Car, Plug, Fan, BedDouble,
 } from 'lucide-react'
+import jsQR from 'jsqr'
 import { useProvisionStore, type ProvisionStep } from '../stores/provisionStore'
 import { getProvisionManager, destroyProvisionManager } from '../protocols/bleProvision'
 
@@ -31,6 +32,132 @@ const DEVICE_ICONS = [
 // Radar ring animation keyframes via inline style
 const radarRings = [0, 1, 2, 3]
 
+// ─── QR Scanner component (jsQR + getUserMedia) ──────────────────────────
+function QrScanScreen({ onBack, onScanned }: {
+  onBack: () => void
+  onScanned: (name: string, serial: string) => void
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const streamRef = useRef<MediaStream | null>(null)
+  const rafRef = useRef<number | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [scanned, setScanned] = useState<{ name: string; serial: string } | null>(null)
+  const [cameraReady, setCameraReady] = useState(false)
+
+  useEffect(() => {
+    let stopped = false
+    const start = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        if (stopped) { stream.getTracks().forEach(t => t.stop()); return }
+        streamRef.current = stream
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+          await videoRef.current.play()
+          setCameraReady(true)
+        }
+      } catch {
+        setError('Camera permission denied. Please allow camera access and try again.')
+      }
+    }
+    start()
+    return () => {
+      stopped = true
+      streamRef.current?.getTracks().forEach(t => t.stop())
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!cameraReady) return
+    const scan = () => {
+      const video = videoRef.current
+      const canvas = canvasRef.current
+      if (!video || !canvas || video.readyState < 2) { rafRef.current = requestAnimationFrame(scan); return }
+      canvas.width = video.videoWidth
+      canvas.height = video.videoHeight
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+      const code = jsQR(imageData.data, imageData.width, imageData.height)
+      if (code?.data) {
+        // Sierro QR format: "SIERRO:<model>:<serial>" or plain serial
+        const parts = code.data.split(':')
+        const name = parts.length >= 2 ? parts[1] : 'Sierro Device'
+        const serial = parts.length >= 3 ? parts[2] : code.data
+        streamRef.current?.getTracks().forEach(t => t.stop())
+        setScanned({ name, serial })
+        return
+      }
+      rafRef.current = requestAnimationFrame(scan)
+    }
+    rafRef.current = requestAnimationFrame(scan)
+    return () => { if (rafRef.current !== null) cancelAnimationFrame(rafRef.current) }
+  }, [cameraReady])
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black flex flex-col">
+      <div className="px-4 pt-5 pb-4 flex items-center gap-3 safe-area-top absolute top-0 left-0 right-0 z-10">
+        <button onClick={onBack} className="w-10 h-10 rounded-full bg-[rgba(0,0,0,0.5)] flex items-center justify-center">
+          <ChevronLeft size={20} className="text-white" />
+        </button>
+        <h1 className="text-title-lg font-semibold text-white">Scan QR Code</h1>
+      </div>
+
+      {/* Camera feed */}
+      <video ref={videoRef} className="absolute inset-0 w-full h-full object-cover" playsInline muted />
+      <canvas ref={canvasRef} className="hidden" />
+
+      {/* Dark overlay with viewfinder cutout */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="relative w-64 h-64">
+          {/* corners */}
+          {[['top-0 left-0', 'M0 20V4C0 1.79 1.79 0 4 0H20'],
+            ['top-0 right-0', 'M24 20V4C24 1.79 22.21 0 20 0H4'],
+            ['bottom-0 left-0', 'M0 4V20C0 22.21 1.79 24 4 24H20'],
+            ['bottom-0 right-0', 'M24 4V20C24 22.21 22.21 24 20 24H4'],
+          ].map(([pos, d], i) => (
+            <svg key={i} className={`absolute ${pos}`} width="36" height="36" viewBox="0 0 24 24" fill="none">
+              <path d={d} stroke="#01D6BE" strokeWidth="2.5" strokeLinecap="round"/>
+            </svg>
+          ))}
+        </div>
+      </div>
+
+      <div className="absolute bottom-0 left-0 right-0 px-6 pb-10 safe-area-bottom">
+        {error ? (
+          <div className="bg-danger/90 rounded-l p-4 text-center">
+            <p className="text-white text-body-md">{error}</p>
+            <button onClick={onBack} className="mt-3 text-white font-semibold underline text-body-md">Go Back</button>
+          </div>
+        ) : scanned ? (
+          <div className="bg-[rgba(0,0,0,0.85)] rounded-l p-5">
+            <p className="text-caption text-primary font-semibold uppercase tracking-widest mb-1">Device Scanned</p>
+            <p className="text-title-md font-bold text-white">{scanned.name}</p>
+            <p className="text-caption text-[#BFBFBF] mb-5">{scanned.serial}</p>
+            <div className="flex gap-3">
+              <button onClick={() => { setScanned(null); setCameraReady(false); setTimeout(() => setCameraReady(true), 100) }}
+                className="flex-1 h-12 rounded-full border border-[rgba(255,255,255,0.3)] text-white font-semibold text-body-md">
+                Rescan
+              </button>
+              <button onClick={() => onScanned(scanned.name, scanned.serial)}
+                className="flex-1 h-12 rounded-full bg-primary text-black font-semibold text-body-md">
+                Connect Device
+              </button>
+            </div>
+          </div>
+        ) : (
+          <p className="text-center text-[rgba(255,255,255,0.7)] text-body-md">
+            Point your camera at the QR code on your Sierro device
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   const store = useProvisionStore()
 
@@ -43,6 +170,25 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
 
   // Simulate found devices list on top of real BLE scan
   const [foundDevices, setFoundDevices] = useState<{ name: string; serial: string }[]>([])
+  const [showNotifSheet, setShowNotifSheet] = useState(false)
+
+  // ─── BLE permission & availability state ─────────────────────────────────
+  type BleStatus = 'checking' | 'no_permission' | 'bt_off' | 'ready'
+  const [bleStatus, setBleStatus] = useState<BleStatus>('checking')
+
+  useEffect(() => {
+    const check = async () => {
+      if (!('bluetooth' in navigator)) { setBleStatus('no_permission'); return }
+      try {
+        // @ts-ignore — navigator.bluetooth.getAvailability() is standard
+        const available = await (navigator as any).bluetooth.getAvailability()
+        setBleStatus(available ? 'ready' : 'bt_off')
+      } catch {
+        setBleStatus('ready') // can't check, assume ready
+      }
+    }
+    check()
+  }, [])
 
   // ─── BLE Scan ────────────────────────────────────────────────────────────
 
@@ -222,6 +368,68 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     const hasDevices = foundDevices.length > 0
     const hasError = !isSearching && store.errorMessage && !hasDevices
 
+    // ── Permission Required screen ──
+    if (bleStatus === 'no_permission') {
+      return (
+        <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
+          <div className="px-4 pt-5 pb-4 flex items-center safe-area-top">
+            <button onClick={handleClose} className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center">
+              <ChevronLeft size={20} className="text-white" />
+            </button>
+            <h1 className="text-title-lg font-semibold text-white ml-3">Add Device</h1>
+          </div>
+          <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
+            <div className="w-20 h-20 rounded-[28px] bg-[rgba(255,59,48,0.1)] flex items-center justify-center mb-6">
+              <AlertCircle size={36} className="text-danger" />
+            </div>
+            <h2 className="text-headline-md font-bold text-white mb-3">Permission Required</h2>
+            <p className="text-body-md text-[#BFBFBF] mb-8">
+              Bluetooth and Local Network access are required to connect your Sierro device. Please enable them in Settings.
+            </p>
+          </div>
+          <div className="px-6 pb-10 safe-area-bottom">
+            <button
+              onClick={() => window.open('app-settings:', '_blank')}
+              className="w-full h-14 rounded-full bg-primary text-black text-body-lg font-semibold"
+            >
+              Open Settings
+            </button>
+          </div>
+        </div>
+      )
+    }
+
+    // ── Bluetooth Off screen ──
+    if (bleStatus === 'bt_off') {
+      return (
+        <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
+          <div className="px-4 pt-5 pb-4 flex items-center safe-area-top">
+            <button onClick={handleClose} className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center">
+              <ChevronLeft size={20} className="text-white" />
+            </button>
+            <h1 className="text-title-lg font-semibold text-white ml-3">Add Device</h1>
+          </div>
+          <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
+            <div className="w-20 h-20 rounded-[28px] bg-[rgba(1,214,190,0.1)] flex items-center justify-center mb-6">
+              <WifiOff size={36} className="text-primary" />
+            </div>
+            <h2 className="text-headline-md font-bold text-white mb-3">Bluetooth is Off</h2>
+            <p className="text-body-md text-[#BFBFBF] mb-8">
+              Please enable Bluetooth on your device to scan for nearby Sierro devices.
+            </p>
+          </div>
+          <div className="px-6 pb-10 safe-area-bottom space-y-3">
+            <button
+              onClick={() => setBleStatus('ready')}
+              className="w-full h-14 rounded-full bg-primary text-black text-body-lg font-semibold"
+            >
+              I've Enabled Bluetooth
+            </button>
+          </div>
+        </div>
+      )
+    }
+
     return (
       <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
         {/* Header */}
@@ -352,50 +560,14 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   // ══════════════════════════════════════════════════════════════════════════
 
   if (uiScreen === 'qr') {
-    return (
-      <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
-        {/* Header */}
-        <div className="px-4 pt-5 pb-4 flex items-center gap-3 safe-area-top">
-          <button
-            onClick={() => setUiScreen('scan')}
-            className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center"
-          >
-            <ChevronLeft size={20} className="text-white" />
-          </button>
-          <h1 className="text-title-lg font-semibold text-white">Scan QR Code</h1>
-        </div>
-
-        {/* Camera viewfinder */}
-        <div className="flex-1 flex flex-col items-center justify-center px-10">
-          <div className="relative w-full aspect-square max-w-[280px]">
-            {/* Dark camera area */}
-            <div className="absolute inset-0 bg-[#0A0A0A] rounded-l" />
-
-            {/* Corner bracket: top-left */}
-            <svg className="absolute top-3 left-3" width="36" height="36" viewBox="0 0 36 36" fill="none">
-              <path d="M0 16V4C0 1.79 1.79 0 4 0H16" stroke="#01D6BE" strokeWidth="3" strokeLinecap="round"/>
-            </svg>
-            {/* top-right */}
-            <svg className="absolute top-3 right-3" width="36" height="36" viewBox="0 0 36 36" fill="none">
-              <path d="M36 16V4C36 1.79 34.21 0 32 0H20" stroke="#01D6BE" strokeWidth="3" strokeLinecap="round"/>
-            </svg>
-            {/* bottom-left */}
-            <svg className="absolute bottom-3 left-3" width="36" height="36" viewBox="0 0 36 36" fill="none">
-              <path d="M0 20V32C0 34.21 1.79 36 4 36H16" stroke="#01D6BE" strokeWidth="3" strokeLinecap="round"/>
-            </svg>
-            {/* bottom-right */}
-            <svg className="absolute bottom-3 right-3" width="36" height="36" viewBox="0 0 36 36" fill="none">
-              <path d="M36 20V32C36 34.21 34.21 36 32 36H20" stroke="#01D6BE" strokeWidth="3" strokeLinecap="round"/>
-            </svg>
-          </div>
-
-          <div className="mt-8 text-center">
-            <p className="text-body-lg font-semibold text-white mb-2">Scan the QR Code on Your Device</p>
-            <p className="text-body-md text-[#BFBFBF]">Point the camera at the QR code found on the label of your Sierro device.</p>
-          </div>
-        </div>
-      </div>
-    )
+    return <QrScanScreen
+      onBack={() => setUiScreen('scan')}
+      onScanned={(name, serial) => {
+        store.setDeviceInfo(name, serial)
+        setFoundDevices([{ name, serial }])
+        setUiScreen('naming')
+      }}
+    />
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -740,7 +912,13 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
 
                 {store.configResult === 'success' && (
                   <button
-                    onClick={handleClose}
+                    onClick={async () => {
+                      if ('Notification' in window && Notification.permission === 'default') {
+                        setShowNotifSheet(true)
+                      } else {
+                        handleClose()
+                      }
+                    }}
                     className="w-full h-14 rounded-full bg-primary text-black text-body-lg font-semibold"
                   >
                     Done
@@ -784,6 +962,51 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Notification permission Bottom Sheet */}
+      <AnimatePresence>
+        {showNotifSheet && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 0.6 }} exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black z-40"
+              onClick={() => { setShowNotifSheet(false); handleClose() }}
+            />
+            <motion.div
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={{ type: 'spring', stiffness: 400, damping: 40 }}
+              className="absolute bottom-0 left-0 right-0 z-50 bg-[#1F1F1F] rounded-t-[24px] px-6 pt-3 pb-10 safe-area-bottom"
+            >
+              <div className="w-10 h-1 bg-[rgba(255,255,255,0.2)] rounded-full mx-auto mb-6" />
+              <div className="w-14 h-14 rounded-[18px] bg-[rgba(1,214,190,0.12)] flex items-center justify-center mb-4">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" stroke="#01D6BE" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <h3 className="text-title-lg font-bold text-white mb-2">Enable Notifications</h3>
+              <p className="text-body-md text-[#BFBFBF] mb-6">
+                Get alerted when your battery is low, a power outage occurs, or solar connects or disconnects.
+              </p>
+              <button
+                onClick={async () => {
+                  await Notification.requestPermission()
+                  setShowNotifSheet(false)
+                  handleClose()
+                }}
+                className="w-full h-14 rounded-full bg-primary text-black text-body-lg font-semibold mb-3"
+              >
+                Enable Notifications
+              </button>
+              <button
+                onClick={() => { setShowNotifSheet(false); handleClose() }}
+                className="w-full h-12 text-body-md text-[#8C8C8C]"
+              >
+                Not Now
+              </button>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
