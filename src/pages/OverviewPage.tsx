@@ -40,6 +40,7 @@ import { mapFieldsToRealtime, mapFiringAlarms } from '../api/deviceApi'
 import type { DeviceAlert } from '../types'
 import {
   showPowerOutageNotification,
+  showSolarChargingNotification,
   getNotificationPermission,
   requestNotificationPermission,
   getIOSPushStatus,
@@ -341,6 +342,16 @@ export default function OverviewPage() {
       [...prev, { battery: batteryPower, ac: acPower, solar: solarPower, output: outputPower }].slice(-30)
     )
   }, [batteryPower, acPower, solarPower, outputPower, isOnline])
+
+  // ─── Solar charging notification ───────────────────────────────────────────
+  const prevSolarRef = useRef(0)
+  useEffect(() => {
+    const prev = prevSolarRef.current
+    prevSolarRef.current = solarPower
+    if (prev === 0 && solarPower > 10 && pushPermission === 'granted') {
+      showSolarChargingNotification(solarPower)
+    }
+  }, [solarPower, pushPermission])
 
   // Build SVG points (viewBox 0 0 300 80) from the buffered series
   const chartSeries = powerHistory.map(p => p[powerDataSource])

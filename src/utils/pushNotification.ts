@@ -258,6 +258,19 @@ export const showPowerOutageNotification = async (): Promise<void> => {
   await showLocalNotification('Power outage. Backup activated.', options)
 }
 
+// 显示太阳能开始充电通知
+export const showSolarChargingNotification = async (solarW: number): Promise<void> => {
+  const basePath = getBasePath()
+  const options: NotificationOptions = {
+    body: `Solar panels are generating ${solarW}W. Your battery is now charging.`,
+    icon: `${basePath}/icon-192x192.png`,
+    badge: `${basePath}/icon-192x192.png`,
+    tag: 'solar-charging',
+    renotify: false,
+  }
+  await showLocalNotification('Solar charging started ☀️', options)
+}
+
 // 订阅 Push 服务（用于服务器推送）
 export const subscribeToPush = async (
   vapidPublicKey?: string
