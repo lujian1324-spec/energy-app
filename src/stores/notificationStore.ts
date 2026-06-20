@@ -16,10 +16,10 @@ interface NotificationState {
   deletedIds: number[]
   /** 已读时间戳（毫秒）；用于判断红点是否消失 */
   lastReadAt: number
-  /** 列表（排除已删除） */
-  items: () => NotificationItem[]
-  /** 未读数量 */
-  unreadCount: () => number
+  /** 列表（排除已删除），可按设备序列号过滤 */
+  items: (deviceSerial?: string) => NotificationItem[]
+  /** 未读数量，可按设备过滤 */
+  unreadCount: (deviceSerial?: string) => number
   /** 标记全部已读（进入通知页时调用） */
   markAllRead: () => void
   /** 删除单条 */
@@ -34,13 +34,14 @@ export const useNotificationStore = create<NotificationState>()(
       deletedIds: [],
       lastReadAt: 0,
 
-      items: () => demoNotifications.filter(n => !get().deletedIds.includes(n.id)),
+      items: (deviceSerial?: string) => {
+        const all = demoNotifications.filter(n => !get().deletedIds.includes(n.id))
+        return deviceSerial ? all.filter(n => n.deviceSerial === deviceSerial) : all
+      },
 
-      unreadCount: () => {
-        // 演示数据无真实时间戳，故用「曾经查看过」作为已读判断：
-        // 未查看过(lastReadAt=0) → 未删除的全部为未读
+      unreadCount: (deviceSerial?: string) => {
         if (get().lastReadAt > 0) return 0
-        return get().items().length
+        return get().items(deviceSerial).length
       },
 
       markAllRead: () => set({ lastReadAt: Date.now() }),

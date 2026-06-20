@@ -34,6 +34,7 @@ import {
   RotateCcw,
   Link2,
   Link2Off,
+  Download,
 } from 'lucide-react'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useAuthStore } from '../stores/authStore'
@@ -295,6 +296,29 @@ export default function SettingPage() {
             <div className="flex-1 min-w-0">
               <div className="text-body-lg font-semibold text-ink-1">Feedback</div>
               <div className="text-body-md text-ink-6 mt-0.5">Send feedback to the Sierro team</div>
+            </div>
+          </button>
+        </motion.div>
+
+        {/* Data Export */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+          className="mb-6">
+          <button
+            onClick={() => {
+              const data = { exportedAt: new Date().toISOString(), settings, powerStation }
+              const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+              const url = URL.createObjectURL(blob)
+              const a = document.createElement('a'); a.href = url
+              a.download = `sierro-data-${new Date().toISOString().slice(0,10)}.json`
+              a.click(); URL.revokeObjectURL(url)
+            }}
+            className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 active:scale-[0.99] transition-transform text-left">
+            <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
+              <Download size={16} className="text-ink-1" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-body-lg font-semibold text-ink-1">Export My Data</div>
+              <div className="text-body-md text-ink-6 mt-0.5">Download your settings and device data as JSON</div>
             </div>
           </button>
         </motion.div>

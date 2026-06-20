@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import ProvisioningPage from './ProvisioningPage'
@@ -28,6 +28,7 @@ import {
   TrendingUp,
   TrendingDown,
 } from 'lucide-react'
+import PullToRefresh from '../components/PullToRefresh'
 import { useDeviceStore } from '../stores/deviceStore'
 import { useAuthStore } from '../stores/authStore'
 import { useNotificationStore } from '../stores/notificationStore'
@@ -421,8 +422,9 @@ export default function DevicePage() {
         </AnimatePresence>
       </motion.div>
 
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pb-4">
+      {/* Scrollable content — pull-to-refresh */}
+      <PullToRefresh onRefresh={async () => { await loadDevices(1, 50) }}>
+      <div className="px-4 pb-4">
         {/* 最新通知 Banner（可按 X 关闭） */}
         <AnimatePresence>
           {lowBatteryDevice && !bannerDismissed && (
@@ -535,6 +537,7 @@ export default function DevicePage() {
           </motion.div>
         )}
       </div>
+      </PullToRefresh>
 
       {/* ===== 设备参数详情 Modal ===== */}
       <AnimatePresence>

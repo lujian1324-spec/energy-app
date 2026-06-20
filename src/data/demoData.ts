@@ -607,19 +607,20 @@ export interface DemoNotification {
   id: number
   type: 'low_battery' | 'power_outage'
   deviceName: string
+  deviceSerial: string
   description: string
   time: string
   date: string
 }
 
 export const demoNotifications: DemoNotification[] = [
-  { id: 1, type: 'low_battery', deviceName: 'SIERRO 1000', description: 'Reserve threshold reached (20%). Charging from AC now.', time: '5 mins ago', date: 'Today' },
-  { id: 2, type: 'power_outage', deviceName: 'SIERRO 2000', description: 'Grid outage detected. Switched to battery backup automatically.', time: '3:42 PM', date: 'Today' },
-  { id: 3, type: 'low_battery', deviceName: 'SIERRO 1000', description: 'Battery at 22% — peak-shaving paused until charged.', time: '1:10 PM', date: 'Today' },
-  { id: 4, type: 'power_outage', deviceName: 'SIERRO 2000', description: 'Grid restored after 18-minute outage. Resuming normal operation.', time: '11:24 AM', date: 'Yesterday' },
-  { id: 5, type: 'low_battery', deviceName: 'SIERRO 1000', description: 'Battery fully charged — ready for backup.', time: 'Apr 28', date: 'April' },
-  { id: 6, type: 'power_outage', deviceName: 'SIERRO 2000', description: 'Backup power engaged for 42 minutes during outage.', time: 'Apr 15', date: 'April' },
-  { id: 7, type: 'low_battery', deviceName: 'SIERRO 1000', description: 'Overnight discharge completed. AC recharge begins at 6 AM.', time: 'Mar 23', date: 'March' },
+  { id: 1, type: 'low_battery', deviceName: 'SIERRO 1000', deviceSerial: 'SN10001', description: 'Reserve threshold reached (20%). Charging from AC now.', time: '5 mins ago', date: 'Today' },
+  { id: 2, type: 'power_outage', deviceName: 'SIERRO 2000', deviceSerial: 'SN10002', description: 'Grid outage detected. Switched to battery backup automatically.', time: '3:42 PM', date: 'Today' },
+  { id: 3, type: 'low_battery', deviceName: 'SIERRO 1000', deviceSerial: 'SN10001', description: 'Battery at 22% — peak-shaving paused until charged.', time: '1:10 PM', date: 'Today' },
+  { id: 4, type: 'power_outage', deviceName: 'SIERRO 2000', deviceSerial: 'SN10002', description: 'Grid restored after 18-minute outage. Resuming normal operation.', time: '11:24 AM', date: 'Yesterday' },
+  { id: 5, type: 'low_battery', deviceName: 'SIERRO 1000', deviceSerial: 'SN10001', description: 'Battery fully charged — ready for backup.', time: 'Apr 28', date: 'April' },
+  { id: 6, type: 'power_outage', deviceName: 'SIERRO 2000', deviceSerial: 'SN10002', description: 'Backup power engaged for 42 minutes during outage.', time: 'Apr 15', date: 'April' },
+  { id: 7, type: 'low_battery', deviceName: 'SIERRO 1000', deviceSerial: 'SN10001', description: 'Overnight discharge completed. AC recharge begins at 6 AM.', time: 'Mar 23', date: 'March' },
 ]
 
 // ═══════════════════════════════════════════════════════

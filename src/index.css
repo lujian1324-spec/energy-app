@@ -105,6 +105,16 @@ body {
   border-radius: 4px;
 }
 
+/* Form fields are wrapped in styled containers that show their own
+   focus-within ring — suppress the duplicate inner ring so we don't get
+   a smaller "box inside the box". */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  box-shadow: none;
+  border-radius: inherit;
+}
+
 /* ============================================================
    WCAG 无障碍 - 动效减弱
 ============================================================ */

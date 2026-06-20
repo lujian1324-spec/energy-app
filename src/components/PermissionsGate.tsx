@@ -84,7 +84,6 @@ interface Props {
 export default function PermissionsGate({ onDone }: Props) {
   const [step, setStep] = useState<'intro' | 'asking' | 'done'>('intro')
   const [results, setResults] = useState<Record<string, boolean>>({})
-  const [currentIdx, setCurrentIdx] = useState(0)
 
   const handleAllow = async () => {
     setStep('asking')
@@ -115,7 +114,8 @@ export default function PermissionsGate({ onDone }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-[999] bg-[#141414] flex flex-col items-center justify-between px-6 safe-area-top safe-area-bottom">
+    <div className="fixed inset-0 z-[999] bg-[#141414] flex flex-col items-center px-6 safe-area-top safe-area-bottom">
+      <div className="flex-1 w-full overflow-y-auto scrollbar-hide">
       <AnimatePresence mode="wait">
         {step === 'intro' && (
           <motion.div
@@ -123,7 +123,7 @@ export default function PermissionsGate({ onDone }: Props) {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -16 }}
-            className="flex flex-col items-center w-full pt-20 flex-1"
+            className="flex flex-col items-center w-full pt-12"
           >
             {/* Shield icon */}
             <div className="w-20 h-20 rounded-[28px] bg-[rgba(1,214,190,0.1)] border border-[rgba(1,214,190,0.25)] flex items-center justify-center mb-6">
@@ -133,12 +133,12 @@ export default function PermissionsGate({ onDone }: Props) {
             <h1 className="text-headline-lg font-bold text-white text-center mb-2">
               App Permissions
             </h1>
-            <p className="text-body-md text-[#BFBFBF] text-center mb-10 max-w-[280px] leading-relaxed">
+            <p className="text-body-md text-[#BFBFBF] text-center mb-6 max-w-[280px] leading-relaxed">
               Sierro needs a few permissions to give you the full experience.
             </p>
 
             {/* Permission list */}
-            <div className="w-full space-y-3 mb-10">
+            <div className="w-full space-y-3 mb-4">
               {PERMISSIONS.map(({ id, Icon, title, description }) => (
                 <div key={id} className="flex items-start gap-4 bg-[#262626] rounded-l px-4 py-4">
                   <div className="w-10 h-10 rounded-l bg-[rgba(1,214,190,0.1)] flex items-center justify-center flex-shrink-0">
@@ -159,7 +159,7 @@ export default function PermissionsGate({ onDone }: Props) {
             key="asking"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex flex-col items-center justify-center flex-1 gap-4"
+            className="flex flex-col items-center justify-center min-h-full gap-4"
           >
             <div className="w-12 h-12 rounded-full border-2 border-[#01D6BE] border-t-transparent animate-spin" />
             <p className="text-body-lg text-[#BFBFBF]">Requesting permissions…</p>
@@ -174,17 +174,17 @@ export default function PermissionsGate({ onDone }: Props) {
             key="done"
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center w-full pt-20 flex-1"
+            className="flex flex-col items-center w-full pt-12"
           >
             <div className="w-20 h-20 rounded-[28px] bg-[rgba(52,199,89,0.1)] border border-[rgba(52,199,89,0.25)] flex items-center justify-center mb-6">
               <Shield size={40} className="text-[#34C759]" />
             </div>
             <h1 className="text-headline-lg font-bold text-white text-center mb-2">All Set</h1>
-            <p className="text-body-md text-[#BFBFBF] text-center mb-10 max-w-[260px] leading-relaxed">
+            <p className="text-body-md text-[#BFBFBF] text-center mb-6 max-w-[260px] leading-relaxed">
               You can always update permissions in your device Settings app.
             </p>
 
-            <div className="w-full space-y-3 mb-10">
+            <div className="w-full space-y-3 mb-4">
               {PERMISSIONS.map(({ id, Icon, title }) => (
                 <div key={id} className="flex items-center gap-4 bg-[#262626] rounded-l px-4 py-3.5">
                   <div className="w-9 h-9 rounded-m bg-[rgba(1,214,190,0.08)] flex items-center justify-center flex-shrink-0">
@@ -204,9 +204,10 @@ export default function PermissionsGate({ onDone }: Props) {
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
 
-      {/* Bottom CTA */}
-      <div className="w-full pb-10 space-y-3">
+      {/* Bottom CTA — pinned, always visible */}
+      <div className="w-full shrink-0 pt-3 pb-6 space-y-3">
         {step === 'intro' && (
           <>
             <button
