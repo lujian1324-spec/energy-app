@@ -19,6 +19,7 @@ import DeviceMonitorPage from './pages/DeviceMonitorPage'
 import DeviceDetailPage from './pages/DeviceDetailPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import BleDebugPage from './pages/BleDebugPage'
+import PeakShavingPage from './pages/PeakShavingPage'
 import { useRealtimeSimulator } from './hooks/useRealtimeSimulator'
 import { useAuthStore } from './stores/authStore'
 import { ToastContainer, useToast } from './components/Toast'
@@ -137,6 +138,7 @@ function AppInner() {
                 <Route path="/device/:id/settings" element={<RequireAuth><DeviceDetailPage /></RequireAuth>} />
                 <Route path="/device/:id/dashboard" element={<RequireAuth><OverviewPage /></RequireAuth>} />
                 <Route path="/smart-schedule" element={<RequireAuth><SmartSchedulePage /></RequireAuth>} />
+                <Route path="/peak-shaving" element={<RequireAuth><PeakShavingPage /></RequireAuth>} />
                 <Route path="/notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
                 <Route path="/onboarding" element={<RequireAuth><OnboardingPage /></RequireAuth>} />
                 <Route path="/ble-debug" element={<BleDebugPage />} />
