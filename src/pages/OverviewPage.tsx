@@ -91,7 +91,15 @@ export default function OverviewPage() {
   // PRD v1.1 §8: 数据来源标识
   const [dataSource] = useState<DataSource>('ble')
   // PRD v1.1 §8.2: Demo Mode 检测 (无设备时或离线时)
-  const isDemoMode = !navigator.onLine
+  const [isNetworkOnline, setIsNetworkOnline] = useState(navigator.onLine)
+  useEffect(() => {
+    const up = () => setIsNetworkOnline(true)
+    const down = () => setIsNetworkOnline(false)
+    window.addEventListener('online', up)
+    window.addEventListener('offline', down)
+    return () => { window.removeEventListener('online', up); window.removeEventListener('offline', down) }
+  }, [])
+  const isDemoMode = !isNetworkOnline
 
   const [displayConfig, setDisplayConfig] = useState({
     showBatteryRing: true,
