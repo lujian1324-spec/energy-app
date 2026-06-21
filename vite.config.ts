@@ -13,6 +13,13 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      // Skip waiting immediately so new SW takes over without requiring a page reload
+      injectRegister: 'auto',
+      workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
+      },
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg', 'sw.js', 'icon-192x192.svg', 'icon-512x512.svg'],
       manifest: {
         name: 'Sierro App',
