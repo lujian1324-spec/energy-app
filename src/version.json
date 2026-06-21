@@ -1,13 +1,20 @@
 {
-  "version": "3.12.0",
-  "build": 2464,
-  "date": "2026-05-21",
+  "version": "3.13.0",
+  "build": 2525,
+  "date": "2026-06-21",
   "changelog": [
-    "T6: Global Toast notification system — success/error/warning/info types, 3.5s auto-dismiss, top-slide animation",
-    "T6: Toast container hoisted to App root — all routes (login, device detail, main) can now trigger toasts",
-    "T19: WebSocket real-time push with auto-reconnect and heartbeat",
-    "T23: Offline command queue with auto-replay on network restore",
-    "T25: QR Code scanner hook (BarcodeDetector API + fallback)",
-    "T26: Unified connection status hook + ConnectionIndicator component"
+    "Real jsQR camera scanner in provisioning flow",
+    "BLE availability gate (no_permission / bt_off / ready screens)",
+    "Notification bottom sheet after device add",
+    "Pull-to-refresh gesture on device list",
+    "Count-up animation for power values (AC / Solar / Output)",
+    "Insights share-as-image with html2canvas + Sierro watermark",
+    "Data export JSON download in Settings",
+    "Week X-axis fixed to Sun→Sat in Insights",
+    "Peak Shaving page route + Energy Management shortcuts in Overview",
+    "Web Serial USB connect entry point",
+    "Solar charging push notification trigger",
+    "Device registered in cloud after BLE provisioning success",
+    "Fix: stale PWA service worker causing blank page on redeploy"
   ]
 }
