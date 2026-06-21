@@ -85,8 +85,8 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-ink-12">
-      <div className="px-4 pt-5 safe-area-top">
+    <div className="h-dvh flex flex-col bg-ink-12">
+      <div className="px-4 pt-5 safe-area-top shrink-0">
         <button
           onClick={() => (step === 'reset' ? setStep('request') : navigate(-1))}
           className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-ink-1 active:scale-95 transition-transform"
@@ -95,7 +95,7 @@ export default function ForgotPasswordPage() {
         </button>
       </div>
 
-      <div className="flex-1 px-6 pt-6">
+      <div className="flex-1 overflow-y-auto px-6 pt-6">
         <h1 className="font-display text-headline-lg text-ink-1 mb-1">Forgot Password</h1>
         <p className="text-body-md text-ink-7 mb-8">
           {step === 'request'
@@ -211,7 +211,7 @@ export default function ForgotPasswordPage() {
       </div>
 
       {!success && (
-        <div className="px-6 pb-10 pt-2 safe-area-bottom">
+        <div className="px-6 pb-10 pt-2 safe-area-bottom shrink-0">
           {step === 'request' ? (
             <button
               onClick={handleSendCode}
