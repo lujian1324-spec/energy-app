@@ -15,6 +15,7 @@ import { toast } from '../components/Toast'
 import { useProvisionStore, type ProvisionStep } from '../stores/provisionStore'
 import { getProvisionManager, destroyProvisionManager } from '../protocols/bleProvision'
 import { useConnectionStore } from '../stores/connectionStore'
+import { useDeviceStore } from '../stores/deviceStore'
 
 // Local UI screens — the multi-step store flow lives inside 'provisioning'
 type UiScreen = 'scan' | 'qr' | 'naming' | 'icon' | 'provisioning'
@@ -318,7 +319,19 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
       const manager = getProvisionManager()
       const resp = await manager.configWifi(store.selectedSsid, store.wifiPassword)
       store.setConfigResult(resp.RC === 0 ? 'success' : 'fail')
-      if (resp.RC !== 0) store.setErrorMessage(`Config failed: RC=${resp.RC}`)
+      if (resp.RC !== 0) {
+        store.setErrorMessage(`Config failed: RC=${resp.RC}`)
+      } else {
+        // Register device in cloud and refresh device list
+        const { addNewDevice, loadDevices } = useDeviceStore.getState()
+        const devResult = await addNewDevice({
+          duid: store.dtuid ?? '',
+          name: deviceNameInput.trim() || (store.deviceName ?? 'My Device'),
+        }).catch(() => null)
+        if (devResult && (devResult.code === 0 || devResult.code === '0')) {
+          await loadDevices()
+        }
+      }
       store.setStep('result')
     } catch (err) {
       store.setConfigResult('fail')
@@ -327,7 +340,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     } finally {
       store.setIsOperating(false)
     }
-  }, [store])
+  }, [store, deviceNameInput])
 
   const handleCheckStatus = useCallback(async () => {
     if (!store.dtuid) return

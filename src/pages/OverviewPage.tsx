@@ -29,6 +29,9 @@ import {
   RefreshCw,
   Wifi,
   WifiOff,
+  Calendar,
+  Sliders,
+  ChevronRight,
 } from 'lucide-react'
 import BatteryRing from '../components/BatteryRing'
 import ToggleSwitch from '../components/ToggleSwitch'
@@ -88,7 +91,15 @@ export default function OverviewPage() {
   // PRD v1.1 §8: 数据来源标识
   const [dataSource] = useState<DataSource>('ble')
   // PRD v1.1 §8.2: Demo Mode 检测 (无设备时或离线时)
-  const isDemoMode = !navigator.onLine
+  const [isNetworkOnline, setIsNetworkOnline] = useState(navigator.onLine)
+  useEffect(() => {
+    const up = () => setIsNetworkOnline(true)
+    const down = () => setIsNetworkOnline(false)
+    window.addEventListener('online', up)
+    window.addEventListener('offline', down)
+    return () => { window.removeEventListener('online', up); window.removeEventListener('offline', down) }
+  }, [])
+  const isDemoMode = !isNetworkOnline
 
   const [displayConfig, setDisplayConfig] = useState({
     showBatteryRing: true,
@@ -747,6 +758,43 @@ export default function OverviewPage() {
                       size="sm"
                     />
                   </div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Energy Management shortcuts */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.09 }}
+              className="mx-5 mb-4"
+            >
+              <div className="text-[11px] font-bold text-[#BFBFBF] tracking-widest uppercase mb-2.5 px-1">
+                Energy Management
+              </div>
+              <div className="bg-[#262626] rounded-l overflow-hidden">
+                {[
+                  { label: 'Smart Schedule', sub: 'Time-of-use charging', icon: Calendar, path: '/smart-schedule', color: '#01D6BE' },
+                  { label: 'Peak Shaving', sub: 'Cut grid demand costs', icon: Sliders, path: '/peak-shaving', color: '#FF9500' },
+                ].map((item, i) => (
+                  <button
+                    key={item.path}
+                    onClick={() => navigate(item.path)}
+                    className={`w-full flex items-center justify-between px-4 py-3.5 hover:bg-[rgba(255,255,255,0.04)] transition-colors
+                      ${i === 0 ? 'border-b border-[rgba(255,255,255,0.06)]' : ''}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center"
+                        style={{ backgroundColor: `${item.color}26` }}>
+                        <item.icon size={16} style={{ color: item.color }} />
+                      </div>
+                      <div className="text-left">
+                        <div className="text-body-md font-semibold text-[#FFFFFF]">{item.label}</div>
+                        <div className="text-[10px] text-[#BFBFBF]">{item.sub}</div>
+                      </div>
+                    </div>
+                    <ChevronRight size={16} className="text-[#595959]" />
+                  </button>
                 ))}
               </div>
             </motion.div>

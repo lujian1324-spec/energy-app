@@ -577,6 +577,13 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           onPress={() => navigate('/smart-schedule')}
         />
 
+        {/* Peak Shaving */}
+        <SettingsRow
+          label="Peak Shaving"
+          value={peakShavingSettings?.enabled ? 'On' : 'Off'}
+          onPress={() => navigate('/peak-shaving')}
+        />
+
         {/* Delete Device */}
         <div className="mt-4">
           <button
