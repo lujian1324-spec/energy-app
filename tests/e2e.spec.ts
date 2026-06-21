@@ -16,17 +16,25 @@ const BASE = 'https://lujian1324-spec.github.io/energy-app'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
+/** Skip the one-time PermissionsGate by pre-setting the localStorage flag */
+async function skipPermissionsGate(page: Page) {
+  await page.addInitScript(() => {
+    localStorage.setItem('sierro_permissions_asked', '1')
+  })
+}
+
 async function loginReal(page: Page, username: string, password: string) {
+  await skipPermissionsGate(page)
   await page.goto(`${BASE}/#/login`)
-  // Wait for app to load — look for username input
   await page.waitForSelector('input[placeholder="Username"]', { timeout: 20000 })
   await page.locator('input[placeholder="Username"]').fill(username)
   await page.locator('input[type="password"]').fill(password)
-  await page.locator('button').filter({ hasText: /^Log in$|^Sign in$/i }).first().click()
+  await page.locator('button').filter({ hasText: /Sign In/i }).first().click()
   await page.waitForURL(/\/(devices|device)/, { timeout: 25000 })
 }
 
 async function loginAsGuest(page: Page) {
+  await skipPermissionsGate(page)
   await page.goto(`${BASE}/#/login`)
   await page.waitForSelector('text=Continue as Guest', { timeout: 20000 })
   await page.locator('text=Continue as Guest').click()
@@ -57,17 +65,20 @@ async function wait(page: Page, ms = 2000) {
 
 test.describe('Auth Pages', () => {
   test('login page loads with username + password fields', async ({ page }) => {
+    await skipPermissionsGate(page)
     await page.goto(`${BASE}/#/login`)
     await expect(page.locator('input[placeholder="Username"]')).toBeVisible({ timeout: 20000 })
     await expect(page.locator('input[type="password"]')).toBeVisible({ timeout: 5000 })
   })
 
   test('register page loads', async ({ page }) => {
+    await skipPermissionsGate(page)
     await page.goto(`${BASE}/#/register`)
     await expect(page.locator('input[type="password"]').first()).toBeVisible({ timeout: 20000 })
   })
 
   test('forgot-password page loads with email field', async ({ page }) => {
+    await skipPermissionsGate(page)
     await page.goto(`${BASE}/#/forgot-password`)
     await expect(
       page.locator('input[type="email"], input[placeholder*="email" i]').first()
@@ -75,34 +86,37 @@ test.describe('Auth Pages', () => {
   })
 
   test('terms page loads with content', async ({ page }) => {
+    await skipPermissionsGate(page)
     await page.goto(`${BASE}/#/terms`)
     await wait(page, 3000)
     await expect(page.locator('body')).not.toBeEmpty()
   })
 
   test('privacy page loads with content', async ({ page }) => {
+    await skipPermissionsGate(page)
     await page.goto(`${BASE}/#/privacy`)
     await wait(page, 3000)
     await expect(page.locator('body')).not.toBeEmpty()
   })
 
   test('unauthenticated /devices redirects to login', async ({ page }) => {
+    await skipPermissionsGate(page)
     await page.goto(`${BASE}/#/devices`)
     await page.waitForURL(/\/(login|devices)/, { timeout: 15000 })
-    // If we ended up on devices, that means a session was persisted — acceptable
     const url = page.url()
     expect(url).toMatch(/\/(login|devices)/)
   })
 
   test('wrong password stays on login or shows error', async ({ page }) => {
+    await skipPermissionsGate(page)
     await page.goto(`${BASE}/#/login`)
     await page.waitForSelector('input[placeholder="Username"]', { timeout: 20000 })
     await page.locator('input[placeholder="Username"]').fill('nobody_xyz_test')
     await page.locator('input[type="password"]').fill('wrongpassword123')
-    await page.locator('button').filter({ hasText: /^Log in$/i }).first().click()
+    await page.locator('button').filter({ hasText: /Sign In/i }).first().click()
     await wait(page, 4000)
     const url = page.url()
-    const hasError = await page.locator('[class*="danger"], [class*="error"], text=/error|invalid|failed|incorrect/i').count() > 0
+    const hasError = await page.locator('[class*="danger"], text=/error|invalid|failed|incorrect/i').count() > 0
     expect(url.includes('login') || hasError).toBeTruthy()
   })
 })
@@ -111,6 +125,7 @@ test.describe('Auth Pages', () => {
 
 test.describe('Forgot Password Flow', () => {
   test('send button disabled with invalid email', async ({ page }) => {
+    await skipPermissionsGate(page)
     await page.goto(`${BASE}/#/forgot-password`)
     await page.waitForSelector('input[type="email"], input[placeholder*="email" i]', { timeout: 20000 })
     await page.locator('input[type="email"], input[placeholder*="email" i]').first().fill('notanemail')
@@ -119,6 +134,7 @@ test.describe('Forgot Password Flow', () => {
   })
 
   test('send button enabled with valid email', async ({ page }) => {
+    await skipPermissionsGate(page)
     await page.goto(`${BASE}/#/forgot-password`)
     await page.waitForSelector('input[type="email"], input[placeholder*="email" i]', { timeout: 20000 })
     await page.locator('input[type="email"], input[placeholder*="email" i]').first().fill('test@example.com')
@@ -129,6 +145,7 @@ test.describe('Forgot Password Flow', () => {
   test('send button is within iPhone 16 viewport (393×852)', async ({ browser }) => {
     const ctx = await browser.newContext({ viewport: { width: 393, height: 852 } })
     const page = await ctx.newPage()
+    await page.addInitScript(() => { localStorage.setItem('sierro_permissions_asked', '1') })
     await page.goto(`${BASE}/#/forgot-password`)
     await page.waitForSelector('button', { timeout: 20000 })
     const sendBtn = page.locator('button').filter({ hasText: /send/i }).first()
@@ -267,6 +284,7 @@ test.describe('[jason1324] Login & Navigation', () => {
 
 test.describe('PWA & Asset Health', () => {
   test('no 404 on JS/CSS assets', async ({ page }) => {
+    await skipPermissionsGate(page)
     const failed: string[] = []
     page.on('response', res => {
       if (res.status() === 404 && (res.url().includes('/assets/') || res.url().match(/\.(js|css)$/))) {
@@ -279,6 +297,7 @@ test.describe('PWA & Asset Health', () => {
   })
 
   test('app shell renders non-blank root', async ({ page }) => {
+    await skipPermissionsGate(page)
     await page.goto(`${BASE}/`)
     await wait(page, 6000)
     // Either login page or devices page should have rendered
@@ -287,6 +306,7 @@ test.describe('PWA & Asset Health', () => {
   })
 
   test('no fatal JS errors on startup', async ({ page }) => {
+    await skipPermissionsGate(page)
     const errors: string[] = []
     page.on('pageerror', e => errors.push(e.message))
     await page.goto(`${BASE}/`)
@@ -300,6 +320,7 @@ test.describe('PWA & Asset Health', () => {
   })
 
   test('privacy policy link works on login page', async ({ page }) => {
+    await skipPermissionsGate(page)
     await page.goto(`${BASE}/#/login`)
     await wait(page, 3000)
     const privacyLink = page.locator('a[href*="privacy"], text=Privacy').first()
@@ -311,6 +332,7 @@ test.describe('PWA & Asset Health', () => {
   })
 
   test('terms link works on login page', async ({ page }) => {
+    await skipPermissionsGate(page)
     await page.goto(`${BASE}/#/login`)
     await wait(page, 3000)
     const termsLink = page.locator('a[href*="terms"], text=Terms').first()
