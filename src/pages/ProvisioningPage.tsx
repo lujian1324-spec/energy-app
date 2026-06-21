@@ -381,7 +381,9 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   const handleNameNext = useCallback(() => {
     const trimmed = deviceNameInput.trim()
     if (!trimmed) { setNameError('Please enter a device name.'); return }
-    // TODO: check for duplicate names against existing devices
+    const { devices } = useDeviceStore.getState()
+    const duplicate = devices.some(d => d.name?.toLowerCase() === trimmed.toLowerCase())
+    if (duplicate) { setNameError('A device with this name already exists. Please choose a different name.'); return }
     setNameError('')
     setUiScreen('icon')
   }, [deviceNameInput])

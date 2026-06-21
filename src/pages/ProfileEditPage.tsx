@@ -575,7 +575,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
             <span className="text-body-md text-white flex-1">Google</span>
             <span className="text-body-md text-[#BFBFBF] mr-2">Not linked</span>
             <button
-              onClick={() => alert('Google login not implemented yet')}
+              onClick={() => toast.error('Google login coming soon')}
               className="h-8 px-4 rounded-full bg-[#01D6BE] text-black text-label font-semibold"
             >
               Link
@@ -590,7 +590,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
             <span className="text-body-md text-white flex-1">Apple</span>
             <span className="text-body-md text-[#BFBFBF] mr-2">Not linked</span>
             <button
-              onClick={() => alert('Apple login not implemented yet')}
+              onClick={() => toast.error('Apple login coming soon')}
               className="h-8 px-4 rounded-full border border-[#01D6BE] text-[#01D6BE] text-label font-semibold"
             >
               Link
