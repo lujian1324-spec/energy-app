@@ -9,7 +9,8 @@
  * Run: npx playwright test --reporter=list
  */
 
-import { test, expect, Page } from '@playwright/test'
+import { test, expect } from '@playwright/test'
+import type { Page } from '@playwright/test'
 
 const BASE = 'https://lujian1324-spec.github.io/energy-app'
 
