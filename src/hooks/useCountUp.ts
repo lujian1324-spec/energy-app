@@ -6,33 +6,35 @@ import { useEffect, useRef, useState } from 'react'
  */
 export function useCountUp(target: number, duration = 400): number {
   const [display, setDisplay] = useState(target)
-  const from = useRef(target)
-  const startTime = useRef<number | null>(null)
+  const displayRef = useRef(target)
   const raf = useRef<number | null>(null)
 
   useEffect(() => {
-    const start = from.current
+    const start = displayRef.current
     const diff = target - start
     if (diff === 0) return
 
-    startTime.current = null
+    if (raf.current !== null) cancelAnimationFrame(raf.current)
+
+    let startTime: number | null = null
 
     const tick = (now: number) => {
-      if (startTime.current === null) startTime.current = now
-      const elapsed = now - startTime.current
+      if (startTime === null) startTime = now
+      const elapsed = now - startTime
       const progress = Math.min(elapsed / duration, 1)
-      // ease-out cubic
       const eased = 1 - Math.pow(1 - progress, 3)
-      setDisplay(Math.round(start + diff * eased))
+      const value = Math.round(start + diff * eased)
+      displayRef.current = value
+      setDisplay(value)
       if (progress < 1) {
         raf.current = requestAnimationFrame(tick)
       } else {
-        from.current = target
+        raf.current = null
       }
     }
 
     raf.current = requestAnimationFrame(tick)
-    return () => { if (raf.current !== null) cancelAnimationFrame(raf.current) }
+    return () => { if (raf.current !== null) { cancelAnimationFrame(raf.current); raf.current = null } }
   }, [target, duration])
 
   return display

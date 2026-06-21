@@ -187,7 +187,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
       store.setDeviceInfo('Sierro (USB)', 'USB')
       setFoundDevices([{ name: 'Sierro (USB)', serial: 'USB' }])
     } catch (err) {
-      if ((err as Error).name !== 'NotFoundError') {
+      if (!(err instanceof Error) || err.name !== 'NotFoundError') {
         toast.error('Failed to connect via USB')
       }
     }

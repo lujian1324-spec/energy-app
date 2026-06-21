@@ -925,8 +925,9 @@ export default function StatsPage() {
                           const { points: outputPts } = generateAreaPathWithPoints(chartFrame.output, 340, 160)
                           const inPt = inputPts[scrubIndex]
                           const outPt = outputPts[scrubIndex]
-                          const inVal = chartFrame.input[scrubIndex]
-                          const outVal = chartFrame.output[scrubIndex]
+                          if (!inPt || !outPt) return null
+                          const inVal = chartFrame.input[scrubIndex] ?? 0
+                          const outVal = chartFrame.output[scrubIndex] ?? 0
                           const text1 = `In ${inVal.toFixed(1)} kWh`
                           const text2 = `Out ${outVal.toFixed(1)} kWh`
                           const boxW = Math.max(text1.length, text2.length) * 5.6 + 14
