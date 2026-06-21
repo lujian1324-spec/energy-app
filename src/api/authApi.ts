@@ -379,7 +379,7 @@ export async function resetPassword(
   email?: string
 ): Promise<ApiResponse<unknown>> {
   return api.postSkipAuth<unknown>('/user/reset/password', {
-    account,
+    ...(account ? { account } : {}),
     newPassword: md5Password(newPlainPassword),
     verifyCode,
     captchaId,
