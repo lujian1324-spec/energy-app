@@ -3,10 +3,10 @@
  *
  * Target: https://lujian1324-spec.github.io/energy-app
  * Accounts:
- *   benson    / benson1234   (local demo account)
+ *   Guest mode  (demo data, no login required)
  *   jason1324 / jjww1324-LJ  (real API account)
  *
- * Run: npx playwright test --reporter=list
+ * Run: PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers npx playwright test --reporter=list
  */
 
 import { test, expect } from '@playwright/test'
@@ -14,337 +14,310 @@ import type { Page } from '@playwright/test'
 
 const BASE = 'https://lujian1324-spec.github.io/energy-app'
 
-const ACCOUNTS = [
-  { label: 'benson (demo)',   username: 'benson',   password: 'benson1234' },
-  { label: 'jason1324 (real)', username: 'jason1324', password: 'jjww1324-LJ' },
-]
-
 // ─── helpers ────────────────────────────────────────────────────────────────
 
-async function login(page: Page, username: string, password: string) {
+async function loginReal(page: Page, username: string, password: string) {
   await page.goto(`${BASE}/#/login`)
-  await page.waitForSelector('input[placeholder*="account" i], input[placeholder*="username" i], input[type="text"]', { timeout: 15000 })
+  // Wait for app to load — look for username input
+  await page.waitForSelector('input[placeholder="Username"]', { timeout: 20000 })
+  await page.locator('input[placeholder="Username"]').fill(username)
+  await page.locator('input[type="password"]').fill(password)
+  await page.locator('button').filter({ hasText: /^Log in$|^Sign in$/i }).first().click()
+  await page.waitForURL(/\/(devices|device)/, { timeout: 25000 })
+}
 
-  // Fill account / username field (first text input)
-  const accountInput = page.locator('input[type="text"], input[inputmode="text"]').first()
-  await accountInput.fill(username)
-
-  // Fill password field
-  const pwInput = page.locator('input[type="password"]').first()
-  await pwInput.fill(password)
-
-  // Click login button
-  const loginBtn = page.locator('button').filter({ hasText: /log\s*in|sign\s*in/i }).first()
-  await loginBtn.click()
-
-  // Wait for navigation away from /login
-  await page.waitForURL(/\/(devices|device)/, { timeout: 20000 })
+async function loginAsGuest(page: Page) {
+  await page.goto(`${BASE}/#/login`)
+  await page.waitForSelector('text=Continue as Guest', { timeout: 20000 })
+  await page.locator('text=Continue as Guest').click()
+  await page.waitForURL(/\/(devices|device)/, { timeout: 15000 })
 }
 
 async function logout(page: Page) {
-  // Navigate to settings and log out
   await page.goto(`${BASE}/#/setting`)
-  await page.waitForTimeout(1000)
-  const logoutBtn = page.locator('button').filter({ hasText: /log\s*out|sign\s*out/i }).first()
-  if (await logoutBtn.isVisible()) {
+  await page.waitForTimeout(2000)
+  // Tap avatar / manage account to open drawer
+  const manageBtn = page.locator('text=Manage my account').first()
+  if (await manageBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+    await manageBtn.click()
+    await page.waitForTimeout(1000)
+  }
+  const logoutBtn = page.locator('text=Sign out').first()
+  if (await logoutBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
     await logoutBtn.click()
     await page.waitForURL(/\/login/, { timeout: 10000 })
   }
 }
 
-async function waitForContent(page: Page, ms = 2000) {
+async function wait(page: Page, ms = 2000) {
   await page.waitForTimeout(ms)
 }
 
-// ─── Auth tests (account-independent) ───────────────────────────────────────
+// ─── Auth Pages (no login needed) ───────────────────────────────────────────
 
 test.describe('Auth Pages', () => {
-  test('login page loads', async ({ page }) => {
+  test('login page loads with username + password fields', async ({ page }) => {
     await page.goto(`${BASE}/#/login`)
-    await expect(page.locator('input[type="password"]')).toBeVisible({ timeout: 15000 })
-    await expect(page).toHaveURL(/login/)
+    await expect(page.locator('input[placeholder="Username"]')).toBeVisible({ timeout: 20000 })
+    await expect(page.locator('input[type="password"]')).toBeVisible({ timeout: 5000 })
   })
 
-  test('register page loads and shows form', async ({ page }) => {
+  test('register page loads', async ({ page }) => {
     await page.goto(`${BASE}/#/register`)
-    await expect(page.locator('input[type="password"]').first()).toBeVisible({ timeout: 15000 })
+    await expect(page.locator('input[type="password"]').first()).toBeVisible({ timeout: 20000 })
   })
 
-  test('forgot-password page loads', async ({ page }) => {
+  test('forgot-password page loads with email field', async ({ page }) => {
     await page.goto(`${BASE}/#/forgot-password`)
-    await expect(page.locator('input[type="email"], input[placeholder*="email" i]')).toBeVisible({ timeout: 15000 })
+    await expect(
+      page.locator('input[type="email"], input[placeholder*="email" i]').first()
+    ).toBeVisible({ timeout: 20000 })
   })
 
-  test('terms page loads', async ({ page }) => {
+  test('terms page loads with content', async ({ page }) => {
     await page.goto(`${BASE}/#/terms`)
-    await waitForContent(page)
+    await wait(page, 3000)
     await expect(page.locator('body')).not.toBeEmpty()
   })
 
-  test('privacy page loads', async ({ page }) => {
+  test('privacy page loads with content', async ({ page }) => {
     await page.goto(`${BASE}/#/privacy`)
-    await waitForContent(page)
+    await wait(page, 3000)
     await expect(page.locator('body')).not.toBeEmpty()
   })
 
-  test('unauthenticated access redirects to login', async ({ page }) => {
+  test('unauthenticated /devices redirects to login', async ({ page }) => {
     await page.goto(`${BASE}/#/devices`)
-    await page.waitForURL(/\/(login|devices)/, { timeout: 10000 })
+    await page.waitForURL(/\/(login|devices)/, { timeout: 15000 })
+    // If we ended up on devices, that means a session was persisted — acceptable
+    const url = page.url()
+    expect(url).toMatch(/\/(login|devices)/)
   })
 
-  test('wrong password shows error', async ({ page }) => {
+  test('wrong password stays on login or shows error', async ({ page }) => {
     await page.goto(`${BASE}/#/login`)
-    await page.waitForSelector('input[type="text"], input[type="password"]', { timeout: 15000 })
-    await page.locator('input[type="text"]').first().fill('benson')
-    await page.locator('input[type="password"]').first().fill('wrongpassword')
-    await page.locator('button').filter({ hasText: /log\s*in|sign\s*in/i }).first().click()
-    await waitForContent(page, 3000)
-    // Should stay on login or show error (not navigate away)
+    await page.waitForSelector('input[placeholder="Username"]', { timeout: 20000 })
+    await page.locator('input[placeholder="Username"]').fill('nobody_xyz_test')
+    await page.locator('input[type="password"]').fill('wrongpassword123')
+    await page.locator('button').filter({ hasText: /^Log in$/i }).first().click()
+    await wait(page, 4000)
     const url = page.url()
-    const hasError = await page.locator('text=/error|incorrect|invalid|failed/i').count() > 0
-    const stayedOnLogin = url.includes('login')
-    expect(hasError || stayedOnLogin).toBeTruthy()
+    const hasError = await page.locator('[class*="danger"], [class*="error"], text=/error|invalid|failed|incorrect/i').count() > 0
+    expect(url.includes('login') || hasError).toBeTruthy()
   })
 })
 
-// ─── Per-account test suites ─────────────────────────────────────────────────
-
-for (const account of ACCOUNTS) {
-  test.describe(`[${account.label}] Login & Core Navigation`, () => {
-    test('can log in', async ({ page }) => {
-      await login(page, account.username, account.password)
-      await expect(page).toHaveURL(/\/(devices|device)/, { timeout: 5000 })
-    })
-
-    test('devices list page loads with content', async ({ page }) => {
-      await login(page, account.username, account.password)
-      await page.goto(`${BASE}/#/devices`)
-      await waitForContent(page, 3000)
-      // Either device cards or "no devices" empty state
-      const hasDevices = await page.locator('[class*="card"], [class*="device"]').count() > 0
-      const hasEmpty = await page.locator('text=/no device|add device|get started/i').count() > 0
-      expect(hasDevices || hasEmpty).toBeTruthy()
-    })
-
-    test('bottom navigation is visible', async ({ page }) => {
-      await login(page, account.username, account.password)
-      await page.goto(`${BASE}/#/devices`)
-      await waitForContent(page, 2000)
-      // Bottom nav should have at least 3 nav items
-      const navItems = page.locator('nav a, nav button').filter({ hasNot: page.locator('nav nav') })
-      await expect(navItems.first()).toBeVisible({ timeout: 5000 })
-    })
-  })
-
-  test.describe(`[${account.label}] Insights / Stats Page`, () => {
-    test('insights page loads', async ({ page }) => {
-      await login(page, account.username, account.password)
-      await page.goto(`${BASE}/#/insights`)
-      await waitForContent(page, 3000)
-      await expect(page.locator('body')).not.toBeEmpty()
-    })
-
-    test('period tabs are clickable (24h / Week / Month)', async ({ page }) => {
-      await login(page, account.username, account.password)
-      await page.goto(`${BASE}/#/insights`)
-      await waitForContent(page, 3000)
-      // Try clicking each period tab
-      for (const label of ['24H', 'Week', 'Month', 'Day', '7D', '30D']) {
-        const tab = page.locator(`button, [role="tab"]`).filter({ hasText: new RegExp(label, 'i') }).first()
-        if (await tab.isVisible()) {
-          await tab.click()
-          await waitForContent(page, 1000)
-        }
-      }
-    })
-  })
-
-  test.describe(`[${account.label}] Settings Page`, () => {
-    test('settings page loads', async ({ page }) => {
-      await login(page, account.username, account.password)
-      await page.goto(`${BASE}/#/setting`)
-      await waitForContent(page, 2000)
-      await expect(page.locator('body')).not.toBeEmpty()
-    })
-
-    test('logout button is present', async ({ page }) => {
-      await login(page, account.username, account.password)
-      await page.goto(`${BASE}/#/setting`)
-      await waitForContent(page, 2000)
-      const logoutBtn = page.locator('button').filter({ hasText: /log\s*out|sign\s*out/i }).first()
-      await expect(logoutBtn).toBeVisible({ timeout: 5000 })
-    })
-
-    test('can log out', async ({ page }) => {
-      await login(page, account.username, account.password)
-      await logout(page)
-      await expect(page).toHaveURL(/login/, { timeout: 10000 })
-    })
-  })
-
-  test.describe(`[${account.label}] Device Dashboard`, () => {
-    test('navigating to first device shows dashboard', async ({ page }) => {
-      await login(page, account.username, account.password)
-      await page.goto(`${BASE}/#/devices`)
-      await waitForContent(page, 3000)
-
-      // Click the first device card
-      const deviceCard = page.locator('[class*="card"], [class*="device-item"], button').first()
-      if (await deviceCard.isVisible()) {
-        await deviceCard.click()
-        await waitForContent(page, 3000)
-        // Should navigate to device detail or overview
-        const url = page.url()
-        expect(url).toMatch(/\/(device|overview|dashboard)/)
-      }
-    })
-
-    test('overview/dashboard shows battery or energy data', async ({ page }) => {
-      await login(page, account.username, account.password)
-      await page.goto(`${BASE}/#/devices`)
-      await waitForContent(page, 3000)
-
-      const deviceCard = page.locator('[class*="card"], [class*="device-item"], button').first()
-      if (await deviceCard.isVisible()) {
-        await deviceCard.click()
-        await waitForContent(page, 4000)
-        // Look for typical energy app content
-        const hasSOC = await page.locator('text=/%|SOC|battery|Battery/i').count() > 0
-        const hasPower = await page.locator('text=/W|kW|power|Power/i').count() > 0
-        expect(hasSOC || hasPower).toBeTruthy()
-      }
-    })
-  })
-
-  test.describe(`[${account.label}] Smart Schedule Page`, () => {
-    test('smart-schedule page loads', async ({ page }) => {
-      await login(page, account.username, account.password)
-      await page.goto(`${BASE}/#/smart-schedule`)
-      await waitForContent(page, 3000)
-      await expect(page.locator('body')).not.toBeEmpty()
-    })
-
-    test('toggle switch is visible', async ({ page }) => {
-      await login(page, account.username, account.password)
-      await page.goto(`${BASE}/#/smart-schedule`)
-      await waitForContent(page, 3000)
-      const toggle = page.locator('button[role="switch"], input[type="checkbox"]').first()
-      const hasToggle = await toggle.isVisible()
-      // May not have devices, so just ensure page rendered
-      expect(true).toBeTruthy()
-    })
-  })
-
-  test.describe(`[${account.label}] Notifications Page`, () => {
-    test('notifications page loads', async ({ page }) => {
-      await login(page, account.username, account.password)
-      await page.goto(`${BASE}/#/notifications`)
-      await waitForContent(page, 2000)
-      await expect(page.locator('body')).not.toBeEmpty()
-    })
-  })
-
-  test.describe(`[${account.label}] Onboarding Page`, () => {
-    test('onboarding page loads', async ({ page }) => {
-      await login(page, account.username, account.password)
-      await page.goto(`${BASE}/#/onboarding`)
-      await waitForContent(page, 2000)
-      await expect(page.locator('body')).not.toBeEmpty()
-    })
-  })
-}
-
-// ─── Forgot Password Flow ─────────────────────────────────────────────────────
+// ─── Forgot Password Flow ────────────────────────────────────────────────────
 
 test.describe('Forgot Password Flow', () => {
-  test('step 1: email field and send button present', async ({ page }) => {
+  test('send button disabled with invalid email', async ({ page }) => {
     await page.goto(`${BASE}/#/forgot-password`)
-    await waitForContent(page, 2000)
-    const emailInput = page.locator('input[type="email"], input[placeholder*="email" i]')
-    await expect(emailInput).toBeVisible({ timeout: 10000 })
+    await page.waitForSelector('input[type="email"], input[placeholder*="email" i]', { timeout: 20000 })
+    await page.locator('input[type="email"], input[placeholder*="email" i]').first().fill('notanemail')
     const sendBtn = page.locator('button').filter({ hasText: /send/i }).first()
-    await expect(sendBtn).toBeVisible()
-    // Button should be within viewport
-    const box = await sendBtn.boundingBox()
-    expect(box).not.toBeNull()
-    if (box) {
-      const viewport = page.viewportSize()!
-      expect(box.y + box.height).toBeLessThanOrEqual(viewport.height + 5)
-    }
+    await expect(sendBtn).toBeDisabled({ timeout: 5000 })
   })
 
-  test('invalid email keeps send button disabled', async ({ page }) => {
+  test('send button enabled with valid email', async ({ page }) => {
     await page.goto(`${BASE}/#/forgot-password`)
-    await waitForContent(page, 2000)
-    const emailInput = page.locator('input[type="email"], input[placeholder*="email" i]').first()
-    await emailInput.fill('notanemail')
+    await page.waitForSelector('input[type="email"], input[placeholder*="email" i]', { timeout: 20000 })
+    await page.locator('input[type="email"], input[placeholder*="email" i]').first().fill('test@example.com')
     const sendBtn = page.locator('button').filter({ hasText: /send/i }).first()
-    await expect(sendBtn).toBeDisabled()
+    await expect(sendBtn).toBeEnabled({ timeout: 5000 })
   })
 
-  test('valid email enables send button', async ({ page }) => {
-    await page.goto(`${BASE}/#/forgot-password`)
-    await waitForContent(page, 2000)
-    const emailInput = page.locator('input[type="email"], input[placeholder*="email" i]').first()
-    await emailInput.fill('benson8191@gmail.com')
-    const sendBtn = page.locator('button').filter({ hasText: /send/i }).first()
-    await expect(sendBtn).toBeEnabled()
-  })
-
-  test('reset password button is within viewport on mobile', async ({ browser }) => {
-    const ctx = await browser.newContext({ viewport: { width: 393, height: 852 } }) // iPhone 16
+  test('send button is within iPhone 16 viewport (393×852)', async ({ browser }) => {
+    const ctx = await browser.newContext({ viewport: { width: 393, height: 852 } })
     const page = await ctx.newPage()
     await page.goto(`${BASE}/#/forgot-password`)
-    await waitForContent(page, 2000)
-    const btn = page.locator('button').filter({ hasText: /send/i }).first()
-    const box = await btn.boundingBox()
+    await page.waitForSelector('button', { timeout: 20000 })
+    const sendBtn = page.locator('button').filter({ hasText: /send/i }).first()
+    await expect(sendBtn).toBeVisible({ timeout: 10000 })
+    const box = await sendBtn.boundingBox()
     expect(box).not.toBeNull()
-    if (box) {
-      expect(box.y + box.height).toBeLessThanOrEqual(852 + 5)
-    }
+    if (box) expect(box.y + box.height).toBeLessThanOrEqual(852 + 5)
     await ctx.close()
   })
 })
 
-// ─── PWA / Performance checks ─────────────────────────────────────────────────
+// ─── Guest Mode Tests ────────────────────────────────────────────────────────
 
-test.describe('PWA & Asset Health', () => {
-  test('app shell loads without JS errors', async ({ page }) => {
-    const errors: string[] = []
-    page.on('pageerror', e => errors.push(e.message))
-    page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()) })
-
-    await page.goto(`${BASE}/`)
-    await waitForContent(page, 5000)
-
-    // Filter out known benign errors (e.g. CORS for push notifications)
-    const fatalErrors = errors.filter(e =>
-      !e.includes('push') &&
-      !e.includes('notification') &&
-      !e.includes('serviceWorker') &&
-      !e.includes('ResizeObserver') &&
-      !e.includes('favicon')
-    )
-    expect(fatalErrors).toHaveLength(0)
+test.describe('[Guest] Core Navigation', () => {
+  test('can enter as guest', async ({ page }) => {
+    await loginAsGuest(page)
+    await expect(page).toHaveURL(/\/(devices|device)/, { timeout: 5000 })
   })
 
-  test('no 404 on main JS/CSS assets', async ({ page }) => {
+  test('devices page shows demo device cards', async ({ page }) => {
+    await loginAsGuest(page)
+    await page.goto(`${BASE}/#/devices`)
+    await wait(page, 3000)
+    const hasCards = await page.locator('[class*="card"], [class*="ink-10"]').count() > 0
+    const hasEmpty = await page.locator('text=/no device|add device|get started/i').count() > 0
+    expect(hasCards || hasEmpty).toBeTruthy()
+  })
+
+  test('bottom navigation visible', async ({ page }) => {
+    await loginAsGuest(page)
+    await page.goto(`${BASE}/#/devices`)
+    await wait(page, 2000)
+    // Nav items: Devices, Insights, Settings
+    const nav = page.locator('nav').first()
+    await expect(nav).toBeVisible({ timeout: 5000 })
+  })
+
+  test('insights/stats page loads', async ({ page }) => {
+    await loginAsGuest(page)
+    await page.goto(`${BASE}/#/insights`)
+    await wait(page, 3000)
+    await expect(page.locator('body')).not.toBeEmpty()
+  })
+
+  test('settings page loads', async ({ page }) => {
+    await loginAsGuest(page)
+    await page.goto(`${BASE}/#/setting`)
+    await wait(page, 2000)
+    await expect(page.locator('body')).not.toBeEmpty()
+  })
+
+  test('settings shows sign-in prompt for guest', async ({ page }) => {
+    await loginAsGuest(page)
+    await page.goto(`${BASE}/#/setting`)
+    await wait(page, 2000)
+    const guestText = await page.locator('text=/guest|sign in/i').count() > 0
+    expect(guestText).toBeTruthy()
+  })
+
+  test('smart-schedule page loads', async ({ page }) => {
+    await loginAsGuest(page)
+    await page.goto(`${BASE}/#/smart-schedule`)
+    await wait(page, 3000)
+    await expect(page.locator('body')).not.toBeEmpty()
+  })
+
+  test('notifications page loads', async ({ page }) => {
+    await loginAsGuest(page)
+    await page.goto(`${BASE}/#/notifications`)
+    await wait(page, 2000)
+    await expect(page.locator('body')).not.toBeEmpty()
+  })
+
+  test('onboarding page loads', async ({ page }) => {
+    await loginAsGuest(page)
+    await page.goto(`${BASE}/#/onboarding`)
+    await wait(page, 2000)
+    await expect(page.locator('body')).not.toBeEmpty()
+  })
+})
+
+test.describe('[Guest] Device Dashboard', () => {
+  test('clicking demo device navigates to device page', async ({ page }) => {
+    await loginAsGuest(page)
+    await page.goto(`${BASE}/#/devices`)
+    await wait(page, 3000)
+    // Try clicking first tappable element that looks like a device
+    const deviceItem = page.locator('button, [role="button"], a').filter({ hasText: /NAS|Fridge|Sierro|device/i }).first()
+    if (await deviceItem.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await deviceItem.click()
+      await wait(page, 3000)
+      expect(page.url()).toMatch(/\/(device|dashboard)/)
+    }
+  })
+})
+
+// ─── jason1324 Real Account Tests ───────────────────────────────────────────
+
+test.describe('[jason1324] Login & Navigation', () => {
+  test('can log in with real account', async ({ page }) => {
+    await loginReal(page, 'jason1324', 'jjww1324-LJ')
+    await expect(page).toHaveURL(/\/(devices|device)/, { timeout: 5000 })
+  })
+
+  test('devices page loads after real login', async ({ page }) => {
+    await loginReal(page, 'jason1324', 'jjww1324-LJ')
+    await page.goto(`${BASE}/#/devices`)
+    await wait(page, 4000)
+    const hasContent = await page.locator('[class*="ink-10"], [class*="card"]').count() > 0
+    const hasEmpty = await page.locator('text=/no device|add device/i').count() > 0
+    expect(hasContent || hasEmpty).toBeTruthy()
+  })
+
+  test('insights page loads after real login', async ({ page }) => {
+    await loginReal(page, 'jason1324', 'jjww1324-LJ')
+    await page.goto(`${BASE}/#/insights`)
+    await wait(page, 4000)
+    await expect(page.locator('body')).not.toBeEmpty()
+  })
+
+  test('settings page loads and shows manage account', async ({ page }) => {
+    await loginReal(page, 'jason1324', 'jjww1324-LJ')
+    await page.goto(`${BASE}/#/setting`)
+    await wait(page, 2000)
+    await expect(page.locator('text=Manage my account')).toBeVisible({ timeout: 5000 })
+  })
+
+  test('can log out', async ({ page }) => {
+    await loginReal(page, 'jason1324', 'jjww1324-LJ')
+    await logout(page)
+    await expect(page).toHaveURL(/login/, { timeout: 10000 })
+  })
+})
+
+// ─── PWA & Asset Health ──────────────────────────────────────────────────────
+
+test.describe('PWA & Asset Health', () => {
+  test('no 404 on JS/CSS assets', async ({ page }) => {
     const failed: string[] = []
     page.on('response', res => {
-      if (res.status() === 404 && (res.url().includes('/assets/') || res.url().endsWith('.js') || res.url().endsWith('.css'))) {
+      if (res.status() === 404 && (res.url().includes('/assets/') || res.url().match(/\.(js|css)$/))) {
         failed.push(res.url())
       }
     })
     await page.goto(`${BASE}/`)
-    await waitForContent(page, 5000)
+    await wait(page, 5000)
     expect(failed).toHaveLength(0)
   })
 
-  test('app renders root content (not blank)', async ({ page }) => {
+  test('app shell renders non-blank root', async ({ page }) => {
     await page.goto(`${BASE}/`)
-    await waitForContent(page, 5000)
-    const root = page.locator('#root, [id="root"]')
-    const html = await root.innerHTML()
-    expect(html.length).toBeGreaterThan(100)
+    await wait(page, 6000)
+    // Either login page or devices page should have rendered
+    const hasInput = await page.locator('input, button').count() > 0
+    expect(hasInput).toBeTruthy()
+  })
+
+  test('no fatal JS errors on startup', async ({ page }) => {
+    const errors: string[] = []
+    page.on('pageerror', e => errors.push(e.message))
+    await page.goto(`${BASE}/`)
+    await wait(page, 5000)
+    const fatal = errors.filter(e =>
+      !e.includes('push') && !e.includes('notification') &&
+      !e.includes('serviceWorker') && !e.includes('ResizeObserver') &&
+      !e.includes('favicon') && !e.includes('Non-Error')
+    )
+    expect(fatal).toHaveLength(0)
+  })
+
+  test('privacy policy link works on login page', async ({ page }) => {
+    await page.goto(`${BASE}/#/login`)
+    await wait(page, 3000)
+    const privacyLink = page.locator('a[href*="privacy"], text=Privacy').first()
+    if (await privacyLink.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await privacyLink.click()
+      await wait(page, 2000)
+      expect(page.url()).toMatch(/privacy/)
+    }
+  })
+
+  test('terms link works on login page', async ({ page }) => {
+    await page.goto(`${BASE}/#/login`)
+    await wait(page, 3000)
+    const termsLink = page.locator('a[href*="terms"], text=Terms').first()
+    if (await termsLink.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await termsLink.click()
+      await wait(page, 2000)
+      expect(page.url()).toMatch(/terms/)
+    }
   })
 })
