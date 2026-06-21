@@ -16,11 +16,19 @@ const BASE = 'https://lujian1324-spec.github.io/energy-app'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
-/** Skip the one-time PermissionsGate by pre-setting the localStorage flag */
+/**
+ * Skip the one-time PermissionsGate by setting localStorage before React reads it.
+ * Navigate to the base URL first so we have a document context, set the flag,
+ * then let the caller navigate to the real target.
+ */
 async function skipPermissionsGate(page: Page) {
-  await page.addInitScript(() => {
+  // Load the shell so localStorage is accessible
+  await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' })
+  await page.evaluate(() => {
     localStorage.setItem('sierro_permissions_asked', '1')
   })
+  // Brief pause for SW to settle
+  await page.waitForTimeout(300)
 }
 
 async function loginReal(page: Page, username: string, password: string) {
@@ -145,7 +153,9 @@ test.describe('Forgot Password Flow', () => {
   test('send button is within iPhone 16 viewport (393×852)', async ({ browser }) => {
     const ctx = await browser.newContext({ viewport: { width: 393, height: 852 } })
     const page = await ctx.newPage()
-    await page.addInitScript(() => { localStorage.setItem('sierro_permissions_asked', '1') })
+    await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' })
+    await page.evaluate(() => { localStorage.setItem('sierro_permissions_asked', '1') })
+    await page.waitForTimeout(300)
     await page.goto(`${BASE}/#/forgot-password`)
     await page.waitForSelector('button', { timeout: 20000 })
     const sendBtn = page.locator('button').filter({ hasText: /send/i }).first()
