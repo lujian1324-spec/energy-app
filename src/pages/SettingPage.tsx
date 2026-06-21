@@ -1,11 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useEffect } from 'react'
-import emailjs from '@emailjs/browser'
-
-// ── EmailJS config ── fill in your credentials from emailjs.com ──
-const EMAILJS_SERVICE_ID  = 'YOUR_SERVICE_ID'
-const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID'
-const EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   Bell,
@@ -32,12 +26,11 @@ import {
   LogOut,
   Trash2,
   RotateCcw,
-  Link2,
-  Link2Off,
   Download,
 } from 'lucide-react'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useAuthStore } from '../stores/authStore'
+import { deleteAccount } from '../api/authApi'
 import { getUserProfile } from '../db/powerflowDB'
 import appVersion from '../version.json'
 import ProfileEditPage from './ProfileEditPage'
@@ -49,6 +42,8 @@ export default function SettingPage() {
   const { powerStation, settings, updateSettings, resetAll, activateFounderBadge } = usePowerStationStore()
   const { user: authUser, logout, isGuest } = useAuthStore()
   const [showSupport, setShowSupport] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
   const [showManageAccount, setShowManageAccount] = useState(false)
   const [showFounderModal, setShowFounderModal] = useState(false)
   const [showResetConfirm, setShowResetConfirm] = useState(false)
@@ -85,33 +80,20 @@ export default function SettingPage() {
   const [supportSending, setSupportSending] = useState(false)
   const [supportError, setSupportError] = useState('')
 
-  const handleSupportSubmit = async (e: React.FormEvent) => {
+  const handleSupportSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setSupportSending(true)
-    setSupportError('')
-    try {
-      await emailjs.send(
-        EMAILJS_SERVICE_ID,
-        EMAILJS_TEMPLATE_ID,
-        {
-          from_email: supportEmail,
-          message: supportMessage,
-          to_email: 'jason@sierro.us',
-        },
-        EMAILJS_PUBLIC_KEY
-      )
-      setSupportSubmitted(true)
-      setTimeout(() => {
-        setShowSupport(false)
-        setSupportEmail('')
-        setSupportMessage('')
-        setSupportSubmitted(false)
-      }, 2000)
-    } catch {
-      setSupportError('Failed to send. Please try again.')
-    } finally {
+    const subject = encodeURIComponent('Sierro App Feedback')
+    const body = encodeURIComponent(`From: ${supportEmail}\n\n${supportMessage}`)
+    window.open(`mailto:support@sierro.us?subject=${subject}&body=${body}`, '_blank')
+    setSupportSubmitted(true)
+    setTimeout(() => {
+      setShowSupport(false)
+      setSupportEmail('')
+      setSupportMessage('')
+      setSupportSubmitted(false)
       setSupportSending(false)
-    }
+    }, 1500)
   }
 
   const handleFounderSubmit = (e: React.FormEvent) => {
@@ -334,12 +316,9 @@ export default function SettingPage() {
               Terms of Use
             </Link>
           </div>
-          <button
-            onClick={() => navigate('/ble-debug')}
-            className="text-caption text-ink-7 hover:text-ink-5 transition-colors"
-          >
+          <p className="text-caption text-ink-7">
             Sierro App v{appVersion.version} &copy; 2026 Sierro Inc.
-          </button>
+          </p>
         </div>
       </div>
 
@@ -432,7 +411,8 @@ export default function SettingPage() {
                   <div className="flex-1 text-body-md font-semibold text-[#FFFFFF]">Reset App</div>
                   <ChevronRight size={16} className="text-[#8C8C8C]" />
                 </div>
-                <div className="flex items-center gap-3 px-4 py-3.5 cursor-pointer">
+                <div className="flex items-center gap-3 px-4 py-3.5 cursor-pointer"
+                  onClick={() => { setShowManageAccount(false); setShowDeleteConfirm(true) }}>
                   <div className="w-9 h-9 rounded-lg bg-[rgba(255,59,48,0.08)] flex items-center justify-center">
                     <Trash2 size={16} className="text-[#FF3B30]" />
                   </div>
@@ -524,6 +504,48 @@ export default function SettingPage() {
                 <div className="flex gap-3">
                   <button onClick={() => setShowResetConfirm(false)} className="flex-1 py-3 rounded-xl bg-[rgba(255,255,255,0.06)] text-[#FFFFFF] font-semibold text-body-md">Cancel</button>
                   <button onClick={() => { resetAll(); setShowResetConfirm(false) }} className="flex-1 py-3 rounded-xl bg-[rgba(255,59,48,0.15)] text-[#FF3B30] font-semibold text-body-md border border-[rgba(255,59,48,0.3)]">Reset</button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ==================== Delete Account Confirm ==================== */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 p-4"
+            onClick={() => !deleteLoading && setShowDeleteConfirm(false)}>
+            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="w-full max-w-md bg-[#262626] rounded-[28px] border border-[rgba(255,59,48,0.2)] overflow-hidden"
+              onClick={e => e.stopPropagation()}>
+              <div className="p-5 space-y-4">
+                <div className="text-center">
+                  <div className="w-12 h-12 rounded-full bg-[rgba(255,59,48,0.1)] flex items-center justify-center mx-auto mb-3">
+                    <Trash2 size={24} className="text-[#FF3B30]" />
+                  </div>
+                  <h3 className="text-base font-bold text-[#FFFFFF] mb-2">Delete Account</h3>
+                  <p className="text-body-md text-[#BFBFBF]">This will permanently delete your account and all associated data. This action cannot be undone.</p>
+                </div>
+                <div className="flex gap-3">
+                  <button disabled={deleteLoading} onClick={() => setShowDeleteConfirm(false)}
+                    className="flex-1 py-3 rounded-xl bg-[rgba(255,255,255,0.06)] text-[#FFFFFF] font-semibold text-body-md disabled:opacity-50">
+                    Cancel
+                  </button>
+                  <button disabled={deleteLoading} onClick={async () => {
+                    setDeleteLoading(true)
+                    try {
+                      await deleteAccount()
+                    } catch { /* ignore — server may reject already-deleted accounts */ }
+                    await logout()
+                    setShowDeleteConfirm(false)
+                    setDeleteLoading(false)
+                  }}
+                    className="flex-1 py-3 rounded-xl bg-[rgba(255,59,48,0.15)] text-[#FF3B30] font-semibold text-body-md border border-[rgba(255,59,48,0.3)] flex items-center justify-center gap-2 disabled:opacity-50">
+                    {deleteLoading ? <Loader2 size={16} className="animate-spin" /> : 'Delete'}
+                  </button>
                 </div>
               </div>
             </motion.div>

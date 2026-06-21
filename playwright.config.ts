@@ -22,13 +22,13 @@ export default defineConfig({
     {
       name: 'Mobile Chrome (iPhone 16)',
       use: {
-        ...devices['iPhone 15'],
+        browserName: 'chromium',
         viewport: { width: 393, height: 852 },
+        userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/120.0.0.0 Mobile/15E148 Safari/604.1',
+        deviceScaleFactor: 3,
+        isMobile: true,
+        hasTouch: true,
       },
-    },
-    {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 14'] },
     },
     {
       name: 'Desktop Chrome',
