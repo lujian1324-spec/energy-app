@@ -65,7 +65,7 @@ export default function ForgotPasswordPage() {
     setLoading(true)
     try {
       const result = await resetPassword(
-        account.trim() || email.trim(),
+        account.trim(),
         newPassword,
         code.trim(),
         captchaId ?? undefined,
