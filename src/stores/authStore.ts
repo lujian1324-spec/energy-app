@@ -56,28 +56,6 @@ export const useAuthStore = create<AuthState>()(
       login: async (username: string, password: string) => {
         set({ loading: true, error: null })
 
-        // 本地测试账号：跳过后端，直接进入 demo 模式（展示演示数据）
-        const u = username.trim().toLowerCase()
-        const localAccounts: Record<string, { password: string; email: string }> = {
-          localtest: { password: 'localtest', email: 'localtest@sierro.test' },
-          localest:  { password: 'localtest', email: 'localtest@sierro.test' },
-          benson:    { password: 'benson1234', email: 'benson8191@gmail.com' },
-          george:    { password: 'sierro1234', email: 'george@sierro.test' },
-        }
-        const localAccount = localAccounts[u]
-        if (localAccount && password === localAccount.password) {
-          useDeviceStore.getState().loadDemoDevices()
-          set({
-            isAuthenticated: true,
-            isGuest: false,
-            user: { account: u, email: localAccount.email } as LoginData,
-            loading: false,
-            error: null,
-            sessionReady: true,
-          })
-          return true
-        }
-
         try {
           const result = await loginByAccount(username, password)
 

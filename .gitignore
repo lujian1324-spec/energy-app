@@ -48,3 +48,5 @@ browser-login.mjs
 dist-*/
 test_api.py
 .claude/
+test-results/
+playwright-report/

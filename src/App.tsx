@@ -19,7 +19,6 @@ import DeviceMonitorPage from './pages/DeviceMonitorPage'
 import DeviceDetailPage from './pages/DeviceDetailPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import BleDebugPage from './pages/BleDebugPage'
-import PeakShavingPage from './pages/PeakShavingPage'
 import { useRealtimeSimulator } from './hooks/useRealtimeSimulator'
 import { useAuthStore } from './stores/authStore'
 import { ToastContainer, useToast } from './components/Toast'
@@ -120,7 +119,7 @@ function AppInner() {
 
   // 设备详情页 & Smart Schedule 页 & 通知页单独渲染，不包含底部导航
   // 注意：/devices（设备列表，带底部导航）不在此分支，故用 '/device/' 前缀匹配
-  if (location.pathname.startsWith('/device/') || location.pathname === '/smart-schedule' || location.pathname === '/peak-shaving' || location.pathname === '/notifications' || location.pathname === '/onboarding' || location.pathname === '/ble-debug' || location.pathname.startsWith('/profile')) {
+  if (location.pathname.startsWith('/device/') || location.pathname === '/smart-schedule' || location.pathname === '/notifications' || location.pathname === '/onboarding' || location.pathname === '/ble-debug' || location.pathname.startsWith('/profile')) {
     return (
       <div className="h-full w-full bg-bg-base flex flex-col overflow-hidden">
         <div className="flex-1 overflow-hidden relative">
@@ -138,7 +137,6 @@ function AppInner() {
                 <Route path="/device/:id/settings" element={<RequireAuth><DeviceDetailPage /></RequireAuth>} />
                 <Route path="/device/:id/dashboard" element={<RequireAuth><OverviewPage /></RequireAuth>} />
                 <Route path="/smart-schedule" element={<RequireAuth><SmartSchedulePage /></RequireAuth>} />
-                <Route path="/peak-shaving" element={<RequireAuth><PeakShavingPage /></RequireAuth>} />
                 <Route path="/notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
                 <Route path="/onboarding" element={<RequireAuth><OnboardingPage /></RequireAuth>} />
                 <Route path="/ble-debug" element={<BleDebugPage />} />
