@@ -12,6 +12,9 @@
     "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
+    "@capacitor/android": "^8.4.1",
+    "@capacitor/cli": "^8.4.1",
+    "@capacitor/core": "^8.4.1",
     "@emailjs/browser": "^4.4.1",
     "@types/crypto-js": "^4.2.2",
     "crypto-js": "^4.2.0",
