@@ -27,8 +27,11 @@ async function skipPermissionsGate(page: Page) {
   await page.evaluate(() => {
     localStorage.setItem('sierro_permissions_asked', '1')
   })
-  // Brief pause for SW to settle
-  await page.waitForTimeout(300)
+  // Reload so React remounts and reads the updated localStorage value.
+  // Without this, the hash navigation is same-document and React keeps
+  // permissionsDone=false from initial mount.
+  await page.reload({ waitUntil: 'domcontentloaded' })
+  await page.waitForTimeout(500)
 }
 
 async function loginReal(page: Page, username: string, password: string) {
@@ -155,7 +158,8 @@ test.describe('Forgot Password Flow', () => {
     const page = await ctx.newPage()
     await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' })
     await page.evaluate(() => { localStorage.setItem('sierro_permissions_asked', '1') })
-    await page.waitForTimeout(300)
+    await page.reload({ waitUntil: 'domcontentloaded' })
+    await page.waitForTimeout(500)
     await page.goto(`${BASE}/#/forgot-password`)
     await page.waitForSelector('button', { timeout: 20000 })
     const sendBtn = page.locator('button').filter({ hasText: /send/i }).first()
