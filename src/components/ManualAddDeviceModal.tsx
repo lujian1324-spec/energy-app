@@ -92,7 +92,7 @@ export default function ManualAddDeviceModal({ onClose }: Props) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="absolute inset-0 bg-[rgba(0,0,0,0.7)] z-50 flex items-end"
+      className="fixed inset-0 bg-[rgba(0,0,0,0.7)] z-50 flex items-end"
       onClick={onClose}
     >
       <motion.div

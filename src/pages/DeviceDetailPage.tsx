@@ -48,7 +48,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const { id: routeId } = useParams<{ id: string }>()
 
   // ── Real device data (useDeviceStore) — used when mounted as a route ──
-  const { devices, selectedDeviceState, selectDevice, loadDeviceState, renameDeviceLocal, removeDevice } = useDeviceStore()
+  const { devices, selectedDeviceState, selectDevice, loadDeviceState, renameDeviceLocal, removeDevice, updateDeviceInfo, isDemoMode } = useDeviceStore()
   const realDevice = devices.find(d => String(d.id) === routeId)
 
   // Standalone route: ensure the real device + its realtime state are loaded
@@ -105,6 +105,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const [pendingIcon, setPendingIcon] = useState('zap')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   // ─── Helpers ─────────────────────────────────────────────────────────────
 
@@ -113,15 +114,44 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const editTargetOriginalName = editTargetDevice?.name ?? deviceName
   const nameChanged = editName.trim().length > 0 && editName.trim() !== editTargetOriginalName
 
-  const handleSaveName = () => {
+  const [savingName, setSavingName] = useState(false)
+  const [nameError, setNameError] = useState<string | null>(null)
+
+  const handleSaveName = async () => {
     if (!nameChanged) return
     const trimmed = editName.trim()
     const targetId = editTargetId || routeId || selectedDeviceId
-    if (targetId) {
-      // 同步到两个 store：home page (deviceStore) + 详情/下拉菜单 (powerStationStore)
-      renameDeviceLocal(targetId, trimmed)
-      updateDeviceNameById(targetId, trimmed)
+    if (!targetId) return
+
+    // 乐观更新：先同步本地两个 store（home page + 详情/下拉菜单）
+    renameDeviceLocal(targetId, trimmed)
+    updateDeviceNameById(targetId, trimmed)
+
+    // 持久化到服务端（demo 模式下跳过真实接口）
+    const numId = Number(targetId)
+    if (numId && !isNaN(numId) && !isDemoMode) {
+      setSavingName(true)
+      setNameError(null)
+      try {
+        const result = await updateDeviceInfo({ id: numId, name: trimmed })
+        if (!(result.code === 0 || result.code === '0')) {
+          // 回滚本地名称
+          renameDeviceLocal(targetId, editTargetOriginalName)
+          updateDeviceNameById(targetId, editTargetOriginalName)
+          setNameError(result.message ?? 'Failed to save name')
+          setSavingName(false)
+          return
+        }
+      } catch (err) {
+        renameDeviceLocal(targetId, editTargetOriginalName)
+        updateDeviceNameById(targetId, editTargetOriginalName)
+        setNameError(err instanceof Error ? err.message : 'Network error')
+        setSavingName(false)
+        return
+      }
+      setSavingName(false)
     }
+
     setShowDeviceDropdown(false)
     setScreen('main')
   }
@@ -145,9 +175,19 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     const numId = Number(id)
     if (!numId || isNaN(numId)) return
     setDeleting(true)
+    setDeleteError(null)
     try {
-      await removeDevice([Number(id)])
-    } catch { /* noop */ }
+      const result = await removeDevice([numId])
+      if (!(result.code === 0 || result.code === '0')) {
+        setDeleteError(result.message ?? 'Failed to delete device')
+        setDeleting(false)
+        return
+      }
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : 'Network error')
+      setDeleting(false)
+      return
+    }
     setDeleting(false)
     setShowDeleteConfirm(false)
     handleBack()
@@ -219,11 +259,12 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           </h1>
           <button
             onClick={handleSaveName}
-            disabled={!nameChanged}
-            className={`ml-auto text-body-lg font-semibold transition-colors ${
-              nameChanged ? 'text-[#01D6BE]' : 'text-[#4A4A4A] cursor-not-allowed'
+            disabled={!nameChanged || savingName}
+            className={`ml-auto text-body-lg font-semibold transition-colors flex items-center gap-1.5 ${
+              nameChanged && !savingName ? 'text-[#01D6BE]' : 'text-[#4A4A4A] cursor-not-allowed'
             }`}
           >
+            {savingName && <Loader2 size={16} className="animate-spin" />}
             Save
           </button>
         </div>
@@ -289,6 +330,9 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               </button>
             )}
           </div>
+          {nameError && (
+            <p className="text-label text-[#FF3B30] mt-2 px-1">{nameError}</p>
+          )}
         </div>
       </div>
     )
@@ -675,6 +719,9 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               <p className="text-body-md text-[#BFBFBF]">
                 Are you sure you want to delete <span className="text-white font-semibold">{deviceName}</span>? This action cannot be undone.
               </p>
+              {deleteError && (
+                <p className="text-label text-[#FF3B30] mt-3">{deleteError}</p>
+              )}
             </div>
             <div className="border-t border-white/10 flex">
               <button

@@ -287,9 +287,27 @@ export const useDeviceStore = create<DeviceStoreState>()(
       },
 
       // ─── 删除设备（解绑/登出） ───
+      // API /device/delete 仅接受单个 id，故逐个删除
 
       removeDevice: async (ids) => {
-        const result = await deleteDevice(ids)
+        // Demo 模式：本地移除，不调用真实接口
+        if (get().isDemoMode) {
+          const idSet = new Set(ids.map(Number))
+          const { selectedDeviceId } = get()
+          set(state => ({
+            devices: state.devices.filter(d => !idSet.has(Number(d.id))),
+            ...(selectedDeviceId && idSet.has(Number(selectedDeviceId))
+              ? { selectedDeviceId: null, selectedDeviceDetails: null, selectedDeviceState: null }
+              : {}),
+          }))
+          return { code: 0, message: 'OK', data: null }
+        }
+
+        let result: ApiResponse<unknown> = { code: 0, message: 'OK', data: null }
+        for (const id of ids) {
+          result = await deleteDevice(id)
+          if (!(result.code === 0 || result.code === '0')) break
+        }
         if (result.code === 0 || result.code === '0') {
           // 刷新设备列表
           const { selectedDeviceId } = get()
@@ -304,6 +322,11 @@ export const useDeviceStore = create<DeviceStoreState>()(
       // ─── 更新设备 ───
 
       updateDeviceInfo: async (data) => {
+        // Demo 模式：本地更新名称，不调用真实接口
+        if (get().isDemoMode) {
+          get().renameDeviceLocal(data.id, data.name)
+          return { code: 0, message: 'OK', data: null }
+        }
         const result = await updateDevice(data)
         if (result.code === 0 || result.code === '0') {
           get().loadDevices()

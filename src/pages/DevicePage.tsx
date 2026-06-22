@@ -29,6 +29,7 @@ import {
   TrendingDown,
 } from 'lucide-react'
 import PullToRefresh from '../components/PullToRefresh'
+import ManualAddDeviceModal from '../components/ManualAddDeviceModal'
 import { useDeviceStore } from '../stores/deviceStore'
 import { useAuthStore } from '../stores/authStore'
 import { useNotificationStore } from '../stores/notificationStore'
@@ -872,20 +873,7 @@ export default function DevicePage() {
       {/* Manual Add Device Modal */}
       <AnimatePresence>
         {showManualAdd && (
-          <motion.div initial={{ opacity: 0, y: '100%' }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: '100%' }}
-            className="fixed inset-0 z-50 bg-[#262626] flex flex-col">
-            <div className="flex items-center justify-between px-5 py-4">
-              <button onClick={() => setShowManualAdd(false)} className="w-9 h-9 rounded-full bg-[#454545] flex items-center justify-center text-[#FFFFFF]">
-                <X size={20} />
-              </button>
-              <h3 className="text-base font-bold text-[#FFFFFF]">Add Device Manually</h3>
-              <div className="w-9" />
-            </div>
-            <div className="flex-1 p-5">
-              <p className="text-body-md text-[#BFBFBF] mb-6">Manual device entry is under development. Please use Bluetooth Scan or QR Code to add devices.</p>
-              <button onClick={() => setShowManualAdd(false)} className="w-full py-3 rounded-xl bg-[rgba(1,214,190,0.12)] text-[#01D6BE] font-semibold text-body-md">OK</button>
-            </div>
-          </motion.div>
+          <ManualAddDeviceModal onClose={() => setShowManualAdd(false)} />
         )}
       </AnimatePresence>
 
