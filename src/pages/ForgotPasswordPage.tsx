@@ -13,7 +13,6 @@ export default function ForgotPasswordPage() {
 
   // Step 1 — request code
   const [email, setEmail] = useState('')
-  const [account, setAccount] = useState('')
   const [sending, setSending] = useState(false)
   const [captchaId, setCaptchaId] = useState<string | null>(null)
   const [countdown, setCountdown] = useState(0)
@@ -65,7 +64,7 @@ export default function ForgotPasswordPage() {
     setLoading(true)
     try {
       const result = await resetPassword(
-        account.trim(),
+        '',
         newPassword,
         code.trim(),
         captchaId ?? undefined,
@@ -110,23 +109,6 @@ export default function ForgotPasswordPage() {
           </div>
         ) : step === 'request' ? (
           <>
-            {/* Account (optional) */}
-            <label className="block text-label text-ink-7 mb-1.5">Account (optional)</label>
-            <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-4 focus-within:ring-1 focus-within:ring-inset focus-within:ring-primary transition-shadow">
-              <input
-                type="text"
-                value={account}
-                onChange={e => { setAccount(e.target.value); setError('') }}
-                placeholder="Username (if known)"
-                autoCapitalize="none"
-                autoCorrect="off"
-                className="flex-1 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
-              />
-              {account && (
-                <button onClick={() => setAccount('')}><X size={16} className="text-ink-7" /></button>
-              )}
-            </div>
-
             {/* Email */}
             <label className="block text-label text-ink-7 mb-1.5">Email</label>
             <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-1 focus-within:ring-1 focus-within:ring-inset focus-within:ring-primary transition-shadow">
@@ -138,6 +120,7 @@ export default function ForgotPasswordPage() {
                 placeholder="Email address"
                 autoCapitalize="none"
                 autoCorrect="off"
+                onKeyDown={e => { if (e.key === 'Enter') handleSendCode() }}
                 className="flex-1 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
               />
               {email && (
