@@ -127,8 +127,10 @@ test.describe('Auth Pages', () => {
     await page.locator('button').filter({ hasText: /Sign In/i }).first().click()
     await wait(page, 4000)
     const url = page.url()
-    const hasError = await page.locator('[class*="danger"], text=/error|invalid|failed|incorrect/i').count() > 0
-    expect(url.includes('login') || hasError).toBeTruthy()
+    // CSS and text= engines can't be combined in one comma selector — query separately
+    const hasDangerClass = await page.locator('[class*="danger"]').count() > 0
+    const hasErrorText = await page.getByText(/error|invalid|failed|incorrect/i).count() > 0
+    expect(url.includes('login') || hasDangerClass || hasErrorText).toBeTruthy()
   })
 })
 
@@ -183,7 +185,9 @@ test.describe('[Guest] Core Navigation', () => {
     await loginAsGuest(page)
     await page.goto(`${BASE}/#/devices`)
     await wait(page, 3000)
-    const hasCards = await page.locator('[class*="card"], [class*="ink-10"]').count() > 0
+    // Device page renders an <h1>Device</h1> header regardless of card/empty state
+    await expect(page.locator('h1', { hasText: /^Device$/ })).toBeVisible({ timeout: 8000 })
+    const hasCards = await page.locator('[class*="262626"]').count() > 0
     const hasEmpty = await page.locator('text=/no device|add device|get started/i').count() > 0
     expect(hasCards || hasEmpty).toBeTruthy()
   })
@@ -268,7 +272,8 @@ test.describe('[jason1324] Login & Navigation', () => {
     await loginReal(page, 'jason1324', 'jjww1324-LJ')
     await page.goto(`${BASE}/#/devices`)
     await wait(page, 4000)
-    const hasContent = await page.locator('[class*="ink-10"], [class*="card"]').count() > 0
+    await expect(page.locator('h1', { hasText: /^Device$/ })).toBeVisible({ timeout: 8000 })
+    const hasContent = await page.locator('[class*="262626"]').count() > 0
     const hasEmpty = await page.locator('text=/no device|add device/i').count() > 0
     expect(hasContent || hasEmpty).toBeTruthy()
   })
