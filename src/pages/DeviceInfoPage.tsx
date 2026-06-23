@@ -61,7 +61,7 @@ export default function DeviceInfoPage() {
   const lastDataAt = device?.lastDataAt ? new Date(device.lastDataAt).getTime() : undefined
 
   // SOC / Temp（从实时数据回退到字段或 0）
-  const soc = realtime?.soc ?? 0
+  const remainingBatteryCapacity = realtime?.remainingBatteryCapacity ?? 0
   const batteryTemp = realtime?.batteryTemp ?? 0
   const batteryPower = realtime?.batteryPower ?? 0
   const outputPower = realtime?.outputPower ?? 0
@@ -133,11 +133,11 @@ export default function DeviceInfoPage() {
 
           <div className="flex items-center gap-5">
             <div className="flex-shrink-0">
-              <BatteryRing percentage={soc} isCharging={batteryPower > 0} timeToFull="--" uid={`info-${id}`} />
+              <BatteryRing percentage={remainingBatteryCapacity} isCharging={batteryPower > 0} timeToFull="--" uid={`info-${id}`} />
             </div>
             <div className="flex-1 grid grid-cols-2 gap-2.5">
               <div className="bg-[#141414] rounded-l p-2.5 text-center">
-                <div className="text-body-md font-bold text-[#FFFFFF]">{soc}%</div>
+                <div className="text-body-md font-bold text-[#FFFFFF]">{remainingBatteryCapacity}%</div>
                 <div className="text-xs text-[#A0A0A5] mt-0.5">SOC</div>
               </div>
               <div className="bg-[#141414] rounded-l p-2.5 text-center">

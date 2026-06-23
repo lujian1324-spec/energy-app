@@ -186,7 +186,7 @@ export default function OverviewPage() {
   }, [selectedDeviceState])
 
   // ─── 计算显示值（带 fallback） ───
-  const soc = realtime?.soc ?? 0
+  const remainingBatteryCapacity = realtime?.remainingBatteryCapacity ?? 0
   const batteryPower = realtime?.batteryPower ?? 0
   const acPower = realtime?.acPower ?? 0
   const solarPower = realtime?.solarPower ?? 0
@@ -198,11 +198,11 @@ export default function OverviewPage() {
 
   // ─── 预估剩余时间 ───
   const remainingTimeDisplay = useMemo(() => {
-    if (soc <= 0 || outputPower <= 0) return null
+    if (remainingBatteryCapacity <= 0 || outputPower <= 0) return null
     // Default capacity: 1kWh (Sierro 1000) or 2kWh (Sierro 2000)
     const modelLower = deviceModel?.toLowerCase() ?? ''
     const capacityWh = modelLower.includes('2000') ? 2000 : 1000
-    const remainingWh = (soc / 100) * capacityWh
+    const remainingWh = (remainingBatteryCapacity / 100) * capacityWh
     const hours = remainingWh / outputPower
     if (hours >= 1) {
       const h = Math.floor(hours)
@@ -212,13 +212,13 @@ export default function OverviewPage() {
     const m = Math.round(hours * 60)
     if (m <= 0) return null
     return `${m}m remaining`
-  }, [soc, outputPower, deviceModel])
+  }, [remainingBatteryCapacity, outputPower, deviceModel])
 
   const chargeTimeDisplay = useMemo(() => {
-    if (soc >= 100 || inputPower <= 0) return null
+    if (remainingBatteryCapacity >= 100 || inputPower <= 0) return null
     const modelLower = deviceModel?.toLowerCase() ?? ''
     const capacityWh = modelLower.includes('2000') ? 2000 : 1000
-    const toChargeWh = ((100 - soc) / 100) * capacityWh
+    const toChargeWh = ((100 - remainingBatteryCapacity) / 100) * capacityWh
     const hours = toChargeWh / inputPower
     if (hours >= 1) {
       const h = Math.floor(hours)
@@ -228,7 +228,7 @@ export default function OverviewPage() {
     const m = Math.round(hours * 60)
     if (m <= 0) return null
     return `${m}m to full`
-  }, [soc, inputPower, deviceModel])
+  }, [remainingBatteryCapacity, inputPower, deviceModel])
   const acOut1Enable = realtime?.acOut1Enable ?? false
   const acOut2Enable = realtime?.acOut2Enable ?? false
   const usbOut1Enable = realtime?.usbOut1Enable ?? false
@@ -384,7 +384,7 @@ export default function OverviewPage() {
 
       {/* Status bar spacer */}
       <div className="h-8 px-5 flex justify-between items-center opacity-0">
-        <span className="text-[12px] text-[#FFFFFF]">{soc}%</span>
+        <span className="text-[12px] text-[#FFFFFF]">{remainingBatteryCapacity}%</span>
       </div>
 
       {/* Scrollable content */}
@@ -516,7 +516,7 @@ export default function OverviewPage() {
             >
               <div className="flex justify-center mb-5">
                 <BatteryRing
-                  percentage={soc}
+                  percentage={remainingBatteryCapacity}
                   isCharging={isCharging}
                   connected={isOnline}
                   timeToFull={chargeTimeDisplay ?? '--'}

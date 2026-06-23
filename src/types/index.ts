@@ -9,7 +9,7 @@
 export interface DeviceRealtimeFields {
   // ── 电量 ──
   /** 电芯剩余容量百分比 (0-100)，API: remainingBatteryCapacity */
-  soc: number
+  remainingBatteryCapacity: number
   /** 电芯容量 Ah，API: batteryCapacity */
   batteryCapacity: number
   /** 电芯电流 A，API: batteryCurrent */
@@ -109,7 +109,7 @@ export interface DeviceAlert {
 /**
  * 设备类型（混合本地 UI 字段 + 云端 API 字段）
  * - UI 本地字段：id, name, type, status, batteryLevel, isOn, power
- * - API 实时字段：deviceId, firmwareVersion, lastSeen, soc, acPower, solarPower...
+ * - API 实时字段：deviceId, firmwareVersion, lastSeen, remainingBatteryCapacity, acPower, solarPower...
  * - API 设备元数据：serialNumber, model, stationId, isOnline, isAlarmed
  */
 export interface Device {
@@ -118,7 +118,7 @@ export interface Device {
   name: string
   type: 'cpap' | 'fridge' | 'powerstation' | 'laptop' | 'phone' | 'lighting' | 'other'
   status: 'online' | 'offline'
-  /** 本地显示用电量百分比（可由 soc 驱动） */
+  /** 本地显示用电量百分比（可由 remainingBatteryCapacity 驱动） */
   batteryLevel: number
   /** 本地开关状态（可由 acOut1Enable 等驱动） */
   isOn: boolean
@@ -146,7 +146,7 @@ export interface Device {
   lastOnlineAt?: number
 
   // ── API 实时状态字段（来自 /remote/device/state/latest，经 mapFieldsToRealtime 映射） ──
-  soc?: number               // remainingBatteryCapacity
+  remainingBatteryCapacity?: number               // remainingBatteryCapacity
   batteryPower?: number
   acPower?: number           // exchangeChargingPower
   solarPower?: number        // generationPower

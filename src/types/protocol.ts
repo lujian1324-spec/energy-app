@@ -186,7 +186,7 @@ export interface ModbusFrame {
 export interface PowerHistoryRecord {
   id?: number
   timestamp: number // Unix ms
-  soc?: number           // 电池电量 %（T9 新增）
+  remainingBatteryCapacity?: number           // 电池电量 %（T9 新增）
   batteryLevel: number
   inputPower: number
   outputPower: number

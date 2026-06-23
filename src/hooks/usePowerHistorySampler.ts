@@ -25,7 +25,7 @@ export function usePowerHistorySampler() {
       const s = stateRef.current
       savePowerHistory({
         timestamp: Date.now(),
-        soc: s.batteryLevel,
+        remainingBatteryCapacity: s.batteryLevel,
         batteryLevel: s.batteryLevel,
         inputPower: s.inputPower,
         outputPower: s.outputPower,

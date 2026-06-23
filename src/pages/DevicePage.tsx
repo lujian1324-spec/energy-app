@@ -272,8 +272,8 @@ export default function DevicePage() {
 
   // 是否有低电量设备（用于最新通知 Banner）
   const lowBatteryDevice = devices.find(d => {
-    const soc = getDeviceNum(d.id, 'soc')
-    return soc !== null && soc < 30
+    const remainingBatteryCapacity = getDeviceNum(d.id, 'remainingBatteryCapacity')
+    return remainingBatteryCapacity !== null && remainingBatteryCapacity < 30
   })
 
   // 未读通知红点（查看通知页后清零）
@@ -457,9 +457,9 @@ export default function DevicePage() {
           /* Device Card List (newest on top — devices[0] assumed newest) */
           <div className="flex flex-col gap-3">
             {devices.map((device, index) => {
-              const socRaw = getDeviceNum(device.id, 'soc')
-              const soc = socRaw ?? 0
-              const socKnown = socRaw !== null
+              const remainingBatteryCapacityRaw = getDeviceNum(device.id, 'remainingBatteryCapacity')
+              const remainingBatteryCapacity = remainingBatteryCapacityRaw ?? 0
+              const remainingBatteryCapacityKnown = remainingBatteryCapacityRaw !== null
               const batteryPower = getDeviceNum(device.id, 'batteryPower')
               const isCharging = batteryPower !== null && batteryPower > 0
               const connected = device.isOnline
@@ -487,7 +487,7 @@ export default function DevicePage() {
                     ) : (
                       <span className="text-[28px] leading-none">{getDeviceIcon(device.deviceSortKey)}</span>
                     )}
-                    <BatteryTag level={soc} unknown={!socKnown} connected={connected} charging={isCharging} />
+                    <BatteryTag level={remainingBatteryCapacity} unknown={!remainingBatteryCapacityKnown} connected={connected} charging={isCharging} />
                   </div>
 
                   {/* Name (up to 2 lines, then ...) */}
@@ -627,7 +627,7 @@ export default function DevicePage() {
                   </div>
                   <div className="grid grid-cols-3 gap-2.5">
                     {[
-                      { label: 'SOC', value: `${getDeviceNum(showDeviceParams.id, 'soc') ?? '--'}%`, icon: Battery, color: '#34C759' },
+                      { label: 'SOC', value: `${getDeviceNum(showDeviceParams.id, 'remainingBatteryCapacity') ?? '--'}%`, icon: Battery, color: '#34C759' },
                       { label: 'Battery', value: `${getDeviceNum(showDeviceParams.id, 'batteryPower') ?? '--'}W`, icon: TrendingDown, color: '#01D6BE' },
                       { label: 'AC Power', value: `${getDeviceNum(showDeviceParams.id, 'acPower') ?? '--'}W`, icon: Zap, color: '#01D6BE' },
                       { label: 'Solar', value: `${getDeviceNum(showDeviceParams.id, 'solarPower') ?? '--'}W`, icon: Sun, color: '#FF9500' },

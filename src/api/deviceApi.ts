@@ -306,7 +306,7 @@ export function mapFieldsToRealtime(
 
   return {
     // 电量 — API: remainingBatteryCapacity
-    soc: getNum('remainingBatteryCapacity'),
+    remainingBatteryCapacity: getNum('remainingBatteryCapacity'),
     batteryCapacity: getNum('batteryCapacity'),
     batteryCurrent: getNum('batteryCurrent'),
     numberOfBatteryUsageCycles: getNum('numberOfBatteryUsageCycles'),

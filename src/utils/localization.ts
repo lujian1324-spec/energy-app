@@ -72,24 +72,24 @@ export function formatDuration(seconds: number): string {
   return `${m}m`
 }
 
-/** 估算剩余放电时间 (soc%, currentLoadW, capacityWh) */
+/** 估算剩余放电时间 (remainingBatteryCapacity%, currentLoadW, capacityWh) */
 export function estimateTimeRemaining(
-  socPercent: number,
+  remainingBatteryCapacity: number,
   loadWatts: number,
   capacityWh: number
 ): number {
   if (loadWatts <= 0) return 0
-  const remainingWh = (socPercent / 100) * capacityWh
+  const remainingWh = (remainingBatteryCapacity / 100) * capacityWh
   return (remainingWh / loadWatts) * 3600
 }
 
-/** 估算充满时间 (soc%, chargeRateW, capacityWh) */
+/** 估算充满时间 (remainingBatteryCapacity%, chargeRateW, capacityWh) */
 export function estimateTimeToFull(
-  socPercent: number,
+  remainingBatteryCapacity: number,
   chargeWatts: number,
   capacityWh: number
 ): number {
   if (chargeWatts <= 0) return 0
-  const remainingWh = ((100 - socPercent) / 100) * capacityWh
+  const remainingWh = ((100 - remainingBatteryCapacity) / 100) * capacityWh
   return (remainingWh / chargeWatts) * 3600
 }

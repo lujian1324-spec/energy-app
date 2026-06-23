@@ -437,7 +437,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             <InfoRow label="Frequency" value="60Hz" />
             <InfoRow
               label="Battery Health"
-              value={rtField('batteryHealth') || (realtime?.soc !== undefined ? '98%' : '98%')}
+              value={rtField('batteryHealth') || (realtime?.remainingBatteryCapacity !== undefined ? '98%' : '98%')}
             />
             <InfoRow label="Cycles" value={rtField('batteryCycles') || '286'} />
             <InfoRow

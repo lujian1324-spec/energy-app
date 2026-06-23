@@ -545,7 +545,7 @@ export const useDeviceStore = create<DeviceStoreState>()(
         try {
           const result = await fetchHistoryData({
             deviceId: Number(deviceId),
-            keys: keys || ['solarPower', 'outputPower', 'soc', 'batteryTemp'],
+            keys: keys || ['solarPower', 'outputPower', 'remainingBatteryCapacity', 'batteryTemp'],
             fromTime,
             toTime,
             page: 1,

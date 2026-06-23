@@ -32,7 +32,7 @@ interface PowerStationState {
   // ── T7: API 实时状态更新 ──
   /**
    * 更新指定设备的实时状态（对齐 /remote/device/state/latest 字段）
-   * 自动驱动本地 UI 字段：batteryLevel ← soc, isOn ← acOut1Enable, power ← outputPower
+   * 自动驱动本地 UI 字段：batteryLevel ← remainingBatteryCapacity, isOn ← acOut1Enable, power ← outputPower
    */
   updateDeviceRealtime: (deviceId: string, fields: Partial<DeviceRealtimeFields>) => void;
   
@@ -391,9 +391,9 @@ updateDeviceRealtime: (deviceId, fields) => {
     const device = state.devices.find(d => d.id === deviceId || d.deviceId === deviceId)
     if (!device) return state
 
-    // 驱动 UI 字段：soc → batteryLevel, outputPower → power, acOut1Enable → isOn
+    // 驱动 UI 字段：remainingBatteryCapacity → batteryLevel, outputPower → power, acOut1Enable → isOn
     const uiUpdates: Partial<Device> = {}
-    if (fields.soc !== undefined) uiUpdates.batteryLevel = fields.soc
+    if (fields.remainingBatteryCapacity !== undefined) uiUpdates.batteryLevel = fields.remainingBatteryCapacity
     if (fields.outputPower !== undefined) uiUpdates.power = fields.outputPower
     if (fields.acOut1Enable !== undefined) uiUpdates.isOn = fields.acOut1Enable
 

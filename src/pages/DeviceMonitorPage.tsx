@@ -160,7 +160,7 @@ export default function DeviceMonitorPage() {
     return mapFieldsToRealtime(selectedDeviceState.fields)
   }, [selectedDeviceState])
 
-  const soc = rt?.soc ?? 0
+  const remainingBatteryCapacity = rt?.remainingBatteryCapacity ?? 0
   const acPower = rt?.acPower ?? 0
   const solarPower = rt?.solarPower ?? 0
   const outputPower = rt?.outputPower ?? 0
@@ -168,9 +168,9 @@ export default function DeviceMonitorPage() {
   const isCharging = batteryPower > 0
   const isOnline = device?.isOnline ?? true
 
-  // Estimate remaining time (rough: kWh capacity * soc% / outputPower)
+  // Estimate remaining time (rough: kWh capacity * remainingBatteryCapacity% / outputPower)
   const capacityWh = (device?.ratedPower ?? 5000)
-  const remainMinutes = outputPower > 0 ? Math.round((capacityWh * soc) / 100 / outputPower * 60) : null
+  const remainMinutes = outputPower > 0 ? Math.round((capacityWh * remainingBatteryCapacity) / 100 / outputPower * 60) : null
   const timeStr = remainMinutes
     ? `${Math.floor(remainMinutes / 60)}h ${remainMinutes % 60}m remaining`
     : isCharging ? 'Charging' : '--'
@@ -190,7 +190,7 @@ export default function DeviceMonitorPage() {
   // Current value badge
   const currentTab = TABS.find(t => t.id === activeTab)!
   const badgeValue = activeTab === 'battery'
-    ? `${soc}%`
+    ? `${remainingBatteryCapacity}%`
     : activeTab === 'ac'
       ? `${Math.abs(acPower)}W`
       : activeTab === 'solar'
@@ -285,7 +285,7 @@ export default function DeviceMonitorPage() {
           {/* Ring */}
           <div className="flex justify-center mb-5">
             <BatteryRing
-              percentage={soc}
+              percentage={remainingBatteryCapacity}
               size={180}
               strokeWidth={12}
               isCharging={isCharging}

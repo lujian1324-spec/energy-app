@@ -181,7 +181,7 @@ function MonthGridPicker({ selectedDate, onSelect }: { selectedDate: Date; onSel
 interface ChartFrame {
   input: number[]
   output: number[]
-  soc: number[]
+  remainingBatteryCapacity: number[]
   labels: string[]
   co2Kg: number
   totalInputKwh: number
@@ -196,11 +196,11 @@ interface ChartFrame {
 function aggregateHistory(raw: HistoryDataResponse, period: Period): ChartFrame | null {
   const solar = raw['generationPower'] ?? []
   const output = raw['outputPower'] ?? []
-  const socArr = raw['remainingBatteryCapacity'] ?? []
+  const remainingBatteryCapacityArr = raw['remainingBatteryCapacity'] ?? []
 
   if (solar.length === 0 && output.length === 0) return null
 
-  const byTime = new Map<string, { solar: number[]; output: number[]; soc: number[] }>()
+  const byTime = new Map<string, { solar: number[]; output: number[]; remainingBatteryCapacity: number[] }>()
 
   const timeToBucket = (ts: string): string => {
     const d = new Date(ts)
@@ -215,24 +215,24 @@ function aggregateHistory(raw: HistoryDataResponse, period: Period): ChartFrame 
 
   for (const pt of solar) {
     const bucket = timeToBucket(pt.time)
-    const entry = byTime.get(bucket) ?? { solar: [], output: [], soc: [] }
+    const entry = byTime.get(bucket) ?? { solar: [], output: [], remainingBatteryCapacity: [] }
     entry.solar.push(Number(pt.value) || 0)
     byTime.set(bucket, entry)
   }
   for (const pt of output) {
     const bucket = timeToBucket(pt.time)
-    const entry = byTime.get(bucket) ?? { solar: [], output: [], soc: [] }
+    const entry = byTime.get(bucket) ?? { solar: [], output: [], remainingBatteryCapacity: [] }
     entry.output.push(Number(pt.value) || 0)
     byTime.set(bucket, entry)
   }
-  for (const pt of socArr) {
+  for (const pt of remainingBatteryCapacityArr) {
     const bucket = timeToBucket(pt.time)
-    const entry = byTime.get(bucket) ?? { solar: [], output: [], soc: [] }
-    entry.soc.push(Number(pt.value) || 0)
+    const entry = byTime.get(bucket) ?? { solar: [], output: [], remainingBatteryCapacity: [] }
+    entry.remainingBatteryCapacity.push(Number(pt.value) || 0)
     byTime.set(bucket, entry)
   }
 
-  let entries: [string, { solar: number[]; output: number[]; soc: number[] }][]
+  let entries: [string, { solar: number[]; output: number[]; remainingBatteryCapacity: number[] }][]
   if (period === 'Week') {
     const dayOrder = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
     entries = [...byTime.entries()].sort(([a], [b]) => dayOrder.indexOf(a) - dayOrder.indexOf(b))
@@ -249,7 +249,7 @@ function aggregateHistory(raw: HistoryDataResponse, period: Period): ChartFrame 
 
   const inputData = sampled.map(([, v]) => avg(v.solar))
   const outputData = sampled.map(([, v]) => avg(v.output))
-  const socData = sampled.map(([, v]) => avg(v.soc))
+  const remainingBatteryCapacityData = sampled.map(([, v]) => avg(v.remainingBatteryCapacity))
   const labels = sampled.map(([k]) => k)
 
   const hoursPerBucket = period === 'Day' ? 1 : period === 'Week' ? 24 : period === 'Month' ? 24 : 72
@@ -268,7 +268,7 @@ function aggregateHistory(raw: HistoryDataResponse, period: Period): ChartFrame 
     ? `Equivalent to driving ${Math.round(totalOutputKwh * 3.5)} fewer miles`
     : 'Connect solar to reduce carbon footprint'
 
-  return { input: inputData, output: outputData, soc: socData, labels, co2Kg: parseFloat(co2Kg), totalInputKwh, totalOutputKwh, insight, ecoInsight }
+  return { input: inputData, output: outputData, remainingBatteryCapacity: remainingBatteryCapacityData, labels, co2Kg: parseFloat(co2Kg), totalInputKwh, totalOutputKwh, insight, ecoInsight }
 }
 
 // ─── Demo/Mock 数据 — 来自 Sierro 1000 真实模拟 CSV ───
@@ -290,38 +290,38 @@ const DAY_PAGES = [
   { dateLabel: 'Jul 4, 2026', insight: 'Sunny day — battery topped up by mid-morning',
     rawInput:  [0,0,1000,0,0,1000,0,1164,1584,1568,1548,1566,1578,1582,1574,1562,1579,1164,0,0,1000,0,0,1000],
     rawOutput: [77,48,64,47,70,50,82,59,84,68,48,66,78,82,74,62,79,58,67,66,80,64,53,80],
-    rawSoc:    [96.2,93.8,100,97.6,94.2,100,95.9,100,100,100,100,100,100,100,100,100,100,100,96.7,93.4,100,96.8,94.1,100] },
+    rawRemainingBatteryCapacity:    [96.2,93.8,100,97.6,94.2,100,95.9,100,100,100,100,100,100,100,100,100,100,100,96.7,93.4,100,96.8,94.1,100] },
   { dateLabel: 'Jul 3, 2026', insight: 'Overcast day — relied on grid top-ups, low solar',
     rawInput:  [0,0,1000,0,0,1000,0,207,399,565,692,772,800,772,692,565,399,207,0,0,1000,0,0,1000],
     rawOutput: [67,69,60,56,56,74,57,59,52,77,52,47,65,81,77,65,78,47,60,45,59,78,59,75],
-    rawSoc:    [96.6,93.2,100,97.2,94.4,100,97.2,100,100,100,100,100,100,100,100,100,100,100,97,94.8,100,96.1,93.1,100] },
+    rawRemainingBatteryCapacity:    [96.6,93.2,100,97.2,94.4,100,97.2,100,100,100,100,100,100,100,100,100,100,100,97,94.8,100,96.1,93.1,100] },
   { dateLabel: 'Jul 2, 2026', insight: 'Partly cloudy — SOC dipped to 83% overnight',
     rawInput:  [0,0,1000,0,0,1000,0,517,999,1414,1578,1582,1554,1569,1564,1414,999,517,0,0,0,0,0,1000],
     rawOutput: [60,74,65,76,74,51,45,60,48,81,78,82,54,69,64,79,80,69,76,48,54,83,77,82],
-    rawSoc:    [97,93.3,100,96.2,92.5,100,97.8,100,100,100,100,100,100,100,100,100,100,100,96.2,93.8,91.1,87,83.1,100] },
+    rawRemainingBatteryCapacity:    [97,93.3,100,96.2,92.5,100,97.8,100,100,100,100,100,100,100,100,100,100,100,96.2,93.8,91.1,87,83.1,100] },
   { dateLabel: 'Jul 1, 2026', insight: 'Full solar day — battery fully charged by morning',
     rawInput:  [0,0,0,1000,0,0,1000,1294,1557,1573,1547,1558,1572,1577,1552,1577,1552,1294,0,0,1000,0,0,1000],
     rawOutput: [46,51,71,58,58,74,73,50,57,73,47,58,72,77,52,77,52,65,78,83,70,49,62,54],
-    rawSoc:    [97.7,95.2,91.6,100,97.1,93.4,100,100,100,100,100,100,100,100,100,100,100,100,96.1,92,100,97.6,94.4,100] },
+    rawRemainingBatteryCapacity:    [97.7,95.2,91.6,100,97.1,93.4,100,100,100,100,100,100,100,100,100,100,100,100,96.1,92,100,97.6,94.4,100] },
 ]
 
 const WEEK_PAGES = [
   { dateLabel: 'Jul 22 – 28, 2026', insight: 'Best week — steady solar, 90–97% min SOC daily',
     rawInput:  [3.463, 3.523, 3.461, 3.716, 3.590, 3.654, 3.534],
     rawOutput: [1.418, 1.514, 1.439, 1.587, 1.525, 1.541, 1.481],
-    rawSoc:    [95, 92, 95, 97, 96, 90, 94] },
+    rawRemainingBatteryCapacity:    [95, 92, 95, 97, 96, 90, 94] },
   { dateLabel: 'Jul 15 – 21, 2026', insight: 'Cloudy stretch — solar output nearly halved',
     rawInput:  [1.676, 1.881, 1.652, 1.638, 1.606, 1.729, 1.684],
     rawOutput: [1.476, 1.545, 1.450, 1.438, 1.532, 1.529, 1.520],
-    rawSoc:    [84, 91, 96, 80, 97, 75, 93] },
+    rawRemainingBatteryCapacity:    [84, 91, 96, 80, 97, 75, 93] },
   { dateLabel: 'Jul 8 – 14, 2026', insight: 'Strong solar week — battery rarely below 91%',
     rawInput:  [3.636, 3.686, 3.605, 3.505, 3.393, 3.647, 3.685],
     rawOutput: [1.532, 1.539, 1.459, 1.416, 1.595, 1.544, 1.565],
-    rawSoc:    [95, 93, 95, 93, 91, 97, 97] },
+    rawRemainingBatteryCapacity:    [95, 93, 95, 93, 91, 97, 97] },
   { dateLabel: 'Jul 1 – 7, 2026', insight: 'Solid solar week — steady 3.3–3.6 kWh/day input',
     rawInput:  [3.626, 3.422, 3.520, 3.337, 3.448, 3.489, 3.448],
     rawOutput: [1.544, 1.293, 1.509, 1.269, 1.328, 1.476, 1.439],
-    rawSoc:    [91, 96, 90, 94, 97, 96, 92] },
+    rawRemainingBatteryCapacity:    [91, 96, 90, 94, 97, 96, 92] },
 ]
 
 function monthSeries(avgW: number, seed: number): number[] {
@@ -333,16 +333,16 @@ function monthSeries(avgW: number, seed: number): number[] {
 const MONTH_PAGES = [
   { dateLabel: 'October 2026', monthNum: 10, totalInputKwh: 42.6, totalOutputKwh: 42.1,
     insight: 'Oct steady output — 39.8 kWh solar, low grid use',
-    rawInput: monthSeries(57.3, 1), rawOutput: monthSeries(56.6, 4), rawSoc: monthSeries(90, 7) },
+    rawInput: monthSeries(57.3, 1), rawOutput: monthSeries(56.6, 4), rawRemainingBatteryCapacity: monthSeries(90, 7) },
   { dateLabel: 'September 2026', monthNum: 9, totalInputKwh: 45.5, totalOutputKwh: 45.0,
     insight: 'Sep peak green ratio — 42.0 kWh solar, 3.5 kWh grid',
-    rawInput: monthSeries(63.2, 2), rawOutput: monthSeries(62.5, 5), rawSoc: monthSeries(91, 8) },
+    rawInput: monthSeries(63.2, 2), rawOutput: monthSeries(62.5, 5), rawRemainingBatteryCapacity: monthSeries(91, 8) },
   { dateLabel: 'August 2026', monthNum: 8, totalInputKwh: 49.7, totalOutputKwh: 48.2,
     insight: 'Aug heaviest grid use (11.2 kWh) — lower solar',
-    rawInput: monthSeries(66.8, 3), rawOutput: monthSeries(64.8, 6), rawSoc: monthSeries(88, 9) },
+    rawInput: monthSeries(66.8, 3), rawOutput: monthSeries(64.8, 6), rawRemainingBatteryCapacity: monthSeries(88, 9) },
   { dateLabel: 'July 2026', monthNum: 7, totalInputKwh: 46.5, totalOutputKwh: 46.5,
     insight: 'Jul highest combined input — 46.5 kWh total',
-    rawInput: monthSeries(62.5, 4), rawOutput: monthSeries(62.5, 7), rawSoc: monthSeries(92, 10) },
+    rawInput: monthSeries(62.5, 4), rawOutput: monthSeries(62.5, 7), rawRemainingBatteryCapacity: monthSeries(92, 10) },
 ]
 
 function getDemoChartFrame(period: Period, pageOffset = 0): ChartFrame {
@@ -353,10 +353,10 @@ function getDemoChartFrame(period: Period, pageOffset = 0): ChartFrame {
     const labels = Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2, '0')}:00`)
     const input = smooth(page.rawInput, 2)
     const output = smooth(page.rawOutput, 2)
-    const soc = smooth(page.rawSoc, 1)
+    const remainingBatteryCapacity = smooth(page.rawRemainingBatteryCapacity, 1)
     const totalInputKwh = page.rawInput.reduce((s, v) => s + v / 1000, 0)
     const totalOutputKwh = page.rawOutput.reduce((s, v) => s + v / 1000, 0)
-    return { input, output, soc, labels, co2Kg: parseFloat((totalInputKwh * 0.5).toFixed(1)), totalInputKwh, totalOutputKwh, insight: page.insight, ecoInsight: `Equivalent to driving ${Math.round(totalOutputKwh * 3.5)} fewer miles`, dateLabel: page.dateLabel }
+    return { input, output, remainingBatteryCapacity, labels, co2Kg: parseFloat((totalInputKwh * 0.5).toFixed(1)), totalInputKwh, totalOutputKwh, insight: page.insight, ecoInsight: `Equivalent to driving ${Math.round(totalOutputKwh * 3.5)} fewer miles`, dateLabel: page.dateLabel }
   }
 
   if (period === 'Week') {
@@ -364,10 +364,10 @@ function getDemoChartFrame(period: Period, pageOffset = 0): ChartFrame {
     const labels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
     const input = smooth(page.rawInput, 2)
     const output = smooth(page.rawOutput, 2)
-    const soc = smooth(page.rawSoc, 1)
+    const remainingBatteryCapacity = smooth(page.rawRemainingBatteryCapacity, 1)
     const totalInputKwh = page.rawInput.reduce((s, v) => s + v, 0)
     const totalOutputKwh = page.rawOutput.reduce((s, v) => s + v, 0)
-    return { input, output, soc, labels, co2Kg: parseFloat((totalInputKwh * 0.5).toFixed(1)), totalInputKwh, totalOutputKwh, insight: page.insight, ecoInsight: `Equivalent to driving ${Math.round(totalOutputKwh * 3.5)} fewer miles`, dateLabel: page.dateLabel }
+    return { input, output, remainingBatteryCapacity, labels, co2Kg: parseFloat((totalInputKwh * 0.5).toFixed(1)), totalInputKwh, totalOutputKwh, insight: page.insight, ecoInsight: `Equivalent to driving ${Math.round(totalOutputKwh * 3.5)} fewer miles`, dateLabel: page.dateLabel }
   }
 
   if (period === 'Month') {
@@ -375,21 +375,21 @@ function getDemoChartFrame(period: Period, pageOffset = 0): ChartFrame {
     const labels = Array.from({ length: 30 }, (_, i) => `${page.monthNum}/${i + 1}`)
     const input = smooth(page.rawInput.slice(0, 30), 3)
     const output = smooth(page.rawOutput.slice(0, 30), 3)
-    const soc = smooth(page.rawSoc.slice(0, 30), 2)
-    return { input, output, soc, labels, co2Kg: parseFloat((page.totalInputKwh * 0.5).toFixed(1)), totalInputKwh: page.totalInputKwh, totalOutputKwh: page.totalOutputKwh, insight: page.insight, ecoInsight: `Equivalent to driving ${Math.round(page.totalOutputKwh * 3.5)} fewer miles`, dateLabel: page.dateLabel }
+    const remainingBatteryCapacity = smooth(page.rawRemainingBatteryCapacity.slice(0, 30), 2)
+    return { input, output, remainingBatteryCapacity, labels, co2Kg: parseFloat((page.totalInputKwh * 0.5).toFixed(1)), totalInputKwh: page.totalInputKwh, totalOutputKwh: page.totalOutputKwh, insight: page.insight, ecoInsight: `Equivalent to driving ${Math.round(page.totalOutputKwh * 3.5)} fewer miles`, dateLabel: page.dateLabel }
   }
 
   // Range: 4-month summary
   const labels = ['Jul', 'Aug', 'Sep', 'Oct']
   const rawInput = [46.5, 49.7, 45.5, 42.6]
   const rawOutput = [46.5, 48.2, 45.0, 42.1]
-  const rawSoc = [92.0, 88.0, 91.0, 90.0]
+  const rawRemainingBatteryCapacity = [92.0, 88.0, 91.0, 90.0]
   const input = smooth(rawInput, 1)
   const output = smooth(rawOutput, 1)
-  const soc = smooth(rawSoc, 1)
+  const remainingBatteryCapacity = smooth(rawRemainingBatteryCapacity, 1)
   const totalInputKwh = rawInput.reduce((s, v) => s + v, 0)
   const totalOutputKwh = rawOutput.reduce((s, v) => s + v, 0)
-  return { input, output, soc, labels, co2Kg: parseFloat((totalInputKwh * 0.5).toFixed(1)), totalInputKwh, totalOutputKwh, insight: 'Sep had the best green energy ratio — 42.0 kWh solar', ecoInsight: `Equivalent to driving ${Math.round(totalOutputKwh * 3.5)} fewer miles` }
+  return { input, output, remainingBatteryCapacity, labels, co2Kg: parseFloat((totalInputKwh * 0.5).toFixed(1)), totalInputKwh, totalOutputKwh, insight: 'Sep had the best green energy ratio — 42.0 kWh solar', ecoInsight: `Equivalent to driving ${Math.round(totalOutputKwh * 3.5)} fewer miles` }
 }
 
 // ─── 加载骨架屏 ───
@@ -613,7 +613,7 @@ export default function StatsPage() {
   }
 
   const hasDevice = deviceId !== null
-  const soc = deviceRealtime?.soc ?? 0
+  const remainingBatteryCapacity = deviceRealtime?.remainingBatteryCapacity ?? 0
   const batteryTemp = deviceRealtime?.batteryTemp ?? 0
   const batteryHealth = 95
   const isDataLoaded = true
@@ -965,11 +965,11 @@ export default function StatsPage() {
                 </div>
                 <div className="flex items-center gap-6">
                   <div className="flex-shrink-0">
-                    <BatteryRing percentage={soc} size={160} strokeWidth={18} isCharging={false} uid="stats-page" />
+                    <BatteryRing percentage={remainingBatteryCapacity} size={160} strokeWidth={18} isCharging={false} uid="stats-page" />
                   </div>
                   <div className="flex-1 grid grid-cols-2 gap-3">
                     <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-l p-2.5">
-                      <div className="text-[14px] font-bold text-[#FFFFFF]">{soc}%</div>
+                      <div className="text-[14px] font-bold text-[#FFFFFF]">{remainingBatteryCapacity}%</div>
                       <div className="text-tiny text-[#BFBFBF] mt-0.5">Charge</div>
                     </div>
                     <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-l p-2.5">

@@ -227,7 +227,7 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
         gatherProtocolNumber: device.gatherProtocolNumber,
         gatherProtocolVersionCode: '2.1',
         fields: {
-          soc: makeField('soc', 'State of Charge', 95, '%', 'battery'),
+          remainingBatteryCapacity: makeField('remainingBatteryCapacity', 'State of Charge', 95, '%', 'battery'),
           batteryPower: makeField('batteryPower', 'Battery Power', 50, 'W', 'battery'),
           batteryVoltage: makeField('batteryVoltage', 'Battery Voltage', 3.2, 'V', 'battery'),
           batteryCurrent: makeField('batteryCurrent', 'Battery Current', 72.5, 'A', 'battery'),
@@ -258,7 +258,7 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
             name: 'Battery',
             category: 'battery',
             stateItems: [
-              { ...makeField('soc', 'SoC', 95, '%', 'battery'), isHidden: false, nameDisplay: 'State of Charge' },
+              { ...makeField('remainingBatteryCapacity', 'SoC', 95, '%', 'battery'), isHidden: false, nameDisplay: 'State of Charge' },
               { ...makeField('batteryPower', 'Power', 50, 'W', 'battery'), isHidden: false, nameDisplay: 'Battery Power' },
             ],
           },
@@ -283,7 +283,7 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
         gatherProtocolNumber: device.gatherProtocolNumber,
         gatherProtocolVersionCode: '2.1',
         fields: {
-          soc: makeField('soc', 'State of Charge', 100, '%', 'battery'),
+          remainingBatteryCapacity: makeField('remainingBatteryCapacity', 'State of Charge', 100, '%', 'battery'),
           batteryPower: makeField('batteryPower', 'Battery Power', 920, 'W', 'battery'),
           batteryVoltage: makeField('batteryVoltage', 'Battery Voltage', 6.4, 'V', 'battery'),
           batteryCurrent: makeField('batteryCurrent', 'Battery Current', 120.2, 'A', 'battery'),
@@ -314,7 +314,7 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
             name: 'Battery',
             category: 'battery',
             stateItems: [
-              { ...makeField('soc', 'SoC', 100, '%', 'battery'), isHidden: false, nameDisplay: 'State of Charge' },
+              { ...makeField('remainingBatteryCapacity', 'SoC', 100, '%', 'battery'), isHidden: false, nameDisplay: 'State of Charge' },
               { ...makeField('batteryPower', 'Power', 920, 'W', 'battery'), isHidden: false, nameDisplay: 'Battery Power' },
             ],
           },
@@ -331,7 +331,7 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
         gatherProtocolNumber: device.gatherProtocolNumber,
         gatherProtocolVersionCode: '2.1',
         fields: {
-          soc: makeField('soc', 'State of Charge', 14, '%', 'battery'),
+          remainingBatteryCapacity: makeField('remainingBatteryCapacity', 'State of Charge', 14, '%', 'battery'),
           batteryPower: makeField('batteryPower', 'Battery Power', 0, 'W', 'battery'),
           batteryVoltage: makeField('batteryVoltage', 'Battery Voltage', 3.0, 'V', 'battery'),
           batteryCurrent: makeField('batteryCurrent', 'Battery Current', 0, 'A', 'battery'),
@@ -361,7 +361,7 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
             name: 'Battery',
             category: 'battery',
             stateItems: [
-              { ...makeField('soc', 'SoC', 14, '%', 'battery'), isHidden: false, nameDisplay: 'State of Charge' },
+              { ...makeField('remainingBatteryCapacity', 'SoC', 14, '%', 'battery'), isHidden: false, nameDisplay: 'State of Charge' },
               { ...makeField('batteryPower', 'Power', 0, 'W', 'battery'), isHidden: false, nameDisplay: 'Battery Power' },
             ],
           },
@@ -405,7 +405,7 @@ export function getDemoEnergyFlow(deviceId: string | number): { code: number; me
         deviceAttributeState: {
           time: Math.floor(Date.now() / 1000).toString(),
           fields: {
-            soc: makeField('soc', 'SoC', 95, '%', 'battery'),
+            remainingBatteryCapacity: makeField('remainingBatteryCapacity', 'SoC', 95, '%', 'battery'),
           },
           groups: [],
         },
@@ -426,7 +426,7 @@ export function getDemoEnergyFlow(deviceId: string | number): { code: number; me
         deviceAttributeState: {
           time: Math.floor(Date.now() / 1000).toString(),
           fields: {
-            soc: makeField('soc', 'SoC', 100, '%', 'battery'),
+            remainingBatteryCapacity: makeField('remainingBatteryCapacity', 'SoC', 100, '%', 'battery'),
           },
           groups: [],
         },
@@ -454,20 +454,20 @@ export function getDemoEnergyFlow(deviceId: string | number): { code: number; me
 // PV_Input_W   / PV_W    → Solar input
 // Fridge_Load_W / Load_W → Output
 // Battery_SOC_Pct/SOC_Pct → Battery capacity (%)
-const REAL_HOURLY: Record<number, { grid: number[]; pv: number[]; load: number[]; soc: number[] }> = {
+const REAL_HOURLY: Record<number, { grid: number[]; pv: number[]; load: number[]; remainingBatteryCapacity: number[] }> = {
   10001: { // SIERRO 1000 — Jun 4, 2026
     grid: [84,51,41,84,52,54,70,25,14,40,0,0,0,0,0,16,4,32,81,47,52,86,43,45],
     pv:   [0,0,0,0,0,0,0,18,29,46,65,82,87,76,76,59,43,13,3,0,0,0,0,0],
     load: [84,51,41,84,52,54,70,43,43,86,52,44,73,43,42,75,47,45,84,47,52,86,43,45],
     // Wavy oscillation overnight/evening, flat full plateau through midday (8am-4pm)
-    soc:  [60,95,65,90,60,98,70,100,100,100,100,100,100,100,100,100,95,65,92,58,96,62,90,65],
+    remainingBatteryCapacity:  [60,95,65,90,60,98,70,100,100,100,100,100,100,100,100,100,95,65,92,58,96,62,90,65],
   },
   10002: { // SIERRO 2000 — Jul 4, 2026
     grid: [0,0,1000,0,0,1000,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1000,0,0,1000],
     pv:   [0,0,0,0,0,0,0,1164,1584,1568,1548,1566,1578,1582,1574,1562,1579,1164,0,0,0,0,0,0],
     load: [77,48,64,47,70,50,82,59,84,68,48,66,78,82,74,62,79,58,67,66,80,64,53,80],
     // NAS and Fridge share the same battery curve shape
-    soc:  [60,95,65,90,60,98,70,100,100,100,100,100,100,100,100,100,95,65,92,58,96,62,90,65],
+    remainingBatteryCapacity:  [60,95,65,90,60,98,70,100,100,100,100,100,100,100,100,100,95,65,92,58,96,62,90,65],
   },
 }
 
@@ -487,7 +487,7 @@ export function getDemoDayCurve(
   const real = REAL_HOURLY[numericId]
   if (!real) return Array(points).fill(0)
 
-  const arr = key === 'exchangeChargingPower' ? real.grid : key === 'generationPower' ? real.pv : key === 'outputPower' ? real.load : real.soc
+  const arr = key === 'exchangeChargingPower' ? real.grid : key === 'generationPower' ? real.pv : key === 'outputPower' ? real.load : real.remainingBatteryCapacity
 
   const raw: number[] = []
   for (let i = 0; i < points; i++) {
@@ -560,9 +560,9 @@ export function getDemoHistoryData(
       const gridVal = Math.round(interp(real.grid, hour, minute))
       const pvVal = Math.round(interp(real.pv, hour, minute))
       const loadVal = Math.round(interp(real.load, hour, minute))
-      const socVal = Math.round(interp(real.soc, hour, minute))
+      const remainingBatteryCapacityVal = Math.round(interp(real.remainingBatteryCapacity, hour, minute))
 
-      remainingBatteryCapacity.push({ time, value: Math.max(0, Math.min(100, socVal)) })
+      remainingBatteryCapacity.push({ time, value: Math.max(0, Math.min(100, remainingBatteryCapacityVal)) })
       exchangeChargingPower.push({ time, value: Math.max(0, gridVal) })
       generationPower.push({ time, value: Math.max(0, pvVal) })
       outputPower.push({ time, value: Math.max(0, loadVal) })
