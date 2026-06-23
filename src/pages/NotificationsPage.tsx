@@ -1,18 +1,27 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence, useMotionValue, animate } from 'framer-motion'
-import { ArrowLeft, Battery, WifiOff, Trash2, BellOff } from 'lucide-react'
+import { ChevronLeft, BatteryLow, Sun, ZapOff, Trash2, BellOff } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useNotificationStore, type NotificationItem } from '../stores/notificationStore'
 
-const dateOrder = ['Today', 'Yesterday', 'April', 'March', 'May']
-
 function getIcon(type: string) {
-  if (type === 'low_battery') return <Battery size={18} className="text-warning" />
-  return <WifiOff size={18} className="text-danger" />
+  switch (type) {
+    case 'low_battery':        return <BatteryLow size={20} className="text-white" />
+    case 'solar_connected':    return <Sun size={20} className="text-white" />
+    case 'solar_disconnected': return <Sun size={20} className="text-white" />
+    case 'power_outage':       return <ZapOff size={20} className="text-white" />
+    default:                   return <ZapOff size={20} className="text-white" />
+  }
 }
 
 function getTitle(type: string) {
-  return type === 'low_battery' ? 'Low Battery' : 'Power Outage Detected'
+  switch (type) {
+    case 'low_battery':        return 'Low Battery'
+    case 'solar_connected':    return 'Solar Connected'
+    case 'solar_disconnected': return 'Solar Disconnected'
+    case 'power_outage':       return 'Power Outage Detected'
+    default:                   return 'Notification'
+  }
 }
 
 // ── 单条通知（支持左滑删除） ──
@@ -33,17 +42,17 @@ function NotificationRow({ item, unread, onDelete }: {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-l">
+    <div className="relative overflow-hidden">
       {/* 删除按钮（底层） */}
       <button
         onClick={onDelete}
         aria-label="Delete"
-        className="absolute right-0 top-0 bottom-0 w-[76px] bg-danger flex items-center justify-center rounded-r-l"
+        className="absolute right-0 top-0 bottom-0 w-[76px] bg-danger flex items-center justify-center"
       >
-        <Trash2 size={20} className="text-ink-1" />
+        <Trash2 size={20} className="text-white" />
       </button>
 
-      {/* 通知卡片（可拖拽层） */}
+      {/* 通知行（可拖拽层），底部分隔线 */}
       <motion.div
         drag="x"
         style={{ x }}
@@ -51,22 +60,26 @@ function NotificationRow({ item, unread, onDelete }: {
         dragElastic={0.06}
         onDragEnd={handleDragEnd}
         onClick={() => { if (open) { setOpen(false); animate(x, 0, { type: 'spring', stiffness: 500, damping: 40 }) } }}
-        className="relative bg-ink-10 rounded-l p-4 cursor-grab active:cursor-grabbing"
+        className="relative bg-ink-12 px-5 py-4 cursor-grab active:cursor-grabbing
+          border-b border-[rgba(255,255,255,0.08)]"
       >
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-l bg-[rgba(255,255,255,0.06)] flex items-center justify-center flex-shrink-0">
+        <div className="flex items-start gap-3.5">
+          {/* 纯白报警图标 + 深色圆形底 */}
+          <div className="w-10 h-10 rounded-full bg-[#2C2C2E] flex items-center justify-center flex-shrink-0">
             {getIcon(item.type)}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-0.5 gap-2">
-              <span className="text-body-md font-semibold text-ink-1 truncate">{getTitle(item.type)}</span>
-              <div className="flex items-center gap-1.5 flex-shrink-0">
-                <span className="text-tiny text-ink-6">{item.time}</span>
-                {unread && <span className="w-2 h-2 rounded-full bg-danger" />}
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <span className="text-body-lg font-semibold text-white">{getTitle(item.type)}</span>
+              <div className="flex items-center gap-2 flex-shrink-0 pt-0.5">
+                <span className="text-caption text-ink-7">{item.time}</span>
+                {unread && <span className="w-2.5 h-2.5 rounded-full bg-danger" />}
               </div>
             </div>
-            <div className="text-caption text-ink-6 truncate">{item.deviceName}</div>
-            <div className="text-label text-ink-7 mt-1 line-clamp-2">{item.description}</div>
+            <div className="text-body-md text-ink-7 leading-snug">
+              <span className="text-ink-6">{item.deviceName}</span>
+              <span className="text-ink-7"> • {item.description}</span>
+            </div>
           </div>
         </div>
       </motion.div>
@@ -83,62 +96,52 @@ export default function NotificationsPage() {
   useEffect(() => { markAllRead() }, [markAllRead])
 
   const list = items()
-  const grouped = list.reduce<Record<string, NotificationItem[]>>((acc, n) => {
-    (acc[n.date] ??= []).push(n)
-    return acc
-  }, {})
 
   return (
     <div className="h-full flex flex-col bg-ink-12 overflow-hidden">
-      {/* Header */}
-      <div className="px-5 pt-4 pb-3 safe-area-top flex items-center gap-3">
+      {/* Header — 返回按钮 + 居中标题 */}
+      <div className="relative px-5 pt-4 pb-4 safe-area-top flex items-center justify-center">
         <button
           onClick={() => navigate(-1)}
-          className="w-9 h-9 rounded-full bg-ink-10 flex items-center justify-center text-ink-1"
+          className="absolute left-5 w-9 h-9 rounded-full bg-[#2C2C2E] flex items-center justify-center text-white active:scale-95 transition-transform"
+          aria-label="Back"
         >
-          <ArrowLeft size={20} />
+          <ChevronLeft size={20} />
         </button>
-        <h2 className="text-title-lg font-bold text-ink-1">Notifications</h2>
+        <h2 className="text-title-lg font-bold text-white">Notifications</h2>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide px-5 pb-4">
+      {/* Content — 分隔线列表 */}
+      <div className="flex-1 overflow-y-auto scrollbar-hide">
         {list.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center justify-center h-full text-center"
           >
-            <div className="w-20 h-20 rounded-l bg-ink-10 flex items-center justify-center mb-4">
+            <div className="w-20 h-20 rounded-full bg-[#2C2C2E] flex items-center justify-center mb-4">
               <BellOff size={32} className="text-ink-7" />
             </div>
             <p className="text-body-md text-ink-6">No notifications</p>
           </motion.div>
         ) : (
-          dateOrder.filter(d => grouped[d]).map(date => (
-            <div key={date} className="mb-5">
-              <div className="text-caption font-bold text-ink-6 tracking-widest uppercase mb-2 px-1">{date}</div>
-              <div className="flex flex-col gap-2">
-                <AnimatePresence initial={false}>
-                  {grouped[date].map((item) => (
-                    <motion.div
-                      key={item.id}
-                      layout
-                      initial={{ opacity: 0, y: 15 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                      transition={{ duration: 0.25 }}
-                    >
-                      <NotificationRow
-                        item={item}
-                        unread={wasUnread && date === 'Today'}
-                        onDelete={() => deleteNotification(item.id)}
-                      />
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>
-            </div>
-          ))
+          <AnimatePresence initial={false}>
+            {list.map((item, idx) => (
+              <motion.div
+                key={item.id}
+                layout
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.25 }}
+              >
+                <NotificationRow
+                  item={item}
+                  unread={wasUnread && idx === 0}
+                  onDelete={() => deleteNotification(item.id)}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
         )}
       </div>
     </div>

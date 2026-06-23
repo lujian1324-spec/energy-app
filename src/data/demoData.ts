@@ -603,9 +603,15 @@ export function getDemoHistoryData(
 // Demo 通知数据（Notifications 模块）
 // ═══════════════════════════════════════════════════════
 
+export type DemoNotificationType =
+  | 'low_battery'
+  | 'power_outage'
+  | 'solar_connected'
+  | 'solar_disconnected'
+
 export interface DemoNotification {
   id: number
-  type: 'low_battery' | 'power_outage'
+  type: DemoNotificationType
   deviceName: string
   deviceSerial: string
   description: string
@@ -614,13 +620,10 @@ export interface DemoNotification {
 }
 
 export const demoNotifications: DemoNotification[] = [
-  { id: 1, type: 'low_battery', deviceName: 'SIERRO 1000', deviceSerial: 'SN10001', description: 'Reserve threshold reached (20%). Charging from AC now.', time: '5 mins ago', date: 'Today' },
-  { id: 2, type: 'power_outage', deviceName: 'SIERRO 2000', deviceSerial: 'SN10002', description: 'Grid outage detected. Switched to battery backup automatically.', time: '3:42 PM', date: 'Today' },
-  { id: 3, type: 'low_battery', deviceName: 'SIERRO 1000', deviceSerial: 'SN10001', description: 'Battery at 22% — peak-shaving paused until charged.', time: '1:10 PM', date: 'Today' },
-  { id: 4, type: 'power_outage', deviceName: 'SIERRO 2000', deviceSerial: 'SN10002', description: 'Grid restored after 18-minute outage. Resuming normal operation.', time: '11:24 AM', date: 'Yesterday' },
-  { id: 5, type: 'low_battery', deviceName: 'SIERRO 1000', deviceSerial: 'SN10001', description: 'Battery fully charged — ready for backup.', time: 'Apr 28', date: 'April' },
-  { id: 6, type: 'power_outage', deviceName: 'SIERRO 2000', deviceSerial: 'SN10002', description: 'Backup power engaged for 42 minutes during outage.', time: 'Apr 15', date: 'April' },
-  { id: 7, type: 'low_battery', deviceName: 'SIERRO 1000', deviceSerial: 'SN10001', description: 'Overnight discharge completed. AC recharge begins at 6 AM.', time: 'Mar 23', date: 'March' },
+  { id: 1, type: 'low_battery',        deviceName: 'Fish Tank', deviceSerial: 'SN10001', description: 'Battery below 30%, estimated remaining time: 1h 24m', time: '2 mins ago',  date: 'Today' },
+  { id: 2, type: 'solar_connected',    deviceName: 'Fridge',    deviceSerial: 'SN10002', description: 'Solar input detected, charging started.',               time: 'Today 3:42 PM', date: 'Today' },
+  { id: 3, type: 'solar_disconnected', deviceName: 'CPAP',      deviceSerial: 'SN10003', description: 'Solar input lost, charging stopped.',                  time: 'May 3',       date: 'May' },
+  { id: 4, type: 'power_outage',       deviceName: 'NAS',       deviceSerial: 'SN10004', description: 'Switched to backup power automatically. Estimated runtime: 10h.', time: 'April 5', date: 'April' },
 ]
 
 // ═══════════════════════════════════════════════════════
