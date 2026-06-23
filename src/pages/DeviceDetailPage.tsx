@@ -576,9 +576,12 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             <div>
               <p className="text-body-md font-semibold text-white mb-2">Time</p>
               <div className="rounded-l bg-[#262626] overflow-hidden">
-                {/* From */}
+                {/* Sleep start → low power */}
                 <div className="flex items-center justify-between px-4 py-4 border-b border-white/5">
-                  <span className="text-body-lg text-white">From</span>
+                  <div>
+                    <p className="text-body-lg text-white">Sleep</p>
+                    <p className="text-caption text-[#8C8C8C]">AC 充电功率 → {schedulerPowers.sleepW}W</p>
+                  </div>
                   <input
                     type="time"
                     value={sleepFrom}
@@ -586,9 +589,12 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                     className="bg-[#3A3A3C] text-white text-body-md rounded-m px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#01D6BE] [color-scheme:dark]"
                   />
                 </div>
-                {/* To */}
+                {/* Wake end → full power */}
                 <div className="flex items-center justify-between px-4 py-4">
-                  <span className="text-body-lg text-white">To</span>
+                  <div>
+                    <p className="text-body-lg text-white">Wake</p>
+                    <p className="text-caption text-[#8C8C8C]">AC 充电功率 → {schedulerPowers.wakeW}W</p>
+                  </div>
                   <input
                     type="time"
                     value={sleepTo}
@@ -598,7 +604,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 </div>
               </div>
               <p className="text-caption text-[#8C8C8C] mt-2 px-1">
-                Sleep mode active {fmt(sleepFrom)} – {fmt(sleepTo)}
+                {fmt(sleepFrom)} 降至 {schedulerPowers.sleepW}W · {fmt(sleepTo)} 恢复 {schedulerPowers.wakeW}W
               </p>
             </div>
           )}
