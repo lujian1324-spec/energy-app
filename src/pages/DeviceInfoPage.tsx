@@ -52,7 +52,8 @@ export default function DeviceInfoPage() {
 
   // 设备名 & 元信息
   const deviceName = device?.name ?? 'Device'
-  const model = device?.gatherProtocolNameDisplay ?? device?.model ?? 'Sierro 2000'
+  // Model 固定为 Sierro 1000
+  const model = 'Sierro 1000'
   const serial = device?.serialNumber ?? '--'
   const station = device?.stationName ?? '--'
   const firmware = device?.softwareVersion ?? '--'
@@ -67,12 +68,8 @@ export default function DeviceInfoPage() {
   const acPower = realtime?.acPower ?? 0
   const solarPower = realtime?.solarPower ?? 0
 
-  // 估算健康度、循环次数（API 暂不返回，从温度和功率推算）
-  const batteryHealth = useMemo(() => {
-    if (batteryTemp > 50) return 78
-    if (batteryTemp > 40) return 88
-    return 95
-  }, [batteryTemp])
+  // Battery Health 固定 100%
+  const batteryHealth = 100
 
   const cycles = useMemo(() => {
     // Demo 估算
@@ -81,22 +78,20 @@ export default function DeviceInfoPage() {
     return Math.max(0, Math.min(2000, Math.floor(days * 0.5)))
   }, [device?.installedAt])
 
-  // 模拟规格（API 不直接返回，根据 model 推断）
+  // 规格（Sierro 1000 固定额定值）
   const specs = useMemo(() => {
-    const lower = model.toLowerCase()
-    const is2000 = lower.includes('2000')
     return {
-      capacity: is2000 ? '2000 Wh' : '1024 Wh',
-      batteryType: is2000 ? 'LiFePO4' : 'NMC',
-      maxChargePower: is2000 ? '1000 W' : '1100 W',
-      maxOutputPower: is2000 ? '1000 W' : '1500 W',
-      voltage: is2000 ? '6.4V DC' : '120 V AC',
+      ratedCapacity: '1000 Wh',
+      batteryType: 'LiFePO4',
+      maxChargePower: '1100 W',
+      ratedOutputPower: '500 W',
+      voltage: '120 V AC',
       frequency: '60 Hz',
-      weight: is2000 ? '~15 kg' : '12.5 kg',
-      dimensions: is2000 ? 'Compact Portable' : '340 × 220 × 250 mm',
+      weight: '12.5 kg',
+      dimensions: '340 × 220 × 250 mm',
       cyclesRated: 3000,
     }
-  }, [model])
+  }, [])
 
   return (
     <div className="h-full flex flex-col bg-[#141414] overflow-hidden">
@@ -184,8 +179,8 @@ export default function DeviceInfoPage() {
             Specifications
           </div>
           <div className="bg-[#262626] rounded-[20px] overflow-hidden divide-y divide-[rgba(255,255,255,0.06)]">
-            <InfoRow icon={Battery} label="Battery Capacity" value={specs.capacity} subValue={specs.batteryType} color="#34C759" />
-            <InfoRow icon={Zap} label="Max Output Power" value={specs.maxOutputPower} subValue={`Surge ${specs.maxOutputPower.replace(' W', '0 W')}`} color="#01D6BE" />
+            <InfoRow icon={Battery} label="Rated Capacity" value={specs.ratedCapacity} subValue={specs.batteryType} color="#34C759" />
+            <InfoRow icon={Zap} label="Rated Output Power" value={specs.ratedOutputPower} subValue="Continuous" color="#01D6BE" />
             <InfoRow icon={Zap} label="Max Charge Power" value={specs.maxChargePower} subValue="AC + Solar + DC" color="#FF9500" />
             <InfoRow icon={Activity} label="Output Voltage" value={specs.voltage} subValue={`Frequency ${specs.frequency}`} color="#A855F7" />
             <InfoRow icon={Thermometer} label="Operating Temp" value="-10°C to 45°C" subValue="Optimal 20°C to 30°C" color="#FF3B30" />
