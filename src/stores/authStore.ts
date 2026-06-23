@@ -43,6 +43,22 @@ function isSuccess(code: number | string): boolean {
   )
 }
 
+/**
+ * 唯一保留的本地测试账号。
+ * 使用 benson / benson1324 登录时跳过真实接口，加载 demo 数据；
+ * 其余任何账号均走真实 API 登录。
+ */
+const TEST_ACCOUNT = { username: 'benson', password: 'benson1324' }
+
+function buildTestUser(): LoginData {
+  return {
+    account: TEST_ACCOUNT.username,
+    userId: 0,
+    userType: 0,
+    isStationOwner: true,
+  }
+}
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -55,6 +71,22 @@ export const useAuthStore = create<AuthState>()(
 
       login: async (username: string, password: string) => {
         set({ loading: true, error: null })
+
+        // 本地测试账号：跳过真实接口，加载 demo 数据
+        if (
+          username.trim() === TEST_ACCOUNT.username &&
+          password === TEST_ACCOUNT.password
+        ) {
+          useDeviceStore.getState().loadDemoDevices()
+          set({
+            isAuthenticated: true,
+            isGuest: false,
+            user: buildTestUser(),
+            loading: false,
+            error: null,
+          })
+          return true
+        }
 
         try {
           const result = await loginByAccount(username, password)
