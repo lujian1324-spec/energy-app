@@ -13,6 +13,19 @@ import { Camera, Bluetooth, HardDrive, Bell, ChevronRight, Shield } from 'lucide
 
 const STORAGE_KEY = 'sierro_permissions_asked'
 
+/**
+ * Resolve a promise but never hang: if it doesn't settle within `ms`,
+ * fall back to `fallback`. Critical for Android WebView (Capacitor) where
+ * getUserMedia / Notification.requestPermission can hang forever when the
+ * native permission bridge isn't wired up, freezing this gate.
+ */
+function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>(resolve => setTimeout(() => resolve(fallback), ms)),
+  ])
+}
+
 interface Permission {
   id: 'storage' | 'notifications' | 'camera' | 'bluetooth'
   Icon: React.FC<{ size?: number; className?: string }>
@@ -87,25 +100,32 @@ export default function PermissionsGate({ onDone }: Props) {
 
   const handleAllow = async () => {
     setStep('asking')
+    // Mark immediately so a stuck/closed prompt never re-traps the user.
+    markPermissionsAsked()
     const r: Record<string, boolean> = { storage: true }
 
-    // Notifications
-    if ('Notification' in window && Notification.permission !== 'denied') {
-      const perm = await Notification.requestPermission()
-      r.notifications = perm === 'granted'
-    } else {
-      r.notifications = Notification.permission === 'granted'
+    // Notifications — guard against WebView hangs (8s cap)
+    try {
+      if ('Notification' in window && Notification.permission !== 'denied') {
+        const perm = await withTimeout(Notification.requestPermission(), 8000, 'default' as NotificationPermission)
+        r.notifications = perm === 'granted'
+      } else if ('Notification' in window) {
+        r.notifications = Notification.permission === 'granted'
+      } else {
+        r.notifications = false
+      }
+    } catch {
+      r.notifications = false
     }
 
-    // Camera
-    r.camera = await requestCamera()
+    // Camera — getUserMedia can hang in WebView; cap at 10s
+    r.camera = await withTimeout(requestCamera(), 10000, false)
 
-    // Bluetooth
-    r.bluetooth = await requestBluetooth()
+    // Bluetooth — Web Bluetooth picker; cap at 10s
+    r.bluetooth = await withTimeout(requestBluetooth(), 10000, false)
 
     setResults(r)
     setStep('done')
-    markPermissionsAsked()
   }
 
   const handleSkip = () => {
@@ -223,6 +243,14 @@ export default function PermissionsGate({ onDone }: Props) {
               Skip for now
             </button>
           </>
+        )}
+        {step === 'asking' && (
+          <button
+            onClick={onDone}
+            className="w-full h-12 text-body-md text-[#8C8C8C] active:opacity-70"
+          >
+            Continue
+          </button>
         )}
         {step === 'done' && (
           <button
