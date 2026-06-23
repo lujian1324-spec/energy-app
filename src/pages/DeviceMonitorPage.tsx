@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { ChevronLeft, ChevronDown, Check, Settings, Bell, Sun, PlugZap } from 'lucide-react'
 import BatteryRing from '../components/BatteryRing'
 import { useDeviceStore } from '../stores/deviceStore'
-import { mapFieldsToRealtime } from '../api/deviceApi'
+import { mapFieldsToRealtime, type HistoryDataResponse } from '../api/deviceApi'
 import { getDemoDayCurve } from '../data/demoData'
 
 // ─── Chart metric tabs ────────────────────────────────────────────────────────
@@ -17,14 +17,53 @@ interface Tab {
   historyKey: 'remainingBatteryCapacity' | 'exchangeChargingPower' | 'generationPower' | 'outputPower'
   unit: string
   color: string
+  /** 固定纵坐标范围：Battery [0,100]%，AC/Solar/Output [0,1000]W */
+  domain: [number, number]
 }
 
 const TABS: Tab[] = [
-  { id: 'battery', label: 'Battery', Icon: ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}><rect x="2" y="7" width="18" height="10" rx="2" stroke="currentColor" strokeWidth="1.8"/><path d="M20 10h2v4h-2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>, historyKey: 'remainingBatteryCapacity', unit: '%', color: '#FFFFFF' },
-  { id: 'ac', label: 'AC', Icon: PlugZap, historyKey: 'exchangeChargingPower', unit: 'W', color: '#01D6BE' },
-  { id: 'solar', label: 'Solar', Icon: Sun, historyKey: 'generationPower', unit: 'W', color: '#FFD700' },
-  { id: 'output', label: 'Output', Icon: ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}><rect x="5" y="5" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.8"/><path d="M9 12h6M12 9v6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>, historyKey: 'outputPower', unit: 'W', color: '#FF9500' },
+  // Battery 曲线 → remainingBatteryCapacity，纵坐标 0–100%
+  { id: 'battery', label: 'Battery', Icon: ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}><rect x="2" y="7" width="18" height="10" rx="2" stroke="currentColor" strokeWidth="1.8"/><path d="M20 10h2v4h-2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>, historyKey: 'remainingBatteryCapacity', unit: '%', color: '#FFFFFF', domain: [0, 100] },
+  // AC 曲线 → exchangeChargingPower，纵坐标 0–1000W
+  { id: 'ac', label: 'AC', Icon: PlugZap, historyKey: 'exchangeChargingPower', unit: 'W', color: '#01D6BE', domain: [0, 1000] },
+  // 太阳能曲线 → generationPower，纵坐标 0–1000W
+  { id: 'solar', label: 'Solar', Icon: Sun, historyKey: 'generationPower', unit: 'W', color: '#FFD700', domain: [0, 1000] },
+  // 输出曲线 → outputPower，纵坐标 0–1000W
+  { id: 'output', label: 'Output', Icon: ({ size, className }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className={className}><rect x="5" y="5" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.8"/><path d="M9 12h6M12 9v6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>, historyKey: 'outputPower', unit: 'W', color: '#FF9500', domain: [0, 1000] },
 ]
+
+// ─── Real-Time Power 历史数据本地缓存（按设备 + 当日日期） ─────────────────────────
+const RT_HISTORY_KEYS = TABS.map(t => t.historyKey)
+const RT_CACHE_PREFIX = 'sierro-rtpower-'
+
+function rtCacheKey(deviceId: string): string {
+  const today = new Date().toISOString().slice(0, 10) // YYYY-MM-DD（当日）
+  return `${RT_CACHE_PREFIX}${deviceId}-${today}`
+}
+
+function loadCachedRtHistory(deviceId: string): HistoryDataResponse | null {
+  try {
+    const raw = localStorage.getItem(rtCacheKey(deviceId))
+    return raw ? (JSON.parse(raw) as HistoryDataResponse) : null
+  } catch {
+    return null
+  }
+}
+
+function saveCachedRtHistory(deviceId: string, data: HistoryDataResponse): void {
+  try {
+    localStorage.setItem(rtCacheKey(deviceId), JSON.stringify(data))
+    // 清理过期（非当日）缓存
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i)
+      if (k && k.startsWith(RT_CACHE_PREFIX) && k !== rtCacheKey(deviceId) && k.includes(`${RT_CACHE_PREFIX}${deviceId}-`)) {
+        localStorage.removeItem(k)
+      }
+    }
+  } catch {
+    /* 忽略配额/序列化错误 */
+  }
+}
 
 // ─── SVG Area Chart ───────────────────────────────────────────────────────────
 export function AreaChart({ data, color, width = 340, height = 130, domain, unit = '', timeLabels }: {
@@ -135,6 +174,7 @@ export default function DeviceMonitorPage() {
   const {
     devices,
     selectedDeviceState,
+    historyData,
     historyLoading,
     selectDevice,
     loadDeviceState,
@@ -143,16 +183,22 @@ export default function DeviceMonitorPage() {
 
   const device = devices.find(d => String(d.id) === id)
 
-  // Select this device and load its state + history
+  // Select this device and load its state + today's history（按当日日期 00:00 → now）
   useEffect(() => {
     if (!id) return
     selectDevice(id)
     loadDeviceState(id)
 
     const now = new Date()
-    const from = new Date(now.getTime() - 24 * 60 * 60 * 1000)
-    loadHistoryData(id, from.toISOString(), now.toISOString(), undefined, 288, true)
+    const from = new Date(now)
+    from.setHours(0, 0, 0, 0) // 当日零点
+    loadHistoryData(id, from.toISOString(), now.toISOString(), RT_HISTORY_KEYS, 288, true)
   }, [id])
+
+  // 历史数据返回后保存到本地（按设备 + 当日日期）
+  useEffect(() => {
+    if (id && historyData) saveCachedRtHistory(id, historyData)
+  }, [id, historyData])
 
   // Map realtime fields
   const rt = useMemo(() => {
@@ -175,14 +221,24 @@ export default function DeviceMonitorPage() {
     ? `${Math.floor(remainMinutes / 60)}h ${remainMinutes % 60}m remaining`
     : isCharging ? 'Charging' : '--'
 
-  // Real-Time Power chart: fixed 0am→24pm day curve (x-axis ticks fixed at 0/4/8/12/16/20/24h)
+  // Real-Time Power chart: 优先使用 API 当日历史数据（本地缓存兜底），否则回退到 demo 曲线
   const chartData = useMemo(() => {
     if (!id) return []
     const tab = TABS.find(t => t.id === activeTab)!
-    // Battery tab uses the unified higher-smoothing sample count for all devices
+
+    // 1) 实时 API 历史 → 2) 本地缓存（当日） → 3) demo 曲线
+    const source = historyData ?? loadCachedRtHistory(id)
+    const series = source?.[tab.historyKey]
+    if (series && series.length > 0) {
+      return series.map(pt => {
+        const v = Number(pt.value)
+        return Number.isFinite(v) ? v : 0
+      })
+    }
+
     const points = activeTab === 'battery' ? 20000 : 2400
     return getDemoDayCurve(id, tab.historyKey, points)
-  }, [id, activeTab])
+  }, [id, activeTab, historyData])
 
   // Fixed x-axis labels: 12am, 4am, 8am, 12pm, 4pm, 8pm, 12am
   const timeLabels = useMemo(() => ['12am', '4am', '8am', '12pm', '4pm', '8pm', '12am'], [])
@@ -363,7 +419,7 @@ export default function DeviceMonitorPage() {
                   color={currentTab.color}
                   width={332}
                   height={130}
-                  domain={activeTab === 'battery' ? [0, 100] : undefined}
+                  domain={currentTab.domain}
                   unit={currentTab.unit}
                   timeLabels={timeLabels}
                 />
