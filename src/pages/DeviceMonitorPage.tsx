@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ChevronLeft, ChevronDown, Check, Settings, Bell, Sun, PlugZap } from 'lucide-react'
 import BatteryRing from '../components/BatteryRing'
-import PassthroughPanel from '../components/PassthroughPanel'
 import { useDeviceStore } from '../stores/deviceStore'
 import { mapFieldsToRealtime, type HistoryDataResponse } from '../api/deviceApi'
 import { getDemoDayCurve } from '../data/demoData'
@@ -570,11 +569,6 @@ export default function DeviceMonitorPage() {
             })}
           </div>
         </motion.div>
-
-        {/* 数据透传 */}
-        <div className="px-4 pb-6">
-          <PassthroughPanel deviceId={id} />
-        </div>
       </div>
     </div>
   )

@@ -1,0 +1,368 @@
+/**
+ * Modbus 数据透传页
+ * 路由：/device/:id/passthrough
+ *
+ * 功能：
+ * - 预设常用 Modbus 报文（点击自动发送）
+ * - 自定义十六进制帧输入
+ * - 收发日志 + 响应自动解析摘要
+ */
+import { useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import { ChevronLeft, Send, Loader2, Terminal, Zap, Settings2 } from 'lucide-react'
+import { passthroughDevice } from '../api/deviceApi'
+import {
+  FRAMES,
+  buildWriteSingleFrame,
+  parseReadResponse,
+  parseRunState,
+  parseWarnCode1,
+  toInt16,
+  fromHexString,
+  toHexString,
+  REG_CONFIG,
+  REG_STATUS,
+} from '../protocols/modbusProtocol'
+
+// ─── 预设报文分组 ─────────────────────────────────────────────────────────────
+
+interface Preset {
+  label: string
+  frame: string
+  desc: string
+  type: 'read' | 'write' | 'ctrl'
+}
+
+const PRESET_GROUPS: { title: string; presets: Preset[] }[] = [
+  {
+    title: '读取数据',
+    presets: [
+      { label: '读取运行参数',    frame: FRAMES.READ_ALL_PARAMS,    desc: '0x0000 × 18 寄存器', type: 'read' },
+      { label: '读取实时状态',    frame: FRAMES.READ_ALL_STATUS,    desc: '0x0100 × 56 (电压/功率/SOC/温度)', type: 'read' },
+      { label: '读取故障/告警',   frame: FRAMES.READ_FAULT_BLOCK,   desc: '0x0126 × 9 (状态字+告警码)', type: 'read' },
+      { label: '读取电芯温度电流', frame: FRAMES.READ_TEMP_CURR,     desc: '0x0120 × 6 寄存器', type: 'read' },
+      { label: '读取电芯极柱电压', frame: FRAMES.READ_CELL_VOLTAGES, desc: '0x0108 × 16 (16节电芯)', type: 'read' },
+      { label: '读取硬件版本',    frame: FRAMES.READ_HW_VERSION,    desc: '0x0200 × 4 寄存器', type: 'read' },
+      { label: '读取软件版本',    frame: FRAMES.READ_MCU_VERSION,   desc: '0x0204 × 4 寄存器', type: 'read' },
+    ],
+  },
+  {
+    title: '开关控制',
+    presets: [
+      { label: 'AC 开机', frame: FRAMES.AC_POWER_ON,  desc: '0x0080 写 0x01AA', type: 'ctrl' },
+      { label: 'AC 关机', frame: FRAMES.AC_POWER_OFF, desc: '0x0080 写 0xAA01', type: 'ctrl' },
+      { label: 'DC 开机', frame: FRAMES.DC_POWER_ON,  desc: '0x0080 写 0x02AA', type: 'ctrl' },
+      { label: 'DC 关机', frame: FRAMES.DC_POWER_OFF, desc: '0x0080 写 0xAA02', type: 'ctrl' },
+    ],
+  },
+  {
+    title: '参数设置',
+    presets: [
+      {
+        label: '触发完整充电',
+        frame: FRAMES.TRIGGER_FULL_CHARGE,
+        desc: '0x0050 写 1，触发一次满充',
+        type: 'write',
+      },
+      {
+        label: '允许开机',
+        frame: FRAMES.ENABLE_POWER_ON,
+        desc: '0x0051 写 0',
+        type: 'write',
+      },
+      {
+        label: '禁止开机',
+        frame: FRAMES.DISABLE_POWER_ON,
+        desc: '0x0051 写 1',
+        type: 'write',
+      },
+      {
+        // 额定交流充电功率：0x0024，默认 300W，单位 W
+        label: '设置AC充电功率 300W',
+        frame: toHexString(buildWriteSingleFrame(REG_CONFIG.AC_CHARGE_POWER, 300)),
+        desc: '0x0024 写 300（W），修改下方可自定义',
+        type: 'write',
+      },
+    ],
+  },
+]
+
+// ─── 响应解析摘要 ─────────────────────────────────────────────────────────────
+
+function summarizeResponse(hexResp: string, sentHex: string): string | null {
+  try {
+    const buf = fromHexString(hexResp)
+    const res = parseReadResponse(buf)
+    if (!res || !res.crcOk || res.registers.length === 0) return null
+    const sentBuf = fromHexString(sentHex)
+    const startAddr = (sentBuf[2] << 8) | sentBuf[3]
+
+    if (startAddr === 0x0100) {
+      const r = res.registers
+      const acInV  = (r[REG_STATUS.AC_IN_VOLTAGE  - 0x0100] ?? 0) * 0.1
+      const acOutV = (r[REG_STATUS.AC_OUT_VOLTAGE - 0x0100] ?? 0) * 0.1
+      const acOutP = r[REG_STATUS.AC_OUT_POWER    - 0x0100] ?? 0
+      const pvV    = (r[REG_STATUS.PV_IN_VOLTAGE  - 0x0100] ?? 0) * 0.1
+      const pvP    = r[REG_STATUS.PV_CHARGE_POWER - 0x0100] ?? 0
+      const soc    = (r[REG_STATUS.CELL_SOC_PCT   - 0x0100] ?? 0) * 0.1
+      return `AC入 ${acInV.toFixed(1)}V  AC出 ${acOutV.toFixed(1)}V / ${acOutP}W  PV ${pvV.toFixed(1)}V / ${pvP}W  SOC ${soc.toFixed(1)}%`
+    }
+    if (startAddr === 0x0126) {
+      const state = parseRunState(res.registers[0] ?? 0)
+      const warn1 = parseWarnCode1(res.registers[1] ?? 0)
+      const flags = [
+        state.pvCharging    && 'PV充电中',
+        state.acCharging    && 'AC充电中',
+        state.acOutput      && 'AC输出',
+        state.bypass        && '旁路',
+        warn1.mpptTempHigh  && '⚠MPPT过温',
+        warn1.pvOverVoltage && '⚠PV过压',
+        warn1.gridOverVolt  && '⚠市电过压',
+        warn1.cellUnder3V   && '⚠单芯<3V',
+      ].filter(Boolean)
+      return flags.length ? flags.join('  ') : '无告警，运行正常'
+    }
+    if (startAddr === 0x0120) {
+      const r = res.registers
+      const curr  = toInt16(r[0] ?? 0) * 0.01
+      const mpptT = toInt16(r[1] ?? 0) * 0.1
+      const cell1T = toInt16(r[3] ?? 0) * 0.1
+      return `电芯电流 ${curr.toFixed(2)}A  MPPT ${mpptT.toFixed(1)}℃  电芯1温 ${cell1T.toFixed(1)}℃`
+    }
+    return res.registers.slice(0, 8)
+      .map(v => `0x${v.toString(16).toUpperCase().padStart(4, '0')}`)
+      .join(' ')
+  } catch {
+    return null
+  }
+}
+
+// ─── 日志条目 ─────────────────────────────────────────────────────────────────
+
+interface LogEntry {
+  id: number
+  dir: 'tx' | 'rx' | 'err'
+  label?: string
+  text: string
+  summary?: string
+  ts: number
+}
+let entryId = 0
+
+// ─── 主页面 ───────────────────────────────────────────────────────────────────
+
+export default function PassthroughPage() {
+  const { id: deviceId = '' } = useParams()
+  const navigate = useNavigate()
+
+  const [customHex, setCustomHex] = useState('')
+  const [acChargePower, setAcChargePower] = useState('300')
+  const [loading, setLoading] = useState<string | null>(null)  // tracks which preset is sending
+  const [logs, setLogs] = useState<LogEntry[]>([])
+
+  const addLog = (dir: LogEntry['dir'], text: string, label?: string, summary?: string) =>
+    setLogs(prev => [...prev.slice(-200), { id: entryId++, dir, text, label, summary, ts: Date.now() }])
+
+  const sendFrame = async (hex: string, label?: string) => {
+    const payload = hex.trim()
+    if (!payload) return
+    const key = label ?? 'custom'
+    setLoading(key)
+    addLog('tx', payload, label)
+    try {
+      const res = await passthroughDevice(deviceId, { data: payload, protocol: 'modbus' })
+      if (res.code === 0 || res.code === '0') {
+        const raw = res.data?.data ?? JSON.stringify(res.data ?? '(empty)')
+        const summary = summarizeResponse(raw, payload)
+        addLog('rx', raw, label, summary ?? undefined)
+      } else {
+        addLog('err', `Code ${res.code}: ${res.message ?? res.msg ?? 'Error'}`, label)
+      }
+    } catch (e) {
+      addLog('err', e instanceof Error ? e.message : 'Network error', label)
+    } finally {
+      setLoading(null)
+    }
+  }
+
+  const dirColor = (dir: LogEntry['dir']) =>
+    dir === 'tx' ? 'text-[#01D6BE]' : dir === 'rx' ? 'text-[#34C759]' : 'text-[#FF3530]'
+
+  const typeColor = (type: Preset['type']) =>
+    type === 'read' ? 'text-[#01D6BE] bg-[rgba(1,214,190,0.1)]'
+    : type === 'ctrl' ? 'text-[#FF9500] bg-[rgba(255,149,0,0.1)]'
+    : 'text-[#8C8C8C] bg-[rgba(255,255,255,0.06)]'
+
+  return (
+    <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
+      {/* Header */}
+      <div className="px-4 pt-5 pb-3 flex items-center gap-3 relative border-b border-[rgba(255,255,255,0.06)]">
+        <button
+          onClick={() => navigate(-1)}
+          className="w-9 h-9 flex items-center justify-center rounded-full bg-[#262626]"
+        >
+          <ChevronLeft size={20} className="text-white" />
+        </button>
+        <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+          <Terminal size={15} className="text-[#01D6BE]" />
+          <h1 className="text-title-lg font-semibold text-white">Modbus 透传</h1>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto pb-8">
+
+        {/* ── 预设报文分组 ── */}
+        {PRESET_GROUPS.map(group => (
+          <div key={group.title} className="px-4 pt-5">
+            <p className="text-caption font-semibold text-[#8C8C8C] mb-2 uppercase tracking-wide">
+              {group.title}
+            </p>
+            <div className="rounded-l bg-[#262626] overflow-hidden divide-y divide-[rgba(255,255,255,0.04)]">
+              {group.presets.map(p => {
+                const isBusy = loading === p.label
+                return (
+                  <button
+                    key={p.label}
+                    onClick={() => sendFrame(p.frame, p.label)}
+                    disabled={loading !== null}
+                    className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-[rgba(255,255,255,0.04)] transition-colors disabled:opacity-50"
+                  >
+                    <div className="flex-1 text-left">
+                      <div className="flex items-center gap-2">
+                        <span className="text-body-md font-medium text-white">{p.label}</span>
+                        <span className={`text-tiny font-semibold px-1.5 py-0.5 rounded-pill ${typeColor(p.type)}`}>
+                          {p.type === 'read' ? 'READ' : p.type === 'ctrl' ? 'CTRL' : 'WRITE'}
+                        </span>
+                      </div>
+                      <p className="text-caption text-[#595959] mt-0.5 font-mono">{p.desc}</p>
+                    </div>
+                    {isBusy
+                      ? <Loader2 size={16} className="text-[#01D6BE] animate-spin flex-shrink-0" />
+                      : <Send size={15} className="text-[#454545] flex-shrink-0" />
+                    }
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        ))}
+
+        {/* ── 设置 AC 充电功率（自定义功率值） ── */}
+        <div className="px-4 pt-5">
+          <p className="text-caption font-semibold text-[#8C8C8C] mb-2 uppercase tracking-wide">
+            设置额定交流充电功率
+          </p>
+          <div className="rounded-l bg-[#262626] p-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <Settings2 size={15} className="text-[#FF9500]" />
+              <span className="text-body-md text-white">AC 充电功率（寄存器 0x0024）</span>
+            </div>
+            <p className="text-caption text-[#595959]">有效值：0 ~ 1000W，默认 300W</p>
+            <div className="flex gap-2">
+              <div className="flex-1 flex items-center bg-[#141414] border border-[rgba(1,214,190,0.2)] rounded-m px-3">
+                <input
+                  type="number"
+                  min={0}
+                  max={1000}
+                  value={acChargePower}
+                  onChange={e => setAcChargePower(e.target.value)}
+                  className="flex-1 bg-transparent text-white text-body-md py-2.5 focus:outline-none"
+                  placeholder="0~1000"
+                />
+                <span className="text-[#8C8C8C] text-caption ml-1">W</span>
+              </div>
+              <button
+                onClick={() => {
+                  const val = Math.max(0, Math.min(1000, Number(acChargePower) || 0))
+                  const frame = toHexString(buildWriteSingleFrame(REG_CONFIG.AC_CHARGE_POWER, val))
+                  sendFrame(frame, `设置AC充电功率 ${val}W`)
+                }}
+                disabled={loading !== null}
+                className="px-4 py-2.5 rounded-m bg-[#01D6BE] text-[#000] text-body-md font-semibold
+                  disabled:opacity-40 flex items-center gap-1.5 active:scale-[0.97] transition-all"
+              >
+                {loading?.startsWith('设置AC充电功率')
+                  ? <Loader2 size={14} className="animate-spin" />
+                  : <Zap size={14} />
+                }
+                写入
+              </button>
+            </div>
+            <p className="text-caption text-[#454545] font-mono">
+              帧预览：{toHexString(buildWriteSingleFrame(REG_CONFIG.AC_CHARGE_POWER, Math.max(0, Math.min(1000, Number(acChargePower) || 0))))}
+            </p>
+          </div>
+        </div>
+
+        {/* ── 自定义帧 ── */}
+        <div className="px-4 pt-5">
+          <p className="text-caption font-semibold text-[#8C8C8C] mb-2 uppercase tracking-wide">
+            自定义十六进制帧
+          </p>
+          <div className="rounded-l bg-[#262626] p-4 space-y-3">
+            <textarea
+              value={customHex}
+              onChange={e => setCustomHex(e.target.value)}
+              placeholder={'如：01 03 01 00 00 12 XX XX\n带空格或不带空格均可'}
+              rows={2}
+              className="w-full px-3 py-2.5 rounded-m bg-[#141414] border border-[rgba(255,255,255,0.06)]
+                text-[#BFBFBF] text-caption placeholder:text-[#454545] font-mono
+                focus:outline-none focus:border-[rgba(1,214,190,0.4)] resize-none"
+            />
+            <button
+              onClick={() => sendFrame(customHex, 'custom')}
+              disabled={loading !== null || !customHex.trim()}
+              className="w-full py-3 rounded-m bg-[#01D6BE] text-[#000] text-body-md font-semibold
+                disabled:opacity-40 flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+            >
+              {loading === 'custom'
+                ? <><Loader2 size={15} className="animate-spin" />发送中…</>
+                : <><Send size={15} />发送自定义帧</>
+              }
+            </button>
+          </div>
+        </div>
+
+        {/* ── 收发日志 ── */}
+        <div className="px-4 pt-5">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-caption font-semibold text-[#8C8C8C] uppercase tracking-wide">收发日志</p>
+            {logs.length > 0 && (
+              <button onClick={() => setLogs([])} className="text-caption text-[#595959] active:text-[#FF3530]">
+                清空
+              </button>
+            )}
+          </div>
+          <div className="rounded-l bg-[#1A1A1A] border border-[rgba(255,255,255,0.04)] p-3 min-h-[80px] max-h-80 overflow-y-auto font-mono space-y-2">
+            {logs.length === 0 ? (
+              <p className="text-caption text-[#454545] text-center py-4">暂无数据，点击上方按钮发送报文</p>
+            ) : (
+              logs.map(l => (
+                <div key={l.id} className="space-y-0.5">
+                  <div className="flex gap-2 text-tiny">
+                    <span className="text-[#454545] flex-shrink-0">
+                      {new Date(l.ts).toLocaleTimeString('en-US', { hour12: false })}
+                    </span>
+                    <span className={`flex-shrink-0 font-bold ${dirColor(l.dir)}`}>
+                      {l.dir === 'tx' ? '→' : l.dir === 'rx' ? '←' : '!'}
+                    </span>
+                    {l.label && (
+                      <span className="text-[#595959] flex-shrink-0">[{l.label}]</span>
+                    )}
+                    <span className={`${dirColor(l.dir)} break-all`}>{l.text}</span>
+                  </div>
+                  {l.summary && (
+                    <div className="ml-[4.5rem] text-tiny text-[#01D6BE] bg-[rgba(1,214,190,0.06)] rounded px-2 py-0.5">
+                      {l.summary}
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  )
+}
