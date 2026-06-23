@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
+import jsQR from 'jsqr'
 import ProvisioningPage from './ProvisioningPage'
 import {
   AlertTriangle,
@@ -119,7 +120,19 @@ export default function DevicePage() {
   const [qrScanning, setQrScanning] = useState(false)
   const [qrResult, setQrResult] = useState<string | null>(null)
   const [qrError, setQrError] = useState<string | null>(null)
+  // 扫码识别出的设备序列号/ID（用于录入）
+  const [scannedSerial, setScannedSerial] = useState('')
+  const [scannedName, setScannedName] = useState('')
   const animationFrameRef = useRef<number | null>(null)
+
+  // ── 打开 QR 弹窗时自动获取摄像头权限并开始扫描，关闭时释放摄像头 ──
+  useEffect(() => {
+    if (showQrScan) {
+      startQrScan()
+    }
+    return () => { stopQrScan() }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showQrScan])
 
   // ── 加载设备列表 ──
   const fetchDevices = useCallback(async () => {
@@ -845,12 +858,32 @@ export default function DevicePage() {
                     <Icon name="scan" size={32} />
                   </div>
                   <h4 className="text-lg font-bold text-[#FFFFFF] text-center mb-2">QR Code Scanned!</h4>
-                  <div className="bg-[#454545] rounded-l p-4 mb-5">
-                    <pre className="text-[12px] text-[#BFBFBF] whitespace-pre-wrap break-all">{qrResult}</pre>
+                  {/* 识别出的设备 ID */}
+                  <div className="bg-[#141414] rounded-l p-4 mb-3">
+                    <p className="text-[11px] text-[#8C8C8C] mb-1">Device ID / Serial Number</p>
+                    <p className="text-body-lg font-semibold text-[#01D6BE] break-all">{scannedSerial || '--'}</p>
+                    {scannedName && <p className="text-[12px] text-[#BFBFBF] mt-1">{scannedName}</p>}
+                  </div>
+                  {/* 原始内容（折叠展示） */}
+                  <div className="bg-[#454545] rounded-l p-3 mb-5">
+                    <p className="text-[10px] text-[#8C8C8C] mb-1">Raw</p>
+                    <pre className="text-[11px] text-[#BFBFBF] whitespace-pre-wrap break-all">{qrResult}</pre>
                   </div>
                   <div className="flex gap-3">
                     <button onClick={() => { setQrResult(null); startQrScan() }} className="flex-1 h-11 rounded-l bg-[#454545] text-[#FFFFFF] text-[14px] font-medium">Scan Again</button>
-                    <button onClick={() => { stopQrScan(); setShowQrScan(false); setQrResult(null); setQrError(null) }} className="flex-1 h-11 rounded-l bg-[#01D6BE] text-[#000000] text-[14px] font-semibold">Add Device</button>
+                    <button
+                      onClick={() => {
+                        stopQrScan()
+                        setShowQrScan(false)
+                        setQrResult(null)
+                        setQrError(null)
+                        // 跳转到录入弹窗，预填扫码得到的设备 ID
+                        setShowManualAdd(true)
+                      }}
+                      className="flex-1 h-11 rounded-l bg-[#01D6BE] text-[#000000] text-[14px] font-semibold"
+                    >
+                      Add Device
+                    </button>
                   </div>
                 </motion.div>
               )}
@@ -862,10 +895,14 @@ export default function DevicePage() {
         )}
       </AnimatePresence>
 
-      {/* Manual Add Device Modal */}
+      {/* Manual Add Device Modal（支持扫码预填设备 ID） */}
       <AnimatePresence>
         {showManualAdd && (
-          <ManualAddDeviceModal onClose={() => setShowManualAdd(false)} />
+          <ManualAddDeviceModal
+            onClose={() => { setShowManualAdd(false); setScannedSerial(''); setScannedName('') }}
+            initialSerialNumber={scannedSerial}
+            initialName={scannedName}
+          />
         )}
       </AnimatePresence>
 
@@ -880,7 +917,51 @@ export default function DevicePage() {
     </div>
   )
 
-  // ── QR helpers (kept for QR modal) ──
+  // ── QR helpers ──
+
+  /**
+   * 解析二维码文本，提取设备序列号/ID 与名称。
+   * 支持格式：
+   *  - "SIERRO:<model>:<serial>"      → name=model, serial=serial
+   *  - JSON: {"sn":"...","name":"..."} 或 {"serialNumber":"..."}
+   *  - URL 含 sn/serialNumber/deviceId 查询参数
+   *  - 纯序列号字符串
+   */
+  function parseQrPayload(text: string): { serial: string; name: string } {
+    const raw = text.trim()
+
+    // SIERRO:<model>:<serial>
+    if (/^SIERRO:/i.test(raw)) {
+      const parts = raw.split(':')
+      const serial = parts[2]?.trim() || parts[1]?.trim() || raw
+      const name = parts.length >= 3 ? parts[1]?.trim() : ''
+      return { serial, name: name || '' }
+    }
+
+    // JSON 对象
+    if (raw.startsWith('{')) {
+      try {
+        const obj = JSON.parse(raw)
+        const serial = String(obj.sn ?? obj.serialNumber ?? obj.deviceSerialNumber ?? obj.deviceId ?? obj.id ?? '').trim()
+        const name = String(obj.name ?? obj.deviceName ?? obj.model ?? '').trim()
+        if (serial) return { serial, name }
+      } catch { /* 非 JSON，继续 */ }
+    }
+
+    // URL 查询参数
+    if (/^https?:\/\//i.test(raw) || raw.includes('?')) {
+      try {
+        const qs = raw.includes('?') ? raw.slice(raw.indexOf('?') + 1) : ''
+        const params = new URLSearchParams(qs)
+        const serial = (params.get('sn') ?? params.get('serialNumber') ?? params.get('deviceId') ?? params.get('id') ?? '').trim()
+        const name = (params.get('name') ?? params.get('model') ?? '').trim()
+        if (serial) return { serial, name }
+      } catch { /* 忽略 */ }
+    }
+
+    // 纯序列号
+    return { serial: raw, name: '' }
+  }
 
   function stopQrScan() {
     if (animationFrameRef.current) { cancelAnimationFrame(animationFrameRef.current); animationFrameRef.current = null }
@@ -891,18 +972,61 @@ export default function DevicePage() {
     setQrScanning(false)
   }
 
+  /** 逐帧用 jsQR 解码视频画面，识别到二维码后停止并录入设备 ID */
+  function tickQrDecode() {
+    const video = videoRef.current
+    const canvas = canvasRef.current
+    if (!video || !canvas || video.readyState < 2) {
+      animationFrameRef.current = requestAnimationFrame(tickQrDecode)
+      return
+    }
+    const w = video.videoWidth
+    const h = video.videoHeight
+    if (!w || !h) {
+      animationFrameRef.current = requestAnimationFrame(tickQrDecode)
+      return
+    }
+    canvas.width = w
+    canvas.height = h
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })
+    if (!ctx) { animationFrameRef.current = requestAnimationFrame(tickQrDecode); return }
+    ctx.drawImage(video, 0, 0, w, h)
+    const imageData = ctx.getImageData(0, 0, w, h)
+    const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' })
+    if (code && code.data) {
+      const { serial, name } = parseQrPayload(code.data)
+      setScannedSerial(serial)
+      setScannedName(name)
+      setQrResult(code.data)
+      stopQrScan()
+      return
+    }
+    animationFrameRef.current = requestAnimationFrame(tickQrDecode)
+  }
+
   async function startQrScan() {
     setQrScanning(true)
     setQrError(null)
     setQrResult(null)
+    setScannedSerial('')
+    setScannedName('')
     try {
+      // 获取摄像头权限并打开后置摄像头
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
       if (videoRef.current) {
         videoRef.current.srcObject = stream
-        videoRef.current.play()
+        await videoRef.current.play()
+        // 启动逐帧识别循环
+        if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
+        animationFrameRef.current = requestAnimationFrame(tickQrDecode)
       }
     } catch (err) {
-      setQrError(`Camera error: ${err instanceof Error ? err.message : String(err)}`)
+      const msg = err instanceof Error ? err.message : String(err)
+      setQrError(
+        /denied|permission/i.test(msg)
+          ? 'Camera permission denied. Please allow camera access and try again.'
+          : `Camera error: ${msg}`
+      )
       setQrScanning(false)
     }
   }

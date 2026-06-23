@@ -10,14 +10,18 @@ import { useToast } from '../components/Toast'
 
 interface Props {
   onClose: () => void
+  /** 预填序列号（如通过扫码获取的设备 ID） */
+  initialSerialNumber?: string
+  /** 预填设备名称 */
+  initialName?: string
 }
 
-export default function ManualAddDeviceModal({ onClose }: Props) {
+export default function ManualAddDeviceModal({ onClose, initialSerialNumber = '', initialName = '' }: Props) {
   const { addNewDevice, addNewDeviceWithStation, loadDevices, stations } = useDeviceStore()
   const { show: showToast } = useToast()
 
-  const [deviceName, setDeviceName] = useState('')
-  const [serialNumber, setSerialNumber] = useState('')
+  const [deviceName, setDeviceName] = useState(initialName)
+  const [serialNumber, setSerialNumber] = useState(initialSerialNumber)
   const [dtuDtuid, setDtuDtuid] = useState('')
   const [stationId, setStationId] = useState<number | ''>('')
   const [createNewStation, setCreateNewStation] = useState(false)
