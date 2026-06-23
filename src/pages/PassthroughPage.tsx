@@ -149,6 +149,119 @@ interface LogEntry {
 }
 let entryId = 0
 
+// ─── 充电功率设置区块 ─────────────────────────────────────────────────────────
+
+const CHARGE_QUICK = [100, 200, 300, 500, 1000]
+
+interface ChargePowerSectionProps {
+  deviceId: string
+  sendFrame: (hex: string, label?: string) => Promise<void>
+  loading: string | null
+}
+
+interface PowerRow {
+  label: string
+  reg: number
+  defaultW: number
+  max: number
+  desc: string
+}
+
+const POWER_ROWS: PowerRow[] = [
+  { label: '额定交流充电功率',       reg: REG_CONFIG.AC_CHARGE_POWER,    defaultW: 300, max: 1000, desc: '寄存器 0x0024，单位 W' },
+  { label: '额定光伏充电功率',       reg: REG_CONFIG.PV_CHARGE_POWER,    defaultW: 300, max: 1000, desc: '寄存器 0x0025，单位 W' },
+  { label: '额定交流+光伏充电功率',  reg: REG_CONFIG.AC_PV_CHARGE_POWER, defaultW: 400, max: 2000, desc: '寄存器 0x0026，单位 W' },
+]
+
+function ChargePowerSection({ deviceId: _deviceId, sendFrame, loading }: ChargePowerSectionProps) {
+  const [values, setValues] = useState<Record<number, string>>({
+    [REG_CONFIG.AC_CHARGE_POWER]:    '300',
+    [REG_CONFIG.PV_CHARGE_POWER]:    '300',
+    [REG_CONFIG.AC_PV_CHARGE_POWER]: '400',
+  })
+
+  const write = (row: PowerRow) => {
+    const val = Math.max(0, Math.min(row.max, Number(values[row.reg]) || 0))
+    const frame = toHexString(buildWriteSingleFrame(row.reg, val))
+    sendFrame(frame, `${row.label} ${val}W`)
+  }
+
+  return (
+    <div className="px-4 pt-5">
+      <p className="text-caption font-semibold text-[#8C8C8C] mb-2 uppercase tracking-wide">
+        充电功率设置
+      </p>
+      <div className="rounded-l bg-[#262626] overflow-hidden divide-y divide-[rgba(255,255,255,0.04)]">
+        {POWER_ROWS.map(row => {
+          const cur = Math.max(0, Math.min(row.max, Number(values[row.reg]) || 0))
+          const frame = toHexString(buildWriteSingleFrame(row.reg, cur))
+          const busyKey = `${row.label} ${cur}W`
+          return (
+            <div key={row.reg} className="p-4 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-body-md font-medium text-white">{row.label}</p>
+                  <p className="text-caption text-[#595959] mt-0.5">{row.desc}，默认 {row.defaultW}W</p>
+                </div>
+              </div>
+
+              {/* 快速预设 */}
+              <div className="flex gap-1.5 flex-wrap">
+                {CHARGE_QUICK.filter(v => v <= row.max).map(v => (
+                  <button
+                    key={v}
+                    onClick={() => {
+                      setValues(prev => ({ ...prev, [row.reg]: String(v) }))
+                    }}
+                    className={`px-3 py-1 rounded-pill text-caption font-semibold transition-colors
+                      ${Number(values[row.reg]) === v
+                        ? 'bg-[#01D6BE] text-[#000]'
+                        : 'bg-[rgba(255,255,255,0.06)] text-[#8C8C8C] active:bg-[rgba(1,214,190,0.15)]'
+                      }`}
+                  >
+                    {v}W
+                  </button>
+                ))}
+              </div>
+
+              {/* 输入 + 写入 */}
+              <div className="flex gap-2">
+                <div className="flex-1 flex items-center bg-[#141414] border border-[rgba(1,214,190,0.2)] rounded-m px-3">
+                  <input
+                    type="number"
+                    min={0}
+                    max={row.max}
+                    value={values[row.reg]}
+                    onChange={e => setValues(prev => ({ ...prev, [row.reg]: e.target.value }))}
+                    className="flex-1 bg-transparent text-white text-body-md py-2 focus:outline-none"
+                    placeholder={`0~${row.max}`}
+                  />
+                  <span className="text-[#8C8C8C] text-caption ml-1">W</span>
+                </div>
+                <button
+                  onClick={() => write(row)}
+                  disabled={loading !== null}
+                  className="px-4 py-2 rounded-m bg-[#01D6BE] text-[#000] text-body-md font-semibold
+                    disabled:opacity-40 flex items-center gap-1.5 active:scale-[0.97] transition-all"
+                >
+                  {loading === busyKey
+                    ? <Loader2 size={14} className="animate-spin" />
+                    : <Zap size={14} />
+                  }
+                  写入
+                </button>
+              </div>
+
+              {/* 帧预览 */}
+              <p className="text-tiny text-[#454545] font-mono break-all">{frame}</p>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ─── 主页面 ───────────────────────────────────────────────────────────────────
 
 export default function PassthroughPage() {
@@ -156,7 +269,6 @@ export default function PassthroughPage() {
   const navigate = useNavigate()
 
   const [customHex, setCustomHex] = useState('')
-  const [acChargePower, setAcChargePower] = useState('300')
   const [loading, setLoading] = useState<string | null>(null)  // tracks which preset is sending
   const [logs, setLogs] = useState<LogEntry[]>([])
 
@@ -247,52 +359,8 @@ export default function PassthroughPage() {
           </div>
         ))}
 
-        {/* ── 设置 AC 充电功率（自定义功率值） ── */}
-        <div className="px-4 pt-5">
-          <p className="text-caption font-semibold text-[#8C8C8C] mb-2 uppercase tracking-wide">
-            设置额定交流充电功率
-          </p>
-          <div className="rounded-l bg-[#262626] p-4 space-y-3">
-            <div className="flex items-center gap-3">
-              <Settings2 size={15} className="text-[#FF9500]" />
-              <span className="text-body-md text-white">AC 充电功率（寄存器 0x0024）</span>
-            </div>
-            <p className="text-caption text-[#595959]">有效值：0 ~ 1000W，默认 300W</p>
-            <div className="flex gap-2">
-              <div className="flex-1 flex items-center bg-[#141414] border border-[rgba(1,214,190,0.2)] rounded-m px-3">
-                <input
-                  type="number"
-                  min={0}
-                  max={1000}
-                  value={acChargePower}
-                  onChange={e => setAcChargePower(e.target.value)}
-                  className="flex-1 bg-transparent text-white text-body-md py-2.5 focus:outline-none"
-                  placeholder="0~1000"
-                />
-                <span className="text-[#8C8C8C] text-caption ml-1">W</span>
-              </div>
-              <button
-                onClick={() => {
-                  const val = Math.max(0, Math.min(1000, Number(acChargePower) || 0))
-                  const frame = toHexString(buildWriteSingleFrame(REG_CONFIG.AC_CHARGE_POWER, val))
-                  sendFrame(frame, `设置AC充电功率 ${val}W`)
-                }}
-                disabled={loading !== null}
-                className="px-4 py-2.5 rounded-m bg-[#01D6BE] text-[#000] text-body-md font-semibold
-                  disabled:opacity-40 flex items-center gap-1.5 active:scale-[0.97] transition-all"
-              >
-                {loading?.startsWith('设置AC充电功率')
-                  ? <Loader2 size={14} className="animate-spin" />
-                  : <Zap size={14} />
-                }
-                写入
-              </button>
-            </div>
-            <p className="text-caption text-[#454545] font-mono">
-              帧预览：{toHexString(buildWriteSingleFrame(REG_CONFIG.AC_CHARGE_POWER, Math.max(0, Math.min(1000, Number(acChargePower) || 0))))}
-            </p>
-          </div>
-        </div>
+        {/* ── 充电功率设置 ── */}
+        <ChargePowerSection deviceId={deviceId} sendFrame={sendFrame} loading={loading} />
 
         {/* ── 自定义帧 ── */}
         <div className="px-4 pt-5">
