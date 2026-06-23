@@ -11,6 +11,7 @@
  *
  * 设备状态:   GET  /remote/device/state/latest?deviceId=
  * 设备控制:   POST /remote/device/config/write?deviceId=
+ * 数据透传:   POST /remote/device/passthrough?deviceId=
  * 批量读取:   POST /remote/device/configs/read?deviceId=
  * 能量流动:   GET  /remote/device/energy/flow?deviceId=
  * 速报启动:   POST /remote/device/state/report/fast/start?deviceId=
@@ -770,6 +771,35 @@ export async function getDeviceConfigCache(
   return api.post<unknown>(
     `/remote/device/configs/cache/get?deviceId=${deviceId}`,
     { keys }
+  )
+}
+
+// ─── 数据透传 ───
+
+export interface PassthroughRequest {
+  /** 透传数据（十六进制字符串或 base64，依设备协议而定） */
+  data: string
+  /** 可选：透传协议类型 */
+  protocol?: string
+  /** 可选：超时时间（ms） */
+  timeout?: number
+}
+
+export interface PassthroughResponse {
+  /** 设备返回的透传数据 */
+  data?: string
+  /** 透传是否成功 */
+  success?: boolean
+}
+
+/** 向设备发送透传指令并获取响应 */
+export async function passthroughDevice(
+  deviceId: string | number,
+  payload: PassthroughRequest
+): Promise<ApiResponse<PassthroughResponse>> {
+  return api.post<PassthroughResponse>(
+    `/remote/device/passthrough?deviceId=${deviceId}`,
+    payload
   )
 }
 
