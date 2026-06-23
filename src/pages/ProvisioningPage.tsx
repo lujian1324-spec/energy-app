@@ -16,6 +16,7 @@ import { useProvisionStore, type ProvisionStep } from '../stores/provisionStore'
 import { getProvisionManager, destroyProvisionManager } from '../protocols/bleProvision'
 import { useConnectionStore } from '../stores/connectionStore'
 import { useDeviceStore } from '../stores/deviceStore'
+import { openAppSettings } from '../utils/openAppSettings'
 
 // Local UI screens — the multi-step store flow lives inside 'provisioning'
 type UiScreen = 'scan' | 'qr' | 'naming' | 'icon' | 'provisioning'
@@ -426,8 +427,13 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
           </div>
           <div className="px-6 pb-10 safe-area-bottom">
             <button
-              onClick={() => window.open('app-settings:', '_blank')}
-              className="w-full h-14 rounded-full bg-primary text-black text-body-lg font-semibold"
+              onClick={async () => {
+                const ok = await openAppSettings()
+                if (!ok) {
+                  toast.info('Please open your device Settings and enable Bluetooth & Location for Sierro.')
+                }
+              }}
+              className="w-full h-14 rounded-full bg-primary text-black text-body-lg font-semibold active:scale-[0.98] transition-transform"
             >
               Open Settings
             </button>
