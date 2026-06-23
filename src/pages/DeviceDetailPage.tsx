@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useSleepModeScheduler, loadSchedule, saveSchedule } from '../hooks/useSleepModeScheduler'
 import {
   ChevronLeft,
   ChevronRight,
@@ -106,6 +107,47 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+
+  // ── Sleep Mode Scheduler ────────────────────────────────────────────────────
+  const deviceIdForScheduler = routeId ?? selectedDeviceId ?? ''
+  const model = realDevice?.model ?? powerStation.model ?? 'Sierro 1000'
+  const schedulerPowers = model.includes('2000')
+    ? { sleepW: 300, wakeW: 1000 }
+    : { sleepW: 150, wakeW: 400 }
+
+  // Load persisted schedule on mount
+  useEffect(() => {
+    if (!deviceIdForScheduler) return
+    const saved = loadSchedule(deviceIdForScheduler)
+    if (saved) {
+      setSleepMode(saved.enabled ? 'On' : 'Off')
+      setSleepFrom(saved.sleepFrom)
+      setSleepTo(saved.sleepTo)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deviceIdForScheduler])
+
+  const { nextEventLabel, nextEventMs, lastSentAt, lastSentLabel } = useSleepModeScheduler({
+    enabled: sleepMode === 'On',
+    sleepFrom,
+    sleepTo,
+    deviceId: deviceIdForScheduler,
+    model,
+  })
+
+  const fmtCountdown = (ms: number): string => {
+    if (ms <= 0) return '—'
+    const totalSec = Math.floor(ms / 1000)
+    const h = Math.floor(totalSec / 3600)
+    const m = Math.floor((totalSec % 3600) / 60)
+    if (h > 0) return `${h}h ${m}m`
+    return `${m}m`
+  }
+
+  const fmtTime = (d: Date | null): string => {
+    if (!d) return '—'
+    return d.toLocaleTimeString()
+  }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────
 
@@ -478,6 +520,8 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
       const deviceId = routeId ?? selectedDeviceId
       if (deviceId) {
         try { await toggleSleepMode(deviceId, enabled) } catch { /* noop */ }
+        // Persist schedule to localStorage
+        saveSchedule(deviceId, { enabled, sleepFrom, sleepTo })
       }
       setScreen('main')
     }
@@ -512,7 +556,9 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-body-lg text-white">Sleep Mode</p>
-                <p className="text-caption text-[#BFBFBF] mt-0.5">Low-noise charging · 150W AC charging limit</p>
+                <p className="text-caption text-[#BFBFBF] mt-0.5">
+                  Low-noise charging · Sleep: {schedulerPowers.sleepW}W / Wake: {schedulerPowers.wakeW}W
+                </p>
               </div>
               <button
                 onClick={() => setSleepMode(enabled ? 'Off' : 'On')}
@@ -554,6 +600,32 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               <p className="text-caption text-[#8C8C8C] mt-2 px-1">
                 Sleep mode active {fmt(sleepFrom)} – {fmt(sleepTo)}
               </p>
+            </div>
+          )}
+
+          {/* Scheduler Status Card — shown when enabled */}
+          {enabled && (
+            <div>
+              <p className="text-body-md font-semibold text-white mb-2">Scheduler Status</p>
+              <div className="rounded-l bg-[#262626] overflow-hidden px-4 py-4 space-y-3">
+                <p className="text-caption text-[#8C8C8C]">
+                  {model} · Sleep: {schedulerPowers.sleepW}W / Wake: {schedulerPowers.wakeW}W
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="text-body-md text-[#BFBFBF]">Next event</span>
+                  <div className="text-right">
+                    <p className="text-body-md text-[#01D6BE] font-semibold">{nextEventLabel}</p>
+                    <p className="text-caption text-[#01D6BE]">{fmtCountdown(nextEventMs)}</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-body-md text-[#8C8C8C]">Last sent</span>
+                  <div className="text-right">
+                    <p className="text-caption text-[#8C8C8C]">{lastSentLabel || '—'}</p>
+                    <p className="text-caption text-[#8C8C8C]">{fmtTime(lastSentAt)}</p>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
