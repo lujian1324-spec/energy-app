@@ -128,7 +128,18 @@ export default function ForgotPasswordPage() {
               )}
             </div>
 
-            {error && <p className="text-label text-danger mb-4">{error}</p>}
+            {error && <p className="text-label text-danger mt-2">{error}</p>}
+
+            {/* Send button — one input-box height below the email field */}
+            <button
+              onClick={handleSendCode}
+              disabled={!emailValid || sending || countdown > 0}
+              className="w-full mt-14 py-4 rounded-m font-semibold text-title-md text-ink-13
+                bg-primary disabled:bg-primary-dark disabled:text-ink-13/60 disabled:cursor-not-allowed
+                active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+            >
+              {sending ? <Loader2 size={18} className="animate-spin" /> : 'Send Verification Code'}
+            </button>
           </>
         ) : (
           <>
@@ -193,29 +204,17 @@ export default function ForgotPasswordPage() {
         )}
       </div>
 
-      {!success && (
+      {!success && step === 'reset' && (
         <div className="px-6 pb-10 pt-2 safe-area-bottom shrink-0">
-          {step === 'request' ? (
-            <button
-              onClick={handleSendCode}
-              disabled={!emailValid || sending || countdown > 0}
-              className="w-full py-4 rounded-m font-semibold text-title-md text-ink-13
-                bg-primary disabled:bg-primary-dark disabled:text-ink-13/60 disabled:cursor-not-allowed
-                active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-            >
-              {sending ? <Loader2 size={18} className="animate-spin" /> : 'Send Verification Code'}
-            </button>
-          ) : (
-            <button
-              onClick={handleReset}
-              disabled={!canReset || loading}
-              className="w-full py-4 rounded-m font-semibold text-title-md text-ink-13
-                bg-primary disabled:bg-primary-dark disabled:text-ink-13/60 disabled:cursor-not-allowed
-                active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-            >
-              {loading ? <Loader2 size={18} className="animate-spin" /> : 'Reset Password'}
-            </button>
-          )}
+          <button
+            onClick={handleReset}
+            disabled={!canReset || loading}
+            className="w-full py-4 rounded-m font-semibold text-title-md text-ink-13
+              bg-primary disabled:bg-primary-dark disabled:text-ink-13/60 disabled:cursor-not-allowed
+              active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+          >
+            {loading ? <Loader2 size={18} className="animate-spin" /> : 'Reset Password'}
+          </button>
         </div>
       )}
     </div>
