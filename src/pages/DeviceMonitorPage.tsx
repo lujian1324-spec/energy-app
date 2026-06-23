@@ -65,7 +65,60 @@ function saveCachedRtHistory(deviceId: string, data: HistoryDataResponse): void 
   }
 }
 
-// ─── SVG Area Chart ───────────────────────────────────────────────────────────
+// ─── Real-Time 实时采样缓冲（按设备 + 当日日期，本地累积） ──────────────────────────
+// 实时读取设备状态参数并保存在本地，逐步绘制当日曲线（即使历史接口无数据也能成图）
+interface RtSample {
+  t: number       // 采样时间戳（ms）
+  battery: number // remainingBatteryCapacity %
+  ac: number      // exchangeChargingPower W
+  solar: number   // generationPower W
+  output: number  // outputPower W
+}
+
+const RT_SAMPLES_PREFIX = 'sierro-rtsamples-'
+const RT_SAMPLE_MIN_GAP_MS = 25 * 1000   // 最小采样间隔（与 30s 轮询配合）
+const RT_SAMPLE_MAX = 600                 // 当日最多保留点数
+
+function rtSamplesKey(deviceId: string): string {
+  const today = new Date().toISOString().slice(0, 10)
+  return `${RT_SAMPLES_PREFIX}${deviceId}-${today}`
+}
+
+function loadRtSamples(deviceId: string): RtSample[] {
+  try {
+    const raw = localStorage.getItem(rtSamplesKey(deviceId))
+    return raw ? (JSON.parse(raw) as RtSample[]) : []
+  } catch {
+    return []
+  }
+}
+
+function saveRtSamples(deviceId: string, samples: RtSample[]): void {
+  try {
+    localStorage.setItem(rtSamplesKey(deviceId), JSON.stringify(samples.slice(-RT_SAMPLE_MAX)))
+    // 清理该设备的过期（非当日）采样
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i)
+      if (k && k.startsWith(`${RT_SAMPLES_PREFIX}${deviceId}-`) && k !== rtSamplesKey(deviceId)) {
+        localStorage.removeItem(k)
+      }
+    }
+  } catch {
+    /* 忽略配额/序列化错误 */
+  }
+}
+
+/** 从一条采样里取指定指标的数值 */
+function metricOf(s: RtSample, metric: Metric): number {
+  switch (metric) {
+    case 'battery': return s.battery
+    case 'ac': return s.ac
+    case 'solar': return s.solar
+    case 'output': return s.output
+  }
+}
+
+
 export function AreaChart({ data, color, width = 340, height = 130, domain, unit = '', timeLabels }: {
   data: number[]
   color: string
@@ -170,12 +223,15 @@ export default function DeviceMonitorPage() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<Metric>('battery')
   const [showDeviceDropdown, setShowDeviceDropdown] = useState(false)
+  // 实时采样变化计数器（用于触发图表重算）
+  const [sampleTick, setSampleTick] = useState(0)
 
   const {
     devices,
     selectedDeviceState,
     historyData,
     historyLoading,
+    isDemoMode,
     selectDevice,
     loadDeviceState,
     loadHistoryData,
@@ -195,6 +251,13 @@ export default function DeviceMonitorPage() {
     loadHistoryData(id, from.toISOString(), now.toISOString(), RT_HISTORY_KEYS, 288, true)
   }, [id])
 
+  // 每 30 秒轮询设备实时状态（与 Overview 一致），用于累积当日实时曲线
+  useEffect(() => {
+    if (!id) return
+    const timer = setInterval(() => loadDeviceState(id), 30000)
+    return () => clearInterval(timer)
+  }, [id, loadDeviceState])
+
   // 历史数据返回后保存到本地（按设备 + 当日日期）
   useEffect(() => {
     if (id && historyData) saveCachedRtHistory(id, historyData)
@@ -205,6 +268,25 @@ export default function DeviceMonitorPage() {
     if (!selectedDeviceState?.fields) return null
     return mapFieldsToRealtime(selectedDeviceState.fields)
   }, [selectedDeviceState])
+
+  // 实时读取设备参数 → 累积保存到本地（按当日日期），逐步绘制当日曲线
+  useEffect(() => {
+    if (!id || !rt || isDemoMode) return
+    const samples = loadRtSamples(id)
+    const last = samples[samples.length - 1]
+    const now = Date.now()
+    // 节流：与 30s 轮询配合，避免同一状态重复写入
+    if (last && now - last.t < RT_SAMPLE_MIN_GAP_MS) return
+    samples.push({
+      t: now,
+      battery: Math.round(rt.remainingBatteryCapacity ?? 0),
+      ac: Math.abs(Math.round(rt.acPower ?? 0)),
+      solar: Math.abs(Math.round(rt.solarPower ?? 0)),
+      output: Math.abs(Math.round(rt.outputPower ?? 0)),
+    })
+    saveRtSamples(id, samples)
+    setSampleTick(x => x + 1)
+  }, [id, rt, isDemoMode])
 
   const remainingBatteryCapacity = rt?.remainingBatteryCapacity ?? 0
   const acPower = rt?.acPower ?? 0
@@ -221,24 +303,46 @@ export default function DeviceMonitorPage() {
     ? `${Math.floor(remainMinutes / 60)}h ${remainMinutes % 60}m remaining`
     : isCharging ? 'Charging' : '--'
 
-  // Real-Time Power chart: 优先使用 API 当日历史数据（本地缓存兜底），否则回退到 demo 曲线
+  // Real-Time Power chart：当日 API 历史 + 本地累积的实时采样，组合绘制当日曲线
   const chartData = useMemo(() => {
     if (!id) return []
     const tab = TABS.find(t => t.id === activeTab)!
 
-    // 1) 实时 API 历史 → 2) 本地缓存（当日） → 3) demo 曲线
-    const source = historyData ?? loadCachedRtHistory(id)
-    const series = source?.[tab.historyKey]
-    if (series && series.length > 0) {
-      return series.map(pt => {
-        const v = Number(pt.value)
-        return Number.isFinite(v) ? v : 0
-      })
+    // Demo 模式：直接用 demo 曲线
+    if (isDemoMode) {
+      const points = activeTab === 'battery' ? 20000 : 2400
+      return getDemoDayCurve(id, tab.historyKey, points)
     }
 
-    const points = activeTab === 'battery' ? 20000 : 2400
-    return getDemoDayCurve(id, tab.historyKey, points)
-  }, [id, activeTab, historyData])
+    const out: number[] = []
+
+    // 1) 当日历史数据（API 实时返回或本地缓存）
+    const source = historyData ?? loadCachedRtHistory(id)
+    const series = source?.[tab.historyKey]
+    let lastHistT = 0
+    if (series && series.length > 0) {
+      for (const pt of series) {
+        const v = Number(pt.value)
+        out.push(Number.isFinite(v) ? v : 0)
+        const t = new Date(pt.time).getTime()
+        if (Number.isFinite(t)) lastHistT = Math.max(lastHistT, t)
+      }
+    }
+
+    // 2) 本地累积的实时采样（仅追加历史末尾之后的点）
+    const samples = loadRtSamples(id)
+    for (const s of samples) {
+      if (s.t <= lastHistT) continue
+      out.push(metricOf(s, activeTab))
+    }
+
+    // 单点无法成线 → 复制为两点
+    if (out.length === 1) return [out[0], out[0]]
+    if (out.length >= 2) return out
+
+    // 暂无任何当日数据
+    return []
+  }, [id, activeTab, historyData, isDemoMode, sampleTick])
 
   // Fixed x-axis labels: 12am, 4am, 8am, 12pm, 4pm, 8pm, 12am
   const timeLabels = useMemo(() => ['12am', '4am', '8am', '12pm', '4pm', '8pm', '12am'], [])
@@ -408,9 +512,14 @@ export default function DeviceMonitorPage() {
 
           {/* Chart area */}
           <div className="overflow-hidden rounded-m -mx-1">
-            {historyLoading || !chartData.length ? (
+            {historyLoading && !chartData.length ? (
               <div className="h-[130px] flex items-center justify-center">
                 <div className="w-5 h-5 rounded-full border-2 border-[#01D6BE] border-t-transparent animate-spin" />
+              </div>
+            ) : !chartData.length ? (
+              <div className="h-[130px] flex flex-col items-center justify-center gap-1 text-center px-4">
+                <span className="text-body-md text-[#8C8C8C]">Collecting today's data…</span>
+                <span className="text-tiny text-[#636366]">Live readings appear here as the device reports them</span>
               </div>
             ) : (
               <div className="w-full">
