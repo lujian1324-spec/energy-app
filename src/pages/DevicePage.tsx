@@ -3,23 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import ProvisioningPage from './ProvisioningPage'
 import {
-  Zap,
   AlertTriangle,
   X,
-  Plus,
-  QrCode,
-  Bluetooth,
   RefreshCw,
-  Bell,
-  BatteryWarning,
   Wifi,
   WifiOff,
   Thermometer,
   Activity,
-  Sun,
-  ChevronRight,
   Info,
-  Battery,
   Clock,
   MapPin,
   Hash,
@@ -28,6 +19,7 @@ import {
   TrendingUp,
   TrendingDown,
 } from 'lucide-react'
+import Icon from '../components/Icon'
 import PullToRefresh from '../components/PullToRefresh'
 import ManualAddDeviceModal from '../components/ManualAddDeviceModal'
 import { useDeviceStore } from '../stores/deviceStore'
@@ -317,7 +309,7 @@ export default function DevicePage() {
               style={{ width: `calc(${fill}% - 3px)`, backgroundColor: color }}
             />
             {charging && (
-              <Zap size={9} className="relative mx-auto text-white" fill="currentColor" strokeWidth={0} />
+              <Icon name="thunder" size={9} className="relative mx-auto" />
             )}
           </span>
           {/* 电池正极 */}
@@ -389,14 +381,14 @@ export default function DevicePage() {
               aria-label="Add device"
               className="w-11 h-11 rounded-full bg-[#262626] flex items-center justify-center text-white hover:bg-[#454545] transition-colors active:scale-95"
             >
-              <Plus size={20} />
+              <Icon name="add" size={20} />
             </button>
             <button
               onClick={() => navigate('/notifications')}
               aria-label="Notifications"
               className="relative w-11 h-11 rounded-full bg-[#262626] flex items-center justify-center text-white hover:bg-[#454545] transition-colors active:scale-95"
             >
-              <Bell size={20} />
+              <Icon name="bell" size={20} />
               {(hasUnreadNotifications || lowBatteryDevice || devices.some(d => d.isAlarmed)) && (
                 <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-[#FF3B30] border-2 border-[#141414]" />
               )}
@@ -436,7 +428,7 @@ export default function DevicePage() {
               onClick={() => navigate('/notifications')}
               className="mb-3 rounded-l bg-[#4B1512] px-4 py-3.5 flex items-start gap-3 cursor-pointer"
             >
-              <BatteryWarning size={22} className="text-white flex-shrink-0 mt-0.5" />
+              <Icon name="low-battery" size={22} className="flex-shrink-0 mt-0.5" />
               <div className="flex-1 min-w-0">
                 <p className="text-body-md font-semibold text-white leading-tight truncate">Low Battery</p>
                 <p className="text-label text-white/90 mt-0.5 leading-snug">
@@ -518,7 +510,7 @@ export default function DevicePage() {
           /* Empty State */
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center text-center pt-24 px-6">
             <div className="w-40 h-40 rounded-l bg-[#3A3A3A] mb-7 flex items-center justify-center">
-              <Zap size={56} className="text-ink-7 opacity-40" />
+              <Icon name="battery" size={56} className="opacity-40" />
             </div>
             <h2 className="text-headline-md font-semibold text-white mb-2">
               {error ? 'Something went wrong' : 'No devices yet'}
@@ -532,7 +524,7 @@ export default function DevicePage() {
               </button>
             ) : (
               <button onClick={() => setShowAddModal(true)} className="px-7 py-3.5 rounded-m border-m border-primary text-primary text-body-lg font-semibold flex items-center gap-2 active:scale-95 transition-transform">
-                <Plus size={20} /> Add Device
+                <Icon name="add" size={20} /> Add Device
               </button>
             )}
           </motion.div>
@@ -713,7 +705,7 @@ export default function DevicePage() {
                   onClick={() => { setShowDeviceParams(null); navigate(`/device/${showDeviceParams.id}`) }}
                   className="w-full py-3 rounded-l bg-[#01D6BE] text-[#000000] text-[14px] font-semibold flex items-center justify-center gap-2"
                 >
-                  View Full Dashboard <ChevronRight size={16} />
+                  View Full Dashboard <Icon name="chevron-right" size={16} />
                 </button>
               </div>
             </motion.div>
@@ -787,7 +779,7 @@ export default function DevicePage() {
               {scanError && (
                 <div className="flex flex-col items-center justify-center py-8">
                   <div className="w-12 h-12 rounded-full bg-[rgba(255,59,48,0.15)] flex items-center justify-center mb-3">
-                    <Bluetooth size={24} className="text-[#FF3B30]" />
+                    <Icon name="bluetooth" size={24} />
                   </div>
                   <p className="text-[14px] text-[#FF3B30] text-center mb-1">Scan Failed</p>
                   <p className="text-[12px] text-[#BFBFBF] text-center px-4">{scanError}</p>
@@ -796,7 +788,7 @@ export default function DevicePage() {
               {!isScanning && !scanError && scannedDevices.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-8">
                   <div className="w-12 h-12 rounded-full bg-[#454545] flex items-center justify-center mb-3">
-                    <Bluetooth size={24} className="text-[#BFBFBF]" />
+                    <Icon name="bluetooth" size={24} />
                   </div>
                   <p className="text-[14px] text-[#BFBFBF]">No devices found</p>
                 </div>
@@ -831,7 +823,7 @@ export default function DevicePage() {
                     </div>
                     {!qrScanning && !qrError && (
                       <div className="absolute inset-0 bg-[#262626] rounded-l flex items-center justify-center">
-                        <QrCode size={64} className="text-[#8C8C8C]" />
+                        <Icon name="scan" size={64} className="opacity-50" />
                       </div>
                     )}
                   </div>
@@ -850,7 +842,7 @@ export default function DevicePage() {
               ) : (
                 <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-sm bg-[#262626] rounded-l p-6">
                   <div className="w-16 h-16 rounded-full bg-[rgba(52,199,89,0.15)] flex items-center justify-center mx-auto mb-4">
-                    <QrCode size={32} className="text-[#34C759]" />
+                    <Icon name="scan" size={32} />
                   </div>
                   <h4 className="text-lg font-bold text-[#FFFFFF] text-center mb-2">QR Code Scanned!</h4>
                   <div className="bg-[#454545] rounded-l p-4 mb-5">

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { ArrowLeft, Shield } from 'lucide-react'
+import Icon from '../components/Icon'
 import { useNavigate } from 'react-router-dom'
 
 interface Section {
@@ -205,11 +205,11 @@ export default function PrivacyPage() {
           onClick={() => navigate(-1)}
           className="w-9 h-9 rounded-full bg-[#262626] flex items-center justify-center text-[#FFFFFF] active:scale-95 transition-transform"
         >
-          <ArrowLeft size={20} />
+          <Icon name="chevron-left" size={20} />
         </button>
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-[rgba(1,214,190,0.1)] flex items-center justify-center">
-            <Shield size={16} className="text-[#01D6BE]" />
+            <Icon name="privacy" size={16} />
           </div>
           <div>
             <h1 className="text-lg font-bold text-[#FFFFFF]">Privacy Policy</h1>

@@ -2,32 +2,22 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
-  Bell,
   X,
   Send,
   Loader2,
   CheckCircle,
-  FileText,
   Headphones,
-  Mail,
   Crown,
   Gift,
   Sparkles,
-  Sun,
   Tag,
   Star,
-  User,
-  Edit3,
-  ChevronRight,
-  Zap,
   Gem,
-  Battery,
-  MessageSquare,
   LogOut,
-  Trash2,
   RotateCcw,
   Download,
 } from 'lucide-react'
+import Icon from '../components/Icon'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useAuthStore } from '../stores/authStore'
 import { deleteAccount } from '../api/authApi'
@@ -132,7 +122,7 @@ export default function SettingPage() {
               ) : settings.founderBadge ? (
                 <Gem size={24} className="text-membership" />
               ) : (
-                <Zap size={24} className="text-primary fill-primary" />
+                <Icon name="thunder" size={24} className="opacity-90" />
               )}
             </div>
           </button>
@@ -144,7 +134,7 @@ export default function SettingPage() {
             </h3>
             <div className="flex items-center gap-0.5 mt-0.5 text-ink-6">
               <span className="text-body-md">{isGuest ? 'Sign in to manage your account' : 'Manage my account'}</span>
-              <ChevronRight size={14} className="text-ink-6" />
+              <Icon name="chevron-right" size={14} className="opacity-60" />
             </div>
           </button>
           {/* Founding Member gold tag */}
@@ -166,7 +156,7 @@ export default function SettingPage() {
           {/* Power Outage */}
           <div className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 text-left">
             <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
-              <Zap size={16} className="text-ink-1" />
+              <Icon name="outage" size={16} />
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-body-lg font-semibold text-ink-1">Power Outage</div>
@@ -182,7 +172,7 @@ export default function SettingPage() {
           {/* Low Battery */}
           <div className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 text-left">
             <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
-              <Battery size={16} className="text-ink-1" />
+              <Icon name="low-battery" size={16} />
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-body-lg font-semibold text-ink-1">Low Battery</div>
@@ -251,7 +241,7 @@ export default function SettingPage() {
           {/* Solar Status */}
           <div className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 text-left">
             <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
-              <Sun size={16} className="text-ink-1" />
+              <Icon name="solar" size={16} />
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-body-lg font-semibold text-ink-1">Solar Status</div>
@@ -273,7 +263,7 @@ export default function SettingPage() {
             onClick={() => setShowSupport(true)}
             className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 active:scale-[0.99] transition-transform text-left">
             <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
-              <MessageSquare size={16} className="text-ink-1" />
+              <Icon name="feedback" size={16} />
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-body-lg font-semibold text-ink-1">Feedback</div>
@@ -342,17 +332,17 @@ export default function SettingPage() {
                 <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[rgba(1,214,190,0.06)] cursor-pointer"
                   onClick={() => { setShowManageAccount(false); setShowProfileEdit(true) }}>
                   <div className="w-9 h-9 rounded-lg bg-[rgba(255,255,255,0.06)] flex items-center justify-center">
-                    <User size={16} className="text-[#FFFFFF]" />
+                    <Icon name="user" size={16} />
                   </div>
                   <div className="flex-1">
                     <div className="text-body-md font-semibold text-[#FFFFFF]">Personal Info</div>
                     <div className="text-[11px] text-[#BFBFBF] mt-0.5">{userProfile.name}</div>
                   </div>
-                  <ChevronRight size={16} className="text-[#8C8C8C]" />
+                  <Icon name="chevron-right" size={16} className="opacity-50" />
                 </div>
                 <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[rgba(1,214,190,0.06)]">
                   <div className="w-9 h-9 rounded-lg bg-[rgba(255,255,255,0.06)] flex items-center justify-center">
-                    <Mail size={16} className="text-[#FFFFFF]" />
+                    <Icon name="email" size={16} />
                   </div>
                   <div className="flex-1">
                     <div className="text-body-md font-semibold text-[#FFFFFF]">Account</div>
@@ -388,10 +378,10 @@ export default function SettingPage() {
                   <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[rgba(1,214,190,0.06)] cursor-pointer"
                     onClick={() => { setShowManageAccount(false); navigate('/login') }}>
                     <div className="w-9 h-9 rounded-lg bg-[rgba(1,214,190,0.12)] flex items-center justify-center">
-                      <User size={16} className="text-[#01D6BE]" />
+                      <Icon name="user" size={16} />
                     </div>
                     <div className="flex-1 text-body-md font-semibold text-[#01D6BE]">Sign In</div>
-                    <ChevronRight size={16} className="text-[#01D6BE]" />
+                    <Icon name="chevron-right" size={16} className="opacity-60" />
                   </div>
                 ) : (
                   <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[rgba(1,214,190,0.06)] cursor-pointer"
@@ -400,7 +390,7 @@ export default function SettingPage() {
                       <LogOut size={16} className="text-[#FFFFFF]" />
                     </div>
                     <div className="flex-1 text-body-md font-semibold text-[#FFFFFF]">Sign out</div>
-                    <ChevronRight size={16} className="text-[#8C8C8C]" />
+                    <Icon name="chevron-right" size={16} className="opacity-50" />
                   </div>
                 )}
                 <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[rgba(1,214,190,0.06)] cursor-pointer"
@@ -409,15 +399,15 @@ export default function SettingPage() {
                     <RotateCcw size={16} className="text-[#FFFFFF]" />
                   </div>
                   <div className="flex-1 text-body-md font-semibold text-[#FFFFFF]">Reset App</div>
-                  <ChevronRight size={16} className="text-[#8C8C8C]" />
+                  <Icon name="chevron-right" size={16} className="opacity-50" />
                 </div>
                 <div className="flex items-center gap-3 px-4 py-3.5 cursor-pointer"
                   onClick={() => { setShowManageAccount(false); setShowDeleteConfirm(true) }}>
                   <div className="w-9 h-9 rounded-lg bg-[rgba(255,59,48,0.08)] flex items-center justify-center">
-                    <Trash2 size={16} className="text-[#FF3B30]" />
+                    <Icon name="trash" size={16} />
                   </div>
                   <div className="flex-1 text-body-md font-semibold text-[#FF3B30]">Delete Account</div>
-                  <ChevronRight size={16} className="text-[#FF3B30]" />
+                  <Icon name="chevron-right" size={16} className="opacity-50" />
                 </div>
               </div>
             </div>
@@ -459,12 +449,12 @@ export default function SettingPage() {
                 ) : (
                   <form onSubmit={handleSupportSubmit} className="space-y-4">
                     <div>
-                      <label className="text-[12px] font-semibold text-[#BFBFBF] mb-2 flex items-center gap-2"><Mail size={14} />Your Email</label>
+                      <label className="text-[12px] font-semibold text-[#BFBFBF] mb-2 flex items-center gap-2"><Icon name="email" size={14} />Your Email</label>
                       <input type="email" required value={supportEmail} onChange={e => setSupportEmail(e.target.value)} placeholder="you@example.com"
                         className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-[rgba(1,214,190,0.15)] text-[#FFFFFF] text-body-md placeholder:text-[#8C8C8C] focus:outline-none focus:border-[rgba(1,214,190,0.4)] transition-colors" />
                     </div>
                     <div>
-                      <label className="text-[12px] font-semibold text-[#BFBFBF] mb-2 flex items-center gap-2"><FileText size={14} />Your Feedback</label>
+                      <label className="text-[12px] font-semibold text-[#BFBFBF] mb-2 flex items-center gap-2"><Icon name="feedback" size={14} />Your Feedback</label>
                       <textarea required value={supportMessage} onChange={e => setSupportMessage(e.target.value)} placeholder="Describe your issue or suggestion..." rows={4}
                         className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-[rgba(1,214,190,0.15)] text-[#FFFFFF] text-body-md placeholder:text-[#8C8C8C] resize-none focus:outline-none focus:border-[rgba(1,214,190,0.4)] transition-colors" />
                     </div>
@@ -524,7 +514,7 @@ export default function SettingPage() {
               <div className="p-5 space-y-4">
                 <div className="text-center">
                   <div className="w-12 h-12 rounded-full bg-[rgba(255,59,48,0.1)] flex items-center justify-center mx-auto mb-3">
-                    <Trash2 size={24} className="text-[#FF3B30]" />
+                    <Icon name="trash" size={24} />
                   </div>
                   <h3 className="text-base font-bold text-[#FFFFFF] mb-2">Delete Account</h3>
                   <p className="text-body-md text-[#BFBFBF]">This will permanently delete your account and all associated data. This action cannot be undone.</p>

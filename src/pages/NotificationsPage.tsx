@@ -1,16 +1,16 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence, useMotionValue, animate } from 'framer-motion'
-import { ChevronLeft, BatteryLow, Sun, ZapOff, Trash2, BellOff } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useNotificationStore, type NotificationItem } from '../stores/notificationStore'
+import Icon from '../components/Icon'
 
-function getIcon(type: string) {
+function getIconName(type: string): string {
   switch (type) {
-    case 'low_battery':        return <BatteryLow size={20} className="text-white" />
-    case 'solar_connected':    return <Sun size={20} className="text-white" />
-    case 'solar_disconnected': return <Sun size={20} className="text-white" />
-    case 'power_outage':       return <ZapOff size={20} className="text-white" />
-    default:                   return <ZapOff size={20} className="text-white" />
+    case 'low_battery':        return 'low-battery'
+    case 'solar_connected':    return 'solar'
+    case 'solar_disconnected': return 'solar'
+    case 'power_outage':       return 'outage'
+    default:                   return 'outage'
   }
 }
 
@@ -49,7 +49,7 @@ function NotificationRow({ item, unread, onDelete }: {
         aria-label="Delete"
         className="absolute right-0 top-0 bottom-0 w-[76px] bg-danger flex items-center justify-center"
       >
-        <Trash2 size={20} className="text-white" />
+        <Icon name="trash" size={20} />
       </button>
 
       {/* 通知行（可拖拽层），底部分隔线 */}
@@ -66,7 +66,7 @@ function NotificationRow({ item, unread, onDelete }: {
         <div className="flex items-start gap-3.5">
           {/* 纯白报警图标 + 深色圆形底 */}
           <div className="w-10 h-10 rounded-full bg-[#2C2C2E] flex items-center justify-center flex-shrink-0">
-            {getIcon(item.type)}
+            <Icon name={getIconName(item.type)} size={20} />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2 mb-1">
@@ -106,7 +106,7 @@ export default function NotificationsPage() {
           className="absolute left-5 w-9 h-9 rounded-full bg-[#2C2C2E] flex items-center justify-center text-white active:scale-95 transition-transform"
           aria-label="Back"
         >
-          <ChevronLeft size={20} />
+          <Icon name="chevron-left" size={20} />
         </button>
         <h2 className="text-title-lg font-bold text-white">Notifications</h2>
       </div>
@@ -119,7 +119,7 @@ export default function NotificationsPage() {
             className="flex flex-col items-center justify-center h-full text-center"
           >
             <div className="w-20 h-20 rounded-full bg-[#2C2C2E] flex items-center justify-center mb-4">
-              <BellOff size={32} className="text-ink-7" />
+              <Icon name="bell" size={32} className="opacity-40" />
             </div>
             <p className="text-body-md text-ink-6">No notifications</p>
           </motion.div>

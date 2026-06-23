@@ -9,7 +9,8 @@
  */
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Camera, Bluetooth, HardDrive, Bell, ChevronRight, Shield } from 'lucide-react'
+import { HardDrive } from 'lucide-react'
+import Icon from './Icon'
 
 const STORAGE_KEY = 'sierro_permissions_asked'
 
@@ -28,7 +29,8 @@ function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
 
 interface Permission {
   id: 'storage' | 'notifications' | 'camera' | 'bluetooth'
-  Icon: React.FC<{ size?: number; className?: string }>
+  iconName?: string
+  LucideIcon?: React.FC<{ size?: number; className?: string }>
   title: string
   description: string
 }
@@ -36,25 +38,25 @@ interface Permission {
 const PERMISSIONS: Permission[] = [
   {
     id: 'storage',
-    Icon: HardDrive,
+    LucideIcon: HardDrive,
     title: 'Local Storage',
     description: 'Save your profile, avatar, and settings on this device.',
   },
   {
     id: 'notifications',
-    Icon: Bell,
+    iconName: 'bell',
     title: 'Notifications',
     description: 'Get alerted instantly when a power outage or device alarm occurs.',
   },
   {
     id: 'camera',
-    Icon: Camera,
+    iconName: 'scan',
     title: 'Camera',
     description: 'Scan QR codes to add devices and update your profile photo.',
   },
   {
     id: 'bluetooth',
-    Icon: Bluetooth,
+    iconName: 'bluetooth',
     title: 'Bluetooth',
     description: 'Connect directly to your SIERRO device for setup and control.',
   },
@@ -147,7 +149,7 @@ export default function PermissionsGate({ onDone }: Props) {
           >
             {/* Shield icon */}
             <div className="w-20 h-20 rounded-[28px] bg-[rgba(1,214,190,0.1)] border border-[rgba(1,214,190,0.25)] flex items-center justify-center mb-6">
-              <Shield size={40} className="text-[#01D6BE]" />
+              <Icon name="privacy" size={40} />
             </div>
 
             <h1 className="text-headline-lg font-bold text-white text-center mb-2">
@@ -159,10 +161,10 @@ export default function PermissionsGate({ onDone }: Props) {
 
             {/* Permission list */}
             <div className="w-full space-y-3 mb-4">
-              {PERMISSIONS.map(({ id, Icon, title, description }) => (
+              {PERMISSIONS.map(({ id, iconName, LucideIcon, title, description }) => (
                 <div key={id} className="flex items-start gap-4 bg-[#262626] rounded-l px-4 py-4">
                   <div className="w-10 h-10 rounded-l bg-[rgba(1,214,190,0.1)] flex items-center justify-center flex-shrink-0">
-                    <Icon size={20} className="text-[#01D6BE]" />
+                    {iconName ? <Icon name={iconName} size={20} /> : LucideIcon ? <LucideIcon size={20} className="text-[#01D6BE]" /> : null}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-body-lg font-semibold text-white">{title}</p>
@@ -197,7 +199,7 @@ export default function PermissionsGate({ onDone }: Props) {
             className="flex flex-col items-center w-full pt-12"
           >
             <div className="w-20 h-20 rounded-[28px] bg-[rgba(52,199,89,0.1)] border border-[rgba(52,199,89,0.25)] flex items-center justify-center mb-6">
-              <Shield size={40} className="text-[#34C759]" />
+              <Icon name="privacy" size={40} />
             </div>
             <h1 className="text-headline-lg font-bold text-white text-center mb-2">All Set</h1>
             <p className="text-body-md text-[#BFBFBF] text-center mb-6 max-w-[260px] leading-relaxed">
@@ -205,10 +207,10 @@ export default function PermissionsGate({ onDone }: Props) {
             </p>
 
             <div className="w-full space-y-3 mb-4">
-              {PERMISSIONS.map(({ id, Icon, title }) => (
+              {PERMISSIONS.map(({ id, iconName, LucideIcon, title }) => (
                 <div key={id} className="flex items-center gap-4 bg-[#262626] rounded-l px-4 py-3.5">
                   <div className="w-9 h-9 rounded-m bg-[rgba(1,214,190,0.08)] flex items-center justify-center flex-shrink-0">
-                    <Icon size={18} className="text-[#01D6BE]" />
+                    {iconName ? <Icon name={iconName} size={18} /> : LucideIcon ? <LucideIcon size={18} className="text-[#01D6BE]" /> : null}
                   </div>
                   <span className="flex-1 text-body-md font-medium text-white">{title}</span>
                   <span
@@ -234,7 +236,7 @@ export default function PermissionsGate({ onDone }: Props) {
               onClick={handleAllow}
               className="w-full h-14 rounded-full bg-[#01D6BE] text-black font-semibold text-body-lg flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
             >
-              Allow All <ChevronRight size={18} />
+              Allow All <Icon name="chevron-right" size={18} />
             </button>
             <button
               onClick={handleSkip}

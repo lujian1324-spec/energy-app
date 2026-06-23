@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { ArrowLeft, FileText } from 'lucide-react'
+import Icon from '../components/Icon'
 import { useNavigate } from 'react-router-dom'
 
 interface Section {
@@ -112,11 +112,11 @@ export default function TermsPage() {
           onClick={() => navigate(-1)}
           className="w-9 h-9 rounded-full bg-[#262626] flex items-center justify-center text-[#FFFFFF] active:scale-95 transition-transform"
         >
-          <ArrowLeft size={20} />
+          <Icon name="chevron-left" size={20} />
         </button>
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-[rgba(52,199,89,0.1)] flex items-center justify-center">
-            <FileText size={16} className="text-[#34C759]" />
+            <Icon name="term of use" size={16} />
           </div>
           <div>
             <h1 className="text-lg font-bold text-[#FFFFFF]">Terms of Use</h1>

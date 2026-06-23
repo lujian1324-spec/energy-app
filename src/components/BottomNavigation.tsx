@@ -1,15 +1,10 @@
 import { NavLink } from 'react-router-dom'
-import {
-  Home,
-  BarChart3,
-  Settings,
-} from 'lucide-react'
+import Icon from './Icon'
 
-// PRD v1.1: 导航标签大写, 路径使用新路由
 const navItems = [
-  { path: '/devices', label: 'Devices', icon: Home, tabId: 'nav-devices' },
-  { path: '/insights', label: 'Stats', icon: BarChart3, tabId: 'nav-insights' },
-  { path: '/setting', label: 'Setting', icon: Settings, tabId: 'nav-setting' },
+  { path: '/devices', label: 'Devices', icon: 'home', tabId: 'nav-devices' },
+  { path: '/insights', label: 'Stats', icon: 'insight', tabId: 'nav-insights' },
+  { path: '/setting', label: 'Setting', icon: 'setting', tabId: 'nav-setting' },
 ]
 
 export default function BottomNavigation() {
@@ -20,31 +15,27 @@ export default function BottomNavigation() {
         role="navigation"
         aria-label="Main navigation"
       >
-        {navItems.map((item) => {
-          const Icon = item.icon
-          return (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              id={item.tabId}
-              aria-label={item.label}
-              className={({ isActive }) =>
-                `flex items-center justify-center min-w-[48px] min-h-[48px] px-4 py-2 rounded-full transition-all duration-200
-                ${isActive ? 'bg-[#01D6BE]' : 'bg-transparent hover:bg-[#01D6BE]/15'}`
-              }
-            >
-              {({ isActive }) => (
-                <span
-                  className={`flex items-center justify-center transition-colors duration-200 ${
-                    isActive ? 'text-[#FFFFFF]' : 'text-[#01D6BE]/70'
-                  }`}
-                >
-                  <Icon size={22} aria-hidden="true" />
-                </span>
-              )}
-            </NavLink>
-          )
-        })}
+        {navItems.map((item) => (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            id={item.tabId}
+            aria-label={item.label}
+            className={({ isActive }) =>
+              `flex items-center justify-center min-w-[48px] min-h-[48px] px-4 py-2 rounded-full transition-all duration-200
+              ${isActive ? 'bg-[#01D6BE]' : 'bg-transparent hover:bg-[#01D6BE]/15'}`
+            }
+          >
+            {({ isActive }) => (
+              <Icon
+                name={item.icon}
+                size={22}
+                className={`transition-opacity duration-200 ${isActive ? 'opacity-100' : 'opacity-50'}`}
+                alt={item.label}
+              />
+            )}
+          </NavLink>
+        ))}
       </nav>
     </div>
   )
