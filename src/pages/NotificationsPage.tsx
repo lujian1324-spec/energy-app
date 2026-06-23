@@ -1,149 +1,185 @@
 import { useEffect, useState } from 'react'
-import { motion, AnimatePresence, useMotionValue, animate } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { useNotificationStore, type NotificationItem } from '../stores/notificationStore'
-import Icon from '../components/Icon'
+import { ChevronLeft, AlertTriangle, CheckCircle, Info, Loader2, Bell, Check } from 'lucide-react'
+import { useDeviceStore } from '../stores/deviceStore'
+import type { AlarmItem } from '../api/deviceApi'
 
-function getIconName(type: string): string {
-  switch (type) {
-    case 'low_battery':        return 'low-battery'
-    case 'solar_connected':    return 'solar'
-    case 'solar_disconnected': return 'solar'
-    case 'power_outage':       return 'outage'
-    default:                   return 'outage'
+function levelConfig(alarm: AlarmItem): { color: string; bg: string; icon: typeof AlertTriangle } {
+  const level = (alarm.levelDict ?? alarm.alarmLevel ?? '').toLowerCase()
+  if (level === 'high' || level === 'critical' || level === 'major') {
+    return { color: '#FF3B30', bg: 'rgba(255,59,48,0.08)', icon: AlertTriangle }
   }
+  if (level === 'medium' || level === 'minor' || level === 'warning') {
+    return { color: '#FF9500', bg: 'rgba(255,149,0,0.08)', icon: AlertTriangle }
+  }
+  return { color: '#01D6BE', bg: 'rgba(1,214,190,0.06)', icon: Info }
 }
 
-function getTitle(type: string) {
-  switch (type) {
-    case 'low_battery':        return 'Low Battery'
-    case 'solar_connected':    return 'Solar Connected'
-    case 'solar_disconnected': return 'Solar Disconnected'
-    case 'power_outage':       return 'Power Outage Detected'
-    default:                   return 'Notification'
-  }
-}
-
-// ── 单条通知（支持左滑删除） ──
-function NotificationRow({ item, unread, onDelete }: {
-  item: NotificationItem
-  unread: boolean
-  onDelete: () => void
+function AlarmRow({ alarm, onDismiss, dismissing }: {
+  alarm: AlarmItem
+  onDismiss: (id: string) => void
+  dismissing: boolean
 }) {
-  const x = useMotionValue(0)
-  const [open, setOpen] = useState(false)
-  const REVEAL = -76 // 露出删除按钮的位移
+  const cfg = levelConfig(alarm)
+  const Icon = alarm.isProcessed ? CheckCircle : cfg.icon
+  const iconColor = alarm.isProcessed ? '#34C759' : cfg.color
 
-  const handleDragEnd = (_: unknown, info: { offset: { x: number }; velocity: { x: number } }) => {
-    const shouldOpen = info.offset.x < -38 || info.velocity.x < -300
-    const target = shouldOpen ? REVEAL : 0
-    setOpen(shouldOpen)
-    animate(x, target, { type: 'spring', stiffness: 500, damping: 40 })
-  }
+  const title = alarm.name ?? alarm.alarmMessage ?? alarm.key ?? `Alarm ${alarm.alarmCode ?? alarm.id}`
+  const subtitle = [
+    alarm.levelDict ?? alarm.alarmLevel,
+    alarm.deviceName,
+    alarm.stationName,
+  ].filter(Boolean).join(' · ')
+
+  const time = alarm.disappearedAt
+    ? `Resolved ${new Date(alarm.disappearedAt).toLocaleDateString()}`
+    : alarm.createdAt
+      ? new Date(alarm.createdAt).toLocaleString()
+      : ''
 
   return (
-    <div className="relative overflow-hidden">
-      {/* 删除按钮（底层） */}
-      <button
-        onClick={onDelete}
-        aria-label="Delete"
-        className="absolute right-0 top-0 bottom-0 w-[76px] bg-danger flex items-center justify-center"
-      >
-        <Icon name="trash" size={20} />
-      </button>
-
-      {/* 通知行（可拖拽层），底部分隔线 */}
-      <motion.div
-        drag="x"
-        style={{ x }}
-        dragConstraints={{ left: REVEAL, right: 0 }}
-        dragElastic={0.06}
-        onDragEnd={handleDragEnd}
-        onClick={() => { if (open) { setOpen(false); animate(x, 0, { type: 'spring', stiffness: 500, damping: 40 }) } }}
-        className="relative bg-ink-12 px-5 py-4 cursor-grab active:cursor-grabbing
-          border-b border-[rgba(255,255,255,0.08)]"
-      >
-        <div className="flex items-start gap-3.5">
-          {/* 纯白报警图标 + 深色圆形底 */}
-          <div className="w-10 h-10 rounded-full bg-[#2C2C2E] flex items-center justify-center flex-shrink-0">
-            <Icon name={getIconName(item.type)} size={20} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2 mb-1">
-              <span className="text-body-lg font-semibold text-white">{getTitle(item.type)}</span>
-              <div className="flex items-center gap-2 flex-shrink-0 pt-0.5">
-                <span className="text-caption text-ink-7">{item.time}</span>
-                {unread && <span className="w-2.5 h-2.5 rounded-full bg-danger" />}
-              </div>
-            </div>
-            <div className="text-body-md text-ink-7 leading-snug">
-              <span className="text-ink-6">{item.deviceName}</span>
-              <span className="text-ink-7"> • {item.description}</span>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    </div>
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+      className="flex items-start gap-3 px-4 py-3.5 border-b border-[rgba(255,255,255,0.06)]"
+      style={{ backgroundColor: alarm.isProcessed ? 'transparent' : cfg.bg }}
+    >
+      <div className="mt-0.5 flex-shrink-0" style={{ color: iconColor }}>
+        <Icon size={18} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="text-body-md font-semibold text-[#FFFFFF] leading-tight">{title}</div>
+        {subtitle && <div className="text-[11px] text-[#8C8C8C] mt-0.5">{subtitle}</div>}
+        {alarm.description && (
+          <div className="text-[11px] text-[#BFBFBF] mt-1 leading-snug">{alarm.description}</div>
+        )}
+        <div className="text-[10px] text-[#636366] mt-1.5">{time}</div>
+      </div>
+      {!alarm.isProcessed && (
+        <button
+          onClick={() => onDismiss(alarm.id)}
+          disabled={dismissing}
+          className="flex-shrink-0 mt-0.5 text-[11px] text-[#01D6BE] px-2.5 py-1 rounded-full bg-[rgba(1,214,190,0.1)] disabled:opacity-40 flex items-center gap-1"
+        >
+          {dismissing ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />}
+          Dismiss
+        </button>
+      )}
+    </motion.div>
   )
 }
 
 export default function NotificationsPage() {
   const navigate = useNavigate()
-  const { items, markAllRead, deleteNotification, unreadCount } = useNotificationStore()
+  const {
+    selectedDeviceId,
+    alarms,
+    alarmTotal,
+    alarmLoading,
+    loadAlarms,
+    dismissAlarm,
+  } = useDeviceStore()
 
-  // 进入页面即视为查看最新通知 → 红点消失
-  const wasUnread = unreadCount() > 0
-  useEffect(() => { markAllRead() }, [markAllRead])
+  const [dismissingIds, setDismissingIds] = useState<Set<string>>(new Set())
 
-  const list = items()
+  useEffect(() => {
+    loadAlarms(selectedDeviceId ? Number(selectedDeviceId) : undefined, 1, 30)
+  }, [selectedDeviceId, loadAlarms])
+
+  const handleDismiss = async (alarmId: string) => {
+    setDismissingIds(prev => new Set(prev).add(alarmId))
+    try {
+      await dismissAlarm(alarmId)
+    } finally {
+      setDismissingIds(prev => { const s = new Set(prev); s.delete(alarmId); return s })
+    }
+  }
+
+  const handleLoadMore = () => {
+    const nextPage = Math.floor(alarms.length / 30) + 1
+    loadAlarms(selectedDeviceId ? Number(selectedDeviceId) : undefined, nextPage, 30, true)
+  }
+
+  const unprocessedCount = alarms.filter(a => !a.isProcessed).length
 
   return (
-    <div className="h-full flex flex-col bg-ink-12 overflow-hidden">
-      {/* Header — 返回按钮 + 居中标题 */}
-      <div className="relative px-5 pt-4 pb-4 safe-area-top flex items-center justify-center">
+    <div className="h-full flex flex-col bg-[#141414] overflow-hidden">
+      {/* Header */}
+      <div className="px-5 pt-4 pb-3 safe-area-top flex items-center gap-3">
         <button
           onClick={() => navigate(-1)}
-          className="absolute left-5 w-9 h-9 rounded-full bg-[#2C2C2E] flex items-center justify-center text-white active:scale-95 transition-transform"
+          className="w-9 h-9 rounded-full bg-[#262626] flex items-center justify-center text-[#FFFFFF] active:scale-95 transition-transform"
           aria-label="Back"
         >
-          <Icon name="chevron-left" size={20} />
+          <ChevronLeft size={20} />
         </button>
-        <h2 className="text-title-lg font-bold text-white">Notifications</h2>
+        <div className="flex-1">
+          <h2 className="text-lg font-bold text-[#FFFFFF]">Alarm List</h2>
+          {unprocessedCount > 0 && (
+            <p className="text-caption text-[#FF3B30]">{unprocessedCount} active</p>
+          )}
+          {unprocessedCount === 0 && alarms.length > 0 && (
+            <p className="text-caption text-[#8C8C8C]">{alarms.length} total</p>
+          )}
+        </div>
+        {alarmLoading && <Loader2 size={18} className="text-[#01D6BE] animate-spin" />}
       </div>
 
-      {/* Content — 分隔线列表 */}
+      {/* List */}
       <div className="flex-1 overflow-y-auto scrollbar-hide">
-        {list.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center justify-center h-full text-center"
-          >
-            <div className="w-20 h-20 rounded-full bg-[#2C2C2E] flex items-center justify-center mb-4">
-              <Icon name="bell" size={32} className="opacity-40" />
-            </div>
-            <p className="text-body-md text-ink-6">No notifications</p>
-          </motion.div>
-        ) : (
-          <AnimatePresence initial={false}>
-            {list.map((item, idx) => (
-              <motion.div
-                key={item.id}
-                layout
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.25 }}
-              >
-                <NotificationRow
-                  item={item}
-                  unread={wasUnread && idx === 0}
-                  onDelete={() => deleteNotification(item.id)}
-                />
-              </motion.div>
-            ))}
-          </AnimatePresence>
+        {/* Loading state (initial) */}
+        {alarmLoading && alarms.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-full gap-3 text-[#8C8C8C]">
+            <Loader2 size={28} className="text-[#01D6BE] animate-spin" />
+            <p className="text-body-md">Loading alarms…</p>
+          </div>
         )}
+
+        {/* Empty state */}
+        {!alarmLoading && alarms.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col items-center justify-center h-full text-center px-6"
+          >
+            <div className="w-20 h-20 rounded-full bg-[#262626] flex items-center justify-center mb-4">
+              <Bell size={32} className="text-[#454545]" />
+            </div>
+            <p className="text-body-lg font-semibold text-[#FFFFFF]">No Alarms</p>
+            <p className="text-body-md text-[#636366] mt-1">All systems are running normally</p>
+          </motion.div>
+        )}
+
+        {/* Alarm rows */}
+        <AnimatePresence initial={false}>
+          {alarms.map(alarm => (
+            <AlarmRow
+              key={alarm.id}
+              alarm={alarm}
+              onDismiss={handleDismiss}
+              dismissing={dismissingIds.has(alarm.id)}
+            />
+          ))}
+        </AnimatePresence>
+
+        {/* Load more */}
+        {alarms.length > 0 && alarms.length < alarmTotal && (
+          <button
+            onClick={handleLoadMore}
+            disabled={alarmLoading}
+            className="w-full py-4 text-body-md text-[#01D6BE] font-medium disabled:opacity-50"
+          >
+            {alarmLoading ? 'Loading…' : `Load More (${alarmTotal - alarms.length} remaining)`}
+          </button>
+        )}
+
+        {/* Bottom spacer */}
+        <div className="h-6" />
       </div>
     </div>
   )
 }
+
