@@ -25,6 +25,7 @@ import { getUserProfile } from '../db/powerflowDB'
 import appVersion from '../version.json'
 import ProfileEditPage from './ProfileEditPage'
 import ToggleSwitch from '../components/ToggleSwitch'
+import PermissionsManager from '../components/PermissionsManager'
 import type { UserProfile } from '../types/protocol'
 
 export default function SettingPage() {
@@ -253,6 +254,11 @@ export default function SettingPage() {
               ariaLabel="Toggle solar status alerts"
             />
           </div>
+        </motion.div>
+
+        {/* Permissions — live status + tester */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>
+          <PermissionsManager />
         </motion.div>
 
         {/* Support */}

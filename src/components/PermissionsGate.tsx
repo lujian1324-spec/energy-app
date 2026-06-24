@@ -1,87 +1,37 @@
 /**
  * First-launch permission prompt.
  *
- * Requests Camera (via getUserMedia), Bluetooth (via requestDevice),
- * and explains Storage access (IndexedDB / localStorage — always granted
- * in modern browsers, so we show it as informational).
+ * Requests Notifications, Camera, Bluetooth, Wi-Fi/Network and persistent
+ * Storage via the shared permissions utility (src/utils/permissions.ts).
  *
  * Shows once then sets a localStorage flag so it never re-appears.
  */
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { HardDrive } from 'lucide-react'
+import { HardDrive, Wifi } from 'lucide-react'
 import Icon from './Icon'
+import {
+  PERMISSION_DEFS,
+  type PermissionId,
+  type PermissionResult,
+} from '../utils/permissions'
 
 const STORAGE_KEY = 'sierro_permissions_asked'
 
-/**
- * Resolve a promise but never hang: if it doesn't settle within `ms`,
- * fall back to `fallback`. Critical for Android WebView (Capacitor) where
- * getUserMedia / Notification.requestPermission can hang forever when the
- * native permission bridge isn't wired up, freezing this gate.
- */
-function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
-  return Promise.race([
-    p,
-    new Promise<T>(resolve => setTimeout(() => resolve(fallback), ms)),
-  ])
+// Per-permission icon (Icon component name, or a Lucide fallback)
+const ICONS: Record<PermissionId, { name?: string; Lucide?: React.FC<{ size?: number; className?: string }> }> = {
+  storage: { Lucide: HardDrive },
+  notifications: { name: 'bell' },
+  camera: { name: 'scan' },
+  bluetooth: { name: 'bluetooth' },
+  wifi: { Lucide: Wifi },
 }
 
-interface Permission {
-  id: 'storage' | 'notifications' | 'camera' | 'bluetooth'
-  iconName?: string
-  LucideIcon?: React.FC<{ size?: number; className?: string }>
-  title: string
-  description: string
-}
-
-const PERMISSIONS: Permission[] = [
-  {
-    id: 'storage',
-    LucideIcon: HardDrive,
-    title: 'Local Storage',
-    description: 'Save your profile, avatar, and settings on this device.',
-  },
-  {
-    id: 'notifications',
-    iconName: 'bell',
-    title: 'Notifications',
-    description: 'Get alerted instantly when a power outage or device alarm occurs.',
-  },
-  {
-    id: 'camera',
-    iconName: 'scan',
-    title: 'Camera',
-    description: 'Scan QR codes to add devices and update your profile photo.',
-  },
-  {
-    id: 'bluetooth',
-    iconName: 'bluetooth',
-    title: 'Bluetooth',
-    description: 'Connect directly to your SIERRO device for setup and control.',
-  },
-]
-
-async function requestCamera(): Promise<boolean> {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true })
-    stream.getTracks().forEach(t => t.stop())
-    return true
-  } catch {
-    return false
-  }
-}
-
-async function requestBluetooth(): Promise<boolean> {
-  try {
-    if (!('bluetooth' in navigator)) return false
-    // requestDevice opens the browser picker — user can cancel
-    await (navigator as any).bluetooth.requestDevice({ acceptAllDevices: true })
-    return true
-  } catch {
-    // User cancelled or BT unavailable — not a fatal error
-    return false
-  }
+function PermIcon({ id, size = 20 }: { id: PermissionId; size?: number }) {
+  const cfg = ICONS[id]
+  if (cfg.name) return <Icon name={cfg.name} size={size} />
+  if (cfg.Lucide) return <cfg.Lucide size={size} className="text-[#01D6BE]" />
+  return null
 }
 
 export function hasAskedPermissions(): boolean {
@@ -98,41 +48,34 @@ interface Props {
 
 export default function PermissionsGate({ onDone }: Props) {
   const [step, setStep] = useState<'intro' | 'asking' | 'done'>('intro')
-  const [results, setResults] = useState<Record<string, boolean>>({})
+  const [results, setResults] = useState<Record<string, PermissionResult>>({})
 
   const handleAllow = async () => {
     setStep('asking')
     // Mark immediately so a stuck/closed prompt never re-traps the user.
     markPermissionsAsked()
-    const r: Record<string, boolean> = { storage: true }
 
-    // Notifications — guard against WebView hangs (8s cap)
-    try {
-      if ('Notification' in window && Notification.permission !== 'denied') {
-        const perm = await withTimeout(Notification.requestPermission(), 8000, 'default' as NotificationPermission)
-        r.notifications = perm === 'granted'
-      } else if ('Notification' in window) {
-        r.notifications = Notification.permission === 'granted'
-      } else {
-        r.notifications = false
-      }
-    } catch {
-      r.notifications = false
+    // Request sequentially so native prompts don't overlap.
+    const r: Record<string, PermissionResult> = {}
+    for (const def of PERMISSION_DEFS) {
+      r[def.id] = await def.request()
+      setResults({ ...r })
     }
-
-    // Camera — getUserMedia can hang in WebView; cap at 10s
-    r.camera = await withTimeout(requestCamera(), 10000, false)
-
-    // Bluetooth — Web Bluetooth picker; cap at 10s
-    r.bluetooth = await withTimeout(requestBluetooth(), 10000, false)
-
-    setResults(r)
     setStep('done')
   }
 
   const handleSkip = () => {
     markPermissionsAsked()
     onDone()
+  }
+
+  const labelFor = (res?: PermissionResult): { text: string; cls: string } => {
+    switch (res?.state) {
+      case 'granted': return { text: 'Allowed', cls: 'text-[#34C759]' }
+      case 'denied': return { text: 'Denied', cls: 'text-[#FF9500]' }
+      case 'unsupported': return { text: 'N/A', cls: 'text-[#8C8C8C]' }
+      default: return { text: 'Optional', cls: 'text-[#BFBFBF]' }
+    }
   }
 
   return (
@@ -161,10 +104,10 @@ export default function PermissionsGate({ onDone }: Props) {
 
             {/* Permission list */}
             <div className="w-full space-y-3 mb-4">
-              {PERMISSIONS.map(({ id, iconName, LucideIcon, title, description }) => (
+              {PERMISSION_DEFS.map(({ id, title, description }) => (
                 <div key={id} className="flex items-start gap-4 bg-[#262626] rounded-l px-4 py-4">
                   <div className="w-10 h-10 rounded-l bg-[rgba(1,214,190,0.1)] flex items-center justify-center flex-shrink-0">
-                    {iconName ? <Icon name={iconName} size={20} /> : LucideIcon ? <LucideIcon size={20} className="text-[#01D6BE]" /> : null}
+                    <PermIcon id={id} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-body-lg font-semibold text-white">{title}</p>
@@ -203,25 +146,27 @@ export default function PermissionsGate({ onDone }: Props) {
             </div>
             <h1 className="text-headline-lg font-bold text-white text-center mb-2">All Set</h1>
             <p className="text-body-md text-[#BFBFBF] text-center mb-6 max-w-[260px] leading-relaxed">
-              You can always update permissions in your device Settings app.
+              You can re-test or update permissions anytime in Settings.
             </p>
 
             <div className="w-full space-y-3 mb-4">
-              {PERMISSIONS.map(({ id, iconName, LucideIcon, title }) => (
-                <div key={id} className="flex items-center gap-4 bg-[#262626] rounded-l px-4 py-3.5">
-                  <div className="w-9 h-9 rounded-m bg-[rgba(1,214,190,0.08)] flex items-center justify-center flex-shrink-0">
-                    {iconName ? <Icon name={iconName} size={18} /> : LucideIcon ? <LucideIcon size={18} className="text-[#01D6BE]" /> : null}
+              {PERMISSION_DEFS.map(({ id, title }) => {
+                const lbl = labelFor(results[id])
+                return (
+                  <div key={id} className="flex items-center gap-4 bg-[#262626] rounded-l px-4 py-3.5">
+                    <div className="w-9 h-9 rounded-m bg-[rgba(1,214,190,0.08)] flex items-center justify-center flex-shrink-0">
+                      <PermIcon id={id} size={18} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="block text-body-md font-medium text-white">{title}</span>
+                      {results[id]?.detail && (
+                        <span className="block text-caption text-[#8C8C8C] mt-0.5 truncate">{results[id]!.detail}</span>
+                      )}
+                    </div>
+                    <span className={`text-label font-semibold flex-shrink-0 ${lbl.cls}`}>{lbl.text}</span>
                   </div>
-                  <span className="flex-1 text-body-md font-medium text-white">{title}</span>
-                  <span
-                    className={`text-label font-semibold ${
-                      results[id] === false ? 'text-[#FF9500]' : 'text-[#34C759]'
-                    }`}
-                  >
-                    {results[id] === false ? 'Denied' : 'Allowed'}
-                  </span>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </motion.div>
         )}
