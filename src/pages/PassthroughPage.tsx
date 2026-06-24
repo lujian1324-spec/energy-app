@@ -17,11 +17,13 @@ import {
   parseReadResponse,
   parseRunState,
   parseWarnCode1,
+  parseResponseToParams,
   toInt16,
   fromHexString,
   toHexString,
   REG_CONFIG,
   REG_STATUS,
+  type ParsedParam,
 } from '../protocols/modbusProtocol'
 
 // ─── 预设报文分组 ─────────────────────────────────────────────────────────────
@@ -271,6 +273,7 @@ export default function PassthroughPage() {
   const [customHex, setCustomHex] = useState('')
   const [loading, setLoading] = useState<string | null>(null)  // tracks which preset is sending
   const [logs, setLogs] = useState<LogEntry[]>([])
+  const [parsedParams, setParsedParams] = useState<ParsedParam[]>([])
 
   const addLog = (dir: LogEntry['dir'], text: string, label?: string, summary?: string) =>
     setLogs(prev => [...prev.slice(-200), { id: entryId++, dir, text, label, summary, ts: Date.now() }])
@@ -294,6 +297,9 @@ export default function PassthroughPage() {
         }
         const summary = summarizeResponse(rxHex, payload)
         addLog('rx', rxHex, label, summary ?? undefined)
+        // 解析为参数列表
+        const params = parseResponseToParams(payload, rxHex)
+        if (params.length > 0) setParsedParams(params)
       } else {
         addLog('err', `Code ${res.code}: ${res.message ?? res.msg ?? 'Error'}`, label)
       }
@@ -397,6 +403,63 @@ export default function PassthroughPage() {
             </button>
           </div>
         </div>
+
+        {/* ── 解析参数列表 ── */}
+        {parsedParams.length > 0 && (() => {
+          const groups: Record<string, ParsedParam[]> = {}
+          for (const p of parsedParams) {
+            if (!groups[p.group]) groups[p.group] = []
+            groups[p.group].push(p)
+          }
+          const GROUP_ORDER = ['AC实时', 'PV实时', '电池实时', '温度电流', '电芯电压', '运行状态', '告警故障', 'AC配置', 'PV配置', '电池配置']
+          const ordered = [...GROUP_ORDER.filter(g => groups[g]), ...Object.keys(groups).filter(g => !GROUP_ORDER.includes(g))]
+          return (
+            <div className="px-4 pt-5">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-caption font-semibold text-[#8C8C8C] uppercase tracking-wide flex items-center gap-1.5">
+                  <Settings2 size={11} className="text-[#01D6BE]" />
+                  解析参数
+                </p>
+                <button onClick={() => setParsedParams([])} className="text-caption text-[#595959] active:text-[#FF3530]">
+                  清除
+                </button>
+              </div>
+              <div className="space-y-3">
+                {ordered.map(grp => (
+                  <div key={grp} className="rounded-l bg-[#262626] overflow-hidden">
+                    <div className="px-3 py-2 bg-[rgba(1,214,190,0.08)] border-b border-[rgba(255,255,255,0.04)]">
+                      <span className="text-caption font-semibold text-[#01D6BE]">{grp}</span>
+                    </div>
+                    <div className="divide-y divide-[rgba(255,255,255,0.04)]">
+                      {groups[grp].map(p => (
+                        <div key={p.addr} className="flex items-center justify-between px-3 py-2.5 gap-2">
+                          <div className="flex-1 min-w-0">
+                            <span className="text-body-md text-[#D9D9D9] text-sm">{p.name}</span>
+                            <span className="text-tiny text-[#454545] font-mono ml-2">
+                              0x{p.addr.toString(16).toUpperCase().padStart(4, '0')}
+                            </span>
+                          </div>
+                          <div className="flex-shrink-0 text-right">
+                            {p.unit ? (
+                              <>
+                                <span className="text-body-md font-semibold text-white">{p.value}</span>
+                                <span className="text-caption text-[#8C8C8C] ml-1">{p.unit}</span>
+                              </>
+                            ) : (
+                              <span className={`text-caption font-medium ${p.value === '正常' || p.value === '无告警' || p.value === '无故障' ? 'text-[#34C759]' : 'text-[#FF9500]'}`}>
+                                {p.value}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        })()}
 
         {/* ── 收发日志 ── */}
         <div className="px-4 pt-5">
