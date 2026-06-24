@@ -297,10 +297,17 @@ export default function DeviceMonitorPage() {
   const isOnline = device?.isOnline ?? true
 
   const netChargeW = acPower + solarPower - outputPower
-  const minsToFull = netChargeW > 0 ? Math.round(remainingBatteryCapacity / netChargeW * 60) : null
-  const timeStr = minsToFull
-    ? `${Math.floor(minsToFull / 60)}h ${minsToFull % 60}m to full`
-    : isCharging ? 'Charging' : '--'
+  const ratedCapacity = device?.ratedPower ?? 5000
+  let timeStr = '--'
+  if (netChargeW > 0) {
+    const minsToFull = Math.round((ratedCapacity - remainingBatteryCapacity) / netChargeW * 60)
+    timeStr = `${Math.floor(minsToFull / 60)}h ${minsToFull % 60}m to full`
+  } else if (netChargeW < 0 && remainingBatteryCapacity > 0) {
+    const minsLeft = Math.round(remainingBatteryCapacity / (-netChargeW) * 60)
+    timeStr = `${Math.floor(minsLeft / 60)}h ${minsLeft % 60}m remaining`
+  } else if (isCharging) {
+    timeStr = 'Charging'
+  }
 
   // Real-Time Power chart：当日 API 历史 + 本地累积的实时采样，组合绘制当日曲线
   const { chartData, chartTimestamps } = useMemo(() => {
