@@ -102,8 +102,12 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     { label: 'Savings', desc: 'Reserve 60% for backup', value: 2 },
   ]
   const [workMode, setWorkMode_] = useState<0 | 1 | 2>(1)
-  const [selectedIcon, setSelectedIcon] = useState('zap')
-  const [pendingIcon, setPendingIcon] = useState('zap')
+  const [selectedIcon, setSelectedIcon] = useState(() =>
+    (routeId ? localStorage.getItem(`sierro-display-icon-${routeId}`) : null) ?? 'zap'
+  )
+  const [pendingIcon, setPendingIcon] = useState(() =>
+    (routeId ? localStorage.getItem(`sierro-display-icon-${routeId}`) : null) ?? 'zap'
+  )
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
@@ -208,6 +212,9 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
 
   const handleSaveIcon = () => {
     setSelectedIcon(pendingIcon)
+    if (routeId) {
+      localStorage.setItem(`sierro-display-icon-${routeId}`, pendingIcon)
+    }
     setScreen('main')
   }
 

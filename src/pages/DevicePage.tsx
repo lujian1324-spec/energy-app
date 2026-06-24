@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import jsQR from 'jsqr'
@@ -19,6 +19,12 @@ import {
   Server,
   TrendingUp,
   TrendingDown,
+  Zap,
+  Refrigerator,
+  Lamp,
+  Fish,
+  PlugZap,
+  BookOpen,
 } from 'lucide-react'
 import Icon from '../components/Icon'
 import PullToRefresh from '../components/PullToRefresh'
@@ -59,6 +65,21 @@ const deviceIcons: Record<string, string> = {
   powerstation: '⚡',
   default: '🔌',
 }
+
+// Lucide icons available in the Display Icon picker (must mirror DeviceDetailPage DISPLAY_ICONS)
+const LUCIDE_ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
+  zap: Zap,
+  refrigerator: Refrigerator,
+  server: Server,
+  lamp: Lamp,
+  fish: Fish,
+  plugzap: PlugZap,
+  wifi: Wifi,
+  cpap: BookOpen,
+}
+
+const getSavedDisplayIconId = (deviceId: string): string | null =>
+  localStorage.getItem(`sierro-display-icon-${deviceId}`)
 
 export default function DevicePage() {
   const navigate = useNavigate()
@@ -492,17 +513,29 @@ export default function DevicePage() {
                 >
                   {/* Top row: Display icon/photo + BatteryTag */}
                   <div className="flex items-start justify-between mb-3">
-                    {getDeviceImage(device.deviceSortKey) ? (
-                      <div className="w-14 h-14 flex items-center justify-center">
-                        <img
-                          src={getDeviceImage(device.deviceSortKey)!}
-                          alt={getDeviceModel(device)}
-                          className="w-full h-full object-contain drop-shadow-sm"
-                        />
-                      </div>
-                    ) : (
-                      <span className="text-[28px] leading-none">{getDeviceIcon(device.deviceSortKey)}</span>
-                    )}
+                    {(() => {
+                      const savedIconId = getSavedDisplayIconId(String(device.id))
+                      const SavedIcon = savedIconId ? LUCIDE_ICON_MAP[savedIconId] : null
+                      if (SavedIcon) {
+                        return (
+                          <div className="w-14 h-14 flex items-center justify-center">
+                            <SavedIcon size={36} className="text-[#01D6BE]" />
+                          </div>
+                        )
+                      }
+                      if (getDeviceImage(device.deviceSortKey)) {
+                        return (
+                          <div className="w-14 h-14 flex items-center justify-center">
+                            <img
+                              src={getDeviceImage(device.deviceSortKey)!}
+                              alt={getDeviceModel(device)}
+                              className="w-full h-full object-contain drop-shadow-sm"
+                            />
+                          </div>
+                        )
+                      }
+                      return <span className="text-[28px] leading-none">{getDeviceIcon(device.deviceSortKey)}</span>
+                    })()}
                     <BatteryTag level={remainingBatteryCapacity} unknown={!remainingBatteryCapacityKnown} connected={connected} charging={isCharging} />
                   </div>
 
