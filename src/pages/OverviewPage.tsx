@@ -86,7 +86,7 @@ export default function OverviewPage() {
   const [alertList, setAlertList] = useState<DeviceAlert[]>([])
   const [pushPermission, setPushPermission] = useState<NotificationPermission>('default')
   const [showDeviceDropdown, setShowDeviceDropdown] = useState(false)
-  const [dismissingAlarmId, setDismissingAlarmId] = useState<number | null>(null)
+  const [dismissingAlarmId, setDismissingAlarmId] = useState<string | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [showDeviceDetail, setShowDeviceDetail] = useState(false)
   const [powerDataSource, setPowerDataSource] = useState<'battery' | 'ac' | 'solar' | 'output'>('battery')
@@ -115,7 +115,7 @@ export default function OverviewPage() {
   useEffect(() => {
     if (id) {
       selectDevice(id)
-      loadAlarms(Number(id))
+      loadAlarms(id)
     }
   }, [id])
 
@@ -139,9 +139,9 @@ export default function OverviewPage() {
     if (alarmPollRef.current) clearInterval(alarmPollRef.current)
     if (selectedDeviceId) {
       // 立即加载一次
-      loadAlarms(Number(selectedDeviceId))
+      loadAlarms(selectedDeviceId)
       alarmPollRef.current = setInterval(() => {
-        loadAlarms(Number(selectedDeviceId))
+        loadAlarms(selectedDeviceId)
       }, 60000)
       return () => {
         if (alarmPollRef.current) clearInterval(alarmPollRef.current)
@@ -289,7 +289,7 @@ export default function OverviewPage() {
   const activeFiringCount = alertList.filter(a => !a.isProcessed).length
 
   // ─── 忽略告警（调用 API） ───
-  const handleDismissAlarm = async (alarmId: number) => {
+  const handleDismissAlarm = async (alarmId: string) => {
     setDismissingAlarmId(alarmId)
     try {
       await dismissAlarm(alarmId)
@@ -1070,7 +1070,7 @@ export default function OverviewPage() {
                 {alarms.length > 0 && alarms.length < alarmTotal && (
                   <button
                     onClick={() => {
-                      if (selectedDeviceId) loadAlarms(Number(selectedDeviceId), Math.ceil(alarms.length / 20) + 1, 20, true)
+                      if (selectedDeviceId) loadAlarms(selectedDeviceId, Math.ceil(alarms.length / 20) + 1, 20, true)
                     }}
                     className="w-full py-2.5 text-[12px] text-[#01D6BE] font-medium"
                   >

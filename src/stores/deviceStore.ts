@@ -111,7 +111,7 @@ interface DeviceStoreState {
   controlDevice: (deviceId: string | number, key: string, value: unknown) => Promise<ApiResponse<unknown>>
   startRealtimeReport: (deviceId: string | number, clientId: string) => Promise<void>
   stopRealtimeReport: (deviceId: string | number, clientId: string) => Promise<void>
-  loadAlarms: (deviceId?: number, page?: number, count?: number, append?: boolean) => Promise<void>
+  loadAlarms: (deviceId?: string | number, page?: number, count?: number, append?: boolean) => Promise<void>
   dismissAlarm: (alarmId: string | number) => Promise<void>
   loadStations: (page?: number, count?: number) => Promise<void>
   createStation: (data: StationAddRequest) => Promise<ApiResponse<unknown>>
@@ -380,7 +380,7 @@ export const useDeviceStore = create<DeviceStoreState>()(
           const result = await fetchAlarms({
             page,
             count,
-            deviceId,
+            deviceId: deviceId !== undefined ? String(deviceId) : undefined,
             orderByCreatedTimeDesc: true,
           })
           if (seq !== alarmRequestSeq) return

@@ -150,7 +150,7 @@ export default function NotificationsPage() {
   const [dismissingIds, setDismissingIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    loadAlarms(selectedDeviceId ? Number(selectedDeviceId) : undefined, 1, 30)
+    loadAlarms(selectedDeviceId ?? undefined, 1, 30)
     // Refresh live device state so the real-time firing alarms are current
     if (selectedDeviceId) loadDeviceState(selectedDeviceId)
   }, [selectedDeviceId, loadAlarms, loadDeviceState])
@@ -182,7 +182,7 @@ export default function NotificationsPage() {
 
   const handleLoadMore = () => {
     const nextPage = Math.floor(alarms.length / 30) + 1
-    loadAlarms(selectedDeviceId ? Number(selectedDeviceId) : undefined, nextPage, 30, true)
+    loadAlarms(selectedDeviceId ?? undefined, nextPage, 30, true)
   }
 
   const unprocessedCount = alarms.filter(a => !a.isProcessed).length
