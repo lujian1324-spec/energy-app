@@ -799,18 +799,13 @@ export async function passthroughDevice(
   deviceId: string | number,
   payload: { data: string; noOutput?: boolean }
 ): Promise<ApiResponse<PassthroughResponse>> {
-  // hex string → Uint8Array → Base64
   const hex = payload.data.replace(/\s+/g, '')
   const bytes = new Uint8Array(hex.match(/.{2}/g)!.map(b => parseInt(b, 16)))
   const base64Input = btoa(String.fromCharCode(...bytes))
 
   return api.post<PassthroughResponse>(
-    `/remote/device/passthrough`,
-    {
-      deviceId: String(deviceId),
-      base64Input,
-      noOutput: payload.noOutput ?? false,
-    }
+    `/remote/device/passthrough?deviceId=${deviceId}`,
+    { base64Input, noOutput: payload.noOutput ?? false }
   )
 }
 
