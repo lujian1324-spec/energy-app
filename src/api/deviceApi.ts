@@ -800,7 +800,7 @@ export async function passthroughDevice(
   const hexNoSpace = payload.data.replace(/\s+/g, '').toUpperCase()
   return api.post<PassthroughResponse>(
     `/remote/device/passthrough?deviceId=${deviceId}`,
-    { content: hexNoSpace, ...(payload.sn ? { sn: payload.sn } : {}) }
+    { data: hexNoSpace }
   )
 }
 
