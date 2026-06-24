@@ -296,11 +296,8 @@ export default function DeviceMonitorPage() {
   const isCharging = batteryPower > 0
   const isOnline = device?.isOnline ?? true
 
-  const capacityWh = (device?.ratedPower ?? 5000)
-  // Time to full: remaining capacity / net charge rate (exchangeChargingPower + generationPower - outputPower)
   const netChargeW = acPower + solarPower - outputPower
-  const remainingCapacityWh = capacityWh * (1 - remainingBatteryCapacity / 100)
-  const minsToFull = netChargeW > 0 ? Math.round(remainingCapacityWh / netChargeW * 60) : null
+  const minsToFull = netChargeW > 0 ? Math.round(remainingBatteryCapacity / netChargeW * 60) : null
   const timeStr = minsToFull
     ? `${Math.floor(minsToFull / 60)}h ${minsToFull % 60}m to full`
     : isCharging ? 'Charging' : '--'
