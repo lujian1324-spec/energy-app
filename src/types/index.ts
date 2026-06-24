@@ -250,6 +250,8 @@ export interface AppSettings {
   founderBadge?: boolean;
   founderBadgeActivatedAt?: string;
   founderBadgeNumber?: number; // 0-100 之间的唯一身份编码
+  /** Low battery push notification toggle (independent of Power Outage) */
+  pushLowBattery?: boolean;
   /** Low battery notification threshold: 10 | 20 | 30 (default: 30) */
   lowBatteryThreshold?: number;
   /** PRD v1.1 §4.3: Device display icon color */

@@ -44,6 +44,7 @@ import type { DeviceAlert } from '../types'
 import {
   showPowerOutageNotification,
   showSolarChargingNotification,
+  showLowBatteryNotification,
   getNotificationPermission,
   requestNotificationPermission,
   getIOSPushStatus,
@@ -363,6 +364,19 @@ export default function OverviewPage() {
       showSolarChargingNotification(solarPower)
     }
   }, [solarPower, pushPermission, settings.pushSolarStatus])
+
+  // ─── Low Battery notification ────────────────────────────────────────────────
+  const prevLowBatteryRef = useRef(false)
+  useEffect(() => {
+    const threshold = settings.lowBatteryThreshold ?? 30
+    const isLow = remainingBatteryCapacity > 0 && remainingBatteryCapacity < threshold
+    const wasLow = prevLowBatteryRef.current
+    prevLowBatteryRef.current = isLow
+
+    if (isLow && !wasLow && (settings.pushLowBattery ?? false) && pushPermission === 'granted') {
+      showLowBatteryNotification(Math.round(remainingBatteryCapacity), threshold)
+    }
+  }, [remainingBatteryCapacity, settings.pushLowBattery, settings.lowBatteryThreshold, pushPermission])
 
   // ─── Power Outage notification (60s poll, AC input voltage < 10V) ───────────
   const prevOutageRef = useRef(false)

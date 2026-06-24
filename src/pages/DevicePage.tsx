@@ -26,6 +26,7 @@ import ManualAddDeviceModal from '../components/ManualAddDeviceModal'
 import { useDeviceStore } from '../stores/deviceStore'
 import { useAuthStore } from '../stores/authStore'
 import { useNotificationStore } from '../stores/notificationStore'
+import { usePowerStationStore } from '../stores/powerStationStore'
 import sierro1000Img from '../assets/sierro-1000.webp'
 import { mapFieldsToRealtime } from '../api/deviceApi'
 import type { DeviceListItem, DeviceStateField } from '../api/deviceApi'
@@ -73,6 +74,7 @@ export default function DevicePage() {
   } = useDeviceStore()
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
   const isGuest = useAuthStore(s => s.isGuest)
+  const { settings } = usePowerStationStore()
 
   const [showAddModal, setShowAddModal] = useState(false)
   const [showManualAdd, setShowManualAdd] = useState(false)
@@ -284,9 +286,10 @@ export default function DevicePage() {
   }
 
   // 是否有低电量设备（用于最新通知 Banner）
+  const lowBatteryThreshold = settings.lowBatteryThreshold ?? 30
   const lowBatteryDevice = devices.find(d => {
     const remainingBatteryCapacity = getDeviceNum(d.id, 'remainingBatteryCapacity')
-    return remainingBatteryCapacity !== null && remainingBatteryCapacity < 30
+    return remainingBatteryCapacity !== null && remainingBatteryCapacity < lowBatteryThreshold
   })
 
   // 未读通知红点（查看通知页后清零）

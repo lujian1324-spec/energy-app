@@ -59,7 +59,7 @@ export default function SettingPage() {
 
   // Push notification settings
   const [pushOutage, setPushOutage] = useState(settings.pushNotifications)
-  const [pushLowBattery, setPushLowBattery] = useState(settings.pushNotifications)
+  const [pushLowBattery, setPushLowBattery] = useState(settings.pushLowBattery ?? false)
   const [pushSolarStatus, setPushSolarStatus] = useState(settings.pushSolarStatus ?? false)
   const [lowBatteryThreshold, setLowBatteryThreshold] = useState(settings.lowBatteryThreshold ?? 30)
 
@@ -182,7 +182,7 @@ export default function SettingPage() {
             </div>
             <ToggleSwitch
               isOn={pushLowBattery}
-              onToggle={() => { setPushLowBattery(!pushLowBattery); updateSettings({ pushNotifications: !pushLowBattery }) }}
+              onToggle={() => { setPushLowBattery(!pushLowBattery); updateSettings({ pushLowBattery: !pushLowBattery }) }}
               ariaLabel="Toggle low battery alerts"
             />
           </div>

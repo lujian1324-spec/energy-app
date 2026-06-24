@@ -256,6 +256,32 @@ export const showPowerOutageNotification = async (
   await showLocalNotification('Power outage. Backup activated.', options)
 }
 
+// 显示低电量通知
+export const showLowBatteryNotification = async (
+  soc: number,
+  threshold: number
+): Promise<void> => {
+  const basePath = getBasePath()
+  const isIOSDevice = isIOS()
+
+  const options: NotificationOptions & { vibrate?: number[]; renotify?: boolean } = {
+    body: `Battery is at ${soc}%. Connect a power source to keep your devices running.`,
+    icon: `${basePath}/icon-192x192.png`,
+    badge: `${basePath}/icon-192x192.png`,
+    tag: `low-battery-${threshold}`,
+    renotify: false,
+    requireInteraction: !isIOSDevice,
+    silent: false,
+    data: { type: 'low-battery', soc, threshold, timestamp: Date.now() },
+  }
+
+  if (!isIOSDevice) {
+    options.vibrate = [200, 100, 200]
+  }
+
+  await showLocalNotification(`Low Battery: ${soc}%`, options)
+}
+
 // 显示太阳能开始充电通知
 export const showSolarChargingNotification = async (solarW: number): Promise<void> => {
   const basePath = getBasePath()
