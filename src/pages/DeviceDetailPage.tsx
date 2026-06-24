@@ -21,6 +21,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useDeviceStore } from '../stores/deviceStore'
 import { mapFieldsToRealtime, toggleSleepMode, setWorkMode } from '../api/deviceApi'
+import sierro1000Img from '../assets/sierro-1000.webp'
 import appVersion from '../version.json'
 
 interface DeviceDetailPageProps {
@@ -405,6 +406,26 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
         {/* Grid */}
         <div className="flex-1 px-4 pt-4">
           <div className="grid grid-cols-4 gap-3">
+            {/* Device photo option */}
+            <button
+              onClick={() => setPendingIcon('photo')}
+              className={`flex flex-col items-center gap-2 py-4 rounded-l transition-colors ${
+                pendingIcon === 'photo' ? 'bg-[#01D6BE]' : 'bg-[#262626]'
+              }`}
+            >
+              <img
+                src={sierro1000Img}
+                alt="Device"
+                className="w-7 h-7 object-contain"
+              />
+              <span
+                className={`text-label ${
+                  pendingIcon === 'photo' ? 'text-black font-semibold' : 'text-[#BFBFBF]'
+                }`}
+              >
+                Device
+              </span>
+            </button>
             {DISPLAY_ICONS.map(({ id, Icon, label }) => (
               <button
                 key={id}
@@ -689,7 +710,11 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           label="Display Icon"
           preview={
             <div className="w-7 h-7 rounded-m bg-[#01D6BE]/10 flex items-center justify-center">
-              <CurrentIconComp size={16} className="text-[#01D6BE]" />
+              {selectedIcon === 'photo' ? (
+                <img src={sierro1000Img} alt="Device" className="w-5 h-5 object-contain" />
+              ) : (
+                <CurrentIconComp size={16} className="text-[#01D6BE]" />
+              )}
             </div>
           }
           onPress={() => {

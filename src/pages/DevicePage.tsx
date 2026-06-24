@@ -515,6 +515,18 @@ export default function DevicePage() {
                   <div className="flex items-start justify-between mb-3">
                     {(() => {
                       const savedIconId = getSavedDisplayIconId(String(device.id))
+                      // Explicit "Device photo" selection — always show the product image
+                      if (savedIconId === 'photo') {
+                        return (
+                          <div className="w-14 h-14 flex items-center justify-center">
+                            <img
+                              src={sierro1000Img}
+                              alt={getDeviceModel(device)}
+                              className="w-full h-full object-contain drop-shadow-sm"
+                            />
+                          </div>
+                        )
+                      }
                       const SavedIcon = savedIconId ? LUCIDE_ICON_MAP[savedIconId] : null
                       if (SavedIcon) {
                         return (
