@@ -170,13 +170,15 @@ export default function DebugParamsPage() {
         : '--'
 
     // Device Monitor 页：双显（netChargeW 公式，与该页一致）
+    const fmtDur = (mins: number) => {
+      const m = Math.max(0, Math.round(mins))
+      return `${Math.floor(m / 60)}h${m % 60}m`
+    }
     let monitorTime = '--'
     if (netChargeW > 0) {
-      const mins = Math.round(((ratedCapacityWh - soc) / netChargeW) * 60)
-      monitorTime = `${Math.floor(mins / 60)}h ${mins % 60}m to full`
+      monitorTime = `${fmtDur(((ratedCapacityWh - soc) / netChargeW) * 60)} to full`
     } else if (netChargeW < 0 && soc > 0) {
-      const mins = Math.round((soc / -netChargeW) * 60)
-      monitorTime = `${Math.floor(mins / 60)}h ${mins % 60}m remaining`
+      monitorTime = `${fmtDur((soc / -netChargeW) * 60)} remaining`
     } else if (isCharging) {
       monitorTime = 'Charging'
     }

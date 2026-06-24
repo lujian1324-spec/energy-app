@@ -299,13 +299,16 @@ export default function DeviceMonitorPage() {
   const netChargeW = acPower + solarPower - outputPower
   // ratedPower 单位为 kW，转换为 W（×1000）参与功率/容量计算
   const ratedCapacity = (device?.ratedPower ?? 5) * 1000
+  // 格式化为 "1h16m"（无内部空格，负值钳为 0）
+  const fmtDuration = (mins: number) => {
+    const m = Math.max(0, Math.round(mins))
+    return `${Math.floor(m / 60)}h${m % 60}m`
+  }
   let timeStr = '--'
   if (netChargeW > 0) {
-    const minsToFull = Math.round((ratedCapacity - remainingBatteryCapacity) / netChargeW * 60)
-    timeStr = `${Math.floor(minsToFull / 60)}h ${minsToFull % 60}m to full`
+    timeStr = `${fmtDuration((ratedCapacity - remainingBatteryCapacity) / netChargeW * 60)} to full`
   } else if (netChargeW < 0 && remainingBatteryCapacity > 0) {
-    const minsLeft = Math.round(remainingBatteryCapacity / (-netChargeW) * 60)
-    timeStr = `${Math.floor(minsLeft / 60)}h ${minsLeft % 60}m remaining`
+    timeStr = `${fmtDuration(remainingBatteryCapacity / (-netChargeW) * 60)} remaining`
   } else if (isCharging) {
     timeStr = 'Charging'
   }
@@ -461,6 +464,7 @@ export default function DeviceMonitorPage() {
               connected={isOnline}
               timeRemaining={timeStr}
               timeToFull={timeStr}
+              rawTimeLabel
             />
           </div>
 

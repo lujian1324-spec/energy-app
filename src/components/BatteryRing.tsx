@@ -10,6 +10,9 @@ interface BatteryRingProps {
   connected?: boolean
   timeToFull?: string
   timeRemaining?: string
+  /** When true, the time strings already include their suffix ("to full"/"remaining")
+   *  and the ring should render them as-is instead of appending its own. */
+  rawTimeLabel?: boolean
   uid?: string
 }
 
@@ -65,6 +68,7 @@ export default function BatteryRing({
   connected = true,
   timeToFull = '1h 24m',
   timeRemaining = '4h 30m',
+  rawTimeLabel = false,
   uid = 'default',
 }: BatteryRingProps) {
   const radius = (size - strokeWidth) / 2
@@ -159,11 +163,11 @@ export default function BatteryRing({
           </div>
         ) : showTime ? (
           <div className="text-[10px] text-[#BFBFBF] mt-1 tracking-wide" aria-hidden="true">
-            {timeRemaining} remaining
+            {rawTimeLabel ? timeRemaining : `${timeRemaining} remaining`}
           </div>
         ) : isCharging ? (
           <div className="text-[10px] text-[#BFBFBF] mt-1 tracking-wide" aria-hidden="true">
-            {timeToFull} to full
+            {rawTimeLabel ? timeToFull : `${timeToFull} to full`}
           </div>
         ) : null}
       </div>
