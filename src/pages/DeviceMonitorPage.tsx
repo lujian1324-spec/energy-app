@@ -304,17 +304,18 @@ export default function DeviceMonitorPage() {
     : isCharging ? 'Charging' : '--'
 
   // Real-Time Power chart：当日 API 历史 + 本地累积的实时采样，组合绘制当日曲线
-  const chartData = useMemo(() => {
-    if (!id) return []
+  const { chartData, chartTimestamps } = useMemo(() => {
+    if (!id) return { chartData: [], chartTimestamps: [] }
     const tab = TABS.find(t => t.id === activeTab)!
 
     // Demo 模式：直接用 demo 曲线
     if (isDemoMode) {
       const points = activeTab === 'battery' ? 20000 : 2400
-      return getDemoDayCurve(id, tab.historyKey, points)
+      return { chartData: getDemoDayCurve(id, tab.historyKey, points), chartTimestamps: [] }
     }
 
     const out: number[] = []
+    const ts: number[] = []
 
     // 1) 当日历史数据（API 实时返回或本地缓存）
     const source = historyData ?? loadCachedRtHistory(id)
@@ -325,6 +326,7 @@ export default function DeviceMonitorPage() {
         const v = Number(pt.value)
         out.push(Number.isFinite(v) ? v : 0)
         const t = new Date(pt.time).getTime()
+        ts.push(Number.isFinite(t) ? t : 0)
         if (Number.isFinite(t)) lastHistT = Math.max(lastHistT, t)
       }
     }
@@ -334,18 +336,34 @@ export default function DeviceMonitorPage() {
     for (const s of samples) {
       if (s.t <= lastHistT) continue
       out.push(metricOf(s, activeTab))
+      ts.push(s.t)
     }
 
     // 单点无法成线 → 复制为两点
-    if (out.length === 1) return [out[0], out[0]]
-    if (out.length >= 2) return out
+    if (out.length === 1) return { chartData: [out[0], out[0]], chartTimestamps: [ts[0], ts[0]] }
+    if (out.length >= 2) return { chartData: out, chartTimestamps: ts }
 
     // 暂无任何当日数据
-    return []
+    return { chartData: [], chartTimestamps: [] }
   }, [id, activeTab, historyData, isDemoMode, sampleTick])
 
-  // Fixed x-axis labels: 12am, 4am, 8am, 12pm, 4pm, 8pm, 12am
-  const timeLabels = useMemo(() => ['12am', '4am', '8am', '12pm', '4pm', '8pm', '12am'], [])
+  // X-axis labels derived from real data timestamps
+  const timeLabels = useMemo(() => {
+    if (chartTimestamps.length === 0) return ['12am', '4am', '8am', '12pm', '4pm', '8pm', '12am']
+    const fmt = (ms: number) => {
+      const d = new Date(ms)
+      let h = d.getHours(), m = d.getMinutes()
+      const ampm = h < 12 ? 'am' : 'pm'
+      h = h % 12 || 12
+      return m === 0 ? `${h}${ampm}` : `${h}:${String(m).padStart(2, '0')}${ampm}`
+    }
+    const n = chartTimestamps.length
+    const count = Math.min(7, n)
+    return Array.from({ length: count }, (_, i) => {
+      const idx = Math.round(i * (n - 1) / (count - 1))
+      return fmt(chartTimestamps[idx] || 0)
+    })
+  }, [chartTimestamps])
 
   // Current value badge
   const currentTab = TABS.find(t => t.id === activeTab)!
