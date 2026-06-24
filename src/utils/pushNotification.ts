@@ -228,33 +228,31 @@ const waitForServiceWorkerActive = async (
 }
 
 // 显示断电警报通知
-export const showPowerOutageNotification = async (): Promise<void> => {
+export const showPowerOutageNotification = async (
+  soc: number = 90,
+  remainingHours: string = '—'
+): Promise<void> => {
   const basePath = getBasePath()
   const isIOSDevice = isIOS()
-  
+
   const options: NotificationOptions & { vibrate?: number[]; renotify?: boolean } = {
-    body: 'The remaining 90% battery will last up to 16 hours.',
+    body: `The remaining ${soc}% battery will last up to ${remainingHours} hours.`,
     icon: `${basePath}/icon-192x192.png`,
-    // iOS badge 图标 - 使用 192x192 作为备用
     badge: `${basePath}/icon-192x192.png`,
     tag: 'power-outage-alert',
-    // 重要：iOS 需要 renotify 才能在锁屏时重复提醒
     renotify: true,
-    // iOS 不支持 requireInteraction
     requireInteraction: !isIOSDevice,
-    // 重要：iOS 上 silent 必须为 false 才能显示在锁屏
     silent: false,
     data: {
       type: 'power-outage',
       timestamp: Date.now(),
     },
   }
-  
-  // 非 iOS 设备添加振动
+
   if (!isIOSDevice) {
     options.vibrate = [200, 100, 200]
   }
-  
+
   await showLocalNotification('Power outage. Backup activated.', options)
 }
 

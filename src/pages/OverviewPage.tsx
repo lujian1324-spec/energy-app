@@ -359,10 +359,32 @@ export default function OverviewPage() {
   useEffect(() => {
     const prev = prevSolarRef.current
     prevSolarRef.current = solarPower
-    if (prev === 0 && solarPower > 10 && pushPermission === 'granted') {
+    if (prev === 0 && solarPower > 10 && pushPermission === 'granted' && settings.pushSolarStatus) {
       showSolarChargingNotification(solarPower)
     }
-  }, [solarPower, pushPermission])
+  }, [solarPower, pushPermission, settings.pushSolarStatus])
+
+  // ─── Power Outage notification (60s poll, AC input voltage < 10V) ───────────
+  const prevOutageRef = useRef(false)
+  useEffect(() => {
+    const acInputVoltage = realtime?.acInputVoltage ?? 0
+    const isOutage = acInputVoltage < 10
+    const wasOutage = prevOutageRef.current
+    prevOutageRef.current = isOutage
+
+    if (isOutage && !wasOutage && settings.pushNotifications && pushPermission === 'granted') {
+      // Calculate remaining work hours: remainingBatteryCapacity / |netChargeW|
+      const netChargeW = acPower + solarPower - outputPower
+      const dischargeW = Math.abs(netChargeW)
+      const remainingHours = dischargeW > 0
+        ? (remainingBatteryCapacity / dischargeW).toFixed(1)
+        : '—'
+      const soc = Math.round(remainingBatteryCapacity)
+
+      showPowerOutageNotification(soc, remainingHours)
+    }
+  }, [realtime?.acInputVoltage, settings.pushNotifications, pushPermission,
+      acPower, solarPower, outputPower, remainingBatteryCapacity])
 
   // Build SVG points (viewBox 0 0 300 80) from the buffered series
   const chartSeries = powerHistory.map(p => p[powerDataSource])
