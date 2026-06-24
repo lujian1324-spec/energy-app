@@ -296,11 +296,13 @@ export default function DeviceMonitorPage() {
   const isCharging = batteryPower > 0
   const isOnline = device?.isOnline ?? true
 
-  // Estimate remaining time (rough: kWh capacity * remainingBatteryCapacity% / outputPower)
   const capacityWh = (device?.ratedPower ?? 5000)
-  const remainMinutes = outputPower > 0 ? Math.round((capacityWh * remainingBatteryCapacity) / 100 / outputPower * 60) : null
-  const timeStr = remainMinutes
-    ? `${Math.floor(remainMinutes / 60)}h ${remainMinutes % 60}m remaining`
+  // Time to full: remaining capacity / net charge rate (exchangeChargingPower + generationPower - outputPower)
+  const netChargeW = acPower + solarPower - outputPower
+  const remainingCapacityWh = capacityWh * (1 - remainingBatteryCapacity / 100)
+  const minsToFull = netChargeW > 0 ? Math.round(remainingCapacityWh / netChargeW * 60) : null
+  const timeStr = minsToFull
+    ? `${Math.floor(minsToFull / 60)}h ${minsToFull % 60}m to full`
     : isCharging ? 'Charging' : '--'
 
   // Real-Time Power chart：当日 API 历史 + 本地累积的实时采样，组合绘制当日曲线
