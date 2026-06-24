@@ -349,23 +349,7 @@ export default function DeviceMonitorPage() {
     return { chartData: [], chartTimestamps: [] }
   }, [id, activeTab, historyData, isDemoMode, sampleTick])
 
-  // X-axis labels derived from real data timestamps
-  const timeLabels = useMemo(() => {
-    if (chartTimestamps.length === 0) return ['12am', '4am', '8am', '12pm', '4pm', '8pm', '12am']
-    const fmt = (ms: number) => {
-      const d = new Date(ms)
-      let h = d.getHours(), m = d.getMinutes()
-      const ampm = h < 12 ? 'am' : 'pm'
-      h = h % 12 || 12
-      return m === 0 ? `${h}${ampm}` : `${h}:${String(m).padStart(2, '0')}${ampm}`
-    }
-    const n = chartTimestamps.length
-    const count = Math.min(7, n)
-    return Array.from({ length: count }, (_, i) => {
-      const idx = Math.round(i * (n - 1) / (count - 1))
-      return fmt(chartTimestamps[idx] || 0)
-    })
-  }, [chartTimestamps])
+  const timeLabels = ['12am', '4am', '8am', '12pm', '4pm', '8pm', '12am']
 
   // Current value badge
   const currentTab = TABS.find(t => t.id === activeTab)!
