@@ -284,7 +284,7 @@ export default function PassthroughPage() {
     try {
       const res = await passthroughDevice(deviceId, { data: payload, protocol: 'modbus' })
       if (res.code === 0 || res.code === '0') {
-        const raw = res.data?.data ?? JSON.stringify(res.data ?? '(empty)')
+        const raw = res.data?.content ?? res.data?.data ?? JSON.stringify(res.data ?? '(empty)')
         const summary = summarizeResponse(raw, payload)
         addLog('rx', raw, label, summary ?? undefined)
       } else {

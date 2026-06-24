@@ -777,29 +777,30 @@ export async function getDeviceConfigCache(
 // ─── 数据透传 ───
 
 export interface PassthroughRequest {
-  /** 透传数据（十六进制字符串或 base64，依设备协议而定） */
-  data: string
-  /** 可选：透传协议类型 */
-  protocol?: string
-  /** 可选：超时时间（ms） */
-  timeout?: number
+  /** 透传数据（十六进制字符串，不含空格，如 "010300000012C5C7"） */
+  content: string
+  /** 设备序列号（部分平台版本需要） */
+  sn?: string
 }
 
 export interface PassthroughResponse {
-  /** 设备返回的透传数据 */
+  /** 设备返回的透传数据（十六进制字符串） */
+  content?: string
   data?: string
-  /** 透传是否成功 */
   success?: boolean
 }
 
-/** 向设备发送透传指令并获取响应 */
+/** 向设备发送透传指令并获取响应
+ *  data 参数接受带空格或不带空格的十六进制字符串，内部自动去除空格
+ */
 export async function passthroughDevice(
   deviceId: string | number,
-  payload: PassthroughRequest
+  payload: { data: string; protocol?: string; sn?: string }
 ): Promise<ApiResponse<PassthroughResponse>> {
+  const hexNoSpace = payload.data.replace(/\s+/g, '').toUpperCase()
   return api.post<PassthroughResponse>(
     `/remote/device/passthrough?deviceId=${deviceId}`,
-    payload
+    { content: hexNoSpace, ...(payload.sn ? { sn: payload.sn } : {}) }
   )
 }
 
