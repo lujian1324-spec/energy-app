@@ -138,7 +138,7 @@ export function useSleepModeScheduler(
     try {
       const frame = buildWriteSingleFrame(REG_CONFIG.AC_CHARGE_POWER, watts)
       const hexFrame = toHexString(frame)
-      await passthroughDevice(did, { data: hexFrame.replace(/\s+/g, '') })
+      await passthroughDevice(did, { data: hexFrame })
       setLastSentAt(new Date())
       setLastSentLabel(label)
     } catch {

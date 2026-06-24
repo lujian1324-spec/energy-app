@@ -282,11 +282,18 @@ export default function PassthroughPage() {
     setLoading(key)
     addLog('tx', payload, label)
     try {
-      const res = await passthroughDevice(deviceId, { data: payload, protocol: 'modbus' })
+      const res = await passthroughDevice(deviceId, { data: payload })
       if (res.code === 0 || res.code === '0') {
-        const raw = res.data?.data ?? res.data?.content ?? JSON.stringify(res.data ?? '(empty)')
-        const summary = summarizeResponse(raw, payload)
-        addLog('rx', raw, label, summary ?? undefined)
+        // 响应可能是 Base64，解码为 Hex 展示
+        let rxHex = ''
+        if (res.data?.base64Output) {
+          const bin = atob(res.data.base64Output)
+          rxHex = Array.from(bin).map(c => c.charCodeAt(0).toString(16).padStart(2, '0').toUpperCase()).join(' ')
+        } else {
+          rxHex = res.data?.data ?? res.data?.content ?? JSON.stringify(res.data ?? '(empty)')
+        }
+        const summary = summarizeResponse(rxHex, payload)
+        addLog('rx', rxHex, label, summary ?? undefined)
       } else {
         addLog('err', `Code ${res.code}: ${res.message ?? res.msg ?? 'Error'}`, label)
       }
