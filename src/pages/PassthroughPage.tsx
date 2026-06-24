@@ -287,14 +287,28 @@ export default function PassthroughPage() {
     try {
       const res = await passthroughDevice(deviceId, { data: payload })
       if (res.code === 0 || res.code === '0') {
-        // 响应可能是 Base64，解码为 Hex 展示
-        let rxHex = ''
-        if (res.data?.base64Output) {
-          const bin = atob(res.data.base64Output)
-          rxHex = Array.from(bin).map(c => c.charCodeAt(0).toString(16).padStart(2, '0').toUpperCase()).join(' ')
-        } else {
-          rxHex = res.data?.data ?? res.data?.content ?? JSON.stringify(res.data ?? '(empty)')
+        // 解码响应：base64 → Hex
+        const b64ToHex = (b64: string) => {
+          const bin = atob(b64.trim())
+          return Array.from(bin).map(c => c.charCodeAt(0).toString(16).padStart(2, '0').toUpperCase()).join(' ')
         }
+        const isBase64 = (s: string) => /^[A-Za-z0-9+/]+=*$/.test(s.trim()) && s.trim().length % 4 === 0
+
+        let rxHex = ''
+        const d = res.data as Record<string, unknown> | string | null | undefined
+        if (typeof d === 'string' && isBase64(d)) {
+          rxHex = b64ToHex(d)
+        } else if (d && typeof d === 'object') {
+          const b64 = (d as Record<string, string>).base64Output ?? (d as Record<string, string>).data ?? (d as Record<string, string>).content ?? ''
+          if (b64 && isBase64(b64)) {
+            rxHex = b64ToHex(b64)
+          } else {
+            rxHex = b64 || JSON.stringify(d)
+          }
+        } else {
+          rxHex = String(d ?? '(empty)')
+        }
+
         const summary = summarizeResponse(rxHex, payload)
         addLog('rx', rxHex, label, summary ?? undefined)
         // 解析为参数列表
