@@ -615,7 +615,7 @@ export default function StatsPage() {
   const hasDevice = deviceId !== null
   const remainingBatteryCapacity = deviceRealtime?.remainingBatteryCapacity ?? 0
   const batteryTemp = deviceRealtime?.batteryTemp ?? 0
-  const batteryHealth = 95
+  const batteryHealth = 100
   const isDataLoaded = true
 
   const deviceName = useMemo(() => {
