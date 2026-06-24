@@ -41,6 +41,7 @@ import DeviceDetailPage from './DeviceDetailPage'
 import { useDeviceStore } from '../stores/deviceStore'
 import { mapFieldsToRealtime, mapFiringAlarms } from '../api/deviceApi'
 import type { DeviceAlert } from '../types'
+import { detectOutageFromFields } from '../utils/powerOutageNotification'
 import {
   showPowerOutageNotification,
   showSolarChargingNotification,
@@ -378,13 +379,22 @@ export default function OverviewPage() {
     }
   }, [remainingBatteryCapacity, settings.pushLowBattery, settings.lowBatteryThreshold, pushPermission])
 
-  // ─── Power Outage notification (60s poll, AC input voltage < 10V) ───────────
+  // ─── Power Outage notification ──────────────────────────────────────────────
+  // Trigger on EITHER a total AC loss (voltage collapse) OR a mains/grid fault
+  // reported by the device — including undervoltage (市电欠压), which keeps the
+  // voltage low-but-nonzero and therefore never trips a simple "< 10V" check.
   const prevOutageRef = useRef(false)
   useEffect(() => {
-    const acInputVoltage = realtime?.acInputVoltage ?? 0
-    const isOutage = acInputVoltage < 10
+    const acInputVoltage = realtime?.acInputVoltage
+    const voltageCollapsed = acInputVoltage !== undefined && acInputVoltage < 10
+    const { outage: faultOutage, reason } = detectOutageFromFields(selectedDeviceState?.fields)
+    const isOutage = voltageCollapsed || faultOutage
     const wasOutage = prevOutageRef.current
     prevOutageRef.current = isOutage
+
+    if (isOutage && !wasOutage) {
+      console.log('[PowerOutage] detected', { acInputVoltage, voltageCollapsed, faultOutage, reason })
+    }
 
     if (isOutage && !wasOutage && settings.pushNotifications && pushPermission === 'granted') {
       // Calculate remaining work hours: remainingBatteryCapacity / |netChargeW|
@@ -397,7 +407,7 @@ export default function OverviewPage() {
 
       showPowerOutageNotification(soc, remainingHours)
     }
-  }, [realtime?.acInputVoltage, settings.pushNotifications, pushPermission,
+  }, [realtime?.acInputVoltage, selectedDeviceState?.fields, settings.pushNotifications, pushPermission,
       acPower, solarPower, outputPower, remainingBatteryCapacity])
 
   // Build SVG points (viewBox 0 0 300 80) from the buffered series

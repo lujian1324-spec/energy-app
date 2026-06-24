@@ -5,13 +5,15 @@
  * on an online device. Deduplicates by alarmId so each event fires once.
  */
 
-// Alarm keys from API (field: key) that indicate AC/grid power loss
-const POWER_OUTAGE_KEYS = new Set([
+// Alarm keys from API (field: key) that indicate AC/grid power loss or
+// mains undervoltage. Used for EXACT field/alarm matching (no substring) so a
+// normal field like `mainsCharging` is never mistaken for an outage.
+export const POWER_OUTAGE_KEYS = new Set([
   // Confirmed from live API data
   'lineLoss',               // 市电停电告警
   'mainsPowerFailures',     // 市电故障
-  'gridVoltLows',           // 市电输入电压过低
-  'bypassUndervoltageFault',// 旁路欠压故障
+  'gridVoltLows',           // 市电输入电压过低 (mains undervoltage)
+  'bypassUndervoltageFault',// 旁路欠压故障 (bypass undervoltage)
   // Additional common keys
   'gridFault',
   'acInputFail',
@@ -22,6 +24,29 @@ const POWER_OUTAGE_KEYS = new Set([
   'powerFailure',
   'lineFault',
 ])
+
+/** A device-state field value is "on" when truthy across the API's encodings. */
+function isFieldOn(value: unknown): boolean {
+  return value === 1 || value === '1' || value === true || value === 'true'
+}
+
+/**
+ * Detect a mains/grid power-loss or undervoltage condition directly from the
+ * device-state `fields` map (NOT from acInputVoltage, which stays low-but-
+ * nonzero during an undervoltage fault). Uses exact key matching.
+ *
+ * Returns the offending key as `reason` so callers can log/show it.
+ */
+export function detectOutageFromFields(
+  fields?: Record<string, { value: unknown }>
+): { outage: boolean; reason?: string } {
+  if (!fields) return { outage: false }
+  for (const key of POWER_OUTAGE_KEYS) {
+    const f = fields[key]
+    if (f && isFieldOn(f.value)) return { outage: true, reason: key }
+  }
+  return { outage: false }
+}
 
 // Track alarmIds already notified to avoid repeat firing
 const notifiedAlarmIds = new Set<string>()
