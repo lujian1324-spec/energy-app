@@ -360,7 +360,7 @@ export default function OverviewPage() {
   useEffect(() => {
     const prev = prevSolarRef.current
     prevSolarRef.current = solarPower
-    if (prev === 0 && solarPower > 10 && pushPermission === 'granted' && settings.pushSolarStatus) {
+    if (prev === 0 && solarPower > 50 && pushPermission === 'granted' && settings.pushSolarStatus) {
       showSolarChargingNotification(solarPower)
     }
   }, [solarPower, pushPermission, settings.pushSolarStatus])
