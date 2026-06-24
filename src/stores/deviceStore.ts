@@ -119,7 +119,7 @@ interface DeviceStoreState {
   enablePeakValley: (deviceId: number, enabled: boolean) => Promise<ApiResponse<unknown>>
   savePeakValleyGeneral: (data: PeakValleyGeneralConfig) => Promise<ApiResponse<unknown>>
   loadEnergyFlow: (deviceId: string | number) => Promise<void>
-  loadHistoryData: (deviceId: string | number, fromTime: string, toTime: string, keys?: string[], count?: number, orderByTimeAsc?: boolean) => Promise<void>
+  loadHistoryData: (deviceId: string | number, fromTime: string | number, toTime: string | number, keys?: string[], count?: number, orderByTimeAsc?: boolean) => Promise<void>
 
   /** 本地重命名设备（不调用后端，同步更新列表/详情，demo 模式同样生效） */
   renameDeviceLocal: (deviceId: string | number, name: string) => void
@@ -529,13 +529,16 @@ export const useDeviceStore = create<DeviceStoreState>()(
       },
 
       // ─── 历史数据（StatsPage）───
-      loadHistoryData: async (deviceId: string | number, fromTime: string, toTime: string, keys?: string[], count?: number, orderByTimeAsc = true) => {
+      loadHistoryData: async (deviceId: string | number, fromTime: string | number, toTime: string | number, keys?: string[], count?: number, orderByTimeAsc = true) => {
         if (!deviceId) return
+
+        // Normalize to millisecond timestamps
+        const fromMs = typeof fromTime === 'number' ? fromTime : new Date(fromTime).getTime()
+        const toMs = typeof toTime === 'number' ? toTime : new Date(toTime).getTime()
 
         // Demo 模式：返回模拟历史数据
         if (get().isDemoMode) {
-          const msRange = new Date(toTime).getTime() - new Date(fromTime).getTime()
-          const hoursRange = Math.round(msRange / (1000 * 3600)) || 24
+          const hoursRange = Math.round((toMs - fromMs) / (1000 * 3600)) || 24
           const demoData = getDemoHistoryData(deviceId, hoursRange)
           set({ historyData: demoData.data, historyLoading: false, historyError: null })
           return
@@ -544,10 +547,10 @@ export const useDeviceStore = create<DeviceStoreState>()(
         set({ historyLoading: true, historyError: null })
         try {
           const result = await fetchHistoryData({
-            deviceId: Number(deviceId),
-            keys: keys || ['solarPower', 'outputPower', 'remainingBatteryCapacity', 'batteryTemp'],
-            fromTime,
-            toTime,
+            deviceId: String(deviceId),
+            keys: keys || ['generationPower', 'outputPower', 'remainingBatteryCapacity', 'batteryTemp'],
+            fromTime: fromMs,
+            toTime: toMs,
             page: 1,
             count: count || 288,
             orderByTimeAsc: orderByTimeAsc ?? true,

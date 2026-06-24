@@ -407,10 +407,10 @@ export interface FastReportStopRequest {
 // ─── 历史数据 ───
 
 export interface HistoryDataRequest {
-  deviceId: number
-  keys: string[]
-  fromTime: string
-  toTime: string
+  deviceId: string | number
+  keys?: string[]
+  fromTime: number   // millisecond timestamp
+  toTime: number     // millisecond timestamp
   page: number
   count: number
   orderByTimeAsc?: boolean
@@ -892,17 +892,17 @@ export async function fetchHistoryData(
 
 /** 便捷：获取最近 N 小时的指定属性历史 */
 export function fetchRecentHistory(
-  deviceId: number,
-  keys: string[],
+  deviceId: string | number,
+  keys?: string[],
   hoursAgo = 24
 ) {
-  const now = new Date()
-  const from = new Date(now.getTime() - hoursAgo * 3600 * 1000)
+  const now = Date.now()
+  const from = now - hoursAgo * 3600 * 1000
   return fetchHistoryData({
     deviceId,
     keys,
-    fromTime: from.toISOString(),
-    toTime: now.toISOString(),
+    fromTime: from,
+    toTime: now,
     page: 1,
     count: 288,
     orderByTimeAsc: true,
