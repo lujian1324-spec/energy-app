@@ -42,6 +42,7 @@ import { useDeviceStore } from '../stores/deviceStore'
 import { mapFieldsToRealtime, mapFiringAlarms } from '../api/deviceApi'
 import type { DeviceAlert } from '../types'
 import { detectOutageFromFields } from '../utils/powerOutageNotification'
+import { batteryTimeLabel } from '../utils/batteryTime'
 import {
   showPowerOutageNotification,
   showSolarChargingNotification,
@@ -194,43 +195,17 @@ export default function OverviewPage() {
   const solarPower = realtime?.solarPower ?? 0
   const outputPower = realtime?.outputPower ?? 0
   const batteryTemp = realtime?.batteryTemp ?? 0
-  const inputPower = Math.max(acPower, solarPower, 0)
   const currentDeviceListItem = devices.find(d => String(d.id) === selectedDeviceId)
-  const deviceModel = selectedDeviceDetails?.gatherProtocolNameDisplay ?? selectedDeviceDetails?.model ?? ''
 
-  // ─── 预估剩余时间 ───
-  const remainingTimeDisplay = useMemo(() => {
-    if (remainingBatteryCapacity <= 0 || outputPower <= 0) return null
-    // Default capacity: 1kWh (Sierro 1000) or 2kWh (Sierro 2000)
-    const modelLower = deviceModel?.toLowerCase() ?? ''
-    const capacityWh = modelLower.includes('2000') ? 2000 : 1000
-    const remainingWh = (remainingBatteryCapacity / 100) * capacityWh
-    const hours = remainingWh / outputPower
-    if (hours >= 1) {
-      const h = Math.floor(hours)
-      const m = Math.round((hours - h) * 60)
-      return `${h}h ${m}m remaining`
-    }
-    const m = Math.round(hours * 60)
-    if (m <= 0) return null
-    return `${m}m remaining`
-  }, [remainingBatteryCapacity, outputPower, deviceModel])
-
-  const chargeTimeDisplay = useMemo(() => {
-    if (remainingBatteryCapacity >= 100 || inputPower <= 0) return null
-    const modelLower = deviceModel?.toLowerCase() ?? ''
-    const capacityWh = modelLower.includes('2000') ? 2000 : 1000
-    const toChargeWh = ((100 - remainingBatteryCapacity) / 100) * capacityWh
-    const hours = toChargeWh / inputPower
-    if (hours >= 1) {
-      const h = Math.floor(hours)
-      const m = Math.round((hours - h) * 60)
-      return `${h}h ${m}m to full`
-    }
-    const m = Math.round(hours * 60)
-    if (m <= 0) return null
-    return `${m}m to full`
-  }, [remainingBatteryCapacity, inputPower, deviceModel])
+  // ─── 预估剩余时间（统一口径，见 utils/batteryTime，与 DeviceMonitorPage 一致）───
+  const batteryRatedPowerKW =
+    currentDeviceListItem?.ratedPower ?? selectedDeviceDetails?.ratedPower
+  const batteryTimeStr = useMemo(() => batteryTimeLabel({
+    acPower, solarPower, outputPower,
+    soc: remainingBatteryCapacity,
+    ratedPowerKW: batteryRatedPowerKW,
+    isCharging: batteryPower > 0,
+  }), [acPower, solarPower, outputPower, remainingBatteryCapacity, batteryRatedPowerKW, batteryPower])
   const acOut1Enable = realtime?.acOut1Enable ?? false
   const acOut2Enable = realtime?.acOut2Enable ?? false
   const usbOut1Enable = realtime?.usbOut1Enable ?? false
@@ -565,8 +540,9 @@ export default function OverviewPage() {
                   percentage={remainingBatteryCapacity}
                   isCharging={isCharging}
                   connected={isOnline}
-                  timeToFull={chargeTimeDisplay ?? '--'}
-                  timeRemaining={(remainingTimeDisplay ?? '').replace(' remaining', '') || '--'}
+                  timeToFull={batteryTimeStr}
+                  timeRemaining={batteryTimeStr}
+                  rawTimeLabel
                 />
               </div>
 

@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronDown, Check, Settings, Bell, Sun, PlugZap } from 'l
 import BatteryRing from '../components/BatteryRing'
 import { useDeviceStore } from '../stores/deviceStore'
 import { mapFieldsToRealtime, type HistoryDataResponse } from '../api/deviceApi'
+import { batteryTimeLabel } from '../utils/batteryTime'
 import { getDemoDayCurve } from '../data/demoData'
 
 // ─── Chart metric tabs ────────────────────────────────────────────────────────
@@ -296,22 +297,13 @@ export default function DeviceMonitorPage() {
   const isCharging = batteryPower > 0
   const isOnline = device?.isOnline ?? true
 
-  const netChargeW = acPower + solarPower - outputPower
-  // ratedPower 单位为 kW，转换为 W（×1000）参与功率/容量计算
-  const ratedCapacity = (device?.ratedPower ?? 5) * 1000
-  // 格式化为 "1h16m"（无内部空格，负值钳为 0）
-  const fmtDuration = (mins: number) => {
-    const m = Math.max(0, Math.round(mins))
-    return `${Math.floor(m / 60)}h${m % 60}m`
-  }
-  let timeStr = '--'
-  if (netChargeW > 0) {
-    timeStr = `${fmtDuration((ratedCapacity - remainingBatteryCapacity) / netChargeW * 60)} to full`
-  } else if (netChargeW < 0 && remainingBatteryCapacity > 0) {
-    timeStr = `${fmtDuration(remainingBatteryCapacity / (-netChargeW) * 60)} remaining`
-  } else if (isCharging) {
-    timeStr = 'Charging'
-  }
+  // 统一口径：电池剩余/充满时间（见 utils/batteryTime）
+  const timeStr = batteryTimeLabel({
+    acPower, solarPower, outputPower,
+    soc: remainingBatteryCapacity,
+    ratedPowerKW: device?.ratedPower,
+    isCharging,
+  })
 
   // Real-Time Power chart：当日 API 历史 + 本地累积的实时采样，组合绘制当日曲线
   const { chartData, chartTimestamps } = useMemo(() => {
