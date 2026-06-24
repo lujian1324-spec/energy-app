@@ -20,6 +20,7 @@ import DeviceDetailPage from './pages/DeviceDetailPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import BleDebugPage from './pages/BleDebugPage'
 import PassthroughPage from './pages/PassthroughPage'
+import DebugParamsPage from './pages/DebugParamsPage'
 import { useRealtimeSimulator } from './hooks/useRealtimeSimulator'
 import { useAuthStore } from './stores/authStore'
 import { ToastContainer, useToast } from './components/Toast'
@@ -142,6 +143,7 @@ function AppInner() {
                 <Route path="/onboarding" element={<RequireAuth><OnboardingPage /></RequireAuth>} />
                 <Route path="/ble-debug" element={<BleDebugPage />} />
                 <Route path="/device/:id/passthrough" element={<RequireAuth><PassthroughPage /></RequireAuth>} />
+                <Route path="/device/:id/debug-params" element={<RequireAuth><DebugParamsPage /></RequireAuth>} />
               </Routes>
             </motion.div>
           </AnimatePresence>
