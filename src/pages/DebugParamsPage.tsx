@@ -128,6 +128,73 @@ export default function DebugParamsPage() {
     return String(v)
   }
 
+  // ─── UI 界面派生 / 计算参数（与各页面显示逻辑保持一致） ───
+  const derivedRows = useMemo(() => {
+    const num = (k: string) => {
+      const v = rt?.[k as keyof typeof rt]
+      return typeof v === 'number' ? v : 0
+    }
+    const acP = num('acPower')
+    const solarP = num('solarPower')
+    const outP = num('outputPower')
+    const battP = num('batteryPower')
+    const soc = num('remainingBatteryCapacity')
+
+    const inputPower = Math.max(acP, solarP, 0)
+    const netChargeW = acP + solarP - outP
+    const isCharging = battP > 0
+
+    const modelLower = (device?.model ?? '').toLowerCase()
+    const capacityWh = modelLower.includes('2000') ? 2000 : 1000
+    const remainingWh = (soc / 100) * capacityWh
+    const ratedCapacityWh = device?.ratedPower != null ? device.ratedPower * 1000 : capacityWh
+
+    const fmtHM = (hours: number, suffix: string) => {
+      if (!isFinite(hours) || hours <= 0) return '--'
+      if (hours >= 1) {
+        const h = Math.floor(hours)
+        const m = Math.round((hours - h) * 60)
+        return `${h}h ${m}m ${suffix}`
+      }
+      const m = Math.round(hours * 60)
+      return m > 0 ? `${m}m ${suffix}` : '--'
+    }
+
+    // Overview 页：放电剩余时间（按机型容量估算）
+    const overviewRemaining =
+      soc > 0 && outP > 0 ? fmtHM(remainingWh / outP, 'remaining') : '--'
+    // Overview 页：充满时间
+    const overviewToFull =
+      soc < 100 && inputPower > 0
+        ? fmtHM((((100 - soc) / 100) * capacityWh) / inputPower, 'to full')
+        : '--'
+
+    // Device Monitor 页：双显（netChargeW 公式，与该页一致）
+    let monitorTime = '--'
+    if (netChargeW > 0) {
+      const mins = Math.round(((ratedCapacityWh - soc) / netChargeW) * 60)
+      monitorTime = `${Math.floor(mins / 60)}h ${mins % 60}m to full`
+    } else if (netChargeW < 0 && soc > 0) {
+      const mins = Math.round((soc / -netChargeW) * 60)
+      monitorTime = `${Math.floor(mins / 60)}h ${mins % 60}m remaining`
+    } else if (isCharging) {
+      monitorTime = 'Charging'
+    }
+
+    return [
+      { label: '输入功率 (inputPower = max(AC,PV))', value: `${inputPower} W` },
+      { label: '净充电功率 (netChargeW = AC+PV−输出)', value: `${netChargeW} W` },
+      { label: '充电中 (isCharging = batteryPower>0)', value: isCharging ? 'Yes' : 'No' },
+      { label: '机型容量 (capacityWh)', value: `${capacityWh} Wh` },
+      { label: '额定容量 (ratedCapacity = ratedPower×1000)', value: `${ratedCapacityWh} Wh` },
+      { label: '剩余电量 (remainingWh = SOC×容量)', value: `${Math.round(remainingWh)} Wh` },
+      { label: 'Overview 剩余时间 (remainingTimeDisplay)', value: overviewRemaining },
+      { label: 'Overview 充满时间 (chargeTimeDisplay)', value: overviewToFull },
+      { label: 'Monitor 时间显示 (timeStr)', value: monitorTime },
+      { label: '电池健康 (batteryHealth, 固定)', value: '100 %' },
+    ]
+  }, [rt, device?.model, device?.ratedPower])
+
   return (
     <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
       {/* Header */}
@@ -200,6 +267,26 @@ export default function DebugParamsPage() {
             </div>
           </div>
         ))}
+
+        {/* UI 派生 / 计算参数 */}
+        <div className="px-4 pt-4">
+          <p className="text-caption font-semibold uppercase tracking-wide mb-2" style={{ color: '#01D6BE' }}>
+            UI 派生 / 计算参数
+          </p>
+          <div className="rounded-l bg-[#262626] overflow-hidden divide-y divide-[rgba(255,255,255,0.04)]">
+            {derivedRows.map(row => {
+              const missing = row.value === '--'
+              return (
+                <div key={row.label} className="flex items-center justify-between px-4 py-3 gap-3">
+                  <span className="text-caption text-[#595959] flex-1 min-w-0 leading-snug">{row.label}</span>
+                  <span className={`text-body-md font-semibold flex-shrink-0 text-right ${missing ? 'text-[#454545]' : 'text-white'}`}>
+                    {row.value}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
 
         {/* 原始 API 字段（全部） */}
         <div className="px-4 pt-4">
