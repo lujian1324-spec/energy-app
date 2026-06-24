@@ -161,7 +161,7 @@ export default function DebugParamsPage() {
               { label: '设备名称 (name)', value: device?.name ?? '--' },
               { label: '型号 (model)', value: device?.model ?? device?.gatherProtocolNameDisplay ?? '--' },
               { label: '序列号 (serialNumber)', value: device?.serialNumber ?? '--' },
-              { label: '额定功率 (ratedPower)', value: device?.ratedPower != null ? `${device.ratedPower} W` : '--' },
+              { label: '额定功率 (ratedPower)', value: device?.ratedPower != null ? `${device.ratedPower * 1000} W (${device.ratedPower} kW)` : '--' },
               { label: '在线状态 (isOnline)', value: device?.isOnline ? 'Online' : 'Offline' },
               { label: '最后更新', value: updatedAt },
             ].map(row => (

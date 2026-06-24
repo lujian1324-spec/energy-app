@@ -316,7 +316,12 @@ export function mapFieldsToRealtime(
     acPower: getNum('exchangeChargingPower'),
     solarPower: getNum('generationPower'),
     outputPower: getNum('outputPower'),
-    batteryPower: getNum('batteryPower'),
+    // 电池功率 = 交流充电 + 光伏充电 − 输出（充电为正，放电为负）
+    // 若 API 直接返回 batteryPower 字段则优先使用，否则用功率公式计算
+    batteryPower: getNum('batteryPower') ??
+      ((getNum('exchangeChargingPower') ?? 0) +
+        (getNum('generationPower') ?? 0) -
+        (getNum('outputPower') ?? 0)),
 
     // 电压 / 频率
     acInputVoltage: getNum('l1AcInputVoltage'),

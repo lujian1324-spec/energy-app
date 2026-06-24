@@ -72,11 +72,14 @@ export default function DeviceInfoPage() {
   const batteryHealth = 100
 
   const cycles = useMemo(() => {
-    // Demo 估算
+    // 真实值：电芯充放电循环次数 (API: numberOfBatteryUsageCycles)
+    const real = realtime?.numberOfBatteryUsageCycles
+    if (real !== undefined && real !== null) return real
+    // Demo 回退估算
     if (!device?.installedAt) return 142
     const days = Math.floor((Date.now() - new Date(device.installedAt).getTime()) / (24 * 3600 * 1000))
     return Math.max(0, Math.min(2000, Math.floor(days * 0.5)))
-  }, [device?.installedAt])
+  }, [realtime?.numberOfBatteryUsageCycles, device?.installedAt])
 
   // 规格（Sierro 1000 固定额定值）
   const specs = useMemo(() => {

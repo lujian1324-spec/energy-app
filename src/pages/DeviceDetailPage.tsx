@@ -490,7 +490,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               label="Capacity"
               value={
                 realDevice?.ratedPower
-                  ? `${(realDevice.ratedPower / 1000).toFixed(1)} kWh`
+                  ? `${realDevice.ratedPower.toFixed(1)} kWh`
                   : `${(powerStation.totalWh / 1000).toFixed(1)} kWh`
               }
             />

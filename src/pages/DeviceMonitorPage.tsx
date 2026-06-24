@@ -297,7 +297,8 @@ export default function DeviceMonitorPage() {
   const isOnline = device?.isOnline ?? true
 
   const netChargeW = acPower + solarPower - outputPower
-  const ratedCapacity = device?.ratedPower ?? 5000
+  // ratedPower 单位为 kW，转换为 W（×1000）参与功率/容量计算
+  const ratedCapacity = (device?.ratedPower ?? 5) * 1000
   let timeStr = '--'
   if (netChargeW > 0) {
     const minsToFull = Math.round((ratedCapacity - remainingBatteryCapacity) / netChargeW * 60)
