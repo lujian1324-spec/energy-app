@@ -517,27 +517,6 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             />
           </div>
 
-          {/* Modbus 透传入口 */}
-          <div className="mt-4 space-y-2">
-            <button
-              onClick={() => navigate(`/device/${routeId ?? selectedDeviceId}/passthrough`)}
-              className="w-full flex items-center justify-between px-4 py-4 rounded-l bg-[#262626] active:opacity-70 transition-opacity"
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-body-lg font-semibold text-[#01D6BE]">Modbus 透传调试</span>
-              </div>
-              <ChevronRight size={18} className="text-[#BFBFBF]" />
-            </button>
-            <button
-              onClick={() => navigate(`/device/${routeId ?? selectedDeviceId}/debug-params`)}
-              className="w-full flex items-center justify-between px-4 py-4 rounded-l bg-[#262626] active:opacity-70 transition-opacity"
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-body-lg font-semibold text-[#8C8C8C]">调试参数查看</span>
-              </div>
-              <ChevronRight size={18} className="text-[#BFBFBF]" />
-            </button>
-          </div>
         </div>
       </div>
     )
