@@ -3,11 +3,12 @@
  * 路由：/device/:id/debug-params
  * 显示本 App 所有 UI 使用的实时参数数值及原始 API 字段
  */
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ChevronLeft, RefreshCw, Loader2, History } from 'lucide-react'
 import { useDeviceStore } from '../stores/deviceStore'
-import { mapFieldsToRealtime, fetchHistoryData } from '../api/deviceApi'
+import { mapFieldsToRealtime } from '../api/deviceApi'
+import { useHistoryFetcher } from '../hooks/useHistoryFetcher'
 
 // ─── 参数分组描述 ─────────────────────────────────────────────────────────────
 
@@ -102,25 +103,11 @@ const PARAM_GROUPS: { title: string; color: string; params: ParamDef[] }[] = [
   },
 ]
 
-// ─── 历史数据类型 ─────────────────────────────────────────────────────────────
-
-interface HistoryPoint {
-  time: string
-  solar: number
-  output: number
-  soc: number
-}
-
-interface HistorySummary {
-  points: HistoryPoint[]
-  solar: { min: number; max: number; avg: number; total: number }
-  output: { min: number; max: number; avg: number; total: number }
-  soc: { min: number; max: number; avg: number }
-}
-
 // ─── 主页面 ───────────────────────────────────────────────────────────────────
 
 const TARGET_SN = '2412315001'
+const JUN25_FROM = new Date('2026-06-25T00:00:00+08:00').getTime()
+const JUN25_TO   = new Date('2026-06-25T23:59:59+08:00').getTime()
 
 export default function DebugParamsPage() {
   const { id } = useParams<{ id: string }>()
@@ -128,65 +115,37 @@ export default function DebugParamsPage() {
   const { devices, selectedDeviceState, loadDeviceState, isDemoMode } = useDeviceStore()
   const device = devices.find(d => String(d.id) === id)
 
-  // ─── 6月25日历史数据 ─────────────────────────────────────────────────────────
-  const [history, setHistory] = useState<HistorySummary | null>(null)
-  const [historyLoading, setHistoryLoading] = useState(false)
-  const [historyError, setHistoryError] = useState<string | null>(null)
+  // ─── 6月25日历史数据（分页拉取，本地缓存） ──────────────────────────────────
   const [showRawHistory, setShowRawHistory] = useState(false)
+  const targetDeviceId = useMemo(() => {
+    const d = devices.find(d => String(d.serialNumber) === TARGET_SN)
+    return d ? String(d.id) : null
+  }, [devices])
 
-  useEffect(() => {
-    const targetDevice = devices.find(d => String(d.serialNumber) === TARGET_SN)
-    if (!targetDevice) return
-    if (history || historyLoading) return
+  const {
+    points: historyPoints,
+    loading: historyLoading,
+    done: historyDone,
+    currentPage: historyPage,
+    savedCount,
+    fromCache: historyFromCache,
+    error: historyError,
+  } = useHistoryFetcher(targetDeviceId, JUN25_FROM, JUN25_TO)
 
-    setHistoryLoading(true)
-    setHistoryError(null)
-
-    const fromTime = new Date('2026-06-25T00:00:00+08:00').getTime()
-    const toTime   = new Date('2026-06-25T23:59:59+08:00').getTime()
-
-    fetchHistoryData({
-      deviceId: String(targetDevice.id),
-      keys: ['generationPower', 'outputPower', 'remainingBatteryCapacity'],
-      fromTime,
-      toTime,
-      page: 1,
-      count: 288,
-      orderByTimeAsc: true,
-    }).then(res => {
-      if (!res.success || !res.data) {
-        setHistoryError(res.message ?? 'Failed to load history')
-        return
-      }
-      const gen  = res.data['generationPower']           ?? []
-      const out  = res.data['outputPower']                ?? []
-      const soc  = res.data['remainingBatteryCapacity']  ?? []
-
-      const len = Math.max(gen.length, out.length, soc.length)
-      if (len === 0) { setHistoryError('No data returned for Jun 25'); return }
-
-      const points: HistoryPoint[] = Array.from({ length: len }, (_, i) => ({
-        time:   gen[i]?.time ?? out[i]?.time ?? soc[i]?.time ?? '',
-        solar:  Number(gen[i]?.value  ?? 0),
-        output: Number(out[i]?.value  ?? 0),
-        soc:    Number(soc[i]?.value  ?? 0),
-      }))
-
-      const stat = (arr: number[]) => ({
-        min: Math.min(...arr),
-        max: Math.max(...arr),
-        avg: arr.reduce((a, b) => a + b, 0) / arr.length,
-        total: arr.reduce((a, b) => a + b, 0),
-      })
-
-      setHistory({
-        points,
-        solar:  stat(points.map(p => p.solar)),
-        output: stat(points.map(p => p.output)),
-        soc:    { ...stat(points.map(p => p.soc)), total: 0 },
-      })
-    }).catch(e => setHistoryError(String(e))).finally(() => setHistoryLoading(false))
-  }, [devices, history, historyLoading])
+  const history = useMemo(() => {
+    if (historyPoints.length === 0) return null
+    const stat = (arr: number[]) => ({
+      min: Math.min(...arr),
+      max: Math.max(...arr),
+      avg: arr.reduce((a, b) => a + b, 0) / arr.length,
+      total: arr.reduce((a, b) => a + b, 0),
+    })
+    return {
+      solar:  stat(historyPoints.map(p => p.solar)),
+      output: stat(historyPoints.map(p => p.output)),
+      soc:    stat(historyPoints.map(p => p.soc)),
+    }
+  }, [historyPoints])
 
   const rt = useMemo(
     () => (selectedDeviceState?.fields ? mapFieldsToRealtime(selectedDeviceState.fields) : null),
@@ -380,7 +339,9 @@ export default function DebugParamsPage() {
           {historyLoading && (
             <div className="flex items-center justify-center py-6 rounded-l bg-[#262626]">
               <Loader2 size={18} className="text-[#01D6BE] animate-spin mr-2" />
-              <span className="text-caption text-[#8C8C8C]">加载中…</span>
+              <span className="text-caption text-[#8C8C8C]">
+                第 {historyPage} 页 · 已获取 {historyPoints.length} 条…
+              </span>
             </div>
           )}
 
@@ -390,18 +351,31 @@ export default function DebugParamsPage() {
             </div>
           )}
 
-          {history && !historyLoading && (
+          {history && (
             <>
               {/* 统计摘要 */}
               <div className="rounded-l bg-[#262626] overflow-hidden divide-y divide-[rgba(255,255,255,0.04)] mb-3">
                 <div className="flex items-center justify-between px-4 py-2.5">
                   <span className="text-caption text-[#8C8C8C]">采样点数</span>
-                  <span className="text-body-md font-semibold text-white">{history.points.length}</span>
+                  <span className="text-body-md font-semibold text-white">
+                    {historyPoints.length}
+                    {historyLoading && <span className="text-caption text-[#595959] ml-1">(加载中…)</span>}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between px-4 py-2.5">
+                  <span className="text-caption text-[#8C8C8C]">数据来源</span>
+                  <span className="text-caption text-[#01D6BE]">
+                    {historyFromCache ? '本地缓存' : `API 分页 · ${historyDone ? historyPage : historyPage + '…'}页`}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between px-4 py-2.5">
+                  <span className="text-caption text-[#8C8C8C]">已落库条数</span>
+                  <span className="text-caption text-[#34C759]">{savedCount} 条</span>
                 </div>
                 <div className="flex items-center justify-between px-4 py-2.5">
                   <span className="text-caption text-[#8C8C8C]">时间范围</span>
                   <span className="text-caption text-[#D9D9D9]">
-                    {history.points[0]?.time.slice(11, 16)} – {history.points[history.points.length - 1]?.time.slice(11, 16)}
+                    {historyPoints[0]?.time.slice(11, 16)} – {historyPoints[historyPoints.length - 1]?.time.slice(11, 16)}
                   </span>
                 </div>
 
@@ -457,7 +431,7 @@ export default function DebugParamsPage() {
                 onClick={() => setShowRawHistory(v => !v)}
                 className="w-full flex items-center justify-between px-4 py-3 rounded-l bg-[#1F1F1F] mb-3 active:opacity-70 transition-opacity"
               >
-                <span className="text-caption text-[#8C8C8C]">原始采样明细 ({history.points.length} 条)</span>
+                <span className="text-caption text-[#8C8C8C]">原始采样明细 ({historyPoints.length} 条)</span>
                 <span className="text-caption text-[#01D6BE]">{showRawHistory ? '收起' : '展开'}</span>
               </button>
 
@@ -469,7 +443,7 @@ export default function DebugParamsPage() {
                       <span key={h} className="text-tiny text-[#595959] text-center">{h}</span>
                     ))}
                   </div>
-                  {history.points.map((p, i) => (
+                  {historyPoints.map((p, i) => (
                     <div key={i} className="grid grid-cols-4 px-3 py-1.5 border-b border-[rgba(255,255,255,0.03)]">
                       <span className="text-tiny font-mono text-[#595959]">{p.time.slice(11, 16)}</span>
                       <span className="text-tiny text-[#FF9500] text-center">{Math.round(p.solar)}</span>

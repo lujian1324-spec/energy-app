@@ -373,6 +373,64 @@ export async function clearOldAlerts(): Promise<number> {
 }
 
 // ================================================================
+// 历史数据批量存储（分页拉取 → 本地缓存）
+// ================================================================
+
+/**
+ * 按设备 ID + 时间段读取本地缓存的历史数据
+ */
+export async function getHistoryByDeviceAndRange(
+  deviceId: string,
+  fromTime: number,
+  toTime: number
+): Promise<PowerHistoryRecord[]> {
+  const db = await getDB()
+  const index = db.transaction('power_history').store.index('timestamp')
+  const range = IDBKeyRange.bound(fromTime, toTime)
+
+  const results: PowerHistoryRecord[] = []
+  let cursor = await index.openCursor(range, 'next')
+  while (cursor) {
+    if (!cursor.value.deviceId || cursor.value.deviceId === deviceId) {
+      results.push(cursor.value)
+    }
+    cursor = await cursor.continue()
+  }
+  return results
+}
+
+/**
+ * 批量写入历史记录，跳过已存在的时间戳（按 deviceId+timestamp 去重）
+ */
+export async function saveHistoryBatch(
+  records: Omit<PowerHistoryRecord, 'id'>[],
+  existingTimestamps: Set<number>
+): Promise<number> {
+  if (records.length === 0) return 0
+  const db = await getDB()
+  const tx = db.transaction('power_history', 'readwrite')
+  let saved = 0
+  for (const r of records) {
+    if (!existingTimestamps.has(r.timestamp)) {
+      await tx.store.add(r as PowerHistoryRecord)
+      existingTimestamps.add(r.timestamp)
+      saved++
+    }
+  }
+  await tx.done
+
+  // 裁剪超出上限
+  const count = await db.count('power_history')
+  if (count > MAX_POWER_HISTORY) {
+    const trimTx = db.transaction('power_history', 'readwrite')
+    const cursor = await trimTx.store.openCursor()
+    if (cursor) await cursor.delete()
+    await trimTx.done
+  }
+  return saved
+}
+
+// ================================================================
 // 数据库工具
 // ================================================================
 

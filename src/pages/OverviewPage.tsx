@@ -41,7 +41,8 @@ import { formatTemp } from '../utils/localization'
 import DeviceDetailPage from './DeviceDetailPage'
 import { useDeviceStore } from '../stores/deviceStore'
 import { usePowerStationStore } from '../stores/powerStationStore'
-import { mapFieldsToRealtime, mapFiringAlarms, fetchHistoryData } from '../api/deviceApi'
+import { mapFieldsToRealtime, mapFiringAlarms } from '../api/deviceApi'
+import { useHistoryFetcher } from '../hooks/useHistoryFetcher'
 import type { DeviceAlert } from '../types'
 import { detectOutageFromFields } from '../utils/powerOutageNotification'
 import { batteryTimeLabel } from '../utils/batteryTime'
@@ -340,52 +341,27 @@ export default function OverviewPage() {
     )
   }, [batteryPower, acPower, solarPower, outputPower, isOnline])
 
-  // ─── June 25 historical overlay for SN 2412315001 ─────────────────────────
+  // ─── June 25 historical overlay for SN 2412315001 (paginated, cached) ──────
   const TARGET_SN = '2412315001'
-  const [historyPoints, setHistoryPoints] = useState<
-    { battery: number; ac: number; solar: number; output: number }[]
-  >([])
-  const [historyLoading, setHistoryLoading] = useState(false)
-  const [historyFetched, setHistoryFetched] = useState(false)
+  const targetDeviceId = useMemo(() => {
+    const d = devices.find(d => String(d.serialNumber) === TARGET_SN)
+    return d ? String(d.id) : null
+  }, [devices])
+  const JUN25_FROM = useMemo(() => new Date('2026-06-25T00:00:00+08:00').getTime(), [])
+  const JUN25_TO   = useMemo(() => new Date('2026-06-25T23:59:59+08:00').getTime(), [])
 
-  useEffect(() => {
-    if (historyFetched) return
-    const targetDevice = devices.find(d => String(d.serialNumber) === TARGET_SN)
-    if (!targetDevice) return
+  const {
+    points: rawHistoryPoints,
+    loading: historyLoading,
+    currentPage: historyPage,
+    fromCache: historyFromCache,
+  } = useHistoryFetcher(targetDeviceId, JUN25_FROM, JUN25_TO)
 
-    setHistoryFetched(true)
-    setHistoryLoading(true)
-
-    // June 25, 2026 CST (UTC+8): 00:00–23:59
-    const fromTime = new Date('2026-06-25T00:00:00+08:00').getTime()
-    const toTime   = new Date('2026-06-25T23:59:59+08:00').getTime()
-
-    fetchHistoryData({
-      deviceId: String(targetDevice.id),
-      keys: ['generationPower', 'outputPower', 'remainingBatteryCapacity'],
-      fromTime,
-      toTime,
-      page: 1,
-      count: 288,
-      orderByTimeAsc: true,
-    }).then(res => {
-      if (res.success && res.data) {
-        const gen  = res.data['generationPower']  ?? []
-        const out  = res.data['outputPower']       ?? []
-        const batt = res.data['remainingBatteryCapacity'] ?? []
-
-        // Align by index (all arrays share same timestamps)
-        const len = Math.max(gen.length, out.length, batt.length)
-        const pts = Array.from({ length: len }, (_, i) => ({
-          solar:   Number(gen[i]?.value  ?? 0),
-          output:  Number(out[i]?.value  ?? 0),
-          battery: Number(batt[i]?.value ?? 0),
-          ac:      0,
-        }))
-        setHistoryPoints(pts)
-      }
-    }).catch(() => {}).finally(() => setHistoryLoading(false))
-  }, [devices, historyFetched])
+  // Convert to chart buffer format
+  const historyPoints = useMemo(
+    () => rawHistoryPoints.map(p => ({ solar: p.solar, output: p.output, battery: p.soc, ac: 0 })),
+    [rawHistoryPoints]
+  )
 
   // ─── Solar charging notification ───────────────────────────────────────────
   const prevSolarRef = useRef(0)
@@ -915,10 +891,18 @@ export default function OverviewPage() {
                 ) : (
                   <>
                     {/* History badge */}
-                    {historyPoints.length > 0 && (
+                    {(historyPoints.length > 0 || historyLoading) && (
                       <div className="absolute top-1 right-1 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#262626] border border-[rgba(1,214,190,0.3)]">
-                        <History size={10} className="text-[#01D6BE]" />
-                        <span className="text-[10px] text-[#01D6BE] font-medium">Jun 25 · SN {TARGET_SN}</span>
+                        {historyLoading
+                          ? <Loader2 size={10} className="text-[#01D6BE] animate-spin" />
+                          : <History size={10} className="text-[#01D6BE]" />
+                        }
+                        <span className="text-[10px] text-[#01D6BE] font-medium">
+                          {historyLoading
+                            ? `p.${historyPage} · ${rawHistoryPoints.length}pts`
+                            : `Jun 25 · ${historyFromCache ? 'cache' : 'API'} · ${rawHistoryPoints.length}pts`
+                          }
+                        </span>
                       </div>
                     )}
                     <svg width="100%" height="100%" viewBox="0 0 300 80" preserveAspectRatio="none">
