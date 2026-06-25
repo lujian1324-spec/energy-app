@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { openAppSettings } from '../utils/openAppSettings'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import jsQR from 'jsqr'
@@ -145,6 +146,7 @@ export default function DevicePage() {
   const [qrScanning, setQrScanning] = useState(false)
   const [qrResult, setQrResult] = useState<string | null>(null)
   const [qrError, setQrError] = useState<string | null>(null)
+  const [cameraDenied, setCameraDenied] = useState(false)
   // 扫码识别出的设备序列号/ID（用于录入）
   const [scannedSerial, setScannedSerial] = useState('')
   const [scannedName, setScannedName] = useState('')
@@ -194,12 +196,8 @@ export default function DevicePage() {
   }, [loadDeviceState])
 
   // 监听 selectedDeviceState 变化并更新缓存
-  const prevSelectedIdRef = useRef<string | null>(null)
   useEffect(() => {
-    const currentId = useDeviceStore.getState().selectedDeviceId
-    if (!currentId) return
-
-    // 新的设备状态数据到来
+    // 更新缓存，不依赖 selectedDeviceId（首次加载时可能尚无选中设备）
     if (selectedDeviceState && selectedDeviceState.deviceId) {
       const idStr = String(selectedDeviceState.deviceId)
       const mapped = mapFieldsToRealtime(selectedDeviceState.fields)
@@ -891,9 +889,18 @@ export default function DevicePage() {
                     )}
                   </div>
                   {qrError ? (
-                    <div className="text-center">
-                      <p className="text-[14px] text-[#FF3B30] mb-2">{qrError}</p>
-                      <button onClick={startQrScan} className="px-5 py-2 bg-[#01D6BE] rounded-full text-[#000000] text-body-md font-semibold">Retry</button>
+                    <div className="text-center px-2">
+                      <p className="text-[14px] text-[#FF3B30] mb-4">{qrError}</p>
+                      {cameraDenied ? (
+                        <button
+                          onClick={() => openAppSettings()}
+                          className="px-5 py-2 bg-[#01D6BE] rounded-full text-[#000000] text-body-md font-semibold"
+                        >
+                          Open Settings
+                        </button>
+                      ) : (
+                        <button onClick={startQrScan} className="px-5 py-2 bg-[#01D6BE] rounded-full text-[#000000] text-body-md font-semibold">Retry</button>
+                      )}
                     </div>
                   ) : (
                     <>
@@ -1058,6 +1065,7 @@ export default function DevicePage() {
     setQrScanning(true)
     setQrError(null)
     setQrResult(null)
+    setCameraDenied(false)
     setScannedSerial('')
     setScannedName('')
     try {
@@ -1072,11 +1080,12 @@ export default function DevicePage() {
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      setQrError(
-        /denied|permission/i.test(msg)
-          ? 'Camera permission denied. Please allow camera access and try again.'
-          : `Camera error: ${msg}`
-      )
+      if (/denied|permission|notallowed/i.test(msg)) {
+        setCameraDenied(true)
+        setQrError('Camera access was denied. Please enable camera permission in Settings to scan QR codes.')
+      } else {
+        setQrError(`Camera error: ${msg}`)
+      }
       setQrScanning(false)
     }
   }

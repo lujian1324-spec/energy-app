@@ -46,7 +46,10 @@ export default function ForgotPasswordPage() {
     try {
       const result = await sendEmailCaptcha(email.trim(), '2')
       if (result.code === 0 || result.code === '0') {
-        setCaptchaId(result.data?.iotCaptchaId ?? null)
+        // data may be an object with iotCaptchaId or a raw string captchaId
+        const cid = result.data?.iotCaptchaId
+          ?? (typeof result.data === 'string' ? result.data : null)
+        setCaptchaId(cid)
         setCountdown(60)
         setStep('reset')
       } else {
@@ -75,7 +78,14 @@ export default function ForgotPasswordPage() {
         setSuccess(true)
         setTimeout(() => navigate('/login', { replace: true }), 2000)
       } else {
-        setError(result.message ?? result.msg ?? 'Reset failed. Please try again.')
+        const raw = result.message ?? result.msg ?? ''
+        const friendly =
+          /illegalArgument|illegal.?argument/i.test(raw)
+            ? 'Invalid verification code or the code has expired. Please try again.'
+            : /captcha|code.*invalid|verify/i.test(raw)
+            ? 'Verification code is incorrect. Please check and retry.'
+            : raw || 'Reset failed. Please try again.'
+        setError(friendly)
       }
     } catch {
       setError('Reset failed. Please try again.')

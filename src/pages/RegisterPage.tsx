@@ -78,7 +78,14 @@ export default function RegisterPage() {
           navigate('/login', { replace: true })
         }
       } else {
-        setError(result.message ?? result.msg ?? 'Registration failed. Please try again.')
+        const raw = result.message ?? result.msg ?? ''
+        const friendly =
+          /account.*exist|already.*exist|duplicate|illegalArgument|illegal.?argument|account.*used|username.*taken/i.test(raw)
+            ? 'This username is already in use. Please choose another.'
+            : /email.*exist|email.*used/i.test(raw)
+            ? 'This email is already registered. Please sign in instead.'
+            : raw || 'Registration failed. Please try again.'
+        setError(friendly)
       }
     } catch {
       setError('Registration failed. Please try again.')
