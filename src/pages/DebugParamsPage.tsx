@@ -3,11 +3,11 @@
  * 路由：/device/:id/debug-params
  * 显示本 App 所有 UI 使用的实时参数数值及原始 API 字段
  */
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ChevronLeft, RefreshCw } from 'lucide-react'
+import { ChevronLeft, RefreshCw, Loader2, History } from 'lucide-react'
 import { useDeviceStore } from '../stores/deviceStore'
-import { mapFieldsToRealtime } from '../api/deviceApi'
+import { mapFieldsToRealtime, fetchHistoryData } from '../api/deviceApi'
 
 // ─── 参数分组描述 ─────────────────────────────────────────────────────────────
 
@@ -102,13 +102,91 @@ const PARAM_GROUPS: { title: string; color: string; params: ParamDef[] }[] = [
   },
 ]
 
+// ─── 历史数据类型 ─────────────────────────────────────────────────────────────
+
+interface HistoryPoint {
+  time: string
+  solar: number
+  output: number
+  soc: number
+}
+
+interface HistorySummary {
+  points: HistoryPoint[]
+  solar: { min: number; max: number; avg: number; total: number }
+  output: { min: number; max: number; avg: number; total: number }
+  soc: { min: number; max: number; avg: number }
+}
+
 // ─── 主页面 ───────────────────────────────────────────────────────────────────
+
+const TARGET_SN = '2412315001'
 
 export default function DebugParamsPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { devices, selectedDeviceState, loadDeviceState, isDemoMode } = useDeviceStore()
   const device = devices.find(d => String(d.id) === id)
+
+  // ─── 6月25日历史数据 ─────────────────────────────────────────────────────────
+  const [history, setHistory] = useState<HistorySummary | null>(null)
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [historyError, setHistoryError] = useState<string | null>(null)
+  const [showRawHistory, setShowRawHistory] = useState(false)
+
+  useEffect(() => {
+    const targetDevice = devices.find(d => String(d.serialNumber) === TARGET_SN)
+    if (!targetDevice) return
+    if (history || historyLoading) return
+
+    setHistoryLoading(true)
+    setHistoryError(null)
+
+    const fromTime = new Date('2026-06-25T00:00:00+08:00').getTime()
+    const toTime   = new Date('2026-06-25T23:59:59+08:00').getTime()
+
+    fetchHistoryData({
+      deviceId: String(targetDevice.id),
+      keys: ['generationPower', 'outputPower', 'remainingBatteryCapacity'],
+      fromTime,
+      toTime,
+      page: 1,
+      count: 288,
+      orderByTimeAsc: true,
+    }).then(res => {
+      if (!res.success || !res.data) {
+        setHistoryError(res.message ?? 'Failed to load history')
+        return
+      }
+      const gen  = res.data['generationPower']           ?? []
+      const out  = res.data['outputPower']                ?? []
+      const soc  = res.data['remainingBatteryCapacity']  ?? []
+
+      const len = Math.max(gen.length, out.length, soc.length)
+      if (len === 0) { setHistoryError('No data returned for Jun 25'); return }
+
+      const points: HistoryPoint[] = Array.from({ length: len }, (_, i) => ({
+        time:   gen[i]?.time ?? out[i]?.time ?? soc[i]?.time ?? '',
+        solar:  Number(gen[i]?.value  ?? 0),
+        output: Number(out[i]?.value  ?? 0),
+        soc:    Number(soc[i]?.value  ?? 0),
+      }))
+
+      const stat = (arr: number[]) => ({
+        min: Math.min(...arr),
+        max: Math.max(...arr),
+        avg: arr.reduce((a, b) => a + b, 0) / arr.length,
+        total: arr.reduce((a, b) => a + b, 0),
+      })
+
+      setHistory({
+        points,
+        solar:  stat(points.map(p => p.solar)),
+        output: stat(points.map(p => p.output)),
+        soc:    { ...stat(points.map(p => p.soc)), total: 0 },
+      })
+    }).catch(e => setHistoryError(String(e))).finally(() => setHistoryLoading(false))
+  }, [devices, history, historyLoading])
 
   const rt = useMemo(
     () => (selectedDeviceState?.fields ? mapFieldsToRealtime(selectedDeviceState.fields) : null),
@@ -288,6 +366,121 @@ export default function DebugParamsPage() {
               )
             })}
           </div>
+        </div>
+
+        {/* 6月25日历史数据 — SN 2412315001 */}
+        <div className="px-4 pt-4">
+          <div className="flex items-center gap-2 mb-2">
+            <History size={12} className="text-[#01D6BE]" />
+            <p className="text-caption font-semibold uppercase tracking-wide text-[#01D6BE]">
+              历史数据 · Jun 25 · SN {TARGET_SN}
+            </p>
+          </div>
+
+          {historyLoading && (
+            <div className="flex items-center justify-center py-6 rounded-l bg-[#262626]">
+              <Loader2 size={18} className="text-[#01D6BE] animate-spin mr-2" />
+              <span className="text-caption text-[#8C8C8C]">加载中…</span>
+            </div>
+          )}
+
+          {historyError && !historyLoading && (
+            <div className="rounded-l bg-[#262626] px-4 py-3">
+              <span className="text-caption text-[#FF3530]">{historyError}</span>
+            </div>
+          )}
+
+          {history && !historyLoading && (
+            <>
+              {/* 统计摘要 */}
+              <div className="rounded-l bg-[#262626] overflow-hidden divide-y divide-[rgba(255,255,255,0.04)] mb-3">
+                <div className="flex items-center justify-between px-4 py-2.5">
+                  <span className="text-caption text-[#8C8C8C]">采样点数</span>
+                  <span className="text-body-md font-semibold text-white">{history.points.length}</span>
+                </div>
+                <div className="flex items-center justify-between px-4 py-2.5">
+                  <span className="text-caption text-[#8C8C8C]">时间范围</span>
+                  <span className="text-caption text-[#D9D9D9]">
+                    {history.points[0]?.time.slice(11, 16)} – {history.points[history.points.length - 1]?.time.slice(11, 16)}
+                  </span>
+                </div>
+
+                {/* Solar */}
+                {[
+                  { label: 'Solar (generationPower)', s: history.solar, unit: 'W', color: '#FF9500' },
+                  { label: 'Output (outputPower)',    s: history.output, unit: 'W', color: '#BFBFBF' },
+                ].map(({ label, s, unit, color }) => (
+                  <div key={label}>
+                    <div className="px-4 pt-2.5 pb-0.5">
+                      <span className="text-caption font-semibold" style={{ color }}>{label}</span>
+                    </div>
+                    <div className="grid grid-cols-4 px-4 pb-2.5 gap-1">
+                      {[
+                        { k: 'Min', v: s.min },
+                        { k: 'Max', v: s.max },
+                        { k: 'Avg', v: s.avg },
+                        { k: 'Sum', v: s.total },
+                      ].map(({ k, v }) => (
+                        <div key={k} className="flex flex-col items-center bg-[#1A1A1A] rounded-m py-1.5">
+                          <span className="text-tiny text-[#595959]">{k}</span>
+                          <span className="text-caption font-semibold text-white">{Math.round(v)}</span>
+                          <span className="text-tiny text-[#595959]">{unit}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+
+                {/* SOC */}
+                <div>
+                  <div className="px-4 pt-2.5 pb-0.5">
+                    <span className="text-caption font-semibold text-[#34C759]">SOC (remainingBatteryCapacity)</span>
+                  </div>
+                  <div className="grid grid-cols-3 px-4 pb-2.5 gap-1">
+                    {[
+                      { k: 'Min', v: history.soc.min },
+                      { k: 'Max', v: history.soc.max },
+                      { k: 'Avg', v: history.soc.avg },
+                    ].map(({ k, v }) => (
+                      <div key={k} className="flex flex-col items-center bg-[#1A1A1A] rounded-m py-1.5">
+                        <span className="text-tiny text-[#595959]">{k}</span>
+                        <span className="text-caption font-semibold text-white">{Math.round(v)}</span>
+                        <span className="text-tiny text-[#595959]">%</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* 原始采样明细（可展开） */}
+              <button
+                onClick={() => setShowRawHistory(v => !v)}
+                className="w-full flex items-center justify-between px-4 py-3 rounded-l bg-[#1F1F1F] mb-3 active:opacity-70 transition-opacity"
+              >
+                <span className="text-caption text-[#8C8C8C]">原始采样明细 ({history.points.length} 条)</span>
+                <span className="text-caption text-[#01D6BE]">{showRawHistory ? '收起' : '展开'}</span>
+              </button>
+
+              {showRawHistory && (
+                <div className="rounded-l bg-[#1A1A1A] overflow-hidden mb-3">
+                  {/* 表头 */}
+                  <div className="grid grid-cols-4 px-3 py-2 border-b border-[rgba(255,255,255,0.06)]">
+                    {['时间', 'Solar W', 'Output W', 'SOC %'].map(h => (
+                      <span key={h} className="text-tiny text-[#595959] text-center">{h}</span>
+                    ))}
+                  </div>
+                  {history.points.map((p, i) => (
+                    <div key={i} className="grid grid-cols-4 px-3 py-1.5 border-b border-[rgba(255,255,255,0.03)]">
+                      <span className="text-tiny font-mono text-[#595959]">{p.time.slice(11, 16)}</span>
+                      <span className="text-tiny text-[#FF9500] text-center">{Math.round(p.solar)}</span>
+                      <span className="text-tiny text-[#BFBFBF] text-center">{Math.round(p.output)}</span>
+                      <span className="text-tiny text-[#34C759] text-center">{Math.round(p.soc)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
         </div>
 
         {/* 原始 API 字段（全部） */}
