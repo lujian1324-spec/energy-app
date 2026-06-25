@@ -26,6 +26,7 @@ import appVersion from '../version.json'
 import ProfileEditPage from './ProfileEditPage'
 import ToggleSwitch from '../components/ToggleSwitch'
 import type { UserProfile } from '../types/protocol'
+import { requestNotificationPermission, getNotificationPermission } from '../utils/pushNotification'
 
 export default function SettingPage() {
   const navigate = useNavigate()
@@ -164,7 +165,14 @@ export default function SettingPage() {
             </div>
             <ToggleSwitch
               isOn={pushOutage}
-              onToggle={() => { setPushOutage(!pushOutage); updateSettings({ pushNotifications: !pushOutage }) }}
+              onToggle={async () => {
+                const next = !pushOutage
+                setPushOutage(next)
+                updateSettings({ pushNotifications: next })
+                if (next && getNotificationPermission() !== 'granted') {
+                  await requestNotificationPermission()
+                }
+              }}
               ariaLabel="Toggle power outage alerts"
             />
           </div>
@@ -182,7 +190,14 @@ export default function SettingPage() {
             </div>
             <ToggleSwitch
               isOn={pushLowBattery}
-              onToggle={() => { setPushLowBattery(!pushLowBattery); updateSettings({ pushLowBattery: !pushLowBattery }) }}
+              onToggle={async () => {
+                const next = !pushLowBattery
+                setPushLowBattery(next)
+                updateSettings({ pushLowBattery: next })
+                if (next && getNotificationPermission() !== 'granted') {
+                  await requestNotificationPermission()
+                }
+              }}
               ariaLabel="Toggle low battery alerts"
             />
           </div>
@@ -249,7 +264,14 @@ export default function SettingPage() {
             </div>
             <ToggleSwitch
               isOn={pushSolarStatus}
-              onToggle={() => { setPushSolarStatus(!pushSolarStatus); updateSettings({ pushSolarStatus: !pushSolarStatus }) }}
+              onToggle={async () => {
+                const next = !pushSolarStatus
+                setPushSolarStatus(next)
+                updateSettings({ pushSolarStatus: next })
+                if (next && getNotificationPermission() !== 'granted') {
+                  await requestNotificationPermission()
+                }
+              }}
               ariaLabel="Toggle solar status alerts"
             />
           </div>

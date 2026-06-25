@@ -268,12 +268,17 @@ export default function OverviewPage() {
   }
 
   // ─── Notifications permission ───
+  // Re-read on mount AND whenever the tab regains focus (user may have granted
+  // permission in SettingPage while this page was in the background).
   useEffect(() => {
-    setPushPermission(getNotificationPermission())
+    const syncPermission = () => setPushPermission(getNotificationPermission())
+    syncPermission()
     if (isIOS()) {
       const iosStatus = getIOSPushStatus()
       console.log('[OverviewPage] iOS Push Status:', iosStatus)
     }
+    window.addEventListener('focus', syncPermission)
+    return () => window.removeEventListener('focus', syncPermission)
   }, [])
 
   // ─── Click outside to close dropdown ───
