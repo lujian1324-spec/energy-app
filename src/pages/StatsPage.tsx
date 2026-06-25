@@ -3,9 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Share2, BarChart3, WifiOff, Zap, ChevronLeft, ChevronRight, Leaf } from 'lucide-react'
 import html2canvas from 'html2canvas'
 import BatteryRing from '../components/BatteryRing'
-import { LastSync, SampleRate, CalcAudit, type DataSource } from '../components/DataTrust'
+import { LastSync, CalcAudit } from '../components/DataTrust'
 import { useDeviceStore } from '../stores/deviceStore'
 import { mapFieldsToRealtime, type HistoryDataResponse } from '../api/deviceApi'
+import { savePowerHistory, getPowerHistory } from '../db/powerflowDB'
+import type { PowerHistoryRecord } from '../types/protocol'
 
 const periods = ['Day', 'Week', 'Month', 'Range'] as const
 type Period = typeof periods[number]
@@ -475,18 +477,50 @@ export default function StatsPage() {
   const chartSvgRef = useRef<SVGSVGElement>(null)
   const [scrubIndex, setScrubIndex] = useState<number | null>(null)
 
-  const { devices, selectedDeviceId, selectedDeviceState, loadDevices, historyData, historyLoading, historyError, loadHistoryData } = useDeviceStore()
+  const { devices, selectedDeviceState, loadDevices, historyData, historyLoading, historyError, loadHistoryData } = useDeviceStore()
 
   const useDemo = !!historyError && !historyLoading
 
+  // 始终使用第一个添加的设备（按 createdAt 最早排序）
   const deviceId = useMemo(() => {
-    if (selectedDeviceId) return selectedDeviceId
-    return devices[0]?.id ? String(devices[0].id) : null
-  }, [selectedDeviceId, devices])
+    if (devices.length === 0) return null
+    // 优先使用有 createdAt 的设备按时间排序，否则取列表第一个
+    const sorted = [...devices].sort((a, b) => {
+      if (a.createdAt && b.createdAt) return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      return 0
+    })
+    return String(sorted[0].id)
+  }, [devices])
+
+  // 本地缓存的历史数据（IndexedDB）
+  const [cachedHistoryData, setCachedHistoryData] = useState<HistoryDataResponse | null>(null)
 
   useEffect(() => {
-    if (devices.length === 0) loadDevices()
+    if (devices.length === 0) loadDevices(1, 50, { orderByCreatedAtAsc: true })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 从 IndexedDB 加载缓存数据（页面初次渲染时立即显示）
+  useEffect(() => {
+    if (!deviceId) return
+    getPowerHistory({ limit: 288 }).then(records => {
+      if (records.length === 0) return
+      // 将 PowerHistoryRecord[] 转换为 HistoryDataResponse 格式
+      const genPower: { time: string; value: number }[] = []
+      const outPower: { time: string; value: number }[] = []
+      const battLevel: { time: string; value: number }[] = []
+      for (const r of [...records].reverse()) {
+        const t = new Date(r.timestamp).toISOString()
+        genPower.push({ time: t, value: r.inputPower })
+        outPower.push({ time: t, value: r.outputPower })
+        battLevel.push({ time: t, value: r.batteryLevel })
+      }
+      setCachedHistoryData({
+        generationPower: genPower,
+        outputPower: outPower,
+        remainingBatteryCapacity: battLevel,
+      } as unknown as HistoryDataResponse)
+    }).catch(() => {/* ignore */})
+  }, [deviceId])
 
   const deviceRealtime = useMemo(() => {
     if (!selectedDeviceState?.fields) return null
@@ -570,13 +604,46 @@ export default function StatsPage() {
 
   useEffect(() => { loadHistory() }, [loadHistory])
 
+  // API 数据返回后保存到 IndexedDB
+  useEffect(() => {
+    if (!historyData || !deviceId) return
+    const genPoints = (historyData as unknown as Record<string, { time: string; value: number }[]>)['generationPower'] ?? []
+    const outPoints = (historyData as unknown as Record<string, { time: string; value: number }[]>)['outputPower'] ?? []
+    const battPoints = (historyData as unknown as Record<string, { time: string; value: number }[]>)['remainingBatteryCapacity'] ?? []
+
+    // 构建时间戳 → 值的映射
+    const genMap = new Map(genPoints.map(p => [p.time, p.value]))
+    const outMap = new Map(outPoints.map(p => [p.time, p.value]))
+    const battMap = new Map(battPoints.map(p => [p.time, p.value]))
+
+    // 取所有时间点的并集
+    const allTimes = new Set([...genMap.keys(), ...outMap.keys()])
+    const records: Omit<PowerHistoryRecord, 'id'>[] = []
+    for (const t of allTimes) {
+      records.push({
+        timestamp: new Date(t).getTime(),
+        inputPower: genMap.get(t) ?? 0,
+        outputPower: outMap.get(t) ?? 0,
+        batteryLevel: battMap.get(t) ?? 0,
+        solarPower: genMap.get(t) ?? 0,
+        temperature: 0,
+        mode: 'normal',
+        deviceId,
+      })
+    }
+    // 批量写入（不阻塞 UI）
+    Promise.allSettled(records.map(r => savePowerHistory(r))).catch(() => {/* ignore */})
+  }, [historyData, deviceId])
+
   const chartFrame = useMemo(() => {
-    if (historyData) {
-      const frame = aggregateHistory(historyData, period)
+    // 优先级：API实时数据 → IndexedDB缓存 → Demo数据
+    const source = historyData ?? cachedHistoryData
+    if (source) {
+      const frame = aggregateHistory(source, period)
       if (frame) return frame
     }
     return getDemoChartFrame(period, pageOffset)
-  }, [historyData, period, pageOffset])
+  }, [historyData, cachedHistoryData, period, pageOffset])
 
   const generateAreaPath = (data: number[], width: number, height: number) => {
     const max = Math.max(...data, 1)
