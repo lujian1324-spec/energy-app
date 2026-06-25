@@ -800,7 +800,6 @@ export default function OverviewPage() {
               <div className="bg-[#262626] rounded-l overflow-hidden">
                 {[
                   { label: 'Smart Schedule', sub: 'Time-of-use charging', icon: Calendar, path: '/smart-schedule', color: '#01D6BE' },
-                  { label: 'Peak Shaving', sub: 'Cut grid demand costs', icon: Sliders, path: '/peak-shaving', color: '#FF9500' },
                 ].map((item, i) => (
                   <button
                     key={item.path}

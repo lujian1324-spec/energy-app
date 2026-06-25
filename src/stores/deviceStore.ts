@@ -292,11 +292,11 @@ export const useDeviceStore = create<DeviceStoreState>()(
       removeDevice: async (ids) => {
         // Demo 模式：本地移除，不调用真实接口
         if (get().isDemoMode) {
-          const idSet = new Set(ids.map(Number))
+          const idSet = new Set(ids.map(String))
           const { selectedDeviceId } = get()
           set(state => ({
-            devices: state.devices.filter(d => !idSet.has(Number(d.id))),
-            ...(selectedDeviceId && idSet.has(Number(selectedDeviceId))
+            devices: state.devices.filter(d => !idSet.has(String(d.id))),
+            ...(selectedDeviceId && idSet.has(String(selectedDeviceId))
               ? { selectedDeviceId: null, selectedDeviceDetails: null, selectedDeviceState: null }
               : {}),
           }))
@@ -311,7 +311,7 @@ export const useDeviceStore = create<DeviceStoreState>()(
         if (result.code === 0 || result.code === '0') {
           // 刷新设备列表
           const { selectedDeviceId } = get()
-          if (selectedDeviceId && ids.includes(Number(selectedDeviceId))) {
+          if (selectedDeviceId && ids.map(String).includes(String(selectedDeviceId))) {
             set({ selectedDeviceId: null, selectedDeviceDetails: null, selectedDeviceState: null })
           }
           get().loadDevices()
@@ -406,7 +406,7 @@ export const useDeviceStore = create<DeviceStoreState>()(
           await ignoreAlarm(alarmId)
           // 刷新告警列表
           const { selectedDeviceId } = get()
-          get().loadAlarms(selectedDeviceId ? Number(selectedDeviceId) : undefined)
+          get().loadAlarms(selectedDeviceId ?? undefined)
         } catch {
           // ignore
         }
