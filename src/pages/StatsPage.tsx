@@ -480,8 +480,8 @@ export default function StatsPage() {
   const useDemo = !!historyError && !historyLoading
 
   const deviceId = useMemo(() => {
-    if (selectedDeviceId) return Number(selectedDeviceId)
-    return devices[0]?.id ?? null
+    if (selectedDeviceId) return selectedDeviceId
+    return devices[0]?.id ? String(devices[0].id) : null
   }, [selectedDeviceId, devices])
 
   useEffect(() => {
@@ -620,13 +620,13 @@ export default function StatsPage() {
 
   const deviceName = useMemo(() => {
     if (!deviceId) return null
-    const dev = devices.find(d => d.id === deviceId)
+    const dev = devices.find(d => String(d.id) === String(deviceId))
     return dev?.name ?? dev?.serialNumber ?? `Device #${deviceId}`
   }, [deviceId, devices])
 
   const deviceDays = useMemo(() => {
     if (!deviceId) return 0
-    const dev = devices.find(d => d.id === deviceId)
+    const dev = devices.find(d => String(d.id) === String(deviceId))
     if (!dev?.installedAt) return 0
     const installed = new Date(dev.installedAt)
     if (isNaN(installed.getTime())) return 0
@@ -634,7 +634,7 @@ export default function StatsPage() {
   }, [deviceId, devices])
 
   const installedYearLabel = useMemo(() => {
-    const dev = devices.find(d => d.id === deviceId)
+    const dev = devices.find(d => String(d.id) === String(deviceId))
     if (!dev?.installedAt) return null
     const d = new Date(dev.installedAt)
     if (isNaN(d.getTime())) return null

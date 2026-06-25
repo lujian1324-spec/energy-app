@@ -109,10 +109,8 @@ export default function SmartSchedulePage() {
   const [apiConfigLoaded, setApiConfigLoaded] = useState(false)
   useEffect(() => {
     if (!selectedDeviceId || apiConfigLoaded) return
-    const deviceIdNum = Number(selectedDeviceId)
-    if (isNaN(deviceIdNum) || deviceIdNum <= 0) return
     ;(async () => {
-      const bundle = await loadPeakValley(deviceIdNum)
+      const bundle = await loadPeakValley(selectedDeviceId)
       if (bundle) {
         const settings = mapBundleToSettings(bundle)
         if (settings.schedules && settings.schedules.length > 0) {
@@ -125,9 +123,7 @@ export default function SmartSchedulePage() {
 
   const handleRefresh = useCallback(async () => {
     if (!selectedDeviceId) return
-    const deviceIdNum = Number(selectedDeviceId)
-    if (isNaN(deviceIdNum) || deviceIdNum <= 0) return
-    const bundle = await loadPeakValley(deviceIdNum)
+    const bundle = await loadPeakValley(selectedDeviceId)
     if (bundle) {
       const settings = mapBundleToSettings(bundle)
       updatePeakShavingSettings(settings)
@@ -140,7 +136,7 @@ export default function SmartSchedulePage() {
       return
     }
     try {
-      await enablePeakValley(Number(selectedDeviceId), enabled)
+      await enablePeakValley(selectedDeviceId, enabled)
       togglePeakShaving(enabled)
     } catch { /* noop */ }
   }, [selectedDeviceId, enablePeakValley, togglePeakShaving])
@@ -148,7 +144,7 @@ export default function SmartSchedulePage() {
   const handleSaveToDevice = useCallback(async () => {
     if (!selectedDeviceId) return
     try {
-      const config = mapSettingsToGeneralConfig(Number(selectedDeviceId), peakShavingSettings)
+      const config = mapSettingsToGeneralConfig(selectedDeviceId, peakShavingSettings)
       await savePeakValleyGeneral(config)
     } catch { /* noop */ }
     navigate(-1)
@@ -156,7 +152,7 @@ export default function SmartSchedulePage() {
 
   const handleScheduleChanged = useCallback(() => {
     if (selectedDeviceId && apiConfigLoaded) {
-      const config = mapSettingsToGeneralConfig(Number(selectedDeviceId), { ...peakShavingSettings })
+      const config = mapSettingsToGeneralConfig(selectedDeviceId, { ...peakShavingSettings })
       savePeakValleyGeneral(config).catch(() => {})
     }
   }, [selectedDeviceId, apiConfigLoaded, peakShavingSettings, savePeakValleyGeneral])

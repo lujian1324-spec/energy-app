@@ -20,6 +20,8 @@ import {
   TrendingUp,
   TrendingDown,
   Zap,
+  Battery,
+  Sun,
   Refrigerator,
   Lamp,
   Fish,

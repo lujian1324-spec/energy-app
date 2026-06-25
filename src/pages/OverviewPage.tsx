@@ -39,6 +39,7 @@ import { DataSourceTag, DemoBanner, LastSync, SampleRate, type DataSource } from
 import { formatTemp } from '../utils/localization'
 import DeviceDetailPage from './DeviceDetailPage'
 import { useDeviceStore } from '../stores/deviceStore'
+import { usePowerStationStore } from '../stores/powerStationStore'
 import { mapFieldsToRealtime, mapFiringAlarms } from '../api/deviceApi'
 import type { DeviceAlert } from '../types'
 import { detectOutageFromFields } from '../utils/powerOutageNotification'
@@ -77,6 +78,8 @@ export default function OverviewPage() {
     energyFlowError,
     loadEnergyFlow,
   } = useDeviceStore()
+
+  const { settings } = usePowerStationStore()
 
   // UI state
   const [showNotifications, setShowNotifications] = useState(false)

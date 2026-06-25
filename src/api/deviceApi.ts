@@ -213,7 +213,7 @@ export interface DeleteDeviceRequest {
 // ─── 更新设备 ───
 
 export interface UpdateDeviceRequest {
-  id: number
+  id: string | number
   name: string
   place?: string
   installVendor?: string
@@ -508,7 +508,7 @@ export interface PeakValleyItem {
 }
 
 export interface PeakValleyGeneralConfig {
-  deviceId: number
+  deviceId: string | number
   isEnabled: boolean
   items: PeakValleyItem[]
   peakPrice?: number
@@ -1220,7 +1220,7 @@ export function mapBundleToSettings(
  * 用于保存时生成 API 请求体
  */
 export function mapSettingsToGeneralConfig(
-  deviceId: number,
+  deviceId: string | number,
   settings: PeakShavingSettings
 ): PeakValleyGeneralConfig {
   return {

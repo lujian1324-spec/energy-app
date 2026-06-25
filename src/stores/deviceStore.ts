@@ -105,7 +105,7 @@ interface DeviceStoreState {
   selectDevice: (deviceId: string | null) => void
   addNewDevice: (data: AddDeviceRequest) => Promise<ApiResponse<unknown>>
   addNewDeviceWithStation: (data: AddDeviceWithStationRequest) => Promise<ApiResponse<unknown>>
-  removeDevice: (ids: number[]) => Promise<ApiResponse<unknown>>
+  removeDevice: (ids: Array<string | number>) => Promise<ApiResponse<unknown>>
   updateDeviceInfo: (data: UpdateDeviceRequest) => Promise<ApiResponse<unknown>>
   togglePin: (ids: number[], pin: boolean) => Promise<ApiResponse<unknown>>
   controlDevice: (deviceId: string | number, key: string, value: unknown) => Promise<ApiResponse<unknown>>
@@ -116,7 +116,7 @@ interface DeviceStoreState {
   loadStations: (page?: number, count?: number) => Promise<void>
   createStation: (data: StationAddRequest) => Promise<ApiResponse<unknown>>
   loadPeakValley: (deviceId: string | number) => Promise<PeakValleyBundleResponse | null>
-  enablePeakValley: (deviceId: number, enabled: boolean) => Promise<ApiResponse<unknown>>
+  enablePeakValley: (deviceId: string | number, enabled: boolean) => Promise<ApiResponse<unknown>>
   savePeakValleyGeneral: (data: PeakValleyGeneralConfig) => Promise<ApiResponse<unknown>>
   loadEnergyFlow: (deviceId: string | number) => Promise<void>
   loadHistoryData: (deviceId: string | number, fromTime: string | number, toTime: string | number, keys?: string[], count?: number, orderByTimeAsc?: boolean) => Promise<void>

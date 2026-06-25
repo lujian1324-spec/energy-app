@@ -44,13 +44,13 @@ const DISPLAY_ICONS = [
 ]
 
 export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
-  const { powerStation, selectedDeviceId, updateDeviceNameById, peakShavingSettings } =
+  const { powerStation, updateDeviceNameById, peakShavingSettings } =
     usePowerStationStore()
   const navigate = useNavigate()
   const { id: routeId } = useParams<{ id: string }>()
 
   // ── Real device data (useDeviceStore) — used when mounted as a route ──
-  const { devices, selectedDeviceState, selectDevice, loadDeviceState, renameDeviceLocal, removeDevice, updateDeviceInfo, isDemoMode } = useDeviceStore()
+  const { devices, selectedDeviceId, selectedDeviceState, selectDevice, loadDeviceState, renameDeviceLocal, removeDevice, updateDeviceInfo, isDemoMode } = useDeviceStore()
   const realDevice = devices.find(d => String(d.id) === routeId)
 
   // Standalone route: ensure the real device + its realtime state are loaded
@@ -175,12 +175,11 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     updateDeviceNameById(targetId, trimmed)
 
     // 持久化到服务端（demo 模式下跳过真实接口）
-    const numId = Number(targetId)
-    if (numId && !isNaN(numId) && !isDemoMode) {
+    if (targetId && !isDemoMode) {
       setSavingName(true)
       setNameError(null)
       try {
-        const result = await updateDeviceInfo({ id: numId, name: trimmed })
+        const result = await updateDeviceInfo({ id: targetId, name: trimmed })
         if (!(result.code === 0 || result.code === '0')) {
           // 回滚本地名称
           renameDeviceLocal(targetId, editTargetOriginalName)
@@ -222,12 +221,10 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const handleDeleteDevice = async () => {
     const id = routeId ?? selectedDeviceId
     if (!id) return
-    const numId = Number(id)
-    if (!numId || isNaN(numId)) return
     setDeleting(true)
     setDeleteError(null)
     try {
-      const result = await removeDevice([numId])
+      const result = await removeDevice([id])
       if (!(result.code === 0 || result.code === '0')) {
         setDeleteError(result.message ?? 'Failed to delete device')
         setDeleting(false)
