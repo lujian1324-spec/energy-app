@@ -32,6 +32,7 @@ import {
   Calendar,
   Sliders,
   ChevronRight,
+  History,
 } from 'lucide-react'
 import BatteryRing from '../components/BatteryRing'
 import ToggleSwitch from '../components/ToggleSwitch'
@@ -40,7 +41,7 @@ import { formatTemp } from '../utils/localization'
 import DeviceDetailPage from './DeviceDetailPage'
 import { useDeviceStore } from '../stores/deviceStore'
 import { usePowerStationStore } from '../stores/powerStationStore'
-import { mapFieldsToRealtime, mapFiringAlarms } from '../api/deviceApi'
+import { mapFieldsToRealtime, mapFiringAlarms, fetchHistoryData } from '../api/deviceApi'
 import type { DeviceAlert } from '../types'
 import { detectOutageFromFields } from '../utils/powerOutageNotification'
 import { batteryTimeLabel } from '../utils/batteryTime'
@@ -339,6 +340,53 @@ export default function OverviewPage() {
     )
   }, [batteryPower, acPower, solarPower, outputPower, isOnline])
 
+  // ─── June 25 historical overlay for SN 2412315001 ─────────────────────────
+  const TARGET_SN = '2412315001'
+  const [historyPoints, setHistoryPoints] = useState<
+    { battery: number; ac: number; solar: number; output: number }[]
+  >([])
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [historyFetched, setHistoryFetched] = useState(false)
+
+  useEffect(() => {
+    if (historyFetched) return
+    const targetDevice = devices.find(d => String(d.serialNumber) === TARGET_SN)
+    if (!targetDevice) return
+
+    setHistoryFetched(true)
+    setHistoryLoading(true)
+
+    // June 25, 2026 CST (UTC+8): 00:00–23:59
+    const fromTime = new Date('2026-06-25T00:00:00+08:00').getTime()
+    const toTime   = new Date('2026-06-25T23:59:59+08:00').getTime()
+
+    fetchHistoryData({
+      deviceId: String(targetDevice.id),
+      keys: ['generationPower', 'outputPower', 'remainingBatteryCapacity'],
+      fromTime,
+      toTime,
+      page: 1,
+      count: 288,
+      orderByTimeAsc: true,
+    }).then(res => {
+      if (res.success && res.data) {
+        const gen  = res.data['generationPower']  ?? []
+        const out  = res.data['outputPower']       ?? []
+        const batt = res.data['remainingBatteryCapacity'] ?? []
+
+        // Align by index (all arrays share same timestamps)
+        const len = Math.max(gen.length, out.length, batt.length)
+        const pts = Array.from({ length: len }, (_, i) => ({
+          solar:   Number(gen[i]?.value  ?? 0),
+          output:  Number(out[i]?.value  ?? 0),
+          battery: Number(batt[i]?.value ?? 0),
+          ac:      0,
+        }))
+        setHistoryPoints(pts)
+      }
+    }).catch(() => {}).finally(() => setHistoryLoading(false))
+  }, [devices, historyFetched])
+
   // ─── Solar charging notification ───────────────────────────────────────────
   const prevSolarRef = useRef(0)
   useEffect(() => {
@@ -393,8 +441,9 @@ export default function OverviewPage() {
   }, [realtime?.acInputVoltage, selectedDeviceState?.fields, settings.pushNotifications, pushPermission,
       acPower, solarPower, outputPower, remainingBatteryCapacity])
 
-  // Build SVG points (viewBox 0 0 300 80) from the buffered series
-  const chartSeries = powerHistory.map(p => p[powerDataSource])
+  // Build SVG points — prefer June 25 history overlay when available
+  const activeHistory = historyPoints.length > 0 ? historyPoints : powerHistory
+  const chartSeries = activeHistory.map(p => p[powerDataSource])
   const chartMax = Math.max(...chartSeries, 1)
   const chartPts = chartSeries.length >= 2
     ? chartSeries.map((v, i) => {
@@ -851,47 +900,60 @@ export default function OverviewPage() {
                 </motion.span>
               </div>
 
-              {/* Chart area — PRD §4.1.2: Disconnected shows guidance text */}
+              {/* Chart area — PRD §4.1.2: Disconnected shows guidance text; history overlay shown when available */}
               <div className="h-24 relative overflow-hidden mb-3">
-                {!isOnline ? (
+                {historyLoading ? (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Loader2 size={20} className="text-[#01D6BE] animate-spin" />
+                  </div>
+                ) : !isOnline && historyPoints.length === 0 ? (
                   <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
                     <AlertTriangle size={26} className="text-[#FF3B30] mb-2" />
                     <span className="text-body-lg font-bold text-[#FFFFFF]">Device disconnected</span>
                     <span className="text-[12px] text-[#BFBFBF] mt-1">Reconnect the device to view chart data.</span>
                   </div>
                 ) : (
-                  <svg width="100%" height="100%" viewBox="0 0 300 80" preserveAspectRatio="none">
-                    <line x1="0" y1="20" x2="300" y2="20" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-                    <line x1="0" y1="40" x2="300" y2="40" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-                    <line x1="0" y1="60" x2="300" y2="60" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-                    {chartPts.length >= 2 ? (
-                      <>
-                        <motion.polyline
-                          key={`line-${powerDataSource}`}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ duration: 0.5 }}
-                          points={chartLinePoints}
-                          fill="none"
-                          stroke={currentChartData.color}
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                        <motion.polygon
-                          key={`fill-${powerDataSource}`}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ duration: 0.3 }}
-                          points={chartAreaPoints}
-                          fill={currentChartData.color}
-                          fillOpacity="0.1"
-                        />
-                      </>
-                    ) : (
-                      <line x1="0" y1="70" x2="300" y2="70" stroke={currentChartData.color} strokeWidth="2" strokeLinecap="round" />
+                  <>
+                    {/* History badge */}
+                    {historyPoints.length > 0 && (
+                      <div className="absolute top-1 right-1 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#262626] border border-[rgba(1,214,190,0.3)]">
+                        <History size={10} className="text-[#01D6BE]" />
+                        <span className="text-[10px] text-[#01D6BE] font-medium">Jun 25 · SN {TARGET_SN}</span>
+                      </div>
                     )}
-                  </svg>
+                    <svg width="100%" height="100%" viewBox="0 0 300 80" preserveAspectRatio="none">
+                      <line x1="0" y1="20" x2="300" y2="20" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+                      <line x1="0" y1="40" x2="300" y2="40" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+                      <line x1="0" y1="60" x2="300" y2="60" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
+                      {chartPts.length >= 2 ? (
+                        <>
+                          <motion.polyline
+                            key={`line-${powerDataSource}-${historyPoints.length}`}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.5 }}
+                            points={chartLinePoints}
+                            fill="none"
+                            stroke={currentChartData.color}
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <motion.polygon
+                            key={`fill-${powerDataSource}-${historyPoints.length}`}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.3 }}
+                            points={chartAreaPoints}
+                            fill={currentChartData.color}
+                            fillOpacity="0.1"
+                          />
+                        </>
+                      ) : (
+                        <line x1="0" y1="70" x2="300" y2="70" stroke={currentChartData.color} strokeWidth="2" strokeLinecap="round" />
+                      )}
+                    </svg>
+                  </>
                 )}
               </div>
 
