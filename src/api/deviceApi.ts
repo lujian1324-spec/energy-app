@@ -668,7 +668,7 @@ export async function addDeviceWithStation(
 export async function deleteDevice(
   id: string | number
 ): Promise<ApiResponse<unknown>> {
-  return api.post<unknown>('/device/delete', { id: Number(id) })
+  return api.post<unknown>('/device/delete', { id: String(id) })
 }
 
 /** 设备状态统计 — state: 10=Alarm 20=Online 30=Offline 40=Fault */
