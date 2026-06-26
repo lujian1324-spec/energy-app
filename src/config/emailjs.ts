@@ -9,9 +9,9 @@
  * the "To" field inside the EmailJS template itself — it is NOT sent from the
  * client. The template should reference these params: {{from_email}}, {{message}}.
  */
-export const EMAILJS_SERVICE_ID = 'YOUR_EMAILJS_SERVICE_ID'
-export const EMAILJS_TEMPLATE_ID = 'YOUR_EMAILJS_TEMPLATE_ID'
-export const EMAILJS_PUBLIC_KEY = 'YOUR_EMAILJS_PUBLIC_KEY'
+export const EMAILJS_SERVICE_ID = 'service_doy82fa'
+export const EMAILJS_TEMPLATE_ID = 'template_y2kxukg'
+export const EMAILJS_PUBLIC_KEY = 'EYCUlzyOZ4nO8MVea'
 
 /** Whether all EmailJS credentials have been configured. */
 export const isEmailJsConfigured = (): boolean =>
