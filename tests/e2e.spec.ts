@@ -55,15 +55,27 @@ async function loginAsGuest(page: Page) {
 async function logout(page: Page) {
   await page.goto(`${BASE}/#/setting`)
   await page.waitForTimeout(2000)
-  // Tap avatar / manage account to open drawer
+  // "Manage my account" 现在直接打开 Profile 编辑页（不再是抽屉）
   const manageBtn = page.locator('text=Manage my account').first()
   if (await manageBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
     await manageBtn.click()
     await page.waitForTimeout(1000)
   }
-  const logoutBtn = page.locator('text=Sign out').first()
-  if (await logoutBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
-    await logoutBtn.click()
+  // Profile 页右上角 "···" 菜单 → Sign out → 二次确认 "Sign Out"
+  const menuBtn = page.locator('button', { hasText: '···' }).first()
+  if (await menuBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+    await menuBtn.click()
+    await page.waitForTimeout(500)
+  }
+  const signOutItem = page.getByText('Sign out', { exact: true }).first()
+  if (await signOutItem.isVisible({ timeout: 3000 }).catch(() => false)) {
+    await signOutItem.click()
+    await page.waitForTimeout(500)
+    // 确认弹窗里的 "Sign Out" 按钮（注意大小写不同）
+    const confirmBtn = page.getByRole('button', { name: 'Sign Out', exact: true }).first()
+    if (await confirmBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await confirmBtn.click()
+    }
     await page.waitForURL(/\/login/, { timeout: 10000 })
   }
 }
