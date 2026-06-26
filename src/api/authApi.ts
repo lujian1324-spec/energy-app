@@ -321,9 +321,13 @@ export async function fetchUserInfo(): Promise<ApiResponse<UserInfo>> {
   return api.post<UserInfo>('/user/select/iotUserInfo')
 }
 
-/** 更新个人用户信息 */
+/** 更新个人用户信息（userId 必填；以 String 发送避免 Java Long 精度丢失） */
 export async function updateUserInfo(data: Partial<UserInfo>): Promise<ApiResponse<unknown>> {
-  return api.post<unknown>('/user/update/iotUserInfo', data)
+  const payload: Record<string, unknown> = { ...data }
+  if (data.userId !== undefined && data.userId !== null) {
+    payload.userId = String(data.userId)
+  }
+  return api.post<unknown>('/user/update/iotUserInfo', payload)
 }
 
 /** 更新用户邮箱（需先通过 sendEmailCaptcha 获取 iotCaptchaId） */
