@@ -334,6 +334,11 @@ export default function OverviewPage() {
   const [powerHistory, setPowerHistory] = useState<
     { battery: number; ac: number; solar: number; output: number }[]
   >([])
+  // Reset the real-time buffer when switching devices so one device's readings
+  // never carry over into another device's Real-Time Power chart.
+  useEffect(() => {
+    setPowerHistory([])
+  }, [selectedDeviceId])
   useEffect(() => {
     if (!isOnline) { setPowerHistory([]); return }
     setPowerHistory(prev =>
@@ -345,8 +350,11 @@ export default function OverviewPage() {
   const TARGET_SN = '2412315001'
   const targetDeviceId = useMemo(() => {
     const d = devices.find(d => String(d.serialNumber) === TARGET_SN)
-    return d ? String(d.id) : null
-  }, [devices])
+    const tid = d ? String(d.id) : null
+    // Only overlay the Jun 25 history when THAT device is the one being viewed —
+    // otherwise its curve bleeds into every other device's Real-Time Power chart.
+    return tid && tid === selectedDeviceId ? tid : null
+  }, [devices, selectedDeviceId])
   const JUN25_FROM = useMemo(() => new Date('2026-06-25T00:00:00+08:00').getTime(), [])
   const JUN25_TO   = useMemo(() => new Date('2026-06-25T23:59:59+08:00').getTime(), [])
 
@@ -447,7 +455,7 @@ export default function OverviewPage() {
         <div className="flex justify-between items-center px-5 py-3">
           {/* Left: Back */}
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/devices')}
             className="w-9 h-9 rounded-full bg-[#262626] flex items-center justify-center text-[#FFFFFF] hover:bg-[#454545] transition-colors flex-shrink-0"
           >
             <ChevronLeft size={22} />
