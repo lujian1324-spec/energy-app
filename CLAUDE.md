@@ -72,3 +72,67 @@ Dark-first, iOS-native feel, rounded-card layout, teal accent on dark bg.
 - All primary interactive elements ≥ 48×48dp; focus ring `#01D6BE` (WCAG).
 - Toggle/button micro-interaction: scale 0.95 → 1. Ring color transition 1s ease-in-out.
 - Reference the PRD (Sierro Energy App PRD v1.1) for per-page behavior.
+
+---
+
+## Versioning (REQUIRED on every change)
+Single source of truth: `src/version.json` (`version`, `build`, `date`, `changelog`),
+mirrored in `package.json` `version`. SettingPage renders `Sierro App v{version}`.
+**Every app-facing change must bump the version and add a changelog entry.**
+- patch (`x.y.Z+1`): bug fix / small tweak
+- minor (`x.Y+1.0`): new feature
+- major (`X+1.0.0`): large rewrite
+Test-only / CI-only changes that don't alter the shipped bundle do NOT bump.
+
+---
+
+## Pages (`src/pages/`)
+Auth (no bottom nav): `LoginPage`, `RegisterPage`, `ForgotPasswordPage`, `TermsPage`, `PrivacyPage`.
+Main tabs (bottom nav, routes `/devices` `/insights` `/setting`): `DevicePage` (device list),
+`StatsPage` (Insights), `SettingPage`. `ProfileEditPage` renders as an overlay inside SettingPage.
+Secondary (no bottom nav): `DeviceMonitorPage` (`/device/:id`), `OverviewPage` (`/device/:id/dashboard`),
+`DeviceDetailPage` (`/device/:id/settings` — the live Device Info screen), `PassthroughPage`,
+`DebugParamsPage` (developer debug view), `SmartSchedulePage` (holds the live peak-shaving UI),
+`NotificationsPage`, `OnboardingPage`, `BleDebugPage`, `DataExportPage`, `ProvisioningPage`.
+- Back navigation on secondary device pages must go to `/devices` via `navigate('/devices',{replace:true})`
+  (plus swipe + popstate interceptors) — never `navigate(-1)` — to avoid history flicker.
+- All non-auth routes share ONE `AnimatePresence`/`Routes` in `App.tsx` so transitions are uniform.
+
+## UI metric label conventions (user-facing display text)
+Same metric → same label across all rendered pages (DebugParamsPage is exempt — it intentionally
+shows raw register names):
+| Metric | Canonical label | Unit |
+|---|---|---|
+| Battery state of charge | **Battery** | % |
+| Battery charge/discharge power | **Battery Power** | W |
+| AC/grid input power | **AC** | W |
+| Solar/PV input power | **Solar** | W |
+| Load/output power | **Output** | W |
+| Battery temperature | **Temperature** (via `formatTemp(c,'F')`) | °F |
+| Nameplate capacity | **Rated Capacity** | kWh |
+| Nameplate output power | **Rated Output Power** | W |
+| Nameplate voltage | **Rated Voltage** | V |
+| Battery usage cycles | **Cycles** | — |
+| Device serial | **Serial Number** | — |
+
+## Backend API parameter conventions (`src/api/`)
+Canonical names/types for request payloads & query params. Keep these consistent:
+- **Device id**: field name `deviceId` in queries, `id` in device CRUD payloads. ALWAYS send as
+  `String(...)` (Java `Long`, exceeds JS safe-int). Responses return ids as strings already.
+- **Station id**: `stationId` (String). **DTU id**: `dtuId` (String).
+- **User id**: `userId`. Stored in `localStorage['iot_user_id']` as a string; source of truth is the
+  login response `LoginData.userId`. Sent as a number only to `/login/logout`. **Do NOT send `userId`
+  to `/user/update/iotUserInfo` or `/user/update/authPassword`** — those identify the user via the
+  `IOT-Token` header and reject a body `userId` (binds to Java `Long` → "illegal argument").
+- **Token**: only via `tokenStore` (`iot_access_token` / `iot_refresh_token`); header is `IOT-Token`
+  (not `Authorization`). Login endpoints use `api.postSkipAuth`.
+- **Password**: always `md5Password()` before send. Fields: `password` (login/register),
+  `oldPassword`/`newPassword` (change password).
+- **Captcha**: response field is `iotCaptchaId`; request field is `captchaId` (pass the received
+  `iotCaptchaId` value as `captchaId`). Verification code field is always `verifyCode`.
+- **Captcha intent**: use the `CaptchaIntent` enum (`'1'`=register `'2'`=reset `'3'`=login `'4'`=update email).
+- **Email captcha quirk**: `/user/send/email/captcha` expects field **`address`**, not `email`.
+- **Country code**: always `normalizeCountryCode()` (strip leading `+`) before send.
+- **Pagination**: `page` (1-based) + `count` per page across all list endpoints.
+- **Success check**: backend `code` may be number `0` or string `'0'` — use `isApiSuccess(code)`
+  from `apiClient.ts`; do not hand-roll `code === 0 || code === '0'` in new code.

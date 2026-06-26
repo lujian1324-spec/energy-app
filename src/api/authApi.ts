@@ -124,6 +124,22 @@ export function md5Password(plainPassword: string): string {
   return CryptoJS.MD5(plainPassword).toString(CryptoJS.enc.Hex).toLowerCase()
 }
 
+/** 规范化国家区号：平台要求不带 "+" 前缀（如 "1" 而非 "+1"）。所有发送区号处统一调用。 */
+export function normalizeCountryCode(code: string): string {
+  return code.replace(/^\+/, '')
+}
+
+/**
+ * 验证码用途（intent）枚举 —— 平台用数值字符串区分场景。
+ * 所有发送验证码的调用统一使用此枚举，避免散落魔法字符串。
+ */
+export const CaptchaIntent = {
+  REGISTER: '1',
+  RESET_PASSWORD: '2',
+  LOGIN: '3',
+  UPDATE_EMAIL: '4',
+} as const
+
 // ═══════════════════════════════════════════════════════
 // 登录
 // ═══════════════════════════════════════════════════════
@@ -177,7 +193,7 @@ export async function loginBySms(
   iotCaptchaId: string,
   verifyCode: string
 ): Promise<ApiResponse<LoginData>> {
-  const normalizedCode = countryTelephoneCode.replace(/^\+/, '')
+  const normalizedCode = normalizeCountryCode(countryTelephoneCode)
   const result = await api.postSkipAuth<LoginData>('/login/sms', {
     cellphone,
     countryTelephoneCode: normalizedCode,
@@ -224,7 +240,7 @@ export async function registerByCellphone(
   captchaId?: string
 ): Promise<ApiResponse<unknown>> {
   // API 要求区号不带 "+" 前缀 (如 "86" 而非 "+86")
-  const normalizedCode = countryTelephoneCode.replace(/^\+/, '')
+  const normalizedCode = normalizeCountryCode(countryTelephoneCode)
   return api.postSkipAuth<unknown>('/user/register/cellphone', {
     account,
     password: md5Password(plainPassword),
@@ -257,7 +273,7 @@ export async function sendSmsCaptcha(
   countryTelephoneCode: string,
   intent = '1'
 ): Promise<ApiResponse<SendCaptchaResponse>> {
-  const normalizedCode = countryTelephoneCode.replace(/^\+/, '')
+  const normalizedCode = normalizeCountryCode(countryTelephoneCode)
   return api.postSkipAuth<SendCaptchaResponse>('/user/send/sms/captcha', {
     cellphone,
     countryTelephoneCode: normalizedCode,

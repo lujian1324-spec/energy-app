@@ -19,6 +19,14 @@ export interface ApiResponse<T = unknown> {
   data?: T
 }
 
+/**
+ * 统一的业务成功判定：后端 code 可能返回数字 0 或字符串 '0'，一律视为成功。
+ * 新代码请统一用此函数，不要再手写 `code === 0 || code === '0'`。
+ */
+export function isApiSuccess(code: number | string | undefined | null): boolean {
+  return code === 0 || code === '0'
+}
+
 // ─── 自定义 API 错误 ───
 export class ApiError extends Error {
   constructor(

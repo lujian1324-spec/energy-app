@@ -1,8 +1,9 @@
 {
-  "version": "3.13.4",
-  "build": 2529,
+  "version": "3.13.5",
+  "build": 2530,
   "date": "2026-06-26",
   "changelog": [
+    "Standardize backend API params (isApiSuccess, normalizeCountryCode, CaptchaIntent) + document page/label/API conventions in CLAUDE.md",
     "Unify UI metric labels: battery=Battery(%), AC input=AC, temperature=Temperature(°F); remove dead pages (DeviceInfoPage, PeakShavingPage)",
     "Device list: fetch every device's battery on enter + refresh all every 60s (was only updating one device due to single-slot state)",
     "Device monitor: back arrow + swipe now return to Device list (was going back in history)",
