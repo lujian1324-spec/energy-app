@@ -18,6 +18,8 @@ export interface HistoryPoint {
   solar: number      // generationPower W
   output: number     // outputPower W
   soc: number        // remainingBatteryCapacity %
+  battery: number    // batteryPower W (charge positive, discharge negative)
+  ac: number         // exchangeChargingPower W
 }
 
 export interface UseHistoryFetcherResult {
@@ -31,7 +33,13 @@ export interface UseHistoryFetcherResult {
 }
 
 const PAGE_SIZE = 10
-const HISTORY_KEYS = ['generationPower', 'outputPower', 'remainingBatteryCapacity'] as const
+const HISTORY_KEYS = [
+  'generationPower',
+  'outputPower',
+  'remainingBatteryCapacity',
+  'batteryPower',
+  'exchangeChargingPower',
+] as const
 
 export function useHistoryFetcher(
   deviceId: string | null,
@@ -99,8 +107,10 @@ export function useHistoryFetcher(
           const gen  = res.data['generationPower']           ?? []
           const out  = res.data['outputPower']                ?? []
           const soc  = res.data['remainingBatteryCapacity']  ?? []
+          const bat  = res.data['batteryPower']               ?? []
+          const ac   = res.data['exchangeChargingPower']      ?? []
 
-          const len = Math.max(gen.length, out.length, soc.length)
+          const len = Math.max(gen.length, out.length, soc.length, bat.length, ac.length)
           if (len === 0) break // 无更多数据
 
           // 构建本页数据点
@@ -108,7 +118,7 @@ export function useHistoryFetcher(
           const pagePoints: HistoryPoint[] = []
 
           for (let i = 0; i < len; i++) {
-            const timeStr = gen[i]?.time ?? out[i]?.time ?? soc[i]?.time ?? ''
+            const timeStr = gen[i]?.time ?? out[i]?.time ?? soc[i]?.time ?? bat[i]?.time ?? ac[i]?.time ?? ''
             const ts = timeStr ? new Date(timeStr).getTime() : fromTime + (page - 1) * PAGE_SIZE * 5 * 60000 + i * 5 * 60000
             pageRecords.push({
               timestamp: ts,
@@ -127,6 +137,8 @@ export function useHistoryFetcher(
               solar: Number(gen[i]?.value ?? 0),
               output: Number(out[i]?.value ?? 0),
               soc: Number(soc[i]?.value ?? 0),
+              battery: Number(bat[i]?.value ?? 0),
+              ac: Number(ac[i]?.value ?? 0),
             })
           }
 
@@ -168,5 +180,7 @@ function toHistoryPoints(records: PowerHistoryRecord[]): HistoryPoint[] {
       solar: r.solarPower ?? r.inputPower,
       output: r.outputPower,
       soc: r.remainingBatteryCapacity ?? r.batteryLevel,
+      battery: 0,
+      ac: 0,
     }))
 }

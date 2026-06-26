@@ -353,7 +353,7 @@ export default function OverviewPage() {
     { key: 'showPortStatus', label: 'Port Status', desc: 'Active port display' },
   ] as const
 
-  // ─── Power chart data (mock SVG paths for now) ───
+  // ─── Power chart data: realtime badge values ───
   const powerChartData = useMemo(() => ({
     battery: { value: batteryPower, color: '#34C759' },
     ac: { value: acPower, color: '#01D6BE' },
@@ -363,46 +363,160 @@ export default function OverviewPage() {
 
   const currentChartData = powerChartData[powerDataSource]
 
-  // ─── Real-time rolling power buffer (last 30 readings) for the chart ───
-  const [powerHistory, setPowerHistory] = useState<
-    { battery: number; ac: number; solar: number; output: number }[]
-  >([])
-  // Reset the real-time buffer when switching devices so one device's readings
-  // never carry over into another device's Real-Time Power chart.
-  useEffect(() => {
-    setPowerHistory([])
-  }, [selectedDeviceId])
-  useEffect(() => {
-    if (!isOnline) { setPowerHistory([]); return }
-    setPowerHistory(prev =>
-      [...prev, { battery: batteryPower, ac: acPower, solar: solarPower, output: outputPower }].slice(-30)
-    )
-  }, [batteryPower, acPower, solarPower, outputPower, isOnline])
-
-  // ─── June 25 historical overlay for SN 2412315001 (paginated, cached) ──────
-  const TARGET_SN = '2412315001'
-  const targetDeviceId = useMemo(() => {
-    const d = devices.find(d => String(d.serialNumber) === TARGET_SN)
-    const tid = d ? String(d.id) : null
-    // Only overlay the Jun 25 history when THAT device is the one being viewed —
-    // otherwise its curve bleeds into every other device's Real-Time Power chart.
-    return tid && tid === selectedDeviceId ? tid : null
-  }, [devices, selectedDeviceId])
-  const JUN25_FROM = useMemo(() => new Date('2026-06-25T00:00:00+08:00').getTime(), [])
-  const JUN25_TO   = useMemo(() => new Date('2026-06-25T23:59:59+08:00').getTime(), [])
+  // ─── Today's time window for chart history ───
+  const [todayFrom, todayTo] = useMemo(() => {
+    const now = new Date()
+    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
+    const end   = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
+    return [start.getTime(), end.getTime()]
+  }, [])
 
   const {
     points: rawHistoryPoints,
     loading: historyLoading,
     currentPage: historyPage,
     fromCache: historyFromCache,
-  } = useHistoryFetcher(targetDeviceId, JUN25_FROM, JUN25_TO)
+  } = useHistoryFetcher(selectedDeviceId, todayFrom, todayTo)
 
-  // Convert to chart buffer format
-  const historyPoints = useMemo(
-    () => rawHistoryPoints.map(p => ({ solar: p.solar, output: p.output, battery: p.soc, ac: 0 })),
-    [rawHistoryPoints]
-  )
+  // ─── Chart zoom / pan state (unix ms within today) ───
+  const [viewStart, setViewStart] = useState(todayFrom)
+  const [viewEnd, setViewEnd] = useState(todayTo)
+  const MIN_WINDOW = 3_600_000  // 1 hour minimum zoom
+
+  // Clamp helper
+  const clampView = useCallback((s: number, e: number): [number, number] => {
+    const win = Math.max(e - s, MIN_WINDOW)
+    const cs = Math.max(todayFrom, Math.min(s, todayTo - win))
+    const ce = Math.min(todayTo, cs + win)
+    return [cs, ce]
+  }, [todayFrom, todayTo])
+
+  // Reset zoom when device changes or day changes
+  useEffect(() => {
+    setViewStart(todayFrom)
+    setViewEnd(todayTo)
+  }, [selectedDeviceId, todayFrom, todayTo])
+
+  // ─── Gesture state for pinch-to-zoom and pan on chart ───
+  const chartTouchRef = useRef<{
+    mode: 'pan' | 'pinch' | null
+    lastX: number
+    lastDist: number
+    viewAtStart: [number, number]
+  }>({ mode: null, lastX: 0, lastDist: 0, viewAtStart: [todayFrom, todayTo] })
+
+  const onChartTouchStart = useCallback((e: React.TouchEvent<SVGSVGElement>) => {
+    if (e.touches.length === 1) {
+      chartTouchRef.current = {
+        mode: 'pan',
+        lastX: e.touches[0].clientX,
+        lastDist: 0,
+        viewAtStart: [viewStart, viewEnd],
+      }
+    } else if (e.touches.length === 2) {
+      const dx = e.touches[1].clientX - e.touches[0].clientX
+      const dy = e.touches[1].clientY - e.touches[0].clientY
+      chartTouchRef.current = {
+        mode: 'pinch',
+        lastX: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+        lastDist: Math.sqrt(dx * dx + dy * dy),
+        viewAtStart: [viewStart, viewEnd],
+      }
+    }
+    e.stopPropagation()
+  }, [viewStart, viewEnd])
+
+  const onChartTouchMove = useCallback((e: React.TouchEvent<SVGSVGElement>) => {
+    const ref = chartTouchRef.current
+    if (!ref.mode) return
+    const svgEl = e.currentTarget
+    const svgWidth = svgEl.getBoundingClientRect().width || 300
+
+    if (ref.mode === 'pan' && e.touches.length === 1) {
+      const dx = e.touches[0].clientX - ref.lastX
+      ref.lastX = e.touches[0].clientX
+      const [s, e2] = ref.viewAtStart
+      const winMs = e2 - s
+      const msPerPx = winMs / svgWidth
+      const delta = -dx * msPerPx
+      const [ns, ne] = clampView(viewStart + delta, viewEnd + delta)
+      setViewStart(ns)
+      setViewEnd(ne)
+      ref.viewAtStart = [ns, ne]
+    } else if (ref.mode === 'pinch' && e.touches.length === 2) {
+      const dx = e.touches[1].clientX - e.touches[0].clientX
+      const dy = e.touches[1].clientY - e.touches[0].clientY
+      const dist = Math.sqrt(dx * dx + dy * dy)
+      const scale = ref.lastDist > 0 ? ref.lastDist / dist : 1
+      ref.lastDist = dist
+      const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2
+      const [s, e2] = [viewStart, viewEnd]
+      const winMs = e2 - s
+      const msPerPx = winMs / svgWidth
+      const pivotMs = s + (cx - svgEl.getBoundingClientRect().left) * msPerPx
+      const newWin = Math.max(MIN_WINDOW, winMs * scale)
+      const ratio = (pivotMs - s) / winMs
+      const ns = pivotMs - ratio * newWin
+      const ne = ns + newWin
+      const [cs, ce] = clampView(ns, ne)
+      setViewStart(cs)
+      setViewEnd(ce)
+    }
+    e.stopPropagation()
+  }, [viewStart, viewEnd, clampView])
+
+  const onChartTouchEnd = useCallback((e: React.TouchEvent<SVGSVGElement>) => {
+    if (e.touches.length === 0) {
+      chartTouchRef.current.mode = null
+    }
+    e.stopPropagation()
+  }, [])
+
+  // ─── Build SVG path from history points, mapped onto viewStart..viewEnd ───
+  const chartPoints = useMemo(() => {
+    const win = viewEnd - viewStart
+    if (win <= 0) return []
+    return rawHistoryPoints
+      .filter(p => p.timestamp >= viewStart - win * 0.05 && p.timestamp <= viewEnd + win * 0.05)
+      .map(p => {
+        const x = ((p.timestamp - viewStart) / win) * 300
+        const val = powerDataSource === 'battery' ? p.battery
+                  : powerDataSource === 'ac'      ? p.ac
+                  : powerDataSource === 'solar'   ? p.solar
+                  :                                 p.output
+        return { x, val }
+      })
+  }, [rawHistoryPoints, viewStart, viewEnd, powerDataSource])
+
+  const chartMax = useMemo(() => Math.max(...chartPoints.map(p => Math.abs(p.val)), 1), [chartPoints])
+
+  const chartSvgPts = useMemo(() => {
+    return chartPoints
+      .filter(p => p.x >= -10 && p.x <= 310)
+      .map(p => {
+        const y = 60 - (Math.abs(p.val) / chartMax) * 55
+        return [p.x, y] as const
+      })
+  }, [chartPoints, chartMax])
+
+  const chartLinePoints = chartSvgPts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ')
+  const chartAreaPoints = chartSvgPts.length >= 2
+    ? `${chartLinePoints} ${chartSvgPts[chartSvgPts.length-1][0].toFixed(1)},70 ${chartSvgPts[0][0].toFixed(1)},70`
+    : ''
+
+  // ─── X-axis tick labels at 0/4/8/12/16/20/24 hours ───
+  const X_TICKS = useMemo(() => {
+    const todayDate = new Date(todayFrom)
+    const year = todayDate.getFullYear()
+    const month = todayDate.getMonth()
+    const day = todayDate.getDate()
+    return [0, 4, 8, 12, 16, 20, 24].map(h => {
+      const ts = new Date(year, month, day, h, 0, 0, 0).getTime()
+      const x = ((ts - viewStart) / (viewEnd - viewStart)) * 300
+      const label = h === 0 || h === 24 ? '12am' : h === 12 ? '12pm' : h < 12 ? `${h}am` : `${h - 12}pm`
+      return { ts, x, label }
+    })
+  }, [todayFrom, viewStart, viewEnd])
 
   // ─── Solar charging notification ───────────────────────────────────────────
   const prevSolarRef = useRef(0)
@@ -457,20 +571,6 @@ export default function OverviewPage() {
     }
   }, [realtime?.acInputVoltage, selectedDeviceState?.fields, settings.pushNotifications, pushPermission,
       acPower, solarPower, outputPower, remainingBatteryCapacity])
-
-  // Build SVG points — prefer June 25 history overlay when available
-  const activeHistory = historyPoints.length > 0 ? historyPoints : powerHistory
-  const chartSeries = activeHistory.map(p => p[powerDataSource])
-  const chartMax = Math.max(...chartSeries, 1)
-  const chartPts = chartSeries.length >= 2
-    ? chartSeries.map((v, i) => {
-        const x = (i / (chartSeries.length - 1)) * 300
-        const y = 75 - (v / chartMax) * 70
-        return [x, y] as const
-      })
-    : []
-  const chartLinePoints = chartPts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ')
-  const chartAreaPoints = chartPts.length ? `${chartLinePoints} 300,80 0,80` : ''
 
   return (
     <div
@@ -904,6 +1004,7 @@ export default function OverviewPage() {
               transition={{ delay: 0.1 }}
               className="mx-5 mb-5 bg-[#262626] rounded-l p-4"
             >
+              {/* Header: title + realtime badge */}
               <div className="flex items-center justify-between mb-3">
                 <span className="text-body-md font-semibold text-[#FFFFFF]">Real-Time Power</span>
                 <motion.span
@@ -920,69 +1021,108 @@ export default function OverviewPage() {
                 </motion.span>
               </div>
 
-              {/* Chart area — PRD §4.1.2: Disconnected shows guidance text; history overlay shown when available */}
-              <div className="h-24 relative overflow-hidden mb-3">
-                {historyLoading ? (
-                  <div className="absolute inset-0 flex items-center justify-center">
+              {/* Chart area with time X-axis */}
+              <div className="relative mb-1" style={{ height: 96 }}>
+                {/* Loading spinner overlay */}
+                {historyLoading && rawHistoryPoints.length === 0 && (
+                  <div className="absolute inset-0 flex items-center justify-center z-10">
                     <Loader2 size={20} className="text-[#01D6BE] animate-spin" />
                   </div>
-                ) : !isOnline && historyPoints.length === 0 ? (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
-                    <AlertTriangle size={26} className="text-[#FF3B30] mb-2" />
-                    <span className="text-body-lg font-bold text-[#FFFFFF]">Device disconnected</span>
-                    <span className="text-[12px] text-[#BFBFBF] mt-1">Reconnect the device to view chart data.</span>
-                  </div>
-                ) : (
-                  <>
-                    {/* History badge */}
-                    {(historyPoints.length > 0 || historyLoading) && (
-                      <div className="absolute top-1 right-1 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#262626] border border-[rgba(1,214,190,0.3)]">
-                        {historyLoading
-                          ? <Loader2 size={10} className="text-[#01D6BE] animate-spin" />
-                          : <History size={10} className="text-[#01D6BE]" />
-                        }
-                        <span className="text-[10px] text-[#01D6BE] font-medium">
-                          {historyLoading
-                            ? `p.${historyPage} · ${rawHistoryPoints.length}pts`
-                            : `Jun 25 · ${historyFromCache ? 'cache' : 'API'} · ${rawHistoryPoints.length}pts`
-                          }
-                        </span>
-                      </div>
-                    )}
-                    <svg width="100%" height="100%" viewBox="0 0 300 80" preserveAspectRatio="none">
-                      <line x1="0" y1="20" x2="300" y2="20" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-                      <line x1="0" y1="40" x2="300" y2="40" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-                      <line x1="0" y1="60" x2="300" y2="60" stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-                      {chartPts.length >= 2 ? (
-                        <>
-                          <motion.polyline
-                            key={`line-${powerDataSource}-${historyPoints.length}`}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.5 }}
-                            points={chartLinePoints}
-                            fill="none"
-                            stroke={currentChartData.color}
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                          <motion.polygon
-                            key={`fill-${powerDataSource}-${historyPoints.length}`}
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.3 }}
-                            points={chartAreaPoints}
-                            fill={currentChartData.color}
-                            fillOpacity="0.1"
-                          />
-                        </>
-                      ) : (
-                        <line x1="0" y1="70" x2="300" y2="70" stroke={currentChartData.color} strokeWidth="2" strokeLinecap="round" />
-                      )}
-                    </svg>
-                  </>
                 )}
+
+                {/* Data status badge (top-left) */}
+                {(rawHistoryPoints.length > 0 || historyLoading) && (
+                  <div className="absolute top-1 left-1 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#1a1a1a] border border-[rgba(1,214,190,0.25)]">
+                    {historyLoading
+                      ? <Loader2 size={9} className="text-[#01D6BE] animate-spin" />
+                      : <History size={9} className="text-[#01D6BE]" />
+                    }
+                    <span className="text-[9px] text-[#01D6BE] font-medium">
+                      {historyLoading
+                        ? `p.${historyPage} · ${rawHistoryPoints.length}pts`
+                        : `${historyFromCache ? 'cache' : 'API'} · ${rawHistoryPoints.length}pts`
+                      }
+                    </span>
+                  </div>
+                )}
+
+                {/* SVG chart — touch handlers for pinch/pan */}
+                <svg
+                  width="100%"
+                  height="78"
+                  viewBox="0 0 300 70"
+                  preserveAspectRatio="none"
+                  style={{ display: 'block', touchAction: 'none' }}
+                  onTouchStart={onChartTouchStart}
+                  onTouchMove={onChartTouchMove}
+                  onTouchEnd={onChartTouchEnd}
+                >
+                  {/* Y grid lines */}
+                  <line x1="0" y1="15" x2="300" y2="15" stroke="rgba(255,255,255,0.05)" strokeWidth="0.8" />
+                  <line x1="0" y1="35" x2="300" y2="35" stroke="rgba(255,255,255,0.05)" strokeWidth="0.8" />
+                  <line x1="0" y1="55" x2="300" y2="55" stroke="rgba(255,255,255,0.05)" strokeWidth="0.8" />
+
+                  {/* X-axis tick lines at 4-hour boundaries */}
+                  {X_TICKS.map(tick => tick.x >= -2 && tick.x <= 302 ? (
+                    <line key={tick.ts} x1={tick.x} y1="0" x2={tick.x} y2="70"
+                      stroke="rgba(255,255,255,0.06)" strokeWidth="0.8" />
+                  ) : null)}
+
+                  {/* Chart fill */}
+                  {chartAreaPoints && (
+                    <motion.polygon
+                      key={`fill-${powerDataSource}-${rawHistoryPoints.length}`}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.3 }}
+                      points={chartAreaPoints}
+                      fill={currentChartData.color}
+                      fillOpacity="0.12"
+                    />
+                  )}
+
+                  {/* Chart line */}
+                  {chartSvgPts.length >= 2 ? (
+                    <motion.polyline
+                      key={`line-${powerDataSource}-${rawHistoryPoints.length}-${viewStart}`}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.4 }}
+                      points={chartLinePoints}
+                      fill="none"
+                      stroke={currentChartData.color}
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  ) : !historyLoading && (
+                    <line x1="0" y1="60" x2="300" y2="60"
+                      stroke={currentChartData.color} strokeWidth="1.5"
+                      strokeOpacity="0.3" strokeLinecap="round" strokeDasharray="4 4" />
+                  )}
+                </svg>
+
+                {/* X-axis tick labels — rendered outside SVG so they don't scale with preserveAspectRatio:none */}
+                <div className="relative" style={{ height: 18 }}>
+                  {X_TICKS.map(tick => {
+                    const pct = ((tick.ts - viewStart) / (viewEnd - viewStart)) * 100
+                    if (pct < -5 || pct > 105) return null
+                    return (
+                      <span
+                        key={tick.ts}
+                        className="absolute text-[9px] text-[#595959] font-medium"
+                        style={{
+                          left: `${pct}%`,
+                          transform: 'translateX(-50%)',
+                          top: 2,
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {tick.label}
+                      </span>
+                    )
+                  })}
+                </div>
               </div>
 
               {/* PRD v1.1 §8.2: 采样率标注 */}

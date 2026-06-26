@@ -1,8 +1,9 @@
 {
-  "version": "3.13.5",
-  "build": 2530,
+  "version": "3.13.6",
+  "build": 2531,
   "date": "2026-06-26",
   "changelog": [
+    "Real-Time Power chart: real time X-axis (12am/4am/8am/12pm/4pm/8pm/12am), pinch-to-zoom + pan (min 1 hour), today's API history (paginated + IndexedDB cache); realtime value shown only in top-right badge",
     "Standardize backend API params (isApiSuccess, normalizeCountryCode, CaptchaIntent) + document page/label/API conventions in CLAUDE.md",
     "Unify UI metric labels: battery=Battery(%), AC input=AC, temperature=Temperature(°F); remove dead pages (DeviceInfoPage, PeakShavingPage)",
     "Device list: fetch every device's battery on enter + refresh all every 60s (was only updating one device due to single-slot state)",
