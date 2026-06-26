@@ -1050,7 +1050,7 @@ export default function OverviewPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className={`text-body-md font-semibold text-[#FFFFFF]`}>
-                            {alert.alarmMessage || `Alarm ${alert.alarmCode}`}
+                            {alert.alarmMessage || (alert.alarmCode ? `Alarm ${alert.alarmCode}` : 'Device Alarm')}
                           </span>
                           <span className={`text-[10px] px-1.5 py-0.5 rounded ${colors.bg} ${colors.text} font-medium`}>
                             LIVE
@@ -1092,10 +1092,10 @@ export default function OverviewPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className={`text-body-md font-semibold ${alarm.isProcessed ? 'text-[#8C8C8C]' : 'text-[#FFFFFF]'}`}>
-                          {alarm.alarmMessage || `Alarm ${alarm.alarmCode}`}
+                          {alarm.alarmMessage || alarm.name || (alarm.alarmCode ? `Alarm ${alarm.alarmCode}` : 'Device Alarm')}
                         </div>
                         <div className="text-[11px] mt-0.5 text-[#BFBFBF]">
-                          Code: {alarm.alarmCode} · Level: {alarm.alarmLevel}
+                          Code: {alarm.alarmCode ?? alarm.key ?? '--'} · Level: {alarm.alarmLevel ?? alarm.levelDict ?? '--'}
                           {alarm.deviceName && <> · <span className="text-[#BFBFBF]">{alarm.deviceName}</span></>}
                         </div>
                       </div>

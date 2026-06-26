@@ -215,12 +215,14 @@ export default function DevicePage() {
     }
   }, [selectedDeviceState])
 
-  // 页面进入后立即为每个设备获取电池容量等实时状态
+  // 页面进入后立即获取电池容量等实时状态，并每隔 60s 自动刷新
   useEffect(() => {
-    if (devices.length > 0 && isAuthenticated) {
-      devices.forEach(d => fetchDeviceRealtime(d.id))
-    }
-  }, [devices, isAuthenticated])
+    if (devices.length === 0 || !isAuthenticated) return
+    const refreshAll = () => devices.forEach(d => fetchDeviceRealtime(d.id))
+    refreshAll()
+    const timer = setInterval(refreshAll, 60000)
+    return () => clearInterval(timer)
+  }, [devices, isAuthenticated, fetchDeviceRealtime])
 
   // ── 刷新单个设备 ──
   const handleRefreshDevice = async (deviceId: number, e: React.MouseEvent) => {

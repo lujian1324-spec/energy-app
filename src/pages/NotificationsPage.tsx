@@ -27,7 +27,7 @@ function severityConfig(severity: string): { color: string; bg: string } {
 
 function FiringAlarmRow({ alarm }: { alarm: FiringAlarm }) {
   const cfg = severityConfig(alarm.severity)
-  const title = alarm.alarmMessage || alarm.alarmCode || `Alarm ${alarm.alarmId}`
+  const title = alarm.alarmMessage || alarm.alarmCode || (alarm.alarmId ? `Alarm ${alarm.alarmId}` : 'Device Alarm')
   const time = alarm.timestamp ? new Date(alarm.timestamp).toLocaleString() : 'Active now'
   return (
     <motion.div
@@ -67,6 +67,25 @@ function SectionHeader({ icon: SIcon, label, count, color }: {
   )
 }
 
+/**
+ * Resolve a human-readable alarm title, falling back through every available
+ * field so we never render "Alarm undefined" when the API omits name/code/id.
+ */
+function resolveAlarmTitle(alarm: AlarmItem): string {
+  const i18n = alarm.nameI18n
+    ? (alarm.nameI18n.en ?? alarm.nameI18n.zh ?? Object.values(alarm.nameI18n)[0])
+    : undefined
+  const code = alarm.alarmCode ?? alarm.key ?? alarm.id
+  return (
+    alarm.name ||
+    i18n ||
+    alarm.alarmMessage ||
+    alarm.description ||
+    alarm.key ||
+    (code ? `Alarm ${code}` : 'Device Alarm')
+  )
+}
+
 function levelConfig(alarm: AlarmItem): { color: string; bg: string; icon: typeof AlertTriangle } {
   const level = (alarm.levelDict ?? alarm.alarmLevel ?? '').toLowerCase()
   if (level === 'high' || level === 'critical' || level === 'major') {
@@ -87,7 +106,7 @@ function AlarmRow({ alarm, onDismiss, dismissing }: {
   const Icon = alarm.isProcessed ? CheckCircle : cfg.icon
   const iconColor = alarm.isProcessed ? '#34C759' : cfg.color
 
-  const title = alarm.name ?? alarm.alarmMessage ?? alarm.key ?? `Alarm ${alarm.alarmCode ?? alarm.id}`
+  const title = resolveAlarmTitle(alarm)
   const subtitle = [
     alarm.levelDict ?? alarm.alarmLevel,
     alarm.deviceName,
