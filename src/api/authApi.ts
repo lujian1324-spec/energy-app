@@ -363,14 +363,19 @@ export async function updateUserCellphone(
   })
 }
 
-/** 修改密码（userId 必填；以 String 发送避免 Java Long 精度丢失） */
+/**
+ * 修改密码（均需 MD5 加密）。
+ *
+ * 后端通过 IOT-Token 请求头识别当前用户，请求体只接受 oldPassword / newPassword。
+ * 不要再传 userId：authPassword 接口会把 userId 绑定为 Java Long，传入字符串形式
+ * 的 userId 会触发 "illegal argument"。第三个参数保留仅为向后兼容，已不再使用。
+ */
 export async function updatePassword(
   oldPlainPassword: string,
   newPlainPassword: string,
-  userId?: number | string
+  _userId?: number | string
 ): Promise<ApiResponse<unknown>> {
   return api.post<unknown>('/user/update/authPassword', {
-    ...(userId !== undefined && userId !== null ? { userId: String(userId) } : {}),
     oldPassword: md5Password(oldPlainPassword),
     newPassword: md5Password(newPlainPassword),
   })
