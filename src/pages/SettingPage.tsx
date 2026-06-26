@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   X,
@@ -62,9 +62,13 @@ export default function SettingPage() {
   const [pushSolarStatus, setPushSolarStatus] = useState(settings.pushSolarStatus ?? false)
   const [lowBatteryThreshold, setLowBatteryThreshold] = useState(settings.lowBatteryThreshold ?? 30)
 
-  useEffect(() => {
+  const reloadUserProfile = useCallback(() => {
     getUserProfile().then(p => { if (p) setUserProfile(p) }).catch(err => console.error('[SettingPage] getUserProfile failed:', err))
   }, [])
+
+  useEffect(() => {
+    reloadUserProfile()
+  }, [reloadUserProfile])
 
   const [supportSending, setSupportSending] = useState(false)
   const [supportError, setSupportError] = useState('')
@@ -492,7 +496,7 @@ export default function SettingPage() {
 
       {/* ==================== Profile Edit Page ==================== */}
       <AnimatePresence>
-        {showProfileEdit && <ProfileEditPage onBack={() => setShowProfileEdit(false)} />}
+        {showProfileEdit && <ProfileEditPage onBack={() => { setShowProfileEdit(false); reloadUserProfile() }} />}
       </AnimatePresence>
     </div>
   )
