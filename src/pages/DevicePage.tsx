@@ -37,7 +37,7 @@ import { useAuthStore } from '../stores/authStore'
 import { useNotificationStore } from '../stores/notificationStore'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import sierro2000Img from '../assets/sierro-2000-product.webp'
-import { mapFieldsToRealtime } from '../api/deviceApi'
+import { mapFieldsToRealtime, fetchDeviceState } from '../api/deviceApi'
 import type { DeviceListItem, DeviceStateField } from '../api/deviceApi'
 import { getDemoDeviceState } from '../data/demoData'
 
@@ -91,7 +91,6 @@ export default function DevicePage() {
     deviceLoading,
     loadDevices,
     loadStations,
-    loadDeviceState,
     selectedDeviceState,
     stateLoading,
     isDemoMode,
@@ -178,9 +177,23 @@ export default function DevicePage() {
     fetchDevices()
   }, [fetchDevices])
 
-  // ── 加载设备实时状态（每个设备） ──
+  // ── 加载设备实时状态（每个设备，独立请求） ──
+  // 注意：不能用 store.loadDeviceState，它用单槽 selectedDeviceState + stateRequestSeq
+  // 做单设备防抖，并发拉多个设备时只有最后一个生效，其余会被丢弃。这里直接调用
+  // fetchDeviceState API，按 deviceId 各自写入 realtimeCache，互不干扰。
   const fetchDeviceRealtime = useCallback(async (deviceId: number | string) => {
     const idStr = String(deviceId)
+    // Demo 模式直接用本地模拟数据
+    if (useDeviceStore.getState().isDemoMode) {
+      const state = getDemoDeviceState(deviceId)
+      if (state) {
+        setRealtimeCache(prev => ({
+          ...prev,
+          [idStr]: { fields: state.fields, raw: mapFieldsToRealtime(state.fields), loading: false, lastUpdated: Date.now() },
+        }))
+      }
+      return
+    }
     // Keep the previous fields/raw while refreshing so the battery icon doesn't
     // briefly flash 0% on every periodic re-fetch — only flip the loading flag.
     setRealtimeCache(prev => ({
@@ -188,14 +201,27 @@ export default function DevicePage() {
       [idStr]: { ...prev[idStr], loading: true },
     }))
     try {
-      await loadDeviceState(deviceId)
+      const result = await fetchDeviceState(idStr)
+      if ((result.code === 0 || result.code === '0') && result.data) {
+        setRealtimeCache(prev => ({
+          ...prev,
+          [idStr]: {
+            fields: result.data!.fields,
+            raw: mapFieldsToRealtime(result.data!.fields),
+            loading: false,
+            lastUpdated: Date.now(),
+          },
+        }))
+      } else {
+        setRealtimeCache(prev => ({ ...prev, [idStr]: { ...prev[idStr], loading: false } }))
+      }
     } catch {
       setRealtimeCache(prev => ({
         ...prev,
         [idStr]: { ...prev[idStr], loading: false },
       }))
     }
-  }, [loadDeviceState])
+  }, [])
 
   // 监听 selectedDeviceState 变化并更新缓存
   useEffect(() => {

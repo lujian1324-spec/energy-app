@@ -1,8 +1,9 @@
 {
-  "version": "3.13.2",
-  "build": 2527,
+  "version": "3.13.3",
+  "build": 2528,
   "date": "2026-06-26",
   "changelog": [
+    "Device list: fetch every device's battery on enter + refresh all every 60s (was only updating one device due to single-slot state)",
     "Device monitor: back arrow + swipe now return to Device list (was going back in history)",
     "Unified page transition animations across all routes (no flicker switching Overview ↔ Device list)",
     "Overview: horizontal swipe gesture returns to Device list page",
