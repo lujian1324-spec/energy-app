@@ -321,12 +321,15 @@ export async function fetchUserInfo(): Promise<ApiResponse<UserInfo>> {
   return api.post<UserInfo>('/user/select/iotUserInfo')
 }
 
-/** 更新个人用户信息（userId 必填；以 String 发送避免 Java Long 精度丢失） */
+/**
+ * 更新个人用户信息（如昵称/头像）。
+ *
+ * 后端通过 IOT-Token 请求头识别当前用户，请求体只需带要更新的字段。
+ * 不要传字符串形式的 userId：iotUserInfo 接口把 userId 绑定为 Java Long，
+ * 传入字符串会触发 "illegal argument"。这里直接剔除 userId，由 token 识别用户。
+ */
 export async function updateUserInfo(data: Partial<UserInfo>): Promise<ApiResponse<unknown>> {
-  const payload: Record<string, unknown> = { ...data }
-  if (data.userId !== undefined && data.userId !== null) {
-    payload.userId = String(data.userId)
-  }
+  const { userId: _userId, ...payload } = data
   return api.post<unknown>('/user/update/iotUserInfo', payload)
 }
 
