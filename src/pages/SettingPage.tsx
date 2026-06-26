@@ -30,14 +30,12 @@ import { requestNotificationPermission, getNotificationPermission } from '../uti
 
 export default function SettingPage() {
   const navigate = useNavigate()
-  const { powerStation, settings, updateSettings, resetAll, activateFounderBadge } = usePowerStationStore()
+  const { powerStation, settings, updateSettings, activateFounderBadge } = usePowerStationStore()
   const { user: authUser, logout, isGuest } = useAuthStore()
   const [showSupport, setShowSupport] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
-  const [showManageAccount, setShowManageAccount] = useState(false)
   const [showFounderModal, setShowFounderModal] = useState(false)
-  const [showResetConfirm, setShowResetConfirm] = useState(false)
 
   // Support form
   const [supportEmail, setSupportEmail] = useState('')
@@ -112,7 +110,7 @@ export default function SettingPage() {
           className="flex items-center gap-3 mb-6">
           {/* Avatar: green ring (default) / gold ring (founder); default icon lightning / diamond */}
           <button
-            onClick={() => isGuest ? navigate('/login') : setShowManageAccount(true)}
+            onClick={() => isGuest ? navigate('/login') : setShowProfileEdit(true)}
             className="relative flex-shrink-0 active:scale-[0.96] transition-transform">
             <div className={`w-[52px] h-[52px] rounded-full flex items-center justify-center overflow-hidden border-m
               ${settings.founderBadge
@@ -128,7 +126,7 @@ export default function SettingPage() {
             </div>
           </button>
           <button
-            onClick={() => isGuest ? navigate('/login') : setShowManageAccount(true)}
+            onClick={() => isGuest ? navigate('/login') : setShowProfileEdit(true)}
             className="flex-1 min-w-0 text-left active:opacity-80 transition-opacity">
             <h3 className="text-title-lg font-semibold text-ink-1 truncate">
               {isGuest ? 'Guest User' : userProfile.name}
@@ -334,109 +332,6 @@ export default function SettingPage() {
         </div>
       </div>
 
-      {/* ==================== Manage Account Page ==================== */}
-      <AnimatePresence>
-        {showManageAccount && (
-          <motion.div initial={{ opacity: 0, x: '100%' }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: '100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed inset-0 z-50 bg-[#141414] flex flex-col overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center gap-3 px-5 pt-4 pb-3 safe-area-top">
-              <button onClick={() => setShowManageAccount(false)} className="w-9 h-9 rounded-full bg-[#262626] flex items-center justify-center text-[#FFFFFF]">
-                <X size={20} />
-              </button>
-              <h2 className="text-lg font-bold text-[#FFFFFF]">Manage Account</h2>
-            </div>
-
-            <div className="flex-1 overflow-y-auto scrollbar-hide px-5 pb-4">
-              {/* Personal Info */}
-              <div className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-l overflow-hidden mb-4">
-                <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[rgba(1,214,190,0.06)] cursor-pointer"
-                  onClick={() => { setShowManageAccount(false); setShowProfileEdit(true) }}>
-                  <div className="w-9 h-9 rounded-lg bg-[rgba(255,255,255,0.06)] flex items-center justify-center">
-                    <Icon name="user" size={16} />
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-body-md font-semibold text-[#FFFFFF]">Personal Info</div>
-                    <div className="text-[11px] text-[#BFBFBF] mt-0.5">{userProfile.name}</div>
-                  </div>
-                  <Icon name="chevron-right" size={16} className="opacity-50" />
-                </div>
-                <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[rgba(1,214,190,0.06)]">
-                  <div className="w-9 h-9 rounded-lg bg-[rgba(255,255,255,0.06)] flex items-center justify-center">
-                    <Icon name="email" size={16} />
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-body-md font-semibold text-[#FFFFFF]">Account</div>
-                    <div className="text-[11px] text-[#BFBFBF] mt-0.5">{authUser?.account || userProfile.email}</div>
-                  </div>
-                </div>
-                <div className="px-4 py-3 border-b border-[rgba(1,214,190,0.06)]">
-                  <span className="text-[11px] font-bold text-[#BFBFBF] tracking-widest uppercase">Link Accounts</span>
-                </div>
-                <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[rgba(1,214,190,0.06)]">
-                  <div className="w-9 h-9 rounded-lg bg-[rgba(255,255,255,0.06)] flex items-center justify-center">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#BFBFBF"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09z"/></svg>
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-body-md font-semibold text-[#FFFFFF]">Apple</div>
-                  </div>
-                  <span className="text-[12px] text-[#FF3B30]">Unlink</span>
-                </div>
-                <div className="flex items-center gap-3 px-4 py-3.5">
-                  <div className="w-9 h-9 rounded-lg bg-[rgba(255,255,255,0.06)] flex items-center justify-center">
-                    <svg width="16" height="16" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#BFBFBF"/></svg>
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-body-md font-semibold text-[#FFFFFF]">Google</div>
-                  </div>
-                  <span className="text-[12px] text-[#01D6BE]">Link</span>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-l overflow-hidden mb-4">
-                {isGuest ? (
-                  <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[rgba(1,214,190,0.06)] cursor-pointer"
-                    onClick={() => { setShowManageAccount(false); navigate('/login') }}>
-                    <div className="w-9 h-9 rounded-lg bg-[rgba(1,214,190,0.12)] flex items-center justify-center">
-                      <Icon name="user" size={16} />
-                    </div>
-                    <div className="flex-1 text-body-md font-semibold text-[#01D6BE]">Sign In</div>
-                    <Icon name="chevron-right" size={16} className="opacity-60" />
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[rgba(1,214,190,0.06)] cursor-pointer"
-                    onClick={async () => { await logout() }}>
-                    <div className="w-9 h-9 rounded-lg bg-[rgba(255,255,255,0.06)] flex items-center justify-center">
-                      <LogOut size={16} className="text-[#FFFFFF]" />
-                    </div>
-                    <div className="flex-1 text-body-md font-semibold text-[#FFFFFF]">Sign out</div>
-                    <Icon name="chevron-right" size={16} className="opacity-50" />
-                  </div>
-                )}
-                <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[rgba(1,214,190,0.06)] cursor-pointer"
-                  onClick={() => { setShowManageAccount(false); setShowResetConfirm(true) }}>
-                  <div className="w-9 h-9 rounded-lg bg-[rgba(255,255,255,0.06)] flex items-center justify-center">
-                    <RotateCcw size={16} className="text-[#FFFFFF]" />
-                  </div>
-                  <div className="flex-1 text-body-md font-semibold text-[#FFFFFF]">Reset App</div>
-                  <Icon name="chevron-right" size={16} className="opacity-50" />
-                </div>
-                <div className="flex items-center gap-3 px-4 py-3.5 cursor-pointer"
-                  onClick={() => { setShowManageAccount(false); setShowDeleteConfirm(true) }}>
-                  <div className="w-9 h-9 rounded-lg bg-[rgba(255,59,48,0.08)] flex items-center justify-center">
-                    <Icon name="trash" size={16} />
-                  </div>
-                  <div className="flex-1 text-body-md font-semibold text-[#FF3B30]">Delete Account</div>
-                  <Icon name="chevron-right" size={16} className="opacity-50" />
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* ==================== Support Modal ==================== */}
       <AnimatePresence>
         {showSupport && (
@@ -489,34 +384,6 @@ export default function SettingPage() {
                     </button>
                   </form>
                 )}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ==================== Reset Confirm Modal ==================== */}
-      <AnimatePresence>
-        {showResetConfirm && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 p-4"
-            onClick={() => setShowResetConfirm(false)}>
-            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="w-full max-w-md bg-[#262626] rounded-[28px] border border-[rgba(255,59,48,0.2)] overflow-hidden"
-              onClick={e => e.stopPropagation()}>
-              <div className="p-5 space-y-4">
-                <div className="text-center">
-                  <div className="w-12 h-12 rounded-full bg-[rgba(255,59,48,0.1)] flex items-center justify-center mx-auto mb-3">
-                    <RotateCcw size={24} className="text-[#FF3B30]" />
-                  </div>
-                  <h3 className="text-base font-bold text-[#FFFFFF] mb-2">Reset App</h3>
-                  <p className="text-body-md text-[#BFBFBF]">All settings, device configurations, and membership data will be permanently deleted.</p>
-                </div>
-                <div className="flex gap-3">
-                  <button onClick={() => setShowResetConfirm(false)} className="flex-1 py-3 rounded-xl bg-[rgba(255,255,255,0.06)] text-[#FFFFFF] font-semibold text-body-md">Cancel</button>
-                  <button onClick={() => { resetAll(); setShowResetConfirm(false) }} className="flex-1 py-3 rounded-xl bg-[rgba(255,59,48,0.15)] text-[#FF3B30] font-semibold text-body-md border border-[rgba(255,59,48,0.3)]">Reset</button>
-                </div>
               </div>
             </motion.div>
           </motion.div>

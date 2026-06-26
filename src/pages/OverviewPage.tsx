@@ -124,6 +124,15 @@ export default function OverviewPage() {
     }
   }, [id])
 
+  // ─── 拦截浏览器/系统返回手势（左滑）→ 始终回到 Device 列表页，避免回退到
+  //     任意历史页面导致的闪烁。压入一个占位历史项，popstate 触发时直接跳转 ───
+  useEffect(() => {
+    window.history.pushState(null, '', window.location.href)
+    const onPopState = () => navigate('/devices', { replace: true })
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [navigate])
+
   // ─── 每 30 秒自动刷新设备状态 ───
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   useEffect(() => {
