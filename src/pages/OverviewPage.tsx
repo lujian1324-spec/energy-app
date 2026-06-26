@@ -137,26 +137,6 @@ export default function OverviewPage() {
     return () => window.removeEventListener('popstate', onPopState)
   }, [backToDevices])
 
-  // ─── 横向滑动手势（左滑/右滑）→ 回到 Device 列表页。
-  //     standalone PWA 没有浏览器边缘返回手势，故在页面内显式监听触摸滑动。
-  //     仅在明显的水平滑动（|dx|>70 且为竖直位移 2 倍以上）时触发，避免误伤竖向滚动。 ───
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null)
-  const onTouchStart = useCallback((e: React.TouchEvent) => {
-    const t = e.touches[0]
-    touchStartRef.current = { x: t.clientX, y: t.clientY }
-  }, [])
-  const onTouchEnd = useCallback((e: React.TouchEvent) => {
-    const start = touchStartRef.current
-    touchStartRef.current = null
-    if (!start) return
-    const t = e.changedTouches[0]
-    const dx = t.clientX - start.x
-    const dy = t.clientY - start.y
-    if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 2) {
-      backToDevices()
-    }
-  }, [backToDevices])
-
   // ─── 每 30 秒自动刷新设备状态 ───
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   useEffect(() => {
@@ -574,8 +554,6 @@ export default function OverviewPage() {
 
   return (
     <div
-      onTouchStart={onTouchStart}
-      onTouchEnd={onTouchEnd}
       className={`h-full flex flex-col bg-[#141414] overflow-hidden relative pt-6 safe-area-top ${isDemoMode ? 'demo-mode' : ''}`}>
       {/* PRD v1.1 §8.2: DEMO MODE 顶部黄色横幅 */}
       <DemoBanner show={isDemoMode} onRetry={handleRefresh} />

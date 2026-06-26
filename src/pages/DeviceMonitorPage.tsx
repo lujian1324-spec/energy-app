@@ -236,24 +236,6 @@ export default function DeviceMonitorPage() {
     return () => window.removeEventListener('popstate', onPopState)
   }, [backToDevices])
 
-  // 横向滑动手势 → 回到 Device 列表页（standalone PWA 无浏览器边缘返回手势）
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null)
-  const onTouchStart = useCallback((e: React.TouchEvent) => {
-    const t = e.touches[0]
-    touchStartRef.current = { x: t.clientX, y: t.clientY }
-  }, [])
-  const onTouchEnd = useCallback((e: React.TouchEvent) => {
-    const start = touchStartRef.current
-    touchStartRef.current = null
-    if (!start) return
-    const t = e.changedTouches[0]
-    const dx = t.clientX - start.x
-    const dy = t.clientY - start.y
-    if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 2) {
-      backToDevices()
-    }
-  }, [backToDevices])
-
   const [activeTab, setActiveTab] = useState<Metric>('battery')
   const [showDeviceDropdown, setShowDeviceDropdown] = useState(false)
   // 实时采样变化计数器（用于触发图表重算）
@@ -397,8 +379,6 @@ export default function DeviceMonitorPage() {
 
   return (
     <div
-      onTouchStart={onTouchStart}
-      onTouchEnd={onTouchEnd}
       className="h-full flex flex-col bg-[#141414] overflow-hidden">
       {/* Header */}
       <div className="px-4 pt-5 pb-3 safe-area-top flex items-center gap-3">
