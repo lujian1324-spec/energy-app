@@ -680,7 +680,7 @@ export async function fetchDeviceStateCount(): Promise<ApiResponse<Array<{ state
 export async function updateDevice(
   data: UpdateDeviceRequest
 ): Promise<ApiResponse<unknown>> {
-  return api.post<unknown>('/device/update', data)
+  return api.post<unknown>('/device/update', { ...data, id: String(data.id) })
 }
 
 /** 置顶设备 */
