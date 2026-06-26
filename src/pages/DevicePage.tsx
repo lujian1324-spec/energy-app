@@ -139,6 +139,8 @@ export default function DevicePage() {
   const [isScanning, setIsScanning] = useState(false)
   const [scannedDevices, setScannedDevices] = useState<BleDevice[]>([])
   const [scanError, setScanError] = useState<string | null>(null)
+  // BLE permission sheet
+  const [blePermissionType, setBlePermissionType] = useState<'unsupported' | 'denied' | null>(null)
 
   // QR scan state
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -213,14 +215,10 @@ export default function DevicePage() {
     }
   }, [selectedDeviceState])
 
-  // 页面加载后为每个设备获取实时状态
+  // 页面进入后立即为每个设备获取电池容量等实时状态
   useEffect(() => {
     if (devices.length > 0 && isAuthenticated) {
-      devices.forEach(d => {
-        if (!realtimeCache[String(d.id)] || Date.now() - (realtimeCache[String(d.id)]?.lastUpdated ?? 0) > 60000) {
-          fetchDeviceRealtime(d.id)
-        }
-      })
+      devices.forEach(d => fetchDeviceRealtime(d.id))
     }
   }, [devices, isAuthenticated])
 
@@ -269,18 +267,39 @@ export default function DevicePage() {
     return deviceIcons.default
   }
 
-  // Real product photo for SIERRO power stations (falls back to emoji elsewhere)
-  const getDeviceImage = (sortKey: string): string | null => {
-    const key = sortKey?.toLowerCase() ?? ''
-    if (key.includes('storage') || key.includes('power') || key.includes('sierro')) return sierro2000Img
-    return null
-  }
+  // Real product photo for all devices — default to Sierro 2000 product image
+  const getDeviceImage = (_sortKey?: string): string => sierro2000Img
 
   const getWorkModeLabel = (mode: number | null | undefined): string => {
     if (mode === 1) return 'Backup'
     if (mode === 2) return 'Eco'
     return 'Normal'
   }
+
+  // ── 蓝牙扫描权限检查 ──
+  const handleBleScan = useCallback(async () => {
+    setShowAddModal(false)
+
+    // Web Bluetooth not available (iOS Safari / PWA)
+    if (!('bluetooth' in navigator)) {
+      setBlePermissionType('unsupported')
+      return
+    }
+
+    // Check if Bluetooth hardware is on / accessible
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const available = await (navigator as any).bluetooth.getAvailability()
+      if (!available) {
+        setBlePermissionType('denied')
+        return
+      }
+    } catch {
+      // getAvailability not supported in this browser — proceed optimistically
+    }
+
+    setShowProvisioning(true)
+  }, [])
 
   const handleDeviceClick = (device: DeviceListItem) => {
     useDeviceStore.getState().selectDevice(String(device.id))
@@ -535,18 +554,15 @@ export default function DevicePage() {
                           </div>
                         )
                       }
-                      if (getDeviceImage(device.deviceSortKey)) {
-                        return (
-                          <div className="w-14 h-14 flex items-center justify-center">
-                            <img
-                              src={getDeviceImage(device.deviceSortKey)!}
-                              alt={getDeviceModel(device)}
-                              className="w-full h-full object-contain drop-shadow-sm"
-                            />
-                          </div>
-                        )
-                      }
-                      return <span className="text-[28px] leading-none">{getDeviceIcon(device.deviceSortKey)}</span>
+                      return (
+                        <div className="w-14 h-14 flex items-center justify-center">
+                          <img
+                            src={getDeviceImage(device.deviceSortKey)}
+                            alt={getDeviceModel(device)}
+                            className="w-full h-full object-contain drop-shadow-sm"
+                          />
+                        </div>
+                      )
                     })()}
                     <BatteryTag level={remainingBatteryCapacity} unknown={!remainingBatteryCapacityKnown} connected={connected} charging={isCharging} />
                   </div>
@@ -615,17 +631,11 @@ export default function DevicePage() {
               <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-[rgba(255,255,255,0.06)]">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 flex items-center justify-center text-lg">
-                    {getDeviceImage(showDeviceParams.deviceSortKey) ? (
-                      <img
-                        src={getDeviceImage(showDeviceParams.deviceSortKey)!}
-                        alt={showDeviceParams.model || 'Sierro'}
-                        className="w-full h-full object-contain"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-l bg-[rgba(1,214,190,0.12)] flex items-center justify-center">
-                        {getDeviceIcon(showDeviceParams.deviceSortKey)}
-                      </div>
-                    )}
+                    <img
+                      src={getDeviceImage(showDeviceParams.deviceSortKey)}
+                      alt={showDeviceParams.model || 'Sierro'}
+                      className="w-full h-full object-contain"
+                    />
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-[#FFFFFF]">{showDeviceParams.name}</h3>
@@ -788,7 +798,7 @@ export default function DevicePage() {
               <h3 className="text-base font-bold text-[#FFFFFF] mb-5">Add New Device</h3>
               <div className="flex flex-col gap-3">
                 {[
-                  { label: 'Bluetooth Scan', desc: 'Find nearby BLE devices', color: '#01D6BE', icon: '📡', action: () => { setShowAddModal(false); setShowProvisioning(true) } },
+                  { label: 'Bluetooth Scan', desc: 'Find nearby BLE devices', color: '#01D6BE', icon: '📡', action: handleBleScan },
                   { label: 'Wi-Fi Setup', desc: 'Connect via local network', color: '#34C759', icon: '📶' },
                   { label: 'Manual Entry', desc: 'Enter device code manually', color: '#FF9500', icon: '⌨️', action: () => { setShowAddModal(false); setShowManualAdd(true) } },
                   { label: 'Scan QR Code', desc: 'Scan device QR code', color: '#01D6BE', icon: '📷', action: () => { setShowAddModal(false); setShowQrScan(true) } },
@@ -968,6 +978,62 @@ export default function DevicePage() {
         {showProvisioning && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <ProvisioningPage onClose={() => setShowProvisioning(false)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* BLE 权限提示 Sheet */}
+      <AnimatePresence>
+        {blePermissionType && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-[rgba(0,0,0,0.7)] z-50 flex items-end"
+            onClick={() => setBlePermissionType(null)}
+          >
+            <motion.div
+              initial={{ y: 240, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 240, opacity: 0 }}
+              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full bg-[#262626] rounded-t-[28px] p-6 pb-10"
+            >
+              <div className="w-10 h-1 bg-[rgba(255,255,255,0.15)] rounded-full mx-auto mb-5" />
+              <div className="flex flex-col items-center text-center mb-6">
+                <div className="w-16 h-16 rounded-full bg-[rgba(1,214,190,0.12)] flex items-center justify-center mb-4">
+                  <Icon name="bluetooth" size={32} />
+                </div>
+                <h3 className="text-title-lg font-semibold text-white mb-2">Bluetooth Permission Required</h3>
+                {blePermissionType === 'unsupported' ? (
+                  <p className="text-body-md text-ink-7 leading-relaxed max-w-[300px]">
+                    Bluetooth scanning is not supported in this browser. On iOS, please use the Sierro native app, or go to Settings and enable Bluetooth access.
+                  </p>
+                ) : (
+                  <p className="text-body-md text-ink-7 leading-relaxed max-w-[300px]">
+                    Bluetooth is currently unavailable or access was denied. Please enable Bluetooth in your system settings and grant permission to this app.
+                  </p>
+                )}
+              </div>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={async () => {
+                    setBlePermissionType(null)
+                    await openAppSettings()
+                  }}
+                  className="w-full h-12 rounded-m bg-primary text-[#000000] text-body-lg font-semibold active:scale-95 transition-transform"
+                >
+                  Open Settings
+                </button>
+                <button
+                  onClick={() => setBlePermissionType(null)}
+                  className="w-full h-12 rounded-m bg-[rgba(255,255,255,0.06)] text-ink-7 text-body-lg font-medium active:scale-95 transition-transform"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
