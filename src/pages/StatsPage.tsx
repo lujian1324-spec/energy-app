@@ -8,6 +8,7 @@ import { useDeviceStore } from '../stores/deviceStore'
 import { mapFieldsToRealtime, type HistoryDataResponse } from '../api/deviceApi'
 import { savePowerHistory, getPowerHistory } from '../db/powerflowDB'
 import type { PowerHistoryRecord } from '../types/protocol'
+import { formatTemp } from '../utils/localization'
 
 const periods = ['Day', 'Week', 'Month', 'Range'] as const
 type Period = typeof periods[number]
@@ -1037,11 +1038,11 @@ export default function StatsPage() {
                   <div className="flex-1 grid grid-cols-2 gap-3">
                     <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-l p-2.5">
                       <div className="text-[14px] font-bold text-[#FFFFFF]">{remainingBatteryCapacity}%</div>
-                      <div className="text-tiny text-[#BFBFBF] mt-0.5">Charge</div>
+                      <div className="text-tiny text-[#BFBFBF] mt-0.5">Battery</div>
                     </div>
                     <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-l p-2.5">
-                      <div className="text-[14px] font-bold text-[#34C759]">{batteryTemp > 0 ? `${batteryTemp}°C` : '--'}</div>
-                      <div className="text-tiny text-[#BFBFBF] mt-0.5">Temp</div>
+                      <div className="text-[14px] font-bold text-[#34C759]">{batteryTemp > 0 ? formatTemp(batteryTemp, 'F') : '--'}</div>
+                      <div className="text-tiny text-[#BFBFBF] mt-0.5">Temperature</div>
                     </div>
                     <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-l p-2.5">
                       <div className="text-[14px] font-bold text-[#01D6BE]">{deviceDays}</div>

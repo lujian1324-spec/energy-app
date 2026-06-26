@@ -660,7 +660,7 @@ export default function OverviewPage() {
               {batteryTemp > 0 && (
                 <div className="flex items-center justify-center gap-1.5 mt-3">
                   <Thermometer size={12} className="text-[#BFBFBF]" aria-hidden="true" />
-                  <span className="text-[11px] text-[#BFBFBF]">Battery: {formatTemp(batteryTemp, 'F')}</span>
+                  <span className="text-[11px] text-[#BFBFBF]">Temperature: {formatTemp(batteryTemp, 'F')}</span>
                 </div>
               )}
 

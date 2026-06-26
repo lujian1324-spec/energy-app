@@ -38,6 +38,7 @@ import { useNotificationStore } from '../stores/notificationStore'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import sierro2000Img from '../assets/sierro-2000-product.webp'
 import { mapFieldsToRealtime, fetchDeviceState } from '../api/deviceApi'
+import { formatTemp } from '../utils/localization'
 import type { DeviceListItem, DeviceStateField } from '../api/deviceApi'
 import { getDemoDeviceState } from '../data/demoData'
 
@@ -726,12 +727,12 @@ export default function DevicePage() {
                   </div>
                   <div className="grid grid-cols-3 gap-2.5">
                     {[
-                      { label: 'SOC', value: `${getDeviceNum(showDeviceParams.id, 'remainingBatteryCapacity') ?? '--'}%`, icon: Battery, color: '#34C759' },
-                      { label: 'Battery', value: `${getDeviceNum(showDeviceParams.id, 'batteryPower') ?? '--'}W`, icon: TrendingDown, color: '#01D6BE' },
-                      { label: 'AC Power', value: `${getDeviceNum(showDeviceParams.id, 'acPower') ?? '--'}W`, icon: Zap, color: '#01D6BE' },
+                      { label: 'Battery', value: `${getDeviceNum(showDeviceParams.id, 'remainingBatteryCapacity') ?? '--'}%`, icon: Battery, color: '#34C759' },
+                      { label: 'Battery Power', value: `${getDeviceNum(showDeviceParams.id, 'batteryPower') ?? '--'}W`, icon: TrendingDown, color: '#01D6BE' },
+                      { label: 'AC', value: `${getDeviceNum(showDeviceParams.id, 'acPower') ?? '--'}W`, icon: Zap, color: '#01D6BE' },
                       { label: 'Solar', value: `${getDeviceNum(showDeviceParams.id, 'solarPower') ?? '--'}W`, icon: Sun, color: '#FF9500' },
                       { label: 'Output', value: `${getDeviceNum(showDeviceParams.id, 'outputPower') ?? '--'}W`, icon: TrendingUp, color: '#BFBFBF' },
-                      { label: 'Temp', value: `${getDeviceNum(showDeviceParams.id, 'batteryTemp') ?? '--'}°C`, icon: Thermometer, color: '#FF9500' },
+                      { label: 'Temperature', value: (() => { const t = getDeviceNum(showDeviceParams.id, 'batteryTemp'); return t !== null ? formatTemp(t, 'F') : '--' })(), icon: Thermometer, color: '#FF9500' },
                     ].map((item) => {
                       const Icon = item.icon
                       return (
