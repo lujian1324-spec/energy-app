@@ -175,7 +175,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
         if (!oldPassword) { setFieldError('Enter your current password'); return }
         if (newPassword.length < 6) { setFieldError('New password must be at least 6 characters'); return }
         if (newPassword !== confirmPassword) { setFieldError('Passwords do not match'); return }
-        const r = await updatePassword(oldPassword, newPassword)
+        const r = await updatePassword(oldPassword, newPassword, userId ?? undefined)
         if (r.code !== 0 && r.code !== '0') throw new Error(r.message ?? 'Failed')
         toast.success('Password updated')
       }

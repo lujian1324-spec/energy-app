@@ -363,12 +363,14 @@ export async function updateUserCellphone(
   })
 }
 
-/** 修改密码 */
+/** 修改密码（userId 必填；以 String 发送避免 Java Long 精度丢失） */
 export async function updatePassword(
   oldPlainPassword: string,
-  newPlainPassword: string
+  newPlainPassword: string,
+  userId?: number | string
 ): Promise<ApiResponse<unknown>> {
   return api.post<unknown>('/user/update/authPassword', {
+    ...(userId !== undefined && userId !== null ? { userId: String(userId) } : {}),
     oldPassword: md5Password(oldPlainPassword),
     newPassword: md5Password(newPlainPassword),
   })
