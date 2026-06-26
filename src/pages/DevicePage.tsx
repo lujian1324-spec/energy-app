@@ -36,7 +36,7 @@ import { useDeviceStore } from '../stores/deviceStore'
 import { useAuthStore } from '../stores/authStore'
 import { useNotificationStore } from '../stores/notificationStore'
 import { usePowerStationStore } from '../stores/powerStationStore'
-import sierro1000Img from '../assets/sierro-1000.webp'
+import sierro2000Img from '../assets/sierro-2000-product.webp'
 import { mapFieldsToRealtime } from '../api/deviceApi'
 import type { DeviceListItem, DeviceStateField } from '../api/deviceApi'
 import { getDemoDeviceState } from '../data/demoData'
@@ -272,7 +272,7 @@ export default function DevicePage() {
   // Real product photo for SIERRO power stations (falls back to emoji elsewhere)
   const getDeviceImage = (sortKey: string): string | null => {
     const key = sortKey?.toLowerCase() ?? ''
-    if (key.includes('storage') || key.includes('power') || key.includes('sierro')) return sierro1000Img
+    if (key.includes('storage') || key.includes('power') || key.includes('sierro')) return sierro2000Img
     return null
   }
 
@@ -520,7 +520,7 @@ export default function DevicePage() {
                         return (
                           <div className="w-14 h-14 flex items-center justify-center">
                             <img
-                              src={sierro1000Img}
+                              src={sierro2000Img}
                               alt={getDeviceModel(device)}
                               className="w-full h-full object-contain drop-shadow-sm"
                             />
