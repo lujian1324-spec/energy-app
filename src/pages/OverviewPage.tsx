@@ -126,12 +126,36 @@ export default function OverviewPage() {
 
   // ─── 拦截浏览器/系统返回手势（左滑）→ 始终回到 Device 列表页，避免回退到
   //     任意历史页面导致的闪烁。压入一个占位历史项，popstate 触发时直接跳转 ───
+  const backToDevices = useCallback(() => {
+    navigate('/devices', { replace: true })
+  }, [navigate])
+
   useEffect(() => {
     window.history.pushState(null, '', window.location.href)
-    const onPopState = () => navigate('/devices', { replace: true })
+    const onPopState = () => backToDevices()
     window.addEventListener('popstate', onPopState)
     return () => window.removeEventListener('popstate', onPopState)
-  }, [navigate])
+  }, [backToDevices])
+
+  // ─── 横向滑动手势（左滑/右滑）→ 回到 Device 列表页。
+  //     standalone PWA 没有浏览器边缘返回手势，故在页面内显式监听触摸滑动。
+  //     仅在明显的水平滑动（|dx|>70 且为竖直位移 2 倍以上）时触发，避免误伤竖向滚动。 ───
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null)
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    const t = e.touches[0]
+    touchStartRef.current = { x: t.clientX, y: t.clientY }
+  }, [])
+  const onTouchEnd = useCallback((e: React.TouchEvent) => {
+    const start = touchStartRef.current
+    touchStartRef.current = null
+    if (!start) return
+    const t = e.changedTouches[0]
+    const dx = t.clientX - start.x
+    const dy = t.clientY - start.y
+    if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 2) {
+      backToDevices()
+    }
+  }, [backToDevices])
 
   // ─── 每 30 秒自动刷新设备状态 ───
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -449,7 +473,10 @@ export default function OverviewPage() {
   const chartAreaPoints = chartPts.length ? `${chartLinePoints} 300,80 0,80` : ''
 
   return (
-    <div className={`h-full flex flex-col bg-[#141414] overflow-hidden relative pt-6 safe-area-top ${isDemoMode ? 'demo-mode' : ''}`}>
+    <div
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+      className={`h-full flex flex-col bg-[#141414] overflow-hidden relative pt-6 safe-area-top ${isDemoMode ? 'demo-mode' : ''}`}>
       {/* PRD v1.1 §8.2: DEMO MODE 顶部黄色横幅 */}
       <DemoBanner show={isDemoMode} onRetry={handleRefresh} />
 
@@ -464,7 +491,7 @@ export default function OverviewPage() {
         <div className="flex justify-between items-center px-5 py-3">
           {/* Left: Back */}
           <button
-            onClick={() => navigate('/devices')}
+            onClick={backToDevices}
             className="w-9 h-9 rounded-full bg-[#262626] flex items-center justify-center text-[#FFFFFF] hover:bg-[#454545] transition-colors flex-shrink-0"
           >
             <ChevronLeft size={22} />
