@@ -120,39 +120,13 @@ function AppInner() {
     )
   }
 
-  // 设备详情页 & Smart Schedule 页 & 通知页单独渲染，不包含底部导航
-  // 注意：/devices（设备列表，带底部导航）不在此分支，故用 '/device/' 前缀匹配
-  if (location.pathname.startsWith('/device/') || location.pathname === '/smart-schedule' || location.pathname === '/notifications' || location.pathname === '/onboarding' || location.pathname === '/ble-debug' || location.pathname === '/data-export' || location.pathname.startsWith('/profile')) {
-    return (
-      <div className="h-full w-full bg-bg-base flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-hidden relative">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3, ease: 'easeOut' }}
-              className="h-full w-full"
-            >
-              <Routes location={location}>
-                <Route path="/device/:id" element={<RequireAuth><DeviceMonitorPage /></RequireAuth>} />
-                <Route path="/device/:id/settings" element={<RequireAuth><DeviceDetailPage /></RequireAuth>} />
-                <Route path="/device/:id/dashboard" element={<RequireAuth><OverviewPage /></RequireAuth>} />
-                <Route path="/smart-schedule" element={<RequireAuth><SmartSchedulePage /></RequireAuth>} />
-                <Route path="/notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
-                <Route path="/onboarding" element={<RequireAuth><OnboardingPage /></RequireAuth>} />
-                <Route path="/ble-debug" element={<RequireAuth><BleDebugPage /></RequireAuth>} />
-                <Route path="/data-export" element={<RequireAuth><DataExportPage /></RequireAuth>} />
-                <Route path="/device/:id/passthrough" element={<RequireAuth><PassthroughPage /></RequireAuth>} />
-                <Route path="/device/:id/debug-params" element={<RequireAuth><DebugParamsPage /></RequireAuth>} />
-              </Routes>
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      </div>
-    )
-  }
+  // 除登录类页面外的所有路由统一在同一个 AnimatePresence + Routes 中渲染，
+  // 保证跨页面（如 Overview ↔ Device 列表）切换走同一套过渡动画、不闪烁。
+  // 底部导航仅在主标签页（/devices、/insights、/setting）显示。
+  const showBottomNav =
+    location.pathname === '/devices' ||
+    location.pathname === '/insights' ||
+    location.pathname === '/setting'
 
   return (
     <div className="h-full w-full bg-bg-base flex flex-col overflow-hidden">
@@ -168,10 +142,21 @@ function AppInner() {
             className="h-full w-full"
           >
             <Routes location={location}>
-              {/* PRD v1.1 新路由 */}
+              {/* 带底部导航的主标签页 */}
               <Route path="/devices" element={<RequireAuth><DevicePage /></RequireAuth>} />
               <Route path="/insights" element={<RequireAuth><StatsPage /></RequireAuth>} />
               <Route path="/setting" element={<RequireAuth><SettingPage /></RequireAuth>} />
+              {/* 二级页面（无底部导航） */}
+              <Route path="/device/:id" element={<RequireAuth><DeviceMonitorPage /></RequireAuth>} />
+              <Route path="/device/:id/settings" element={<RequireAuth><DeviceDetailPage /></RequireAuth>} />
+              <Route path="/device/:id/dashboard" element={<RequireAuth><OverviewPage /></RequireAuth>} />
+              <Route path="/device/:id/passthrough" element={<RequireAuth><PassthroughPage /></RequireAuth>} />
+              <Route path="/device/:id/debug-params" element={<RequireAuth><DebugParamsPage /></RequireAuth>} />
+              <Route path="/smart-schedule" element={<RequireAuth><SmartSchedulePage /></RequireAuth>} />
+              <Route path="/notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
+              <Route path="/onboarding" element={<RequireAuth><OnboardingPage /></RequireAuth>} />
+              <Route path="/ble-debug" element={<RequireAuth><BleDebugPage /></RequireAuth>} />
+              <Route path="/data-export" element={<RequireAuth><DataExportPage /></RequireAuth>} />
               {/* 首次进入默认登录页，已登录/游客模式则进入 devices */}
               <Route
                 path="/"
@@ -190,8 +175,8 @@ function AppInner() {
         </AnimatePresence>
       </div>
 
-      {/* 底部导航 - PRD v1.1 大写标签 + 48×48dp 触控热区 */}
-      <BottomNavigation />
+      {/* 底部导航 - 仅主标签页显示 */}
+      {showBottomNav && <BottomNavigation />}
     </div>
   )
 }
