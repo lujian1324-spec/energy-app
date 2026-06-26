@@ -61,7 +61,7 @@ export default function BleDebugPage() {
   // ── 连接 ──
   const handleConnect = useCallback(async () => {
     setBusy('connect')
-    addLog('info', '开始扫描并连接蓝牙设备...')
+    addLog('info', 'Scanning and connecting to BLE device...')
     addLog('info', `Service=${BLE_PROVISION_UUIDS.SERVICE}`)
     addLog('info', `Write(TX)=${BLE_PROVISION_UUIDS.WRITE_TX}  Indicate(RX)=${BLE_PROVISION_UUIDS.INDICATE_RX}`)
     addLog('info', `MTU=${BLE_PROVISION_MTU}`)
@@ -69,7 +69,7 @@ export default function BleDebugPage() {
     try {
       const manager = getProvisionManager({
         onLog: (m) => addLog('info', m),
-        onDisconnected: () => { addLog('error', '设备已断开连接'); setConnected(false) },
+        onDisconnected: () => { addLog('error', 'Device disconnected'); setConnected(false) },
       })
       await manager.connect()
       const name = manager.btDevice?.name ?? null
@@ -80,9 +80,9 @@ export default function BleDebugPage() {
         const parsed = parseBleName(name)
         if (parsed) {
           setBleStatus(parsed.status)
-          addLog('info', `蓝牙名称解析: prefix=${parsed.prefix} status=${parsed.status} dtuid=${parsed.dtuid}`)
+          addLog('info', `BLE name parsed: prefix=${parsed.prefix} status=${parsed.status} dtuid=${parsed.dtuid}`)
         } else {
-          addLog('error', `无法解析蓝牙名称: "${name}"`)
+          addLog('error', `Cannot parse BLE name: "${name}"`)
         }
       }
       if (id) {
@@ -91,9 +91,9 @@ export default function BleDebugPage() {
         addLog('info', `AES Key = MD5("${id}SEC_") = ${key}`)
       }
       setConnected(true)
-      addLog('success', `已连接: ${name ?? '(无名称)'} DTUID=${id ?? '未知'}`)
+      addLog('success', `Connected: ${name ?? '(no name)'} DTUID=${id ?? 'unknown'}`)
     } catch (err) {
-      addLog('error', '连接失败', err instanceof Error ? `${err.name}: ${err.message}` : String(err))
+      addLog('error', 'Connection failed', err instanceof Error ? `${err.name}: ${err.message}` : String(err))
       setConnected(false)
     } finally {
       setBusy(null)
@@ -105,7 +105,7 @@ export default function BleDebugPage() {
     setConnected(false)
     setVersion(null)
     setApList([])
-    addLog('info', '已主动断开连接')
+    addLog('info', 'Disconnected manually')
   }, [addLog])
 
   // ── 通用命令执行 ──
@@ -122,7 +122,7 @@ export default function BleDebugPage() {
       const dt = Math.round(performance.now() - t0)
       const r = resp as { RC?: number; CID?: number; PL?: unknown }
       const rc = r?.RC
-      const rcText = rc === 0 ? 'OK' : rc === 9000 ? '需蓝牙密码' : rc === 9001 ? '密码错误' : rc === 1 ? '执行失败' : `RC=${rc}`
+      const rcText = rc === 0 ? 'OK' : rc === 9000 ? 'BLE password required' : rc === 9001 ? 'Wrong password' : rc === 1 ? 'Failed' : `RC=${rc}`
       addLog(
         rc === 0 ? 'resp' : 'error',
         `← ${label} [${dt}ms] CID=${r?.CID} RC=${rc} (${rcText})`,
@@ -132,7 +132,7 @@ export default function BleDebugPage() {
       return resp
     } catch (err) {
       const dt = Math.round(performance.now() - t0)
-      addLog('error', `← ${label} [${dt}ms] 异常`, err instanceof Error ? `${err.name}: ${err.message}` : String(err))
+      addLog('error', `← ${label} [${dt}ms] exception`, err instanceof Error ? `${err.name}: ${err.message}` : String(err))
       return null
     } finally {
       setBusy(null)
@@ -158,7 +158,7 @@ export default function BleDebugPage() {
 
   const handleConfig = useCallback(() => {
     const m = getProvisionManager()
-    addLog('info', `配置参数: SSID="${ssid}" Key长度=${wifiPwd.length}`)
+    addLog('info', `Config params: SSID="${ssid}" Key length=${wifiPwd.length}`)
     runCmd(`SET_CONFIG (30005)`, () => m.configWifi(ssid, wifiPwd))
   }, [runCmd, ssid, wifiPwd, addLog])
 
@@ -183,8 +183,8 @@ export default function BleDebugPage() {
       `[${new Date(l.ts).toLocaleTimeString()}.${String(l.ts % 1000).padStart(3, '0')}] [${l.level.toUpperCase()}] ${l.msg}${l.detail ? '\n' + l.detail : ''}`
     ).join('\n')
     navigator.clipboard?.writeText(text).then(
-      () => addLog('success', '日志已复制到剪贴板'),
-      () => addLog('error', '复制失败')
+      () => addLog('success', 'Logs copied to clipboard'),
+      () => addLog('error', 'Copy failed')
     )
   }, [logs, addLog])
 
@@ -230,13 +230,13 @@ export default function BleDebugPage() {
           <ChevronLeft size={20} className="text-white" />
         </button>
         <div className="flex-1">
-          <h1 className="text-title-md font-semibold text-white">BLE 配网调试</h1>
-          <p className="text-caption text-ink-6">临时调试页面 · /ble-debug</p>
+          <h1 className="text-title-md font-semibold text-white">BLE Provisioning Debug</h1>
+          <p className="text-caption text-ink-6">Temporary debug page · /ble-debug</p>
         </div>
         <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-caption font-semibold
           ${connected ? 'bg-[rgba(52,199,89,0.15)] text-success' : 'bg-ink-10 text-ink-6'}`}>
           <span className={`w-2 h-2 rounded-full ${connected ? 'bg-success' : 'bg-ink-6'}`} />
-          {connected ? '已连接' : '未连接'}
+          {connected ? 'Connected' : 'Disconnected'}
         </div>
       </div>
 
@@ -246,7 +246,7 @@ export default function BleDebugPage() {
           <div className="m-4 flex items-start gap-2 bg-[rgba(255,53,48,0.08)] rounded-l px-4 py-3">
             <AlertTriangle size={16} className="text-danger mt-0.5 flex-shrink-0" />
             <span className="text-body-md text-danger">
-              当前浏览器不支持 Web Bluetooth。请使用 Android/桌面版 Chrome 或 Edge（iOS Safari 不支持）。
+              This browser does not support Web Bluetooth. Use Chrome or Edge on Android/desktop (iOS Safari is not supported).
             </span>
           </div>
         )}
@@ -258,34 +258,34 @@ export default function BleDebugPage() {
               className="w-full h-12 rounded-pill bg-primary text-black text-body-lg font-semibold
                 disabled:opacity-50 flex items-center justify-center gap-2">
               {busy === 'connect' ? <Loader2 size={18} className="animate-spin" /> : <Bluetooth size={18} />}
-              扫描并连接
+              Scan & Connect
             </button>
           ) : (
             <button onClick={handleDisconnect}
               className="w-full h-12 rounded-pill bg-ink-10 text-danger text-body-lg font-semibold
                 flex items-center justify-center gap-2">
-              <XCircle size={18} /> 断开连接
+              <XCircle size={18} /> Disconnect
             </button>
           )}
         </div>
 
         {/* 设备参数 */}
         <div className="px-4 pt-4">
-          <p className="text-caption font-bold text-ink-6 tracking-widest uppercase mb-2">设备参数</p>
+          <p className="text-caption font-bold text-ink-6 tracking-widest uppercase mb-2">Device Params</p>
           <div className="bg-ink-10 rounded-l p-3 space-y-2 text-body-md">
-            <ParamRow label="蓝牙名称" value={deviceName} />
+            <ParamRow label="BLE Name" value={deviceName} />
             <ParamRow label="DTUID" value={dtuid} mono />
             <ParamRow label="AES Key" value={aesKey} mono />
-            <ParamRow label="连接状态" value={bleStatus === null ? null :
-              `${bleStatus} (${bleStatus === 0 ? 'WiFi未连接' : bleStatus === 1 ? 'WiFi已连接' : bleStatus === 3 ? 'MQTT已连接' : '保留'})`} />
-            <ParamRow label="软件版本(SV)" value={version?.SV ?? null} />
-            <ParamRow label="硬件版本(HV)" value={version?.HV ?? null} />
+            <ParamRow label="Connection Status" value={bleStatus === null ? null :
+              `${bleStatus} (${bleStatus === 0 ? 'WiFi disconnected' : bleStatus === 1 ? 'WiFi connected' : bleStatus === 3 ? 'MQTT connected' : 'Reserved'})`} />
+            <ParamRow label="Software Version (SV)" value={version?.SV ?? null} />
+            <ParamRow label="Hardware Version (HV)" value={version?.HV ?? null} />
           </div>
         </div>
 
         {/* 命令按钮 */}
         <div className="px-4 pt-4">
-          <p className="text-caption font-bold text-ink-6 tracking-widest uppercase mb-2">命令</p>
+          <p className="text-caption font-bold text-ink-6 tracking-widest uppercase mb-2">Commands</p>
           <div className="grid grid-cols-3 gap-2">
             {commands.map(c => (
               <button key={c.key} onClick={c.onClick} disabled={!connected || !!busy}
@@ -302,7 +302,7 @@ export default function BleDebugPage() {
         {apList.length > 0 && (
           <div className="px-4 pt-4">
             <p className="text-caption font-bold text-ink-6 tracking-widest uppercase mb-2">
-              WiFi 列表 ({apList.length})
+              WiFi List ({apList.length})
             </p>
             <div className="bg-ink-10 rounded-l divide-y divide-[rgba(255,255,255,0.06)]">
               {apList.map((ap, i) => (
@@ -311,10 +311,10 @@ export default function BleDebugPage() {
                   <div className="flex items-center gap-2">
                     <Wifi size={14} className="text-primary" />
                     <span className={`text-body-md ${ssid === ap.SSID ? 'text-primary font-semibold' : 'text-white'}`}>
-                      {ap.SSID || '(隐藏网络)'}
+                      {ap.SSID || '(hidden network)'}
                     </span>
                   </div>
-                  <span className="text-caption text-ink-6">{ap.Secu === 1 ? '加密' : '开放'}</span>
+                  <span className="text-caption text-ink-6">{ap.Secu === 1 ? 'Encrypted' : 'Open'}</span>
                 </button>
               ))}
             </div>
@@ -323,17 +323,17 @@ export default function BleDebugPage() {
 
         {/* 配置输入 */}
         <div className="px-4 pt-4 space-y-2">
-          <p className="text-caption font-bold text-ink-6 tracking-widest uppercase mb-2">配置输入</p>
-          <DebugInput label="SSID" value={ssid} onChange={setSsid} placeholder="WiFi 名称" />
-          <DebugInput label="WiFi 密码" value={wifiPwd} onChange={setWifiPwd} placeholder="WiFi 密码" />
-          <DebugInput label="蓝牙密码" value={bleKey} onChange={setBleKey} placeholder="BLE Key (RC=9000 时需要)" />
+          <p className="text-caption font-bold text-ink-6 tracking-widest uppercase mb-2">Config Input</p>
+          <DebugInput label="SSID" value={ssid} onChange={setSsid} placeholder="WiFi name" />
+          <DebugInput label="WiFi Password" value={wifiPwd} onChange={setWifiPwd} placeholder="WiFi password" />
+          <DebugInput label="BLE Password" value={bleKey} onChange={setBleKey} placeholder="BLE Key (required when RC=9000)" />
         </div>
 
         {/* 日志 */}
         <div className="px-4 pt-4 pb-6">
           <div className="flex items-center justify-between mb-2">
             <p className="text-caption font-bold text-ink-6 tracking-widest uppercase">
-              过程日志 ({logs.length})
+              Process Log ({logs.length})
             </p>
             <div className="flex items-center gap-2">
               <button onClick={handleCopyLogs} className="w-8 h-8 rounded-full bg-ink-10 flex items-center justify-center text-ink-5">
@@ -349,7 +349,7 @@ export default function BleDebugPage() {
           </div>
           <div className="bg-black rounded-l p-3 font-mono text-tiny leading-relaxed min-h-[200px] max-h-[400px] overflow-y-auto">
             {logs.length === 0 ? (
-              <p className="text-ink-7">暂无日志，点击「扫描并连接」开始...</p>
+              <p className="text-ink-7">No logs yet. Tap "Scan & Connect" to start...</p>
             ) : (
               logs.map(l => {
                 const time = new Date(l.ts)

@@ -37,52 +37,52 @@ interface Preset {
 
 const PRESET_GROUPS: { title: string; presets: Preset[] }[] = [
   {
-    title: '读取数据',
+    title: 'Read Data',
     presets: [
-      { label: '读取运行参数',    frame: FRAMES.READ_ALL_PARAMS,    desc: '0x0000 × 18 寄存器', type: 'read' },
-      { label: '读取实时状态',    frame: FRAMES.READ_ALL_STATUS,    desc: '0x0100 × 56 (电压/功率/SOC/温度)', type: 'read' },
-      { label: '读取故障/告警',   frame: FRAMES.READ_FAULT_BLOCK,   desc: '0x0126 × 9 (状态字+告警码)', type: 'read' },
-      { label: '读取电芯温度电流', frame: FRAMES.READ_TEMP_CURR,     desc: '0x0120 × 6 寄存器', type: 'read' },
-      { label: '读取电芯极柱电压', frame: FRAMES.READ_CELL_VOLTAGES, desc: '0x0108 × 16 (16节电芯)', type: 'read' },
-      { label: '读取硬件版本',    frame: FRAMES.READ_HW_VERSION,    desc: '0x0200 × 4 寄存器', type: 'read' },
-      { label: '读取软件版本',    frame: FRAMES.READ_MCU_VERSION,   desc: '0x0204 × 4 寄存器', type: 'read' },
+      { label: 'Read Run Params',    frame: FRAMES.READ_ALL_PARAMS,    desc: '0x0000 × 18 registers', type: 'read' },
+      { label: 'Read Live Status',    frame: FRAMES.READ_ALL_STATUS,    desc: '0x0100 × 56 (voltage/power/SOC/temp)', type: 'read' },
+      { label: 'Read Fault/Alarm',   frame: FRAMES.READ_FAULT_BLOCK,   desc: '0x0126 × 9 (status word + alarm code)', type: 'read' },
+      { label: 'Read Cell Temp/Current', frame: FRAMES.READ_TEMP_CURR,     desc: '0x0120 × 6 registers', type: 'read' },
+      { label: 'Read Cell Voltages', frame: FRAMES.READ_CELL_VOLTAGES, desc: '0x0108 × 16 (16 cells)', type: 'read' },
+      { label: 'Read Hardware Version',    frame: FRAMES.READ_HW_VERSION,    desc: '0x0200 × 4 registers', type: 'read' },
+      { label: 'Read Software Version',    frame: FRAMES.READ_MCU_VERSION,   desc: '0x0204 × 4 registers', type: 'read' },
     ],
   },
   {
-    title: '开关控制',
+    title: 'Switch Control',
     presets: [
-      { label: 'AC 开机', frame: FRAMES.AC_POWER_ON,  desc: '0x0080 写 0x01AA', type: 'ctrl' },
-      { label: 'AC 关机', frame: FRAMES.AC_POWER_OFF, desc: '0x0080 写 0xAA01', type: 'ctrl' },
-      { label: 'DC 开机', frame: FRAMES.DC_POWER_ON,  desc: '0x0080 写 0x02AA', type: 'ctrl' },
-      { label: 'DC 关机', frame: FRAMES.DC_POWER_OFF, desc: '0x0080 写 0xAA02', type: 'ctrl' },
+      { label: 'AC On', frame: FRAMES.AC_POWER_ON,  desc: '0x0080 write 0x01AA', type: 'ctrl' },
+      { label: 'AC Off', frame: FRAMES.AC_POWER_OFF, desc: '0x0080 write 0xAA01', type: 'ctrl' },
+      { label: 'DC On', frame: FRAMES.DC_POWER_ON,  desc: '0x0080 write 0x02AA', type: 'ctrl' },
+      { label: 'DC Off', frame: FRAMES.DC_POWER_OFF, desc: '0x0080 write 0xAA02', type: 'ctrl' },
     ],
   },
   {
-    title: '参数设置',
+    title: 'Parameter Settings',
     presets: [
       {
-        label: '触发完整充电',
+        label: 'Trigger Full Charge',
         frame: FRAMES.TRIGGER_FULL_CHARGE,
-        desc: '0x0050 写 1，触发一次满充',
+        desc: '0x0050 write 1, trigger one full charge',
         type: 'write',
       },
       {
-        label: '允许开机',
+        label: 'Enable Power On',
         frame: FRAMES.ENABLE_POWER_ON,
-        desc: '0x0051 写 0',
+        desc: '0x0051 write 0',
         type: 'write',
       },
       {
-        label: '禁止开机',
+        label: 'Disable Power On',
         frame: FRAMES.DISABLE_POWER_ON,
-        desc: '0x0051 写 1',
+        desc: '0x0051 write 1',
         type: 'write',
       },
       {
         // 额定交流充电功率：0x0024，默认 300W，单位 W
-        label: '设置AC充电功率 300W',
+        label: 'Set AC Charge Power 300W',
         frame: toHexString(buildWriteSingleFrame(REG_CONFIG.AC_CHARGE_POWER, 300)),
-        desc: '0x0024 写 300（W），修改下方可自定义',
+        desc: '0x0024 write 300 (W), customize below',
         type: 'write',
       },
     ],
@@ -107,29 +107,29 @@ function summarizeResponse(hexResp: string, sentHex: string): string | null {
       const pvV    = (r[REG_STATUS.PV_IN_VOLTAGE  - 0x0100] ?? 0) * 0.1
       const pvP    = r[REG_STATUS.PV_CHARGE_POWER - 0x0100] ?? 0
       const soc    = (r[REG_STATUS.CELL_SOC_PCT   - 0x0100] ?? 0) * 0.1
-      return `AC入 ${acInV.toFixed(1)}V  AC出 ${acOutV.toFixed(1)}V / ${acOutP}W  PV ${pvV.toFixed(1)}V / ${pvP}W  SOC ${soc.toFixed(1)}%`
+      return `AC In ${acInV.toFixed(1)}V  AC Out ${acOutV.toFixed(1)}V / ${acOutP}W  PV ${pvV.toFixed(1)}V / ${pvP}W  SOC ${soc.toFixed(1)}%`
     }
     if (startAddr === 0x0126) {
       const state = parseRunState(res.registers[0] ?? 0)
       const warn1 = parseWarnCode1(res.registers[1] ?? 0)
       const flags = [
-        state.pvCharging    && 'PV充电中',
-        state.acCharging    && 'AC充电中',
-        state.acOutput      && 'AC输出',
-        state.bypass        && '旁路',
-        warn1.mpptTempHigh  && '⚠MPPT过温',
-        warn1.pvOverVoltage && '⚠PV过压',
-        warn1.gridOverVolt  && '⚠市电过压',
-        warn1.cellUnder3V   && '⚠单芯<3V',
+        state.pvCharging    && 'PV Charging',
+        state.acCharging    && 'AC Charging',
+        state.acOutput      && 'AC Output',
+        state.bypass        && 'Bypass',
+        warn1.mpptTempHigh  && '⚠MPPT Overtemp',
+        warn1.pvOverVoltage && '⚠PV Overvoltage',
+        warn1.gridOverVolt  && '⚠Grid Overvoltage',
+        warn1.cellUnder3V   && '⚠Cell <3V',
       ].filter(Boolean)
-      return flags.length ? flags.join('  ') : '无告警，运行正常'
+      return flags.length ? flags.join('  ') : 'Normal'
     }
     if (startAddr === 0x0120) {
       const r = res.registers
       const curr  = toInt16(r[0] ?? 0) * 0.01
       const mpptT = toInt16(r[1] ?? 0) * 0.1
       const cell1T = toInt16(r[3] ?? 0) * 0.1
-      return `电芯电流 ${curr.toFixed(2)}A  MPPT ${mpptT.toFixed(1)}℃  电芯1温 ${cell1T.toFixed(1)}℃`
+      return `Cell Current ${curr.toFixed(2)}A  MPPT ${mpptT.toFixed(1)}℃  Cell 1 Temp ${cell1T.toFixed(1)}℃`
     }
     return res.registers.slice(0, 8)
       .map(v => `0x${v.toString(16).toUpperCase().padStart(4, '0')}`)
@@ -170,9 +170,9 @@ interface PowerRow {
 }
 
 const POWER_ROWS: PowerRow[] = [
-  { label: '额定交流充电功率',       reg: REG_CONFIG.AC_CHARGE_POWER,    defaultW: 300, max: 1000, desc: '寄存器 0x0024，单位 W' },
-  { label: '额定光伏充电功率',       reg: REG_CONFIG.PV_CHARGE_POWER,    defaultW: 300, max: 1000, desc: '寄存器 0x0025，单位 W' },
-  { label: '额定交流+光伏充电功率',  reg: REG_CONFIG.AC_PV_CHARGE_POWER, defaultW: 400, max: 2000, desc: '寄存器 0x0026，单位 W' },
+  { label: 'AC Charge Power',       reg: REG_CONFIG.AC_CHARGE_POWER,    defaultW: 300, max: 1000, desc: 'Register 0x0024, unit W' },
+  { label: 'PV Charge Power',       reg: REG_CONFIG.PV_CHARGE_POWER,    defaultW: 300, max: 1000, desc: 'Register 0x0025, unit W' },
+  { label: 'AC+PV Charge Power',  reg: REG_CONFIG.AC_PV_CHARGE_POWER, defaultW: 400, max: 2000, desc: 'Register 0x0026, unit W' },
 ]
 
 function ChargePowerSection({ deviceId: _deviceId, sendFrame, loading }: ChargePowerSectionProps) {
@@ -191,7 +191,7 @@ function ChargePowerSection({ deviceId: _deviceId, sendFrame, loading }: ChargeP
   return (
     <div className="px-4 pt-5">
       <p className="text-caption font-semibold text-[#8C8C8C] mb-2 uppercase tracking-wide">
-        充电功率设置
+        Charge Power Settings
       </p>
       <div className="rounded-l bg-[#262626] overflow-hidden divide-y divide-[rgba(255,255,255,0.04)]">
         {POWER_ROWS.map(row => {
@@ -203,7 +203,7 @@ function ChargePowerSection({ deviceId: _deviceId, sendFrame, loading }: ChargeP
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-body-md font-medium text-white">{row.label}</p>
-                  <p className="text-caption text-[#595959] mt-0.5">{row.desc}，默认 {row.defaultW}W</p>
+                  <p className="text-caption text-[#595959] mt-0.5">{row.desc}, default {row.defaultW}W</p>
                 </div>
               </div>
 
@@ -250,7 +250,7 @@ function ChargePowerSection({ deviceId: _deviceId, sendFrame, loading }: ChargeP
                     ? <Loader2 size={14} className="animate-spin" />
                     : <Zap size={14} />
                   }
-                  写入
+                  Write
                 </button>
               </div>
 
@@ -344,7 +344,7 @@ export default function PassthroughPage() {
         </button>
         <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5">
           <Terminal size={15} className="text-[#01D6BE]" />
-          <h1 className="text-title-lg font-semibold text-white">Modbus 透传</h1>
+          <h1 className="text-title-lg font-semibold text-white">Modbus Passthrough</h1>
         </div>
       </div>
 
@@ -392,13 +392,13 @@ export default function PassthroughPage() {
         {/* ── 自定义帧 ── */}
         <div className="px-4 pt-5">
           <p className="text-caption font-semibold text-[#8C8C8C] mb-2 uppercase tracking-wide">
-            自定义十六进制帧
+            Custom Hex Frame
           </p>
           <div className="rounded-l bg-[#262626] p-4 space-y-3">
             <textarea
               value={customHex}
               onChange={e => setCustomHex(e.target.value)}
-              placeholder={'如：01 03 01 00 00 12 XX XX\n带空格或不带空格均可'}
+              placeholder={'e.g. 01 03 01 00 00 12 XX XX\nwith or without spaces'}
               rows={2}
               className="w-full px-3 py-2.5 rounded-m bg-[#141414] border border-[rgba(255,255,255,0.06)]
                 text-[#BFBFBF] text-caption placeholder:text-[#454545] font-mono
@@ -411,8 +411,8 @@ export default function PassthroughPage() {
                 disabled:opacity-40 flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
             >
               {loading === 'custom'
-                ? <><Loader2 size={15} className="animate-spin" />发送中…</>
-                : <><Send size={15} />发送自定义帧</>
+                ? <><Loader2 size={15} className="animate-spin" />Sending…</>
+                : <><Send size={15} />Send Custom Frame</>
               }
             </button>
           </div>
@@ -425,17 +425,17 @@ export default function PassthroughPage() {
             if (!groups[p.group]) groups[p.group] = []
             groups[p.group].push(p)
           }
-          const GROUP_ORDER = ['AC实时', 'PV实时', '电池实时', '温度电流', '电芯电压', '运行状态', '告警故障', 'AC配置', 'PV配置', '电池配置']
+          const GROUP_ORDER = ['AC Live', 'PV Live', 'Battery Live', 'Temp/Current', 'Cell Voltage', 'Run State', 'Alarm/Fault', 'AC Config', 'PV Config', 'Battery Config']
           const ordered = [...GROUP_ORDER.filter(g => groups[g]), ...Object.keys(groups).filter(g => !GROUP_ORDER.includes(g))]
           return (
             <div className="px-4 pt-5">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-caption font-semibold text-[#8C8C8C] uppercase tracking-wide flex items-center gap-1.5">
                   <Settings2 size={11} className="text-[#01D6BE]" />
-                  解析参数
+                  Parsed Params
                 </p>
                 <button onClick={() => setParsedParams([])} className="text-caption text-[#595959] active:text-[#FF3530]">
-                  清除
+                  Clear
                 </button>
               </div>
               <div className="space-y-3">
@@ -460,7 +460,7 @@ export default function PassthroughPage() {
                                 <span className="text-caption text-[#8C8C8C] ml-1">{p.unit}</span>
                               </>
                             ) : (
-                              <span className={`text-caption font-medium ${p.value === '正常' || p.value === '无告警' || p.value === '无故障' ? 'text-[#34C759]' : 'text-[#FF9500]'}`}>
+                              <span className={`text-caption font-medium ${p.value === 'Normal' || p.value === 'No Alarm' || p.value === 'No Fault' ? 'text-[#34C759]' : 'text-[#FF9500]'}`}>
                                 {p.value}
                               </span>
                             )}
@@ -478,16 +478,16 @@ export default function PassthroughPage() {
         {/* ── 收发日志 ── */}
         <div className="px-4 pt-5">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-caption font-semibold text-[#8C8C8C] uppercase tracking-wide">收发日志</p>
+            <p className="text-caption font-semibold text-[#8C8C8C] uppercase tracking-wide">TX/RX Log</p>
             {logs.length > 0 && (
               <button onClick={() => setLogs([])} className="text-caption text-[#595959] active:text-[#FF3530]">
-                清空
+                Clear
               </button>
             )}
           </div>
           <div className="rounded-l bg-[#1A1A1A] border border-[rgba(255,255,255,0.04)] p-3 min-h-[80px] max-h-80 overflow-y-auto font-mono space-y-2">
             {logs.length === 0 ? (
-              <p className="text-caption text-[#454545] text-center py-4">暂无数据，点击上方按钮发送报文</p>
+              <p className="text-caption text-[#454545] text-center py-4">No data — tap a button above to send a frame</p>
             ) : (
               logs.map(l => (
                 <div key={l.id} className="space-y-0.5">

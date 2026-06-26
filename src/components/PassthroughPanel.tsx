@@ -31,18 +31,18 @@ let entryId = 0
 
 // 预设报文列表
 const PRESETS: { label: string; frame: string; desc: string }[] = [
-  { label: '读取运行参数',    frame: FRAMES.READ_ALL_PARAMS,   desc: '0x0000 × 18 寄存器（配置参数）' },
-  { label: '读取实时状态',    frame: FRAMES.READ_ALL_STATUS,   desc: '0x0100 × 56 寄存器（电压/功率/SOC/温度）' },
-  { label: '读取故障/告警',   frame: FRAMES.READ_FAULT_BLOCK,  desc: '0x0126 × 9 寄存器（状态字+告警码）' },
-  { label: '读取电芯温度电流', frame: FRAMES.READ_TEMP_CURR,    desc: '0x0120 × 6 寄存器' },
-  { label: '读取电芯极柱电压', frame: FRAMES.READ_CELL_VOLTAGES,desc: '0x0108 × 16 寄存器' },
-  { label: '读取硬件版本',    frame: FRAMES.READ_HW_VERSION,   desc: '0x0200 × 4 寄存器' },
-  { label: '读取软件版本',    frame: FRAMES.READ_MCU_VERSION,  desc: '0x0204 × 4 寄存器' },
-  { label: 'AC 开机',        frame: FRAMES.AC_POWER_ON,       desc: '0x0080 写 0x01AA' },
-  { label: 'AC 关机',        frame: FRAMES.AC_POWER_OFF,      desc: '0x0080 写 0xAA01' },
-  { label: 'DC 开机',        frame: FRAMES.DC_POWER_ON,       desc: '0x0080 写 0x02AA' },
-  { label: 'DC 关机',        frame: FRAMES.DC_POWER_OFF,      desc: '0x0080 写 0xAA02' },
-  { label: '触发完整充电',    frame: FRAMES.TRIGGER_FULL_CHARGE, desc: '0x0050 写 1' },
+  { label: 'Read Run Params',    frame: FRAMES.READ_ALL_PARAMS,   desc: '0x0000 × 18 registers (config params)' },
+  { label: 'Read Live Status',    frame: FRAMES.READ_ALL_STATUS,   desc: '0x0100 × 56 registers (voltage/power/SOC/temp)' },
+  { label: 'Read Fault/Alarm',   frame: FRAMES.READ_FAULT_BLOCK,  desc: '0x0126 × 9 registers (status word + alarm code)' },
+  { label: 'Read Cell Temp/Current', frame: FRAMES.READ_TEMP_CURR,    desc: '0x0120 × 6 registers' },
+  { label: 'Read Cell Voltages', frame: FRAMES.READ_CELL_VOLTAGES,desc: '0x0108 × 16 registers' },
+  { label: 'Read Hardware Version',    frame: FRAMES.READ_HW_VERSION,   desc: '0x0200 × 4 registers' },
+  { label: 'Read Software Version',    frame: FRAMES.READ_MCU_VERSION,  desc: '0x0204 × 4 registers' },
+  { label: 'AC On',        frame: FRAMES.AC_POWER_ON,       desc: '0x0080 write 0x01AA' },
+  { label: 'AC Off',        frame: FRAMES.AC_POWER_OFF,      desc: '0x0080 write 0xAA01' },
+  { label: 'DC On',        frame: FRAMES.DC_POWER_ON,       desc: '0x0080 write 0x02AA' },
+  { label: 'DC Off',        frame: FRAMES.DC_POWER_OFF,      desc: '0x0080 write 0xAA02' },
+  { label: 'Trigger Full Charge',    frame: FRAMES.TRIGGER_FULL_CHARGE, desc: '0x0050 write 1' },
 ]
 
 /** 尝试把 FC03 响应解析成人类可读摘要 */
@@ -65,7 +65,7 @@ function summarizeResponse(hexResp: string, sentHex: string): string | null {
       const pvV    = (r[REG_STATUS.PV_IN_VOLTAGE  - 0x0100] ?? 0) * 0.1
       const pvP    = r[REG_STATUS.PV_CHARGE_POWER - 0x0100] ?? 0
       const soc    = (r[REG_STATUS.CELL_SOC_PCT   - 0x0100] ?? 0) * 0.1
-      return `AC入 ${acInV.toFixed(1)}V  AC出 ${acOutV.toFixed(1)}V ${acOutP}W  PV ${pvV.toFixed(1)}V ${pvP}W  SOC ${soc.toFixed(1)}%`
+      return `AC In ${acInV.toFixed(1)}V  AC Out ${acOutV.toFixed(1)}V ${acOutP}W  PV ${pvV.toFixed(1)}V ${pvP}W  SOC ${soc.toFixed(1)}%`
     }
 
     if (startAddr === 0x0126) {
@@ -73,16 +73,16 @@ function summarizeResponse(hexResp: string, sentHex: string): string | null {
       const state = parseRunState(res.registers[0] ?? 0)
       const warn1 = parseWarnCode1(res.registers[1] ?? 0)
       const flags = [
-        state.pvCharging    && 'PV充电',
-        state.acCharging    && 'AC充电',
-        state.acOutput      && 'AC输出',
-        state.bypass        && '旁路',
-        warn1.mpptTempHigh  && '⚠MPPT过温',
-        warn1.pvOverVoltage && '⚠PV过压',
-        warn1.gridOverVolt  && '⚠市电过压',
-        warn1.cellUnder3V   && '⚠单芯<3V',
+        state.pvCharging    && 'PV Charging',
+        state.acCharging    && 'AC Charging',
+        state.acOutput      && 'AC Output',
+        state.bypass        && 'Bypass',
+        warn1.mpptTempHigh  && '⚠MPPT Overtemp',
+        warn1.pvOverVoltage && '⚠PV Overvoltage',
+        warn1.gridOverVolt  && '⚠Grid Overvoltage',
+        warn1.cellUnder3V   && '⚠Cell <3V',
       ].filter(Boolean)
-      return flags.length ? flags.join('  ') : '无告警，运行正常'
+      return flags.length ? flags.join('  ') : 'Normal'
     }
 
     if (startAddr === 0x0120) {
@@ -90,7 +90,7 @@ function summarizeResponse(hexResp: string, sentHex: string): string | null {
       const curr = toInt16(r[0] ?? 0) * 0.01
       const mpptT = toInt16(r[1] ?? 0) * 0.1
       const cell1T = toInt16(r[3] ?? 0) * 0.1
-      return `电芯电流 ${curr.toFixed(2)}A  MPPT ${mpptT.toFixed(1)}℃  电芯1温 ${cell1T.toFixed(1)}℃`
+      return `Cell Current ${curr.toFixed(2)}A  MPPT ${mpptT.toFixed(1)}℃  Cell 1 Temp ${cell1T.toFixed(1)}℃`
     }
 
     // 通用：显示前 8 个寄存器原始值
@@ -138,7 +138,7 @@ export default function PassthroughPanel({ deviceId }: Props) {
       {/* Header */}
       <div className="flex items-center gap-2">
         <Terminal size={14} className="text-[#01D6BE]" />
-        <span className="text-[12px] font-semibold text-[#BFBFBF]">Modbus 数据透传</span>
+        <span className="text-[12px] font-semibold text-[#BFBFBF]">Modbus Passthrough</span>
       </div>
 
       {/* 预设报文选择器 */}
@@ -149,7 +149,7 @@ export default function PassthroughPanel({ deviceId }: Props) {
             bg-[#141414] border border-[rgba(255,255,255,0.06)]
             text-[#8C8C8C] text-[12px] active:scale-[0.98] transition-all"
         >
-          <span>选择预设报文</span>
+          <span>Select Preset</span>
           <ChevronDown size={13} className={`transition-transform ${showPresets ? 'rotate-180' : ''}`} />
         </button>
 
@@ -175,14 +175,14 @@ export default function PassthroughPanel({ deviceId }: Props) {
 
       {/* 自定义输入 + 发送 */}
       <div>
-        <label className="text-[10px] font-semibold text-[#595959] mb-1 block">自定义十六进制帧</label>
+        <label className="text-[10px] font-semibold text-[#595959] mb-1 block">Custom Hex Frame</label>
         <div className="flex gap-2">
           <input
             type="text"
             value={data}
             onChange={e => setData(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') sendFrame(data) }}
-            placeholder="如：01 03 00 00 00 12 C5 C7"
+            placeholder="e.g. 01 03 00 00 00 12 C5 C7"
             className="flex-1 px-3 py-2 rounded-m bg-[#141414] border border-[rgba(255,255,255,0.06)]
               text-[#BFBFBF] text-[12px] placeholder:text-[#454545]
               focus:outline-none focus:border-[rgba(1,214,190,0.4)] font-mono"
@@ -194,7 +194,7 @@ export default function PassthroughPanel({ deviceId }: Props) {
               disabled:opacity-40 flex items-center gap-1.5 active:scale-[0.97] transition-all"
           >
             {loading ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
-            发送
+            Send
           </button>
         </div>
       </div>
@@ -202,7 +202,7 @@ export default function PassthroughPanel({ deviceId }: Props) {
       {/* 收发日志 */}
       <div className="rounded-m bg-[#141414] border border-[rgba(255,255,255,0.04)] p-3 min-h-[60px] max-h-56 overflow-y-auto font-mono space-y-1.5">
         {logs.length === 0 ? (
-          <p className="text-[11px] text-[#454545] text-center py-2">暂无数据</p>
+          <p className="text-[11px] text-[#454545] text-center py-2">No data</p>
         ) : (
           logs.map(l => (
             <div key={l.id} className="flex gap-2 text-[11px]">

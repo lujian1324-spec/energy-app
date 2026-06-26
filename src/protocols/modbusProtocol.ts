@@ -513,251 +513,251 @@ function bitStr(raw: number, bits: Record<number, string>, lo = false): string {
   const active = Object.entries(bits)
     .filter(([bit]) => byte & (1 << Number(bit)))
     .map(([, label]) => label)
-  return active.length ? active.join(' | ') : '正常'
+  return active.length ? active.join(' | ') : 'Normal'
 }
 
 const REG_DESC: Record<number, RegDesc> = {
   // ── Config 0x00-0x0A ────────────────────────
-  0x0000: { name: '交流输入低压切出点',   group: 'AC配置',  scale: 0.1,  unit: 'V' },
-  0x0001: { name: '交流输入低压回复点',   group: 'AC配置',  scale: 0.1,  unit: 'V' },
-  0x0002: { name: '交流输入高压切出点',   group: 'AC配置',  scale: 0.1,  unit: 'V' },
-  0x0003: { name: '交流输入高压回复点',   group: 'AC配置',  scale: 0.1,  unit: 'V' },
-  0x0004: { name: '交流频率低切出点',     group: 'AC配置',  scale: 0.1,  unit: 'Hz' },
-  0x0005: { name: '交流频率低回复点',     group: 'AC配置',  scale: 0.1,  unit: 'Hz' },
-  0x0006: { name: '交流频率高切出点',     group: 'AC配置',  scale: 0.1,  unit: 'Hz' },
-  0x0007: { name: '交流频率高回复点',     group: 'AC配置',  scale: 0.1,  unit: 'Hz' },
-  0x0008: { name: '逆变输出电压额定值',   group: 'AC配置',  scale: 0.1,  unit: 'V' },
-  0x0009: { name: '交流旁路输出功率',     group: 'AC配置',  scale: 1,    unit: 'W' },
-  0x000A: { name: '交流逆变输出功率',     group: 'AC配置',  scale: 1,    unit: 'W' },
+  0x0000: { name: 'AC Input Low-V Cutout',   group: 'AC Config',  scale: 0.1,  unit: 'V' },
+  0x0001: { name: 'AC Input Low-V Restore',   group: 'AC Config',  scale: 0.1,  unit: 'V' },
+  0x0002: { name: 'AC Input High-V Cutout',   group: 'AC Config',  scale: 0.1,  unit: 'V' },
+  0x0003: { name: 'AC Input High-V Restore',   group: 'AC Config',  scale: 0.1,  unit: 'V' },
+  0x0004: { name: 'AC Freq Low Cutout',     group: 'AC Config',  scale: 0.1,  unit: 'Hz' },
+  0x0005: { name: 'AC Freq Low Restore',     group: 'AC Config',  scale: 0.1,  unit: 'Hz' },
+  0x0006: { name: 'AC Freq High Cutout',     group: 'AC Config',  scale: 0.1,  unit: 'Hz' },
+  0x0007: { name: 'AC Freq High Restore',     group: 'AC Config',  scale: 0.1,  unit: 'Hz' },
+  0x0008: { name: 'Inverter Output Voltage',   group: 'AC Config',  scale: 0.1,  unit: 'V' },
+  0x0009: { name: 'AC Bypass Output Power',     group: 'AC Config',  scale: 1,    unit: 'W' },
+  0x000A: { name: 'AC Inverter Output Power',     group: 'AC Config',  scale: 1,    unit: 'W' },
   // ── Config 0x10-0x1F ────────────────────────
-  0x0010: { name: '电芯低压报警点',       group: '电池配置', scale: 1,   unit: 'mV' },
-  0x0011: { name: '电芯低压关机点',       group: '电池配置', scale: 1,   unit: 'mV' },
-  0x0012: { name: '电芯低压报警回复点',   group: '电池配置', scale: 1,   unit: 'mV' },
-  0x0013: { name: '电芯高压报警点',       group: '电池配置', scale: 1,   unit: 'mV' },
-  0x0014: { name: '电芯高压报警回复点',   group: '电池配置', scale: 1,   unit: 'mV' },
-  0x0015: { name: '电芯低温保护点',       group: '电池配置', scale: 1,   unit: '℃', signed: true },
-  0x0016: { name: '电芯低温告警点',       group: '电池配置', scale: 1,   unit: '℃', signed: true },
-  0x0017: { name: '电芯低温告警恢复点',   group: '电池配置', scale: 1,   unit: '℃', signed: true },
-  0x0018: { name: '电芯高温保护点',       group: '电池配置', scale: 1,   unit: '℃', signed: true },
-  0x0019: { name: '电芯高温告警点',       group: '电池配置', scale: 1,   unit: '℃', signed: true },
-  0x001A: { name: '电芯高温告警恢复点',   group: '电池配置', scale: 1,   unit: '℃', signed: true },
-  0x001B: { name: '电池额定容量',         group: '电池配置', scale: 0.1, unit: 'Ah' },
-  0x001C: { name: '电池当前容量',         group: '电池配置', scale: 0.1, unit: 'Ah' },
-  0x001D: { name: '电池计算容量',         group: '电池配置', scale: 0.1, unit: 'Ah' },
-  0x001E: { name: '电池放电容量',         group: '电池配置', scale: 0.1, unit: 'Ah' },
-  0x001F: { name: '电池循环次数',         group: '电池配置', scale: 1,   unit: '次' },
+  0x0010: { name: 'Cell Low-V Alarm',       group: 'Battery Config', scale: 1,   unit: 'mV' },
+  0x0011: { name: 'Cell Low-V Shutdown',       group: 'Battery Config', scale: 1,   unit: 'mV' },
+  0x0012: { name: 'Cell Low-V Alarm Restore',   group: 'Battery Config', scale: 1,   unit: 'mV' },
+  0x0013: { name: 'Cell High-V Alarm',       group: 'Battery Config', scale: 1,   unit: 'mV' },
+  0x0014: { name: 'Cell High-V Alarm Restore',   group: 'Battery Config', scale: 1,   unit: 'mV' },
+  0x0015: { name: 'Cell Low-Temp Protect',       group: 'Battery Config', scale: 1,   unit: '℃', signed: true },
+  0x0016: { name: 'Cell Low-Temp Alarm',       group: 'Battery Config', scale: 1,   unit: '℃', signed: true },
+  0x0017: { name: 'Cell Low-Temp Alarm Restore',   group: 'Battery Config', scale: 1,   unit: '℃', signed: true },
+  0x0018: { name: 'Cell High-Temp Protect',       group: 'Battery Config', scale: 1,   unit: '℃', signed: true },
+  0x0019: { name: 'Cell High-Temp Alarm',       group: 'Battery Config', scale: 1,   unit: '℃', signed: true },
+  0x001A: { name: 'Cell High-Temp Alarm Restore',   group: 'Battery Config', scale: 1,   unit: '℃', signed: true },
+  0x001B: { name: 'Battery Rated Capacity',         group: 'Battery Config', scale: 0.1, unit: 'Ah' },
+  0x001C: { name: 'Battery Current Capacity',         group: 'Battery Config', scale: 0.1, unit: 'Ah' },
+  0x001D: { name: 'Battery Calc Capacity',         group: 'Battery Config', scale: 0.1, unit: 'Ah' },
+  0x001E: { name: 'Battery Discharge Capacity',         group: 'Battery Config', scale: 0.1, unit: 'Ah' },
+  0x001F: { name: 'Battery Cycle Count',         group: 'Battery Config', scale: 1,   unit: 'cyc' },
   // ── Config 0x20-0x2E ────────────────────────
-  0x0020: { name: 'PV输入最低电压',       group: 'PV配置',   scale: 0.1, unit: 'V' },
-  0x0021: { name: 'PV输入最高电压',       group: 'PV配置',   scale: 0.1, unit: 'V' },
-  0x0022: { name: '充电均衡电压点',       group: 'PV配置',   scale: 1,   unit: 'mV' },
-  0x0023: { name: '充电浮充电压点',       group: 'PV配置',   scale: 1,   unit: 'mV' },
-  0x0024: { name: '额定交流充电功率',     group: 'PV配置',   scale: 1,   unit: 'W' },
-  0x0025: { name: '额定光伏充电功率',     group: 'PV配置',   scale: 1,   unit: 'W' },
-  0x0026: { name: '额定交流+光伏充电功率',group: 'PV配置',   scale: 1,   unit: 'W' },
-  0x002B: { name: '电池额定容量(2)',      group: '电池配置', scale: 0.1, unit: 'Ah' },
-  0x002C: { name: '充电累计时间',         group: '电池配置', scale: 1,   unit: 'h' },
-  0x002D: { name: '放电累计时间',         group: '电池配置', scale: 1,   unit: 'h' },
-  0x002E: { name: '充满再唤醒时间',       group: '电池配置', scale: 1,   unit: 'h' },
+  0x0020: { name: 'PV Input Min Voltage',       group: 'PV Config',   scale: 0.1, unit: 'V' },
+  0x0021: { name: 'PV Input Max Voltage',       group: 'PV Config',   scale: 0.1, unit: 'V' },
+  0x0022: { name: 'Charge Equalize Voltage',       group: 'PV Config',   scale: 1,   unit: 'mV' },
+  0x0023: { name: 'Charge Float Voltage',       group: 'PV Config',   scale: 1,   unit: 'mV' },
+  0x0024: { name: 'AC Charge Power',     group: 'PV Config',   scale: 1,   unit: 'W' },
+  0x0025: { name: 'PV Charge Power',     group: 'PV Config',   scale: 1,   unit: 'W' },
+  0x0026: { name: 'AC+PV Charge Power',group: 'PV Config',   scale: 1,   unit: 'W' },
+  0x002B: { name: 'Battery Rated Capacity (2)',      group: 'Battery Config', scale: 0.1, unit: 'Ah' },
+  0x002C: { name: 'Charge Total Time',         group: 'Battery Config', scale: 1,   unit: 'h' },
+  0x002D: { name: 'Discharge Total Time',         group: 'Battery Config', scale: 1,   unit: 'h' },
+  0x002E: { name: 'Re-Wake After Full',       group: 'Battery Config', scale: 1,   unit: 'h' },
   // ── Status 0x100-0x107 ──────────────────────
-  0x0100: { name: '交流输入电压',         group: 'AC实时',   scale: 0.1, unit: 'V' },
-  0x0101: { name: '交流输入频率',         group: 'AC实时',   scale: 0.1, unit: 'Hz' },
-  0x0102: { name: '交流输出电压',         group: 'AC实时',   scale: 0.1, unit: 'V' },
-  0x0103: { name: '交流输出频率',         group: 'AC实时',   scale: 0.1, unit: 'Hz' },
-  0x0104: { name: '交流输出功率',         group: 'AC实时',   scale: 1,   unit: 'W' },
-  0x0105: { name: 'PV输入电压',           group: 'PV实时',   scale: 0.1, unit: 'V' },
-  0x0106: { name: 'PV充电功率',           group: 'PV实时',   scale: 1,   unit: 'W' },
-  0x0107: { name: '交流充电功率',         group: 'AC实时',   scale: 1,   unit: 'W' },
+  0x0100: { name: 'AC Input Voltage',         group: 'AC Live',   scale: 0.1, unit: 'V' },
+  0x0101: { name: 'AC Input Frequency',         group: 'AC Live',   scale: 0.1, unit: 'Hz' },
+  0x0102: { name: 'AC Output Voltage',         group: 'AC Live',   scale: 0.1, unit: 'V' },
+  0x0103: { name: 'AC Output Frequency',         group: 'AC Live',   scale: 0.1, unit: 'Hz' },
+  0x0104: { name: 'AC Output Power',         group: 'AC Live',   scale: 1,   unit: 'W' },
+  0x0105: { name: 'PV Input Voltage',           group: 'PV Live',   scale: 0.1, unit: 'V' },
+  0x0106: { name: 'PV Charge Power',           group: 'PV Live',   scale: 1,   unit: 'W' },
+  0x0107: { name: 'AC Charge Power',         group: 'AC Live',   scale: 1,   unit: 'W' },
   // ── Cell voltages 0x108-0x118 ───────────────
-  0x0108: { name: '电芯1极柱电压',        group: '电芯电压', scale: 1,   unit: 'mV' },
-  0x0109: { name: '电芯2极柱电压',        group: '电芯电压', scale: 1,   unit: 'mV' },
-  0x010A: { name: '电芯3极柱电压',        group: '电芯电压', scale: 1,   unit: 'mV' },
-  0x010B: { name: '电芯4极柱电压',        group: '电芯电压', scale: 1,   unit: 'mV' },
-  0x010C: { name: '电芯5极柱电压',        group: '电芯电压', scale: 1,   unit: 'mV' },
-  0x010D: { name: '电芯6极柱电压',        group: '电芯电压', scale: 1,   unit: 'mV' },
-  0x010E: { name: '电芯7极柱电压',        group: '电芯电压', scale: 1,   unit: 'mV' },
-  0x010F: { name: '电芯8极柱电压',        group: '电芯电压', scale: 1,   unit: 'mV' },
-  0x0110: { name: '电芯9极柱电压',        group: '电芯电压', scale: 1,   unit: 'mV' },
-  0x0111: { name: '电芯10极柱电压',       group: '电芯电压', scale: 1,   unit: 'mV' },
-  0x0112: { name: '电芯11极柱电压',       group: '电芯电压', scale: 1,   unit: 'mV' },
-  0x0113: { name: '电芯12极柱电压',       group: '电芯电压', scale: 1,   unit: 'mV' },
-  0x0114: { name: '电芯13极柱电压',       group: '电芯电压', scale: 1,   unit: 'mV' },
-  0x0115: { name: '电芯14极柱电压',       group: '电芯电压', scale: 1,   unit: 'mV' },
-  0x0116: { name: '电芯15极柱电压',       group: '电芯电压', scale: 1,   unit: 'mV' },
-  0x0117: { name: '电芯16极柱电压',       group: '电芯电压', scale: 1,   unit: 'mV' },
-  0x0118: { name: '电芯电解电容电压',     group: '电芯电压', scale: 1,   unit: 'mV' },
+  0x0108: { name: 'Cell 1 Voltage',        group: 'Cell Voltage', scale: 1,   unit: 'mV' },
+  0x0109: { name: 'Cell 2 Voltage',        group: 'Cell Voltage', scale: 1,   unit: 'mV' },
+  0x010A: { name: 'Cell 3 Voltage',        group: 'Cell Voltage', scale: 1,   unit: 'mV' },
+  0x010B: { name: 'Cell 4 Voltage',        group: 'Cell Voltage', scale: 1,   unit: 'mV' },
+  0x010C: { name: 'Cell 5 Voltage',        group: 'Cell Voltage', scale: 1,   unit: 'mV' },
+  0x010D: { name: 'Cell 6 Voltage',        group: 'Cell Voltage', scale: 1,   unit: 'mV' },
+  0x010E: { name: 'Cell 7 Voltage',        group: 'Cell Voltage', scale: 1,   unit: 'mV' },
+  0x010F: { name: 'Cell 8 Voltage',        group: 'Cell Voltage', scale: 1,   unit: 'mV' },
+  0x0110: { name: 'Cell 9 Voltage',        group: 'Cell Voltage', scale: 1,   unit: 'mV' },
+  0x0111: { name: 'Cell 10 Voltage',       group: 'Cell Voltage', scale: 1,   unit: 'mV' },
+  0x0112: { name: 'Cell 11 Voltage',       group: 'Cell Voltage', scale: 1,   unit: 'mV' },
+  0x0113: { name: 'Cell 12 Voltage',       group: 'Cell Voltage', scale: 1,   unit: 'mV' },
+  0x0114: { name: 'Cell 13 Voltage',       group: 'Cell Voltage', scale: 1,   unit: 'mV' },
+  0x0115: { name: 'Cell 14 Voltage',       group: 'Cell Voltage', scale: 1,   unit: 'mV' },
+  0x0116: { name: 'Cell 15 Voltage',       group: 'Cell Voltage', scale: 1,   unit: 'mV' },
+  0x0117: { name: 'Cell 16 Voltage',       group: 'Cell Voltage', scale: 1,   unit: 'mV' },
+  0x0118: { name: 'Cell Cap Voltage',     group: 'Cell Voltage', scale: 1,   unit: 'mV' },
   // ── Cell stats 0x119-0x11F ──────────────────
-  0x0119: { name: '电芯容量',             group: '电池实时', scale: 0.1, unit: 'Ah' },
-  0x011A: { name: '电芯剩余容量',         group: '电池实时', scale: 0.1, unit: '%' },
-  0x011B: { name: '电芯充放电循环次数',   group: '电池实时', scale: 1,   unit: '次' },
+  0x0119: { name: 'Cell Capacity',             group: 'Battery Live', scale: 0.1, unit: 'Ah' },
+  0x011A: { name: 'Cell SOC',         group: 'Battery Live', scale: 0.1, unit: '%' },
+  0x011B: { name: 'Cell Cycle Count',   group: 'Battery Live', scale: 1,   unit: 'cyc' },
   // ── Current / temperature 0x120-0x125 ───────
-  0x0120: { name: '电芯电流',             group: '温度电流', scale: 0.01, unit: 'A', signed: true },
-  0x0121: { name: 'MPPT散热器温度',       group: '温度电流', scale: 0.1,  unit: '℃', signed: true },
-  0x0122: { name: 'DCDC散热器温度',       group: '温度电流', scale: 0.1,  unit: '℃', signed: true },
-  0x0123: { name: '电芯1温度',            group: '温度电流', scale: 0.1,  unit: '℃', signed: true },
-  0x0124: { name: '电芯2温度',            group: '温度电流', scale: 0.1,  unit: '℃', signed: true },
-  0x0125: { name: '电芯3温度',            group: '温度电流', scale: 0.1,  unit: '℃', signed: true },
+  0x0120: { name: 'Cell Current',             group: 'Temp/Current', scale: 0.01, unit: 'A', signed: true },
+  0x0121: { name: 'MPPT Heatsink Temp',       group: 'Temp/Current', scale: 0.1,  unit: '℃', signed: true },
+  0x0122: { name: 'DCDC Heatsink Temp',       group: 'Temp/Current', scale: 0.1,  unit: '℃', signed: true },
+  0x0123: { name: 'Cell 1 Temp',            group: 'Temp/Current', scale: 0.1,  unit: '℃', signed: true },
+  0x0124: { name: 'Cell 2 Temp',            group: 'Temp/Current', scale: 0.1,  unit: '℃', signed: true },
+  0x0125: { name: 'Cell 3 Temp',            group: 'Temp/Current', scale: 0.1,  unit: '℃', signed: true },
   // ── Run state / faults 0x126-0x134 ──────────
   0x0126: {
-    name: '运行状态', group: '运行状态',
+    name: 'Run State', group: 'Run State',
     fmt: (raw) => {
       const lo = raw & 0xff
       const hi = (raw >> 8) & 0xff
       const flags: string[] = []
-      if (lo & 0x01) flags.push('PV充电中')
-      if (lo & 0x02) flags.push('AC充电中')
-      if (lo & 0x04) flags.push('AC输出')
-      if (lo & 0x08) flags.push('旁路')
-      if (lo & 0x10) flags.push('逆变运行')
-      if (lo & 0x20) flags.push('倒计时关机')
-      if (lo & 0x40) flags.push('DC运行')
-      if (lo & 0x80) flags.push('LCD背光关')
-      if (hi & 0x01) flags.push('风扇运行')
-      return flags.length ? flags.join(' | ') : '待机'
+      if (lo & 0x01) flags.push('PV Charging')
+      if (lo & 0x02) flags.push('AC Charging')
+      if (lo & 0x04) flags.push('AC Output')
+      if (lo & 0x08) flags.push('Bypass')
+      if (lo & 0x10) flags.push('Inverting')
+      if (lo & 0x20) flags.push('Countdown Off')
+      if (lo & 0x40) flags.push('DC Running')
+      if (lo & 0x80) flags.push('LCD Backlight Off')
+      if (hi & 0x01) flags.push('Fan Running')
+      return flags.length ? flags.join(' | ') : 'Standby'
     },
   },
   0x0127: {
-    name: '告警代码1', group: '告警故障',
+    name: 'Alarm Code 1', group: 'Alarm/Fault',
     fmt: (raw) => {
       const lo = raw & 0xff
       const hi = (raw >> 8) & 0xff
       const w: string[] = []
-      if (hi & 0x80) w.push('电芯3温度低')
-      if (hi & 0x40) w.push('电芯2温度低')
-      if (hi & 0x20) w.push('电芯1温度低')
-      if (hi & 0x10) w.push('电芯3温度高')
-      if (hi & 0x08) w.push('电芯2温度高')
-      if (hi & 0x04) w.push('电芯1温度高')
-      if (hi & 0x02) w.push('DCDC过温')
-      if (hi & 0x01) w.push('MPPT过温')
-      if (lo & 0x80) w.push('PV输入过压')
-      if (lo & 0x40) w.push('市电欠压')
-      if (lo & 0x20) w.push('市电过压')
-      if (lo & 0x10) w.push('BUS过压')
-      if (lo & 0x08) w.push('BUS欠压')
-      if (lo & 0x04) w.push('单芯<3.0V')
-      if (lo & 0x02) w.push('电芯保险丝开路')
-      if (lo & 0x01) w.push('铝条松动')
-      return w.length ? w.join(' | ') : '无告警'
+      if (hi & 0x80) w.push('Cell 3 Temp Low')
+      if (hi & 0x40) w.push('Cell 2 Temp Low')
+      if (hi & 0x20) w.push('Cell 1 Temp Low')
+      if (hi & 0x10) w.push('Cell 3 Temp High')
+      if (hi & 0x08) w.push('Cell 2 Temp High')
+      if (hi & 0x04) w.push('Cell 1 Temp High')
+      if (hi & 0x02) w.push('DCDC Overtemp')
+      if (hi & 0x01) w.push('MPPT Overtemp')
+      if (lo & 0x80) w.push('PV Input Overvoltage')
+      if (lo & 0x40) w.push('Grid Undervoltage')
+      if (lo & 0x20) w.push('Grid Overvoltage')
+      if (lo & 0x10) w.push('BUS Overvoltage')
+      if (lo & 0x08) w.push('BUS Undervoltage')
+      if (lo & 0x04) w.push('Cell <3.0V')
+      if (lo & 0x02) w.push('Cell Fuse Open')
+      if (lo & 0x01) w.push('Busbar Loose')
+      return w.length ? w.join(' | ') : 'No Alarm'
     },
   },
   0x0128: {
-    name: '告警代码2', group: '告警故障',
+    name: 'Alarm Code 2', group: 'Alarm/Fault',
     fmt: (raw) => {
       const lo = raw & 0xff
       const w: string[] = []
-      if (lo & 0x04) w.push('温度采样异常')
-      if (lo & 0x02) w.push('主继电器故障')
-      if (lo & 0x01) w.push('输出短路')
-      return w.length ? w.join(' | ') : '无告警'
+      if (lo & 0x04) w.push('Temp Sampling Fault')
+      if (lo & 0x02) w.push('Main Relay Fault')
+      if (lo & 0x01) w.push('Output Short')
+      return w.length ? w.join(' | ') : 'No Alarm'
     },
   },
   0x0129: {
-    name: '市电故障', group: '告警故障',
+    name: 'Grid Fault', group: 'Alarm/Fault',
     fmt: (raw) => {
       const lo = raw & 0xff
       const hi = (raw >> 8) & 0xff
       const w: string[] = []
-      if (hi & 0x80) w.push('充电硬件过流')
-      if (hi & 0x40) w.push('LLC充电过流')
-      if (hi & 0x20) w.push('市电继电器故障')
-      if (hi & 0x10) w.push('市电过载')
-      if (hi & 0x08) w.push('锁相故障')
-      if (hi & 0x04) w.push('孤岛故障')
-      if (hi & 0x02) w.push('市电掉电快检')
-      if (hi & 0x01) w.push('旁路欠频')
-      if (lo & 0x80) w.push('市电欠频')
-      if (lo & 0x40) w.push('旁路欠频2')
-      if (lo & 0x20) w.push('市电过频')
-      if (lo & 0x10) w.push('旁路欠压')
-      if (lo & 0x08) w.push('市电欠压2')
-      if (lo & 0x04) w.push('旁路过压')
-      if (lo & 0x02) w.push('市电过压')
-      return w.length ? w.join(' | ') : '无故障'
+      if (hi & 0x80) w.push('Charge HW Overcurrent')
+      if (hi & 0x40) w.push('LLC Charge Overcurrent')
+      if (hi & 0x20) w.push('Grid Relay Fault')
+      if (hi & 0x10) w.push('Grid Overload')
+      if (hi & 0x08) w.push('PLL Fault')
+      if (hi & 0x04) w.push('Islanding Fault')
+      if (hi & 0x02) w.push('Grid Outage Fast Detect')
+      if (hi & 0x01) w.push('Bypass Underfreq')
+      if (lo & 0x80) w.push('Grid Underfreq')
+      if (lo & 0x40) w.push('Bypass Underfreq 2')
+      if (lo & 0x20) w.push('Grid Overfreq')
+      if (lo & 0x10) w.push('Bypass Undervoltage')
+      if (lo & 0x08) w.push('Grid Undervoltage 2')
+      if (lo & 0x04) w.push('Bypass Overvoltage')
+      if (lo & 0x02) w.push('Grid Overvoltage')
+      return w.length ? w.join(' | ') : 'No Fault'
     },
   },
   0x012A: {
-    name: '逆变器整机故障', group: '告警故障',
+    name: 'Inverter Fault', group: 'Alarm/Fault',
     fmt: (raw) => {
       const lo = raw & 0xff
       const hi = (raw >> 8) & 0xff
       const w: string[] = []
-      if (hi & 0x04) w.push('软件自锁')
-      if (hi & 0x02) w.push('软件自锁2')
-      if (hi & 0x01) w.push('DC过载')
-      if (lo & 0x80) w.push('DC软件过流')
-      if (lo & 0x40) w.push('DC硬件过流')
-      if (lo & 0x20) w.push('系统过温')
-      if (lo & 0x10) w.push('母线软起')
-      if (lo & 0x08) w.push('母线欠压')
-      if (lo & 0x04) w.push('母线过压')
-      if (lo & 0x02) w.push('母线过压快检')
-      if (lo & 0x01) w.push('系统故障')
-      return w.length ? w.join(' | ') : '无故障'
+      if (hi & 0x04) w.push('Software Lockout')
+      if (hi & 0x02) w.push('Software Lockout 2')
+      if (hi & 0x01) w.push('DC Overload')
+      if (lo & 0x80) w.push('DC SW Overcurrent')
+      if (lo & 0x40) w.push('DC HW Overcurrent')
+      if (lo & 0x20) w.push('System Overtemp')
+      if (lo & 0x10) w.push('Bus Soft Start')
+      if (lo & 0x08) w.push('Bus Undervoltage')
+      if (lo & 0x04) w.push('Bus Overvoltage')
+      if (lo & 0x02) w.push('Bus Overvoltage Fast Detect')
+      if (lo & 0x01) w.push('System Fault')
+      return w.length ? w.join(' | ') : 'No Fault'
     },
   },
   0x012B: {
-    name: '离网故障', group: '告警故障',
+    name: 'Off-Grid Fault', group: 'Alarm/Fault',
     fmt: (raw) => {
       const lo = raw & 0xff
       const w: string[] = []
-      if (lo & 0x80) w.push('半波过载')
-      if (lo & 0x40) w.push('输出欠压')
-      if (lo & 0x20) w.push('软件过流')
-      if (lo & 0x10) w.push('硬件过流')
-      if (lo & 0x08) w.push('软件过流快检')
-      if (lo & 0x04) w.push('输出过载')
-      if (lo & 0x02) w.push('输出短路')
-      if (lo & 0x01) w.push('离网逆变故障')
-      return w.length ? w.join(' | ') : '无故障'
+      if (lo & 0x80) w.push('Half-Wave Overload')
+      if (lo & 0x40) w.push('Output Undervoltage')
+      if (lo & 0x20) w.push('SW Overcurrent')
+      if (lo & 0x10) w.push('HW Overcurrent')
+      if (lo & 0x08) w.push('SW Overcurrent Fast Detect')
+      if (lo & 0x04) w.push('Output Overload')
+      if (lo & 0x02) w.push('Output Short')
+      if (lo & 0x01) w.push('Off-Grid Inverter Fault')
+      return w.length ? w.join(' | ') : 'No Fault'
     },
   },
-  0x012C: { name: '电芯数量',             group: '运行状态', scale: 1, unit: '节' },
-  0x012D: { name: '温度传感器数量',       group: '运行状态', scale: 1, unit: '个' },
-  0x012E: { name: '充电累计时间',         group: '运行状态', scale: 1, unit: 'h' },
-  0x012F: { name: '放电累计时间',         group: '运行状态', scale: 1, unit: 'h' },
+  0x012C: { name: 'Cell Count',             group: 'Run State', scale: 1, unit: 'cells' },
+  0x012D: { name: 'Temp Sensor Count',       group: 'Run State', scale: 1, unit: 'pcs' },
+  0x012E: { name: 'Charge Total Time',         group: 'Run State', scale: 1, unit: 'h' },
+  0x012F: { name: 'Discharge Total Time',         group: 'Run State', scale: 1, unit: 'h' },
   0x0130: {
-    name: '电池状态', group: '运行状态',
+    name: 'Battery State', group: 'Run State',
     fmt: (raw) => {
       const lo = raw & 0xff
       const w: string[] = []
-      if (lo & 0x08) w.push('电池超级过压')
-      if (lo & 0x04) w.push('电池欠压')
-      if (lo & 0x02) w.push('电池未连接')
-      if (lo & 0x01) w.push('电池过压')
-      return w.length ? w.join(' | ') : '正常'
+      if (lo & 0x08) w.push('Battery Severe Overvoltage')
+      if (lo & 0x04) w.push('Battery Undervoltage')
+      if (lo & 0x02) w.push('Battery Disconnected')
+      if (lo & 0x01) w.push('Battery Overvoltage')
+      return w.length ? w.join(' | ') : 'Normal'
     },
   },
   0x0133: {
-    name: '系统状态机', group: '运行状态',
+    name: 'System State Machine', group: 'Run State',
     fmt: (raw) => {
       const states: Record<number, string> = {
-        0: '系统初始化', 1: '上电状态', 2: '待机',
-        3: '市电继电器闭合等待', 4: '市电继电器闭合', 5: '市电LLC软起',
-        6: '充电运行', 7: '放电LLC软起', 8: '放电运行',
-        9: '故障态', 10: '关机态', 11: '在线升级态',
+        0: 'System Init', 1: 'Power-Up', 2: 'Standby',
+        3: 'Grid Relay Closing Wait', 4: 'Grid Relay Closed', 5: 'Grid LLC Soft Start',
+        6: 'Charging', 7: 'Discharge LLC Soft Start', 8: 'Discharging',
+        9: 'Fault', 10: 'Shutdown', 11: 'Online Upgrade',
       }
       const bit = Math.log2(raw & -raw)  // lowest set bit
-      return states[bit] ?? `状态机0x${raw.toString(16).toUpperCase()}`
+      return states[bit] ?? `State 0x${raw.toString(16).toUpperCase()}`
     },
   },
   0x0134: {
-    name: 'PV故障', group: '告警故障',
+    name: 'PV Fault', group: 'Alarm/Fault',
     fmt: (raw) => {
       const lo = raw & 0xff
       const hi = (raw >> 8) & 0xff
       const w: string[] = []
-      if (hi & 0x80) w.push('PV反向过流')
-      if (hi & 0x40) w.push('PV母线过压快检')
-      if (hi & 0x20) w.push('PV过压快检')
-      if (hi & 0x10) w.push('PV过温')
-      if (hi & 0x08) w.push('PV母线过压')
-      if (hi & 0x04) w.push('PV短路快检')
-      if (lo & 0x80) w.push('PV未连接')
-      if (lo & 0x40) w.push('PV短路')
-      if (lo & 0x20) w.push('PV过流')
-      if (lo & 0x10) w.push('PV输出欠压')
-      if (lo & 0x08) w.push('PV输出过压')
-      return w.length ? w.join(' | ') : '无故障'
+      if (hi & 0x80) w.push('PV Reverse Overcurrent')
+      if (hi & 0x40) w.push('PV Bus Overvoltage Fast Detect')
+      if (hi & 0x20) w.push('PV Overvoltage Fast Detect')
+      if (hi & 0x10) w.push('PV Overtemp')
+      if (hi & 0x08) w.push('PV Bus Overvoltage')
+      if (hi & 0x04) w.push('PV Short Fast Detect')
+      if (lo & 0x80) w.push('PV Disconnected')
+      if (lo & 0x40) w.push('PV Short')
+      if (lo & 0x20) w.push('PV Overcurrent')
+      if (lo & 0x10) w.push('PV Output Undervoltage')
+      if (lo & 0x08) w.push('PV Output Overvoltage')
+      return w.length ? w.join(' | ') : 'No Fault'
     },
   },
 }

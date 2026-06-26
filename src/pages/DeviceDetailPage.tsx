@@ -509,7 +509,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             />
             <InfoRow
               label="Rated Output Power"
-              value={ratedParams ? `${ratedParams.acInvOutputPower}W` : '--'}
+              value={realDevice?.ratedPower ? `${realDevice.ratedPower}W` : '--'}
             />
             <InfoRow label="Rated Voltage" value="120V" />
             <InfoRow label="Frequency" value="60Hz" />
@@ -517,7 +517,10 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               label="Battery Health"
               value={rtField('batteryHealth') || (realtime?.remainingBatteryCapacity !== undefined ? '98%' : '98%')}
             />
-            <InfoRow label="Cycles" value={rtField('batteryCycles') || '286'} />
+            <InfoRow
+              label="Cycles"
+              value={rtField('numberOfBatteryUsageCycles') || realtime?.numberOfBatteryUsageCycles?.toString() || '--'}
+            />
             <InfoRow
               label="Temperature"
               value={rtField('batteryTemp') || `${powerStation.temperature || '82.4'}°F`}
@@ -535,7 +538,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               className="w-full flex items-center justify-between px-4 py-4 rounded-l bg-[#262626] active:opacity-70 transition-opacity"
             >
               <div className="flex items-center gap-2">
-                <span className="text-body-lg font-semibold text-[#01D6BE]">Modbus 透传调试</span>
+                <span className="text-body-lg font-semibold text-[#01D6BE]">Modbus Debug</span>
               </div>
               <ChevronRight size={18} className="text-[#BFBFBF]" />
             </button>
@@ -544,7 +547,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               className="w-full flex items-center justify-between px-4 py-4 rounded-l bg-[#262626] active:opacity-70 transition-opacity"
             >
               <div className="flex items-center gap-2">
-                <span className="text-body-lg font-semibold text-[#8C8C8C]">调试参数查看</span>
+                <span className="text-body-lg font-semibold text-[#8C8C8C]">Debug Params</span>
               </div>
               <ChevronRight size={18} className="text-[#BFBFBF]" />
             </button>

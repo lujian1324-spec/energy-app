@@ -25,80 +25,80 @@ const fmtMode = (v: unknown) => ({ 0: 'Backup', 1: 'Normal', 2: 'Power Saving' }
 
 const PARAM_GROUPS: { title: string; color: string; params: ParamDef[] }[] = [
   {
-    title: '电量 / 容量',
+    title: 'Charge / Capacity',
     color: '#01D6BE',
     params: [
       { label: 'SOC (remainingBatteryCapacity)', key: 'remainingBatteryCapacity', unit: '%' },
-      { label: '电池容量 (batteryCapacity)', key: 'batteryCapacity', unit: 'Wh' },
-      { label: '电池电流 (batteryCurrent)', key: 'batteryCurrent', unit: 'A', fmt: fmt1 },
-      { label: '充放循环次数 (numberOfBatteryUsageCycles)', key: 'numberOfBatteryUsageCycles', unit: '次' },
+      { label: 'Battery Capacity (batteryCapacity)', key: 'batteryCapacity', unit: 'Wh' },
+      { label: 'Battery Current (batteryCurrent)', key: 'batteryCurrent', unit: 'A', fmt: fmt1 },
+      { label: 'Cycle Count (numberOfBatteryUsageCycles)', key: 'numberOfBatteryUsageCycles', unit: 'cycles' },
     ],
   },
   {
-    title: '功率',
+    title: 'Power',
     color: '#FFD700',
     params: [
-      { label: 'AC充电功率 (exchangeChargingPower)', key: 'acPower', unit: 'W' },
-      { label: 'PV发电功率 (generationPower)', key: 'solarPower', unit: 'W' },
-      { label: '负载输出功率 (outputPower)', key: 'outputPower', unit: 'W' },
-      { label: '电池功率 (batteryPower)', key: 'batteryPower', unit: 'W' },
+      { label: 'AC Charge Power (exchangeChargingPower)', key: 'acPower', unit: 'W' },
+      { label: 'PV Generation Power (generationPower)', key: 'solarPower', unit: 'W' },
+      { label: 'Load Output Power (outputPower)', key: 'outputPower', unit: 'W' },
+      { label: 'Battery Power (batteryPower)', key: 'batteryPower', unit: 'W' },
     ],
   },
   {
-    title: '电压 / 频率',
+    title: 'Voltage / Frequency',
     color: '#FF9500',
     params: [
-      { label: 'AC输入电压 (l1AcInputVoltage)', key: 'acInputVoltage', unit: 'V', fmt: fmt1 },
-      { label: 'AC输入频率 (acInputFrequency)', key: 'acInputFrequency', unit: 'Hz', fmt: fmt1 },
-      { label: 'AC输出电压 (acOutputVoltage)', key: 'acOutputVoltage', unit: 'V', fmt: fmt1 },
-      { label: 'AC输出频率 (acOutputFrequency)', key: 'acOutputFrequency', unit: 'Hz', fmt: fmt1 },
-      { label: 'PV输入电压 (solarInputVoltage)', key: 'solarInputVoltage', unit: 'V', fmt: fmt1 },
+      { label: 'AC Input Voltage (l1AcInputVoltage)', key: 'acInputVoltage', unit: 'V', fmt: fmt1 },
+      { label: 'AC Input Frequency (acInputFrequency)', key: 'acInputFrequency', unit: 'Hz', fmt: fmt1 },
+      { label: 'AC Output Voltage (acOutputVoltage)', key: 'acOutputVoltage', unit: 'V', fmt: fmt1 },
+      { label: 'AC Output Frequency (acOutputFrequency)', key: 'acOutputFrequency', unit: 'Hz', fmt: fmt1 },
+      { label: 'PV Input Voltage (solarInputVoltage)', key: 'solarInputVoltage', unit: 'V', fmt: fmt1 },
     ],
   },
   {
-    title: '温度',
+    title: 'Temperature',
     color: '#FF3530',
     params: [
-      { label: '电芯1温度 (cellTemperature1)', key: 'batteryTemp', unit: '℃', fmt: fmt1 },
-      { label: '电芯2温度 (cellTemperature2)', key: 'cellTemperature2', unit: '℃', fmt: fmt1 },
-      { label: '电芯3温度 (cellTemperature3)', key: 'cellTemperature3', unit: '℃', fmt: fmt1 },
-      { label: 'MPPT温度 (mpptTemperature)', key: 'mpptTemperature', unit: '℃', fmt: fmt1 },
-      { label: 'DCDC温度 (dcdcTemperature)', key: 'dcdcTemperature', unit: '℃', fmt: fmt1 },
+      { label: 'Cell 1 Temp (cellTemperature1)', key: 'batteryTemp', unit: '℃', fmt: fmt1 },
+      { label: 'Cell 2 Temp (cellTemperature2)', key: 'cellTemperature2', unit: '℃', fmt: fmt1 },
+      { label: 'Cell 3 Temp (cellTemperature3)', key: 'cellTemperature3', unit: '℃', fmt: fmt1 },
+      { label: 'MPPT Temp (mpptTemperature)', key: 'mpptTemperature', unit: '℃', fmt: fmt1 },
+      { label: 'DCDC Temp (dcdcTemperature)', key: 'dcdcTemperature', unit: '℃', fmt: fmt1 },
     ],
   },
   {
-    title: '能量统计',
+    title: 'Energy Stats',
     color: '#34C759',
     params: [
-      { label: '当日PV发电量 (pvGeneratedEnergyOfDay)', key: 'pvGeneratedEnergyOfDay', unit: 'Wh' },
-      { label: '累计PV发电量 (totalPVGeneratedEnergy)', key: 'totalPVGeneratedEnergy', unit: 'Wh' },
-      { label: '充电累计时间 (accumulatedChargingTime)', key: 'accumulatedChargingTime', unit: 'h' },
-      { label: '放电累计时间 (accumulatedDischargeTime)', key: 'accumulatedDischargeTime', unit: 'h' },
+      { label: 'Today PV Generation (pvGeneratedEnergyOfDay)', key: 'pvGeneratedEnergyOfDay', unit: 'Wh' },
+      { label: 'Total PV Generation (totalPVGeneratedEnergy)', key: 'totalPVGeneratedEnergy', unit: 'Wh' },
+      { label: 'Total Charge Time (accumulatedChargingTime)', key: 'accumulatedChargingTime', unit: 'h' },
+      { label: 'Total Discharge Time (accumulatedDischargeTime)', key: 'accumulatedDischargeTime', unit: 'h' },
     ],
   },
   {
-    title: '开关状态',
+    title: 'Switch State',
     color: '#8C8C8C',
     params: [
-      { label: 'AC输出1 (inversionState)', key: 'acOut1Enable', fmt: fmtBool },
-      { label: 'AC输出2 (acOut2Enable)', key: 'acOut2Enable', fmt: fmtBool },
-      { label: 'USB输出 (usbOut1Enable)', key: 'usbOut1Enable', fmt: fmtBool },
-      { label: 'PV充电 (photovoltaicCharging)', key: 'photovoltaicCharging', fmt: fmtBool },
-      { label: 'AC充电 (mainsCharging)', key: 'mainsCharging', fmt: fmtBool },
-      { label: 'AC输出总 (acOutputs)', key: 'acOutputs', fmt: fmtBool },
-      { label: '旁路 (bypassStatus)', key: 'bypassStatus', fmt: fmtBool },
-      { label: '无负载关机 (noLoadShutdown)', key: 'noLoadShutdown', fmt: fmtBool },
+      { label: 'AC Output 1 (inversionState)', key: 'acOut1Enable', fmt: fmtBool },
+      { label: 'AC Output 2 (acOut2Enable)', key: 'acOut2Enable', fmt: fmtBool },
+      { label: 'USB Output (usbOut1Enable)', key: 'usbOut1Enable', fmt: fmtBool },
+      { label: 'PV Charging (photovoltaicCharging)', key: 'photovoltaicCharging', fmt: fmtBool },
+      { label: 'AC Charging (mainsCharging)', key: 'mainsCharging', fmt: fmtBool },
+      { label: 'AC Outputs (acOutputs)', key: 'acOutputs', fmt: fmtBool },
+      { label: 'Bypass (bypassStatus)', key: 'bypassStatus', fmt: fmtBool },
+      { label: 'No-Load Shutdown (noLoadShutdown)', key: 'noLoadShutdown', fmt: fmtBool },
       { label: 'Sleep Mode (sleepMode)', key: 'sleepMode', fmt: fmtBool },
     ],
   },
   {
-    title: '模式 / 版本',
+    title: 'Mode / Version',
     color: '#BFBFBF',
     params: [
-      { label: '工作模式 (workMode)', key: 'workMode', fmt: fmtMode },
-      { label: '硬件版本 (hardwareVersion)', key: 'hardwareVersion' },
-      { label: '主控软件版本 (softwareVersionNumber)', key: 'softwareVersionNumber' },
-      { label: '逆变软件版本 (inverterSoftwareVersionNumber)', key: 'inverterSoftwareVersionNumber' },
+      { label: 'Work Mode (workMode)', key: 'workMode', fmt: fmtMode },
+      { label: 'Hardware Version (hardwareVersion)', key: 'hardwareVersion' },
+      { label: 'Main SW Version (softwareVersionNumber)', key: 'softwareVersionNumber' },
+      { label: 'Inverter SW Version (inverterSoftwareVersionNumber)', key: 'inverterSoftwareVersionNumber' },
     ],
   },
 ]
@@ -221,16 +221,16 @@ export default function DebugParamsPage() {
     }
 
     return [
-      { label: '输入功率 (inputPower = max(AC,PV))', value: `${inputPower} W` },
-      { label: '净充电功率 (netChargeW = AC+PV−输出)', value: `${netChargeW} W` },
-      { label: '充电中 (isCharging = batteryPower>0)', value: isCharging ? 'Yes' : 'No' },
-      { label: '机型容量 (capacityWh)', value: `${capacityWh} Wh` },
-      { label: '额定容量 (ratedCapacity = ratedPower×1000)', value: `${ratedCapacityWh} Wh` },
-      { label: '剩余电量 (remainingWh = SOC×容量)', value: `${Math.round(remainingWh)} Wh` },
-      { label: 'Overview 剩余时间 (remainingTimeDisplay)', value: overviewRemaining },
-      { label: 'Overview 充满时间 (chargeTimeDisplay)', value: overviewToFull },
-      { label: 'Monitor 时间显示 (timeStr)', value: monitorTime },
-      { label: '电池健康 (batteryHealth, 固定)', value: '100 %' },
+      { label: 'Input Power (inputPower = max(AC,PV))', value: `${inputPower} W` },
+      { label: 'Net Charge Power (netChargeW = AC+PV−Output)', value: `${netChargeW} W` },
+      { label: 'Charging (isCharging = batteryPower>0)', value: isCharging ? 'Yes' : 'No' },
+      { label: 'Model Capacity (capacityWh)', value: `${capacityWh} Wh` },
+      { label: 'Rated Capacity (ratedCapacity = ratedPower×1000)', value: `${ratedCapacityWh} Wh` },
+      { label: 'Remaining Charge (remainingWh = SOC×Capacity)', value: `${Math.round(remainingWh)} Wh` },
+      { label: 'Overview Remaining Time (remainingTimeDisplay)', value: overviewRemaining },
+      { label: 'Overview Time to Full (chargeTimeDisplay)', value: overviewToFull },
+      { label: 'Monitor Time Display (timeStr)', value: monitorTime },
+      { label: 'Battery Health (batteryHealth, fixed)', value: '100 %' },
     ]
   }, [rt, device?.model, device?.ratedPower])
 
@@ -245,8 +245,8 @@ export default function DebugParamsPage() {
           <ChevronLeft size={20} className="text-white" />
         </button>
         <div className="flex-1 text-center">
-          <h1 className="text-title-lg font-semibold text-white">调试参数</h1>
-          <p className="text-tiny text-[#595959]">{device?.name ?? id} · {isDemoMode ? 'Demo' : '实时'}</p>
+          <h1 className="text-title-lg font-semibold text-white">Debug Params</h1>
+          <p className="text-tiny text-[#595959]">{device?.name ?? id} · {isDemoMode ? 'Demo' : 'Live'}</p>
         </div>
         <button
           onClick={() => id && loadDeviceState(id)}
@@ -260,16 +260,16 @@ export default function DebugParamsPage() {
 
         {/* 设备元数据 */}
         <div className="px-4 pt-4">
-          <p className="text-caption font-semibold text-[#8C8C8C] uppercase tracking-wide mb-2">设备信息</p>
+          <p className="text-caption font-semibold text-[#8C8C8C] uppercase tracking-wide mb-2">Device Info</p>
           <div className="rounded-l bg-[#262626] overflow-hidden divide-y divide-[rgba(255,255,255,0.04)]">
             {[
               { label: 'Device ID', value: String(device?.id ?? id ?? '--') },
-              { label: '设备名称 (name)', value: device?.name ?? '--' },
-              { label: '型号 (model)', value: device?.model ?? device?.gatherProtocolNameDisplay ?? '--' },
-              { label: '序列号 (serialNumber)', value: device?.serialNumber ?? '--' },
-              { label: '额定功率 (ratedPower)', value: device?.ratedPower != null ? `${device.ratedPower * 1000} W (${device.ratedPower} kW)` : '--' },
-              { label: '在线状态 (isOnline)', value: device?.isOnline ? 'Online' : 'Offline' },
-              { label: '最后更新', value: updatedAt },
+              { label: 'Name (name)', value: device?.name ?? '--' },
+              { label: 'Model (model)', value: device?.model ?? device?.gatherProtocolNameDisplay ?? '--' },
+              { label: 'Serial Number (serialNumber)', value: device?.serialNumber ?? '--' },
+              { label: 'Rated Power (ratedPower)', value: device?.ratedPower != null ? `${device.ratedPower * 1000} W (${device.ratedPower} kW)` : '--' },
+              { label: 'Online Status (isOnline)', value: device?.isOnline ? 'Online' : 'Offline' },
+              { label: 'Last Updated', value: updatedAt },
             ].map(row => (
               <div key={row.label} className="flex items-center justify-between px-4 py-3 gap-3">
                 <span className="text-caption text-[#8C8C8C] flex-1 min-w-0">{row.label}</span>
@@ -310,7 +310,7 @@ export default function DebugParamsPage() {
         {/* UI 派生 / 计算参数 */}
         <div className="px-4 pt-4">
           <p className="text-caption font-semibold uppercase tracking-wide mb-2" style={{ color: '#01D6BE' }}>
-            UI 派生 / 计算参数
+            UI Derived / Computed Params
           </p>
           <div className="rounded-l bg-[#262626] overflow-hidden divide-y divide-[rgba(255,255,255,0.04)]">
             {derivedRows.map(row => {
@@ -332,7 +332,7 @@ export default function DebugParamsPage() {
           <div className="flex items-center gap-2 mb-2">
             <History size={12} className="text-[#01D6BE]" />
             <p className="text-caption font-semibold uppercase tracking-wide text-[#01D6BE]">
-              历史数据 · Jun 25 · SN {TARGET_SN}
+              History · Jun 25 · SN {TARGET_SN}
             </p>
           </div>
 
@@ -340,7 +340,7 @@ export default function DebugParamsPage() {
             <div className="flex items-center justify-center py-6 rounded-l bg-[#262626]">
               <Loader2 size={18} className="text-[#01D6BE] animate-spin mr-2" />
               <span className="text-caption text-[#8C8C8C]">
-                第 {historyPage} 页 · 已获取 {historyPoints.length} 条…
+                Page {historyPage} · {historyPoints.length} fetched…
               </span>
             </div>
           )}
@@ -356,24 +356,24 @@ export default function DebugParamsPage() {
               {/* 统计摘要 */}
               <div className="rounded-l bg-[#262626] overflow-hidden divide-y divide-[rgba(255,255,255,0.04)] mb-3">
                 <div className="flex items-center justify-between px-4 py-2.5">
-                  <span className="text-caption text-[#8C8C8C]">采样点数</span>
+                  <span className="text-caption text-[#8C8C8C]">Samples</span>
                   <span className="text-body-md font-semibold text-white">
                     {historyPoints.length}
-                    {historyLoading && <span className="text-caption text-[#595959] ml-1">(加载中…)</span>}
+                    {historyLoading && <span className="text-caption text-[#595959] ml-1">(loading…)</span>}
                   </span>
                 </div>
                 <div className="flex items-center justify-between px-4 py-2.5">
-                  <span className="text-caption text-[#8C8C8C]">数据来源</span>
+                  <span className="text-caption text-[#8C8C8C]">Data Source</span>
                   <span className="text-caption text-[#01D6BE]">
-                    {historyFromCache ? '本地缓存' : `API 分页 · ${historyDone ? historyPage : historyPage + '…'}页`}
+                    {historyFromCache ? 'Local Cache' : `API Paged · ${historyDone ? historyPage : historyPage + '…'} pages`}
                   </span>
                 </div>
                 <div className="flex items-center justify-between px-4 py-2.5">
-                  <span className="text-caption text-[#8C8C8C]">已落库条数</span>
-                  <span className="text-caption text-[#34C759]">{savedCount} 条</span>
+                  <span className="text-caption text-[#8C8C8C]">Rows Saved</span>
+                  <span className="text-caption text-[#34C759]">{savedCount} rows</span>
                 </div>
                 <div className="flex items-center justify-between px-4 py-2.5">
-                  <span className="text-caption text-[#8C8C8C]">时间范围</span>
+                  <span className="text-caption text-[#8C8C8C]">Time Range</span>
                   <span className="text-caption text-[#D9D9D9]">
                     {historyPoints[0]?.time.slice(11, 16)} – {historyPoints[historyPoints.length - 1]?.time.slice(11, 16)}
                   </span>
@@ -431,15 +431,15 @@ export default function DebugParamsPage() {
                 onClick={() => setShowRawHistory(v => !v)}
                 className="w-full flex items-center justify-between px-4 py-3 rounded-l bg-[#1F1F1F] mb-3 active:opacity-70 transition-opacity"
               >
-                <span className="text-caption text-[#8C8C8C]">原始采样明细 ({historyPoints.length} 条)</span>
-                <span className="text-caption text-[#01D6BE]">{showRawHistory ? '收起' : '展开'}</span>
+                <span className="text-caption text-[#8C8C8C]">Raw Samples ({historyPoints.length} rows)</span>
+                <span className="text-caption text-[#01D6BE]">{showRawHistory ? 'Collapse' : 'Expand'}</span>
               </button>
 
               {showRawHistory && (
                 <div className="rounded-l bg-[#1A1A1A] overflow-hidden mb-3">
                   {/* 表头 */}
                   <div className="grid grid-cols-4 px-3 py-2 border-b border-[rgba(255,255,255,0.06)]">
-                    {['时间', 'Solar W', 'Output W', 'SOC %'].map(h => (
+                    {['Time', 'Solar W', 'Output W', 'SOC %'].map(h => (
                       <span key={h} className="text-tiny text-[#595959] text-center">{h}</span>
                     ))}
                   </div>
@@ -460,11 +460,11 @@ export default function DebugParamsPage() {
         {/* 原始 API 字段（全部） */}
         <div className="px-4 pt-4">
           <p className="text-caption font-semibold text-[#8C8C8C] uppercase tracking-wide mb-2">
-            原始 API 字段（/remote/device/state/latest）
+            Raw API Fields (/remote/device/state/latest)
           </p>
           <div className="rounded-l bg-[#1A1A1A] overflow-hidden divide-y divide-[rgba(255,255,255,0.03)]">
             {Object.keys(rawFields).length === 0 ? (
-              <p className="text-caption text-[#454545] text-center py-4">暂无数据</p>
+              <p className="text-caption text-[#454545] text-center py-4">No data</p>
             ) : (
               Object.entries(rawFields).map(([key, field]) => (
                 <div key={key} className="flex items-center justify-between px-4 py-2.5 gap-3">

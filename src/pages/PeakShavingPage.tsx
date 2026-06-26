@@ -22,10 +22,10 @@ import { usePowerStationStore } from '../stores/powerStationStore'
 import type { PeakShavingSchedule } from '../types'
 
 const scheduleTypeConfig = {
-  charge: { label: '充电', color: '#34C759', icon: Battery, bgColor: 'rgba(52,199,89,0.15)' },
-  discharge: { label: '放电', color: '#FF9500', icon: Zap, bgColor: 'rgba(255,149,0,0.15)' },
-  grid: { label: '市电', color: '#01D6BE', icon: Power, bgColor: 'rgba(1,214,190,0.15)' },
-  battery: { label: '电池', color: '#FFD700', icon: Battery, bgColor: 'rgba(255,215,0,0.15)' },
+  charge: { label: 'Charging', color: '#34C759', icon: Battery, bgColor: 'rgba(52,199,89,0.15)' },
+  discharge: { label: 'Discharging', color: '#FF9500', icon: Zap, bgColor: 'rgba(255,149,0,0.15)' },
+  grid: { label: 'Grid', color: '#01D6BE', icon: Power, bgColor: 'rgba(1,214,190,0.15)' },
+  battery: { label: 'Battery', color: '#FFD700', icon: Battery, bgColor: 'rgba(255,215,0,0.15)' },
 }
 
 export default function PeakShavingPage() {
