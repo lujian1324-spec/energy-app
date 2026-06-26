@@ -17,7 +17,9 @@ import {
   RotateCcw,
   Download,
 } from 'lucide-react'
+import emailjs from '@emailjs/browser'
 import Icon from '../components/Icon'
+import { EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, EMAILJS_PUBLIC_KEY, isEmailJsConfigured } from '../config/emailjs'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useAuthStore } from '../stores/authStore'
 import { deleteAccount } from '../api/authApi'
@@ -73,12 +75,43 @@ export default function SettingPage() {
   const [supportSending, setSupportSending] = useState(false)
   const [supportError, setSupportError] = useState('')
 
-  const handleSupportSubmit = (e: React.FormEvent) => {
+  const handleSupportSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSupportSending(true)
+    setSupportError('')
+
+    // Preferred path: send via EmailJS (recipient is fixed in the template).
+    if (isEmailJsConfigured()) {
+      try {
+        await emailjs.send(
+          EMAILJS_SERVICE_ID,
+          EMAILJS_TEMPLATE_ID,
+          {
+            from_email: supportEmail,
+            message: supportMessage,
+            subject: 'Sierro App Feedback',
+          },
+          { publicKey: EMAILJS_PUBLIC_KEY }
+        )
+        setSupportSubmitted(true)
+        setTimeout(() => {
+          setShowSupport(false)
+          setSupportEmail('')
+          setSupportMessage('')
+          setSupportSubmitted(false)
+          setSupportSending(false)
+        }, 1500)
+      } catch (err) {
+        setSupportError(err instanceof Error ? err.message : 'Failed to send feedback. Please try again.')
+        setSupportSending(false)
+      }
+      return
+    }
+
+    // Fallback: open the user's mail client until EmailJS is configured.
     const subject = encodeURIComponent('Sierro App Feedback')
     const body = encodeURIComponent(`From: ${supportEmail}\n\n${supportMessage}`)
-    window.open(`mailto:support@sierro.us?subject=${subject}&body=${body}`, '_blank')
+    window.open(`mailto:lujian1324@gmail.com?subject=${subject}&body=${body}`, '_blank')
     setSupportSubmitted(true)
     setTimeout(() => {
       setShowSupport(false)
