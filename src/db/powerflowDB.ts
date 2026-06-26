@@ -24,7 +24,13 @@ import type {
 import type { PeakShavingSettings } from '../types'
 
 const DB_NAME = 'powerflow-db'
-const DB_VERSION = 3   // T10/T11: 升至 v3，增加 smart_schedule store
+const DB_VERSION = 4   // v4: add rated_params store
+
+export interface RatedParams {
+  deviceId: string
+  acInvOutputPower: number  // 交流逆变输出功率 (W), register 0x000A
+  fetchedAt: number         // unix ms
+}
 
 /** 最大保留条数（避免无限增长） */
 const MAX_POWER_HISTORY = 8640 // ~24h @ 10s interval
@@ -59,6 +65,10 @@ type PowerFlowDB = IDBPDatabase<{
   smart_schedule: {
     key: string
     value: PeakShavingSettings
+  }
+  rated_params: {
+    key: string
+    value: RatedParams
   }
 }>
 
@@ -95,6 +105,10 @@ async function getDB(): Promise<PowerFlowDB> {
     smart_schedule: {
       key: string
       value: PeakShavingSettings
+    }
+    rated_params: {
+      key: string
+      value: RatedParams
     }
   }>(DB_NAME, DB_VERSION, {
     upgrade(db, oldVersion) {
@@ -143,6 +157,11 @@ async function getDB(): Promise<PowerFlowDB> {
       // ---- smart_schedule (added in v3, T10) ----
       if (!db.objectStoreNames.contains('smart_schedule')) {
         db.createObjectStore('smart_schedule')
+      }
+
+      // ---- rated_params (added in v4) ----
+      if (!db.objectStoreNames.contains('rated_params')) {
+        db.createObjectStore('rated_params')
       }
     },
   })
@@ -540,3 +559,17 @@ export async function getAlertsByDevice(deviceId: string, limit = 50): Promise<A
     .slice(0, limit)
 }
 
+
+// ================================================================
+// v4: Rated Params 额定参数缓存
+// ================================================================
+
+export async function saveRatedParams(params: RatedParams): Promise<void> {
+  const db = await getDB()
+  await db.put('rated_params', params, params.deviceId)
+}
+
+export async function loadRatedParams(deviceId: string): Promise<RatedParams | undefined> {
+  const db = await getDB()
+  return db.get('rated_params', deviceId)
+}

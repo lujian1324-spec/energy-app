@@ -52,6 +52,28 @@ import {
   getDemoEnergyFlow,
   getDemoHistoryData,
 } from '../data/demoData'
+import { passthroughDevice } from '../api/deviceApi'
+import { FRAMES, fromHexString, parseReadResponse } from '../protocols/modbusProtocol'
+import { saveRatedParams, loadRatedParams } from '../db/powerflowDB'
+
+/** 透传读取设备额定参数并缓存到 IndexedDB（24h TTL，fire-and-forget）*/
+async function fetchAndCacheRatedParams(deviceId: string): Promise<void> {
+  try {
+    const cached = await loadRatedParams(deviceId)
+    if (cached && Date.now() - cached.fetchedAt < 86_400_000) return  // 24h cache
+    const res = await passthroughDevice(deviceId, { data: FRAMES.READ_ALL_PARAMS })
+    const b64 = res.data?.base64Output ?? res.data?.content ?? res.data?.data
+    if (!b64) return
+    const hex = Array.from(atob(b64)).map(c => c.charCodeAt(0).toString(16).padStart(2, '0')).join(' ')
+    const parsed = parseReadResponse(fromHexString(hex))
+    if (!parsed || parsed.registers.length < 11) return
+    const acInvOutputPower = parsed.registers[10]  // offset 10 = register 0x000A
+    if (acInvOutputPower === undefined || acInvOutputPower === 0) return
+    await saveRatedParams({ deviceId, acInvOutputPower, fetchedAt: Date.now() })
+  } catch {
+    // non-critical — silently ignore
+  }
+}
 
 // ═══════════════════════════════════════════════════════
 // 类型
@@ -192,12 +214,15 @@ export const useDeviceStore = create<DeviceStoreState>()(
         try {
           const result = await fetchDeviceList(page, count, filters)
           if ((result.code === 0 || result.code === '0') && result.data) {
+            const list = result.data.list ?? []
             set({
-              devices: result.data.list ?? [],
+              devices: list,
               deviceTotal: result.data.total ?? 0,
               devicePage: page,
               deviceLoading: false,
             })
+            // Fire-and-forget: fetch rated params for each device via passthrough
+            list.forEach(d => fetchAndCacheRatedParams(String(d.id)))
           } else {
             set({ deviceLoading: false })
           }

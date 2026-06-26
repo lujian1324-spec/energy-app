@@ -21,6 +21,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useDeviceStore } from '../stores/deviceStore'
 import { mapFieldsToRealtime, toggleSleepMode, setWorkMode } from '../api/deviceApi'
+import { loadRatedParams, type RatedParams } from '../db/powerflowDB'
 import sierro1000Img from '../assets/sierro-1000.webp'
 import appVersion from '../version.json'
 
@@ -83,6 +84,14 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     [selectedDeviceState]
   )
   const rtField = (key: string): string | undefined => selectedDeviceState?.fields?.[key]?.valueDisplay
+
+  // Rated params fetched from IndexedDB (populated by deviceStore after login/add)
+  const [ratedParams, setRatedParams] = useState<RatedParams | null>(null)
+  const deviceIdForRated = routeId ?? selectedDeviceId ?? ''
+  useEffect(() => {
+    if (!deviceIdForRated) return
+    loadRatedParams(deviceIdForRated).then(p => setRatedParams(p ?? null))
+  }, [deviceIdForRated])
 
   // Prefer real device info, fall back to the mock powerStation profile
   const deviceName = realDevice?.name ?? powerStation.name
@@ -484,11 +493,13 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               value={realDevice?.serialNumber || (powerStation as any).serialNumber || 'SNXXXX'}
             />
             <InfoRow
-              label="Capacity"
+              label="Rated Capacity"
               value={
-                realDevice?.ratedPower
-                  ? `${realDevice.ratedPower.toFixed(1)} kWh`
-                  : `${(powerStation.totalWh / 1000).toFixed(1)} kWh`
+                ratedParams
+                  ? `${((ratedParams.acInvOutputPower * 2) / 1000).toFixed(1)} kWh`
+                  : realDevice?.ratedPower
+                    ? `${realDevice.ratedPower.toFixed(1)} kWh`
+                    : '--'
               }
             />
             <InfoRow label="Battery Type" value="LFP" />
@@ -497,10 +508,10 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               value={realDevice?.softwareVersion || appVersion.version || '--'}
             />
             <InfoRow
-              label="Output Power"
-              value={rtField('outputPower') || String(powerStation.specs?.maxOutputPower || '500W')}
+              label="Rated Output Power"
+              value={ratedParams ? `${ratedParams.acInvOutputPower}W` : '--'}
             />
-            <InfoRow label="Voltage" value={rtField('batteryVoltage') || '120V'} />
+            <InfoRow label="Rated Voltage" value="120V" />
             <InfoRow label="Frequency" value="60Hz" />
             <InfoRow
               label="Battery Health"
