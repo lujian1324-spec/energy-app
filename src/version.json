@@ -1,8 +1,9 @@
 {
-  "version": "3.13.1",
-  "build": 2526,
+  "version": "3.13.2",
+  "build": 2527,
   "date": "2026-06-26",
   "changelog": [
+    "Device monitor: back arrow + swipe now return to Device list (was going back in history)",
     "Unified page transition animations across all routes (no flicker switching Overview ↔ Device list)",
     "Overview: horizontal swipe gesture returns to Device list page",
     "Fix: username update 'illegal argument' (no userId sent to iotUserInfo)",
