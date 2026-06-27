@@ -86,17 +86,83 @@ Test-only / CI-only changes that don't alter the shipped bundle do NOT bump.
 
 ---
 
-## Pages (`src/pages/`)
-Auth (no bottom nav): `LoginPage`, `RegisterPage`, `ForgotPasswordPage`, `TermsPage`, `PrivacyPage`.
-Main tabs (bottom nav, routes `/devices` `/insights` `/setting`): `DevicePage` (device list),
-`StatsPage` (Insights), `SettingPage`. `ProfileEditPage` renders as an overlay inside SettingPage.
-Secondary (no bottom nav): `DeviceMonitorPage` (`/device/:id`), `OverviewPage` (`/device/:id/dashboard`),
-`DeviceDetailPage` (`/device/:id/settings` — the live Device Info screen), `PassthroughPage`,
-`DebugParamsPage` (developer debug view), `SmartSchedulePage` (holds the live peak-shaving UI),
-`NotificationsPage`, `OnboardingPage`, `BleDebugPage`, `DataExportPage`, `ProvisioningPage`.
+## Pages & Routes (`src/pages/`, wired in `App.tsx`)
+
+### Route table
+| Route | Component | Bottom nav | Notes |
+|---|---|---|---|
+| `/login` `/register` `/forgot-password` `/terms` `/privacy` | `LoginPage` `RegisterPage` `ForgotPasswordPage` `TermsPage` `PrivacyPage` | no | Auth — separate `AnimatePresence` branch |
+| `/devices` | `DevicePage` | **yes** | Device list (default after login) |
+| `/insights` | `StatsPage` | **yes** | Insights (`/stats` redirects here) |
+| `/setting` | `SettingPage` | **yes** | Settings (`/settings` redirects here); `ProfileEditPage` is an overlay inside it |
+| `/device/:id` | `DeviceMonitorPage` | no | Live monitor |
+| `/device/:id/dashboard` | `OverviewPage` | no | Overview dashboard |
+| `/device/:id/settings` | `DeviceDetailPage` | no | Device Info (live) |
+| `/device/:id/passthrough` | `PassthroughPage` | no | Modbus passthrough |
+| `/device/:id/debug-params` | `DebugParamsPage` | no | Developer debug view (raw register names — exempt from label canon) |
+| `/smart-schedule` | `SmartSchedulePage` | no | Peak-shaving UI |
+| `/notifications` | `NotificationsPage` | no | Alarm center |
+| `/onboarding` `/ble-debug` `/data-export` | `OnboardingPage` `BleDebugPage` `DataExportPage` | no | |
+
+Also present but not routed standalone: `ProvisioningPage` (inside DevicePage add-flow).
 - Back navigation on secondary device pages must go to `/devices` via `navigate('/devices',{replace:true})`
-  (plus swipe + popstate interceptors) — never `navigate(-1)` — to avoid history flicker.
-- All non-auth routes share ONE `AnimatePresence`/`Routes` in `App.tsx` so transitions are uniform.
+  (plus popstate interceptor) — never `navigate(-1)` — to avoid history flicker. (Horizontal
+  swipe-to-back was removed to prevent accidental navigation.)
+- All non-auth routes share ONE `AnimatePresence`/`Routes` in `App.tsx` (with `initial={false}`).
+
+### Cards & parameters per page (user-facing label → source field)
+Use the label canon below; same metric = same label everywhere except DebugParamsPage.
+
+**DevicePage** (`/devices`)
+- *Device card* (per device): name, model (`gatherProtocolName`/`model`), **Battery** % (`remainingBatteryCapacity`), charging dot (`batteryPower>0`), online badge (`isOnline`), power toggle.
+- *Low Battery banner*: name, `Battery below {lowBatteryThreshold}%`, remaining time (`batteryTimeLabel`).
+- *Device params modal*: **Battery** % (`remainingBatteryCapacity`), **Battery Power** W (`batteryPower`), **AC** W (`acPower`), **Solar** W (`solarPower`), **Output** W (`outputPower`), **Temperature** °F (`batteryTemp`); port states (`acOut1/2Enable`,`usbOut1Enable`,`sleepMode`,`workMode`).
+
+**OverviewPage** (`/device/:id/dashboard`)
+- *Battery Hero*: ring **Battery** % (`remainingBatteryCapacity`), time to full/remaining (`batteryTimeLabel`); Input block **AC** W (`acPower`)+**Solar** W (`solarPower`), Output block **Output** W (`outputPower`); **Temperature** °F (`batteryTemp`).
+- *Quick Controls*: Sleep Mode (`sleepMode`), Backup/Saving (`workMode`).
+- *Ports*: AC Output 1/2 (`acOut1/2Enable`), USB (`usbOut1Enable`).
+- *Energy Management*: Smart Schedule link.
+- *Real-Time Power chart*: top-right badge = realtime value of selected tab (`battery/ac/solar/output` from 30s-polled `selectedDeviceState`); curve = **today's** API history via `useHistoryFetcher` (`batteryPower/exchangeChargingPower/generationPower/outputPower`), real-time X-axis (12am/4am/8am/12pm/4pm/8pm/12am), pinch/wheel zoom (min 1h) + pan.
+- *Alerts panel*: firing alarms (`firingAlarms`) + history alarms.
+
+**DeviceMonitorPage** (`/device/:id`)
+- *SoC card*: ring **Battery** % (`remainingBatteryCapacity`), **AC** W, **Solar** W, **Output** W.
+- *Real-Time Power chart*: badge + area chart, tabs battery/ac/solar/output, 12am–12am axis.
+
+**DeviceDetailPage** (`/device/:id/settings` — Device Info)
+- *Name edit*, *icon picker*.
+- *Device Info*: model, **Serial Number** (`serialNumber`), **Rated Capacity** (`acInvOutputPower×2`, Wh→kWh), **Rated Output Power** W (`ratedPower`), **Rated Voltage** 120V (fixed), **Cycles** (`numberOfBatteryUsageCycles`), **Temperature** °F (`batteryTemp`), Wi-Fi (`isOnline`), firmware (`softwareVersion`).
+- *Sleep Mode editor* (`sleepFrom`/`sleepTo` + scheduler), *Battery Priority sheet* (Backup 100% / Savings 60%), *delete dialog*.
+
+**StatsPage** (`/insights`)
+- *Header*: days-in-service (from `installedAt`).
+- *Period selector* (Day/Week/Month/Range) + *date navigator*.
+- *CO₂ card*: CO₂ reduced Kg + eco insight + formula.
+- *Input vs. Output chart*: insight text; Week=bar pairs, Day/Month/Range=line w/ scrub tooltip (input/output kWh).
+- (Battery Health card removed.)
+
+**SettingPage** (`/setting`)
+- *Profile card*: avatar, name, account action, founder badge.
+- *Push Notifications*: Power Outage (`pushNotifications`), Low Battery (`pushLowBattery`)+threshold slider (`lowBatteryThreshold`), Solar Status (`pushSolarStatus`). Toggles drive Web Push enable/disable.
+- *Feedback modal* (EmailJS), *Founder badge modal*, *data export*, legal links + version.
+
+**SmartSchedulePage** (`/smart-schedule`)
+- *Enable toggle*, *24h clock donut* (charge/discharge/idle arcs).
+- *Peak/Off-peak cards*, *periods list* (`startTime–endTime`,`type`).
+- *Prices*: peak/off-peak/part-peak $/kWh. *Params*: max charge/discharge W, min/max SOC %. *Estimated savings* daily/monthly/yearly.
+
+**NotificationsPage** (`/notifications`)
+- *Active Now*: firing alarms (`alarmMessage`, severity, time). *History*: title, severity, device/station, dismiss (`isProcessed`), load-more.
+
+**DataExportPage** (`/data-export`)
+- *Privacy notice*, *JSON/CSV export*, *recycle bin*, *analytics toggle*, legal links.
+
+**PassthroughPage** (`/device/:id/passthrough`)
+- *Preset groups* (Read Data / Switch Control / Parameter Settings), *charge-power settings*, *custom hex frame*, *parsed params groups*, *TX/RX log*.
+
+**DebugParamsPage** (`/device/:id/debug-params`) — raw register names (exempt from canon)
+- Device meta; 7 param groups (Charge/Capacity, Power, Voltage/Freq, Temperature, Energy Stats, Switch State, Mode/Version); UI-derived rows (netChargeW, capacity Wh, remaining Wh, **Battery Time** via `batteryTimeLabel`); history stats; raw API field dump.
 
 ## UI metric label conventions (user-facing display text)
 Same metric → same label across all rendered pages (DebugParamsPage is exempt — it intentionally
