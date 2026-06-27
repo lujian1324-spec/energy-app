@@ -17,6 +17,29 @@ import {
   type ProtocolType,
 } from '../types/protocol'
 import { logConnection, logCommand, addAlert } from '../db/powerflowDB'
+import { Capacitor } from '@capacitor/core'
+
+/** 功率数据包解码 (6 bytes: int16×3 little-endian)，Web/原生共用 */
+function decodePowerPacket(view: DataView): BlePowerPacket {
+  return {
+    inputPower:  view.getInt16(0, true),
+    outputPower: view.getInt16(2, true),
+    temperature: view.getInt16(4, true) / 10,
+  }
+}
+
+/** Web 与原生两套实现共享的公开接口 */
+export interface IBleManager {
+  connect(): Promise<void>
+  disconnect(): Promise<void>
+  setMode(mode: string): Promise<boolean>
+  setChargeLimit(limit: number): Promise<boolean>
+  togglePort(portBit: number, enable: boolean): Promise<boolean>
+  subscribeNotifications(): Promise<void>
+  readAll(): Promise<void>
+  readonly isConnected: boolean
+  readonly connectedDeviceName: string | undefined
+}
 
 // ----------------------------------------------------------------
 // 类型（补全 Web Bluetooth API 缺失的 TS 类型）
@@ -395,13 +418,207 @@ export class BleManager {
 }
 
 // ----------------------------------------------------------------
-// 单例导出（全应用共享一个 BleManager 实例）
+// 原生 BLE（Capacitor / @capacitor-community/bluetooth-le）
+//   WebView 不支持 Web Bluetooth，原生包走此实现。GATT 服务/特征 UUID 与
+//   Web 版完全一致，仅传输层由 BleClient 承接。
 // ----------------------------------------------------------------
-let _bleInstance: BleManager | null = null
+class NativeBleManager implements IBleManager {
+  private deviceId: string | null = null
+  private deviceName: string | undefined
+  private connected = false
+  private cb: BleCallbacks
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null
+  private reconnectAttempts = 0
+  private readonly MAX_RECONNECT = 5
 
-export function getBleManager(callbacks: BleCallbacks): BleManager {
+  constructor(callbacks: BleCallbacks) {
+    this.cb = callbacks
+  }
+
+  // 动态加载插件，避免进入 Web 主包
+  private async ble() {
+    const { BleClient, numbersToDataView } = await import('@capacitor-community/bluetooth-le')
+    return { BleClient, numbersToDataView }
+  }
+
+  async connect(): Promise<void> {
+    this._emitStatus({ protocol: 'bluetooth', status: 'scanning' })
+    try {
+      const { BleClient } = await this.ble()
+      await BleClient.initialize({ androidNeverForLocation: true })
+      const device = await BleClient.requestDevice({
+        namePrefix: 'Sierro',
+        optionalServices: [BLE_UUIDS.POWER_SERVICE, BLE_UUIDS.DEVICE_INFO_SERVICE],
+      })
+      this.deviceId = device.deviceId
+      this.deviceName = device.name
+      this._emitStatus({ protocol: 'bluetooth', status: 'connecting', deviceName: this.deviceName })
+
+      await BleClient.connect(this.deviceId, () => this._onDisconnected())
+      this.connected = true
+      this.reconnectAttempts = 0
+
+      this._emitStatus({
+        protocol: 'bluetooth', status: 'connected',
+        deviceName: this.deviceName, deviceId: this.deviceId, lastConnectedAt: Date.now(),
+      })
+      void logConnection({
+        timestamp: Date.now(), protocol: 'bluetooth',
+        deviceName: this.deviceName ?? 'Unknown', deviceId: this.deviceId, action: 'connected',
+      })
+      void addAlert({
+        timestamp: Date.now(), type: 'connection_restored', severity: 'info',
+        message: `已连接 BLE 设备：${this.deviceName}`, resolved: false,
+      })
+
+      await this.readAll()
+      await this.subscribeNotifications()
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      if (/cancel|denied|no device/i.test(msg)) {
+        this._emitStatus({ protocol: 'bluetooth', status: 'disconnected' })
+        return
+      }
+      this._emitStatus({ protocol: 'bluetooth', status: 'error', errorMessage: msg })
+      void addAlert({
+        timestamp: Date.now(), type: 'connection_lost', severity: 'warning',
+        message: `BLE 连接失败：${msg}`, resolved: false,
+      })
+    }
+  }
+
+  async disconnect(): Promise<void> {
+    this._clearReconnectTimer()
+    if (this.deviceId) {
+      try { const { BleClient } = await this.ble(); await BleClient.disconnect(this.deviceId) } catch { /* ignore */ }
+    }
+    this.connected = false
+    this._emitStatus({ protocol: 'bluetooth', status: 'disconnected' })
+  }
+
+  async setMode(mode: string): Promise<boolean> {
+    return this._write(BLE_UUIDS.CHAR_OPERATING_MODE, [MODE_ENCODE[mode] ?? 0], `setMode(${mode})`)
+  }
+
+  async setChargeLimit(limit: number): Promise<boolean> {
+    const clamped = Math.max(50, Math.min(100, limit))
+    return this._write(BLE_UUIDS.CHAR_CHARGE_LIMIT, [clamped], `setChargeLimit(${clamped})`)
+  }
+
+  async togglePort(portBit: number, enable: boolean): Promise<boolean> {
+    if (!this.deviceId) return false
+    try {
+      const { BleClient } = await this.ble()
+      const current = await BleClient.read(this.deviceId, BLE_UUIDS.POWER_SERVICE, BLE_UUIDS.CHAR_PORT_STATUS)
+      const bitmap = current.getUint8(0)
+      const newBitmap = enable ? bitmap | (1 << portBit) : bitmap & ~(1 << portBit)
+      return this._write(BLE_UUIDS.CHAR_PORT_STATUS, [newBitmap], `togglePort(${portBit},${enable})`)
+    } catch {
+      return false
+    }
+  }
+
+  async subscribeNotifications(): Promise<void> {
+    if (!this.deviceId) return
+    const { BleClient } = await this.ble()
+    const S = BLE_UUIDS.POWER_SERVICE
+    const sub = async (uuid: string, fn: (v: DataView) => void) => {
+      try { await BleClient.startNotifications(this.deviceId!, S, uuid, fn) } catch { /* not notifiable */ }
+    }
+    await sub(BLE_UUIDS.CHAR_BATTERY_LEVEL, v => this.cb.onBatteryLevel(v.getUint8(0)))
+    await sub(BLE_UUIDS.CHAR_POWER_DATA, v => this.cb.onPowerData(decodePowerPacket(v)))
+    await sub(BLE_UUIDS.CHAR_PORT_STATUS, v => this.cb.onPortStatus(v.getUint8(0)))
+    await sub(BLE_UUIDS.CHAR_OPERATING_MODE, v => this.cb.onModeChange(MODE_DECODE[v.getUint8(0)] ?? 'solar'))
+  }
+
+  async readAll(): Promise<void> {
+    if (!this.deviceId) return
+    try {
+      const { BleClient } = await this.ble()
+      const S = BLE_UUIDS.POWER_SERVICE
+      const read = (uuid: string) => BleClient.read(this.deviceId!, S, uuid)
+      try { this.cb.onBatteryLevel((await read(BLE_UUIDS.CHAR_BATTERY_LEVEL)).getUint8(0)) } catch { /* opt */ }
+      try { this.cb.onPowerData(decodePowerPacket(await read(BLE_UUIDS.CHAR_POWER_DATA))) } catch { /* opt */ }
+      try { this.cb.onPortStatus((await read(BLE_UUIDS.CHAR_PORT_STATUS)).getUint8(0)) } catch { /* opt */ }
+      try { this.cb.onModeChange(MODE_DECODE[(await read(BLE_UUIDS.CHAR_OPERATING_MODE)).getUint8(0)] ?? 'solar') } catch { /* opt */ }
+    } catch (err) {
+      console.warn('[NativeBLE] readAll 失败:', err)
+    }
+  }
+
+  private async _write(uuid: string, bytes: number[], commandName: string): Promise<boolean> {
+    if (!this.deviceId) return false
+    const t0 = Date.now()
+    try {
+      const { BleClient, numbersToDataView } = await this.ble()
+      await BleClient.write(this.deviceId, BLE_UUIDS.POWER_SERVICE, uuid, numbersToDataView(bytes))
+      void logCommand({
+        timestamp: t0, source: 'user', protocol: 'bluetooth', command: commandName,
+        payload: bytes.map(b => b.toString(16).padStart(2, '0')).join(' '),
+        success: true, responseMs: Date.now() - t0,
+      })
+      return true
+    } catch (err) {
+      void logCommand({ timestamp: t0, source: 'user', protocol: 'bluetooth', command: commandName, success: false, responseMs: Date.now() - t0 })
+      console.error('[NativeBLE] 写入失败:', commandName, err)
+      return false
+    }
+  }
+
+  private _onDisconnected(): void {
+    this.connected = false
+    this._emitStatus({ protocol: 'bluetooth', status: 'disconnected', deviceName: this.deviceName })
+    void logConnection({
+      timestamp: Date.now(), protocol: 'bluetooth',
+      deviceName: this.deviceName ?? 'Unknown', deviceId: this.deviceId ?? '', action: 'disconnected',
+    })
+    this._scheduleReconnect()
+  }
+
+  private _scheduleReconnect(): void {
+    if (this.reconnectAttempts >= this.MAX_RECONNECT || !this.deviceId) {
+      if (this.reconnectAttempts >= this.MAX_RECONNECT) {
+        void addAlert({ timestamp: Date.now(), type: 'connection_lost', severity: 'critical', message: 'BLE 断线后多次重连失败，已停止尝试', resolved: false })
+      }
+      return
+    }
+    const delay = Math.min(2000 * Math.pow(2, this.reconnectAttempts), 30000)
+    this.reconnectAttempts++
+    this.reconnectTimer = setTimeout(async () => {
+      try {
+        const { BleClient } = await this.ble()
+        await BleClient.connect(this.deviceId!, () => this._onDisconnected())
+        this.connected = true
+        this.reconnectAttempts = 0
+        this._emitStatus({ protocol: 'bluetooth', status: 'connected', deviceName: this.deviceName, deviceId: this.deviceId!, lastConnectedAt: Date.now() })
+        await this.readAll()
+        await this.subscribeNotifications()
+      } catch {
+        this._scheduleReconnect()
+      }
+    }, delay)
+  }
+
+  private _clearReconnectTimer(): void {
+    if (this.reconnectTimer) { clearTimeout(this.reconnectTimer); this.reconnectTimer = null }
+  }
+
+  private _emitStatus(info: ConnectionInfo): void { this.cb.onStatusChange(info) }
+
+  get isConnected(): boolean { return this.connected }
+  get connectedDeviceName(): string | undefined { return this.deviceName }
+}
+
+// ----------------------------------------------------------------
+// 单例导出（全应用共享一个 BleManager 实例）— 按平台选择实现
+// ----------------------------------------------------------------
+let _bleInstance: IBleManager | null = null
+
+export function getBleManager(callbacks: BleCallbacks): IBleManager {
   if (!_bleInstance) {
- _bleInstance = new BleManager(callbacks)
+    _bleInstance = Capacitor.isNativePlatform()
+      ? new NativeBleManager(callbacks)
+      : new BleManager(callbacks)
   }
   return _bleInstance
 }

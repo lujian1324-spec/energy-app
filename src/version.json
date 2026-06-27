@@ -1,8 +1,9 @@
 {
-  "version": "3.17.0",
-  "build": 2541,
+  "version": "3.17.1",
+  "build": 2542,
   "date": "2026-06-26",
   "changelog": [
+    "Native BLE: bleManager now has dual backend - Web Bluetooth (PWA) + @capacitor-community/bluetooth-le (native), selected by isNativePlatform; same GATT UUIDs/callbacks (native transfer layer needs real-device validation)",
     "Native (Capacitor) permissions: permissions.ts + notifications now use native plugins on iOS/Android (push/local-notifications, camera, bluetooth-le) via isNativePlatform branch; Android manifest permissions added; iOS Info.plist + setup documented in docs/NATIVE_SETUP.md",
     "iOS/Android adaptation: ship real PNG icons (192/512/apple-touch-180/badge-96) — iOS ignores SVG home-screen icons and Android notification icons must be raster; manifest now PNG + maskable; apple-touch-icon PNG + apple-mobile-web-app-title; notifications use existing PNG icon/badge; outage notif goes through SW (iOS PWA compatible)",
     "Fix Real-Time Power chart: history never loaded (useHistoryFetcher checked res.success which does not exist -> now isApiSuccess(res.code)); widen zoom/pan gesture area to whole chart + add desktop wheel-zoom",

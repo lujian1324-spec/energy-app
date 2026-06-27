@@ -57,11 +57,16 @@ Google services Gradle plugin (per @capacitor/push-notifications docs).
 | Wi-Fi/Network | ✅ online probe | ✅ NETWORK/WIFI_STATE | ✅ NSLocalNetworkUsageDescription |
 | localStorage | ✅ | ✅ (WebView) | ✅ (WebView) |
 
-## Still TODO for full native parity (not done here — needs native build/test)
-- `src/protocols/bleManager.ts` still uses **Web Bluetooth** (`navigator.bluetooth`).
-  For native BLE it must branch to `@capacitor-community/bluetooth-le`
-  (`BleClient.requestDevice` / `connect` / `startNotifications`). Permission
-  acquisition is wired; the data-transfer layer is not yet ported.
-- QR scanning (`useQRScanner.ts`) uses `getUserMedia`; for best native UX consider
-  a native scanner, though getUserMedia works in the WebView once CAMERA is granted.
-- Wire `PushNotifications` token listeners → backend (reuse `webPushApi` contract).
+## Done
+- `src/protocols/bleManager.ts` now has BOTH backends: `BleManager` (Web Bluetooth)
+  and `NativeBleManager` (`@capacitor-community/bluetooth-le`). `getBleManager()`
+  picks by `Capacitor.isNativePlatform()`. Same GATT service/characteristic UUIDs,
+  same callbacks. **Must be validated on a real device / native build** — the
+  transfer layer (connect/read/write/notify/reconnect) is code-complete but
+  untested in CI here.
+
+## Still TODO for full native parity (needs native build/test)
+- QR scanning (`useQRScanner.ts`) uses `getUserMedia`; works in the WebView once
+  CAMERA is granted, but a native scanner plugin gives better UX.
+- Wire `PushNotifications` token listeners (`registration` / `registrationError` /
+  `pushNotificationReceived`) → backend (reuse the `webPushApi` contract).
