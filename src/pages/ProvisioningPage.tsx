@@ -227,7 +227,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
         onDisconnected: () => store.setErrorMessage('Device disconnected'),
       })
       await manager.connect()
-      const name = manager.btDevice?.name ?? 'Sierro Device'
+      const name = manager.deviceName ?? 'Sierro Device'
       const duid = manager.getDuid()
       store.setDeviceInfo(name, duid)
       setFoundDevices([{ name, serial: duid ?? 'Unknown' }])

@@ -72,7 +72,7 @@ export default function BleDebugPage() {
         onDisconnected: () => { addLog('error', 'Device disconnected'); setConnected(false) },
       })
       await manager.connect()
-      const name = manager.btDevice?.name ?? null
+      const name = manager.deviceName ?? null
       const id = manager.getDuid()
       setDeviceName(name)
       setDtuid(id)

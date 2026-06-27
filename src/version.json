@@ -1,8 +1,9 @@
 {
-  "version": "3.17.3",
-  "build": 2544,
+  "version": "3.18.0",
+  "build": 2545,
   "date": "2026-06-26",
   "changelog": [
+    "WiFi setup (BLE provisioning) now works on native iOS/Android: bleProvision.ts refactored to dual backend (Web Bluetooth + @capacitor-community/bluetooth-le) behind a shared base class; same FEE7/FED5/FED6 protocol, AES+Base64+packet framing, CID command set per spec v2.9",
     "Android: CI builds a downloadable debug APK and publishes it as a GitHub Release asset (apk-v<version>)",
     "Native push: APNs/FCM token registration listeners (registration/received/action) report token to backend (nativePush.ts); wired on login + push-toggle, torn down on logout",
     "Native BLE: bleManager now has dual backend - Web Bluetooth (PWA) + @capacitor-community/bluetooth-le (native), selected by isNativePlatform; same GATT UUIDs/callbacks (native transfer layer needs real-device validation)",
