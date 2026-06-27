@@ -1,0 +1,19 @@
+{
+  "name": "sierro-push-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Reference push relay for Sierro Energy App — stores Web Push / APNs / FCM tokens and pushes alerts. Deploy alongside (or have the device backend call) /notify.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "keys:vapid": "web-push generate-vapid-keys"
+  },
+  "dependencies": {
+    "@parse/node-apn": "^6.0.1",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "firebase-admin": "^12.0.0",
+    "web-push": "^3.6.7"
+  }
+}
