@@ -43,6 +43,7 @@ import { useDeviceStore } from '../stores/deviceStore'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { mapFieldsToRealtime, mapFiringAlarms } from '../api/deviceApi'
 import { useHistoryFetcher } from '../hooks/useHistoryFetcher'
+import { loadRatedParams } from '../db/powerflowDB'
 import type { DeviceAlert } from '../types'
 import { detectOutageFromFields } from '../utils/powerOutageNotification'
 import { batteryTimeLabel } from '../utils/batteryTime'
@@ -215,15 +216,22 @@ export default function OverviewPage() {
   const batteryTemp = realtime?.batteryTemp ?? 0
   const currentDeviceListItem = devices.find(d => String(d.id) === selectedDeviceId)
 
+  // ─── 额定容量（Wh）= acInvOutputPower × 2，与 Device Info 页 Rated Capacity 同源 ───
+  const [batteryCapacityWh, setBatteryCapacityWh] = useState<number | undefined>(undefined)
+  useEffect(() => {
+    if (!selectedDeviceId) { setBatteryCapacityWh(undefined); return }
+    loadRatedParams(selectedDeviceId)
+      .then(p => setBatteryCapacityWh(p ? p.acInvOutputPower * 2 : undefined))
+      .catch(() => setBatteryCapacityWh(undefined))
+  }, [selectedDeviceId])
+
   // ─── 预估剩余时间（统一口径，见 utils/batteryTime，与 DeviceMonitorPage 一致）───
-  const batteryRatedPowerKW =
-    currentDeviceListItem?.ratedPower ?? selectedDeviceDetails?.ratedPower
   const batteryTimeStr = useMemo(() => batteryTimeLabel({
     acPower, solarPower, outputPower,
     soc: remainingBatteryCapacity,
-    ratedPowerKW: batteryRatedPowerKW,
+    capacityWh: batteryCapacityWh,
     isCharging: batteryPower > 0,
-  }), [acPower, solarPower, outputPower, remainingBatteryCapacity, batteryRatedPowerKW, batteryPower])
+  }), [acPower, solarPower, outputPower, remainingBatteryCapacity, batteryCapacityWh, batteryPower])
   const acOut1Enable = realtime?.acOut1Enable ?? false
   const acOut2Enable = realtime?.acOut2Enable ?? false
   const usbOut1Enable = realtime?.usbOut1Enable ?? false

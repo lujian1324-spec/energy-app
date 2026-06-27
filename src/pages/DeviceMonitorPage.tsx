@@ -6,6 +6,7 @@ import BatteryRing from '../components/BatteryRing'
 import { useDeviceStore } from '../stores/deviceStore'
 import { mapFieldsToRealtime, type HistoryDataResponse } from '../api/deviceApi'
 import { batteryTimeLabel } from '../utils/batteryTime'
+import { loadRatedParams } from '../db/powerflowDB'
 import { getDemoDayCurve } from '../data/demoData'
 
 // ─── Chart metric tabs ────────────────────────────────────────────────────────
@@ -311,11 +312,20 @@ export default function DeviceMonitorPage() {
   const isCharging = batteryPower > 0
   const isOnline = device?.isOnline ?? true
 
+  // 额定容量（Wh）= acInvOutputPower × 2，与 Device Info 页 Rated Capacity 同源
+  const [batteryCapacityWh, setBatteryCapacityWh] = useState<number | undefined>(undefined)
+  useEffect(() => {
+    if (!id) { setBatteryCapacityWh(undefined); return }
+    loadRatedParams(id)
+      .then(p => setBatteryCapacityWh(p ? p.acInvOutputPower * 2 : undefined))
+      .catch(() => setBatteryCapacityWh(undefined))
+  }, [id])
+
   // 统一口径：电池剩余/充满时间（见 utils/batteryTime）
   const timeStr = batteryTimeLabel({
     acPower, solarPower, outputPower,
     soc: remainingBatteryCapacity,
-    ratedPowerKW: device?.ratedPower,
+    capacityWh: batteryCapacityWh,
     isCharging,
   })
 
