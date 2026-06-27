@@ -6,6 +6,7 @@
  */
 import { useState, useEffect, useRef } from 'react'
 import { fetchHistoryData } from '../api/deviceApi'
+import { isApiSuccess } from '../utils/apiClient'
 import {
   getHistoryByDeviceAndRange,
   saveHistoryBatch,
@@ -99,8 +100,8 @@ export function useHistoryFetcher(
 
           if (cancelRef.current) break
 
-          if (!res.success || !res.data) {
-            setError(res.message ?? 'API error')
+          if (!isApiSuccess(res.code) || !res.data) {
+            setError(res.message ?? res.msg ?? 'API error')
             break
           }
 

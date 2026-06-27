@@ -1,8 +1,9 @@
 {
-  "version": "3.16.0",
-  "build": 2538,
+  "version": "3.16.1",
+  "build": 2539,
   "date": "2026-06-26",
   "changelog": [
+    "Fix Real-Time Power chart: history never loaded (useHistoryFetcher checked res.success which does not exist -> now isApiSuccess(res.code)); widen zoom/pan gesture area to whole chart + add desktop wheel-zoom",
     "Web Push (client side): subscribe via VAPID + report PushSubscription to backend on enabling notifications; idempotent re-sync on launch; unsubscribe on logout. Workbox SW now importScripts sw-push.js so server pushes display when app is closed/locked (requires backend VAPID push to deliver)",
     "Low battery: banner threshold text now reflects Settings value; global low-battery monitor polls all devices app-wide and pushes a system notification when SOC crosses the threshold (fires while app runs in foreground or background; 30-min per-device throttle)",
     "Insights: remove Battery Health card (ring + Battery/Temperature/Days/Health tiles)",

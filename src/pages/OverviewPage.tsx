@@ -392,7 +392,7 @@ export default function OverviewPage() {
     viewAtStart: [number, number]
   }>({ mode: null, lastX: 0, lastDist: 0, viewAtStart: [todayFrom, todayTo] })
 
-  const onChartTouchStart = useCallback((e: React.TouchEvent<SVGSVGElement>) => {
+  const onChartTouchStart = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
     if (e.touches.length === 1) {
       chartTouchRef.current = {
         mode: 'pan',
@@ -413,7 +413,7 @@ export default function OverviewPage() {
     e.stopPropagation()
   }, [viewStart, viewEnd])
 
-  const onChartTouchMove = useCallback((e: React.TouchEvent<SVGSVGElement>) => {
+  const onChartTouchMove = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
     const ref = chartTouchRef.current
     if (!ref.mode) return
     const svgEl = e.currentTarget
@@ -452,12 +452,27 @@ export default function OverviewPage() {
     e.stopPropagation()
   }, [viewStart, viewEnd, clampView])
 
-  const onChartTouchEnd = useCallback((e: React.TouchEvent<SVGSVGElement>) => {
+  const onChartTouchEnd = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
     if (e.touches.length === 0) {
       chartTouchRef.current.mode = null
     }
     e.stopPropagation()
   }, [])
+
+  // 桌面端：滚轮缩放（以指针位置为锚点，最小 1 小时）
+  const onChartWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+    const el = e.currentTarget
+    const rect = el.getBoundingClientRect()
+    const width = rect.width || 300
+    const winMs = viewEnd - viewStart
+    const pivotMs = viewStart + ((e.clientX - rect.left) / width) * winMs
+    const scale = e.deltaY > 0 ? 1.15 : 1 / 1.15 // 下滚放大窗口（缩小），上滚放大
+    const newWin = Math.max(MIN_WINDOW, Math.min(todayTo - todayFrom, winMs * scale))
+    const ratio = (pivotMs - viewStart) / winMs
+    const [cs, ce] = clampView(pivotMs - ratio * newWin, pivotMs - ratio * newWin + newWin)
+    setViewStart(cs)
+    setViewEnd(ce)
+  }, [viewStart, viewEnd, clampView, todayFrom, todayTo])
 
   // ─── Build SVG path from history points, mapped onto viewStart..viewEnd ───
   const chartPoints = useMemo(() => {
@@ -997,8 +1012,15 @@ export default function OverviewPage() {
                 </motion.span>
               </div>
 
-              {/* Chart area with time X-axis */}
-              <div className="relative mb-1" style={{ height: 96 }}>
+              {/* Chart area with time X-axis — gestures captured on the whole area */}
+              <div
+                className="relative mb-1"
+                style={{ height: 96, touchAction: 'none' }}
+                onTouchStart={onChartTouchStart}
+                onTouchMove={onChartTouchMove}
+                onTouchEnd={onChartTouchEnd}
+                onWheel={onChartWheel}
+              >
                 {/* Loading spinner overlay */}
                 {historyLoading && rawHistoryPoints.length === 0 && (
                   <div className="absolute inset-0 flex items-center justify-center z-10">
@@ -1029,9 +1051,6 @@ export default function OverviewPage() {
                   viewBox="0 0 300 70"
                   preserveAspectRatio="none"
                   style={{ display: 'block', touchAction: 'none' }}
-                  onTouchStart={onChartTouchStart}
-                  onTouchMove={onChartTouchMove}
-                  onTouchEnd={onChartTouchEnd}
                 >
                   {/* Y grid lines */}
                   <line x1="0" y1="15" x2="300" y2="15" stroke="rgba(255,255,255,0.05)" strokeWidth="0.8" />
