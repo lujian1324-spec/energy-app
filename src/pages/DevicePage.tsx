@@ -39,6 +39,8 @@ import { usePowerStationStore } from '../stores/powerStationStore'
 import sierro2000Img from '../assets/sierro-2000-product.webp'
 import { mapFieldsToRealtime, fetchDeviceState } from '../api/deviceApi'
 import { formatTemp } from '../utils/localization'
+import { batteryTimeLabel } from '../utils/batteryTime'
+import { loadRatedParams } from '../db/powerflowDB'
 import type { DeviceListItem, DeviceStateField } from '../api/deviceApi'
 import { getDemoDeviceState } from '../data/demoData'
 
@@ -361,6 +363,26 @@ export default function DevicePage() {
     return remainingBatteryCapacity !== null && remainingBatteryCapacity < lowBatteryThreshold
   })
 
+  // 低电量横幅剩余时间：统一走 batteryTimeLabel（容量 = acInvOutputPower×2，缺省 1000）
+  const [lowBatteryCapacityWh, setLowBatteryCapacityWh] = useState<number | undefined>(undefined)
+  useEffect(() => {
+    const lid = lowBatteryDevice ? String(lowBatteryDevice.id) : null
+    if (!lid) { setLowBatteryCapacityWh(undefined); return }
+    loadRatedParams(lid)
+      .then(p => setLowBatteryCapacityWh(p ? p.acInvOutputPower * 2 : undefined))
+      .catch(() => setLowBatteryCapacityWh(undefined))
+  }, [lowBatteryDevice?.id])
+  const lowBatteryTimeStr = lowBatteryDevice
+    ? batteryTimeLabel({
+        acPower: getDeviceNum(lowBatteryDevice.id, 'acPower') ?? 0,
+        solarPower: getDeviceNum(lowBatteryDevice.id, 'solarPower') ?? 0,
+        outputPower: getDeviceNum(lowBatteryDevice.id, 'outputPower') ?? 0,
+        soc: getDeviceNum(lowBatteryDevice.id, 'remainingBatteryCapacity') ?? 0,
+        capacityWh: lowBatteryCapacityWh,
+        isCharging: (getDeviceNum(lowBatteryDevice.id, 'batteryPower') ?? 0) > 0,
+      })
+    : '--'
+
   // 未读通知红点（查看通知页后清零）
   const hasUnreadNotifications = useNotificationStore(s => s.unreadCount()) > 0
 
@@ -517,7 +539,7 @@ export default function DevicePage() {
               <div className="flex-1 min-w-0">
                 <p className="text-body-md font-semibold text-white leading-tight truncate">Low Battery</p>
                 <p className="text-label text-white/90 mt-0.5 leading-snug">
-                  {lowBatteryDevice.name} • Battery below 30%, estimated remaining time: {getDeviceField(String(lowBatteryDevice.id), 'remainingTime') || '1h 24m'}
+                  {lowBatteryDevice.name} • Battery below 30%, estimated remaining time: {lowBatteryTimeStr.replace(/ remaining$/, '')}
                 </p>
               </div>
               <button

@@ -3,12 +3,14 @@
  * 路由：/device/:id/debug-params
  * 显示本 App 所有 UI 使用的实时参数数值及原始 API 字段
  */
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ChevronLeft, RefreshCw, Loader2, History } from 'lucide-react'
 import { useDeviceStore } from '../stores/deviceStore'
 import { mapFieldsToRealtime } from '../api/deviceApi'
 import { useHistoryFetcher } from '../hooks/useHistoryFetcher'
+import { batteryTimeLabel } from '../utils/batteryTime'
+import { loadRatedParams } from '../db/powerflowDB'
 
 // ─── 参数分组描述 ─────────────────────────────────────────────────────────────
 
@@ -115,6 +117,15 @@ export default function DebugParamsPage() {
   const { devices, selectedDeviceState, loadDeviceState, isDemoMode } = useDeviceStore()
   const device = devices.find(d => String(d.id) === id)
 
+  // 额定容量（Wh）= acInvOutputPower × 2，与 batteryTime.ts / Device Info 页同源
+  const [batteryCapacityWh, setBatteryCapacityWh] = useState<number | undefined>(undefined)
+  useEffect(() => {
+    if (!id) { setBatteryCapacityWh(undefined); return }
+    loadRatedParams(id)
+      .then(p => setBatteryCapacityWh(p ? p.acInvOutputPower * 2 : undefined))
+      .catch(() => setBatteryCapacityWh(undefined))
+  }, [id])
+
   // ─── 6月25日历史数据（分页拉取，本地缓存） ──────────────────────────────────
   const [showRawHistory, setShowRawHistory] = useState(false)
   const targetDeviceId = useMemo(() => {
@@ -177,62 +188,30 @@ export default function DebugParamsPage() {
     const battP = num('batteryPower')
     const soc = num('remainingBatteryCapacity')
 
-    const inputPower = Math.max(acP, solarP, 0)
     const netChargeW = acP + solarP - outP
     const isCharging = battP > 0
 
-    const modelLower = (device?.model ?? '').toLowerCase()
-    const capacityWh = modelLower.includes('2000') ? 2000 : 1000
+    // 统一口径：容量(Wh) = acInvOutputPower × 2，缺省 1000（见 utils/batteryTime.ts）
+    const capacityWh = batteryCapacityWh && batteryCapacityWh > 0 ? batteryCapacityWh : 1000
     const remainingWh = (soc / 100) * capacityWh
-    const ratedCapacityWh = device?.ratedPower != null ? device.ratedPower * 1000 : capacityWh
+    const neededWh = ((100 - soc) / 100) * capacityWh
 
-    const fmtHM = (hours: number, suffix: string) => {
-      if (!isFinite(hours) || hours <= 0) return '--'
-      if (hours >= 1) {
-        const h = Math.floor(hours)
-        const m = Math.round((hours - h) * 60)
-        return `${h}h ${m}m ${suffix}`
-      }
-      const m = Math.round(hours * 60)
-      return m > 0 ? `${m}m ${suffix}` : '--'
-    }
-
-    // Overview 页：放电剩余时间（按机型容量估算）
-    const overviewRemaining =
-      soc > 0 && outP > 0 ? fmtHM(remainingWh / outP, 'remaining') : '--'
-    // Overview 页：充满时间
-    const overviewToFull =
-      soc < 100 && inputPower > 0
-        ? fmtHM((((100 - soc) / 100) * capacityWh) / inputPower, 'to full')
-        : '--'
-
-    // Device Monitor 页：双显（netChargeW 公式，与该页一致）
-    const fmtDur = (mins: number) => {
-      const m = Math.max(0, Math.round(mins))
-      return `${Math.floor(m / 60)}h${m % 60}m`
-    }
-    let monitorTime = '--'
-    if (netChargeW > 0) {
-      monitorTime = `${fmtDur(((ratedCapacityWh - soc) / netChargeW) * 60)} to full`
-    } else if (netChargeW < 0 && soc > 0) {
-      monitorTime = `${fmtDur((soc / -netChargeW) * 60)} remaining`
-    } else if (isCharging) {
-      monitorTime = 'Charging'
-    }
+    // 全 App 统一使用 batteryTimeLabel（Overview / Device Monitor / 此页同一函数）
+    const unifiedTime = batteryTimeLabel({
+      acPower: acP, solarPower: solarP, outputPower: outP,
+      soc, capacityWh: batteryCapacityWh, isCharging,
+    })
 
     return [
-      { label: 'Input Power (inputPower = max(AC,PV))', value: `${inputPower} W` },
       { label: 'Net Charge Power (netChargeW = AC+PV−Output)', value: `${netChargeW} W` },
       { label: 'Charging (isCharging = batteryPower>0)', value: isCharging ? 'Yes' : 'No' },
-      { label: 'Model Capacity (capacityWh)', value: `${capacityWh} Wh` },
-      { label: 'Rated Capacity (ratedCapacity = ratedPower×1000)', value: `${ratedCapacityWh} Wh` },
+      { label: 'Rated Capacity (capacityWh = acInvOutputPower×2)', value: `${capacityWh} Wh${batteryCapacityWh ? '' : ' (default)'}` },
       { label: 'Remaining Charge (remainingWh = SOC×Capacity)', value: `${Math.round(remainingWh)} Wh` },
-      { label: 'Overview Remaining Time (remainingTimeDisplay)', value: overviewRemaining },
-      { label: 'Overview Time to Full (chargeTimeDisplay)', value: overviewToFull },
-      { label: 'Monitor Time Display (timeStr)', value: monitorTime },
+      { label: 'Energy to Full (neededWh = (1−SOC)×Capacity)', value: `${Math.round(neededWh)} Wh` },
+      { label: 'Battery Time (batteryTimeLabel — unified)', value: unifiedTime },
       { label: 'Battery Health (batteryHealth, fixed)', value: '100 %' },
     ]
-  }, [rt, device?.model, device?.ratedPower])
+  }, [rt, batteryCapacityWh])
 
   return (
     <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">

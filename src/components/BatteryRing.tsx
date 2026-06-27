@@ -66,8 +66,8 @@ export default function BatteryRing({
   isCharging = false,
   isPlugged = false,
   connected = true,
-  timeToFull = '1h 24m',
-  timeRemaining = '4h 30m',
+  timeToFull = '--',
+  timeRemaining = '--',
   rawTimeLabel = false,
   uid = 'default',
 }: BatteryRingProps) {

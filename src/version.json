@@ -1,8 +1,9 @@
 {
-  "version": "3.14.2",
-  "build": 2535,
+  "version": "3.14.3",
+  "build": 2536,
   "date": "2026-06-26",
   "changelog": [
+    "Unify battery remaining/to-full time across app: DebugParamsPage + DevicePage low-battery banner now use batteryTimeLabel (capacity=acInvOutputPowerx2 Wh); removed duplicate/old buggy formulas",
     "Battery ring time estimate: default rated capacity fallback 5000Wh -> 1000Wh when nameplate not cached",
     "Fix battery ring time estimate: use real capacity (acInvOutputPower x2 Wh) so remaining/to-full = energyWh / power (was treating SOC%% as Wh, e.g. wrong 11m)",
     "UI polish: tabular numbers on live values (no jitter), scale-on-press feedback on buttons, balanced heading/body text wrap, skip page-enter animation on first load, replace transition-all with explicit properties",
