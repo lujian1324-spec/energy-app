@@ -1,8 +1,9 @@
 {
-  "version": "3.18.11",
-  "build": 2556,
+  "version": "3.19.0",
+  "build": 2557,
   "date": "2026-06-26",
   "changelog": [
+    "Radius unification: migrate all legacy rounded-md/lg/xl to canonical scale (md->m 8px, lg/xl->l 12px) so every surface uses s/m/l/pill; cards & dialogs now uniform 12px, inputs/tiles consistent (modal sheet tops keep their 28px arbitrary radius)",
     "Color tokens: snap off-palette grays to ink scale (#A0A0A5/#AEAEB2->ink-6, #636366->ink-7 per config intent) and unify #FF3530->danger; removes off-palette colors",
     "Design-token sweep (components): same value-identical hex->token + rounded-sm->rounded-m pass over src/components",
     "Design-token sweep (pages): replace value-identical hardcoded hex (#262626->ink-10, #BFBFBF->ink-6, #01D6BE->primary, etc.) with tokens; rounded-sm->rounded-m (both 8px). Zero visual change, consistency only",

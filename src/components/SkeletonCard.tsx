@@ -6,7 +6,7 @@ function SkeletonBlock({ className }: { className?: string }) {
     <motion.div
       animate={{ opacity: [0.4, 0.7, 0.4] }}
       transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-      className={`bg-ink-9 rounded-lg ${className ?? ''}`}
+      className={`bg-ink-9 rounded-l ${className ?? ''}`}
     />
   )
 }

@@ -403,7 +403,7 @@ export default function SettingPage() {
               onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(255,149,0,0.1)]">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[rgba(255,149,0,0.1)] flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-l bg-[rgba(255,149,0,0.1)] flex items-center justify-center">
                     <Headphones size={20} className="text-warning" />
                   </div>
                   <div>
@@ -427,17 +427,17 @@ export default function SettingPage() {
                     <div>
                       <label className="text-[12px] font-semibold text-ink-6 mb-2 flex items-center gap-2"><Icon name="email" size={14} />Your Email</label>
                       <input type="email" required value={supportEmail} onChange={e => setSupportEmail(e.target.value)} placeholder="you@example.com"
-                        className="w-full px-4 py-3 rounded-xl bg-ink-12 border border-[rgba(1,214,190,0.15)] text-ink-1 text-body-md placeholder:text-ink-7 focus:outline-none focus:border-[rgba(1,214,190,0.4)] transition-colors" />
+                        className="w-full px-4 py-3 rounded-l bg-ink-12 border border-[rgba(1,214,190,0.15)] text-ink-1 text-body-md placeholder:text-ink-7 focus:outline-none focus:border-[rgba(1,214,190,0.4)] transition-colors" />
                     </div>
                     <div>
                       <label className="text-[12px] font-semibold text-ink-6 mb-2 flex items-center gap-2"><Icon name="feedback" size={14} />Your Feedback</label>
                       <textarea required value={supportMessage} onChange={e => setSupportMessage(e.target.value)} placeholder="Describe your issue or suggestion..." rows={4}
-                        className="w-full px-4 py-3 rounded-xl bg-ink-12 border border-[rgba(1,214,190,0.15)] text-ink-1 text-body-md placeholder:text-ink-7 resize-none focus:outline-none focus:border-[rgba(1,214,190,0.4)] transition-colors" />
+                        className="w-full px-4 py-3 rounded-l bg-ink-12 border border-[rgba(1,214,190,0.15)] text-ink-1 text-body-md placeholder:text-ink-7 resize-none focus:outline-none focus:border-[rgba(1,214,190,0.4)] transition-colors" />
                     </div>
                     {supportError && (
                       <p className="text-[12px] text-danger text-center">{supportError}</p>
                     )}
-                    <button type="submit" disabled={supportSending} className="w-full py-3.5 rounded-xl bg-[rgba(255,149,0,0.12)] text-warning font-semibold text-body-md flex items-center justify-center gap-2 active:scale-95 transition-transform border border-[rgba(255,149,0,0.2)] disabled:opacity-50">
+                    <button type="submit" disabled={supportSending} className="w-full py-3.5 rounded-l bg-[rgba(255,149,0,0.12)] text-warning font-semibold text-body-md flex items-center justify-center gap-2 active:scale-95 transition-transform border border-[rgba(255,149,0,0.2)] disabled:opacity-50">
                       {supportSending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                       {supportSending ? 'Sending...' : 'Submit Feedback'}
                     </button>
@@ -469,7 +469,7 @@ export default function SettingPage() {
                 </div>
                 <div className="flex gap-3">
                   <button disabled={deleteLoading} onClick={() => setShowDeleteConfirm(false)}
-                    className="flex-1 py-3 rounded-xl bg-[rgba(255,255,255,0.06)] text-ink-1 font-semibold text-body-md disabled:opacity-50">
+                    className="flex-1 py-3 rounded-l bg-[rgba(255,255,255,0.06)] text-ink-1 font-semibold text-body-md disabled:opacity-50">
                     Cancel
                   </button>
                   <button disabled={deleteLoading} onClick={async () => {
@@ -481,7 +481,7 @@ export default function SettingPage() {
                     setShowDeleteConfirm(false)
                     setDeleteLoading(false)
                   }}
-                    className="flex-1 py-3 rounded-xl bg-[rgba(255,59,48,0.15)] text-danger font-semibold text-body-md border border-[rgba(255,59,48,0.3)] flex items-center justify-center gap-2 disabled:opacity-50">
+                    className="flex-1 py-3 rounded-l bg-[rgba(255,59,48,0.15)] text-danger font-semibold text-body-md border border-[rgba(255,59,48,0.3)] flex items-center justify-center gap-2 disabled:opacity-50">
                     {deleteLoading ? <Loader2 size={16} className="animate-spin" /> : 'Delete'}
                   </button>
                 </div>
@@ -503,7 +503,7 @@ export default function SettingPage() {
               onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(255,215,0,0.1)]">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[rgba(255,215,0,0.1)] flex items-center justify-center"><Crown size={20} className="text-membership" /></div>
+                  <div className="w-10 h-10 rounded-l bg-[rgba(255,215,0,0.1)] flex items-center justify-center"><Crown size={20} className="text-membership" /></div>
                   <div>
                     <h3 className="text-base font-bold text-ink-1">Founder Badge</h3>
                     <p className="text-[11px] text-ink-6">Unlock exclusive benefits</p>
@@ -524,7 +524,7 @@ export default function SettingPage() {
                       <p className="text-[12px] text-ink-6 mb-3">Founding Members enjoy:</p>
                       <div className="grid grid-cols-2 gap-2">
                         {founderBenefits.map(b => { const Icon = b.icon; return (
-                          <div key={b.label} className="flex items-center gap-2 bg-[rgba(255,215,0,0.05)] rounded-lg p-2">
+                          <div key={b.label} className="flex items-center gap-2 bg-[rgba(255,215,0,0.05)] rounded-l p-2">
                             <Icon size={14} className="text-membership" /><span className="text-[11px] text-ink-1">{b.label}</span>
                           </div>
                         )})}
@@ -534,10 +534,10 @@ export default function SettingPage() {
                       <div>
                         <label className="text-[12px] font-semibold text-ink-6 mb-2 flex items-center gap-2"><Sparkles size={14} />Enter Code</label>
                         <input type="text" required value={founderCode} onChange={e => setFounderCode(e.target.value)} placeholder="e.g., FOUNDER2024"
-                          className="w-full px-4 py-3 rounded-xl bg-ink-12 border border-[rgba(255,215,0,0.2)] text-ink-1 text-body-md placeholder:text-ink-7 uppercase focus:outline-none focus:border-[rgba(255,215,0,0.5)] transition-colors" />
+                          className="w-full px-4 py-3 rounded-l bg-ink-12 border border-[rgba(255,215,0,0.2)] text-ink-1 text-body-md placeholder:text-ink-7 uppercase focus:outline-none focus:border-[rgba(255,215,0,0.5)] transition-colors" />
                       </div>
                       {founderMessage && <div className={`text-[11px] text-center ${founderSuccess ? 'text-success' : 'text-danger'}`}>{founderMessage}</div>}
-                      <button type="submit" className="w-full py-3.5 rounded-xl bg-[rgba(255,215,0,0.12)] text-membership font-semibold text-body-md flex items-center justify-center gap-2 active:scale-95 transition-transform border border-[rgba(255,215,0,0.25)]">
+                      <button type="submit" className="w-full py-3.5 rounded-l bg-[rgba(255,215,0,0.12)] text-membership font-semibold text-body-md flex items-center justify-center gap-2 active:scale-95 transition-transform border border-[rgba(255,215,0,0.25)]">
                         <Crown size={16} />Activate Badge
                       </button>
                     </form>

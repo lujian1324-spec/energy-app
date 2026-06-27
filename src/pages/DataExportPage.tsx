@@ -199,7 +199,7 @@ export default function DataExportPage() {
           <div className="px-4 py-3.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[rgba(168,85,247,0.12)] flex items-center justify-center">
+                <div className="w-10 h-10 rounded-l bg-[rgba(168,85,247,0.12)] flex items-center justify-center">
                   <RotateCcw size={18} className="text-[#A855F7]" />
                 </div>
                 <div>
@@ -227,7 +227,7 @@ export default function DataExportPage() {
             </span>
           </div>
           <div className="flex items-center gap-3 px-4 py-3.5">
-            <div className="w-9 h-9 rounded-lg bg-[rgba(52,199,89,0.1)] flex items-center justify-center flex-shrink-0">
+            <div className="w-9 h-9 rounded-l bg-[rgba(52,199,89,0.1)] flex items-center justify-center flex-shrink-0">
               <Check size={16} className="text-success" />
             </div>
             <div className="flex-1">

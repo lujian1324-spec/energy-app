@@ -133,7 +133,7 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
               value={deviceName}
               onChange={e => { setDeviceName(e.target.value); setError(null) }}
               placeholder="e.g. Sierro 1000"
-              className="w-full px-4 py-3 rounded-xl bg-ink-12 border border-[rgba(1,214,190,0.15)]
+              className="w-full px-4 py-3 rounded-l bg-ink-12 border border-[rgba(1,214,190,0.15)]
                 text-ink-1 text-[14px] placeholder:text-ink-7
                 focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
             />
@@ -149,7 +149,7 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
               value={serialNumber}
               onChange={e => { setSerialNumber(e.target.value); setError(null) }}
               placeholder="e.g. 999256001232612"
-              className="w-full px-4 py-3 rounded-xl bg-ink-12 border border-[rgba(1,214,190,0.15)]
+              className="w-full px-4 py-3 rounded-l bg-ink-12 border border-[rgba(1,214,190,0.15)]
                 text-ink-1 text-[14px] placeholder:text-ink-7
                 focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
             />
@@ -165,7 +165,7 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
               value={dtuDtuid}
               onChange={e => { setDtuDtuid(e.target.value); setError(null) }}
               placeholder="e.g. DTU serial number"
-              className="w-full px-4 py-3 rounded-xl bg-ink-12 border border-[rgba(1,214,190,0.15)]
+              className="w-full px-4 py-3 rounded-l bg-ink-12 border border-[rgba(1,214,190,0.15)]
                 text-ink-1 text-[14px] placeholder:text-ink-7
                 focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
             />
@@ -180,7 +180,7 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
               <select
                 value={stationId}
                 onChange={e => setStationId(Number(e.target.value))}
-                className="w-full px-4 py-3 rounded-xl bg-ink-12 border border-[rgba(1,214,190,0.15)]
+                className="w-full px-4 py-3 rounded-l bg-ink-12 border border-[rgba(1,214,190,0.15)]
                   text-ink-1 text-[14px] focus:outline-none focus:border-[rgba(1,214,190,0.5)]"
               >
                 {stations.map(s => (
@@ -208,7 +208,7 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
                 value={newStationName}
                 onChange={e => setNewStationName(e.target.value)}
                 placeholder="e.g. Home Solar Station"
-                className="w-full px-4 py-3 rounded-xl bg-ink-12 border border-[rgba(1,214,190,0.15)]
+                className="w-full px-4 py-3 rounded-l bg-ink-12 border border-[rgba(1,214,190,0.15)]
                   text-ink-1 text-[14px] placeholder:text-ink-7
                   focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
               />
@@ -217,7 +217,7 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
 
           {/* 错误提示 */}
           {error && (
-            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl
+            <div className="flex items-center gap-2 px-3 py-2.5 rounded-l
               bg-[rgba(255,59,48,0.08)] border border-[rgba(255,59,48,0.2)]">
               <AlertCircle size={14} className="text-danger flex-shrink-0" />
               <p className="text-[12px] text-danger">{error}</p>
@@ -228,7 +228,7 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
           <button
             type="submit"
             disabled={loading || !deviceName.trim()}
-            className="w-full py-3.5 rounded-xl font-semibold text-[14px]
+            className="w-full py-3.5 rounded-l font-semibold text-[14px]
               bg-primary text-ink-13
               disabled:opacity-40 disabled:cursor-not-allowed
               active:scale-[0.98] transition-all flex items-center justify-center gap-2"

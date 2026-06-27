@@ -208,7 +208,7 @@ export default function PrivacyPage() {
           <Icon name="chevron-left" size={20} />
         </button>
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-[rgba(1,214,190,0.1)] flex items-center justify-center">
+          <div className="w-8 h-8 rounded-l bg-[rgba(1,214,190,0.1)] flex items-center justify-center">
             <Icon name="privacy" size={16} />
           </div>
           <div>

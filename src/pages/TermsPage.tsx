@@ -115,7 +115,7 @@ export default function TermsPage() {
           <Icon name="chevron-left" size={20} />
         </button>
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-[rgba(52,199,89,0.1)] flex items-center justify-center">
+          <div className="w-8 h-8 rounded-l bg-[rgba(52,199,89,0.1)] flex items-center justify-center">
             <Icon name="term of use" size={16} />
           </div>
           <div>

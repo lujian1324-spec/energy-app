@@ -849,7 +849,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
       {/* Delete Confirm Dialog */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60 px-4 pb-8">
-          <div className="w-full max-w-sm bg-ink-11 rounded-xl overflow-hidden">
+          <div className="w-full max-w-sm bg-ink-11 rounded-l overflow-hidden">
             <div className="px-6 pt-6 pb-4 text-center">
               <p className="text-title-md font-semibold text-white mb-2">Delete Device</p>
               <p className="text-body-md text-ink-6">

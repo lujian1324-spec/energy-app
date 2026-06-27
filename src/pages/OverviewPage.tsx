@@ -638,7 +638,7 @@ export default function OverviewPage() {
                               : 'hover:bg-[rgba(255,255,255,0.05)]'
                             }`}
                         >
-                          <div className={`w-9 h-9 rounded-lg flex items-center justify-center
+                          <div className={`w-9 h-9 rounded-l flex items-center justify-center
                             ${isSelected
                               ? 'bg-[rgba(1,214,190,0.15)] text-primary'
                               : 'bg-[rgba(255,255,255,0.06)] text-ink-6'
@@ -837,7 +837,7 @@ export default function OverviewPage() {
                 {/* Sleep Mode */}
                 <div className="flex items-center justify-between px-4 py-3.5 border-b border-[rgba(255,255,255,0.06)]">
                   <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors
+                    <div className={`w-9 h-9 rounded-l flex items-center justify-center transition-colors
                       ${localSleepMode ? 'bg-[rgba(1,214,190,0.15)]' : 'bg-[rgba(255,255,255,0.06)]'}`}>
                       <Moon size={16} className={localSleepMode ? 'text-primary' : 'text-ink-6'} />
                     </div>
@@ -858,7 +858,7 @@ export default function OverviewPage() {
                 {/* Backup Mode / Saving Mode (workMode) */}
                 <div className="flex items-center justify-between px-4 py-3.5">
                   <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors
+                    <div className={`w-9 h-9 rounded-l flex items-center justify-center transition-colors
                       ${activeMode === 'backup' ? 'bg-[rgba(255,149,0,0.15)]' : 'bg-[rgba(52,199,89,0.15)]'}`}>
                       {activeMode === 'backup'
                         ? <Shield size={16} className="text-warning" />
@@ -924,7 +924,7 @@ export default function OverviewPage() {
                       ${index < 2 ? 'border-b border-[rgba(255,255,255,0.06)]' : ''}`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors
+                      <div className={`w-9 h-9 rounded-l flex items-center justify-center transition-colors
                         ${port.enabled ? 'bg-[rgba(52,199,89,0.15)]' : 'bg-[rgba(255,255,255,0.06)]'}`}>
                         <Zap size={16} className={port.enabled ? 'text-success' : 'text-ink-7'} />
                       </div>
@@ -973,7 +973,7 @@ export default function OverviewPage() {
                       ${i === 0 ? 'border-b border-[rgba(255,255,255,0.06)]' : ''}`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg flex items-center justify-center"
+                      <div className="w-9 h-9 rounded-l flex items-center justify-center"
                         style={{ backgroundColor: `${item.color}26` }}>
                         <item.icon size={16} style={{ color: item.color }} />
                       </div>
@@ -1140,7 +1140,7 @@ export default function OverviewPage() {
                     <button
                       key={item.key}
                       onClick={() => setPowerDataSource(item.key)}
-                      className={`flex flex-col items-center gap-1 px-4 py-1 rounded-xl active:scale-[0.96] transition-[background-color,transform] duration-150
+                      className={`flex flex-col items-center gap-1 px-4 py-1 rounded-l active:scale-[0.96] transition-[background-color,transform] duration-150
                         ${isActive ? 'bg-[rgba(1,214,190,0.15)]' : 'hover:bg-[rgba(255,255,255,0.03)]'}`}
                     >
                       <Icon size={18} className={isActive ? 'text-primary' : 'text-ink-6'} />
