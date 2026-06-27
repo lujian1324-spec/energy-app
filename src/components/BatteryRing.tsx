@@ -142,11 +142,11 @@ export default function BatteryRing({
       {/* 中心内容 */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         {/* 电量百分比 — Disconnected/0 显示 - (PRD §5.1) */}
-        <div className="text-headline-xl font-extrabold text-[#FFFFFF] leading-none tracking-tight tnum">
+        <div className="text-headline-xl font-extrabold text-ink-1 leading-none tracking-tight tnum">
           {connected ? (
-            <>{safePercent}<span className="text-lg font-medium text-[#BFBFBF]">%</span></>
+            <>{safePercent}<span className="text-lg font-medium text-ink-6">%</span></>
           ) : (
-            <span className="text-[#8C8C8C]">-</span>
+            <span className="text-ink-7">-</span>
           )}
         </div>
 
@@ -162,11 +162,11 @@ export default function BatteryRing({
             </span>
           </div>
         ) : showTime ? (
-          <div className="text-[10px] text-[#BFBFBF] mt-1 tracking-wide" aria-hidden="true">
+          <div className="text-[10px] text-ink-6 mt-1 tracking-wide" aria-hidden="true">
             {rawTimeLabel ? timeRemaining : `${timeRemaining} remaining`}
           </div>
         ) : isCharging ? (
-          <div className="text-[10px] text-[#BFBFBF] mt-1 tracking-wide" aria-hidden="true">
+          <div className="text-[10px] text-ink-6 mt-1 tracking-wide" aria-hidden="true">
             {rawTimeLabel ? timeToFull : `${timeToFull} to full`}
           </div>
         ) : null}

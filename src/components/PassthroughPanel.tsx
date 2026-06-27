@@ -131,14 +131,14 @@ export default function PassthroughPanel({ deviceId }: Props) {
   }
 
   const dirColor = (dir: LogEntry['dir']) =>
-    dir === 'tx' ? 'text-[#01D6BE]' : dir === 'rx' ? 'text-[#34C759]' : 'text-[#FF3530]'
+    dir === 'tx' ? 'text-primary' : dir === 'rx' ? 'text-success' : 'text-[#FF3530]'
 
   return (
-    <div className="bg-[#1F1F1F] rounded-l border border-[rgba(255,255,255,0.06)] p-4 space-y-3">
+    <div className="bg-ink-11 rounded-l border border-[rgba(255,255,255,0.06)] p-4 space-y-3">
       {/* Header */}
       <div className="flex items-center gap-2">
-        <Terminal size={14} className="text-[#01D6BE]" />
-        <span className="text-[12px] font-semibold text-[#BFBFBF]">Modbus Passthrough</span>
+        <Terminal size={14} className="text-primary" />
+        <span className="text-[12px] font-semibold text-ink-6">Modbus Passthrough</span>
       </div>
 
       {/* 预设报文选择器 */}
@@ -146,15 +146,15 @@ export default function PassthroughPanel({ deviceId }: Props) {
         <button
           onClick={() => setShowPresets(v => !v)}
           className="w-full flex items-center justify-between px-3 py-2 rounded-m
-            bg-[#141414] border border-[rgba(255,255,255,0.06)]
-            text-[#8C8C8C] text-[12px] active:scale-[0.98] transition-all"
+            bg-ink-12 border border-[rgba(255,255,255,0.06)]
+            text-ink-7 text-[12px] active:scale-[0.98] transition-all"
         >
           <span>Select Preset</span>
           <ChevronDown size={13} className={`transition-transform ${showPresets ? 'rotate-180' : ''}`} />
         </button>
 
         {showPresets && (
-          <div className="mt-1 rounded-m bg-[#141414] border border-[rgba(255,255,255,0.06)] divide-y divide-[rgba(255,255,255,0.04)] max-h-52 overflow-y-auto">
+          <div className="mt-1 rounded-m bg-ink-12 border border-[rgba(255,255,255,0.06)] divide-y divide-[rgba(255,255,255,0.04)] max-h-52 overflow-y-auto">
             {PRESETS.map(p => (
               <button
                 key={p.label}
@@ -164,9 +164,9 @@ export default function PassthroughPanel({ deviceId }: Props) {
                 }}
                 className="w-full text-left px-3 py-2.5 hover:bg-[rgba(1,214,190,0.06)] transition-colors"
               >
-                <div className="text-[12px] text-[#BFBFBF] font-medium">{p.label}</div>
-                <div className="text-[10px] text-[#595959] mt-0.5 font-mono">{p.frame}</div>
-                <div className="text-[10px] text-[#454545] mt-0.5">{p.desc}</div>
+                <div className="text-[12px] text-ink-6 font-medium">{p.label}</div>
+                <div className="text-[10px] text-ink-8 mt-0.5 font-mono">{p.frame}</div>
+                <div className="text-[10px] text-ink-9 mt-0.5">{p.desc}</div>
               </button>
             ))}
           </div>
@@ -175,7 +175,7 @@ export default function PassthroughPanel({ deviceId }: Props) {
 
       {/* 自定义输入 + 发送 */}
       <div>
-        <label className="text-[10px] font-semibold text-[#595959] mb-1 block">Custom Hex Frame</label>
+        <label className="text-[10px] font-semibold text-ink-8 mb-1 block">Custom Hex Frame</label>
         <div className="flex gap-2">
           <input
             type="text"
@@ -183,14 +183,14 @@ export default function PassthroughPanel({ deviceId }: Props) {
             onChange={e => setData(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') sendFrame(data) }}
             placeholder="e.g. 01 03 00 00 00 12 C5 C7"
-            className="flex-1 px-3 py-2 rounded-m bg-[#141414] border border-[rgba(255,255,255,0.06)]
-              text-[#BFBFBF] text-[12px] placeholder:text-[#454545]
+            className="flex-1 px-3 py-2 rounded-m bg-ink-12 border border-[rgba(255,255,255,0.06)]
+              text-ink-6 text-[12px] placeholder:text-ink-9
               focus:outline-none focus:border-[rgba(1,214,190,0.4)] font-mono"
           />
           <button
             onClick={() => sendFrame(data)}
             disabled={loading || !data.trim()}
-            className="px-4 py-2 rounded-m bg-[#01D6BE] text-[#000] text-[12px] font-semibold
+            className="px-4 py-2 rounded-m bg-primary text-[#000] text-[12px] font-semibold
               disabled:opacity-40 flex items-center gap-1.5 active:scale-[0.97] transition-all"
           >
             {loading ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
@@ -200,13 +200,13 @@ export default function PassthroughPanel({ deviceId }: Props) {
       </div>
 
       {/* 收发日志 */}
-      <div className="rounded-m bg-[#141414] border border-[rgba(255,255,255,0.04)] p-3 min-h-[60px] max-h-56 overflow-y-auto font-mono space-y-1.5">
+      <div className="rounded-m bg-ink-12 border border-[rgba(255,255,255,0.04)] p-3 min-h-[60px] max-h-56 overflow-y-auto font-mono space-y-1.5">
         {logs.length === 0 ? (
-          <p className="text-[11px] text-[#454545] text-center py-2">No data</p>
+          <p className="text-[11px] text-ink-9 text-center py-2">No data</p>
         ) : (
           logs.map(l => (
             <div key={l.id} className="flex gap-2 text-[11px]">
-              <span className="text-[#454545] flex-shrink-0">
+              <span className="text-ink-9 flex-shrink-0">
                 {new Date(l.ts).toLocaleTimeString('en-US', { hour12: false })}
               </span>
               <span className={`flex-shrink-0 font-bold ${dirColor(l.dir)}`}>

@@ -37,10 +37,10 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-[#141414] flex items-center justify-center p-6">
-          <div className="bg-[#262626] rounded-l p-8 max-w-sm w-full text-center">
+        <div className="min-h-screen bg-ink-12 flex items-center justify-center p-6">
+          <div className="bg-ink-10 rounded-l p-8 max-w-sm w-full text-center">
             {/* 错误图标 */}
-            <div className="w-14 h-14 rounded-full bg-[#454545] flex items-center justify-center mx-auto mb-4">
+            <div className="w-14 h-14 rounded-full bg-ink-9 flex items-center justify-center mx-auto mb-4">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF453A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="15" y1="9" x2="9" y2="15" />
@@ -55,7 +55,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
             {/* 错误详情（仅开发环境） */}
             {import.meta.env.DEV && this.state.error && (
-              <div className="mb-6 p-3 bg-[#454545] rounded-lg text-left max-h-32 overflow-auto">
+              <div className="mb-6 p-3 bg-ink-9 rounded-lg text-left max-h-32 overflow-auto">
                 <p className="text-[#FF453A] text-xs font-mono break-all">
                   {this.state.error.message}
                 </p>
@@ -64,7 +64,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
             <button
               onClick={this.handleRetry}
-              className="w-full py-3 bg-[#01D6BE] text-black font-semibold rounded-l active:scale-95 transition-transform"
+              className="w-full py-3 bg-primary text-black font-semibold rounded-l active:scale-95 transition-transform"
             >
               Try Again
             </button>

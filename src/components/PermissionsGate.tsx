@@ -30,7 +30,7 @@ const ICONS: Record<PermissionId, { name?: string; Lucide?: React.FC<{ size?: nu
 function PermIcon({ id, size = 20 }: { id: PermissionId; size?: number }) {
   const cfg = ICONS[id]
   if (cfg.name) return <Icon name={cfg.name} size={size} />
-  if (cfg.Lucide) return <cfg.Lucide size={size} className="text-[#01D6BE]" />
+  if (cfg.Lucide) return <cfg.Lucide size={size} className="text-primary" />
   return null
 }
 
@@ -71,15 +71,15 @@ export default function PermissionsGate({ onDone }: Props) {
 
   const labelFor = (res?: PermissionResult): { text: string; cls: string } => {
     switch (res?.state) {
-      case 'granted': return { text: 'Allowed', cls: 'text-[#34C759]' }
-      case 'denied': return { text: 'Denied', cls: 'text-[#FF9500]' }
-      case 'unsupported': return { text: 'N/A', cls: 'text-[#8C8C8C]' }
-      default: return { text: 'Optional', cls: 'text-[#BFBFBF]' }
+      case 'granted': return { text: 'Allowed', cls: 'text-success' }
+      case 'denied': return { text: 'Denied', cls: 'text-warning' }
+      case 'unsupported': return { text: 'N/A', cls: 'text-ink-7' }
+      default: return { text: 'Optional', cls: 'text-ink-6' }
     }
   }
 
   return (
-    <div className="fixed inset-0 z-[999] bg-[#141414] flex flex-col items-center px-6 safe-area-top safe-area-bottom">
+    <div className="fixed inset-0 z-[999] bg-ink-12 flex flex-col items-center px-6 safe-area-top safe-area-bottom">
       <div className="flex-1 w-full overflow-y-auto scrollbar-hide">
       <AnimatePresence mode="wait">
         {step === 'intro' && (
@@ -98,20 +98,20 @@ export default function PermissionsGate({ onDone }: Props) {
             <h1 className="text-headline-lg font-bold text-white text-center mb-2">
               App Permissions
             </h1>
-            <p className="text-body-md text-[#BFBFBF] text-center mb-6 max-w-[280px] leading-relaxed">
+            <p className="text-body-md text-ink-6 text-center mb-6 max-w-[280px] leading-relaxed">
               Sierro needs a few permissions to give you the full experience.
             </p>
 
             {/* Permission list */}
             <div className="w-full space-y-3 mb-4">
               {PERMISSION_DEFS.map(({ id, title, description }) => (
-                <div key={id} className="flex items-start gap-4 bg-[#262626] rounded-l px-4 py-4">
+                <div key={id} className="flex items-start gap-4 bg-ink-10 rounded-l px-4 py-4">
                   <div className="w-10 h-10 rounded-l bg-[rgba(1,214,190,0.1)] flex items-center justify-center flex-shrink-0">
                     <PermIcon id={id} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-body-lg font-semibold text-white">{title}</p>
-                    <p className="text-body-md text-[#BFBFBF] mt-0.5 leading-snug">{description}</p>
+                    <p className="text-body-md text-ink-6 mt-0.5 leading-snug">{description}</p>
                   </div>
                 </div>
               ))}
@@ -126,9 +126,9 @@ export default function PermissionsGate({ onDone }: Props) {
             animate={{ opacity: 1 }}
             className="flex flex-col items-center justify-center min-h-full gap-4"
           >
-            <div className="w-12 h-12 rounded-full border-2 border-[#01D6BE] border-t-transparent animate-spin" />
-            <p className="text-body-lg text-[#BFBFBF]">Requesting permissions…</p>
-            <p className="text-caption text-[#8C8C8C] text-center max-w-[220px]">
+            <div className="w-12 h-12 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+            <p className="text-body-lg text-ink-6">Requesting permissions…</p>
+            <p className="text-caption text-ink-7 text-center max-w-[220px]">
               Please respond to any system prompts that appear.
             </p>
           </motion.div>
@@ -145,7 +145,7 @@ export default function PermissionsGate({ onDone }: Props) {
               <Icon name="privacy" size={40} />
             </div>
             <h1 className="text-headline-lg font-bold text-white text-center mb-2">All Set</h1>
-            <p className="text-body-md text-[#BFBFBF] text-center mb-6 max-w-[260px] leading-relaxed">
+            <p className="text-body-md text-ink-6 text-center mb-6 max-w-[260px] leading-relaxed">
               You can re-test or update permissions anytime in Settings.
             </p>
 
@@ -153,14 +153,14 @@ export default function PermissionsGate({ onDone }: Props) {
               {PERMISSION_DEFS.map(({ id, title }) => {
                 const lbl = labelFor(results[id])
                 return (
-                  <div key={id} className="flex items-center gap-4 bg-[#262626] rounded-l px-4 py-3.5">
+                  <div key={id} className="flex items-center gap-4 bg-ink-10 rounded-l px-4 py-3.5">
                     <div className="w-9 h-9 rounded-m bg-[rgba(1,214,190,0.08)] flex items-center justify-center flex-shrink-0">
                       <PermIcon id={id} size={18} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <span className="block text-body-md font-medium text-white">{title}</span>
                       {results[id]?.detail && (
-                        <span className="block text-caption text-[#8C8C8C] mt-0.5 truncate">{results[id]!.detail}</span>
+                        <span className="block text-caption text-ink-7 mt-0.5 truncate">{results[id]!.detail}</span>
                       )}
                     </div>
                     <span className={`text-label font-semibold flex-shrink-0 ${lbl.cls}`}>{lbl.text}</span>
@@ -179,13 +179,13 @@ export default function PermissionsGate({ onDone }: Props) {
           <>
             <button
               onClick={handleAllow}
-              className="w-full h-14 rounded-full bg-[#01D6BE] text-black font-semibold text-body-lg flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+              className="w-full h-14 rounded-full bg-primary text-black font-semibold text-body-lg flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
             >
               Allow All <Icon name="chevron-right" size={18} />
             </button>
             <button
               onClick={handleSkip}
-              className="w-full h-12 text-body-md text-[#8C8C8C] active:opacity-70"
+              className="w-full h-12 text-body-md text-ink-7 active:opacity-70"
             >
               Skip for now
             </button>
@@ -194,7 +194,7 @@ export default function PermissionsGate({ onDone }: Props) {
         {step === 'asking' && (
           <button
             onClick={onDone}
-            className="w-full h-12 text-body-md text-[#8C8C8C] active:opacity-70"
+            className="w-full h-12 text-body-md text-ink-7 active:opacity-70"
           >
             Continue
           </button>
@@ -202,7 +202,7 @@ export default function PermissionsGate({ onDone }: Props) {
         {step === 'done' && (
           <button
             onClick={onDone}
-            className="w-full h-14 rounded-full bg-[#01D6BE] text-black font-semibold text-body-lg active:scale-[0.98] transition-transform"
+            className="w-full h-14 rounded-full bg-primary text-black font-semibold text-body-lg active:scale-[0.98] transition-transform"
           >
             Get Started
           </button>

@@ -28,20 +28,20 @@ const ICONS: Record<PermissionId, { name?: string; Lucide?: React.FC<{ size?: nu
 function PermIcon({ id, size = 16 }: { id: PermissionId; size?: number }) {
   const cfg = ICONS[id]
   if (cfg.name) return <Icon name={cfg.name} size={size} />
-  if (cfg.Lucide) return <cfg.Lucide size={size} className="text-[#01D6BE]" />
+  if (cfg.Lucide) return <cfg.Lucide size={size} className="text-primary" />
   return null
 }
 
 function StateBadge({ state }: { state?: PermissionState }) {
   switch (state) {
     case 'granted':
-      return <span className="flex items-center gap-1 text-label font-semibold text-[#34C759]"><CheckCircle2 size={14} /> Granted</span>
+      return <span className="flex items-center gap-1 text-label font-semibold text-success"><CheckCircle2 size={14} /> Granted</span>
     case 'denied':
       return <span className="flex items-center gap-1 text-label font-semibold text-[#FF3530]"><XCircle size={14} /> Denied</span>
     case 'unsupported':
-      return <span className="flex items-center gap-1 text-label font-semibold text-[#8C8C8C]"><MinusCircle size={14} /> N/A</span>
+      return <span className="flex items-center gap-1 text-label font-semibold text-ink-7"><MinusCircle size={14} /> N/A</span>
     default:
-      return <span className="flex items-center gap-1 text-label font-semibold text-[#FF9500]"><CircleDashed size={14} /> Ask</span>
+      return <span className="flex items-center gap-1 text-label font-semibold text-warning"><CircleDashed size={14} /> Ask</span>
   }
 }
 

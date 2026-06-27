@@ -29,9 +29,9 @@ export default function ToggleSwitch({
       aria-label={ariaLabel}
       className={`
         relative rounded-full transition-all duration-300 ease-out
-        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#01D6BE] focus-visible:ring-offset-2 focus-visible:ring-offset-[#141414]
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-ink-12
         ${isOn
-          ? 'bg-[#01D6BE]'
+          ? 'bg-primary'
           : 'bg-[#39393D]'
         }
         ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}

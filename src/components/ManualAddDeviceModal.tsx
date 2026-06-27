@@ -105,18 +105,18 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
         exit={{ y: 300, opacity: 0 }}
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full bg-[#262626] rounded-t-[28px] p-6 pb-10 max-h-[85vh] overflow-y-auto"
+        className="w-full bg-ink-10 rounded-t-[28px] p-6 pb-10 max-h-[85vh] overflow-y-auto"
       >
         <div className="w-10 h-1 bg-[rgba(255,255,255,0.15)] rounded-full mx-auto mb-5" />
 
         <div className="flex items-center justify-between mb-5">
-          <h3 className="text-base font-bold text-[#FFFFFF] flex items-center gap-2">
-            <Keyboard size={18} className="text-[#FF9500]" />
+          <h3 className="text-base font-bold text-ink-1 flex items-center gap-2">
+            <Keyboard size={18} className="text-warning" />
             Add Device Manually
           </h3>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-[#454545] flex items-center justify-center text-[#BFBFBF]"
+            className="w-8 h-8 rounded-full bg-ink-9 flex items-center justify-center text-ink-6"
           >
             <X size={18} />
           </button>
@@ -125,7 +125,7 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* 设备名称 */}
           <div>
-            <label className="text-[11px] font-semibold text-[#BFBFBF] mb-1.5 block">
+            <label className="text-[11px] font-semibold text-ink-6 mb-1.5 block">
               Device Name *
             </label>
             <input
@@ -133,15 +133,15 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
               value={deviceName}
               onChange={e => { setDeviceName(e.target.value); setError(null) }}
               placeholder="e.g. Sierro 1000"
-              className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-[rgba(1,214,190,0.15)]
-                text-[#FFFFFF] text-[14px] placeholder:text-[#8C8C8C]
+              className="w-full px-4 py-3 rounded-xl bg-ink-12 border border-[rgba(1,214,190,0.15)]
+                text-ink-1 text-[14px] placeholder:text-ink-7
                 focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
             />
           </div>
 
           {/* 序列号 */}
           <div>
-            <label className="text-[11px] font-semibold text-[#BFBFBF] mb-1.5 block">
+            <label className="text-[11px] font-semibold text-ink-6 mb-1.5 block">
               Serial Number (SN)
             </label>
             <input
@@ -149,15 +149,15 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
               value={serialNumber}
               onChange={e => { setSerialNumber(e.target.value); setError(null) }}
               placeholder="e.g. 999256001232612"
-              className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-[rgba(1,214,190,0.15)]
-                text-[#FFFFFF] text-[14px] placeholder:text-[#8C8C8C]
+              className="w-full px-4 py-3 rounded-xl bg-ink-12 border border-[rgba(1,214,190,0.15)]
+                text-ink-1 text-[14px] placeholder:text-ink-7
                 focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
             />
           </div>
 
           {/* DTU ID */}
           <div>
-            <label className="text-[11px] font-semibold text-[#BFBFBF] mb-1.5 block">
+            <label className="text-[11px] font-semibold text-ink-6 mb-1.5 block">
               DTU ID (Data Logger)
             </label>
             <input
@@ -165,8 +165,8 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
               value={dtuDtuid}
               onChange={e => { setDtuDtuid(e.target.value); setError(null) }}
               placeholder="e.g. DTU serial number"
-              className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-[rgba(1,214,190,0.15)]
-                text-[#FFFFFF] text-[14px] placeholder:text-[#8C8C8C]
+              className="w-full px-4 py-3 rounded-xl bg-ink-12 border border-[rgba(1,214,190,0.15)]
+                text-ink-1 text-[14px] placeholder:text-ink-7
                 focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
             />
           </div>
@@ -174,14 +174,14 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
           {/* 选择电站（如果有） */}
           {stations.length > 0 && (
             <div>
-              <label className="text-[11px] font-semibold text-[#BFBFBF] mb-1.5 block">
+              <label className="text-[11px] font-semibold text-ink-6 mb-1.5 block">
                 Station
               </label>
               <select
                 value={stationId}
                 onChange={e => setStationId(Number(e.target.value))}
-                className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-[rgba(1,214,190,0.15)]
-                  text-[#FFFFFF] text-[14px] focus:outline-none focus:border-[rgba(1,214,190,0.5)]"
+                className="w-full px-4 py-3 rounded-xl bg-ink-12 border border-[rgba(1,214,190,0.15)]
+                  text-ink-1 text-[14px] focus:outline-none focus:border-[rgba(1,214,190,0.5)]"
               >
                 {stations.map(s => (
                   <option key={s.id} value={s.id}>{s.name}</option>
@@ -190,7 +190,7 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
               <button
                 type="button"
                 onClick={() => setCreateNewStation(v => !v)}
-                className="mt-2 text-[12px] text-[#01D6BE] font-medium"
+                className="mt-2 text-[12px] text-primary font-medium"
               >
                 {createNewStation ? '← Select existing station' : '+ Create new station'}
               </button>
@@ -200,7 +200,7 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
           {/* 新电站名称 */}
           {createNewStation && (
             <div>
-              <label className="text-[11px] font-semibold text-[#BFBFBF] mb-1.5 block">
+              <label className="text-[11px] font-semibold text-ink-6 mb-1.5 block">
                 New Station Name
               </label>
               <input
@@ -208,8 +208,8 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
                 value={newStationName}
                 onChange={e => setNewStationName(e.target.value)}
                 placeholder="e.g. Home Solar Station"
-                className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-[rgba(1,214,190,0.15)]
-                  text-[#FFFFFF] text-[14px] placeholder:text-[#8C8C8C]
+                className="w-full px-4 py-3 rounded-xl bg-ink-12 border border-[rgba(1,214,190,0.15)]
+                  text-ink-1 text-[14px] placeholder:text-ink-7
                   focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
               />
             </div>
@@ -219,8 +219,8 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
           {error && (
             <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl
               bg-[rgba(255,59,48,0.08)] border border-[rgba(255,59,48,0.2)]">
-              <AlertCircle size={14} className="text-[#FF3B30] flex-shrink-0" />
-              <p className="text-[12px] text-[#FF3B30]">{error}</p>
+              <AlertCircle size={14} className="text-danger flex-shrink-0" />
+              <p className="text-[12px] text-danger">{error}</p>
             </div>
           )}
 
@@ -229,7 +229,7 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
             type="submit"
             disabled={loading || !deviceName.trim()}
             className="w-full py-3.5 rounded-xl font-semibold text-[14px]
-              bg-[#01D6BE] text-[#000000]
+              bg-primary text-ink-13
               disabled:opacity-40 disabled:cursor-not-allowed
               active:scale-[0.98] transition-all flex items-center justify-center gap-2"
           >

@@ -49,16 +49,16 @@ function ToastCard({ toast, onDismiss }: { toast: ToastItem; onDismiss: (id: str
         <Icon size={16} style={{ color }} />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-body-md font-semibold text-[#FFFFFF] leading-snug">{toast.title}</div>
+        <div className="text-body-md font-semibold text-ink-1 leading-snug">{toast.title}</div>
         {toast.message && (
-          <div className="text-[11px] text-[#BFBFBF] mt-0.5 leading-snug">{toast.message}</div>
+          <div className="text-[11px] text-ink-6 mt-0.5 leading-snug">{toast.message}</div>
         )}
       </div>
       <button
         onClick={() => onDismiss(toast.id)}
         className="flex-shrink-0 w-5 h-5 rounded-full bg-[rgba(255,255,255,0.08)] flex items-center justify-center mt-0.5"
       >
-        <X size={10} className="text-[#BFBFBF]" />
+        <X size={10} className="text-ink-6" />
       </button>
     </motion.div>
   )

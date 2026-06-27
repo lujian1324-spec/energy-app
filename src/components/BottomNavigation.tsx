@@ -28,7 +28,7 @@ export default function BottomNavigation() {
             aria-label={item.label}
             className={({ isActive }) =>
               `flex items-center justify-center min-w-[48px] min-h-[48px] px-4 py-2 rounded-full transition-colors duration-200
-              ${isActive ? 'bg-[#01D6BE]' : 'bg-transparent hover:bg-[#01D6BE]/15'}`
+              ${isActive ? 'bg-primary' : 'bg-transparent hover:bg-primary/15'}`
             }
           >
             {({ isActive }) => (
