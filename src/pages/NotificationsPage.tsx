@@ -41,8 +41,8 @@ function FiringAlarmRow({ alarm }: { alarm: FiringAlarm }) {
         <AlertTriangle size={18} />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-body-md font-semibold text-[#FFFFFF] leading-tight">{title}</div>
-        {alarm.severity && <div className="text-[11px] text-[#8C8C8C] mt-0.5 capitalize">{alarm.severity}</div>}
+        <div className="text-body-md font-semibold text-ink-1 leading-tight">{title}</div>
+        {alarm.severity && <div className="text-[11px] text-ink-7 mt-0.5 capitalize">{alarm.severity}</div>}
         <div className="text-[10px] text-[#636366] mt-1.5">{time}</div>
       </div>
       <span
@@ -132,10 +132,10 @@ function AlarmRow({ alarm, onDismiss, dismissing }: {
         <Icon size={18} />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-body-md font-semibold text-[#FFFFFF] leading-tight">{title}</div>
-        {subtitle && <div className="text-[11px] text-[#8C8C8C] mt-0.5">{subtitle}</div>}
+        <div className="text-body-md font-semibold text-ink-1 leading-tight">{title}</div>
+        {subtitle && <div className="text-[11px] text-ink-7 mt-0.5">{subtitle}</div>}
         {alarm.description && (
-          <div className="text-[11px] text-[#BFBFBF] mt-1 leading-snug">{alarm.description}</div>
+          <div className="text-[11px] text-ink-6 mt-1 leading-snug">{alarm.description}</div>
         )}
         <div className="text-[10px] text-[#636366] mt-1.5">{time}</div>
       </div>
@@ -143,7 +143,7 @@ function AlarmRow({ alarm, onDismiss, dismissing }: {
         <button
           onClick={() => onDismiss(alarm.id)}
           disabled={dismissing}
-          className="flex-shrink-0 mt-0.5 text-[11px] text-[#01D6BE] px-2.5 py-1 rounded-full bg-[rgba(1,214,190,0.1)] disabled:opacity-40 flex items-center gap-1"
+          className="flex-shrink-0 mt-0.5 text-[11px] text-primary px-2.5 py-1 rounded-full bg-[rgba(1,214,190,0.1)] disabled:opacity-40 flex items-center gap-1"
         >
           {dismissing ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />}
           Dismiss
@@ -207,35 +207,35 @@ export default function NotificationsPage() {
   const unprocessedCount = alarms.filter(a => !a.isProcessed).length
 
   return (
-    <div className="h-full flex flex-col bg-[#141414] overflow-hidden">
+    <div className="h-full flex flex-col bg-ink-12 overflow-hidden">
       {/* Header */}
       <div className="px-5 pt-4 pb-3 safe-area-top flex items-center gap-3">
         <button
           onClick={() => navigate(-1)}
-          className="w-9 h-9 rounded-full bg-[#262626] flex items-center justify-center text-[#FFFFFF] active:scale-95 transition-transform"
+          className="w-9 h-9 rounded-full bg-ink-10 flex items-center justify-center text-ink-1 active:scale-95 transition-transform"
           aria-label="Back"
         >
           <ChevronLeft size={20} />
         </button>
         <div className="flex-1">
-          <h2 className="text-lg font-bold text-[#FFFFFF]">Notifications</h2>
+          <h2 className="text-lg font-bold text-ink-1">Notifications</h2>
           {firingAlarms.length > 0 ? (
-            <p className="text-caption text-[#FF3B30]">{firingAlarms.length} active now</p>
+            <p className="text-caption text-danger">{firingAlarms.length} active now</p>
           ) : unprocessedCount > 0 ? (
-            <p className="text-caption text-[#FF9500]">{unprocessedCount} unprocessed</p>
+            <p className="text-caption text-warning">{unprocessedCount} unprocessed</p>
           ) : alarms.length > 0 ? (
-            <p className="text-caption text-[#8C8C8C]">{alarms.length} in history</p>
+            <p className="text-caption text-ink-7">{alarms.length} in history</p>
           ) : null}
         </div>
-        {alarmLoading && <Loader2 size={18} className="text-[#01D6BE] animate-spin" />}
+        {alarmLoading && <Loader2 size={18} className="text-primary animate-spin" />}
       </div>
 
       {/* List */}
       <div className="flex-1 overflow-y-auto scrollbar-hide">
         {/* Loading state (initial) */}
         {alarmLoading && alarms.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full gap-3 text-[#8C8C8C]">
-            <Loader2 size={28} className="text-[#01D6BE] animate-spin" />
+          <div className="flex flex-col items-center justify-center h-full gap-3 text-ink-7">
+            <Loader2 size={28} className="text-primary animate-spin" />
             <p className="text-body-md">Loading alarms…</p>
           </div>
         )}
@@ -247,10 +247,10 @@ export default function NotificationsPage() {
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center justify-center h-full text-center px-6"
           >
-            <div className="w-20 h-20 rounded-full bg-[#262626] flex items-center justify-center mb-4">
-              <Bell size={32} className="text-[#454545]" />
+            <div className="w-20 h-20 rounded-full bg-ink-10 flex items-center justify-center mb-4">
+              <Bell size={32} className="text-ink-9" />
             </div>
-            <p className="text-body-lg font-semibold text-[#FFFFFF]">No Alarms</p>
+            <p className="text-body-lg font-semibold text-ink-1">No Alarms</p>
             <p className="text-body-md text-[#636366] mt-1">All systems are running normally</p>
           </motion.div>
         )}
@@ -287,7 +287,7 @@ export default function NotificationsPage() {
           <button
             onClick={handleLoadMore}
             disabled={alarmLoading}
-            className="w-full py-4 text-body-md text-[#01D6BE] font-medium disabled:opacity-50"
+            className="w-full py-4 text-body-md text-primary font-medium disabled:opacity-50"
           >
             {alarmLoading ? 'Loading…' : `Load More (${alarmTotal - alarms.length} remaining)`}
           </button>

@@ -389,12 +389,12 @@ export default function DeviceMonitorPage() {
 
   return (
     <div
-      className="h-full flex flex-col bg-[#141414] overflow-hidden">
+      className="h-full flex flex-col bg-ink-12 overflow-hidden">
       {/* Header */}
       <div className="px-4 pt-5 pb-3 safe-area-top flex items-center gap-3">
         <button
           onClick={backToDevices}
-          className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center active:scale-95 transition-transform flex-shrink-0"
+          className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center active:scale-95 transition-transform flex-shrink-0"
         >
           <ChevronLeft size={20} className="text-white" />
         </button>
@@ -414,12 +414,12 @@ export default function DeviceMonitorPage() {
                 className={`text-white transition-transform duration-200 ${showDeviceDropdown ? 'rotate-180' : ''}`}
               />
             </div>
-            <span className="text-label text-[#01D6BE]">
+            <span className="text-label text-primary">
               {isOnline ? 'Connected' : 'Offline'}
             </span>
           </button>
           {showDeviceDropdown && devices.length > 1 && (
-            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-50 w-48 rounded-l bg-[#262626] border border-white/10 shadow-xl overflow-hidden">
+            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-50 w-48 rounded-l bg-ink-10 border border-white/10 shadow-xl overflow-hidden">
               {devices.map(d => {
                 const isSelected = String(d.id) === id
                 return (
@@ -431,10 +431,10 @@ export default function DeviceMonitorPage() {
                     }}
                     className="w-full px-4 py-3 flex items-center justify-between border-b border-white/5 last:border-0 active:bg-white/5"
                   >
-                    <span className={`text-body-md ${isSelected ? 'text-[#01D6BE] font-semibold' : 'text-white'}`}>
+                    <span className={`text-body-md ${isSelected ? 'text-primary font-semibold' : 'text-white'}`}>
                       {d.name}
                     </span>
-                    {isSelected && <Check size={15} className="text-[#01D6BE]" />}
+                    {isSelected && <Check size={15} className="text-primary" />}
                   </button>
                 )
               })}
@@ -446,17 +446,17 @@ export default function DeviceMonitorPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => navigate(`/device/${id}/settings`)}
-            className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center active:scale-95 transition-transform"
+            className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center active:scale-95 transition-transform"
           >
             <Settings size={18} className="text-white" />
           </button>
           <button
             onClick={() => navigate('/notifications')}
-            className="relative w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center active:scale-95 transition-transform"
+            className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center active:scale-95 transition-transform"
           >
             <Bell size={18} className="text-white" />
             {device?.isAlarmed && (
-              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#FF3B30] border-2 border-[#141414]" />
+              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-danger border-2 border-ink-12" />
             )}
           </button>
         </div>
@@ -469,7 +469,7 @@ export default function DeviceMonitorPage() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="bg-[#262626] rounded-l p-5"
+          className="bg-ink-10 rounded-l p-5"
         >
           {/* Ring */}
           <div className="flex justify-center mb-5">
@@ -488,32 +488,32 @@ export default function DeviceMonitorPage() {
           {/* Input / Output row — three equal-size value cards */}
           <div>
             <div className="flex items-center gap-1 mb-2">
-              <p className="text-label text-[#BFBFBF] flex-1">Input</p>
+              <p className="text-label text-ink-6 flex-1">Input</p>
               <span className="w-4 flex-shrink-0" />
-              <p className="text-label text-[#BFBFBF] flex-1 text-right">Output</p>
+              <p className="text-label text-ink-6 flex-1 text-right">Output</p>
             </div>
             <div className="grid grid-cols-[1fr_16px_1fr_1fr] gap-2 items-stretch">
-              <div className="bg-[#1F1F1F] rounded-m px-3 py-3 text-center flex flex-col items-center justify-center">
+              <div className="bg-ink-11 rounded-m px-3 py-3 text-center flex flex-col items-center justify-center">
                 <div>
                   <span className="text-title-md font-semibold text-white tnum">{fmtW(acPower)}</span>
-                  <span className="text-label text-[#BFBFBF]">w</span>
+                  <span className="text-label text-ink-6">w</span>
                 </div>
-                <p className="text-tiny text-[#8C8C8C] mt-0.5">AC</p>
+                <p className="text-tiny text-ink-7 mt-0.5">AC</p>
               </div>
-              <span className="text-[#8C8C8C] text-body-md font-semibold self-center text-center">+</span>
-              <div className="bg-[#1F1F1F] rounded-m px-3 py-3 text-center flex flex-col items-center justify-center">
+              <span className="text-ink-7 text-body-md font-semibold self-center text-center">+</span>
+              <div className="bg-ink-11 rounded-m px-3 py-3 text-center flex flex-col items-center justify-center">
                 <div>
                   <span className="text-title-md font-semibold text-white tnum">{fmtW(solarPower)}</span>
-                  <span className="text-label text-[#BFBFBF]">w</span>
+                  <span className="text-label text-ink-6">w</span>
                 </div>
-                <p className="text-tiny text-[#8C8C8C] mt-0.5">Solar</p>
+                <p className="text-tiny text-ink-7 mt-0.5">Solar</p>
               </div>
-              <div className="bg-[#1F1F1F] rounded-m px-3 py-3 text-center flex flex-col items-center justify-center">
+              <div className="bg-ink-11 rounded-m px-3 py-3 text-center flex flex-col items-center justify-center">
                 <div>
                   <span className="text-title-md font-semibold text-white tnum">{fmtW(outputPower)}</span>
-                  <span className="text-label text-[#BFBFBF]">w</span>
+                  <span className="text-label text-ink-6">w</span>
                 </div>
-                <p className="text-tiny text-[#8C8C8C] mt-0.5">AC</p>
+                <p className="text-tiny text-ink-7 mt-0.5">AC</p>
               </div>
             </div>
           </div>
@@ -524,7 +524,7 @@ export default function DeviceMonitorPage() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.08 }}
-          className="bg-[#262626] rounded-l p-4"
+          className="bg-ink-10 rounded-l p-4"
         >
           {/* Card header */}
           <div className="flex items-center justify-between mb-3">
@@ -544,11 +544,11 @@ export default function DeviceMonitorPage() {
           <div className="overflow-hidden rounded-m -mx-1">
             {historyLoading && !chartData.length ? (
               <div className="h-[130px] flex items-center justify-center">
-                <div className="w-5 h-5 rounded-full border-2 border-[#01D6BE] border-t-transparent animate-spin" />
+                <div className="w-5 h-5 rounded-full border-2 border-primary border-t-transparent animate-spin" />
               </div>
             ) : !chartData.length ? (
               <div className="h-[130px] flex flex-col items-center justify-center gap-1 text-center px-4">
-                <span className="text-body-md text-[#8C8C8C]">Collecting today's data…</span>
+                <span className="text-body-md text-ink-7">Collecting today's data…</span>
                 <span className="text-tiny text-[#636366]">Live readings appear here as the device reports them</span>
               </div>
             ) : (
@@ -570,7 +570,7 @@ export default function DeviceMonitorPage() {
           {timeLabels.length > 0 && (
             <div className="flex justify-between mt-1 px-1">
               {timeLabels.map((lbl, i) => (
-                <span key={i} className="text-tiny text-[#8C8C8C]">{lbl}</span>
+                <span key={i} className="text-tiny text-ink-7">{lbl}</span>
               ))}
             </div>
           )}
@@ -589,9 +589,9 @@ export default function DeviceMonitorPage() {
                 >
                   <tab.Icon
                     size={18}
-                    className={active ? 'text-white' : 'text-[#8C8C8C]'}
+                    className={active ? 'text-white' : 'text-ink-7'}
                   />
-                  <span className={`text-tiny font-medium ${active ? 'text-white' : 'text-[#8C8C8C]'}`}>
+                  <span className={`text-tiny font-medium ${active ? 'text-white' : 'text-ink-7'}`}>
                     {tab.label}
                   </span>
                 </button>

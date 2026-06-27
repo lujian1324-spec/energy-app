@@ -567,13 +567,13 @@ export default function OverviewPage() {
 
   return (
     <div
-      className={`h-full flex flex-col bg-[#141414] overflow-hidden relative pt-6 safe-area-top ${isDemoMode ? 'demo-mode' : ''}`}>
+      className={`h-full flex flex-col bg-ink-12 overflow-hidden relative pt-6 safe-area-top ${isDemoMode ? 'demo-mode' : ''}`}>
       {/* PRD v1.1 §8.2: DEMO MODE 顶部黄色横幅 */}
       <DemoBanner show={isDemoMode} onRetry={handleRefresh} />
 
       {/* Status bar spacer */}
       <div className="h-8 px-5 flex justify-between items-center opacity-0">
-        <span className="text-[12px] text-[#FFFFFF]">{remainingBatteryCapacity}%</span>
+        <span className="text-[12px] text-ink-1">{remainingBatteryCapacity}%</span>
       </div>
 
       {/* Scrollable content */}
@@ -583,7 +583,7 @@ export default function OverviewPage() {
           {/* Left: Back */}
           <button
             onClick={backToDevices}
-            className="w-9 h-9 rounded-full bg-[#262626] flex items-center justify-center text-[#FFFFFF] hover:bg-[#454545] active:scale-[0.96] transition-[background-color,transform] duration-150 flex-shrink-0"
+            className="w-9 h-9 rounded-full bg-ink-10 flex items-center justify-center text-ink-1 hover:bg-ink-9 active:scale-[0.96] transition-[background-color,transform] duration-150 flex-shrink-0"
           >
             <ChevronLeft size={22} />
           </button>
@@ -595,19 +595,19 @@ export default function OverviewPage() {
               className="flex flex-col items-center"
             >
               <div className="flex items-center gap-1.5">
-                <h2 className="text-[18px] font-bold text-[#FFFFFF] max-w-[180px] truncate">
+                <h2 className="text-[18px] font-bold text-ink-1 max-w-[180px] truncate">
                   {deviceName}
                 </h2>
                 {/* PRD §4.1.2: chevron only when multiple devices */}
                 {devices.length > 1 && (
                   <ChevronDown
                     size={16}
-                    className={`text-[#FFFFFF] transition-transform duration-200 ${showDeviceDropdown ? 'rotate-180' : ''}`}
+                    className={`text-ink-1 transition-transform duration-200 ${showDeviceDropdown ? 'rotate-180' : ''}`}
                   />
                 )}
               </div>
               {/* PRD §4.1.1: Connected / Disconnected subtitle under device name */}
-              <span className={`text-[12px] mt-0.5 ${isOnline ? 'text-[#BFBFBF]' : 'text-[#FF3B30]'}`}>
+              <span className={`text-[12px] mt-0.5 ${isOnline ? 'text-ink-6' : 'text-danger'}`}>
                 {isOnline ? 'Connected' : 'Disconnected'}
               </span>
             </button>
@@ -620,10 +620,10 @@ export default function OverviewPage() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute top-full left-0 mt-2 w-[260px] bg-[#262626] rounded-l border border-[rgba(1,214,190,0.15)] shadow-xl z-50 overflow-hidden"
+                  className="absolute top-full left-0 mt-2 w-[260px] bg-ink-10 rounded-l border border-[rgba(1,214,190,0.15)] shadow-xl z-50 overflow-hidden"
                 >
                   <div className="py-2">
-                    <div className="px-3 py-2 text-[10px] text-[#BFBFBF] uppercase tracking-wider">
+                    <div className="px-3 py-2 text-[10px] text-ink-6 uppercase tracking-wider">
                       Select Device
                     </div>
                     {devices.map((device) => {
@@ -640,24 +640,24 @@ export default function OverviewPage() {
                         >
                           <div className={`w-9 h-9 rounded-lg flex items-center justify-center
                             ${isSelected
-                              ? 'bg-[rgba(1,214,190,0.15)] text-[#01D6BE]'
-                              : 'bg-[rgba(255,255,255,0.06)] text-[#BFBFBF]'
+                              ? 'bg-[rgba(1,214,190,0.15)] text-primary'
+                              : 'bg-[rgba(255,255,255,0.06)] text-ink-6'
                             }`}
                           >
                             <Battery size={18} />
                           </div>
                           <div className="flex-1 text-left min-w-0">
-                            <div className={`text-body-md font-semibold truncate ${isSelected ? 'text-[#01D6BE]' : 'text-[#FFFFFF]'}`}>
+                            <div className={`text-body-md font-semibold truncate ${isSelected ? 'text-primary' : 'text-ink-1'}`}>
                               {device.name}
                             </div>
-                            <div className="text-[10px] text-[#BFBFBF] flex items-center gap-1.5">
-                              <span className={`inline-block w-1.5 h-1.5 rounded-full ${device.isOnline ? 'bg-[#34C759]' : 'bg-[#8C8C8C]'}`} />
+                            <div className="text-[10px] text-ink-6 flex items-center gap-1.5">
+                              <span className={`inline-block w-1.5 h-1.5 rounded-full ${device.isOnline ? 'bg-success' : 'bg-ink-7'}`} />
                               {device.isOnline ? 'Online' : 'Offline'}
                               {device.model && ` · ${device.model}`}
                             </div>
                           </div>
                           {isSelected && (
-                            <div className="w-2 h-2 rounded-full bg-[#01D6BE]" />
+                            <div className="w-2 h-2 rounded-full bg-primary" />
                           )}
                         </button>
                       )
@@ -672,18 +672,18 @@ export default function OverviewPage() {
           <div className="flex items-center gap-2 flex-shrink-0">
             <button
               onClick={() => setShowDeviceDetail(true)}
-              className="w-9 h-9 rounded-full bg-[#262626] flex items-center justify-center text-[#FFFFFF] hover:bg-[#454545] transition-colors"
+              className="w-9 h-9 rounded-full bg-ink-10 flex items-center justify-center text-ink-1 hover:bg-ink-9 transition-colors"
             >
               <Settings size={18} />
             </button>
             <motion.button
               onClick={() => setShowAlerts(true)}
               whileTap={{ scale: 0.85 }}
-              className="w-9 h-9 rounded-full bg-[#262626] flex items-center justify-center relative"
+              className="w-9 h-9 rounded-full bg-ink-10 flex items-center justify-center relative"
             >
-              <Bell size={18} className="text-[#FFFFFF]" />
+              <Bell size={18} className="text-ink-1" />
               {(unreadAlarmCount > 0 || activeFiringCount > 0) && (
-                <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#FF3B30]" />
+                <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-danger" />
               )}
             </motion.button>
           </div>
@@ -692,8 +692,8 @@ export default function OverviewPage() {
         {/* Loading state */}
         {stateLoading && !realtime ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 size={24} className="text-[#01D6BE] animate-spin" />
-            <span className="ml-3 text-body-md text-[#BFBFBF]">Loading device data...</span>
+            <Loader2 size={24} className="text-primary animate-spin" />
+            <span className="ml-3 text-body-md text-ink-6">Loading device data...</span>
           </div>
         ) : (
           <>
@@ -701,7 +701,7 @@ export default function OverviewPage() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mx-5 mb-4 bg-[#262626] rounded-l p-5"
+              className="mx-5 mb-4 bg-ink-10 rounded-l p-5"
             >
               <div className="flex justify-center mb-5">
                 <BatteryRing
@@ -719,30 +719,30 @@ export default function OverviewPage() {
                 {/* Input block: AC + Solar */}
                 <div className="flex-1 max-w-[180px] rounded-l bg-[rgba(1,214,190,0.10)] border border-[rgba(1,214,190,0.25)] px-3 py-2">
                   <div className="flex items-center gap-1 mb-1.5">
-                    <TrendingDown size={12} className="text-[#01D6BE]" />
-                    <span className="text-[11px] font-medium text-[#01D6BE]">Input</span>
+                    <TrendingDown size={12} className="text-primary" />
+                    <span className="text-[11px] font-medium text-primary">Input</span>
                   </div>
                   <div className="flex items-center justify-around">
                     <div className="flex flex-col items-center">
-                      <span className="text-body-md font-bold text-[#FFFFFF] tnum">{isOnline ? `${animatedAcPower}W` : '-'}</span>
-                      <span className="text-tiny text-[#BFBFBF] mt-0.5">AC</span>
+                      <span className="text-body-md font-bold text-ink-1 tnum">{isOnline ? `${animatedAcPower}W` : '-'}</span>
+                      <span className="text-tiny text-ink-6 mt-0.5">AC</span>
                     </div>
-                    <span className="text-[#01D6BE] text-body-md font-semibold px-1">+</span>
+                    <span className="text-primary text-body-md font-semibold px-1">+</span>
                     <div className="flex flex-col items-center">
-                      <span className="text-body-md font-bold text-[#FFFFFF] tnum">{isOnline ? `${animatedSolarPower}W` : '-'}</span>
-                      <span className="text-tiny text-[#FF9500] mt-0.5">Solar</span>
+                      <span className="text-body-md font-bold text-ink-1 tnum">{isOnline ? `${animatedSolarPower}W` : '-'}</span>
+                      <span className="text-tiny text-warning mt-0.5">Solar</span>
                     </div>
                   </div>
                 </div>
                 {/* Output block */}
-                <div className="flex-1 max-w-[120px] rounded-l bg-[#454545] px-3 py-2">
+                <div className="flex-1 max-w-[120px] rounded-l bg-ink-9 px-3 py-2">
                   <div className="flex items-center gap-1 mb-1.5">
-                    <TrendingUp size={12} className="text-[#BFBFBF]" />
-                    <span className="text-[11px] font-medium text-[#BFBFBF]">Output</span>
+                    <TrendingUp size={12} className="text-ink-6" />
+                    <span className="text-[11px] font-medium text-ink-6">Output</span>
                   </div>
                   <div className="flex flex-col items-center justify-center">
-                    <span className="text-body-md font-bold text-[#FFFFFF] tnum">{isOnline ? `${animatedOutputPower}W` : '-'}</span>
-                    <span className="text-tiny text-[#BFBFBF] mt-0.5">Load</span>
+                    <span className="text-body-md font-bold text-ink-1 tnum">{isOnline ? `${animatedOutputPower}W` : '-'}</span>
+                    <span className="text-tiny text-ink-6 mt-0.5">Load</span>
                   </div>
                 </div>
               </div>
@@ -750,14 +750,14 @@ export default function OverviewPage() {
               {/* PRD v1.1 §11.1: 温度 °F 北美默认 + 数据来源标签 */}
               {batteryTemp > 0 && (
                 <div className="flex items-center justify-center gap-1.5 mt-3">
-                  <Thermometer size={12} className="text-[#BFBFBF]" aria-hidden="true" />
-                  <span className="text-[11px] text-[#BFBFBF]">Temperature: {formatTemp(batteryTemp, 'F')}</span>
+                  <Thermometer size={12} className="text-ink-6" aria-hidden="true" />
+                  <span className="text-[11px] text-ink-6">Temperature: {formatTemp(batteryTemp, 'F')}</span>
                 </div>
               )}
 
               {/* Energy Flow Error */}
               {energyFlowError && (
-                <div className="text-center mt-2 text-[10px] text-[#FF3B30]">
+                <div className="text-center mt-2 text-[10px] text-danger">
                   Energy flow: {energyFlowError}
                 </div>
               )}
@@ -781,20 +781,20 @@ export default function OverviewPage() {
                   key={group.key}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="mx-5 mb-3 bg-[#262626] rounded-l overflow-hidden"
+                  className="mx-5 mb-3 bg-ink-10 rounded-l overflow-hidden"
                 >
                   <button
                     onClick={() => toggleGroupCollapse(group.key)}
                     className="w-full flex items-center justify-between px-4 py-3"
                   >
                     <div className="flex items-center gap-2">
-                      <Icon size={14} className="text-[#BFBFBF]" />
-                      <span className="text-[12px] font-semibold text-[#FFFFFF]">{group.name}</span>
-                      <span className="text-[10px] text-[#8C8C8C]">({visibleItems.length})</span>
+                      <Icon size={14} className="text-ink-6" />
+                      <span className="text-[12px] font-semibold text-ink-1">{group.name}</span>
+                      <span className="text-[10px] text-ink-7">({visibleItems.length})</span>
                     </div>
                     <ChevronDown
                       size={14}
-                      className={`text-[#BFBFBF] transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`}
+                      className={`text-ink-6 transition-transform duration-200 ${isCollapsed ? '' : 'rotate-180'}`}
                     />
                   </button>
                   <AnimatePresence>
@@ -809,8 +809,8 @@ export default function OverviewPage() {
                         <div className="px-4 pb-3 grid grid-cols-2 gap-x-3 gap-y-1.5">
                           {visibleItems.map(item => (
                             <div key={item.key} className="flex justify-between items-center py-1 border-b border-[rgba(255,255,255,0.03)]">
-                              <span className="text-[10px] text-[#BFBFBF] truncate mr-2">{item.nameDisplay}</span>
-                              <span className="text-[10px] text-[#FFFFFF] font-mono whitespace-nowrap">
+                              <span className="text-[10px] text-ink-6 truncate mr-2">{item.nameDisplay}</span>
+                              <span className="text-[10px] text-ink-1 font-mono whitespace-nowrap">
                                 {item.valueDisplay}{item.unit ? ` ${item.unit}` : ''}
                               </span>
                             </div>
@@ -830,20 +830,20 @@ export default function OverviewPage() {
               transition={{ delay: 0.05 }}
               className="mx-5 mb-4"
             >
-              <div className="text-[11px] font-bold text-[#BFBFBF] tracking-widest uppercase mb-2.5 px-1">
+              <div className="text-[11px] font-bold text-ink-6 tracking-widest uppercase mb-2.5 px-1">
                 Quick Controls
               </div>
-              <div className="bg-[#262626] rounded-l overflow-hidden">
+              <div className="bg-ink-10 rounded-l overflow-hidden">
                 {/* Sleep Mode */}
                 <div className="flex items-center justify-between px-4 py-3.5 border-b border-[rgba(255,255,255,0.06)]">
                   <div className="flex items-center gap-3">
                     <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors
                       ${localSleepMode ? 'bg-[rgba(1,214,190,0.15)]' : 'bg-[rgba(255,255,255,0.06)]'}`}>
-                      <Moon size={16} className={localSleepMode ? 'text-[#01D6BE]' : 'text-[#BFBFBF]'} />
+                      <Moon size={16} className={localSleepMode ? 'text-primary' : 'text-ink-6'} />
                     </div>
                     <div>
-                      <div className="text-body-md font-semibold text-[#FFFFFF]">Sleep Mode</div>
-                      <div className="text-[10px] text-[#BFBFBF]">Low power standby · 5W output</div>
+                      <div className="text-body-md font-semibold text-ink-1">Sleep Mode</div>
+                      <div className="text-[10px] text-ink-6">Low power standby · 5W output</div>
                     </div>
                   </div>
                   <div className={`${controlLoading === 'sleepMode' ? 'opacity-50 pointer-events-none' : ''}`}>
@@ -861,27 +861,27 @@ export default function OverviewPage() {
                     <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors
                       ${activeMode === 'backup' ? 'bg-[rgba(255,149,0,0.15)]' : 'bg-[rgba(52,199,89,0.15)]'}`}>
                       {activeMode === 'backup'
-                        ? <Shield size={16} className="text-[#FF9500]" />
-                        : <Leaf size={16} className="text-[#34C759]" />
+                        ? <Shield size={16} className="text-warning" />
+                        : <Leaf size={16} className="text-success" />
                       }
                     </div>
                     <div>
-                      <div className="text-body-md font-semibold text-[#FFFFFF]">
+                      <div className="text-body-md font-semibold text-ink-1">
                         {activeMode === 'backup' ? 'Backup Mode' : 'Saving Mode'}
                       </div>
-                      <div className="text-[10px] text-[#BFBFBF]">
+                      <div className="text-[10px] text-ink-6">
                         {activeMode === 'backup' ? 'Prioritize backup reserve' : 'Optimize energy efficiency'}
                       </div>
                     </div>
                   </div>
-                  <div className="flex bg-[#141414] rounded-full p-0.5">
+                  <div className="flex bg-ink-12 rounded-full p-0.5">
                     <button
                       onClick={() => handleSetWorkMode('backup')}
                       disabled={controlLoading === 'workMode'}
                       className={`px-3 py-1.5 rounded-full text-[11px] font-semibold active:scale-[0.96] transition-[color,background-color,transform] duration-150
                         ${activeMode === 'backup'
-                          ? 'bg-[#FF9500] text-[#000000]'
-                          : 'text-[#BFBFBF] hover:text-[#FFFFFF]'
+                          ? 'bg-warning text-ink-13'
+                          : 'text-ink-6 hover:text-ink-1'
                         }`}
                     >
                       Backup
@@ -891,8 +891,8 @@ export default function OverviewPage() {
                       disabled={controlLoading === 'workMode'}
                       className={`px-3 py-1.5 rounded-full text-[11px] font-semibold active:scale-[0.96] transition-[color,background-color,transform] duration-150
                         ${activeMode === 'saving'
-                          ? 'bg-[#34C759] text-[#000000]'
-                          : 'text-[#BFBFBF] hover:text-[#FFFFFF]'
+                          ? 'bg-success text-ink-13'
+                          : 'text-ink-6 hover:text-ink-1'
                         }`}
                     >
                       Saving
@@ -909,10 +909,10 @@ export default function OverviewPage() {
               transition={{ delay: 0.08 }}
               className="mx-5 mb-4"
             >
-              <div className="text-[11px] font-bold text-[#BFBFBF] tracking-widest uppercase mb-2.5 px-1">
+              <div className="text-[11px] font-bold text-ink-6 tracking-widest uppercase mb-2.5 px-1">
                 Ports
               </div>
-              <div className="bg-[#262626] rounded-l overflow-hidden">
+              <div className="bg-ink-10 rounded-l overflow-hidden">
                 {[
                   { label: 'AC Output 1', enabled: acOut1Enable, key: 'acOut1Enable' },
                   { label: 'AC Output 2', enabled: acOut2Enable, key: 'acOut2Enable' },
@@ -926,11 +926,11 @@ export default function OverviewPage() {
                     <div className="flex items-center gap-3">
                       <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors
                         ${port.enabled ? 'bg-[rgba(52,199,89,0.15)]' : 'bg-[rgba(255,255,255,0.06)]'}`}>
-                        <Zap size={16} className={port.enabled ? 'text-[#34C759]' : 'text-[#8C8C8C]'} />
+                        <Zap size={16} className={port.enabled ? 'text-success' : 'text-ink-7'} />
                       </div>
                       <div>
-                        <div className="text-body-md font-semibold text-[#FFFFFF]">{port.label}</div>
-                        <div className="text-[10px] text-[#BFBFBF]">
+                        <div className="text-body-md font-semibold text-ink-1">{port.label}</div>
+                        <div className="text-[10px] text-ink-6">
                           {port.enabled ? 'Active' : 'Inactive'}
                         </div>
                       </div>
@@ -959,10 +959,10 @@ export default function OverviewPage() {
               transition={{ delay: 0.09 }}
               className="mx-5 mb-4"
             >
-              <div className="text-[11px] font-bold text-[#BFBFBF] tracking-widest uppercase mb-2.5 px-1">
+              <div className="text-[11px] font-bold text-ink-6 tracking-widest uppercase mb-2.5 px-1">
                 Energy Management
               </div>
-              <div className="bg-[#262626] rounded-l overflow-hidden">
+              <div className="bg-ink-10 rounded-l overflow-hidden">
                 {[
                   { label: 'Smart Schedule', sub: 'Time-of-use charging', icon: Calendar, path: '/smart-schedule', color: '#01D6BE' },
                 ].map((item, i) => (
@@ -978,11 +978,11 @@ export default function OverviewPage() {
                         <item.icon size={16} style={{ color: item.color }} />
                       </div>
                       <div className="text-left">
-                        <div className="text-body-md font-semibold text-[#FFFFFF]">{item.label}</div>
-                        <div className="text-[10px] text-[#BFBFBF]">{item.sub}</div>
+                        <div className="text-body-md font-semibold text-ink-1">{item.label}</div>
+                        <div className="text-[10px] text-ink-6">{item.sub}</div>
                       </div>
                     </div>
-                    <ChevronRight size={16} className="text-[#595959]" />
+                    <ChevronRight size={16} className="text-ink-8" />
                   </button>
                 ))}
               </div>
@@ -993,11 +993,11 @@ export default function OverviewPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="mx-5 mb-5 bg-[#262626] rounded-l p-4"
+              className="mx-5 mb-5 bg-ink-10 rounded-l p-4"
             >
               {/* Header: title + realtime badge */}
               <div className="flex items-center justify-between mb-3">
-                <span className="text-body-md font-semibold text-[#FFFFFF]">Real-Time Power</span>
+                <span className="text-body-md font-semibold text-ink-1">Real-Time Power</span>
                 <motion.span
                   key={isOnline ? currentChartData.value : 'offline'}
                   initial={{ scale: 0.8, opacity: 0 }}
@@ -1024,7 +1024,7 @@ export default function OverviewPage() {
                 {/* Loading spinner overlay */}
                 {historyLoading && rawHistoryPoints.length === 0 && (
                   <div className="absolute inset-0 flex items-center justify-center z-10">
-                    <Loader2 size={20} className="text-[#01D6BE] animate-spin" />
+                    <Loader2 size={20} className="text-primary animate-spin" />
                   </div>
                 )}
 
@@ -1032,10 +1032,10 @@ export default function OverviewPage() {
                 {(rawHistoryPoints.length > 0 || historyLoading) && (
                   <div className="absolute top-1 left-1 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#1a1a1a] border border-[rgba(1,214,190,0.25)]">
                     {historyLoading
-                      ? <Loader2 size={9} className="text-[#01D6BE] animate-spin" />
-                      : <History size={9} className="text-[#01D6BE]" />
+                      ? <Loader2 size={9} className="text-primary animate-spin" />
+                      : <History size={9} className="text-primary" />
                     }
-                    <span className="text-[9px] text-[#01D6BE] font-medium">
+                    <span className="text-[9px] text-primary font-medium">
                       {historyLoading
                         ? `p.${historyPage} · ${rawHistoryPoints.length}pts`
                         : `${historyFromCache ? 'cache' : 'API'} · ${rawHistoryPoints.length}pts`
@@ -1105,7 +1105,7 @@ export default function OverviewPage() {
                     return (
                       <span
                         key={tick.ts}
-                        className="absolute text-[9px] text-[#595959] font-medium"
+                        className="absolute text-[9px] text-ink-8 font-medium"
                         style={{
                           left: `${pct}%`,
                           transform: 'translateX(-50%)',
@@ -1143,8 +1143,8 @@ export default function OverviewPage() {
                       className={`flex flex-col items-center gap-1 px-4 py-1 rounded-xl active:scale-[0.96] transition-[background-color,transform] duration-150
                         ${isActive ? 'bg-[rgba(1,214,190,0.15)]' : 'hover:bg-[rgba(255,255,255,0.03)]'}`}
                     >
-                      <Icon size={18} className={isActive ? 'text-[#01D6BE]' : 'text-[#BFBFBF]'} />
-                      <span className={`text-[10px] font-medium ${isActive ? 'text-[#01D6BE]' : 'text-[#BFBFBF]'}`}>
+                      <Icon size={18} className={isActive ? 'text-primary' : 'text-ink-6'} />
+                      <span className={`text-[10px] font-medium ${isActive ? 'text-primary' : 'text-ink-6'}`}>
                         {item.label}
                       </span>
                     </button>
@@ -1172,22 +1172,22 @@ export default function OverviewPage() {
               exit={{ y: 300, opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full bg-[#262626] rounded-t-[28px] p-5 pb-8"
+              className="w-full bg-ink-10 rounded-t-[28px] p-5 pb-8"
             >
               <div className="w-10 h-1 bg-[rgba(255,255,255,0.15)] rounded-full mx-auto mb-4" />
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-2">
-                  <AlertTriangle size={18} className="text-[#FF9500]" />
-                  <h3 className="text-base font-bold text-[#FFFFFF]">Device Alerts</h3>
+                  <AlertTriangle size={18} className="text-warning" />
+                  <h3 className="text-base font-bold text-ink-1">Device Alerts</h3>
                 </div>
                 <div className="flex items-center gap-2">
                   {unreadAlarmCount > 0 && (
-                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-[rgba(255,59,48,0.12)] text-[#FF3B30] font-semibold">
+                    <span className="text-[11px] px-2 py-0.5 rounded-full bg-[rgba(255,59,48,0.12)] text-danger font-semibold">
                       {unreadAlarmCount} Active
                     </span>
                   )}
                   <button onClick={() => setShowAlerts(false)} className="w-9 h-9 rounded-full bg-[rgba(255,255,255,0.08)] flex items-center justify-center active:scale-[0.96] transition-transform">
-                    <X size={14} className="text-[#BFBFBF]" />
+                    <X size={14} className="text-ink-6" />
                   </button>
                 </div>
               </div>
@@ -1195,26 +1195,26 @@ export default function OverviewPage() {
               <div className="flex flex-col gap-2.5 max-h-[450px] overflow-y-auto scrollbar-hide">
                 {alarmLoading && (
                   <div className="flex items-center justify-center py-8">
-                    <Loader2 size={20} className="text-[#01D6BE] animate-spin" />
-                    <span className="ml-2 text-body-md text-[#BFBFBF]">Loading alarms...</span>
+                    <Loader2 size={20} className="text-primary animate-spin" />
+                    <span className="ml-2 text-body-md text-ink-6">Loading alarms...</span>
                   </div>
                 )}
 
                 {!alarmLoading && alertList.length === 0 && alarms.length === 0 && (
                   <div className="text-center py-8">
-                    <Check size={32} className="mx-auto mb-2 text-[#34C759]" />
-                    <p className="text-body-md text-[#BFBFBF]">No active alerts</p>
-                    <p className="text-[11px] text-[#8C8C8C] mt-1">All systems normal</p>
+                    <Check size={32} className="mx-auto mb-2 text-success" />
+                    <p className="text-body-md text-ink-6">No active alerts</p>
+                    <p className="text-[11px] text-ink-7 mt-1">All systems normal</p>
                   </div>
                 )}
 
                 {/* Real-time firing alarms */}
                 {alertList.map((alert, index) => {
                   const severityColors: Record<string, { bg: string; dot: string; text: string }> = {
-                    critical: { bg: 'bg-[rgba(255,59,48,0.06)]', dot: '#FF3B30', text: 'text-[#FF3B30]' },
-                    major: { bg: 'bg-[rgba(255,59,48,0.06)]', dot: '#FF3B30', text: 'text-[#FF3B30]' },
-                    minor: { bg: 'bg-[rgba(255,149,0,0.06)]', dot: '#FF9500', text: 'text-[#FF9500]' },
-                    info: { bg: 'bg-[rgba(1,214,190,0.04)]', dot: '#01D6BE', text: 'text-[#01D6BE]' },
+                    critical: { bg: 'bg-[rgba(255,59,48,0.06)]', dot: '#FF3B30', text: 'text-danger' },
+                    major: { bg: 'bg-[rgba(255,59,48,0.06)]', dot: '#FF3B30', text: 'text-danger' },
+                    minor: { bg: 'bg-[rgba(255,149,0,0.06)]', dot: '#FF9500', text: 'text-warning' },
+                    info: { bg: 'bg-[rgba(1,214,190,0.04)]', dot: '#01D6BE', text: 'text-primary' },
                   }
                   const colors = severityColors[alert.severity] || severityColors.info
 
@@ -1228,18 +1228,18 @@ export default function OverviewPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className={`text-body-md font-semibold text-[#FFFFFF]`}>
+                          <span className={`text-body-md font-semibold text-ink-1`}>
                             {alert.alarmMessage || (alert.alarmCode ? `Alarm ${alert.alarmCode}` : 'Device Alarm')}
                           </span>
                           <span className={`text-[10px] px-1.5 py-0.5 rounded ${colors.bg} ${colors.text} font-medium`}>
                             LIVE
                           </span>
                         </div>
-                        <div className="text-[11px] mt-0.5 text-[#BFBFBF]">
+                        <div className="text-[11px] mt-0.5 text-ink-6">
                           Code: {alert.alarmCode} · {alert.severity}
                         </div>
                       </div>
-                      <div className="text-[10px] text-[#8C8C8C] whitespace-nowrap mt-0.5">
+                      <div className="text-[10px] text-ink-7 whitespace-nowrap mt-0.5">
                         {alert.timestamp ? new Date(alert.timestamp).toLocaleTimeString() : 'now'}
                       </div>
                     </div>
@@ -1249,11 +1249,11 @@ export default function OverviewPage() {
                 {/* History alarms from API */}
                 {!alarmLoading && alarms.map((alarm) => {
                   const levelColors: Record<string, { bg: string; dot: string; text: string }> = {
-                    critical: { bg: 'bg-[rgba(255,59,48,0.06)]', dot: '#FF3B30', text: 'text-[#FF3B30]' },
-                    major: { bg: 'bg-[rgba(255,59,48,0.06)]', dot: '#FF3B30', text: 'text-[#FF3B30]' },
-                    warning: { bg: 'bg-[rgba(255,149,0,0.06)]', dot: '#FF9500', text: 'text-[#FF9500]' },
-                    minor: { bg: 'bg-[rgba(255,149,0,0.06)]', dot: '#FF9500', text: 'text-[#FF9500]' },
-                    info: { bg: 'bg-[rgba(1,214,190,0.04)]', dot: '#01D6BE', text: 'text-[#01D6BE]' },
+                    critical: { bg: 'bg-[rgba(255,59,48,0.06)]', dot: '#FF3B30', text: 'text-danger' },
+                    major: { bg: 'bg-[rgba(255,59,48,0.06)]', dot: '#FF3B30', text: 'text-danger' },
+                    warning: { bg: 'bg-[rgba(255,149,0,0.06)]', dot: '#FF9500', text: 'text-warning' },
+                    minor: { bg: 'bg-[rgba(255,149,0,0.06)]', dot: '#FF9500', text: 'text-warning' },
+                    info: { bg: 'bg-[rgba(1,214,190,0.04)]', dot: '#01D6BE', text: 'text-primary' },
                   }
                   const colors = levelColors[alarm.alarmLevel] || levelColors.info
 
@@ -1265,28 +1265,28 @@ export default function OverviewPage() {
                     >
                       <div className="mt-0.5 flex-shrink-0">
                         {alarm.isProcessed
-                          ? <Check size={14} className="text-[#34C759]" />
+                          ? <Check size={14} className="text-success" />
                           : <CircleDot size={14} style={{ color: colors.dot }} />
                         }
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className={`text-body-md font-semibold ${alarm.isProcessed ? 'text-[#8C8C8C]' : 'text-[#FFFFFF]'}`}>
+                        <div className={`text-body-md font-semibold ${alarm.isProcessed ? 'text-ink-7' : 'text-ink-1'}`}>
                           {alarm.alarmMessage || alarm.name || (alarm.alarmCode ? `Alarm ${alarm.alarmCode}` : 'Device Alarm')}
                         </div>
-                        <div className="text-[11px] mt-0.5 text-[#BFBFBF]">
+                        <div className="text-[11px] mt-0.5 text-ink-6">
                           Code: {alarm.alarmCode ?? alarm.key ?? '--'} · Level: {alarm.alarmLevel ?? alarm.levelDict ?? '--'}
-                          {alarm.deviceName && <> · <span className="text-[#BFBFBF]">{alarm.deviceName}</span></>}
+                          {alarm.deviceName && <> · <span className="text-ink-6">{alarm.deviceName}</span></>}
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                        <div className="text-[10px] text-[#8C8C8C] whitespace-nowrap">
+                        <div className="text-[10px] text-ink-7 whitespace-nowrap">
                           {alarm.createdAt ? new Date(alarm.createdAt).toLocaleString() : ''}
                         </div>
                         {!alarm.isProcessed && (
                           <button
                             onClick={() => handleDismissAlarm(alarm.id)}
                             disabled={dismissingAlarmId === alarm.id}
-                            className="text-[10px] text-[#01D6BE] px-2 py-0.5 rounded-full bg-[rgba(1,214,190,0.1)] disabled:opacity-50 flex items-center gap-1"
+                            className="text-[10px] text-primary px-2 py-0.5 rounded-full bg-[rgba(1,214,190,0.1)] disabled:opacity-50 flex items-center gap-1"
                           >
                             {dismissingAlarmId === alarm.id ? (
                               <><Loader2 size={10} className="animate-spin" /> Dismissing</>
@@ -1304,7 +1304,7 @@ export default function OverviewPage() {
                     onClick={() => {
                       if (selectedDeviceId) loadAlarms(selectedDeviceId, Math.ceil(alarms.length / 20) + 1, 20, true)
                     }}
-                    className="w-full py-2.5 text-[12px] text-[#01D6BE] font-medium"
+                    className="w-full py-2.5 text-[12px] text-primary font-medium"
                   >
                     Load More ({alarmTotal - alarms.length} remaining)
                   </button>
@@ -1331,27 +1331,27 @@ export default function OverviewPage() {
               exit={{ y: -20, opacity: 0 }}
               transition={{ type: 'spring', damping: 28, stiffness: 350 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full bg-[#262626] rounded-b-[28px] p-5 pt-4"
+              className="w-full bg-ink-10 rounded-b-[28px] p-5 pt-4"
             >
               <div className="flex justify-between items-center mb-4">
                 <div>
-                  <h3 className="text-base font-bold text-[#FFFFFF]">Alert History</h3>
-                  {unreadAlarmCount > 0 && <span className="text-[11px] text-[#FF3B30]">{unreadAlarmCount} unread</span>}
-                  {unreadAlarmCount === 0 && alarms.length > 0 && <span className="text-[11px] text-[#BFBFBF]">{alarms.length} total</span>}
+                  <h3 className="text-base font-bold text-ink-1">Alert History</h3>
+                  {unreadAlarmCount > 0 && <span className="text-[11px] text-danger">{unreadAlarmCount} unread</span>}
+                  {unreadAlarmCount === 0 && alarms.length > 0 && <span className="text-[11px] text-ink-6">{alarms.length} total</span>}
                 </div>
                 <button onClick={() => setShowNotifications(false)} className="w-9 h-9 rounded-full bg-[rgba(255,255,255,0.08)] flex items-center justify-center active:scale-[0.96] transition-transform">
-                  <X size={14} className="text-[#BFBFBF]" />
+                  <X size={14} className="text-ink-6" />
                 </button>
               </div>
               <div className="flex flex-col gap-2.5 max-h-[320px] overflow-y-auto scrollbar-hide">
                 {alarmLoading ? (
                   <div className="flex items-center justify-center py-8">
-                    <Loader2 size={20} className="text-[#01D6BE] animate-spin" />
+                    <Loader2 size={20} className="text-primary animate-spin" />
                   </div>
                 ) : alarms.length === 0 ? (
                   <div className="text-center py-8">
-                    <Check size={28} className="mx-auto mb-2 text-[#34C759]" />
-                    <p className="text-body-md text-[#BFBFBF]">No alarm history</p>
+                    <Check size={28} className="mx-auto mb-2 text-success" />
+                    <p className="text-body-md text-ink-6">No alarm history</p>
                   </div>
                 ) : (
                   alarms.slice(0, 15).map((alarm) => {
@@ -1371,15 +1371,15 @@ export default function OverviewPage() {
                       >
                         <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: alarm.isProcessed ? '#8C8C8C' : dotColor }} />
                         <div className="flex-1 min-w-0">
-                          <div className={`text-body-md font-semibold ${alarm.isProcessed ? 'text-[#BFBFBF]' : 'text-[#FFFFFF]'}`}>
+                          <div className={`text-body-md font-semibold ${alarm.isProcessed ? 'text-ink-6' : 'text-ink-1'}`}>
                             {alarm.alarmMessage || alarm.alarmCode}
                           </div>
-                          <div className="text-[11px] text-[#8C8C8C] mt-0.5">
+                          <div className="text-[11px] text-ink-7 mt-0.5">
                             {alarm.deviceName && <>{alarm.deviceName} · </>}
                             {alarm.createdAt ? new Date(alarm.createdAt).toLocaleString() : ''}
                           </div>
                         </div>
-                        {alarm.isProcessed && <Check size={12} className="text-[#8C8C8C] mt-1 flex-shrink-0" />}
+                        {alarm.isProcessed && <Check size={12} className="text-ink-7 mt-1 flex-shrink-0" />}
                       </div>
                     )
                   })
@@ -1388,7 +1388,7 @@ export default function OverviewPage() {
               {alarms.length > 15 && (
                 <button
                   onClick={() => { setShowNotifications(false); setShowAlerts(true) }}
-                  className="w-full mt-2 py-2 text-[12px] text-[#01D6BE] font-medium"
+                  className="w-full mt-2 py-2 text-[12px] text-primary font-medium"
                 >
                   View All Alerts ({alarmTotal})
                 </button>
@@ -1414,24 +1414,24 @@ export default function OverviewPage() {
               exit={{ y: 300, opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full bg-[#262626] rounded-t-[28px] p-6 pb-10"
+              className="w-full bg-ink-10 rounded-t-[28px] p-6 pb-10"
             >
               <div className="w-10 h-1 bg-[rgba(255,255,255,0.15)] rounded-full mx-auto mb-5" />
               <div className="flex justify-between items-center mb-5">
-                <h3 className="text-base font-bold text-[#FFFFFF]">Display Settings</h3>
+                <h3 className="text-base font-bold text-ink-1">Display Settings</h3>
                 <button onClick={() => setShowDisplaySettings(false)} className="w-9 h-9 rounded-full bg-[rgba(255,255,255,0.08)] flex items-center justify-center active:scale-[0.96] transition-transform">
-                  <X size={14} className="text-[#BFBFBF]" />
+                  <X size={14} className="text-ink-6" />
                 </button>
               </div>
-              <p className="text-[11px] text-[#8C8C8C] mb-4">Choose which sections to show on the overview screen</p>
+              <p className="text-[11px] text-ink-7 mb-4">Choose which sections to show on the overview screen</p>
               <div className="flex flex-col gap-2">
                 {displayItems.map(({ key, label, desc }) => (
                   <div key={key} className="flex items-center justify-between py-3 border-b border-[rgba(255,255,255,0.06)]">
                     <div className="flex items-center gap-3">
-                      {displayConfig[key] ? <Eye size={15} className="text-[#01D6BE]" /> : <EyeOff size={15} className="text-[#8C8C8C]" />}
+                      {displayConfig[key] ? <Eye size={15} className="text-primary" /> : <EyeOff size={15} className="text-ink-7" />}
                       <div>
-                        <div className={`text-body-md font-medium ${displayConfig[key] ? 'text-[#FFFFFF]' : 'text-[#8C8C8C]'}`}>{label}</div>
-                        <div className="text-[10px] text-[#8C8C8C]">{desc}</div>
+                        <div className={`text-body-md font-medium ${displayConfig[key] ? 'text-ink-1' : 'text-ink-7'}`}>{label}</div>
+                        <div className="text-[10px] text-ink-7">{desc}</div>
                       </div>
                     </div>
                     <ToggleSwitch isOn={displayConfig[key]} onToggle={() => setDisplayConfig(prev => ({ ...prev, [key]: !prev[key] }))} size="sm" />

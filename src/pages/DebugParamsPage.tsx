@@ -214,24 +214,24 @@ export default function DebugParamsPage() {
   }, [rt, batteryCapacityWh])
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
+    <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
       {/* Header */}
       <div className="px-4 pt-5 pb-3 flex items-center gap-3 border-b border-[rgba(255,255,255,0.06)]">
         <button
           onClick={() => navigate(-1)}
-          className="w-9 h-9 flex items-center justify-center rounded-full bg-[#262626]"
+          className="w-9 h-9 flex items-center justify-center rounded-full bg-ink-10"
         >
           <ChevronLeft size={20} className="text-white" />
         </button>
         <div className="flex-1 text-center">
           <h1 className="text-title-lg font-semibold text-white">Debug Params</h1>
-          <p className="text-tiny text-[#595959]">{device?.name ?? id} · {isDemoMode ? 'Demo' : 'Live'}</p>
+          <p className="text-tiny text-ink-8">{device?.name ?? id} · {isDemoMode ? 'Demo' : 'Live'}</p>
         </div>
         <button
           onClick={() => id && loadDeviceState(id)}
-          className="w-9 h-9 flex items-center justify-center rounded-full bg-[#262626] active:scale-95 transition-transform"
+          className="w-9 h-9 flex items-center justify-center rounded-full bg-ink-10 active:scale-95 transition-transform"
         >
-          <RefreshCw size={15} className="text-[#01D6BE]" />
+          <RefreshCw size={15} className="text-primary" />
         </button>
       </div>
 
@@ -239,8 +239,8 @@ export default function DebugParamsPage() {
 
         {/* 设备元数据 */}
         <div className="px-4 pt-4">
-          <p className="text-caption font-semibold text-[#8C8C8C] uppercase tracking-wide mb-2">Device Info</p>
-          <div className="rounded-l bg-[#262626] overflow-hidden divide-y divide-[rgba(255,255,255,0.04)]">
+          <p className="text-caption font-semibold text-ink-7 uppercase tracking-wide mb-2">Device Info</p>
+          <div className="rounded-l bg-ink-10 overflow-hidden divide-y divide-[rgba(255,255,255,0.04)]">
             {[
               { label: 'Device ID', value: String(device?.id ?? id ?? '--') },
               { label: 'Name (name)', value: device?.name ?? '--' },
@@ -251,7 +251,7 @@ export default function DebugParamsPage() {
               { label: 'Last Updated', value: updatedAt },
             ].map(row => (
               <div key={row.label} className="flex items-center justify-between px-4 py-3 gap-3">
-                <span className="text-caption text-[#8C8C8C] flex-1 min-w-0">{row.label}</span>
+                <span className="text-caption text-ink-7 flex-1 min-w-0">{row.label}</span>
                 <span className="text-body-md font-medium text-white text-right">{row.value}</span>
               </div>
             ))}
@@ -264,19 +264,19 @@ export default function DebugParamsPage() {
             <p className="text-caption font-semibold uppercase tracking-wide mb-2" style={{ color: group.color }}>
               {group.title}
             </p>
-            <div className="rounded-l bg-[#262626] overflow-hidden divide-y divide-[rgba(255,255,255,0.04)]">
+            <div className="rounded-l bg-ink-10 overflow-hidden divide-y divide-[rgba(255,255,255,0.04)]">
               {group.params.map(p => {
                 const val = getValue(p)
                 const missing = val === '--'
                 return (
                   <div key={p.key} className="flex items-center justify-between px-4 py-3 gap-3">
-                    <span className="text-caption text-[#595959] flex-1 min-w-0 leading-snug">{p.label}</span>
+                    <span className="text-caption text-ink-8 flex-1 min-w-0 leading-snug">{p.label}</span>
                     <div className="flex-shrink-0 text-right">
-                      <span className={`text-body-md font-semibold ${missing ? 'text-[#454545]' : 'text-white'}`}>
+                      <span className={`text-body-md font-semibold ${missing ? 'text-ink-9' : 'text-white'}`}>
                         {val}
                       </span>
                       {p.unit && !missing && (
-                        <span className="text-caption text-[#8C8C8C] ml-1">{p.unit}</span>
+                        <span className="text-caption text-ink-7 ml-1">{p.unit}</span>
                       )}
                     </div>
                   </div>
@@ -291,13 +291,13 @@ export default function DebugParamsPage() {
           <p className="text-caption font-semibold uppercase tracking-wide mb-2" style={{ color: '#01D6BE' }}>
             UI Derived / Computed Params
           </p>
-          <div className="rounded-l bg-[#262626] overflow-hidden divide-y divide-[rgba(255,255,255,0.04)]">
+          <div className="rounded-l bg-ink-10 overflow-hidden divide-y divide-[rgba(255,255,255,0.04)]">
             {derivedRows.map(row => {
               const missing = row.value === '--'
               return (
                 <div key={row.label} className="flex items-center justify-between px-4 py-3 gap-3">
-                  <span className="text-caption text-[#595959] flex-1 min-w-0 leading-snug">{row.label}</span>
-                  <span className={`text-body-md font-semibold flex-shrink-0 text-right ${missing ? 'text-[#454545]' : 'text-white'}`}>
+                  <span className="text-caption text-ink-8 flex-1 min-w-0 leading-snug">{row.label}</span>
+                  <span className={`text-body-md font-semibold flex-shrink-0 text-right ${missing ? 'text-ink-9' : 'text-white'}`}>
                     {row.value}
                   </span>
                 </div>
@@ -309,23 +309,23 @@ export default function DebugParamsPage() {
         {/* 6月25日历史数据 — SN 2412315001 */}
         <div className="px-4 pt-4">
           <div className="flex items-center gap-2 mb-2">
-            <History size={12} className="text-[#01D6BE]" />
-            <p className="text-caption font-semibold uppercase tracking-wide text-[#01D6BE]">
+            <History size={12} className="text-primary" />
+            <p className="text-caption font-semibold uppercase tracking-wide text-primary">
               History · Jun 25 · SN {TARGET_SN}
             </p>
           </div>
 
           {historyLoading && (
-            <div className="flex items-center justify-center py-6 rounded-l bg-[#262626]">
-              <Loader2 size={18} className="text-[#01D6BE] animate-spin mr-2" />
-              <span className="text-caption text-[#8C8C8C]">
+            <div className="flex items-center justify-center py-6 rounded-l bg-ink-10">
+              <Loader2 size={18} className="text-primary animate-spin mr-2" />
+              <span className="text-caption text-ink-7">
                 Page {historyPage} · {historyPoints.length} fetched…
               </span>
             </div>
           )}
 
           {historyError && !historyLoading && (
-            <div className="rounded-l bg-[#262626] px-4 py-3">
+            <div className="rounded-l bg-ink-10 px-4 py-3">
               <span className="text-caption text-[#FF3530]">{historyError}</span>
             </div>
           )}
@@ -333,27 +333,27 @@ export default function DebugParamsPage() {
           {history && (
             <>
               {/* 统计摘要 */}
-              <div className="rounded-l bg-[#262626] overflow-hidden divide-y divide-[rgba(255,255,255,0.04)] mb-3">
+              <div className="rounded-l bg-ink-10 overflow-hidden divide-y divide-[rgba(255,255,255,0.04)] mb-3">
                 <div className="flex items-center justify-between px-4 py-2.5">
-                  <span className="text-caption text-[#8C8C8C]">Samples</span>
+                  <span className="text-caption text-ink-7">Samples</span>
                   <span className="text-body-md font-semibold text-white">
                     {historyPoints.length}
-                    {historyLoading && <span className="text-caption text-[#595959] ml-1">(loading…)</span>}
+                    {historyLoading && <span className="text-caption text-ink-8 ml-1">(loading…)</span>}
                   </span>
                 </div>
                 <div className="flex items-center justify-between px-4 py-2.5">
-                  <span className="text-caption text-[#8C8C8C]">Data Source</span>
-                  <span className="text-caption text-[#01D6BE]">
+                  <span className="text-caption text-ink-7">Data Source</span>
+                  <span className="text-caption text-primary">
                     {historyFromCache ? 'Local Cache' : `API Paged · ${historyDone ? historyPage : historyPage + '…'} pages`}
                   </span>
                 </div>
                 <div className="flex items-center justify-between px-4 py-2.5">
-                  <span className="text-caption text-[#8C8C8C]">Rows Saved</span>
-                  <span className="text-caption text-[#34C759]">{savedCount} rows</span>
+                  <span className="text-caption text-ink-7">Rows Saved</span>
+                  <span className="text-caption text-success">{savedCount} rows</span>
                 </div>
                 <div className="flex items-center justify-between px-4 py-2.5">
-                  <span className="text-caption text-[#8C8C8C]">Time Range</span>
-                  <span className="text-caption text-[#D9D9D9]">
+                  <span className="text-caption text-ink-7">Time Range</span>
+                  <span className="text-caption text-ink-5">
                     {historyPoints[0]?.time.slice(11, 16)} – {historyPoints[historyPoints.length - 1]?.time.slice(11, 16)}
                   </span>
                 </div>
@@ -375,9 +375,9 @@ export default function DebugParamsPage() {
                         { k: 'Sum', v: s.total },
                       ].map(({ k, v }) => (
                         <div key={k} className="flex flex-col items-center bg-[#1A1A1A] rounded-m py-1.5">
-                          <span className="text-tiny text-[#595959]">{k}</span>
+                          <span className="text-tiny text-ink-8">{k}</span>
                           <span className="text-caption font-semibold text-white">{Math.round(v)}</span>
-                          <span className="text-tiny text-[#595959]">{unit}</span>
+                          <span className="text-tiny text-ink-8">{unit}</span>
                         </div>
                       ))}
                     </div>
@@ -387,7 +387,7 @@ export default function DebugParamsPage() {
                 {/* SOC */}
                 <div>
                   <div className="px-4 pt-2.5 pb-0.5">
-                    <span className="text-caption font-semibold text-[#34C759]">SOC (remainingBatteryCapacity)</span>
+                    <span className="text-caption font-semibold text-success">SOC (remainingBatteryCapacity)</span>
                   </div>
                   <div className="grid grid-cols-3 px-4 pb-2.5 gap-1">
                     {[
@@ -396,9 +396,9 @@ export default function DebugParamsPage() {
                       { k: 'Avg', v: history.soc.avg },
                     ].map(({ k, v }) => (
                       <div key={k} className="flex flex-col items-center bg-[#1A1A1A] rounded-m py-1.5">
-                        <span className="text-tiny text-[#595959]">{k}</span>
+                        <span className="text-tiny text-ink-8">{k}</span>
                         <span className="text-caption font-semibold text-white">{Math.round(v)}</span>
-                        <span className="text-tiny text-[#595959]">%</span>
+                        <span className="text-tiny text-ink-8">%</span>
                       </div>
                     ))}
                   </div>
@@ -408,10 +408,10 @@ export default function DebugParamsPage() {
               {/* 原始采样明细（可展开） */}
               <button
                 onClick={() => setShowRawHistory(v => !v)}
-                className="w-full flex items-center justify-between px-4 py-3 rounded-l bg-[#1F1F1F] mb-3 active:opacity-70 transition-opacity"
+                className="w-full flex items-center justify-between px-4 py-3 rounded-l bg-ink-11 mb-3 active:opacity-70 transition-opacity"
               >
-                <span className="text-caption text-[#8C8C8C]">Raw Samples ({historyPoints.length} rows)</span>
-                <span className="text-caption text-[#01D6BE]">{showRawHistory ? 'Collapse' : 'Expand'}</span>
+                <span className="text-caption text-ink-7">Raw Samples ({historyPoints.length} rows)</span>
+                <span className="text-caption text-primary">{showRawHistory ? 'Collapse' : 'Expand'}</span>
               </button>
 
               {showRawHistory && (
@@ -419,15 +419,15 @@ export default function DebugParamsPage() {
                   {/* 表头 */}
                   <div className="grid grid-cols-4 px-3 py-2 border-b border-[rgba(255,255,255,0.06)]">
                     {['Time', 'Solar W', 'Output W', 'SOC %'].map(h => (
-                      <span key={h} className="text-tiny text-[#595959] text-center">{h}</span>
+                      <span key={h} className="text-tiny text-ink-8 text-center">{h}</span>
                     ))}
                   </div>
                   {historyPoints.map((p, i) => (
                     <div key={i} className="grid grid-cols-4 px-3 py-1.5 border-b border-[rgba(255,255,255,0.03)]">
-                      <span className="text-tiny font-mono text-[#595959]">{p.time.slice(11, 16)}</span>
-                      <span className="text-tiny text-[#FF9500] text-center">{Math.round(p.solar)}</span>
-                      <span className="text-tiny text-[#BFBFBF] text-center">{Math.round(p.output)}</span>
-                      <span className="text-tiny text-[#34C759] text-center">{Math.round(p.soc)}</span>
+                      <span className="text-tiny font-mono text-ink-8">{p.time.slice(11, 16)}</span>
+                      <span className="text-tiny text-warning text-center">{Math.round(p.solar)}</span>
+                      <span className="text-tiny text-ink-6 text-center">{Math.round(p.output)}</span>
+                      <span className="text-tiny text-success text-center">{Math.round(p.soc)}</span>
                     </div>
                   ))}
                 </div>
@@ -438,18 +438,18 @@ export default function DebugParamsPage() {
 
         {/* 原始 API 字段（全部） */}
         <div className="px-4 pt-4">
-          <p className="text-caption font-semibold text-[#8C8C8C] uppercase tracking-wide mb-2">
+          <p className="text-caption font-semibold text-ink-7 uppercase tracking-wide mb-2">
             Raw API Fields (/remote/device/state/latest)
           </p>
           <div className="rounded-l bg-[#1A1A1A] overflow-hidden divide-y divide-[rgba(255,255,255,0.03)]">
             {Object.keys(rawFields).length === 0 ? (
-              <p className="text-caption text-[#454545] text-center py-4">No data</p>
+              <p className="text-caption text-ink-9 text-center py-4">No data</p>
             ) : (
               Object.entries(rawFields).map(([key, field]) => (
                 <div key={key} className="flex items-center justify-between px-4 py-2.5 gap-3">
-                  <span className="text-tiny text-[#595959] font-mono flex-1 min-w-0 truncate">{key}</span>
+                  <span className="text-tiny text-ink-8 font-mono flex-1 min-w-0 truncate">{key}</span>
                   <div className="flex-shrink-0 text-right">
-                    <span className="text-caption font-medium text-[#D9D9D9]">
+                    <span className="text-caption font-medium text-ink-5">
                       {field.valueDisplay ?? String(field.value ?? '--')}
                     </span>
                   </div>

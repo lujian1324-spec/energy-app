@@ -311,18 +311,18 @@ export default function SmartSchedulePage() {
   const offPeakSchedule = peakShavingSettings.schedules.find(s => s.type === 'charge' && s.enabled)
 
   return (
-    <div className="h-full flex flex-col bg-[#141414] overflow-hidden">
+    <div className="h-full flex flex-col bg-ink-12 overflow-hidden">
       {/* Header */}
       <div className="px-4 pt-4 pb-3 safe-area-top flex items-center gap-3">
         <button
           onClick={() => navigate(-1)}
-          className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center text-white active:scale-95 transition-transform flex-shrink-0"
+          className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-white active:scale-95 transition-transform flex-shrink-0"
         >
           <ChevronLeft size={20} />
         </button>
         <h2 className="flex-1 text-center text-body-lg font-semibold text-white">Smart Schedule</h2>
         <button
-          className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center text-[#BFBFBF] flex-shrink-0"
+          className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-ink-6 flex-shrink-0"
         >
           <Info size={18} />
         </button>
@@ -331,11 +331,11 @@ export default function SmartSchedulePage() {
       <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pb-24">
 
         {/* Toggle */}
-        <div className="bg-[#262626] rounded-l p-4 mb-4 flex items-center justify-between">
+        <div className="bg-ink-10 rounded-l p-4 mb-4 flex items-center justify-between">
           <span className="text-body-md font-semibold text-white">Smart Schedule</span>
           <button
             onClick={() => handleTogglePeakShaving(!peakShavingSettings.enabled)}
-            className={`w-14 h-8 rounded-full relative transition-colors ${peakShavingSettings.enabled ? 'bg-primary' : 'bg-[#8C8C8C]'}`}
+            className={`w-14 h-8 rounded-full relative transition-colors ${peakShavingSettings.enabled ? 'bg-primary' : 'bg-ink-7'}`}
           >
             <motion.div
               className="w-6 h-6 rounded-full bg-white absolute top-1"
@@ -451,23 +451,23 @@ export default function SmartSchedulePage() {
         {/* Peak / Off-Peak / Idle cards */}
         <div className="grid grid-cols-2 gap-3 mb-4">
           {/* Peak card */}
-          <div className="bg-[#262626] rounded-l p-3 border border-[rgba(255,149,0,0.3)]">
+          <div className="bg-ink-10 rounded-l p-3 border border-[rgba(255,149,0,0.3)]">
             <div className="flex items-center gap-1.5 mb-2">
-              <div className="w-2 h-2 rounded-full bg-[#FF9500]" />
-              <span className="text-caption font-semibold text-[#FF9500]">Peak</span>
+              <div className="w-2 h-2 rounded-full bg-warning" />
+              <span className="text-caption font-semibold text-warning">Peak</span>
             </div>
             <div className="text-label font-bold text-white mb-1">
               {peakSchedule
                 ? `${minutesToLabel(timeToMinutes(peakSchedule.startTime))} - ${minutesToLabel(timeToMinutes(peakSchedule.endTime))}`
                 : 'No peak set'}
             </div>
-            <p className="text-tiny text-[#BFBFBF] leading-relaxed">
+            <p className="text-tiny text-ink-6 leading-relaxed">
               Sierro discharging, powering your connected devices with stored energy.
             </p>
           </div>
 
           {/* Off-Peak card */}
-          <div className="bg-[#262626] rounded-l p-3 border border-[rgba(1,214,190,0.3)]">
+          <div className="bg-ink-10 rounded-l p-3 border border-[rgba(1,214,190,0.3)]">
             <div className="flex items-center gap-1.5 mb-2">
               <div className="w-2 h-2 rounded-full bg-primary" />
               <span className="text-caption font-semibold text-primary">Off-Peak</span>
@@ -477,18 +477,18 @@ export default function SmartSchedulePage() {
                 ? `${minutesToLabel(timeToMinutes(offPeakSchedule.startTime))} - ${minutesToLabel(timeToMinutes(offPeakSchedule.endTime))}`
                 : 'No off-peak set'}
             </div>
-            <p className="text-tiny text-[#BFBFBF] leading-relaxed">
+            <p className="text-tiny text-ink-6 leading-relaxed">
               Sierro charging, storing cheap grid electricity overnight.
             </p>
           </div>
         </div>
 
         {/* Idle hint */}
-        <div className="bg-[#262626] rounded-l p-3 mb-3 flex items-center gap-3">
-          <div className="w-2 h-2 rounded-full bg-[#8C8C8C]" />
+        <div className="bg-ink-10 rounded-l p-3 mb-3 flex items-center gap-3">
+          <div className="w-2 h-2 rounded-full bg-ink-7" />
           <div className="flex-1">
-            <span className="text-label font-semibold text-[#BFBFBF]">Idle</span>
-            <p className="text-tiny text-[#8C8C8C]">Gaps on the clock — grid powers devices directly, Sierro stays idle.</p>
+            <span className="text-label font-semibold text-ink-6">Idle</span>
+            <p className="text-tiny text-ink-7">Gaps on the clock — grid powers devices directly, Sierro stays idle.</p>
           </div>
         </div>
 
@@ -506,24 +506,24 @@ export default function SmartSchedulePage() {
           </div>
           <div className="space-y-2">
             {peakShavingSettings.schedules.length === 0 && (
-              <div className="bg-[#262626] rounded-l p-4 text-center text-tiny text-[#8C8C8C]">
+              <div className="bg-ink-10 rounded-l p-4 text-center text-tiny text-ink-7">
                 No time periods. Tap “Add” to create one.
               </div>
             )}
             {peakShavingSettings.schedules.map((s) => {
               const cfg = scheduleTypeConfig[s.type]
               return (
-                <div key={s.id} className="bg-[#262626] rounded-l p-3 flex items-center gap-3">
+                <div key={s.id} className="bg-ink-10 rounded-l p-3 flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: cfg.color }} />
                   <button onClick={() => openEditModal(s)} className="flex-1 min-w-0 text-left">
                     <div className="text-label font-semibold text-white truncate">{s.name}</div>
-                    <div className="text-tiny text-[#BFBFBF]">
+                    <div className="text-tiny text-ink-6">
                       {cfg.label} · {minutesToLabel(timeToMinutes(s.startTime))} – {minutesToLabel(timeToMinutes(s.endTime))}
                     </div>
                   </button>
                   <button
                     onClick={() => handleDeleteClick(s)}
-                    className="w-8 h-8 rounded-full bg-[#454545] flex items-center justify-center text-danger flex-shrink-0 active:scale-95 transition-transform"
+                    className="w-8 h-8 rounded-full bg-ink-9 flex items-center justify-center text-danger flex-shrink-0 active:scale-95 transition-transform"
                     aria-label={`Delete ${s.name}`}
                   >
                     <Trash2 size={14} />
@@ -547,11 +547,11 @@ export default function SmartSchedulePage() {
               </button>
             )}
           </div>
-          <div className="bg-[#262626] rounded-l p-4 space-y-4">
+          <div className="bg-ink-10 rounded-l p-4 space-y-4">
             <div>
-              <label className="text-caption text-[#BFBFBF] block mb-1">Peak Price</label>
+              <label className="text-caption text-ink-6 block mb-1">Peak Price</label>
               <div className="flex items-center gap-2">
-                <span className="text-body-md text-[#BFBFBF]">$</span>
+                <span className="text-body-md text-ink-6">$</span>
                 <input
                   type="number"
                   step="0.01"
@@ -559,13 +559,13 @@ export default function SmartSchedulePage() {
                   onChange={(e) => updatePeakShavingSettings({ peakPrice: parseFloat(e.target.value) || 0 })}
                   className="flex-1 bg-transparent text-body-md text-white outline-none border-b border-[rgba(255,255,255,0.12)] pb-1"
                 />
-                <span className="text-caption text-[#8C8C8C]">/kWh</span>
+                <span className="text-caption text-ink-7">/kWh</span>
               </div>
             </div>
             <div>
-              <label className="text-caption text-[#BFBFBF] block mb-1">Off-Peak Price</label>
+              <label className="text-caption text-ink-6 block mb-1">Off-Peak Price</label>
               <div className="flex items-center gap-2">
-                <span className="text-body-md text-[#BFBFBF]">$</span>
+                <span className="text-body-md text-ink-6">$</span>
                 <input
                   type="number"
                   step="0.01"
@@ -573,14 +573,14 @@ export default function SmartSchedulePage() {
                   onChange={(e) => updatePeakShavingSettings({ offPeakPrice: parseFloat(e.target.value) || 0 })}
                   className="flex-1 bg-transparent text-body-md text-white outline-none border-b border-[rgba(255,255,255,0.12)] pb-1"
                 />
-                <span className="text-caption text-[#8C8C8C]">/kWh</span>
+                <span className="text-caption text-ink-7">/kWh</span>
               </div>
             </div>
             {showPartPeak && (
               <div>
-                <label className="text-caption text-[#BFBFBF] block mb-1">Part-Peak Price</label>
+                <label className="text-caption text-ink-6 block mb-1">Part-Peak Price</label>
                 <div className="flex items-center gap-2">
-                  <span className="text-body-md text-[#BFBFBF]">$</span>
+                  <span className="text-body-md text-ink-6">$</span>
                   <input
                     type="number"
                     step="0.01"
@@ -588,7 +588,7 @@ export default function SmartSchedulePage() {
                     onChange={(e) => updatePeakShavingSettings({ partPeakPrice: parseFloat(e.target.value) || 0 })}
                     className="flex-1 bg-transparent text-body-md text-white outline-none border-b border-[rgba(255,255,255,0.12)] pb-1"
                   />
-                  <span className="text-caption text-[#8C8C8C]">/kWh</span>
+                  <span className="text-caption text-ink-7">/kWh</span>
                 </div>
               </div>
             )}
@@ -603,9 +603,9 @@ export default function SmartSchedulePage() {
               Optimize
             </button>
           </div>
-          <div className="bg-[#262626] rounded-l p-4 grid grid-cols-2 gap-4">
+          <div className="bg-ink-10 rounded-l p-4 grid grid-cols-2 gap-4">
             <div>
-              <label className="text-caption text-[#BFBFBF] block mb-1">
+              <label className="text-caption text-ink-6 block mb-1">
                 Max Charge <span className="text-danger">*</span>
               </label>
               <div className="flex items-center gap-1">
@@ -615,12 +615,12 @@ export default function SmartSchedulePage() {
                   onChange={(e) => updatePeakShavingSettings({ maxChargePower: parseInt(e.target.value) || 0 })}
                   className="w-full bg-transparent text-body-md text-white outline-none border-b border-[rgba(255,255,255,0.12)] pb-1"
                 />
-                <span className="text-caption text-[#8C8C8C] flex-shrink-0">W</span>
+                <span className="text-caption text-ink-7 flex-shrink-0">W</span>
               </div>
-              <p className="text-tiny text-[#8C8C8C] mt-1">Charging speed during off-peak</p>
+              <p className="text-tiny text-ink-7 mt-1">Charging speed during off-peak</p>
             </div>
             <div>
-              <label className="text-caption text-[#BFBFBF] block mb-1">
+              <label className="text-caption text-ink-6 block mb-1">
                 Max Discharge <span className="text-danger">*</span>
               </label>
               <div className="flex items-center gap-1">
@@ -630,12 +630,12 @@ export default function SmartSchedulePage() {
                   onChange={(e) => updatePeakShavingSettings({ maxDischargePower: parseInt(e.target.value) || 0 })}
                   className="w-full bg-transparent text-body-md text-white outline-none border-b border-[rgba(255,255,255,0.12)] pb-1"
                 />
-                <span className="text-caption text-[#8C8C8C] flex-shrink-0">W</span>
+                <span className="text-caption text-ink-7 flex-shrink-0">W</span>
               </div>
-              <p className="text-tiny text-[#8C8C8C] mt-1">Discharging speed during peak</p>
+              <p className="text-tiny text-ink-7 mt-1">Discharging speed during peak</p>
             </div>
             <div>
-              <label className="text-caption text-[#BFBFBF] block mb-1">
+              <label className="text-caption text-ink-6 block mb-1">
                 Min SOC <span className="text-danger">*</span>
               </label>
               <div className="flex items-center gap-1">
@@ -646,12 +646,12 @@ export default function SmartSchedulePage() {
                   onChange={(e) => updatePeakShavingSettings({ minBatteryLevel: parseInt(e.target.value) || 0 })}
                   className="w-full bg-transparent text-body-md text-white outline-none border-b border-[rgba(255,255,255,0.12)] pb-1"
                 />
-                <span className="text-caption text-[#8C8C8C] flex-shrink-0">%</span>
+                <span className="text-caption text-ink-7 flex-shrink-0">%</span>
               </div>
-              <p className="text-tiny text-[#8C8C8C] mt-1">Minimum battery level</p>
+              <p className="text-tiny text-ink-7 mt-1">Minimum battery level</p>
             </div>
             <div>
-              <label className="text-caption text-[#BFBFBF] block mb-1">
+              <label className="text-caption text-ink-6 block mb-1">
                 Max SOC <span className="text-danger">*</span>
               </label>
               <div className="flex items-center gap-1">
@@ -662,9 +662,9 @@ export default function SmartSchedulePage() {
                   onChange={(e) => updatePeakShavingSettings({ maxBatteryLevel: parseInt(e.target.value) || 0 })}
                   className="w-full bg-transparent text-body-md text-white outline-none border-b border-[rgba(255,255,255,0.12)] pb-1"
                 />
-                <span className="text-caption text-[#8C8C8C] flex-shrink-0">%</span>
+                <span className="text-caption text-ink-7 flex-shrink-0">%</span>
               </div>
-              <p className="text-tiny text-[#8C8C8C] mt-1">Maximum charge level</p>
+              <p className="text-tiny text-ink-7 mt-1">Maximum charge level</p>
             </div>
           </div>
         </div>
@@ -672,17 +672,17 @@ export default function SmartSchedulePage() {
         {/* Estimated Savings */}
         <div className="mb-6">
           <span className="text-body-md font-semibold text-white block mb-2">Estimated Savings</span>
-          <div className="bg-[#262626] rounded-l p-4 grid grid-cols-3 gap-3 text-center">
+          <div className="bg-ink-10 rounded-l p-4 grid grid-cols-3 gap-3 text-center">
             <div>
-              <div className="text-caption text-[#BFBFBF] mb-1">Daily</div>
+              <div className="text-caption text-ink-6 mb-1">Daily</div>
               <div className="text-body-lg font-bold text-primary">${savings.daily.toFixed(2)}</div>
             </div>
             <div className="border-x border-[rgba(255,255,255,0.06)]">
-              <div className="text-caption text-[#BFBFBF] mb-1">Monthly</div>
+              <div className="text-caption text-ink-6 mb-1">Monthly</div>
               <div className="text-body-lg font-bold text-primary">${savings.monthly.toFixed(2)}</div>
             </div>
             <div>
-              <div className="text-caption text-[#BFBFBF] mb-1">Yearly</div>
+              <div className="text-caption text-ink-6 mb-1">Yearly</div>
               <div className="text-body-lg font-bold text-primary">${savings.yearly.toFixed(2)}</div>
             </div>
           </div>
@@ -690,7 +690,7 @@ export default function SmartSchedulePage() {
       </div>
 
       {/* Save button */}
-      <div className="absolute bottom-0 left-0 right-0 px-4 pb-8 pt-3 bg-[#141414]">
+      <div className="absolute bottom-0 left-0 right-0 px-4 pb-8 pt-3 bg-ink-12">
         <button
           onClick={handleSaveToDevice}
           disabled={peakValleySaving}
@@ -718,30 +718,30 @@ export default function SmartSchedulePage() {
               exit={{ y: 300 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full bg-[#262626] rounded-t-[28px] p-6 pb-10"
+              className="w-full bg-ink-10 rounded-t-[28px] p-6 pb-10"
             >
               <div className="w-10 h-1 bg-[rgba(255,255,255,0.15)] rounded-full mx-auto mb-5" />
               <h3 className="text-body-lg font-bold text-white mb-5">Add Schedule</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="text-caption text-[#BFBFBF] mb-2 block">Schedule Name</label>
+                  <label className="text-caption text-ink-6 mb-2 block">Schedule Name</label>
                   <input
                     type="text"
                     value={newSchedule.name}
                     onChange={(e) => setNewSchedule({ ...newSchedule, name: e.target.value })}
                     placeholder="e.g., Morning Charge"
-                    className="w-full h-11 bg-[#454545] rounded-m px-4 text-body-md text-white placeholder-[#8C8C8C] outline-none"
+                    className="w-full h-11 bg-ink-9 rounded-m px-4 text-body-md text-white placeholder-ink-7 outline-none"
                   />
                 </div>
                 <div>
-                  <label className="text-caption text-[#BFBFBF] mb-2 block">Type</label>
+                  <label className="text-caption text-ink-6 mb-2 block">Type</label>
                   <div className="grid grid-cols-2 gap-2">
                     {Object.entries(scheduleTypeConfig).map(([type, config]) => (
                       <button
                         key={type}
                         onClick={() => setNewSchedule({ ...newSchedule, type: type as PeakShavingSchedule['type'] })}
                         className={`flex items-center gap-2 p-3 rounded-m transition-colors
-                          ${newSchedule.type === type ? 'bg-[#3A3A3A] border border-primary' : 'bg-[#454545]'}`}
+                          ${newSchedule.type === type ? 'bg-[#3A3A3A] border border-primary' : 'bg-ink-9'}`}
                       >
                         <config.icon size={16} style={{ color: config.color }} />
                         <span className="text-body-md text-white">{config.label}</span>
@@ -751,16 +751,16 @@ export default function SmartSchedulePage() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-caption text-[#BFBFBF] mb-2 block">Start</label>
+                    <label className="text-caption text-ink-6 mb-2 block">Start</label>
                     <input type="time" value={newSchedule.startTime}
                       onChange={(e) => setNewSchedule({ ...newSchedule, startTime: e.target.value })}
-                      className="w-full h-11 bg-[#454545] rounded-m px-4 text-body-md text-white outline-none" />
+                      className="w-full h-11 bg-ink-9 rounded-m px-4 text-body-md text-white outline-none" />
                   </div>
                   <div>
-                    <label className="text-caption text-[#BFBFBF] mb-2 block">End</label>
+                    <label className="text-caption text-ink-6 mb-2 block">End</label>
                     <input type="time" value={newSchedule.endTime}
                       onChange={(e) => setNewSchedule({ ...newSchedule, endTime: e.target.value })}
-                      className="w-full h-11 bg-[#454545] rounded-m px-4 text-body-md text-white outline-none" />
+                      className="w-full h-11 bg-ink-9 rounded-m px-4 text-body-md text-white outline-none" />
                   </div>
                 </div>
                 {conflictResult.conflict && (
@@ -768,13 +768,13 @@ export default function SmartSchedulePage() {
                     <AlertTriangle size={16} className="text-warning flex-shrink-0 mt-0.5" />
                     <div>
                       <div className="text-caption font-semibold text-warning">Schedule Conflict</div>
-                      <div className="text-tiny text-[#BFBFBF]">Overlaps with "{conflictResult.with}" ({conflictResult.overlap})</div>
+                      <div className="text-tiny text-ink-6">Overlaps with "{conflictResult.with}" ({conflictResult.overlap})</div>
                     </div>
                   </div>
                 )}
               </div>
               <div className="flex gap-3 mt-6">
-                <button onClick={() => setShowAddModal(false)} className="flex-1 h-11 rounded-m bg-[#454545] text-white text-body-md font-medium">Cancel</button>
+                <button onClick={() => setShowAddModal(false)} className="flex-1 h-11 rounded-m bg-ink-9 text-white text-body-md font-medium">Cancel</button>
                 <button onClick={handleAddSchedule} disabled={!newSchedule.name || conflictResult.conflict}
                   className="flex-1 h-11 rounded-m bg-primary text-black text-body-md font-semibold disabled:opacity-50">
                   Add
@@ -801,34 +801,34 @@ export default function SmartSchedulePage() {
               exit={{ y: 300 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full bg-[#262626] rounded-t-[28px] p-6 pb-10"
+              className="w-full bg-ink-10 rounded-t-[28px] p-6 pb-10"
             >
               <div className="w-10 h-1 bg-[rgba(255,255,255,0.15)] rounded-full mx-auto mb-5" />
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-body-lg font-bold text-white">Edit Schedule</h3>
-                <button onClick={() => setEditingSchedule(null)} className="w-8 h-8 rounded-full bg-[#454545] flex items-center justify-center text-[#BFBFBF]">
+                <button onClick={() => setEditingSchedule(null)} className="w-8 h-8 rounded-full bg-ink-9 flex items-center justify-center text-ink-6">
                   <X size={18} />
                 </button>
               </div>
               <div className="space-y-4">
                 <div>
-                  <label className="text-caption text-[#BFBFBF] mb-2 block">Name</label>
+                  <label className="text-caption text-ink-6 mb-2 block">Name</label>
                   <input
                     type="text"
                     value={editForm.name || ''}
                     onChange={(e) => handleEditFormChange({ name: e.target.value })}
-                    className="w-full h-11 bg-[#454545] rounded-m px-4 text-body-md text-white outline-none"
+                    className="w-full h-11 bg-ink-9 rounded-m px-4 text-body-md text-white outline-none"
                   />
                 </div>
                 <div>
-                  <label className="text-caption text-[#BFBFBF] mb-2 block">Type</label>
+                  <label className="text-caption text-ink-6 mb-2 block">Type</label>
                   <div className="grid grid-cols-2 gap-2">
                     {Object.entries(scheduleTypeConfig).map(([type, config]) => (
                       <button
                         key={type}
                         onClick={() => handleEditFormChange({ type: type as PeakShavingSchedule['type'] })}
                         className={`flex items-center gap-2 p-3 rounded-m transition-colors
-                          ${editForm.type === type ? 'bg-[#3A3A3A] border border-primary' : 'bg-[#454545]'}`}
+                          ${editForm.type === type ? 'bg-[#3A3A3A] border border-primary' : 'bg-ink-9'}`}
                       >
                         <config.icon size={16} style={{ color: config.color }} />
                         <span className="text-body-md text-white">{config.label}</span>
@@ -838,16 +838,16 @@ export default function SmartSchedulePage() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-caption text-[#BFBFBF] mb-2 block">Start</label>
+                    <label className="text-caption text-ink-6 mb-2 block">Start</label>
                     <input type="time" value={editForm.startTime || ''}
                       onChange={(e) => handleEditFormChange({ startTime: e.target.value })}
-                      className="w-full h-11 bg-[#454545] rounded-m px-4 text-body-md text-white outline-none" />
+                      className="w-full h-11 bg-ink-9 rounded-m px-4 text-body-md text-white outline-none" />
                   </div>
                   <div>
-                    <label className="text-caption text-[#BFBFBF] mb-2 block">End</label>
+                    <label className="text-caption text-ink-6 mb-2 block">End</label>
                     <input type="time" value={editForm.endTime || ''}
                       onChange={(e) => handleEditFormChange({ endTime: e.target.value })}
-                      className="w-full h-11 bg-[#454545] rounded-m px-4 text-body-md text-white outline-none" />
+                      className="w-full h-11 bg-ink-9 rounded-m px-4 text-body-md text-white outline-none" />
                   </div>
                 </div>
                 {editConflict.conflict && (
@@ -855,13 +855,13 @@ export default function SmartSchedulePage() {
                     <AlertTriangle size={16} className="text-warning flex-shrink-0 mt-0.5" />
                     <div>
                       <div className="text-caption font-semibold text-warning">Conflict</div>
-                      <div className="text-tiny text-[#BFBFBF]">Overlaps with "{editConflict.with}" ({editConflict.overlap})</div>
+                      <div className="text-tiny text-ink-6">Overlaps with "{editConflict.with}" ({editConflict.overlap})</div>
                     </div>
                   </div>
                 )}
               </div>
               <div className="flex gap-3 mt-6">
-                <button onClick={() => setEditingSchedule(null)} className="flex-1 h-11 rounded-m bg-[#454545] text-white text-body-md font-medium">Cancel</button>
+                <button onClick={() => setEditingSchedule(null)} className="flex-1 h-11 rounded-m bg-ink-9 text-white text-body-md font-medium">Cancel</button>
                 <button onClick={handleSaveEdit} disabled={!editForm.name || editConflict.conflict}
                   className="flex-1 h-11 rounded-m bg-primary text-black text-body-md font-semibold disabled:opacity-50">
                   Save
@@ -897,20 +897,20 @@ export default function SmartSchedulePage() {
               animate={{ scale: 1 }}
               exit={{ scale: 0.9 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-sm bg-[#262626] rounded-l p-6"
+              className="w-full max-w-sm bg-ink-10 rounded-l p-6"
             >
               <div className="flex flex-col items-center mb-5">
                 <div className="w-14 h-14 rounded-full bg-[rgba(255,53,48,0.12)] flex items-center justify-center mb-4">
                   <AlertTriangle size={28} className="text-danger" />
                 </div>
                 <h3 className="text-body-lg font-bold text-white mb-1">Delete Schedule?</h3>
-                <p className="text-body-md text-[#BFBFBF] text-center">
+                <p className="text-body-md text-ink-6 text-center">
                   Delete "<span className="text-white font-semibold">{deleteConfirm.scheduleName}</span>"? This cannot be undone.
                 </p>
               </div>
               <div className="flex gap-3">
                 <button onClick={() => setDeleteConfirm({ show: false, scheduleId: '', scheduleName: '' })}
-                  className="flex-1 h-11 rounded-m bg-[#454545] text-white text-body-md font-medium">
+                  className="flex-1 h-11 rounded-m bg-ink-9 text-white text-body-md font-medium">
                   Cancel
                 </button>
                 <button onClick={handleDeleteConfirm}

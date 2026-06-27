@@ -399,45 +399,45 @@ export default function SettingPage() {
             onClick={() => setShowSupport(false)}>
             <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="w-full max-w-md bg-[#262626] rounded-[28px] border border-[rgba(255,149,0,0.15)] overflow-hidden"
+              className="w-full max-w-md bg-ink-10 rounded-[28px] border border-[rgba(255,149,0,0.15)] overflow-hidden"
               onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(255,149,0,0.1)]">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-[rgba(255,149,0,0.1)] flex items-center justify-center">
-                    <Headphones size={20} className="text-[#FF9500]" />
+                    <Headphones size={20} className="text-warning" />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-[#FFFFFF]">Feedback</h3>
-                    <p className="text-[11px] text-[#BFBFBF]">We'd love to hear from you</p>
+                    <h3 className="text-base font-bold text-ink-1">Feedback</h3>
+                    <p className="text-[11px] text-ink-6">We'd love to hear from you</p>
                   </div>
                 </div>
-                <button onClick={() => setShowSupport(false)} className="p-2 rounded-full hover:bg-[rgba(255,255,255,0.05)]"><X size={20} className="text-[#BFBFBF]" /></button>
+                <button onClick={() => setShowSupport(false)} className="p-2 rounded-full hover:bg-[rgba(255,255,255,0.05)]"><X size={20} className="text-ink-6" /></button>
               </div>
               <div className="p-5">
                 {supportSubmitted ? (
                   <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-8">
                     <div className="w-16 h-16 rounded-full bg-[rgba(52,199,89,0.1)] flex items-center justify-center mx-auto mb-4">
-                      <CheckCircle size={32} className="text-[#34C759]" />
+                      <CheckCircle size={32} className="text-success" />
                     </div>
-                    <h4 className="text-body-lg font-bold text-[#FFFFFF] mb-2">Feedback Submitted!</h4>
-                    <p className="text-[12px] text-[#BFBFBF]">We will get back to you within 24 hours.</p>
+                    <h4 className="text-body-lg font-bold text-ink-1 mb-2">Feedback Submitted!</h4>
+                    <p className="text-[12px] text-ink-6">We will get back to you within 24 hours.</p>
                   </motion.div>
                 ) : (
                   <form onSubmit={handleSupportSubmit} className="space-y-4">
                     <div>
-                      <label className="text-[12px] font-semibold text-[#BFBFBF] mb-2 flex items-center gap-2"><Icon name="email" size={14} />Your Email</label>
+                      <label className="text-[12px] font-semibold text-ink-6 mb-2 flex items-center gap-2"><Icon name="email" size={14} />Your Email</label>
                       <input type="email" required value={supportEmail} onChange={e => setSupportEmail(e.target.value)} placeholder="you@example.com"
-                        className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-[rgba(1,214,190,0.15)] text-[#FFFFFF] text-body-md placeholder:text-[#8C8C8C] focus:outline-none focus:border-[rgba(1,214,190,0.4)] transition-colors" />
+                        className="w-full px-4 py-3 rounded-xl bg-ink-12 border border-[rgba(1,214,190,0.15)] text-ink-1 text-body-md placeholder:text-ink-7 focus:outline-none focus:border-[rgba(1,214,190,0.4)] transition-colors" />
                     </div>
                     <div>
-                      <label className="text-[12px] font-semibold text-[#BFBFBF] mb-2 flex items-center gap-2"><Icon name="feedback" size={14} />Your Feedback</label>
+                      <label className="text-[12px] font-semibold text-ink-6 mb-2 flex items-center gap-2"><Icon name="feedback" size={14} />Your Feedback</label>
                       <textarea required value={supportMessage} onChange={e => setSupportMessage(e.target.value)} placeholder="Describe your issue or suggestion..." rows={4}
-                        className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-[rgba(1,214,190,0.15)] text-[#FFFFFF] text-body-md placeholder:text-[#8C8C8C] resize-none focus:outline-none focus:border-[rgba(1,214,190,0.4)] transition-colors" />
+                        className="w-full px-4 py-3 rounded-xl bg-ink-12 border border-[rgba(1,214,190,0.15)] text-ink-1 text-body-md placeholder:text-ink-7 resize-none focus:outline-none focus:border-[rgba(1,214,190,0.4)] transition-colors" />
                     </div>
                     {supportError && (
-                      <p className="text-[12px] text-[#FF3B30] text-center">{supportError}</p>
+                      <p className="text-[12px] text-danger text-center">{supportError}</p>
                     )}
-                    <button type="submit" disabled={supportSending} className="w-full py-3.5 rounded-xl bg-[rgba(255,149,0,0.12)] text-[#FF9500] font-semibold text-body-md flex items-center justify-center gap-2 active:scale-95 transition-transform border border-[rgba(255,149,0,0.2)] disabled:opacity-50">
+                    <button type="submit" disabled={supportSending} className="w-full py-3.5 rounded-xl bg-[rgba(255,149,0,0.12)] text-warning font-semibold text-body-md flex items-center justify-center gap-2 active:scale-95 transition-transform border border-[rgba(255,149,0,0.2)] disabled:opacity-50">
                       {supportSending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                       {supportSending ? 'Sending...' : 'Submit Feedback'}
                     </button>
@@ -457,19 +457,19 @@ export default function SettingPage() {
             onClick={() => !deleteLoading && setShowDeleteConfirm(false)}>
             <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="w-full max-w-md bg-[#262626] rounded-[28px] border border-[rgba(255,59,48,0.2)] overflow-hidden"
+              className="w-full max-w-md bg-ink-10 rounded-[28px] border border-[rgba(255,59,48,0.2)] overflow-hidden"
               onClick={e => e.stopPropagation()}>
               <div className="p-5 space-y-4">
                 <div className="text-center">
                   <div className="w-12 h-12 rounded-full bg-[rgba(255,59,48,0.1)] flex items-center justify-center mx-auto mb-3">
                     <Icon name="trash" size={24} />
                   </div>
-                  <h3 className="text-base font-bold text-[#FFFFFF] mb-2">Delete Account</h3>
-                  <p className="text-body-md text-[#BFBFBF]">This will permanently delete your account and all associated data. This action cannot be undone.</p>
+                  <h3 className="text-base font-bold text-ink-1 mb-2">Delete Account</h3>
+                  <p className="text-body-md text-ink-6">This will permanently delete your account and all associated data. This action cannot be undone.</p>
                 </div>
                 <div className="flex gap-3">
                   <button disabled={deleteLoading} onClick={() => setShowDeleteConfirm(false)}
-                    className="flex-1 py-3 rounded-xl bg-[rgba(255,255,255,0.06)] text-[#FFFFFF] font-semibold text-body-md disabled:opacity-50">
+                    className="flex-1 py-3 rounded-xl bg-[rgba(255,255,255,0.06)] text-ink-1 font-semibold text-body-md disabled:opacity-50">
                     Cancel
                   </button>
                   <button disabled={deleteLoading} onClick={async () => {
@@ -481,7 +481,7 @@ export default function SettingPage() {
                     setShowDeleteConfirm(false)
                     setDeleteLoading(false)
                   }}
-                    className="flex-1 py-3 rounded-xl bg-[rgba(255,59,48,0.15)] text-[#FF3B30] font-semibold text-body-md border border-[rgba(255,59,48,0.3)] flex items-center justify-center gap-2 disabled:opacity-50">
+                    className="flex-1 py-3 rounded-xl bg-[rgba(255,59,48,0.15)] text-danger font-semibold text-body-md border border-[rgba(255,59,48,0.3)] flex items-center justify-center gap-2 disabled:opacity-50">
                     {deleteLoading ? <Loader2 size={16} className="animate-spin" /> : 'Delete'}
                   </button>
                 </div>
@@ -499,45 +499,45 @@ export default function SettingPage() {
             onClick={() => setShowFounderModal(false)}>
             <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="w-full max-w-md bg-[#262626] rounded-[28px] border border-[rgba(255,215,0,0.2)] overflow-hidden"
+              className="w-full max-w-md bg-ink-10 rounded-[28px] border border-[rgba(255,215,0,0.2)] overflow-hidden"
               onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(255,215,0,0.1)]">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[rgba(255,215,0,0.1)] flex items-center justify-center"><Crown size={20} className="text-[#FFD700]" /></div>
+                  <div className="w-10 h-10 rounded-xl bg-[rgba(255,215,0,0.1)] flex items-center justify-center"><Crown size={20} className="text-membership" /></div>
                   <div>
-                    <h3 className="text-base font-bold text-[#FFFFFF]">Founder Badge</h3>
-                    <p className="text-[11px] text-[#BFBFBF]">Unlock exclusive benefits</p>
+                    <h3 className="text-base font-bold text-ink-1">Founder Badge</h3>
+                    <p className="text-[11px] text-ink-6">Unlock exclusive benefits</p>
                   </div>
                 </div>
-                <button onClick={() => setShowFounderModal(false)} className="p-2 rounded-full hover:bg-[rgba(255,255,255,0.05)]"><X size={20} className="text-[#BFBFBF]" /></button>
+                <button onClick={() => setShowFounderModal(false)} className="p-2 rounded-full hover:bg-[rgba(255,255,255,0.05)]"><X size={20} className="text-ink-6" /></button>
               </div>
               <div className="p-5">
                 {founderSuccess ? (
                   <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-8">
-                    <div className="w-16 h-16 rounded-full bg-[rgba(255,215,0,0.15)] flex items-center justify-center mx-auto mb-4"><Crown size={32} className="text-[#FFD700]" /></div>
-                    <h4 className="text-body-lg font-bold text-[#FFD700] mb-2">Welcome, Founding Member!</h4>
-                    <p className="text-[12px] text-[#BFBFBF]">Your exclusive benefits are now active.</p>
+                    <div className="w-16 h-16 rounded-full bg-[rgba(255,215,0,0.15)] flex items-center justify-center mx-auto mb-4"><Crown size={32} className="text-membership" /></div>
+                    <h4 className="text-body-lg font-bold text-membership mb-2">Welcome, Founding Member!</h4>
+                    <p className="text-[12px] text-ink-6">Your exclusive benefits are now active.</p>
                   </motion.div>
                 ) : (
                   <>
                     <div className="mb-5">
-                      <p className="text-[12px] text-[#BFBFBF] mb-3">Founding Members enjoy:</p>
+                      <p className="text-[12px] text-ink-6 mb-3">Founding Members enjoy:</p>
                       <div className="grid grid-cols-2 gap-2">
                         {founderBenefits.map(b => { const Icon = b.icon; return (
                           <div key={b.label} className="flex items-center gap-2 bg-[rgba(255,215,0,0.05)] rounded-lg p-2">
-                            <Icon size={14} className="text-[#FFD700]" /><span className="text-[11px] text-[#FFFFFF]">{b.label}</span>
+                            <Icon size={14} className="text-membership" /><span className="text-[11px] text-ink-1">{b.label}</span>
                           </div>
                         )})}
                       </div>
                     </div>
                     <form onSubmit={handleFounderSubmit} className="space-y-4">
                       <div>
-                        <label className="text-[12px] font-semibold text-[#BFBFBF] mb-2 flex items-center gap-2"><Sparkles size={14} />Enter Code</label>
+                        <label className="text-[12px] font-semibold text-ink-6 mb-2 flex items-center gap-2"><Sparkles size={14} />Enter Code</label>
                         <input type="text" required value={founderCode} onChange={e => setFounderCode(e.target.value)} placeholder="e.g., FOUNDER2024"
-                          className="w-full px-4 py-3 rounded-xl bg-[#141414] border border-[rgba(255,215,0,0.2)] text-[#FFFFFF] text-body-md placeholder:text-[#8C8C8C] uppercase focus:outline-none focus:border-[rgba(255,215,0,0.5)] transition-colors" />
+                          className="w-full px-4 py-3 rounded-xl bg-ink-12 border border-[rgba(255,215,0,0.2)] text-ink-1 text-body-md placeholder:text-ink-7 uppercase focus:outline-none focus:border-[rgba(255,215,0,0.5)] transition-colors" />
                       </div>
-                      {founderMessage && <div className={`text-[11px] text-center ${founderSuccess ? 'text-[#34C759]' : 'text-[#FF3B30]'}`}>{founderMessage}</div>}
-                      <button type="submit" className="w-full py-3.5 rounded-xl bg-[rgba(255,215,0,0.12)] text-[#FFD700] font-semibold text-body-md flex items-center justify-center gap-2 active:scale-95 transition-transform border border-[rgba(255,215,0,0.25)]">
+                      {founderMessage && <div className={`text-[11px] text-center ${founderSuccess ? 'text-success' : 'text-danger'}`}>{founderMessage}</div>}
+                      <button type="submit" className="w-full py-3.5 rounded-xl bg-[rgba(255,215,0,0.12)] text-membership font-semibold text-body-md flex items-center justify-center gap-2 active:scale-95 transition-transform border border-[rgba(255,215,0,0.25)]">
                         <Crown size={16} />Activate Badge
                       </button>
                     </form>

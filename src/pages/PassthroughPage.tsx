@@ -190,10 +190,10 @@ function ChargePowerSection({ deviceId: _deviceId, sendFrame, loading }: ChargeP
 
   return (
     <div className="px-4 pt-5">
-      <p className="text-caption font-semibold text-[#8C8C8C] mb-2 uppercase tracking-wide">
+      <p className="text-caption font-semibold text-ink-7 mb-2 uppercase tracking-wide">
         Charge Power Settings
       </p>
-      <div className="rounded-l bg-[#262626] overflow-hidden divide-y divide-[rgba(255,255,255,0.04)]">
+      <div className="rounded-l bg-ink-10 overflow-hidden divide-y divide-[rgba(255,255,255,0.04)]">
         {POWER_ROWS.map(row => {
           const cur = Math.max(0, Math.min(row.max, Number(values[row.reg]) || 0))
           const frame = toHexString(buildWriteSingleFrame(row.reg, cur))
@@ -203,7 +203,7 @@ function ChargePowerSection({ deviceId: _deviceId, sendFrame, loading }: ChargeP
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-body-md font-medium text-white">{row.label}</p>
-                  <p className="text-caption text-[#595959] mt-0.5">{row.desc}, default {row.defaultW}W</p>
+                  <p className="text-caption text-ink-8 mt-0.5">{row.desc}, default {row.defaultW}W</p>
                 </div>
               </div>
 
@@ -217,8 +217,8 @@ function ChargePowerSection({ deviceId: _deviceId, sendFrame, loading }: ChargeP
                     }}
                     className={`px-3 py-1 rounded-pill text-caption font-semibold transition-colors
                       ${Number(values[row.reg]) === v
-                        ? 'bg-[#01D6BE] text-[#000]'
-                        : 'bg-[rgba(255,255,255,0.06)] text-[#8C8C8C] active:bg-[rgba(1,214,190,0.15)]'
+                        ? 'bg-primary text-[#000]'
+                        : 'bg-[rgba(255,255,255,0.06)] text-ink-7 active:bg-[rgba(1,214,190,0.15)]'
                       }`}
                   >
                     {v}W
@@ -228,7 +228,7 @@ function ChargePowerSection({ deviceId: _deviceId, sendFrame, loading }: ChargeP
 
               {/* 输入 + 写入 */}
               <div className="flex gap-2">
-                <div className="flex-1 flex items-center bg-[#141414] border border-[rgba(1,214,190,0.2)] rounded-m px-3">
+                <div className="flex-1 flex items-center bg-ink-12 border border-[rgba(1,214,190,0.2)] rounded-m px-3">
                   <input
                     type="number"
                     min={0}
@@ -238,12 +238,12 @@ function ChargePowerSection({ deviceId: _deviceId, sendFrame, loading }: ChargeP
                     className="flex-1 bg-transparent text-white text-body-md py-2 focus:outline-none"
                     placeholder={`0~${row.max}`}
                   />
-                  <span className="text-[#8C8C8C] text-caption ml-1">W</span>
+                  <span className="text-ink-7 text-caption ml-1">W</span>
                 </div>
                 <button
                   onClick={() => write(row)}
                   disabled={loading !== null}
-                  className="px-4 py-2 rounded-m bg-[#01D6BE] text-[#000] text-body-md font-semibold
+                  className="px-4 py-2 rounded-m bg-primary text-[#000] text-body-md font-semibold
                     disabled:opacity-40 flex items-center gap-1.5 active:scale-[0.97] transition-all"
                 >
                   {loading === busyKey
@@ -255,7 +255,7 @@ function ChargePowerSection({ deviceId: _deviceId, sendFrame, loading }: ChargeP
               </div>
 
               {/* 帧预览 */}
-              <p className="text-tiny text-[#454545] font-mono break-all">{frame}</p>
+              <p className="text-tiny text-ink-9 font-mono break-all">{frame}</p>
             </div>
           )
         })}
@@ -325,25 +325,25 @@ export default function PassthroughPage() {
   }
 
   const dirColor = (dir: LogEntry['dir']) =>
-    dir === 'tx' ? 'text-[#01D6BE]' : dir === 'rx' ? 'text-[#34C759]' : 'text-[#FF3530]'
+    dir === 'tx' ? 'text-primary' : dir === 'rx' ? 'text-success' : 'text-[#FF3530]'
 
   const typeColor = (type: Preset['type']) =>
-    type === 'read' ? 'text-[#01D6BE] bg-[rgba(1,214,190,0.1)]'
-    : type === 'ctrl' ? 'text-[#FF9500] bg-[rgba(255,149,0,0.1)]'
-    : 'text-[#8C8C8C] bg-[rgba(255,255,255,0.06)]'
+    type === 'read' ? 'text-primary bg-[rgba(1,214,190,0.1)]'
+    : type === 'ctrl' ? 'text-warning bg-[rgba(255,149,0,0.1)]'
+    : 'text-ink-7 bg-[rgba(255,255,255,0.06)]'
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
+    <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
       {/* Header */}
       <div className="px-4 pt-5 pb-3 flex items-center gap-3 relative border-b border-[rgba(255,255,255,0.06)]">
         <button
           onClick={() => navigate(-1)}
-          className="w-9 h-9 flex items-center justify-center rounded-full bg-[#262626]"
+          className="w-9 h-9 flex items-center justify-center rounded-full bg-ink-10"
         >
           <ChevronLeft size={20} className="text-white" />
         </button>
         <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5">
-          <Terminal size={15} className="text-[#01D6BE]" />
+          <Terminal size={15} className="text-primary" />
           <h1 className="text-title-lg font-semibold text-white">Modbus Passthrough</h1>
         </div>
       </div>
@@ -353,10 +353,10 @@ export default function PassthroughPage() {
         {/* ── 预设报文分组 ── */}
         {PRESET_GROUPS.map(group => (
           <div key={group.title} className="px-4 pt-5">
-            <p className="text-caption font-semibold text-[#8C8C8C] mb-2 uppercase tracking-wide">
+            <p className="text-caption font-semibold text-ink-7 mb-2 uppercase tracking-wide">
               {group.title}
             </p>
-            <div className="rounded-l bg-[#262626] overflow-hidden divide-y divide-[rgba(255,255,255,0.04)]">
+            <div className="rounded-l bg-ink-10 overflow-hidden divide-y divide-[rgba(255,255,255,0.04)]">
               {group.presets.map(p => {
                 const isBusy = loading === p.label
                 return (
@@ -373,11 +373,11 @@ export default function PassthroughPage() {
                           {p.type === 'read' ? 'READ' : p.type === 'ctrl' ? 'CTRL' : 'WRITE'}
                         </span>
                       </div>
-                      <p className="text-caption text-[#595959] mt-0.5 font-mono">{p.desc}</p>
+                      <p className="text-caption text-ink-8 mt-0.5 font-mono">{p.desc}</p>
                     </div>
                     {isBusy
-                      ? <Loader2 size={16} className="text-[#01D6BE] animate-spin flex-shrink-0" />
-                      : <Send size={15} className="text-[#454545] flex-shrink-0" />
+                      ? <Loader2 size={16} className="text-primary animate-spin flex-shrink-0" />
+                      : <Send size={15} className="text-ink-9 flex-shrink-0" />
                     }
                   </button>
                 )
@@ -391,23 +391,23 @@ export default function PassthroughPage() {
 
         {/* ── 自定义帧 ── */}
         <div className="px-4 pt-5">
-          <p className="text-caption font-semibold text-[#8C8C8C] mb-2 uppercase tracking-wide">
+          <p className="text-caption font-semibold text-ink-7 mb-2 uppercase tracking-wide">
             Custom Hex Frame
           </p>
-          <div className="rounded-l bg-[#262626] p-4 space-y-3">
+          <div className="rounded-l bg-ink-10 p-4 space-y-3">
             <textarea
               value={customHex}
               onChange={e => setCustomHex(e.target.value)}
               placeholder={'e.g. 01 03 01 00 00 12 XX XX\nwith or without spaces'}
               rows={2}
-              className="w-full px-3 py-2.5 rounded-m bg-[#141414] border border-[rgba(255,255,255,0.06)]
-                text-[#BFBFBF] text-caption placeholder:text-[#454545] font-mono
+              className="w-full px-3 py-2.5 rounded-m bg-ink-12 border border-[rgba(255,255,255,0.06)]
+                text-ink-6 text-caption placeholder:text-ink-9 font-mono
                 focus:outline-none focus:border-[rgba(1,214,190,0.4)] resize-none"
             />
             <button
               onClick={() => sendFrame(customHex, 'custom')}
               disabled={loading !== null || !customHex.trim()}
-              className="w-full py-3 rounded-m bg-[#01D6BE] text-[#000] text-body-md font-semibold
+              className="w-full py-3 rounded-m bg-primary text-[#000] text-body-md font-semibold
                 disabled:opacity-40 flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
             >
               {loading === 'custom'
@@ -430,26 +430,26 @@ export default function PassthroughPage() {
           return (
             <div className="px-4 pt-5">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-caption font-semibold text-[#8C8C8C] uppercase tracking-wide flex items-center gap-1.5">
-                  <Settings2 size={11} className="text-[#01D6BE]" />
+                <p className="text-caption font-semibold text-ink-7 uppercase tracking-wide flex items-center gap-1.5">
+                  <Settings2 size={11} className="text-primary" />
                   Parsed Params
                 </p>
-                <button onClick={() => setParsedParams([])} className="text-caption text-[#595959] active:text-[#FF3530]">
+                <button onClick={() => setParsedParams([])} className="text-caption text-ink-8 active:text-[#FF3530]">
                   Clear
                 </button>
               </div>
               <div className="space-y-3">
                 {ordered.map(grp => (
-                  <div key={grp} className="rounded-l bg-[#262626] overflow-hidden">
+                  <div key={grp} className="rounded-l bg-ink-10 overflow-hidden">
                     <div className="px-3 py-2 bg-[rgba(1,214,190,0.08)] border-b border-[rgba(255,255,255,0.04)]">
-                      <span className="text-caption font-semibold text-[#01D6BE]">{grp}</span>
+                      <span className="text-caption font-semibold text-primary">{grp}</span>
                     </div>
                     <div className="divide-y divide-[rgba(255,255,255,0.04)]">
                       {groups[grp].map(p => (
                         <div key={p.addr} className="flex items-center justify-between px-3 py-2.5 gap-2">
                           <div className="flex-1 min-w-0">
-                            <span className="text-body-md text-[#D9D9D9] text-sm">{p.name}</span>
-                            <span className="text-tiny text-[#454545] font-mono ml-2">
+                            <span className="text-body-md text-ink-5 text-sm">{p.name}</span>
+                            <span className="text-tiny text-ink-9 font-mono ml-2">
                               0x{p.addr.toString(16).toUpperCase().padStart(4, '0')}
                             </span>
                           </div>
@@ -457,10 +457,10 @@ export default function PassthroughPage() {
                             {p.unit ? (
                               <>
                                 <span className="text-body-md font-semibold text-white">{p.value}</span>
-                                <span className="text-caption text-[#8C8C8C] ml-1">{p.unit}</span>
+                                <span className="text-caption text-ink-7 ml-1">{p.unit}</span>
                               </>
                             ) : (
-                              <span className={`text-caption font-medium ${p.value === 'Normal' || p.value === 'No Alarm' || p.value === 'No Fault' ? 'text-[#34C759]' : 'text-[#FF9500]'}`}>
+                              <span className={`text-caption font-medium ${p.value === 'Normal' || p.value === 'No Alarm' || p.value === 'No Fault' ? 'text-success' : 'text-warning'}`}>
                                 {p.value}
                               </span>
                             )}
@@ -478,33 +478,33 @@ export default function PassthroughPage() {
         {/* ── 收发日志 ── */}
         <div className="px-4 pt-5">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-caption font-semibold text-[#8C8C8C] uppercase tracking-wide">TX/RX Log</p>
+            <p className="text-caption font-semibold text-ink-7 uppercase tracking-wide">TX/RX Log</p>
             {logs.length > 0 && (
-              <button onClick={() => setLogs([])} className="text-caption text-[#595959] active:text-[#FF3530]">
+              <button onClick={() => setLogs([])} className="text-caption text-ink-8 active:text-[#FF3530]">
                 Clear
               </button>
             )}
           </div>
           <div className="rounded-l bg-[#1A1A1A] border border-[rgba(255,255,255,0.04)] p-3 min-h-[80px] max-h-80 overflow-y-auto font-mono space-y-2">
             {logs.length === 0 ? (
-              <p className="text-caption text-[#454545] text-center py-4">No data — tap a button above to send a frame</p>
+              <p className="text-caption text-ink-9 text-center py-4">No data — tap a button above to send a frame</p>
             ) : (
               logs.map(l => (
                 <div key={l.id} className="space-y-0.5">
                   <div className="flex gap-2 text-tiny">
-                    <span className="text-[#454545] flex-shrink-0">
+                    <span className="text-ink-9 flex-shrink-0">
                       {new Date(l.ts).toLocaleTimeString('en-US', { hour12: false })}
                     </span>
                     <span className={`flex-shrink-0 font-bold ${dirColor(l.dir)}`}>
                       {l.dir === 'tx' ? '→' : l.dir === 'rx' ? '←' : '!'}
                     </span>
                     {l.label && (
-                      <span className="text-[#595959] flex-shrink-0">[{l.label}]</span>
+                      <span className="text-ink-8 flex-shrink-0">[{l.label}]</span>
                     )}
                     <span className={`${dirColor(l.dir)} break-all`}>{l.text}</span>
                   </div>
                   {l.summary && (
-                    <div className="ml-[4.5rem] text-tiny text-[#01D6BE] bg-[rgba(1,214,190,0.06)] rounded px-2 py-0.5">
+                    <div className="ml-[4.5rem] text-tiny text-primary bg-[rgba(1,214,190,0.06)] rounded px-2 py-0.5">
                       {l.summary}
                     </div>
                   )}

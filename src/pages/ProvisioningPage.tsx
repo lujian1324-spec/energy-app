@@ -139,7 +139,7 @@ function QrScanScreen({ onBack, onScanned }: {
           <div className="bg-[rgba(0,0,0,0.85)] rounded-l p-5">
             <p className="text-caption text-primary font-semibold uppercase tracking-widest mb-1">Device Scanned</p>
             <p className="text-title-md font-bold text-white">{scanned.name}</p>
-            <p className="text-caption text-[#BFBFBF] mb-5">{scanned.serial}</p>
+            <p className="text-caption text-ink-6 mb-5">{scanned.serial}</p>
             <div className="flex gap-3">
               <button onClick={() => { setScanned(null); setCameraReady(false); setTimeout(() => setCameraReady(true), 100) }}
                 className="flex-1 h-12 rounded-full border border-[rgba(255,255,255,0.3)] text-white font-semibold text-body-md">
@@ -444,9 +444,9 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     // ── Permission Required screen ──
     if (bleStatus === 'no_permission') {
       return (
-        <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
+        <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
           <div className="px-4 pt-5 pb-4 flex items-center safe-area-top">
-            <button onClick={handleClose} className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center">
+            <button onClick={handleClose} className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center">
               <ChevronLeft size={20} className="text-white" />
             </button>
             <h1 className="text-title-lg font-semibold text-white ml-3">Add Device</h1>
@@ -456,7 +456,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
               <AlertCircle size={36} className="text-danger" />
             </div>
             <h2 className="text-headline-md font-bold text-white mb-3">Permission Required</h2>
-            <p className="text-body-md text-[#BFBFBF] mb-8">
+            <p className="text-body-md text-ink-6 mb-8">
               Bluetooth and Local Network access are required to connect your Sierro device. Please enable them in Settings.
             </p>
           </div>
@@ -480,9 +480,9 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     // ── Bluetooth Off screen ──
     if (bleStatus === 'bt_off') {
       return (
-        <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
+        <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
           <div className="px-4 pt-5 pb-4 flex items-center safe-area-top">
-            <button onClick={handleClose} className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center">
+            <button onClick={handleClose} className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center">
               <ChevronLeft size={20} className="text-white" />
             </button>
             <h1 className="text-title-lg font-semibold text-white ml-3">Add Device</h1>
@@ -492,7 +492,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
               <WifiOff size={36} className="text-primary" />
             </div>
             <h2 className="text-headline-md font-bold text-white mb-3">Bluetooth is Off</h2>
-            <p className="text-body-md text-[#BFBFBF] mb-8">
+            <p className="text-body-md text-ink-6 mb-8">
               Please enable Bluetooth on your device to scan for nearby Sierro devices.
             </p>
           </div>
@@ -509,12 +509,12 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     }
 
     return (
-      <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
+      <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
         {/* Header */}
         <div className="px-4 pt-5 pb-4 flex items-center justify-between safe-area-top">
           <button
             onClick={handleClose}
-            className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center"
+            className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center"
           >
             <ChevronLeft size={20} className="text-white" />
           </button>
@@ -547,7 +547,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                 />
               ))}
               {/* Centre phone icon */}
-              <div className="w-16 h-16 rounded-l bg-[#262626] flex items-center justify-center z-10">
+              <div className="w-16 h-16 rounded-l bg-ink-10 flex items-center justify-center z-10">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
                   <rect x="5" y="2" width="14" height="20" rx="3" stroke="#01D6BE" strokeWidth="1.5"/>
                   <circle cx="12" cy="18" r="1" fill="#01D6BE"/>
@@ -559,39 +559,39 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
             {isSearching && (
               <div className="text-center mb-6">
                 <p className="text-body-lg font-semibold text-white mb-1">Searching for nearby devices...</p>
-                <p className="text-body-md text-[#BFBFBF]">Make sure your device is powered on and nearby.</p>
+                <p className="text-body-md text-ink-6">Make sure your device is powered on and nearby.</p>
               </div>
             )}
 
             {!isSearching && !hasDevices && !store.errorMessage && (
               <div className="text-center mb-6">
                 <p className="text-body-lg font-semibold text-white mb-1">Ready to Scan</p>
-                <p className="text-body-md text-[#BFBFBF]">Tap the button below to search for nearby devices.</p>
+                <p className="text-body-md text-ink-6">Tap the button below to search for nearby devices.</p>
               </div>
             )}
 
             {hasError && (
               <div className="text-center mb-6">
                 <p className="text-body-lg font-semibold text-white mb-1">No Devices Found</p>
-                <p className="text-body-md text-[#BFBFBF]">Make sure your device is powered on and Bluetooth is enabled.</p>
+                <p className="text-body-md text-ink-6">Make sure your device is powered on and Bluetooth is enabled.</p>
               </div>
             )}
 
             {/* Found devices list */}
             {hasDevices && (
               <div className="w-full mb-6">
-                <p className="text-caption font-bold text-[#BFBFBF] tracking-widest uppercase mb-3 px-1">
+                <p className="text-caption font-bold text-ink-6 tracking-widest uppercase mb-3 px-1">
                   Found Devices ({foundDevices.length})
                 </p>
                 <div className="flex flex-col gap-2">
                   {foundDevices.map((device, i) => (
                     <div
                       key={i}
-                      className="bg-[#262626] rounded-l px-4 py-4 flex items-center justify-between"
+                      className="bg-ink-10 rounded-l px-4 py-4 flex items-center justify-between"
                     >
                       <div>
                         <p className="text-body-lg font-semibold text-white">{device.name}</p>
-                        <p className="text-caption text-[#BFBFBF] mt-0.5">{device.serial}</p>
+                        <p className="text-caption text-ink-6 mt-0.5">{device.serial}</p>
                       </div>
                       <button
                         onClick={handleConnect}
@@ -654,12 +654,12 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
 
   if (uiScreen === 'naming') {
     return (
-      <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
+      <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
         {/* Header */}
         <div className="px-4 pt-5 pb-4 flex items-center gap-3 safe-area-top">
           <button
             onClick={() => setUiScreen('scan')}
-            className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center"
+            className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center"
           >
             <ChevronLeft size={20} className="text-white" />
           </button>
@@ -667,12 +667,12 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
 
         <div className="flex-1 px-6 pt-6">
           <h1 className="text-headline-lg font-bold text-white mb-2">Name Your Device</h1>
-          <p className="text-body-md text-[#BFBFBF] mb-8">
+          <p className="text-body-md text-ink-6 mb-8">
             Give your device a name so you can easily identify it.
           </p>
 
           {/* Input card */}
-          <div className={`bg-[#262626] rounded-l px-4 py-4 flex items-center gap-3 mb-2
+          <div className={`bg-ink-10 rounded-l px-4 py-4 flex items-center gap-3 mb-2
             ${nameError ? 'border border-danger' : ''}`}
           >
             <input
@@ -681,11 +681,11 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
               onChange={(e) => { setDeviceNameInput(e.target.value); setNameError('') }}
               placeholder="Device name"
               autoFocus
-              className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#8C8C8C] outline-none caret-primary"
+              className="flex-1 bg-transparent text-body-lg text-white placeholder:text-ink-7 outline-none caret-primary"
             />
             {deviceNameInput.length > 0 && (
               <button onClick={() => setDeviceNameInput('')}>
-                <X size={16} className="text-[#8C8C8C]" />
+                <X size={16} className="text-ink-7" />
               </button>
             )}
           </div>
@@ -770,12 +770,12 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   // ══════════════════════════════════════════════════════════════════════════
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
+    <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
       {/* Header */}
       <div className="px-4 pt-5 pb-4 flex items-center gap-3 safe-area-top">
         <button
           onClick={() => setUiScreen('naming')}
-          className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center"
+          className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center"
         >
           <ChevronLeft size={20} className="text-white" />
         </button>
@@ -799,18 +799,18 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                   <CheckCircle size={28} className="text-primary" />
                 </div>
                 <p className="text-body-lg font-semibold text-white mb-1">{store.deviceName}</p>
-                {store.dtuid && <p className="text-caption text-[#BFBFBF]">{store.dtuid}</p>}
+                {store.dtuid && <p className="text-caption text-ink-6">{store.dtuid}</p>}
               </div>
 
               {store.needBleKey && !store.bleKeyVerified && (
-                <div className="bg-[#262626] rounded-l px-4 py-4 mb-4">
+                <div className="bg-ink-10 rounded-l px-4 py-4 mb-4">
                   <p className="text-body-md font-semibold text-white mb-3">BLE Key Required</p>
                   <input
                     type="password"
                     value={bleKeyInput}
                     onChange={(e) => setBleKeyInput(e.target.value)}
                     placeholder="Enter BLE key"
-                    className="w-full bg-[#1A1A1A] rounded-m px-4 py-3 text-body-md text-white placeholder:text-[#8C8C8C] outline-none border border-[rgba(255,255,255,0.08)] focus:border-primary mb-3"
+                    className="w-full bg-[#1A1A1A] rounded-m px-4 py-3 text-body-md text-white placeholder:text-ink-7 outline-none border border-[rgba(255,255,255,0.08)] focus:border-primary mb-3"
                   />
                   <button
                     onClick={handleConfirmBleKey}
@@ -841,12 +841,12 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
               {store.apLoading ? (
                 <div className="flex items-center justify-center py-20 gap-3">
                   <Loader2 size={24} className="text-primary animate-spin" />
-                  <span className="text-body-md text-[#BFBFBF]">Scanning Wi-Fi...</span>
+                  <span className="text-body-md text-ink-6">Scanning Wi-Fi...</span>
                 </div>
               ) : store.apList.length === 0 ? (
                 <div className="text-center py-16">
-                  <WifiOff size={36} className="text-[#8C8C8C] mx-auto mb-4" />
-                  <p className="text-body-md text-[#BFBFBF] mb-4">No Wi-Fi networks found</p>
+                  <WifiOff size={36} className="text-ink-7 mx-auto mb-4" />
+                  <p className="text-body-md text-ink-6 mb-4">No Wi-Fi networks found</p>
                   <button onClick={handleScanWifi} className="text-body-md text-primary font-semibold flex items-center gap-1 mx-auto">
                     <RefreshCw size={14} /> Scan Again
                   </button>
@@ -857,16 +857,16 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                     <button
                       key={`${ap.SSID}-${i}`}
                       onClick={() => { store.setSelectedSsid(ap.SSID); store.setStep('password') }}
-                      className="bg-[#262626] rounded-l px-4 py-4 flex items-center justify-between active:opacity-70 transition-opacity"
+                      className="bg-ink-10 rounded-l px-4 py-4 flex items-center justify-between active:opacity-70 transition-opacity"
                     >
                       <div className="flex items-center gap-3">
                         <Wifi size={18} className="text-primary flex-shrink-0" />
                         <span className="text-body-lg text-white">{ap.SSID || '(Hidden Network)'}</span>
                       </div>
-                      {ap.Secu === 1 && <Lock size={14} className="text-[#BFBFBF]" />}
+                      {ap.Secu === 1 && <Lock size={14} className="text-ink-6" />}
                     </button>
                   ))}
-                  <button onClick={handleScanWifi} className="text-caption text-[#BFBFBF] flex items-center gap-1 mx-auto mt-2">
+                  <button onClick={handleScanWifi} className="text-caption text-ink-6 flex items-center gap-1 mx-auto mt-2">
                     <RefreshCw size={10} /> Refresh
                   </button>
                 </div>
@@ -877,8 +877,8 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
           {/* password */}
           {store.step === 'password' && (
             <motion.div key="password" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="pt-4">
-              <div className="bg-[#262626] rounded-l px-4 py-4 mb-2">
-                <p className="text-caption text-[#BFBFBF] mb-1">Network</p>
+              <div className="bg-ink-10 rounded-l px-4 py-4 mb-2">
+                <p className="text-caption text-ink-6 mb-1">Network</p>
                 <div className="flex items-center justify-between">
                   <p className="text-body-lg font-semibold text-white">{store.selectedSsid}</p>
                   <button
@@ -890,8 +890,8 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                 </div>
               </div>
 
-              <div className="bg-[#262626] rounded-l px-4 py-4 mb-6">
-                <p className="text-caption text-[#BFBFBF] mb-2">Password</p>
+              <div className="bg-ink-10 rounded-l px-4 py-4 mb-6">
+                <p className="text-caption text-ink-6 mb-2">Password</p>
                 <div className="flex items-center gap-2">
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -899,12 +899,12 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                     onChange={(e) => store.setWifiPassword(e.target.value)}
                     placeholder="Enter Wi-Fi password"
                     autoFocus
-                    className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#8C8C8C] outline-none caret-primary"
+                    className="flex-1 bg-transparent text-body-lg text-white placeholder:text-ink-7 outline-none caret-primary"
                   />
                   <button onClick={() => setShowPassword(!showPassword)}>
                     {showPassword
-                      ? <EyeOff size={16} className="text-[#8C8C8C]" />
-                      : <Eye size={16} className="text-[#8C8C8C]" />
+                      ? <EyeOff size={16} className="text-ink-7" />
+                      : <Eye size={16} className="text-ink-7" />
                     }
                   </button>
                 </div>
@@ -927,7 +927,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
               <div className="flex flex-col items-center py-16">
                 <Loader2 size={40} className="text-primary animate-spin mb-6" />
                 <p className="text-body-lg font-semibold text-white mb-2">Connecting to Wi-Fi...</p>
-                <p className="text-body-md text-[#BFBFBF]">This may take a moment.</p>
+                <p className="text-body-md text-ink-6">This may take a moment.</p>
               </div>
             </motion.div>
           )}
@@ -952,24 +952,24 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
               </div>
 
               {store.wifiStatus && (
-                <div className="bg-[#262626] rounded-l px-4 py-4 mb-4 space-y-3">
+                <div className="bg-ink-10 rounded-l px-4 py-4 mb-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-body-md text-[#BFBFBF]">Wi-Fi</span>
+                    <span className="text-body-md text-ink-6">Wi-Fi</span>
                     <span className={`text-body-md font-semibold ${store.wifiStatus.WConn ? 'text-success' : 'text-danger'}`}>
                       {store.wifiStatus.WConn ? 'Connected' : 'Not Connected'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-body-md text-[#BFBFBF]">Network</span>
+                    <span className="text-body-md text-ink-6">Network</span>
                     <span className="text-body-md text-white">{store.wifiStatus.SSID}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-body-md text-[#BFBFBF]">Signal</span>
+                    <span className="text-body-md text-ink-6">Signal</span>
                     <span className="text-body-md text-white">{store.wifiStatus.RSSI} dBm</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-body-md text-[#BFBFBF]">Cloud</span>
-                    <span className={`text-body-md ${store.wifiStatus.SConn ? 'text-success' : 'text-[#FF9500]'}`}>
+                    <span className="text-body-md text-ink-6">Cloud</span>
+                    <span className={`text-body-md ${store.wifiStatus.SConn ? 'text-success' : 'text-warning'}`}>
                       {store.wifiStatus.SConn ? 'Connected' : 'Pending'}
                     </span>
                   </div>
@@ -981,7 +981,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                   <button
                     onClick={handleCheckStatus}
                     disabled={store.isOperating}
-                    className="w-full h-12 rounded-l bg-[#262626] text-primary text-body-md font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="w-full h-12 rounded-l bg-ink-10 text-primary text-body-md font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     {store.isOperating ? <Loader2 size={14} className="animate-spin" /> : <Server size={14} />}
                     Check Connection Status
@@ -1007,14 +1007,14 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                   <>
                     <button
                       onClick={() => store.setStep('wifi')}
-                      className="w-full h-12 rounded-l bg-[#262626] text-white text-body-md font-semibold flex items-center justify-center gap-2"
+                      className="w-full h-12 rounded-l bg-ink-10 text-white text-body-md font-semibold flex items-center justify-center gap-2"
                     >
                       Try Again
                     </button>
                     <button
                       onClick={handleRestart}
                       disabled={store.isOperating}
-                      className="w-full h-12 rounded-l bg-[#262626] text-[#FF9500] text-body-md font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+                      className="w-full h-12 rounded-l bg-ink-10 text-warning text-body-md font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                       {store.isOperating ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
                       Restart Device
@@ -1053,7 +1053,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
             <motion.div
               initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', stiffness: 400, damping: 40 }}
-              className="absolute bottom-0 left-0 right-0 z-50 bg-[#1F1F1F] rounded-t-[24px] px-6 pt-3 pb-10 safe-area-bottom"
+              className="absolute bottom-0 left-0 right-0 z-50 bg-ink-11 rounded-t-[24px] px-6 pt-3 pb-10 safe-area-bottom"
             >
               <div className="w-10 h-1 bg-[rgba(255,255,255,0.2)] rounded-full mx-auto mb-6" />
               <div className="w-14 h-14 rounded-[18px] bg-[rgba(1,214,190,0.12)] flex items-center justify-center mb-4">
@@ -1062,7 +1062,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                 </svg>
               </div>
               <h3 className="text-title-lg font-bold text-white mb-2">Enable Notifications</h3>
-              <p className="text-body-md text-[#BFBFBF] mb-6">
+              <p className="text-body-md text-ink-6 mb-6">
                 Get alerted when your battery is low, a power outage occurs, or solar connects or disconnects.
               </p>
               <button
@@ -1077,7 +1077,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
               </button>
               <button
                 onClick={() => { setShowNotifSheet(false); handleClose() }}
-                className="w-full h-12 text-body-md text-[#8C8C8C]"
+                className="w-full h-12 text-body-md text-ink-7"
               >
                 Not Now
               </button>

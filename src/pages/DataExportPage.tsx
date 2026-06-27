@@ -102,21 +102,21 @@ export default function DataExportPage() {
   }
 
   return (
-    <div className="h-full flex flex-col bg-[#141414] overflow-hidden">
+    <div className="h-full flex flex-col bg-ink-12 overflow-hidden">
       <div className="px-5 pt-4 pb-3 safe-area-top flex items-center gap-3">
         <button
           onClick={() => navigate(-1)}
-          className="w-9 h-9 rounded-full bg-[#262626] flex items-center justify-center text-[#FFFFFF] active:scale-95"
+          className="w-9 h-9 rounded-full bg-ink-10 flex items-center justify-center text-ink-1 active:scale-95"
           aria-label="Back"
         >
           <ChevronLeft size={20} />
         </button>
         <div className="flex-1">
-          <h2 className="text-lg font-bold text-[#FFFFFF]">Privacy & Data</h2>
+          <h2 className="text-lg font-bold text-ink-1">Privacy & Data</h2>
           <p className="text-caption text-[#A0A0A5]">Export and manage your data</p>
         </div>
         <div className="w-9 h-9 rounded-full bg-[rgba(1,214,190,0.12)] flex items-center justify-center">
-          <Shield size={18} className="text-[#01D6BE]" />
+          <Shield size={18} className="text-primary" />
         </div>
       </div>
 
@@ -128,9 +128,9 @@ export default function DataExportPage() {
           className="bg-[rgba(1,214,190,0.06)] border border-[rgba(1,214,190,0.2)] rounded-[20px] p-4 mb-4"
         >
           <div className="flex items-start gap-3">
-            <Info size={18} className="text-[#01D6BE] flex-shrink-0 mt-0.5" />
+            <Info size={18} className="text-primary flex-shrink-0 mt-0.5" />
             <div>
-              <h3 className="text-[13px] font-semibold text-[#FFFFFF] mb-1">Your data, your control</h3>
+              <h3 className="text-[13px] font-semibold text-ink-1 mb-1">Your data, your control</h3>
               <p className="text-caption text-[#A0A0A5] leading-relaxed">
                 Sierro stores your energy data locally on this device and on our secure cloud.
                 You can export or delete it at any time.
@@ -153,17 +153,17 @@ export default function DataExportPage() {
             <button
               onClick={handleExportJson}
               disabled={!!exportLoading}
-              className="w-full flex items-center gap-3.5 p-4 bg-[#262626] rounded-l active:scale-[0.99] transition-transform disabled:opacity-50"
+              className="w-full flex items-center gap-3.5 p-4 bg-ink-10 rounded-l active:scale-[0.99] transition-transform disabled:opacity-50"
             >
               <div className="w-11 h-11 rounded-l bg-[rgba(1,214,190,0.12)] flex items-center justify-center flex-shrink-0">
-                <FileJson size={20} className="text-[#01D6BE]" />
+                <FileJson size={20} className="text-primary" />
               </div>
               <div className="flex-1 text-left">
-                <div className="text-body-md font-semibold text-[#FFFFFF]">Export as JSON</div>
+                <div className="text-body-md font-semibold text-ink-1">Export as JSON</div>
                 <div className="text-caption text-[#A0A0A5] mt-0.5">Full snapshot: devices, history, settings</div>
               </div>
               {exportLoading === 'json' ? (
-                <RotateCcw size={18} className="text-[#01D6BE] animate-spin" />
+                <RotateCcw size={18} className="text-primary animate-spin" />
               ) : (
                 <Download size={18} className="text-[#A0A0A5]" />
               )}
@@ -171,17 +171,17 @@ export default function DataExportPage() {
             <button
               onClick={handleExportCsv}
               disabled={!!exportLoading}
-              className="w-full flex items-center gap-3.5 p-4 bg-[#262626] rounded-l active:scale-[0.99] transition-transform disabled:opacity-50"
+              className="w-full flex items-center gap-3.5 p-4 bg-ink-10 rounded-l active:scale-[0.99] transition-transform disabled:opacity-50"
             >
               <div className="w-11 h-11 rounded-l bg-[rgba(255,149,0,0.12)] flex items-center justify-center flex-shrink-0">
-                <FileText size={20} className="text-[#FF9500]" />
+                <FileText size={20} className="text-warning" />
               </div>
               <div className="flex-1 text-left">
-                <div className="text-body-md font-semibold text-[#FFFFFF]">Export as CSV</div>
+                <div className="text-body-md font-semibold text-ink-1">Export as CSV</div>
                 <div className="text-caption text-[#A0A0A5] mt-0.5">Time-series history data for analysis</div>
               </div>
               {exportLoading === 'csv' ? (
-                <RotateCcw size={18} className="text-[#FF9500] animate-spin" />
+                <RotateCcw size={18} className="text-warning animate-spin" />
               ) : (
                 <Download size={18} className="text-[#A0A0A5]" />
               )}
@@ -194,7 +194,7 @@ export default function DataExportPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-[#262626] rounded-[20px] overflow-hidden mb-4"
+          className="bg-ink-10 rounded-[20px] overflow-hidden mb-4"
         >
           <div className="px-4 py-3.5">
             <div className="flex items-center justify-between">
@@ -203,7 +203,7 @@ export default function DataExportPage() {
                   <RotateCcw size={18} className="text-[#A855F7]" />
                 </div>
                 <div>
-                  <div className="text-body-md font-semibold text-[#FFFFFF]">Recycle Bin</div>
+                  <div className="text-body-md font-semibold text-ink-1">Recycle Bin</div>
                   <div className="text-caption text-[#A0A0A5] mt-0.5">Deleted data kept for 30 days</div>
                 </div>
               </div>
@@ -219,7 +219,7 @@ export default function DataExportPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="bg-[#262626] rounded-[20px] overflow-hidden mb-4"
+          className="bg-ink-10 rounded-[20px] overflow-hidden mb-4"
         >
           <div className="px-4 py-3 border-b border-[rgba(255,255,255,0.06)]">
             <span className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase">
@@ -228,10 +228,10 @@ export default function DataExportPage() {
           </div>
           <div className="flex items-center gap-3 px-4 py-3.5">
             <div className="w-9 h-9 rounded-lg bg-[rgba(52,199,89,0.1)] flex items-center justify-center flex-shrink-0">
-              <Check size={16} className="text-[#34C759]" />
+              <Check size={16} className="text-success" />
             </div>
             <div className="flex-1">
-              <div className="text-[13px] font-semibold text-[#FFFFFF]">Anonymous Analytics</div>
+              <div className="text-[13px] font-semibold text-ink-1">Anonymous Analytics</div>
               <div className="text-caption text-[#A0A0A5] mt-0.5">Help improve Sierro (no personal data)</div>
             </div>
             <ToggleSwitch
@@ -249,11 +249,11 @@ export default function DataExportPage() {
         {/* Legal links */}
         <div className="text-center py-2 text-caption">
           <div className="flex items-center justify-center gap-3 mb-2">
-            <button onClick={() => navigate('/privacy')} className="text-[#A0A0A5] hover:text-[#FFFFFF] transition-colors">
+            <button onClick={() => navigate('/privacy')} className="text-[#A0A0A5] hover:text-ink-1 transition-colors">
               Privacy Policy
             </button>
             <span className="text-[#636366]">|</span>
-            <button onClick={() => navigate('/terms')} className="text-[#A0A0A5] hover:text-[#FFFFFF] transition-colors">
+            <button onClick={() => navigate('/terms')} className="text-[#A0A0A5] hover:text-ink-1 transition-colors">
               Terms of Use
             </button>
           </div>

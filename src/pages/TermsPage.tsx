@@ -105,12 +105,12 @@ export default function TermsPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-[#141414] flex flex-col">
+    <div className="min-h-screen bg-ink-12 flex flex-col">
       {/* Header */}
       <div className="flex items-center gap-3 px-5 pt-4 pb-3 safe-area-top border-b border-[rgba(255,255,255,0.06)]">
         <button
           onClick={() => navigate(-1)}
-          className="w-9 h-9 rounded-full bg-[#262626] flex items-center justify-center text-[#FFFFFF] active:scale-95 transition-transform"
+          className="w-9 h-9 rounded-full bg-ink-10 flex items-center justify-center text-ink-1 active:scale-95 transition-transform"
         >
           <Icon name="chevron-left" size={20} />
         </button>
@@ -119,8 +119,8 @@ export default function TermsPage() {
             <Icon name="term of use" size={16} />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-[#FFFFFF]">Terms of Use</h1>
-            <p className="text-[11px] text-[#BFBFBF]">Last updated: May 2026</p>
+            <h1 className="text-lg font-bold text-ink-1">Terms of Use</h1>
+            <p className="text-[11px] text-ink-6">Last updated: May 2026</p>
           </div>
         </div>
       </div>
@@ -133,20 +133,20 @@ export default function TermsPage() {
           transition={{ duration: 0.3 }}
         >
           {/* Intro */}
-          <p className="text-body-md text-[#BFBFBF] leading-relaxed mb-6">
+          <p className="text-body-md text-ink-6 leading-relaxed mb-6">
             Welcome to Sierro. These Terms of Use govern your use of the Sierro App and its related
             services. Please read them carefully before using the App.
           </p>
 
           {/* Table of Contents */}
-          <div className="bg-[#262626] border border-[rgba(255,255,255,0.06)] rounded-l p-4 mb-6">
-            <h2 className="text-[12px] font-bold text-[#BFBFBF] uppercase tracking-wider mb-3">Contents</h2>
+          <div className="bg-ink-10 border border-[rgba(255,255,255,0.06)] rounded-l p-4 mb-6">
+            <h2 className="text-[12px] font-bold text-ink-6 uppercase tracking-wider mb-3">Contents</h2>
             <div className="space-y-1">
               {sections.map(s => (
                 <a
                   key={s.id}
                   href={`#${s.id}`}
-                  className="block text-[12px] text-[#01D6BE] py-1 hover:text-[#14B8A6] transition-colors"
+                  className="block text-[12px] text-primary py-1 hover:text-[#14B8A6] transition-colors"
                 >
                   {s.title}
                 </a>
@@ -163,9 +163,9 @@ export default function TermsPage() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2, delay: i * 0.03 }}
-                className="bg-[#262626] border border-[rgba(52,199,89,0.08)] rounded-l p-4"
+                className="bg-ink-10 border border-[rgba(52,199,89,0.08)] rounded-l p-4"
               >
-                <h3 className="text-body-md font-bold text-[#34C759] mb-2">{section.title}</h3>
+                <h3 className="text-body-md font-bold text-success mb-2">{section.title}</h3>
                 <p className="text-[12px] text-[#AEAEB2] leading-relaxed whitespace-pre-line">
                   {section.content}
                 </p>
@@ -174,7 +174,7 @@ export default function TermsPage() {
           </div>
 
           {/* Footer */}
-          <div className="text-center pt-8 pb-4 text-[11px] text-[#8C8C8C]">
+          <div className="text-center pt-8 pb-4 text-[11px] text-ink-7">
             &copy; 2026 Sierro Inc. All rights reserved.
           </div>
         </motion.div>

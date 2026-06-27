@@ -58,12 +58,12 @@ export default function OnboardingPage() {
   // ─── Step 2: Add first device ─────────────────────────────────────────────
   if (step === 'device') {
     return (
-      <div className="h-full flex flex-col bg-[#141414]">
+      <div className="h-full flex flex-col bg-ink-12">
         {/* Skip for now */}
         <div className="px-4 pt-5 flex justify-end safe-area-top">
           <button
             onClick={finish}
-            className="text-body-md text-[#BFBFBF] active:opacity-70"
+            className="text-body-md text-ink-6 active:opacity-70"
           >
             Skip for now
           </button>
@@ -79,7 +79,7 @@ export default function OnboardingPage() {
           </div>
 
           <h1 className="text-headline-lg font-bold text-white mb-3">Add your first device</h1>
-          <p className="text-body-lg text-[#BFBFBF] max-w-[300px]">
+          <p className="text-body-lg text-ink-6 max-w-[300px]">
             Connect a Sierro device to start monitoring power, battery, and savings in real time.
           </p>
         </div>
@@ -99,28 +99,28 @@ export default function OnboardingPage() {
 
   // ─── Step 1: Name ─────────────────────────────────────────────────────────
   return (
-    <div className="h-full flex flex-col bg-[#141414]">
+    <div className="h-full flex flex-col bg-ink-12">
       <div className="px-4 pt-5 safe-area-top" />
 
       <div className="flex-1 px-6 pt-10">
         <h1 className="text-headline-lg font-bold text-white mb-2">What should we call you?</h1>
-        <p className="text-body-md text-[#BFBFBF] mb-8">
+        <p className="text-body-md text-ink-6 mb-8">
           This is how you'll appear in the Sierro app.
         </p>
 
         {/* Name input card */}
-        <div className="bg-[#262626] rounded-l px-4 py-4 flex items-center gap-3">
+        <div className="bg-ink-10 rounded-l px-4 py-4 flex items-center gap-3">
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Your name"
             autoFocus
-            className="flex-1 bg-transparent text-body-lg text-white placeholder:text-[#8C8C8C] outline-none caret-primary"
+            className="flex-1 bg-transparent text-body-lg text-white placeholder:text-ink-7 outline-none caret-primary"
           />
           {name.length > 0 && (
             <button onClick={() => setName('')}>
-              <X size={16} className="text-[#8C8C8C]" />
+              <X size={16} className="text-ink-7" />
             </button>
           )}
         </div>

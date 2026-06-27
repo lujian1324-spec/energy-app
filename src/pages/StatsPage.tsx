@@ -760,16 +760,16 @@ export default function StatsPage() {
         {!hasDevice && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center justify-center py-20 px-8">
-            <div className="w-16 h-16 rounded-2xl bg-[#262626] flex items-center justify-center mb-4">
-              <BarChart3 size={32} className="text-[#8C8C8C]" />
+            <div className="w-16 h-16 rounded-2xl bg-ink-10 flex items-center justify-center mb-4">
+              <BarChart3 size={32} className="text-ink-7" />
             </div>
-            <h3 className="text-[16px] font-bold text-[#FFFFFF] mb-2">No Data Yet</h3>
-            <p className="text-body-md text-[#BFBFBF] text-center leading-relaxed mb-6">
+            <h3 className="text-[16px] font-bold text-ink-1 mb-2">No Data Yet</h3>
+            <p className="text-body-md text-ink-6 text-center leading-relaxed mb-6">
               Connect a device to start tracking energy usage and statistics.
             </p>
-            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#262626] border border-[rgba(255,255,255,0.06)]">
-              <WifiOff size={14} className="text-[#8C8C8C]" />
-              <span className="text-[12px] text-[#8C8C8C]">No device connected</span>
+            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-ink-10 border border-[rgba(255,255,255,0.06)]">
+              <WifiOff size={14} className="text-ink-7" />
+              <span className="text-[12px] text-ink-7">No device connected</span>
             </div>
           </motion.div>
         )}

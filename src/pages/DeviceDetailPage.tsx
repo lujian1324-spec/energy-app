@@ -257,7 +257,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const BackBtn = ({ to }: { to: Screen | 'parent' }) => (
     <button
       onClick={() => (to === 'parent' ? handleBack() : setScreen(to as Screen))}
-      className="w-10 h-10 rounded-full bg-[#262626] flex items-center justify-center active:scale-95 transition-transform flex-shrink-0"
+      className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center active:scale-95 transition-transform flex-shrink-0"
     >
       <ChevronLeft size={20} className="text-white" />
     </button>
@@ -267,7 +267,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
 
   const InfoRow = ({ label, value }: { label: string; value: string }) => (
     <div className="flex items-center justify-between px-4 py-4 border-b border-white/5 last:border-0">
-      <span className="text-body-md text-[#BFBFBF]">{label}</span>
+      <span className="text-body-md text-ink-6">{label}</span>
       <span className="text-body-md text-white">{value}</span>
     </div>
   )
@@ -287,15 +287,15 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   }) => (
     <div
       onClick={onPress}
-      className="rounded-l bg-[#262626] mb-2 px-4 py-4 flex items-center justify-between cursor-pointer active:opacity-70 transition-opacity"
+      className="rounded-l bg-ink-10 mb-2 px-4 py-4 flex items-center justify-between cursor-pointer active:opacity-70 transition-opacity"
     >
       <span className="text-body-lg text-white">{label}</span>
       <div className="flex items-center gap-2">
         {preview}
         {value !== undefined && (
-          <span className="text-body-md text-[#BFBFBF]">{value}</span>
+          <span className="text-body-md text-ink-6">{value}</span>
         )}
-        <ChevronRight size={18} className="text-[#BFBFBF]" />
+        <ChevronRight size={18} className="text-ink-6" />
       </div>
     </div>
   )
@@ -306,7 +306,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
 
   if (screen === 'editName') {
     return (
-      <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
+      <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
         {/* Header */}
         <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
           <BackBtn to="main" />
@@ -317,7 +317,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             onClick={handleSaveName}
             disabled={!nameChanged || savingName}
             className={`ml-auto text-body-lg font-semibold transition-colors flex items-center gap-1.5 ${
-              nameChanged && !savingName ? 'text-[#01D6BE]' : 'text-[#4A4A4A] cursor-not-allowed'
+              nameChanged && !savingName ? 'text-primary' : 'text-[#4A4A4A] cursor-not-allowed'
             }`}
           >
             {savingName && <Loader2 size={16} className="animate-spin" />}
@@ -328,22 +328,22 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
         {/* Device selector dropdown — pick which device to rename */}
         {devices.length > 1 && (
           <div className="px-4 pt-2">
-            <span className="text-caption text-[#BFBFBF] block mb-2 px-1">Select Device</span>
+            <span className="text-caption text-ink-6 block mb-2 px-1">Select Device</span>
             <div className="relative">
               <button
                 onClick={() => setShowDeviceDropdown(v => !v)}
-                className="w-full rounded-l bg-[#262626] px-4 py-4 flex items-center justify-between active:opacity-70 transition-opacity"
+                className="w-full rounded-l bg-ink-10 px-4 py-4 flex items-center justify-between active:opacity-70 transition-opacity"
               >
                 <span className="text-body-lg text-white truncate">
                   {editTargetDevice?.name ?? editTargetOriginalName}
                 </span>
                 <ChevronDown
                   size={18}
-                  className={`text-[#BFBFBF] transition-transform ${showDeviceDropdown ? 'rotate-180' : ''}`}
+                  className={`text-ink-6 transition-transform ${showDeviceDropdown ? 'rotate-180' : ''}`}
                 />
               </button>
               {showDeviceDropdown && (
-                <div className="absolute left-0 right-0 mt-2 z-10 rounded-l bg-[#262626] border border-white/10 overflow-hidden shadow-xl">
+                <div className="absolute left-0 right-0 mt-2 z-10 rounded-l bg-ink-10 border border-white/10 overflow-hidden shadow-xl">
                   {devices.map((d) => {
                     const isSel = String(d.id) === editTargetId
                     return (
@@ -352,10 +352,10 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                         onClick={() => handleSelectDevice(String(d.id))}
                         className="w-full px-4 py-3.5 flex items-center justify-between border-b border-white/5 last:border-0 active:bg-white/5"
                       >
-                        <span className={`text-body-md ${isSel ? 'text-[#01D6BE] font-semibold' : 'text-white'}`}>
+                        <span className={`text-body-md ${isSel ? 'text-primary font-semibold' : 'text-white'}`}>
                           {d.name}
                         </span>
-                        {isSel && <Check size={16} className="text-[#01D6BE]" />}
+                        {isSel && <Check size={16} className="text-primary" />}
                       </button>
                     )
                   })}
@@ -367,27 +367,27 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
 
         {/* Input */}
         <div className="px-4 pt-4">
-          <span className="text-caption text-[#BFBFBF] block mb-2 px-1">Name</span>
-          <div className="rounded-l bg-[#262626] px-4 py-4 flex items-center gap-3">
+          <span className="text-caption text-ink-6 block mb-2 px-1">Name</span>
+          <div className="rounded-l bg-ink-10 px-4 py-4 flex items-center gap-3">
             <input
               type="text"
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
               autoFocus
-              className="flex-1 bg-transparent text-body-lg text-white outline-none caret-[#01D6BE]"
+              className="flex-1 bg-transparent text-body-lg text-white outline-none caret-primary"
               placeholder="Device name"
             />
             {editName.length > 0 && (
               <button
                 onClick={() => setEditName('')}
-                className="w-6 h-6 rounded-full bg-[#BFBFBF]/30 flex items-center justify-center"
+                className="w-6 h-6 rounded-full bg-ink-6/30 flex items-center justify-center"
               >
-                <X size={14} className="text-[#BFBFBF]" />
+                <X size={14} className="text-ink-6" />
               </button>
             )}
           </div>
           {nameError && (
-            <p className="text-label text-[#FF3B30] mt-2 px-1">{nameError}</p>
+            <p className="text-label text-danger mt-2 px-1">{nameError}</p>
           )}
         </div>
       </div>
@@ -400,7 +400,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
 
   if (screen === 'displayIcon') {
     return (
-      <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
+      <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
         {/* Header */}
         <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
           <BackBtn to="main" />
@@ -416,7 +416,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             <button
               onClick={() => setPendingIcon('photo')}
               className={`flex flex-col items-center gap-2 py-4 rounded-l transition-colors ${
-                pendingIcon === 'photo' ? 'bg-[#01D6BE]' : 'bg-[#262626]'
+                pendingIcon === 'photo' ? 'bg-primary' : 'bg-ink-10'
               }`}
             >
               <img
@@ -426,7 +426,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               />
               <span
                 className={`text-label ${
-                  pendingIcon === 'photo' ? 'text-black font-semibold' : 'text-[#BFBFBF]'
+                  pendingIcon === 'photo' ? 'text-black font-semibold' : 'text-ink-6'
                 }`}
               >
                 Device
@@ -437,16 +437,16 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 key={id}
                 onClick={() => setPendingIcon(id)}
                 className={`flex flex-col items-center gap-2 py-4 rounded-l transition-colors ${
-                  pendingIcon === id ? 'bg-[#01D6BE]' : 'bg-[#262626]'
+                  pendingIcon === id ? 'bg-primary' : 'bg-ink-10'
                 }`}
               >
                 <Icon
                   size={28}
-                  className={pendingIcon === id ? 'text-black' : 'text-[#BFBFBF]'}
+                  className={pendingIcon === id ? 'text-black' : 'text-ink-6'}
                 />
                 <span
                   className={`text-label ${
-                    pendingIcon === id ? 'text-black font-semibold' : 'text-[#BFBFBF]'
+                    pendingIcon === id ? 'text-black font-semibold' : 'text-ink-6'
                   }`}
                 >
                   {label}
@@ -460,7 +460,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
         <div className="px-4 pb-8 pt-4">
           <button
             onClick={handleSaveIcon}
-            className="w-full h-12 rounded-l bg-[#01D6BE] text-black font-semibold text-body-lg active:scale-95 transition-transform"
+            className="w-full h-12 rounded-l bg-primary text-black font-semibold text-body-lg active:scale-95 transition-transform"
           >
             Save
           </button>
@@ -475,7 +475,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
 
   if (screen === 'deviceInfo') {
     return (
-      <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
+      <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
         {/* Header */}
         <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
           <BackBtn to="main" />
@@ -486,7 +486,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
 
         {/* Info list */}
         <div className="flex-1 overflow-y-auto px-4 pt-2">
-          <div className="rounded-l bg-[#262626] overflow-hidden">
+          <div className="rounded-l bg-ink-10 overflow-hidden">
             <InfoRow label="Model" value={realDevice?.model || powerStation.model || 'Sierro 1000'} />
             <InfoRow
               label="Serial Number"
@@ -535,21 +535,21 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           <div className="mt-4 space-y-2">
             <button
               onClick={() => navigate(`/device/${routeId ?? selectedDeviceId}/passthrough`)}
-              className="w-full flex items-center justify-between px-4 py-4 rounded-l bg-[#262626] active:opacity-70 transition-opacity"
+              className="w-full flex items-center justify-between px-4 py-4 rounded-l bg-ink-10 active:opacity-70 transition-opacity"
             >
               <div className="flex items-center gap-2">
-                <span className="text-body-lg font-semibold text-[#01D6BE]">Modbus Debug</span>
+                <span className="text-body-lg font-semibold text-primary">Modbus Debug</span>
               </div>
-              <ChevronRight size={18} className="text-[#BFBFBF]" />
+              <ChevronRight size={18} className="text-ink-6" />
             </button>
             <button
               onClick={() => navigate(`/device/${routeId ?? selectedDeviceId}/debug-params`)}
-              className="w-full flex items-center justify-between px-4 py-4 rounded-l bg-[#262626] active:opacity-70 transition-opacity"
+              className="w-full flex items-center justify-between px-4 py-4 rounded-l bg-ink-10 active:opacity-70 transition-opacity"
             >
               <div className="flex items-center gap-2">
-                <span className="text-body-lg font-semibold text-[#8C8C8C]">Debug Params</span>
+                <span className="text-body-lg font-semibold text-ink-7">Debug Params</span>
               </div>
-              <ChevronRight size={18} className="text-[#BFBFBF]" />
+              <ChevronRight size={18} className="text-ink-6" />
             </button>
           </div>
         </div>
@@ -583,7 +583,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     }
 
     return (
-      <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
+      <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
         {/* Header */}
         <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
           <BackBtn to="main" />
@@ -592,7 +592,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           </h1>
           <button
             onClick={handleSaveSleepMode}
-            className="ml-auto text-body-lg font-semibold text-[#01D6BE]"
+            className="ml-auto text-body-lg font-semibold text-primary"
           >
             Save
           </button>
@@ -600,17 +600,17 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
 
         <div className="flex-1 overflow-y-auto px-4 pt-2 pb-8 space-y-6">
           {/* Toggle row */}
-          <div className="rounded-l bg-[#262626] px-4 py-4">
+          <div className="rounded-l bg-ink-10 px-4 py-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-body-lg text-white">Sleep Mode</p>
-                <p className="text-caption text-[#BFBFBF] mt-0.5">
+                <p className="text-caption text-ink-6 mt-0.5">
                   Low-noise charging · Sleep: {schedulerPowers.sleepW}W / Wake: {schedulerPowers.wakeW}W
                 </p>
               </div>
               <button
                 onClick={() => setSleepMode(enabled ? 'Off' : 'On')}
-                className={`relative w-12 h-7 rounded-full transition-colors duration-200 ${enabled ? 'bg-[#01D6BE]' : 'bg-[#3A3A3C]'}`}
+                className={`relative w-12 h-7 rounded-full transition-colors duration-200 ${enabled ? 'bg-primary' : 'bg-[#3A3A3C]'}`}
               >
                 <span
                   className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow-sm transition-transform duration-200 ${enabled ? 'translate-x-5' : 'translate-x-0'}`}
@@ -623,35 +623,35 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           {enabled && (
             <div>
               <p className="text-body-md font-semibold text-white mb-2">Time</p>
-              <div className="rounded-l bg-[#262626] overflow-hidden">
+              <div className="rounded-l bg-ink-10 overflow-hidden">
                 {/* Sleep start → low power */}
                 <div className="flex items-center justify-between px-4 py-4 border-b border-white/5">
                   <div>
                     <p className="text-body-lg text-white">Sleep</p>
-                    <p className="text-caption text-[#8C8C8C]">AC 充电功率 → {schedulerPowers.sleepW}W</p>
+                    <p className="text-caption text-ink-7">AC 充电功率 → {schedulerPowers.sleepW}W</p>
                   </div>
                   <input
                     type="time"
                     value={sleepFrom}
                     onChange={e => setSleepFrom(e.target.value)}
-                    className="bg-[#3A3A3C] text-white text-body-md rounded-m px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#01D6BE] [color-scheme:dark]"
+                    className="bg-[#3A3A3C] text-white text-body-md rounded-m px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary [color-scheme:dark]"
                   />
                 </div>
                 {/* Wake end → full power */}
                 <div className="flex items-center justify-between px-4 py-4">
                   <div>
                     <p className="text-body-lg text-white">Wake</p>
-                    <p className="text-caption text-[#8C8C8C]">AC 充电功率 → {schedulerPowers.wakeW}W</p>
+                    <p className="text-caption text-ink-7">AC 充电功率 → {schedulerPowers.wakeW}W</p>
                   </div>
                   <input
                     type="time"
                     value={sleepTo}
                     onChange={e => setSleepTo(e.target.value)}
-                    className="bg-[#3A3A3C] text-white text-body-md rounded-m px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#01D6BE] [color-scheme:dark]"
+                    className="bg-[#3A3A3C] text-white text-body-md rounded-m px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary [color-scheme:dark]"
                   />
                 </div>
               </div>
-              <p className="text-caption text-[#8C8C8C] mt-2 px-1">
+              <p className="text-caption text-ink-7 mt-2 px-1">
                 {fmt(sleepFrom)} 降至 {schedulerPowers.sleepW}W · {fmt(sleepTo)} 恢复 {schedulerPowers.wakeW}W
               </p>
             </div>
@@ -661,22 +661,22 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           {enabled && (
             <div>
               <p className="text-body-md font-semibold text-white mb-2">Scheduler Status</p>
-              <div className="rounded-l bg-[#262626] overflow-hidden px-4 py-4 space-y-3">
-                <p className="text-caption text-[#8C8C8C]">
+              <div className="rounded-l bg-ink-10 overflow-hidden px-4 py-4 space-y-3">
+                <p className="text-caption text-ink-7">
                   {model} · Sleep: {schedulerPowers.sleepW}W / Wake: {schedulerPowers.wakeW}W
                 </p>
                 <div className="flex items-center justify-between">
-                  <span className="text-body-md text-[#BFBFBF]">Next event</span>
+                  <span className="text-body-md text-ink-6">Next event</span>
                   <div className="text-right">
-                    <p className="text-body-md text-[#01D6BE] font-semibold">{nextEventLabel}</p>
-                    <p className="text-caption text-[#01D6BE]">{fmtCountdown(nextEventMs)}</p>
+                    <p className="text-body-md text-primary font-semibold">{nextEventLabel}</p>
+                    <p className="text-caption text-primary">{fmtCountdown(nextEventMs)}</p>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-body-md text-[#8C8C8C]">Last sent</span>
+                  <span className="text-body-md text-ink-7">Last sent</span>
                   <div className="text-right">
-                    <p className="text-caption text-[#8C8C8C]">{lastSentLabel || '—'}</p>
-                    <p className="text-caption text-[#8C8C8C]">{fmtTime(lastSentAt)}</p>
+                    <p className="text-caption text-ink-7">{lastSentLabel || '—'}</p>
+                    <p className="text-caption text-ink-7">{fmtTime(lastSentAt)}</p>
                   </div>
                 </div>
               </div>
@@ -692,7 +692,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   // ═════════════════════════════════════════════════════════════════════════
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#141414] flex flex-col">
+    <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
       {/* Header */}
       <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
         <BackBtn to="parent" />
@@ -720,11 +720,11 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
         <SettingsRow
           label="Display Icon"
           preview={
-            <div className="w-7 h-7 rounded-m bg-[#01D6BE]/10 flex items-center justify-center">
+            <div className="w-7 h-7 rounded-m bg-primary/10 flex items-center justify-center">
               {selectedIcon === 'photo' ? (
                 <img src={sierro1000Img} alt="Device" className="w-5 h-5 object-contain" />
               ) : (
-                <CurrentIconComp size={16} className="text-[#01D6BE]" />
+                <CurrentIconComp size={16} className="text-primary" />
               )}
             </div>
           }
@@ -768,7 +768,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
         <div className="mt-4">
           <button
             onClick={() => setShowDeleteConfirm(true)}
-            className="w-full rounded-l bg-[#262626] px-4 py-4 text-body-lg font-semibold text-[#FF3B30] active:opacity-70 transition-opacity"
+            className="w-full rounded-l bg-ink-10 px-4 py-4 text-body-lg font-semibold text-danger active:opacity-70 transition-opacity"
           >
             Delete Device
           </button>
@@ -783,7 +783,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full bg-[#1F1F1F] rounded-t-2xl overflow-hidden pb-8"
+            className="w-full bg-ink-11 rounded-t-2xl overflow-hidden pb-8"
           >
             {/* Drag handle */}
             <div className="flex justify-center pt-3 pb-1">
@@ -812,14 +812,14 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                     onClick={() => setWorkModeDraft(m.value)}
                     className={`w-full rounded-l border px-4 py-4 text-center transition-colors ${
                       selected
-                        ? 'border-[#01D6BE] bg-[#01D6BE]/15'
+                        ? 'border-primary bg-primary/15'
                         : 'border-white/15 bg-transparent'
                     }`}
                   >
-                    <p className={`text-title-md font-semibold ${selected ? 'text-white' : 'text-[#8C8C8C]'}`}>
+                    <p className={`text-title-md font-semibold ${selected ? 'text-white' : 'text-ink-7'}`}>
                       {m.label}
                     </p>
-                    <p className={`text-body-md mt-0.5 ${selected ? 'text-[#D9D9D9]' : 'text-[#8C8C8C]'}`}>
+                    <p className={`text-body-md mt-0.5 ${selected ? 'text-ink-5' : 'text-ink-7'}`}>
                       {m.desc}
                     </p>
                   </button>
@@ -837,7 +837,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                     try { await setWorkMode(deviceId, workModeDraft) } catch { /* noop */ }
                   }
                 }}
-                className="w-full h-12 rounded-l bg-[#01D6BE] text-black font-semibold text-body-lg active:scale-95 transition-transform"
+                className="w-full h-12 rounded-l bg-primary text-black font-semibold text-body-lg active:scale-95 transition-transform"
               >
                 Save
               </button>
@@ -849,14 +849,14 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
       {/* Delete Confirm Dialog */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60 px-4 pb-8">
-          <div className="w-full max-w-sm bg-[#1F1F1F] rounded-xl overflow-hidden">
+          <div className="w-full max-w-sm bg-ink-11 rounded-xl overflow-hidden">
             <div className="px-6 pt-6 pb-4 text-center">
               <p className="text-title-md font-semibold text-white mb-2">Delete Device</p>
-              <p className="text-body-md text-[#BFBFBF]">
+              <p className="text-body-md text-ink-6">
                 Are you sure you want to delete <span className="text-white font-semibold">{deviceName}</span>? This action cannot be undone.
               </p>
               {deleteError && (
-                <p className="text-label text-[#FF3B30] mt-3">{deleteError}</p>
+                <p className="text-label text-danger mt-3">{deleteError}</p>
               )}
             </div>
             <div className="border-t border-white/10 flex">
@@ -870,9 +870,9 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               <button
                 onClick={handleDeleteDevice}
                 disabled={deleting}
-                className="flex-1 py-4 text-body-lg font-semibold text-[#FF3B30] active:bg-white/5 flex items-center justify-center gap-2"
+                className="flex-1 py-4 text-body-lg font-semibold text-danger active:bg-white/5 flex items-center justify-center gap-2"
               >
-                {deleting ? <Loader2 size={16} className="animate-spin text-[#FF3B30]" /> : 'Delete'}
+                {deleting ? <Loader2 size={16} className="animate-spin text-danger" /> : 'Delete'}
               </button>
             </div>
           </div>
