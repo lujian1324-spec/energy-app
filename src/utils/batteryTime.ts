@@ -6,7 +6,7 @@
  * Physics (energy ÷ power, dimensionally consistent):
  *   netChargeW       = acPower + solarPower - outputPower   (charge +, discharge -)
  *   capacityWh       = acInvOutputPower × 2  (rated capacity, Wh — same basis as
- *                      the Device Info "Rated Capacity" row); defaults to 5000 Wh.
+ *                      the Device Info "Rated Capacity" row); defaults to 1000 Wh.
  *   remainingEnergyWh = (soc% / 100) × capacityWh
  *   neededEnergyWh    = (1 - soc% / 100) × capacityWh
  *
@@ -20,7 +20,7 @@
  */
 
 /** Default rated capacity (Wh) when the device's nameplate value is unknown. */
-const DEFAULT_CAPACITY_WH = 5000
+const DEFAULT_CAPACITY_WH = 1000
 
 /** Format minutes as "1h16m" — no inner space, negative values clamped to 0. */
 export function formatDuration(mins: number): string {
@@ -34,7 +34,7 @@ export interface BatteryTimeInput {
   outputPower: number
   /** remainingBatteryCapacity (state of charge, %) */
   soc: number
-  /** Rated battery capacity in Wh (acInvOutputPower × 2). Defaults to 5000 Wh. */
+  /** Rated battery capacity in Wh (acInvOutputPower × 2). Defaults to 1000 Wh. */
   capacityWh?: number
   /** batteryPower > 0 (used only for the idle "Charging" fallback) */
   isCharging?: boolean

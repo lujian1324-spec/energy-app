@@ -1,8 +1,9 @@
 {
-  "version": "3.14.1",
-  "build": 2534,
+  "version": "3.14.2",
+  "build": 2535,
   "date": "2026-06-26",
   "changelog": [
+    "Battery ring time estimate: default rated capacity fallback 5000Wh -> 1000Wh when nameplate not cached",
     "Fix battery ring time estimate: use real capacity (acInvOutputPower x2 Wh) so remaining/to-full = energyWh / power (was treating SOC%% as Wh, e.g. wrong 11m)",
     "UI polish: tabular numbers on live values (no jitter), scale-on-press feedback on buttons, balanced heading/body text wrap, skip page-enter animation on first load, replace transition-all with explicit properties",
     "Remove swipe-to-back gesture on Overview and Device Monitor pages (prevent accidental navigation)",
