@@ -9,7 +9,12 @@ const navItems = [
 
 export default function BottomNavigation() {
   return (
-    <div className="flex justify-center items-end pb-6 pt-2 bg-transparent pointer-events-none safe-area-bottom">
+    <div
+      className="flex justify-center items-end pt-2 bg-transparent pointer-events-none"
+      // 底部偏移随设备安全区自适应：无安全区(桌面/多数安卓)≈12px，
+      // 有安全区(iPhone 等)= 安全区 + 8px，避免被 Home 指示条遮挡或留过大空隙
+      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }}
+    >
       <nav
         className="flex items-center gap-1 px-2 py-2 rounded-full bg-[#0E3F3A] pointer-events-auto shadow-lg"
         role="navigation"
