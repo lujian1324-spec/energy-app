@@ -37,7 +37,7 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-ink-12 flex items-center justify-center p-6">
+        <div className="min-h-screen bg-ink-13 flex items-center justify-center p-6">
           <div className="bg-ink-10 rounded-l p-8 max-w-sm w-full text-center">
             {/* 错误图标 */}
             <div className="w-14 h-14 rounded-full bg-ink-9 flex items-center justify-center mx-auto mb-4">

@@ -199,7 +199,9 @@ test.describe('[Guest] Core Navigation', () => {
     await wait(page, 3000)
     // Device page renders an <h1>Device</h1> header regardless of card/empty state
     await expect(page.locator('h1', { hasText: /^Device$/ })).toBeVisible({ timeout: 8000 })
-    const hasCards = await page.locator('[class*="262626"]').count() > 0
+    // Cards now use the design token bg-ink-10 (#262626) — match the token class,
+    // not the raw hex (hardcoded hex was removed in the token sweep).
+    const hasCards = await page.locator('[class*="ink-10"]').count() > 0
     const hasEmpty = await page.locator('text=/no device|add device|get started/i').count() > 0
     expect(hasCards || hasEmpty).toBeTruthy()
   })
@@ -285,7 +287,7 @@ test.describe('[jason1324] Login & Navigation', () => {
     await page.goto(`${BASE}/#/devices`)
     await wait(page, 4000)
     await expect(page.locator('h1', { hasText: /^Device$/ })).toBeVisible({ timeout: 8000 })
-    const hasContent = await page.locator('[class*="262626"]').count() > 0
+    const hasContent = await page.locator('[class*="ink-10"]').count() > 0
     const hasEmpty = await page.locator('text=/no device|add device/i').count() > 0
     expect(hasContent || hasEmpty).toBeTruthy()
   })

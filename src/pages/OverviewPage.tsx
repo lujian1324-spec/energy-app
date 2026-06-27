@@ -567,7 +567,7 @@ export default function OverviewPage() {
 
   return (
     <div
-      className={`h-full flex flex-col bg-ink-12 overflow-hidden relative pt-6 safe-area-top ${isDemoMode ? 'demo-mode' : ''}`}>
+      className={`h-full flex flex-col bg-ink-13 overflow-hidden relative pt-6 safe-area-top ${isDemoMode ? 'demo-mode' : ''}`}>
       {/* PRD v1.1 §8.2: DEMO MODE 顶部黄色横幅 */}
       <DemoBanner show={isDemoMode} onRetry={handleRefresh} />
 
@@ -874,7 +874,7 @@ export default function OverviewPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex bg-ink-12 rounded-full p-0.5">
+                  <div className="flex bg-ink-13 rounded-full p-0.5">
                     <button
                       onClick={() => handleSetWorkMode('backup')}
                       disabled={controlLoading === 'workMode'}

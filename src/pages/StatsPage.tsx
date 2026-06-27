@@ -704,7 +704,7 @@ export default function StatsPage() {
     : null
 
   return (
-    <div className="h-full flex flex-col bg-ink-12 overflow-hidden pt-6">
+    <div className="h-full flex flex-col bg-ink-13 overflow-hidden pt-6">
       {/* Header */}
       <div className="px-4 pt-8 pb-2 safe-area-top flex justify-between items-start">
         <div>

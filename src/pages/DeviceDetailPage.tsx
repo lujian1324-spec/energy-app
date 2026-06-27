@@ -306,7 +306,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
 
   if (screen === 'editName') {
     return (
-      <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
+      <div className="fixed inset-0 z-50 bg-ink-13 flex flex-col">
         {/* Header */}
         <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
           <BackBtn to="main" />
@@ -400,7 +400,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
 
   if (screen === 'displayIcon') {
     return (
-      <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
+      <div className="fixed inset-0 z-50 bg-ink-13 flex flex-col">
         {/* Header */}
         <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
           <BackBtn to="main" />
@@ -475,7 +475,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
 
   if (screen === 'deviceInfo') {
     return (
-      <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
+      <div className="fixed inset-0 z-50 bg-ink-13 flex flex-col">
         {/* Header */}
         <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
           <BackBtn to="main" />
@@ -583,7 +583,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     }
 
     return (
-      <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
+      <div className="fixed inset-0 z-50 bg-ink-13 flex flex-col">
         {/* Header */}
         <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
           <BackBtn to="main" />
@@ -692,7 +692,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   // ═════════════════════════════════════════════════════════════════════════
 
   return (
-    <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
+    <div className="fixed inset-0 z-50 bg-ink-13 flex flex-col">
       {/* Header */}
       <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
         <BackBtn to="parent" />

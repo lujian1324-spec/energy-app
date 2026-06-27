@@ -257,7 +257,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: '100%' }}
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        className="fixed inset-0 z-50 bg-ink-12 flex flex-col"
+        className="fixed inset-0 z-50 bg-ink-13 flex flex-col"
       >
         {/* Sub-screen header */}
         <div className="px-4 pt-4 pb-4 safe-area-top flex items-center justify-between">
@@ -420,7 +420,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: '100%' }}
       transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-      className="fixed inset-0 z-40 bg-ink-12 flex flex-col"
+      className="fixed inset-0 z-40 bg-ink-13 flex flex-col"
     >
       {/* Top bar */}
       <div className="px-4 pt-4 pb-2 safe-area-top flex items-center justify-between relative">

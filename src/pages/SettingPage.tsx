@@ -158,7 +158,7 @@ export default function SettingPage() {
 
 
   return (
-    <div className="h-full flex flex-col bg-ink-12 overflow-hidden">
+    <div className="h-full flex flex-col bg-ink-13 overflow-hidden">
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pt-4 pb-4 safe-area-top">
         {/* User Profile — avatar + name + manage-account row, Founding Member gold tag */}
@@ -427,12 +427,12 @@ export default function SettingPage() {
                     <div>
                       <label className="text-[12px] font-semibold text-ink-6 mb-2 flex items-center gap-2"><Icon name="email" size={14} />Your Email</label>
                       <input type="email" required value={supportEmail} onChange={e => setSupportEmail(e.target.value)} placeholder="you@example.com"
-                        className="w-full px-4 py-3 rounded-l bg-ink-12 border border-[rgba(1,214,190,0.15)] text-ink-1 text-body-md placeholder:text-ink-7 focus:outline-none focus:border-[rgba(1,214,190,0.4)] transition-colors" />
+                        className="w-full px-4 py-3 rounded-l bg-ink-13 border border-[rgba(1,214,190,0.15)] text-ink-1 text-body-md placeholder:text-ink-7 focus:outline-none focus:border-[rgba(1,214,190,0.4)] transition-colors" />
                     </div>
                     <div>
                       <label className="text-[12px] font-semibold text-ink-6 mb-2 flex items-center gap-2"><Icon name="feedback" size={14} />Your Feedback</label>
                       <textarea required value={supportMessage} onChange={e => setSupportMessage(e.target.value)} placeholder="Describe your issue or suggestion..." rows={4}
-                        className="w-full px-4 py-3 rounded-l bg-ink-12 border border-[rgba(1,214,190,0.15)] text-ink-1 text-body-md placeholder:text-ink-7 resize-none focus:outline-none focus:border-[rgba(1,214,190,0.4)] transition-colors" />
+                        className="w-full px-4 py-3 rounded-l bg-ink-13 border border-[rgba(1,214,190,0.15)] text-ink-1 text-body-md placeholder:text-ink-7 resize-none focus:outline-none focus:border-[rgba(1,214,190,0.4)] transition-colors" />
                     </div>
                     {supportError && (
                       <p className="text-[12px] text-danger text-center">{supportError}</p>
@@ -534,7 +534,7 @@ export default function SettingPage() {
                       <div>
                         <label className="text-[12px] font-semibold text-ink-6 mb-2 flex items-center gap-2"><Sparkles size={14} />Enter Code</label>
                         <input type="text" required value={founderCode} onChange={e => setFounderCode(e.target.value)} placeholder="e.g., FOUNDER2024"
-                          className="w-full px-4 py-3 rounded-l bg-ink-12 border border-[rgba(255,215,0,0.2)] text-ink-1 text-body-md placeholder:text-ink-7 uppercase focus:outline-none focus:border-[rgba(255,215,0,0.5)] transition-colors" />
+                          className="w-full px-4 py-3 rounded-l bg-ink-13 border border-[rgba(255,215,0,0.2)] text-ink-1 text-body-md placeholder:text-ink-7 uppercase focus:outline-none focus:border-[rgba(255,215,0,0.5)] transition-colors" />
                       </div>
                       {founderMessage && <div className={`text-[11px] text-center ${founderSuccess ? 'text-success' : 'text-danger'}`}>{founderMessage}</div>}
                       <button type="submit" className="w-full py-3.5 rounded-l bg-[rgba(255,215,0,0.12)] text-membership font-semibold text-body-md flex items-center justify-center gap-2 active:scale-95 transition-transform border border-[rgba(255,215,0,0.25)]">

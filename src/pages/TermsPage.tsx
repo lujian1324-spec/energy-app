@@ -105,7 +105,7 @@ export default function TermsPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-ink-12 flex flex-col">
+    <div className="min-h-screen bg-ink-13 flex flex-col">
       {/* Header */}
       <div className="flex items-center gap-3 px-5 pt-4 pb-3 safe-area-top border-b border-[rgba(255,255,255,0.06)]">
         <button

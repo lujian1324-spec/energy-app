@@ -1,8 +1,10 @@
 {
-  "version": "3.19.1",
-  "build": 2558,
+  "version": "3.20.0",
+  "build": 2559,
   "date": "2026-06-26",
   "changelog": [
+    "All page backgrounds now pure black (#000000): base token/body/manifest/native + page roots ink-12->ink-13; cards stay ink-10 for contrast",
+    "Fix e2e: device-card check matched the raw hex class [class*=262626] which the token sweep removed; now matches the ink-10 token class",
     "Bottom nav: align to bottom edge on iOS (drop safe-area-inset reservation; fixed 8px gap) so it no longer floats above the Home indicator",
     "Radius unification: migrate all legacy rounded-md/lg/xl to canonical scale (md->m 8px, lg/xl->l 12px) so every surface uses s/m/l/pill; cards & dialogs now uniform 12px, inputs/tiles consistent (modal sheet tops keep their 28px arbitrary radius)",
     "Color tokens: snap off-palette grays to ink scale (#A0A0A5/#AEAEB2->ink-6, #636366->ink-7 per config intent) and unify #FF3530->danger; removes off-palette colors",

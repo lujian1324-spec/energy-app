@@ -228,7 +228,7 @@ function ChargePowerSection({ deviceId: _deviceId, sendFrame, loading }: ChargeP
 
               {/* 输入 + 写入 */}
               <div className="flex gap-2">
-                <div className="flex-1 flex items-center bg-ink-12 border border-[rgba(1,214,190,0.2)] rounded-m px-3">
+                <div className="flex-1 flex items-center bg-ink-13 border border-[rgba(1,214,190,0.2)] rounded-m px-3">
                   <input
                     type="number"
                     min={0}
@@ -333,7 +333,7 @@ export default function PassthroughPage() {
     : 'text-ink-7 bg-[rgba(255,255,255,0.06)]'
 
   return (
-    <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
+    <div className="fixed inset-0 z-50 bg-ink-13 flex flex-col">
       {/* Header */}
       <div className="px-4 pt-5 pb-3 flex items-center gap-3 relative border-b border-[rgba(255,255,255,0.06)]">
         <button
@@ -400,7 +400,7 @@ export default function PassthroughPage() {
               onChange={e => setCustomHex(e.target.value)}
               placeholder={'e.g. 01 03 01 00 00 12 XX XX\nwith or without spaces'}
               rows={2}
-              className="w-full px-3 py-2.5 rounded-m bg-ink-12 border border-[rgba(255,255,255,0.06)]
+              className="w-full px-3 py-2.5 rounded-m bg-ink-13 border border-[rgba(255,255,255,0.06)]
                 text-ink-6 text-caption placeholder:text-ink-9 font-mono
                 focus:outline-none focus:border-[rgba(1,214,190,0.4)] resize-none"
             />

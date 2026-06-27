@@ -104,7 +104,7 @@ export default {
         },
         // ── Semantic aliases used across the existing app ──
         accent: '#01D6BE',
-        'bg-base': '#141414',   // ink-12
+        'bg-base': '#000000',   // pages: pure black
         'bg-card': '#262626',   // ink-10
         'bg-card2': '#454545',   // ink-9 (was off-palette #333333)
         'txt-primary': '#FFFFFF',

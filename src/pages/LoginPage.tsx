@@ -141,7 +141,7 @@ export default function LoginPage() {
   })()
 
   return (
-    <div className="min-h-screen bg-ink-12 flex flex-col px-6 safe-area-top safe-area-bottom">
+    <div className="min-h-screen bg-ink-13 flex flex-col px-6 safe-area-top safe-area-bottom">
       <div className="flex-1 flex flex-col justify-center">
         {/* Brand */}
         <div className="text-center mb-10">

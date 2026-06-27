@@ -102,7 +102,7 @@ export default function DataExportPage() {
   }
 
   return (
-    <div className="h-full flex flex-col bg-ink-12 overflow-hidden">
+    <div className="h-full flex flex-col bg-ink-13 overflow-hidden">
       <div className="px-5 pt-4 pb-3 safe-area-top flex items-center gap-3">
         <button
           onClick={() => navigate(-1)}

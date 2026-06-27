@@ -444,7 +444,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     // ── Permission Required screen ──
     if (bleStatus === 'no_permission') {
       return (
-        <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
+        <div className="fixed inset-0 z-50 bg-ink-13 flex flex-col">
           <div className="px-4 pt-5 pb-4 flex items-center safe-area-top">
             <button onClick={handleClose} className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center">
               <ChevronLeft size={20} className="text-white" />
@@ -480,7 +480,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     // ── Bluetooth Off screen ──
     if (bleStatus === 'bt_off') {
       return (
-        <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
+        <div className="fixed inset-0 z-50 bg-ink-13 flex flex-col">
           <div className="px-4 pt-5 pb-4 flex items-center safe-area-top">
             <button onClick={handleClose} className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center">
               <ChevronLeft size={20} className="text-white" />
@@ -509,7 +509,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     }
 
     return (
-      <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
+      <div className="fixed inset-0 z-50 bg-ink-13 flex flex-col">
         {/* Header */}
         <div className="px-4 pt-5 pb-4 flex items-center justify-between safe-area-top">
           <button
@@ -654,7 +654,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
 
   if (uiScreen === 'naming') {
     return (
-      <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
+      <div className="fixed inset-0 z-50 bg-ink-13 flex flex-col">
         {/* Header */}
         <div className="px-4 pt-5 pb-4 flex items-center gap-3 safe-area-top">
           <button
@@ -716,7 +716,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
 
   if (uiScreen === 'icon') {
     return (
-      <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
+      <div className="fixed inset-0 z-50 bg-ink-13 flex flex-col">
         {/* Header */}
         <div className="px-4 pt-5 pb-4 flex items-center gap-3 safe-area-top">
           <button
@@ -770,7 +770,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   // ══════════════════════════════════════════════════════════════════════════
 
   return (
-    <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
+    <div className="fixed inset-0 z-50 bg-ink-13 flex flex-col">
       {/* Header */}
       <div className="px-4 pt-5 pb-4 flex items-center gap-3 safe-area-top">
         <button

@@ -95,7 +95,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="h-dvh flex flex-col bg-ink-12">
+    <div className="h-dvh flex flex-col bg-ink-13">
       <div className="px-4 pt-5 safe-area-top shrink-0">
         <button
           onClick={() => (step === 'reset' ? setStep('request') : navigate(-1))}
