@@ -347,6 +347,57 @@ export const unsubscribeFromPush = async (): Promise<boolean> => {
   }
 }
 
+// ─── 服务端 Web Push 编排（订阅 + 上报后端，App 关闭也能收到） ─────────────────
+import { VAPID_PUBLIC_KEY, isWebPushConfigured } from '../config/webPush'
+import { registerPushSubscription, unregisterPushSubscription } from '../api/webPushApi'
+
+/**
+ * 启用服务端 Web Push：请求权限 → 订阅 Push 服务 → 上报后端。
+ * 返回 true 表示订阅成功（后端上报失败仍返回 true，订阅本身有效）。
+ * 未配置 VAPID 公钥时直接返回 false（仅依赖前台监控）。
+ */
+export const enableWebPush = async (): Promise<boolean> => {
+  if (!isWebPushConfigured()) {
+    console.info('[WebPush] VAPID public key not configured — skipping server push subscription')
+    return false
+  }
+  if (getNotificationPermission() !== 'granted') {
+    const perm = await requestNotificationPermission()
+    if (perm !== 'granted') return false
+  }
+  const subscription = await subscribeToPush(VAPID_PUBLIC_KEY)
+  if (!subscription) return false
+  await registerPushSubscription(subscription) // best-effort，后端未就绪不影响订阅
+  return true
+}
+
+/** 关闭服务端 Web Push：通知后端注销 + 取消浏览器订阅。 */
+export const disableWebPush = async (): Promise<void> => {
+  try {
+    const registration = await registerServiceWorker()
+    const subscription = await registration?.pushManager.getSubscription()
+    if (subscription) {
+      await unregisterPushSubscription(subscription.endpoint)
+      await unsubscribeFromPush()
+    }
+  } catch (e) {
+    console.warn('[WebPush] disableWebPush failed:', e)
+  }
+}
+
+/**
+ * 幂等同步：App 启动 / 登录后调用。
+ * 若已授予权限且任一推送开关开启，则确保存在有效订阅并已上报后端。
+ * 用于覆盖订阅过期（pushsubscriptionchange）或换设备登录的情况。
+ */
+export const syncWebPushSubscription = async (anyPushEnabled: boolean): Promise<void> => {
+  if (!isWebPushConfigured()) return
+  if (!anyPushEnabled) return
+  if (getNotificationPermission() !== 'granted') return
+  const subscription = await subscribeToPush(VAPID_PUBLIC_KEY)
+  if (subscription) await registerPushSubscription(subscription)
+}
+
 // 辅助函数：将 base64 字符串转换为 Uint8Array
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - base64String.length % 4) % 4)

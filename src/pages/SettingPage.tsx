@@ -28,7 +28,7 @@ import appVersion from '../version.json'
 import ProfileEditPage from './ProfileEditPage'
 import ToggleSwitch from '../components/ToggleSwitch'
 import type { UserProfile } from '../types/protocol'
-import { requestNotificationPermission, getNotificationPermission } from '../utils/pushNotification'
+import { requestNotificationPermission, getNotificationPermission, enableWebPush, disableWebPush } from '../utils/pushNotification'
 
 export default function SettingPage() {
   const navigate = useNavigate()
@@ -63,6 +63,18 @@ export default function SettingPage() {
   const [pushLowBattery, setPushLowBattery] = useState(settings.pushLowBattery ?? false)
   const [pushSolarStatus, setPushSolarStatus] = useState(settings.pushSolarStatus ?? false)
   const [lowBatteryThreshold, setLowBatteryThreshold] = useState(settings.lowBatteryThreshold ?? 30)
+
+  // 任一推送开关变化后，编排服务端 Web Push 订阅：
+  // - 打开任一开关 → 请求权限 + 订阅 + 上报后端
+  // - 全部关闭     → 注销订阅
+  const syncWebPush = useCallback(async (outage: boolean, lowBat: boolean, solar: boolean) => {
+    const anyOn = outage || lowBat || solar
+    if (anyOn) {
+      await enableWebPush()
+    } else {
+      await disableWebPush()
+    }
+  }, [])
 
   const reloadUserProfile = useCallback(() => {
     getUserProfile().then(p => { if (p) setUserProfile(p) }).catch(err => console.error('[SettingPage] getUserProfile failed:', err))
@@ -207,6 +219,7 @@ export default function SettingPage() {
                 if (next && getNotificationPermission() !== 'granted') {
                   await requestNotificationPermission()
                 }
+                await syncWebPush(next, pushLowBattery, pushSolarStatus)
               }}
               ariaLabel="Toggle power outage alerts"
             />
@@ -232,6 +245,7 @@ export default function SettingPage() {
                 if (next && getNotificationPermission() !== 'granted') {
                   await requestNotificationPermission()
                 }
+                await syncWebPush(pushOutage, next, pushSolarStatus)
               }}
               ariaLabel="Toggle low battery alerts"
             />
@@ -306,6 +320,7 @@ export default function SettingPage() {
                 if (next && getNotificationPermission() !== 'granted') {
                   await requestNotificationPermission()
                 }
+                await syncWebPush(pushOutage, pushLowBattery, next)
               }}
               ariaLabel="Toggle solar status alerts"
             />

@@ -14,6 +14,7 @@ import {
 } from '../api/authApi'
 import { tokenStore } from '../utils/apiClient'
 import { useDeviceStore } from './deviceStore'
+import { disableWebPush } from '../utils/pushNotification'
 
 interface AuthState {
   isAuthenticated: boolean
@@ -83,6 +84,8 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: async () => {
+        // 先注销 Web Push 订阅（需在 token 失效前调用后端），避免登出后仍收推送
+        try { await disableWebPush() } catch { /* ignore */ }
         await apiLogout()
         // 清除 demo 模式
         useDeviceStore.getState().exitDemoMode()

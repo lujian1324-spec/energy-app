@@ -19,8 +19,11 @@ export default defineConfig({
         skipWaiting: true,
         clientsClaim: true,
         cleanupOutdatedCaches: true,
+        // 把 Web Push 事件处理器导入到 Workbox 生成的 SW（registerServiceWorker
+        // 注册的就是这个 SW，必须带 'push' 监听，服务端推送才能在关闭/锁屏时弹出）
+        importScripts: ['sw-push.js'],
       },
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg', 'sw.js', 'icon-192x192.svg', 'icon-512x512.svg'],
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg', 'sw-push.js', 'icon-192x192.svg', 'icon-512x512.svg'],
       manifest: {
         name: 'Sierro App',
         short_name: 'Sierro',

@@ -25,6 +25,8 @@ import DataExportPage from './pages/DataExportPage'
 import { useRealtimeSimulator } from './hooks/useRealtimeSimulator'
 import { useLowBatteryMonitor } from './hooks/useLowBatteryMonitor'
 import { useAuthStore } from './stores/authStore'
+import { usePowerStationStore } from './stores/powerStationStore'
+import { syncWebPushSubscription } from './utils/pushNotification'
 import { ToastContainer, useToast } from './components/Toast'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { Zap, Loader2 } from 'lucide-react'
@@ -83,6 +85,15 @@ function AppInner() {
   useEffect(() => {
     restoreSession()
   }, [restoreSession])
+
+  // 登录后幂等同步 Web Push 订阅（覆盖订阅过期 / 换设备登录；已开启推送才执行）
+  useEffect(() => {
+    if (!isAuthenticated) return
+    const s = usePowerStationStore.getState().settings
+    const anyPushEnabled =
+      !!s.pushNotifications || !!s.pushLowBattery || !!s.pushSolarStatus
+    syncWebPushSubscription(anyPushEnabled)
+  }, [isAuthenticated])
 
   // 等待会话恢复完成
   if (!sessionReady) {
