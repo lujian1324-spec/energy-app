@@ -23,33 +23,23 @@ export default defineConfig({
         // 注册的就是这个 SW，必须带 'push' 监听，服务端推送才能在关闭/锁屏时弹出）
         importScripts: ['sw-push.js'],
       },
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg', 'sw-push.js', 'icon-192x192.svg', 'icon-512x512.svg'],
+      includeAssets: ['apple-touch-icon.png', 'sw-push.js', 'badge-96.png', 'icon-192x192.png', 'icon-512x512.png'],
       manifest: {
         name: 'Sierro App',
         short_name: 'Sierro',
         description: '智能储能设备管理应用',
-        theme_color: '#000000',
-        background_color: '#FFFFFF',
+        theme_color: '#141414',
+        background_color: '#141414',
         display: 'standalone',
         scope: base,
         start_url: base,
+        // PNG icons: iOS ignores SVG home-screen icons and Android notification
+        // icons must be raster — ship PNG so install + push render on both.
         icons: [
-          {
-            src: 'icon-192x192.svg',
-            sizes: '192x192',
-            type: 'image/svg+xml'
-          },
-          {
-            src: 'icon-512x512.svg',
-            sizes: '512x512',
-            type: 'image/svg+xml'
-          },
-          {
-            src: 'icon-192x192.svg',
-            sizes: '192x192',
-            type: 'image/svg+xml',
-            purpose: 'maskable'
-          }
+          { src: 'icon-192x192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'icon-512x512.png', sizes: '512x512', type: 'image/png' },
+          { src: 'icon-192x192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+          { src: 'icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
         ]
       }
     })

@@ -25,6 +25,8 @@ export const POWER_OUTAGE_KEYS = new Set([
   'lineFault',
 ])
 
+import { showLocalNotification } from './pushNotification'
+
 /** A device-state field value is "on" when truthy across the API's encodings. */
 function isFieldOn(value: unknown): boolean {
   return value === 1 || value === '1' || value === true || value === 'true'
@@ -98,13 +100,14 @@ export async function checkAndNotifyPowerOutage(
     if (notifiedAlarmIds.has(alarm.alarmId)) continue
     notifiedAlarmIds.add(alarm.alarmId)
 
-    new Notification('⚡ Power Outage Detected', {
+    // 经 Service Worker 显示，兼容 iOS PWA（new Notification() 在 iOS standalone 不可用）；
+    // icon/badge 由 showLocalNotification 注入存在的 PNG（带 base 路径）
+    showLocalNotification('⚡ Power Outage Detected', {
       body: `${deviceName}: ${alarm.name || alarm.alarmMessage || 'AC grid power lost. Running on battery.'}`,
-      icon: '/icons/icon-192.png',
       tag: `power-outage-${alarm.alarmId}`,
       renotify: false,
       requireInteraction: true,
-    })
+    } as NotificationOptions)
   }
 }
 

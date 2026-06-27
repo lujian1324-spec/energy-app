@@ -30,7 +30,7 @@ self.addEventListener('push', (event) => {
   const options = {
     body: data.body || 'New notification',
     icon: data.icon || `${basePath}/icon-192x192.png`,
-    badge: data.badge || `${basePath}/icon-192x192.png`,
+    badge: data.badge || `${basePath}/badge-96.png`,
     tag: data.tag || 'sierro-alert',
     renotify: true,
     requireInteraction: isIOSDevice ? undefined : (data.requireInteraction !== false),

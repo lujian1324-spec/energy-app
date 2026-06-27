@@ -163,7 +163,7 @@ export const showLocalNotification = async (
       const notificationOptions: NotificationOptions & { vibrate?: number[]; renotify?: boolean } = {
         icon: `${getBasePath()}/icon-192x192.png`,
         // iOS badge 图标 - 使用 192x192 作为备用
-        badge: `${getBasePath()}/icon-192x192.png`,
+        badge: `${getBasePath()}/badge-96.png`,
         tag: 'sierro-alert',
         // 重要：iOS 需要 renotify 才能在锁屏时重复提醒相同 tag 的通知
         renotify: true,
@@ -193,7 +193,7 @@ export const showLocalNotification = async (
       console.warn('[Push] Falling back to legacy Notification API')
       const notification = new Notification(title, {
         icon: `${getBasePath()}/icon-192x192.png`,
-        badge: `${getBasePath()}/icon-192x192.png`,
+        badge: `${getBasePath()}/badge-96.png`,
         tag: 'sierro-alert',
         requireInteraction: true,
         ...options,
@@ -238,7 +238,7 @@ export const showPowerOutageNotification = async (
   const options: NotificationOptions & { vibrate?: number[]; renotify?: boolean } = {
     body: `The remaining ${soc}% battery will last up to ${remainingHours} hours.`,
     icon: `${basePath}/icon-192x192.png`,
-    badge: `${basePath}/icon-192x192.png`,
+    badge: `${basePath}/badge-96.png`,
     tag: 'power-outage-alert',
     renotify: true,
     requireInteraction: !isIOSDevice,
@@ -267,7 +267,7 @@ export const showLowBatteryNotification = async (
   const options: NotificationOptions & { vibrate?: number[]; renotify?: boolean } = {
     body: `Battery is at ${soc}%. Connect a power source to keep your devices running.`,
     icon: `${basePath}/icon-192x192.png`,
-    badge: `${basePath}/icon-192x192.png`,
+    badge: `${basePath}/badge-96.png`,
     tag: `low-battery-${threshold}`,
     renotify: false,
     requireInteraction: !isIOSDevice,
@@ -288,7 +288,7 @@ export const showSolarChargingNotification = async (solarW: number): Promise<voi
   const options: NotificationOptions = {
     body: `Solar panels are generating ${solarW}W. Your battery is now charging.`,
     icon: `${basePath}/icon-192x192.png`,
-    badge: `${basePath}/icon-192x192.png`,
+    badge: `${basePath}/badge-96.png`,
     tag: 'solar-charging',
     renotify: false,
   }
