@@ -1,8 +1,9 @@
 {
-  "version": "3.18.4",
-  "build": 2549,
+  "version": "3.18.5",
+  "build": 2550,
   "date": "2026-06-26",
   "changelog": [
+    "WiFi setup: auto-scan AP list on entering Select Wi-Fi (no more manual Scan Again); retry once when first scan returns empty (device scan latency); stay on list to pick SSID (was wrongly jumping to password); dedupe/empty-SSID filter",
     "Fix BLE add-device \"serial number cannot be empty\": provisioning now sends deviceSerialNumber=DTUID + isVirtualSerialNumber (no separate inverter SN available during BLE setup)",
     "Fix: BLE-added device not appearing in list — add-device sent wrong payload (duid/name); now sends deviceName+dtuDtuid+stationId (reuses a station or creates one) and surfaces real bind failures",
     "Remove dead USB/Web-Serial code: delete serialModbus.ts, useProtocol.ts, useConnectionStatus.tsx; strip serial from connectionStore + ProtocolType",

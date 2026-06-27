@@ -279,10 +279,20 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     store.setErrorMessage(null)
     try {
       const manager = getProvisionManager()
-      const resp = await manager.scanAp()
-      if (resp.RC === 0 && resp.PL) {
-        store.setApList(Array.isArray(resp.PL) ? resp.PL : [])
-        store.setStep('password')
+      // 设备首次扫描常常还没扫完就返回空列表 → 空结果时稍等再扫一次
+      let resp = await manager.scanAp()
+      let list = resp.RC === 0 && Array.isArray(resp.PL) ? (resp.PL as typeof store.apList) : []
+      if (resp.RC === 0 && list.length === 0) {
+        await new Promise(r => setTimeout(r, 1500))
+        resp = await manager.scanAp()
+        list = resp.RC === 0 && Array.isArray(resp.PL) ? (resp.PL as typeof store.apList) : list
+      }
+      if (resp.RC === 0) {
+        // 去重 + 过滤空 SSID，按信号/字母排序保持稳定
+        const seen = new Set<string>()
+        const cleaned = list.filter(ap => ap.SSID && !seen.has(ap.SSID) && seen.add(ap.SSID))
+        store.setApList(cleaned)
+        // 停留在 wifi 列表步骤，由用户点选某个 SSID 后再进入 password
       } else {
         store.setErrorMessage(`WiFi scan failed: RC=${resp.RC}`)
       }
@@ -295,6 +305,19 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
       store.setApLoading(false)
     }
   }, [store])
+
+  // 进入 "Select Wi-Fi" 步骤时自动扫描一次（避免空列表需手动点 Scan）
+  const autoScannedRef = useRef(false)
+  useEffect(() => {
+    if (store.step === 'wifi') {
+      if (!autoScannedRef.current && !store.apLoading) {
+        autoScannedRef.current = true
+        handleScanWifi()
+      }
+    } else {
+      autoScannedRef.current = false // 离开后重置，下次再次进入会重新自动扫描
+    }
+  }, [store.step, store.apLoading, handleScanWifi])
 
   const handleConfig = useCallback(async () => {
     if (!store.dtuid || !store.selectedSsid) return
