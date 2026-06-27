@@ -1,8 +1,9 @@
 {
-  "version": "3.18.7",
-  "build": 2552,
+  "version": "3.18.8",
+  "build": 2553,
   "date": "2026-06-26",
   "changelog": [
+    "UI polish: enlarge Overview sheet close buttons 28->36px (tap target) + scale-on-press; replace transition-all on shared Button and BottomNavigation with specific properties",
     "Fix asymmetric card corners: rounded-l(12px)/rounded-s(4px) tokens collided with Tailwind built-in side utilities (rounded-l=left, rounded-s=start), making left corners 4px and right 12px; force all-corners in index.css",
     "Bottom nav: position adapts to device safe-area (calc(env(safe-area-inset-bottom)+12px)); fixes inconsistent floating gap on devices without a safe-area inset (was conflicting pb-6 + 34px fallback)",
     "WiFi setup: auto-scan AP list on entering Select Wi-Fi (no more manual Scan Again); retry once when first scan returns empty (device scan latency); stay on list to pick SSID (was wrongly jumping to password); dedupe/empty-SSID filter",

@@ -1186,7 +1186,7 @@ export default function OverviewPage() {
                       {unreadAlarmCount} Active
                     </span>
                   )}
-                  <button onClick={() => setShowAlerts(false)} className="w-7 h-7 rounded-full bg-[rgba(255,255,255,0.08)] flex items-center justify-center">
+                  <button onClick={() => setShowAlerts(false)} className="w-9 h-9 rounded-full bg-[rgba(255,255,255,0.08)] flex items-center justify-center active:scale-[0.96] transition-transform">
                     <X size={14} className="text-[#BFBFBF]" />
                   </button>
                 </div>
@@ -1339,7 +1339,7 @@ export default function OverviewPage() {
                   {unreadAlarmCount > 0 && <span className="text-[11px] text-[#FF3B30]">{unreadAlarmCount} unread</span>}
                   {unreadAlarmCount === 0 && alarms.length > 0 && <span className="text-[11px] text-[#BFBFBF]">{alarms.length} total</span>}
                 </div>
-                <button onClick={() => setShowNotifications(false)} className="w-7 h-7 rounded-full bg-[rgba(255,255,255,0.08)] flex items-center justify-center">
+                <button onClick={() => setShowNotifications(false)} className="w-9 h-9 rounded-full bg-[rgba(255,255,255,0.08)] flex items-center justify-center active:scale-[0.96] transition-transform">
                   <X size={14} className="text-[#BFBFBF]" />
                 </button>
               </div>
@@ -1419,7 +1419,7 @@ export default function OverviewPage() {
               <div className="w-10 h-1 bg-[rgba(255,255,255,0.15)] rounded-full mx-auto mb-5" />
               <div className="flex justify-between items-center mb-5">
                 <h3 className="text-base font-bold text-[#FFFFFF]">Display Settings</h3>
-                <button onClick={() => setShowDisplaySettings(false)} className="w-7 h-7 rounded-full bg-[rgba(255,255,255,0.08)] flex items-center justify-center">
+                <button onClick={() => setShowDisplaySettings(false)} className="w-9 h-9 rounded-full bg-[rgba(255,255,255,0.08)] flex items-center justify-center active:scale-[0.96] transition-transform">
                   <X size={14} className="text-[#BFBFBF]" />
                 </button>
               </div>
