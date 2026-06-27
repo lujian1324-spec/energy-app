@@ -452,7 +452,7 @@ export default function DevicePage() {
   // ── 未登录 + 非游客 → 强制引导登录 ──
   if (!isAuthenticated && !isGuest) {
     return (
-      <div className="h-full flex flex-col bg-ink-13 overflow-hidden">
+      <div className="h-full flex flex-col bg-ink-12 overflow-hidden">
         <div className="px-5 pt-4 pb-3 safe-area-top">
           <h1 className="text-display font-display text-white">Device</h1>
         </div>
@@ -472,7 +472,7 @@ export default function DevicePage() {
   }
 
   return (
-    <div className="h-full flex flex-col bg-ink-13 overflow-hidden">
+    <div className="h-full flex flex-col bg-ink-12 overflow-hidden">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}
@@ -706,7 +706,7 @@ export default function DevicePage() {
                 {/* Device Meta Info */}
                 <div className="space-y-3">
                   <h4 className="text-[11px] font-bold text-ink-6 tracking-widest uppercase">Device Info</h4>
-                  <div className="bg-ink-13 rounded-l divide-y divide-[rgba(255,255,255,0.06)]">
+                  <div className="bg-ink-12 rounded-l divide-y divide-[rgba(255,255,255,0.06)]">
                     {[
                       { icon: Hash, label: 'Serial Number', value: showDeviceParams.serialNumber || '--' },
                       { icon: Server, label: 'Station', value: showDeviceParams.stationName || '--' },
@@ -758,7 +758,7 @@ export default function DevicePage() {
                     ].map((item) => {
                       const Icon = item.icon
                       return (
-                        <div key={item.label} className="bg-ink-13 rounded-l p-3 flex flex-col items-center">
+                        <div key={item.label} className="bg-ink-12 rounded-l p-3 flex flex-col items-center">
                           <Icon size={14} style={{ color: item.color }} className="mb-1.5" />
                           <div className="text-[14px] font-bold text-ink-1">{item.value}</div>
                           <div className="text-tiny text-ink-6 mt-0.5">{item.label}</div>
@@ -771,7 +771,7 @@ export default function DevicePage() {
                 {/* Port Status */}
                 <div className="space-y-3">
                   <h4 className="text-[11px] font-bold text-ink-6 tracking-widest uppercase">Port Controls</h4>
-                  <div className="bg-ink-13 rounded-l divide-y divide-[rgba(255,255,255,0.06)]">
+                  <div className="bg-ink-12 rounded-l divide-y divide-[rgba(255,255,255,0.06)]">
                     {[
                       { label: 'AC Output 1', key: 'acOut1Enable' },
                       { label: 'AC Output 2', key: 'acOut2Enable' },
@@ -792,7 +792,7 @@ export default function DevicePage() {
                       )
                     })}
                   </div>
-                  <div className="bg-ink-13 rounded-l px-4 py-3 flex items-center justify-between">
+                  <div className="bg-ink-12 rounded-l px-4 py-3 flex items-center justify-between">
                     <span className="text-body-md text-ink-1">Work Mode</span>
                     <span className="text-[12px] px-2 py-0.5 rounded-full bg-[rgba(1,214,190,0.1)] text-primary font-medium">
                       {getWorkModeLabel(getDeviceNum(showDeviceParams.id, 'workMode'))}
@@ -804,7 +804,7 @@ export default function DevicePage() {
                 {realtimeCache[String(showDeviceParams.id)]?.fields && (
                   <div className="space-y-3">
                     <h4 className="text-[11px] font-bold text-ink-6 tracking-widest uppercase">All Parameters</h4>
-                    <div className="bg-ink-13 rounded-l divide-y divide-[rgba(255,255,255,0.04)]">
+                    <div className="bg-ink-12 rounded-l divide-y divide-[rgba(255,255,255,0.04)]">
                       {Object.entries(realtimeCache[String(showDeviceParams.id)].fields)
                         .sort((a, b) => a[0].localeCompare(b[0]))
                         .map(([key, field]) => (
@@ -977,7 +977,7 @@ export default function DevicePage() {
                   </div>
                   <h4 className="text-lg font-bold text-ink-1 text-center mb-2">QR Code Scanned!</h4>
                   {/* 识别出的设备 ID */}
-                  <div className="bg-ink-13 rounded-l p-4 mb-3">
+                  <div className="bg-ink-12 rounded-l p-4 mb-3">
                     <p className="text-[11px] text-ink-7 mb-1">Device ID / Serial Number</p>
                     <p className="text-body-lg font-semibold text-primary break-all">{scannedSerial || '--'}</p>
                     {scannedName && <p className="text-[12px] text-ink-6 mt-1">{scannedName}</p>}

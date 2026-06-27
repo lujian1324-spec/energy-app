@@ -8,11 +8,11 @@ const config: CapacitorConfig = {
     androidScheme: 'https',
   },
   android: {
-    backgroundColor: '#000000',
+    backgroundColor: '#141414',
     allowMixedContent: false,
   },
   ios: {
-    backgroundColor: '#000000',
+    backgroundColor: '#141414',
     contentInset: 'always',
     // 允许 WKWebView 访问本地文件
     allowsLinkPreview: false,
@@ -21,7 +21,7 @@ const config: CapacitorConfig = {
   plugins: {
     SplashScreen: {
       launchAutoHide: true,
-      backgroundColor: '#000000',
+      backgroundColor: '#141414',
       showSpinner: false,
     },
     PushNotifications: {

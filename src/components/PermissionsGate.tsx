@@ -79,7 +79,7 @@ export default function PermissionsGate({ onDone }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-[999] bg-ink-13 flex flex-col items-center px-6 safe-area-top safe-area-bottom">
+    <div className="fixed inset-0 z-[999] bg-ink-12 flex flex-col items-center px-6 safe-area-top safe-area-bottom">
       <div className="flex-1 w-full overflow-y-auto scrollbar-hide">
       <AnimatePresence mode="wait">
         {step === 'intro' && (

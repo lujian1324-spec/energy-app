@@ -222,7 +222,7 @@ export default function BleDebugPage() {
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-ink-13 flex flex-col">
+    <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
       {/* Header */}
       <div className="px-4 pt-5 pb-3 flex items-center gap-3 safe-area-top border-b border-[rgba(255,255,255,0.06)]">
         <button onClick={() => navigate(-1)}

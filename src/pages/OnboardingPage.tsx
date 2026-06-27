@@ -58,7 +58,7 @@ export default function OnboardingPage() {
   // ─── Step 2: Add first device ─────────────────────────────────────────────
   if (step === 'device') {
     return (
-      <div className="h-full flex flex-col bg-ink-13">
+      <div className="h-full flex flex-col bg-ink-12">
         {/* Skip for now */}
         <div className="px-4 pt-5 flex justify-end safe-area-top">
           <button
@@ -99,7 +99,7 @@ export default function OnboardingPage() {
 
   // ─── Step 1: Name ─────────────────────────────────────────────────────────
   return (
-    <div className="h-full flex flex-col bg-ink-13">
+    <div className="h-full flex flex-col bg-ink-12">
       <div className="px-4 pt-5 safe-area-top" />
 
       <div className="flex-1 px-6 pt-10">

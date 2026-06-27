@@ -95,7 +95,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-ink-13">
+    <div className="min-h-screen flex flex-col bg-ink-12">
       <div className="px-4 pt-5 safe-area-top">
         <button
           onClick={() => navigate(-1)}

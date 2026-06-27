@@ -1,8 +1,9 @@
 {
-  "version": "3.20.1",
-  "build": 2560,
+  "version": "3.20.2",
+  "build": 2561,
   "date": "2026-06-26",
   "changelog": [
+    "Revert pure-black backgrounds back to #141414 (base token/body/manifest/native + page roots ink-13->ink-12); cards remain ink-10. Kept the e2e selector fix",
     "Bottom nav: reduce bottom gap 8px -> 4px (sit closer to the bottom edge)",
     "All page backgrounds now pure black (#000000): base token/body/manifest/native + page roots ink-12->ink-13; cards stay ink-10 for contrast",
     "Fix e2e: device-card check matched the raw hex class [class*=262626] which the token sweep removed; now matches the ink-10 token class",

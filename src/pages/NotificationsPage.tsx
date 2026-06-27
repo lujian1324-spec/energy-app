@@ -207,7 +207,7 @@ export default function NotificationsPage() {
   const unprocessedCount = alarms.filter(a => !a.isProcessed).length
 
   return (
-    <div className="h-full flex flex-col bg-ink-13 overflow-hidden">
+    <div className="h-full flex flex-col bg-ink-12 overflow-hidden">
       {/* Header */}
       <div className="px-5 pt-4 pb-3 safe-area-top flex items-center gap-3">
         <button

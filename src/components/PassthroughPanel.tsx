@@ -146,7 +146,7 @@ export default function PassthroughPanel({ deviceId }: Props) {
         <button
           onClick={() => setShowPresets(v => !v)}
           className="w-full flex items-center justify-between px-3 py-2 rounded-m
-            bg-ink-13 border border-[rgba(255,255,255,0.06)]
+            bg-ink-12 border border-[rgba(255,255,255,0.06)]
             text-ink-7 text-[12px] active:scale-[0.98] transition-all"
         >
           <span>Select Preset</span>
@@ -154,7 +154,7 @@ export default function PassthroughPanel({ deviceId }: Props) {
         </button>
 
         {showPresets && (
-          <div className="mt-1 rounded-m bg-ink-13 border border-[rgba(255,255,255,0.06)] divide-y divide-[rgba(255,255,255,0.04)] max-h-52 overflow-y-auto">
+          <div className="mt-1 rounded-m bg-ink-12 border border-[rgba(255,255,255,0.06)] divide-y divide-[rgba(255,255,255,0.04)] max-h-52 overflow-y-auto">
             {PRESETS.map(p => (
               <button
                 key={p.label}
@@ -183,7 +183,7 @@ export default function PassthroughPanel({ deviceId }: Props) {
             onChange={e => setData(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') sendFrame(data) }}
             placeholder="e.g. 01 03 00 00 00 12 C5 C7"
-            className="flex-1 px-3 py-2 rounded-m bg-ink-13 border border-[rgba(255,255,255,0.06)]
+            className="flex-1 px-3 py-2 rounded-m bg-ink-12 border border-[rgba(255,255,255,0.06)]
               text-ink-6 text-[12px] placeholder:text-ink-9
               focus:outline-none focus:border-[rgba(1,214,190,0.4)] font-mono"
           />
@@ -200,7 +200,7 @@ export default function PassthroughPanel({ deviceId }: Props) {
       </div>
 
       {/* 收发日志 */}
-      <div className="rounded-m bg-ink-13 border border-[rgba(255,255,255,0.04)] p-3 min-h-[60px] max-h-56 overflow-y-auto font-mono space-y-1.5">
+      <div className="rounded-m bg-ink-12 border border-[rgba(255,255,255,0.04)] p-3 min-h-[60px] max-h-56 overflow-y-auto font-mono space-y-1.5">
         {logs.length === 0 ? (
           <p className="text-[11px] text-ink-9 text-center py-2">No data</p>
         ) : (

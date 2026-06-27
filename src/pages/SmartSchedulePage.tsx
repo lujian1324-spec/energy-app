@@ -311,7 +311,7 @@ export default function SmartSchedulePage() {
   const offPeakSchedule = peakShavingSettings.schedules.find(s => s.type === 'charge' && s.enabled)
 
   return (
-    <div className="h-full flex flex-col bg-ink-13 overflow-hidden">
+    <div className="h-full flex flex-col bg-ink-12 overflow-hidden">
       {/* Header */}
       <div className="px-4 pt-4 pb-3 safe-area-top flex items-center gap-3">
         <button
@@ -690,7 +690,7 @@ export default function SmartSchedulePage() {
       </div>
 
       {/* Save button */}
-      <div className="absolute bottom-0 left-0 right-0 px-4 pb-8 pt-3 bg-ink-13">
+      <div className="absolute bottom-0 left-0 right-0 px-4 pb-8 pt-3 bg-ink-12">
         <button
           onClick={handleSaveToDevice}
           disabled={peakValleySaving}
