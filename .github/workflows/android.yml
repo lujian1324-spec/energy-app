@@ -10,6 +10,9 @@ on:
       - 'capacitor.config.ts'
       - 'package.json'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -36,6 +39,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Read app version
+        id: ver
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
       - name: Build web app
         run: npm run build
 
@@ -49,9 +56,27 @@ jobs:
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
 
-      - name: Upload APK
+      - name: Rename APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk sierro-energy-v${{ steps.ver.outputs.version }}.apk
+
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sierro-energy-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: sierro-energy-v${{ steps.ver.outputs.version }}-apk
+          path: sierro-energy-v${{ steps.ver.outputs.version }}.apk
           retention-days: 30
+
+      # Publish a Release so there is a clean, direct .apk download link
+      - name: Publish APK to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-v${{ steps.ver.outputs.version }}
+          name: Sierro Energy APK v${{ steps.ver.outputs.version }}
+          body: |
+            Debug-signed Android APK built from `main` (v${{ steps.ver.outputs.version }}).
+            Install on a device with "Unknown sources" enabled. For Play Store release,
+            sign with a release keystore (see docs/NATIVE_SETUP.md).
+          files: sierro-energy-v${{ steps.ver.outputs.version }}.apk
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
