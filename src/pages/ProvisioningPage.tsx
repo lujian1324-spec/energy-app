@@ -14,7 +14,6 @@ import jsQR from 'jsqr'
 import { toast } from '../components/Toast'
 import { useProvisionStore, type ProvisionStep } from '../stores/provisionStore'
 import { getProvisionManager, destroyProvisionManager } from '../protocols/bleProvision'
-import { useConnectionStore } from '../stores/connectionStore'
 import { useDeviceStore } from '../stores/deviceStore'
 import { openAppSettings } from '../utils/openAppSettings'
 
@@ -176,23 +175,6 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   const [foundDevices, setFoundDevices] = useState<{ name: string; serial: string }[]>([])
   const [showNotifSheet, setShowNotifSheet] = useState(false)
 
-  const { serialSupported, setSerialConnection } = useConnectionStore()
-
-  const handleSerialConnect = useCallback(async () => {
-    if (!('serial' in navigator)) { toast.error('Web Serial not supported in this browser.'); return }
-    try {
-      const port = await (navigator as any).serial.requestPort()
-      await port.open({ baudRate: 9600 })
-      setSerialConnection({ protocol: 'serial', status: 'connected', deviceName: 'Sierro (USB)' })
-      toast.success('USB connection established')
-      store.setDeviceInfo('Sierro (USB)', 'USB')
-      setFoundDevices([{ name: 'Sierro (USB)', serial: 'USB' }])
-    } catch (err) {
-      if (!(err instanceof Error) || err.name !== 'NotFoundError') {
-        toast.error('Failed to connect via USB')
-      }
-    }
-  }, [setSerialConnection, store])
 
   // ─── BLE permission & availability state ─────────────────────────────────
   type BleStatus = 'checking' | 'no_permission' | 'bt_off' | 'ready'
@@ -596,15 +578,6 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
               >
                 <Loader2 size={18} className="animate-spin" />
                 Searching...
-              </button>
-            )}
-            {serialSupported && !isSearching && !hasDevices && (
-              <button
-                onClick={handleSerialConnect}
-                className="w-full h-12 rounded-full border border-ink-8 text-ink-4 text-body-md font-semibold transition-colors hover:border-primary hover:text-primary flex items-center justify-center gap-2"
-              >
-                <Server size={16} />
-                Connect via USB (RS485)
               </button>
             )}
           </div>

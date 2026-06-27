@@ -80,10 +80,19 @@ abstract class BaseProvisionManager implements IBleProvisionManager {
     this.cleanupResponse()
     this.receivedPackets = []
 
-    for (let i = 0; i < packets.length; i++) {
-      this.log(`发送第 ${i + 1}/${packets.length} 包...`)
-      await this.writePacket(packets[i])
-      if (i < packets.length - 1) await this.sleep(50)
+    // 发送所有分包；若中途 GATT 断开，重连一次后整条命令重发
+    try {
+      await this.writeAllPackets(packets)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      if (/disconnect|GATT|not connected/i.test(msg)) {
+        this.log('写入时断开，重连后重发...')
+        await this.ensureReady()
+        this.receivedPackets = []
+        await this.writeAllPackets(packets)
+      } else {
+        throw err
+      }
     }
 
     return new Promise<T>((resolve, reject) => {
@@ -94,6 +103,14 @@ abstract class BaseProvisionManager implements IBleProvisionManager {
         reject(new Error('等待设备应答超时'))
       }, timeout)
     })
+  }
+
+  private async writeAllPackets(packets: Uint8Array[]): Promise<void> {
+    for (let i = 0; i < packets.length; i++) {
+      this.log(`发送第 ${i + 1}/${packets.length} 包...`)
+      await this.writePacket(packets[i])
+      if (i < packets.length - 1) await this.sleep(50)
+    }
   }
 
   /** 子类在收到 FED6 indication 分包时调用 */

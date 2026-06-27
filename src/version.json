@@ -1,8 +1,9 @@
 {
-  "version": "3.18.1",
-  "build": 2546,
+  "version": "3.18.2",
+  "build": 2547,
   "date": "2026-06-26",
   "changelog": [
+    "Add Device: remove Connect via USB (RS485) option; WiFi provisioning auto-retries a command once after reconnecting if GATT drops mid-write",
     "Fix WiFi setup GATT disconnect: reconnect-on-demand before each BLE provisioning command (Web + native) so idle GATT drops auto-recover; native scan falls back to service-UUID filter when SSL_ prefix misses; friendlier disconnect error copy",
     "WiFi setup (BLE provisioning) now works on native iOS/Android: bleProvision.ts refactored to dual backend (Web Bluetooth + @capacitor-community/bluetooth-le) behind a shared base class; same FEE7/FED5/FED6 protocol, AES+Base64+packet framing, CID command set per spec v2.9",
     "Android: CI builds a downloadable debug APK and publishes it as a GitHub Release asset (apk-v<version>)",
