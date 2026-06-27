@@ -5,7 +5,7 @@
 // -------------------- 连接层 --------------------
 
 /** 通讯协议类型 */
-export type ProtocolType = 'bluetooth' | 'serial' | 'none'
+export type ProtocolType = 'bluetooth' | 'none'
 
 /** 连接状态 */
 export type ConnectionStatus = 'disconnected' | 'scanning' | 'connecting' | 'connected' | 'error'

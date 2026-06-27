@@ -1,8 +1,10 @@
 {
-  "version": "3.18.2",
-  "build": 2547,
+  "version": "3.18.3",
+  "build": 2548,
   "date": "2026-06-26",
   "changelog": [
+    "Fix: BLE-added device not appearing in list — add-device sent wrong payload (duid/name); now sends deviceName+dtuDtuid+stationId (reuses a station or creates one) and surfaces real bind failures",
+    "Remove dead USB/Web-Serial code: delete serialModbus.ts, useProtocol.ts, useConnectionStatus.tsx; strip serial from connectionStore + ProtocolType",
     "Add Device: remove Connect via USB (RS485) option; WiFi provisioning auto-retries a command once after reconnecting if GATT drops mid-write",
     "Fix WiFi setup GATT disconnect: reconnect-on-demand before each BLE provisioning command (Web + native) so idle GATT drops auto-recover; native scan falls back to service-UUID filter when SSL_ prefix misses; friendlier disconnect error copy",
     "WiFi setup (BLE provisioning) now works on native iOS/Android: bleProvision.ts refactored to dual backend (Web Bluetooth + @capacitor-community/bluetooth-le) behind a shared base class; same FEE7/FED5/FED6 protocol, AES+Base64+packet framing, CID command set per spec v2.9",

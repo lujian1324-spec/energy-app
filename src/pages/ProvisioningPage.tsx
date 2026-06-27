@@ -308,14 +308,30 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
       if (resp.RC !== 0) {
         store.setErrorMessage(`Config failed: RC=${resp.RC}`)
       } else {
-        // Register device in cloud and refresh device list
-        const { addNewDevice, loadDevices } = useDeviceStore.getState()
-        const devResult = await addNewDevice({
-          duid: store.dtuid ?? '',
-          name: deviceNameInput.trim() || (store.deviceName ?? 'My Device'),
-        }).catch(() => null)
-        if (devResult && (devResult.code === 0 || devResult.code === '0')) {
-          await loadDevices()
+        // Register device in the cloud (correct payload: deviceName + dtuDtuid + stationId)
+        // then refresh the list. A device must belong to a station — reuse an
+        // existing one, or create one together with the device for new accounts.
+        const ds = useDeviceStore.getState()
+        const deviceName = deviceNameInput.trim() || (store.deviceName ?? 'My Device')
+        const dtuDtuid = store.dtuid ?? ''
+        const isOk = (c: number | string | undefined) => c === 0 || c === '0'
+
+        await ds.loadStations().catch(() => {})
+        const stationId = useDeviceStore.getState().stations[0]?.id
+
+        const devResult = stationId != null
+          ? await ds.addNewDevice({ deviceName, dtuDtuid, stationId }).catch(() => null)
+          : await ds.addNewDeviceWithStation({ deviceName, dtuDtuid, stationId: 0, stationName: deviceName }).catch(() => null)
+
+        if (devResult && isOk(devResult.code)) {
+          await ds.loadDevices()
+        } else {
+          // Wi-Fi config succeeded but binding the device to the account failed —
+          // tell the user instead of silently showing success with an empty list.
+          store.setConfigResult('fail')
+          store.setErrorMessage(
+            `Wi-Fi configured, but adding the device failed: ${devResult?.message ?? devResult?.msg ?? 'please try again'}`
+          )
         }
       }
       store.setStep('result')
