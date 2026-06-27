@@ -37,7 +37,7 @@ function StateBadge({ state }: { state?: PermissionState }) {
     case 'granted':
       return <span className="flex items-center gap-1 text-label font-semibold text-success"><CheckCircle2 size={14} /> Granted</span>
     case 'denied':
-      return <span className="flex items-center gap-1 text-label font-semibold text-[#FF3530]"><XCircle size={14} /> Denied</span>
+      return <span className="flex items-center gap-1 text-label font-semibold text-danger"><XCircle size={14} /> Denied</span>
     case 'unsupported':
       return <span className="flex items-center gap-1 text-label font-semibold text-ink-7"><MinusCircle size={14} /> N/A</span>
     default:

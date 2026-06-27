@@ -326,7 +326,7 @@ export default function DebugParamsPage() {
 
           {historyError && !historyLoading && (
             <div className="rounded-l bg-ink-10 px-4 py-3">
-              <span className="text-caption text-[#FF3530]">{historyError}</span>
+              <span className="text-caption text-danger">{historyError}</span>
             </div>
           )}
 

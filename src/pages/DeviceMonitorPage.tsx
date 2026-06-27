@@ -549,7 +549,7 @@ export default function DeviceMonitorPage() {
             ) : !chartData.length ? (
               <div className="h-[130px] flex flex-col items-center justify-center gap-1 text-center px-4">
                 <span className="text-body-md text-ink-7">Collecting today's data…</span>
-                <span className="text-tiny text-[#636366]">Live readings appear here as the device reports them</span>
+                <span className="text-tiny text-ink-7">Live readings appear here as the device reports them</span>
               </div>
             ) : (
               <div className="w-full">

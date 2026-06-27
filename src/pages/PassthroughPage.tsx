@@ -325,7 +325,7 @@ export default function PassthroughPage() {
   }
 
   const dirColor = (dir: LogEntry['dir']) =>
-    dir === 'tx' ? 'text-primary' : dir === 'rx' ? 'text-success' : 'text-[#FF3530]'
+    dir === 'tx' ? 'text-primary' : dir === 'rx' ? 'text-success' : 'text-danger'
 
   const typeColor = (type: Preset['type']) =>
     type === 'read' ? 'text-primary bg-[rgba(1,214,190,0.1)]'
@@ -434,7 +434,7 @@ export default function PassthroughPage() {
                   <Settings2 size={11} className="text-primary" />
                   Parsed Params
                 </p>
-                <button onClick={() => setParsedParams([])} className="text-caption text-ink-8 active:text-[#FF3530]">
+                <button onClick={() => setParsedParams([])} className="text-caption text-ink-8 active:text-danger">
                   Clear
                 </button>
               </div>
@@ -480,7 +480,7 @@ export default function PassthroughPage() {
           <div className="flex items-center justify-between mb-2">
             <p className="text-caption font-semibold text-ink-7 uppercase tracking-wide">TX/RX Log</p>
             {logs.length > 0 && (
-              <button onClick={() => setLogs([])} className="text-caption text-ink-8 active:text-[#FF3530]">
+              <button onClick={() => setLogs([])} className="text-caption text-ink-8 active:text-danger">
                 Clear
               </button>
             )}

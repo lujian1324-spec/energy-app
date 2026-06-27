@@ -43,7 +43,7 @@ function FiringAlarmRow({ alarm }: { alarm: FiringAlarm }) {
       <div className="flex-1 min-w-0">
         <div className="text-body-md font-semibold text-ink-1 leading-tight">{title}</div>
         {alarm.severity && <div className="text-[11px] text-ink-7 mt-0.5 capitalize">{alarm.severity}</div>}
-        <div className="text-[10px] text-[#636366] mt-1.5">{time}</div>
+        <div className="text-[10px] text-ink-7 mt-1.5">{time}</div>
       </div>
       <span
         className="flex-shrink-0 mt-0.5 text-[10px] font-semibold px-2 py-1 rounded-full"
@@ -62,7 +62,7 @@ function SectionHeader({ icon: SIcon, label, count, color }: {
     <div className="flex items-center gap-2 px-4 pt-4 pb-2">
       <SIcon size={14} style={{ color }} />
       <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color }}>{label}</span>
-      <span className="text-[11px] text-[#636366]">({count})</span>
+      <span className="text-[11px] text-ink-7">({count})</span>
     </div>
   )
 }
@@ -137,7 +137,7 @@ function AlarmRow({ alarm, onDismiss, dismissing }: {
         {alarm.description && (
           <div className="text-[11px] text-ink-6 mt-1 leading-snug">{alarm.description}</div>
         )}
-        <div className="text-[10px] text-[#636366] mt-1.5">{time}</div>
+        <div className="text-[10px] text-ink-7 mt-1.5">{time}</div>
       </div>
       {!alarm.isProcessed && (
         <button
@@ -251,7 +251,7 @@ export default function NotificationsPage() {
               <Bell size={32} className="text-ink-9" />
             </div>
             <p className="text-body-lg font-semibold text-ink-1">No Alarms</p>
-            <p className="text-body-md text-[#636366] mt-1">All systems are running normally</p>
+            <p className="text-body-md text-ink-7 mt-1">All systems are running normally</p>
           </motion.div>
         )}
 

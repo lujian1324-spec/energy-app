@@ -113,7 +113,7 @@ export default function DataExportPage() {
         </button>
         <div className="flex-1">
           <h2 className="text-lg font-bold text-ink-1">Privacy & Data</h2>
-          <p className="text-caption text-[#A0A0A5]">Export and manage your data</p>
+          <p className="text-caption text-ink-6">Export and manage your data</p>
         </div>
         <div className="w-9 h-9 rounded-full bg-[rgba(1,214,190,0.12)] flex items-center justify-center">
           <Shield size={18} className="text-primary" />
@@ -131,7 +131,7 @@ export default function DataExportPage() {
             <Info size={18} className="text-primary flex-shrink-0 mt-0.5" />
             <div>
               <h3 className="text-[13px] font-semibold text-ink-1 mb-1">Your data, your control</h3>
-              <p className="text-caption text-[#A0A0A5] leading-relaxed">
+              <p className="text-caption text-ink-6 leading-relaxed">
                 Sierro stores your energy data locally on this device and on our secure cloud.
                 You can export or delete it at any time.
               </p>
@@ -146,7 +146,7 @@ export default function DataExportPage() {
           transition={{ delay: 0.05 }}
           className="mb-4"
         >
-          <div className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase mb-3 px-1">
+          <div className="text-caption font-bold text-ink-6 tracking-widest uppercase mb-3 px-1">
             Export Data
           </div>
           <div className="space-y-2.5">
@@ -160,12 +160,12 @@ export default function DataExportPage() {
               </div>
               <div className="flex-1 text-left">
                 <div className="text-body-md font-semibold text-ink-1">Export as JSON</div>
-                <div className="text-caption text-[#A0A0A5] mt-0.5">Full snapshot: devices, history, settings</div>
+                <div className="text-caption text-ink-6 mt-0.5">Full snapshot: devices, history, settings</div>
               </div>
               {exportLoading === 'json' ? (
                 <RotateCcw size={18} className="text-primary animate-spin" />
               ) : (
-                <Download size={18} className="text-[#A0A0A5]" />
+                <Download size={18} className="text-ink-6" />
               )}
             </button>
             <button
@@ -178,12 +178,12 @@ export default function DataExportPage() {
               </div>
               <div className="flex-1 text-left">
                 <div className="text-body-md font-semibold text-ink-1">Export as CSV</div>
-                <div className="text-caption text-[#A0A0A5] mt-0.5">Time-series history data for analysis</div>
+                <div className="text-caption text-ink-6 mt-0.5">Time-series history data for analysis</div>
               </div>
               {exportLoading === 'csv' ? (
                 <RotateCcw size={18} className="text-warning animate-spin" />
               ) : (
-                <Download size={18} className="text-[#A0A0A5]" />
+                <Download size={18} className="text-ink-6" />
               )}
             </button>
           </div>
@@ -204,7 +204,7 @@ export default function DataExportPage() {
                 </div>
                 <div>
                   <div className="text-body-md font-semibold text-ink-1">Recycle Bin</div>
-                  <div className="text-caption text-[#A0A0A5] mt-0.5">Deleted data kept for 30 days</div>
+                  <div className="text-caption text-ink-6 mt-0.5">Deleted data kept for 30 days</div>
                 </div>
               </div>
               <span className="text-caption px-2 py-0.5 rounded-full bg-[rgba(168,85,247,0.15)] text-[#A855F7] font-semibold">
@@ -222,7 +222,7 @@ export default function DataExportPage() {
           className="bg-ink-10 rounded-[20px] overflow-hidden mb-4"
         >
           <div className="px-4 py-3 border-b border-[rgba(255,255,255,0.06)]">
-            <span className="text-caption font-bold text-[#A0A0A5] tracking-widest uppercase">
+            <span className="text-caption font-bold text-ink-6 tracking-widest uppercase">
               Privacy Preferences
             </span>
           </div>
@@ -232,7 +232,7 @@ export default function DataExportPage() {
             </div>
             <div className="flex-1">
               <div className="text-[13px] font-semibold text-ink-1">Anonymous Analytics</div>
-              <div className="text-caption text-[#A0A0A5] mt-0.5">Help improve Sierro (no personal data)</div>
+              <div className="text-caption text-ink-6 mt-0.5">Help improve Sierro (no personal data)</div>
             </div>
             <ToggleSwitch
               isOn={privacyAck}
@@ -249,15 +249,15 @@ export default function DataExportPage() {
         {/* Legal links */}
         <div className="text-center py-2 text-caption">
           <div className="flex items-center justify-center gap-3 mb-2">
-            <button onClick={() => navigate('/privacy')} className="text-[#A0A0A5] hover:text-ink-1 transition-colors">
+            <button onClick={() => navigate('/privacy')} className="text-ink-6 hover:text-ink-1 transition-colors">
               Privacy Policy
             </button>
-            <span className="text-[#636366]">|</span>
-            <button onClick={() => navigate('/terms')} className="text-[#A0A0A5] hover:text-ink-1 transition-colors">
+            <span className="text-ink-7">|</span>
+            <button onClick={() => navigate('/terms')} className="text-ink-6 hover:text-ink-1 transition-colors">
               Terms of Use
             </button>
           </div>
-          <p className="text-[#636366]">Sierro Inc. · Data Protection Officer: privacy@sierro.com</p>
+          <p className="text-ink-7">Sierro Inc. · Data Protection Officer: privacy@sierro.com</p>
         </div>
       </div>
     </div>

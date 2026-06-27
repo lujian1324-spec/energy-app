@@ -131,7 +131,7 @@ export default function PassthroughPanel({ deviceId }: Props) {
   }
 
   const dirColor = (dir: LogEntry['dir']) =>
-    dir === 'tx' ? 'text-primary' : dir === 'rx' ? 'text-success' : 'text-[#FF3530]'
+    dir === 'tx' ? 'text-primary' : dir === 'rx' ? 'text-success' : 'text-danger'
 
   return (
     <div className="bg-ink-11 rounded-l border border-[rgba(255,255,255,0.06)] p-4 space-y-3">

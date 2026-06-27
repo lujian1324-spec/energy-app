@@ -1,8 +1,9 @@
 {
-  "version": "3.18.10",
-  "build": 2555,
+  "version": "3.18.11",
+  "build": 2556,
   "date": "2026-06-26",
   "changelog": [
+    "Color tokens: snap off-palette grays to ink scale (#A0A0A5/#AEAEB2->ink-6, #636366->ink-7 per config intent) and unify #FF3530->danger; removes off-palette colors",
     "Design-token sweep (components): same value-identical hex->token + rounded-sm->rounded-m pass over src/components",
     "Design-token sweep (pages): replace value-identical hardcoded hex (#262626->ink-10, #BFBFBF->ink-6, #01D6BE->primary, etc.) with tokens; rounded-sm->rounded-m (both 8px). Zero visual change, consistency only",
     "UI polish: enlarge Overview sheet close buttons 28->36px (tap target) + scale-on-press; replace transition-all on shared Button and BottomNavigation with specific properties",

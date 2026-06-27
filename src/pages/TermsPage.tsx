@@ -166,7 +166,7 @@ export default function TermsPage() {
                 className="bg-ink-10 border border-[rgba(52,199,89,0.08)] rounded-l p-4"
               >
                 <h3 className="text-body-md font-bold text-success mb-2">{section.title}</h3>
-                <p className="text-[12px] text-[#AEAEB2] leading-relaxed whitespace-pre-line">
+                <p className="text-[12px] text-ink-6 leading-relaxed whitespace-pre-line">
                   {section.content}
                 </p>
               </motion.div>
