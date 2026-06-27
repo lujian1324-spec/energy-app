@@ -319,9 +319,17 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
         await ds.loadStations().catch(() => {})
         const stationId = useDeviceStore.getState().stations[0]?.id
 
+        // 配网仅能拿到 DTUID（采集器唯一 ID），无独立逆变器 SN，故以 DTUID 作为
+        // 设备序列号并标记为虚拟 SN（与 ManualAddDeviceModal 的兜底一致）。
+        const base = {
+          deviceName,
+          dtuDtuid,
+          deviceSerialNumber: dtuDtuid,
+          isVirtualSerialNumber: true,
+        }
         const devResult = stationId != null
-          ? await ds.addNewDevice({ deviceName, dtuDtuid, stationId }).catch(() => null)
-          : await ds.addNewDeviceWithStation({ deviceName, dtuDtuid, stationId: 0, stationName: deviceName }).catch(() => null)
+          ? await ds.addNewDevice({ ...base, stationId }).catch(() => null)
+          : await ds.addNewDeviceWithStation({ ...base, stationId: 0, stationName: deviceName }).catch(() => null)
 
         if (devResult && isOk(devResult.code)) {
           await ds.loadDevices()

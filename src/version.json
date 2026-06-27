@@ -1,8 +1,9 @@
 {
-  "version": "3.18.3",
-  "build": 2548,
+  "version": "3.18.4",
+  "build": 2549,
   "date": "2026-06-26",
   "changelog": [
+    "Fix BLE add-device \"serial number cannot be empty\": provisioning now sends deviceSerialNumber=DTUID + isVirtualSerialNumber (no separate inverter SN available during BLE setup)",
     "Fix: BLE-added device not appearing in list — add-device sent wrong payload (duid/name); now sends deviceName+dtuDtuid+stationId (reuses a station or creates one) and surfaces real bind failures",
     "Remove dead USB/Web-Serial code: delete serialModbus.ts, useProtocol.ts, useConnectionStatus.tsx; strip serial from connectionStore + ProtocolType",
     "Add Device: remove Connect via USB (RS485) option; WiFi provisioning auto-retries a command once after reconnecting if GATT drops mid-write",
