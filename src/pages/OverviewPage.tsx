@@ -570,7 +570,7 @@ export default function OverviewPage() {
           {/* Left: Back */}
           <button
             onClick={backToDevices}
-            className="w-9 h-9 rounded-full bg-[#262626] flex items-center justify-center text-[#FFFFFF] hover:bg-[#454545] transition-colors flex-shrink-0"
+            className="w-9 h-9 rounded-full bg-[#262626] flex items-center justify-center text-[#FFFFFF] hover:bg-[#454545] active:scale-[0.96] transition-[background-color,transform] duration-150 flex-shrink-0"
           >
             <ChevronLeft size={22} />
           </button>
@@ -711,12 +711,12 @@ export default function OverviewPage() {
                   </div>
                   <div className="flex items-center justify-around">
                     <div className="flex flex-col items-center">
-                      <span className="text-body-md font-bold text-[#FFFFFF]">{isOnline ? `${animatedAcPower}W` : '-'}</span>
+                      <span className="text-body-md font-bold text-[#FFFFFF] tnum">{isOnline ? `${animatedAcPower}W` : '-'}</span>
                       <span className="text-tiny text-[#BFBFBF] mt-0.5">AC</span>
                     </div>
                     <span className="text-[#01D6BE] text-body-md font-semibold px-1">+</span>
                     <div className="flex flex-col items-center">
-                      <span className="text-body-md font-bold text-[#FFFFFF]">{isOnline ? `${animatedSolarPower}W` : '-'}</span>
+                      <span className="text-body-md font-bold text-[#FFFFFF] tnum">{isOnline ? `${animatedSolarPower}W` : '-'}</span>
                       <span className="text-tiny text-[#FF9500] mt-0.5">Solar</span>
                     </div>
                   </div>
@@ -728,7 +728,7 @@ export default function OverviewPage() {
                     <span className="text-[11px] font-medium text-[#BFBFBF]">Output</span>
                   </div>
                   <div className="flex flex-col items-center justify-center">
-                    <span className="text-body-md font-bold text-[#FFFFFF]">{isOnline ? `${animatedOutputPower}W` : '-'}</span>
+                    <span className="text-body-md font-bold text-[#FFFFFF] tnum">{isOnline ? `${animatedOutputPower}W` : '-'}</span>
                     <span className="text-tiny text-[#BFBFBF] mt-0.5">Load</span>
                   </div>
                 </div>
@@ -865,7 +865,7 @@ export default function OverviewPage() {
                     <button
                       onClick={() => handleSetWorkMode('backup')}
                       disabled={controlLoading === 'workMode'}
-                      className={`px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all
+                      className={`px-3 py-1.5 rounded-full text-[11px] font-semibold active:scale-[0.96] transition-[color,background-color,transform] duration-150
                         ${activeMode === 'backup'
                           ? 'bg-[#FF9500] text-[#000000]'
                           : 'text-[#BFBFBF] hover:text-[#FFFFFF]'
@@ -876,7 +876,7 @@ export default function OverviewPage() {
                     <button
                       onClick={() => handleSetWorkMode('saving')}
                       disabled={controlLoading === 'workMode'}
-                      className={`px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all
+                      className={`px-3 py-1.5 rounded-full text-[11px] font-semibold active:scale-[0.96] transition-[color,background-color,transform] duration-150
                         ${activeMode === 'saving'
                           ? 'bg-[#34C759] text-[#000000]'
                           : 'text-[#BFBFBF] hover:text-[#FFFFFF]'
@@ -989,7 +989,7 @@ export default function OverviewPage() {
                   key={isOnline ? currentChartData.value : 'offline'}
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  className="text-[11px] px-2 py-0.5 rounded-full font-semibold"
+                  className="text-[11px] px-2 py-0.5 rounded-full font-semibold tnum"
                   style={{
                     backgroundColor: isOnline ? `${currentChartData.color}26` : 'rgba(160,160,165,0.15)',
                     color: isOnline ? currentChartData.color : '#BFBFBF'
@@ -1123,7 +1123,7 @@ export default function OverviewPage() {
                     <button
                       key={item.key}
                       onClick={() => setPowerDataSource(item.key)}
-                      className={`flex flex-col items-center gap-1 px-4 py-1 rounded-xl transition-all
+                      className={`flex flex-col items-center gap-1 px-4 py-1 rounded-xl active:scale-[0.96] transition-[background-color,transform] duration-150
                         ${isActive ? 'bg-[rgba(1,214,190,0.15)]' : 'hover:bg-[rgba(255,255,255,0.03)]'}`}
                     >
                       <Icon size={18} className={isActive ? 'text-[#01D6BE]' : 'text-[#BFBFBF]'} />

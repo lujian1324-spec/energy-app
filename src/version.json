@@ -1,8 +1,9 @@
 {
-  "version": "3.13.7",
-  "build": 2532,
+  "version": "3.14.0",
+  "build": 2533,
   "date": "2026-06-26",
   "changelog": [
+    "UI polish: tabular numbers on live values (no jitter), scale-on-press feedback on buttons, balanced heading/body text wrap, skip page-enter animation on first load, replace transition-all with explicit properties",
     "Remove swipe-to-back gesture on Overview and Device Monitor pages (prevent accidental navigation)",
     "Real-Time Power chart: real time X-axis (12am/4am/8am/12pm/4pm/8pm/12am), pinch-to-zoom + pan (min 1 hour), today's API history (paginated + IndexedDB cache); realtime value shown only in top-right badge",
     "Standardize backend API params (isApiSuccess, normalizeCountryCode, CaptchaIntent) + document page/label/API conventions in CLAUDE.md",

@@ -142,7 +142,7 @@ export default function BatteryRing({
       {/* 中心内容 */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         {/* 电量百分比 — Disconnected/0 显示 - (PRD §5.1) */}
-        <div className="text-headline-xl font-extrabold text-[#FFFFFF] leading-none tracking-tight">
+        <div className="text-headline-xl font-extrabold text-[#FFFFFF] leading-none tracking-tight tnum">
           {connected ? (
             <>{safePercent}<span className="text-lg font-medium text-[#BFBFBF]">%</span></>
           ) : (

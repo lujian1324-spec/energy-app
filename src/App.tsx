@@ -94,7 +94,7 @@ function AppInner() {
   // 登录/注册页单独渲染，不包含底部导航
   if (location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/terms' || location.pathname === '/privacy' || location.pathname === '/forgot-password') {
     return (
-      <AnimatePresence mode="wait">
+      <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={location.pathname}
           initial={{ opacity: 0 }}
@@ -132,7 +132,7 @@ function AppInner() {
     <div className="h-full w-full bg-bg-base flex flex-col overflow-hidden">
       {/* 主内容区域 */}
       <div className="flex-1 overflow-hidden relative">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={location.pathname}
             initial={{ opacity: 0, x: 20 }}

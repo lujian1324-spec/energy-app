@@ -400,7 +400,7 @@ export default function DevicePage() {
           {/* 电池正极 */}
           <span className="w-[2px] h-[5px] rounded-r-[1px] ml-[1px]" style={{ backgroundColor: '#8C8C8C' }} />
         </span>
-        <span className="text-body-md font-semibold text-white">{level}%</span>
+        <span className="text-body-md font-semibold text-white tnum">{level}%</span>
       </span>
     )
   }

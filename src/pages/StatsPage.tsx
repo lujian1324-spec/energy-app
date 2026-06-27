@@ -792,7 +792,7 @@ export default function StatsPage() {
                 className="flex flex-col items-center text-center py-5">
                 <div className="flex items-baseline justify-center gap-2">
                   <Zap size={32} className="text-primary fill-primary self-center" />
-                  <span className="text-headline-xl font-semibold text-ink-1 leading-none">{deviceDays}</span>
+                  <span className="text-headline-xl font-semibold text-ink-1 leading-none tnum">{deviceDays}</span>
                   <span className="text-title-md text-ink-6">Days</span>
                 </div>
                 <p className="text-body-md text-ink-6 mt-3">
@@ -805,7 +805,7 @@ export default function StatsPage() {
             <div className="flex bg-ink-10 rounded-pill p-1 mb-3">
               {periods.map((p) => (
                 <button key={p} onClick={() => setPeriod(p)}
-                  className={`flex-1 text-body-md font-semibold py-2 rounded-pill transition-all duration-200
+                  className={`flex-1 text-body-md font-semibold py-2 rounded-pill active:scale-[0.96] transition-[color,background-color,transform] duration-200
                     ${period === p ? 'bg-ink-3 text-ink-13' : 'text-ink-6 hover:text-ink-1'}`}>
                   {p}
                 </button>
@@ -909,7 +909,7 @@ export default function StatsPage() {
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-baseline gap-1.5">
-                        <span className="text-headline-lg font-semibold text-ink-1 leading-none">{chartFrame.co2Kg}</span>
+                        <span className="text-headline-lg font-semibold text-ink-1 leading-none tnum">{chartFrame.co2Kg}</span>
                         <span className="text-body-md text-ink-6">Kg</span>
                       </div>
                       <p className="text-body-md text-ink-6 mt-2">{chartFrame.ecoInsight}</p>
@@ -1037,19 +1037,19 @@ export default function StatsPage() {
                   </div>
                   <div className="flex-1 grid grid-cols-2 gap-3">
                     <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-l p-2.5">
-                      <div className="text-[14px] font-bold text-[#FFFFFF]">{remainingBatteryCapacity}%</div>
+                      <div className="text-[14px] font-bold text-[#FFFFFF] tnum">{remainingBatteryCapacity}%</div>
                       <div className="text-tiny text-[#BFBFBF] mt-0.5">Battery</div>
                     </div>
                     <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-l p-2.5">
-                      <div className="text-[14px] font-bold text-[#34C759]">{batteryTemp > 0 ? formatTemp(batteryTemp, 'F') : '--'}</div>
+                      <div className="text-[14px] font-bold text-[#34C759] tnum">{batteryTemp > 0 ? formatTemp(batteryTemp, 'F') : '--'}</div>
                       <div className="text-tiny text-[#BFBFBF] mt-0.5">Temperature</div>
                     </div>
                     <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-l p-2.5">
-                      <div className="text-[14px] font-bold text-[#01D6BE]">{deviceDays}</div>
+                      <div className="text-[14px] font-bold text-[#01D6BE] tnum">{deviceDays}</div>
                       <div className="text-tiny text-[#BFBFBF] mt-0.5">Days</div>
                     </div>
                     <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-l p-2.5">
-                      <div className="text-[14px] font-bold text-[#FF9500]">{batteryHealth}%</div>
+                      <div className="text-[14px] font-bold text-[#FF9500] tnum">{batteryHealth}%</div>
                       <div className="text-tiny text-[#BFBFBF] mt-0.5">Health</div>
                     </div>
                   </div>

@@ -485,7 +485,7 @@ export default function DeviceMonitorPage() {
             <div className="grid grid-cols-[1fr_16px_1fr_1fr] gap-2 items-stretch">
               <div className="bg-[#1F1F1F] rounded-m px-3 py-3 text-center flex flex-col items-center justify-center">
                 <div>
-                  <span className="text-title-md font-semibold text-white">{fmtW(acPower)}</span>
+                  <span className="text-title-md font-semibold text-white tnum">{fmtW(acPower)}</span>
                   <span className="text-label text-[#BFBFBF]">w</span>
                 </div>
                 <p className="text-tiny text-[#8C8C8C] mt-0.5">AC</p>
@@ -493,14 +493,14 @@ export default function DeviceMonitorPage() {
               <span className="text-[#8C8C8C] text-body-md font-semibold self-center text-center">+</span>
               <div className="bg-[#1F1F1F] rounded-m px-3 py-3 text-center flex flex-col items-center justify-center">
                 <div>
-                  <span className="text-title-md font-semibold text-white">{fmtW(solarPower)}</span>
+                  <span className="text-title-md font-semibold text-white tnum">{fmtW(solarPower)}</span>
                   <span className="text-label text-[#BFBFBF]">w</span>
                 </div>
                 <p className="text-tiny text-[#8C8C8C] mt-0.5">Solar</p>
               </div>
               <div className="bg-[#1F1F1F] rounded-m px-3 py-3 text-center flex flex-col items-center justify-center">
                 <div>
-                  <span className="text-title-md font-semibold text-white">{fmtW(outputPower)}</span>
+                  <span className="text-title-md font-semibold text-white tnum">{fmtW(outputPower)}</span>
                   <span className="text-label text-[#BFBFBF]">w</span>
                 </div>
                 <p className="text-tiny text-[#8C8C8C] mt-0.5">AC</p>

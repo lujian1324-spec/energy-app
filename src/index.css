@@ -73,6 +73,35 @@ body {
   letter-spacing: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* ============================================================
+   排版细节 Typography polish
+   - 标题平衡换行，正文避免孤行（widow/orphan）
+============================================================ */
+h1, h2, h3, h4,
+.text-display, .text-headline-xl, .text-headline-lg,
+.text-headline-md, .text-title-lg, .text-title-md {
+  text-wrap: balance;
+}
+p {
+  text-wrap: pretty;
+}
+
+/* 动态数字：等宽数字防止跳动（电量/功率/计时等实时刷新值） */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* ============================================================
+   图片描边 Image outline — 深色背景用纯白低透明描边，
+   避免被底色染色后像边缘脏污（principle #11）
+============================================================ */
+.img-outline {
+  outline: 1px solid rgba(255, 255, 255, 0.1);
+  outline-offset: -1px;
 }
 
 /* Design System: Anton for display / page titles (Figma) */
