@@ -1,8 +1,9 @@
 {
-  "version": "3.16.2",
-  "build": 2540,
+  "version": "3.17.0",
+  "build": 2541,
   "date": "2026-06-26",
   "changelog": [
+    "Native (Capacitor) permissions: permissions.ts + notifications now use native plugins on iOS/Android (push/local-notifications, camera, bluetooth-le) via isNativePlatform branch; Android manifest permissions added; iOS Info.plist + setup documented in docs/NATIVE_SETUP.md",
     "iOS/Android adaptation: ship real PNG icons (192/512/apple-touch-180/badge-96) — iOS ignores SVG home-screen icons and Android notification icons must be raster; manifest now PNG + maskable; apple-touch-icon PNG + apple-mobile-web-app-title; notifications use existing PNG icon/badge; outage notif goes through SW (iOS PWA compatible)",
     "Fix Real-Time Power chart: history never loaded (useHistoryFetcher checked res.success which does not exist -> now isApiSuccess(res.code)); widen zoom/pan gesture area to whole chart + add desktop wheel-zoom",
     "Web Push (client side): subscribe via VAPID + report PushSubscription to backend on enabling notifications; idempotent re-sync on launch; unsubscribe on logout. Workbox SW now importScripts sw-push.js so server pushes display when app is closed/locked (requires backend VAPID push to deliver)",

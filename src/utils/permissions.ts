@@ -12,6 +12,22 @@
  * Web APIs are bridged to native, and unsupported queries degrade to a probe.
  */
 
+import { Capacitor } from '@capacitor/core'
+
+/** True when running inside the native Capacitor shell (Android/iOS app). */
+const isNative = (): boolean => Capacitor.isNativePlatform()
+
+/** Map a Capacitor plugin permission string to our PermissionState. */
+function mapCapState(s: string | undefined): PermissionState {
+  switch (s) {
+    case 'granted': return 'granted'
+    case 'denied': return 'denied'
+    case 'prompt':
+    case 'prompt-with-rationale': return 'prompt'
+    default: return 'prompt'
+  }
+}
+
 export type PermissionId = 'notifications' | 'camera' | 'bluetooth' | 'wifi' | 'storage'
 
 export type PermissionState =
@@ -62,6 +78,16 @@ async function queryPermission(name: PermissionName): Promise<PermissionState | 
 // ═══════════════════════════════════════════════════════════════════════════
 
 export async function checkNotifications(): Promise<PermissionResult> {
+  if (isNative()) {
+    try {
+      const { PushNotifications } = await import('@capacitor/push-notifications')
+      const { receive } = await PushNotifications.checkPermissions()
+      const st = mapCapState(receive)
+      return st === 'granted' ? ok('Allowed') : st === 'denied' ? no('Blocked — enable in system settings') : ask('Not requested yet')
+    } catch {
+      return na('Notifications plugin unavailable')
+    }
+  }
   if (!('Notification' in window)) return na('Notifications API unavailable')
   switch (Notification.permission) {
     case 'granted': return ok('Allowed')
@@ -71,6 +97,18 @@ export async function checkNotifications(): Promise<PermissionResult> {
 }
 
 export async function requestNotifications(): Promise<PermissionResult> {
+  if (isNative()) {
+    try {
+      const { PushNotifications } = await import('@capacitor/push-notifications')
+      const { receive } = await PushNotifications.requestPermissions()
+      const st = mapCapState(receive)
+      // 授权后注册 APNs/FCM，使后端 Web/原生推送可达
+      if (st === 'granted') { try { await PushNotifications.register() } catch { /* ignore */ } }
+      return st === 'granted' ? ok('Allowed') : st === 'denied' ? no('Blocked') : ask('Dismissed')
+    } catch {
+      return na('Notifications plugin unavailable')
+    }
+  }
   if (!('Notification' in window)) return na('Notifications API unavailable')
   if (Notification.permission === 'denied') return no('Blocked — enable in system settings')
   try {
@@ -90,6 +128,16 @@ export async function requestNotifications(): Promise<PermissionResult> {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export async function checkCamera(): Promise<PermissionResult> {
+  if (isNative()) {
+    try {
+      const { Camera } = await import('@capacitor/camera')
+      const { camera } = await Camera.checkPermissions()
+      const st = mapCapState(camera)
+      return st === 'granted' ? ok('Allowed') : st === 'denied' ? no('Blocked — enable in system settings') : ask('Not requested yet')
+    } catch {
+      return na('Camera plugin unavailable')
+    }
+  }
   if (!navigator.mediaDevices?.getUserMedia) return na('Camera API unavailable')
   const q = await queryPermission('camera' as PermissionName)
   if (q === 'granted') return ok('Allowed')
@@ -98,6 +146,16 @@ export async function checkCamera(): Promise<PermissionResult> {
 }
 
 export async function requestCamera(): Promise<PermissionResult> {
+  if (isNative()) {
+    try {
+      const { Camera } = await import('@capacitor/camera')
+      const { camera } = await Camera.requestPermissions({ permissions: ['camera'] })
+      const st = mapCapState(camera)
+      return st === 'granted' ? ok('Allowed') : st === 'denied' ? no('Blocked') : ask('Dismissed')
+    } catch {
+      return na('Camera plugin unavailable')
+    }
+  }
   if (!navigator.mediaDevices?.getUserMedia) return na('Camera API unavailable')
   try {
     const stream = await withTimeout(
@@ -121,6 +179,16 @@ export async function requestCamera(): Promise<PermissionResult> {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export async function checkBluetooth(): Promise<PermissionResult> {
+  if (isNative()) {
+    try {
+      const { BleClient } = await import('@capacitor-community/bluetooth-le')
+      await BleClient.initialize({ androidNeverForLocation: true })
+      const enabled = await withTimeout(BleClient.isEnabled(), 4000, false)
+      return enabled ? ask('Adapter ready — pick a device to pair') : no('Bluetooth is off')
+    } catch {
+      return na('Bluetooth plugin unavailable')
+    }
+  }
   const bt = (navigator as any).bluetooth
   if (!bt) return na('Web Bluetooth unavailable')
   try {
@@ -134,6 +202,18 @@ export async function checkBluetooth(): Promise<PermissionResult> {
 }
 
 export async function requestBluetooth(): Promise<PermissionResult> {
+  if (isNative()) {
+    try {
+      const { BleClient } = await import('@capacitor-community/bluetooth-le')
+      // initialize() triggers the runtime BLE/Location permission prompts on Android;
+      // isEnabled() then reflects radio state. (Pairing happens later in bleManager.)
+      await BleClient.initialize({ androidNeverForLocation: true })
+      const enabled = await withTimeout(BleClient.isEnabled(), 6000, false)
+      return enabled ? ok('Bluetooth ready') : no('Bluetooth is off — enable it in system settings')
+    } catch {
+      return na('Bluetooth plugin unavailable')
+    }
+  }
   const bt = (navigator as any).bluetooth
   if (!bt) return na('Web Bluetooth unavailable')
   try {

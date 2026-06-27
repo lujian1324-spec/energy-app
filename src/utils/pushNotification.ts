@@ -1,4 +1,6 @@
-// 推送通知服务 - 使用 Web Push API + Service Worker
+// 推送通知服务 - 使用 Web Push API + Service Worker（PWA）；
+// 原生 Capacitor 平台改用 @capacitor/local-notifications（WebView 无 Web Notification）
+import { Capacitor } from '@capacitor/core'
 
 // Service Worker 注册实例
 let swRegistration: ServiceWorkerRegistration | null = null
@@ -74,8 +76,26 @@ const getBasePath = () => {
   return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
 }
 
+// 原生平台通知权限缓存（WebView 无 Notification.permission，需经插件异步读取后缓存）
+let nativeNotifState: NotificationPermission = 'default'
+
+/** 刷新原生通知权限缓存（App 启动 / 授权后调用）。Web 平台为 no-op。 */
+export const refreshNotificationPermission = async (): Promise<NotificationPermission> => {
+  if (!Capacitor.isNativePlatform()) return getNotificationPermission()
+  try {
+    const { LocalNotifications } = await import('@capacitor/local-notifications')
+    const { display } = await LocalNotifications.checkPermissions()
+    nativeNotifState = display === 'granted' ? 'granted' : display === 'denied' ? 'denied' : 'default'
+  } catch {
+    nativeNotifState = 'default'
+  }
+  return nativeNotifState
+}
+
 // 获取通知权限状态
 export const getNotificationPermission = (): NotificationPermission => {
+  // 原生平台：返回缓存值（由 refreshNotificationPermission 维护）
+  if (Capacitor.isNativePlatform()) return nativeNotifState
   if (!isNotificationSupported()) {
     return 'denied'
   }
@@ -134,6 +154,28 @@ export const showLocalNotification = async (
   title: string,
   options?: NotificationOptions
 ): Promise<void> => {
+  // 原生 (Capacitor): WebView 不暴露 Web Notification API，改用 LocalNotifications 插件
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const { LocalNotifications } = await import('@capacitor/local-notifications')
+      const perm = await LocalNotifications.checkPermissions()
+      if (perm.display !== 'granted') {
+        const req = await LocalNotifications.requestPermissions()
+        if (req.display !== 'granted') return
+      }
+      await LocalNotifications.schedule({
+        notifications: [{
+          id: Math.floor(Date.now() % 2147483647),
+          title,
+          body: (options?.body as string) ?? '',
+          // smallIcon/sound use native defaults; tag-equivalent grouping via channelId
+        }],
+      })
+    } catch (e) {
+      console.warn('[Native] LocalNotifications failed:', e)
+    }
+    return
+  }
   if (!isNotificationSupported()) {
     console.warn('Notifications not supported')
     const iosStatus = getIOSPushStatus()

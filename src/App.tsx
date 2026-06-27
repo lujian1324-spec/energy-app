@@ -26,7 +26,7 @@ import { useRealtimeSimulator } from './hooks/useRealtimeSimulator'
 import { useLowBatteryMonitor } from './hooks/useLowBatteryMonitor'
 import { useAuthStore } from './stores/authStore'
 import { usePowerStationStore } from './stores/powerStationStore'
-import { syncWebPushSubscription } from './utils/pushNotification'
+import { syncWebPushSubscription, refreshNotificationPermission } from './utils/pushNotification'
 import { ToastContainer, useToast } from './components/Toast'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { Zap, Loader2 } from 'lucide-react'
@@ -81,14 +81,17 @@ function AppInner() {
   // 首次启动权限引导：session 恢复完成后检查
   const [permissionsDone, setPermissionsDone] = useState(hasAskedPermissions)
 
-  // 启动时恢复会话
+  // 启动时恢复会话 + 刷新原生通知权限缓存
   useEffect(() => {
     restoreSession()
+    refreshNotificationPermission()
   }, [restoreSession])
 
   // 登录后幂等同步 Web Push 订阅（覆盖订阅过期 / 换设备登录；已开启推送才执行）
   useEffect(() => {
     if (!isAuthenticated) return
+    // 原生平台先刷新通知权限缓存（getNotificationPermission 同步依赖它）
+    refreshNotificationPermission()
     const s = usePowerStationStore.getState().settings
     const anyPushEnabled =
       !!s.pushNotifications || !!s.pushLowBattery || !!s.pushSolarStatus
