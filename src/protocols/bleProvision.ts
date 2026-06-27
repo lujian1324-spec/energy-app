@@ -61,10 +61,16 @@ abstract class BaseProvisionManager implements IBleProvisionManager {
   get deviceName(): string | undefined { return this._deviceName }
   getDuid(): string | null { return this.dtuid }
 
+  /** 子类可重写：发送前确保 GATT 已连接（按需重连）。默认无操作。 */
+  protected async ensureReady(): Promise<void> {}
+
   /** 发送命令并等待应答 */
   async sendCommand<T = BleProvisionResponse>(commandJson: object, dtuid?: string, timeout = 15000): Promise<T> {
     const key = dtuid || this.dtuid
     if (!key) throw new Error('BLE 未连接或 DTUID 未知')
+
+    // GATT 可能在两次命令之间空闲断开（Web Bluetooth 常见）→ 发送前按需重连
+    await this.ensureReady()
 
     this.log(`发送命令: ${JSON.stringify(commandJson)}`)
     const encrypted = encrypt(commandJson, key)
@@ -192,6 +198,23 @@ class WebBleProvisionManager extends BaseProvisionManager {
     this.log('GATT 连接成功')
   }
 
+  /** 按需重连：GATT 空闲断开后重新连接并重新获取特征 / 订阅 */
+  protected async ensureReady(): Promise<void> {
+    if (!this.device?.gatt) throw new Error('BLE 未连接，请重新连接设备')
+    if (this.device.gatt.connected && this.writeChar && this.indicateChar) return
+
+    this.log('GATT 已断开，正在重连...')
+    this.server = await this.device.gatt.connect()
+    const service = await this.server.getPrimaryService(BLE_PROVISION_UUIDS.SERVICE)
+    this.writeChar = await service.getCharacteristic(BLE_PROVISION_UUIDS.WRITE_TX)
+    this.indicateChar = await service.getCharacteristic(BLE_PROVISION_UUIDS.INDICATE_RX)
+    // 避免重复绑定监听
+    this.indicateChar.removeEventListener('characteristicvaluechanged', this.handleIndication)
+    await this.indicateChar.startNotifications()
+    this.indicateChar.addEventListener('characteristicvaluechanged', this.handleIndication)
+    this.log('GATT 重连成功')
+  }
+
   protected async writePacket(bytes: Uint8Array): Promise<void> {
     await this.writeChar!.writeValueWithoutResponse(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer)
   }
@@ -223,6 +246,7 @@ class WebBleProvisionManager extends BaseProvisionManager {
 // ─── 原生 Capacitor BLE 后端 ──────────────────────────────────────────────────
 class NativeBleProvisionManager extends BaseProvisionManager {
   private deviceId: string | null = null
+  private connected = false
 
   private async ble() {
     const m = await import('@capacitor-community/bluetooth-le')
@@ -233,23 +257,47 @@ class NativeBleProvisionManager extends BaseProvisionManager {
     const BleClient = await this.ble()
     await BleClient.initialize({ androidNeverForLocation: true })
     this.log('扫描蓝牙设备...')
-    const device = await BleClient.requestDevice({
-      namePrefix: 'SSL_',
-      optionalServices: [BLE_PROVISION_UUIDS.SERVICE],
-    })
+    // 优先按 SSL_ 前缀过滤；前缀被改过/扫不到时回退到按服务 UUID 过滤
+    let device
+    try {
+      device = await BleClient.requestDevice({
+        namePrefix: 'SSL_',
+        optionalServices: [BLE_PROVISION_UUIDS.SERVICE],
+      })
+    } catch (e) {
+      this.log('SSL_ 前缀未匹配，改用服务 UUID 扫描...')
+      device = await BleClient.requestDevice({
+        services: [BLE_PROVISION_UUIDS.SERVICE],
+      })
+    }
     this.deviceId = device.deviceId
     this.log(`正在连接 ${device.name}...`)
-    await BleClient.connect(this.deviceId, () => {
+    await this.openLink()
+    this.parseName(device.name)
+    this.log('GATT 连接成功')
+  }
+
+  /** 建立连接 + 订阅（连接与重连共用） */
+  private async openLink(): Promise<void> {
+    const BleClient = await this.ble()
+    await BleClient.connect(this.deviceId!, () => {
+      this.connected = false
       this.log('设备已断开连接')
       this.cleanupResponse(); this.clearResponseTimeout()
       this.cb.onDisconnected?.()
     })
     await BleClient.startNotifications(
-      this.deviceId, BLE_PROVISION_UUIDS.SERVICE, BLE_PROVISION_UUIDS.INDICATE_RX,
+      this.deviceId!, BLE_PROVISION_UUIDS.SERVICE, BLE_PROVISION_UUIDS.INDICATE_RX,
       (value) => this.onIncoming(new Uint8Array(value.buffer, value.byteOffset, value.byteLength)),
     )
-    this.parseName(device.name)
-    this.log('GATT 连接成功')
+    this.connected = true
+  }
+
+  protected async ensureReady(): Promise<void> {
+    if (this.connected || !this.deviceId) return
+    this.log('GATT 已断开，正在重连...')
+    await this.openLink()
+    this.log('GATT 重连成功')
   }
 
   protected async writePacket(bytes: Uint8Array): Promise<void> {
@@ -268,7 +316,7 @@ class NativeBleProvisionManager extends BaseProvisionManager {
         await BleClient.disconnect(this.deviceId)
       } catch { /* ignore */ }
     }
-    this.deviceId = null; this.dtuid = null
+    this.deviceId = null; this.dtuid = null; this.connected = false
     this.log('已断开连接')
   }
 }

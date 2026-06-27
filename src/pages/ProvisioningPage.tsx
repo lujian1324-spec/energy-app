@@ -305,7 +305,10 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
         store.setErrorMessage(`WiFi scan failed: RC=${resp.RC}`)
       }
     } catch (err) {
-      store.setErrorMessage(err instanceof Error ? err.message : 'WiFi scan failed')
+      const m = err instanceof Error ? err.message : 'WiFi scan failed'
+      store.setErrorMessage(/disconnect|GATT/i.test(m)
+        ? 'Bluetooth disconnected. Please reconnect the device and try again.'
+        : m)
     } finally {
       store.setApLoading(false)
     }
@@ -335,8 +338,11 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
       }
       store.setStep('result')
     } catch (err) {
+      const m = err instanceof Error ? err.message : 'Config failed'
       store.setConfigResult('fail')
-      store.setErrorMessage(err instanceof Error ? err.message : 'Config failed')
+      store.setErrorMessage(/disconnect|GATT/i.test(m)
+        ? 'Bluetooth disconnected. Please reconnect the device and try again.'
+        : m)
       store.setStep('result')
     } finally {
       store.setIsOperating(false)
