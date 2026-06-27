@@ -2,13 +2,11 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Share2, BarChart3, WifiOff, Zap, ChevronLeft, ChevronRight, Leaf } from 'lucide-react'
 import html2canvas from 'html2canvas'
-import BatteryRing from '../components/BatteryRing'
 import { LastSync, CalcAudit } from '../components/DataTrust'
 import { useDeviceStore } from '../stores/deviceStore'
-import { mapFieldsToRealtime, type HistoryDataResponse } from '../api/deviceApi'
+import { type HistoryDataResponse } from '../api/deviceApi'
 import { savePowerHistory, getPowerHistory } from '../db/powerflowDB'
 import type { PowerHistoryRecord } from '../types/protocol'
-import { formatTemp } from '../utils/localization'
 
 const periods = ['Day', 'Week', 'Month', 'Range'] as const
 type Period = typeof periods[number]
@@ -478,7 +476,7 @@ export default function StatsPage() {
   const chartSvgRef = useRef<SVGSVGElement>(null)
   const [scrubIndex, setScrubIndex] = useState<number | null>(null)
 
-  const { devices, selectedDeviceState, loadDevices, historyData, historyLoading, historyError, loadHistoryData } = useDeviceStore()
+  const { devices, loadDevices, historyData, historyLoading, historyError, loadHistoryData } = useDeviceStore()
 
   const useDemo = !!historyError && !historyLoading
 
@@ -522,11 +520,6 @@ export default function StatsPage() {
       } as unknown as HistoryDataResponse)
     }).catch(() => {/* ignore */})
   }, [deviceId])
-
-  const deviceRealtime = useMemo(() => {
-    if (!selectedDeviceState?.fields) return null
-    return mapFieldsToRealtime(selectedDeviceState.fields)
-  }, [selectedDeviceState])
 
   // ── Derived pageOffset for demo data ──
   const pageOffset = useMemo(() => {
@@ -681,9 +674,6 @@ export default function StatsPage() {
   }
 
   const hasDevice = deviceId !== null
-  const remainingBatteryCapacity = deviceRealtime?.remainingBatteryCapacity ?? 0
-  const batteryTemp = deviceRealtime?.batteryTemp ?? 0
-  const batteryHealth = 100
   const isDataLoaded = true
 
   const deviceName = useMemo(() => {
@@ -1023,39 +1013,6 @@ export default function StatsPage() {
               </>
             )}
 
-            {/* Battery Health Card */}
-            {hasDevice && (
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                className="bg-[#262626] border border-[rgba(1,214,190,0.08)] rounded-l p-4">
-                <div className="flex justify-between items-center mb-3">
-                  <div className="text-sm font-bold text-[#FFFFFF]">Battery Health</div>
-                  <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[rgba(52,199,89,0.12)] text-[#34C759] border border-[rgba(52,199,89,0.25)] text-[10px] font-semibold">Good</div>
-                </div>
-                <div className="flex items-center gap-6">
-                  <div className="flex-shrink-0">
-                    <BatteryRing percentage={remainingBatteryCapacity} size={160} strokeWidth={18} isCharging={false} uid="stats-page" />
-                  </div>
-                  <div className="flex-1 grid grid-cols-2 gap-3">
-                    <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-l p-2.5">
-                      <div className="text-[14px] font-bold text-[#FFFFFF] tnum">{remainingBatteryCapacity}%</div>
-                      <div className="text-tiny text-[#BFBFBF] mt-0.5">Battery</div>
-                    </div>
-                    <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-l p-2.5">
-                      <div className="text-[14px] font-bold text-[#34C759] tnum">{batteryTemp > 0 ? formatTemp(batteryTemp, 'F') : '--'}</div>
-                      <div className="text-tiny text-[#BFBFBF] mt-0.5">Temperature</div>
-                    </div>
-                    <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-l p-2.5">
-                      <div className="text-[14px] font-bold text-[#01D6BE] tnum">{deviceDays}</div>
-                      <div className="text-tiny text-[#BFBFBF] mt-0.5">Days</div>
-                    </div>
-                    <div className="text-center bg-[rgba(255,255,255,0.03)] rounded-l p-2.5">
-                      <div className="text-[14px] font-bold text-[#FF9500] tnum">{batteryHealth}%</div>
-                      <div className="text-tiny text-[#BFBFBF] mt-0.5">Health</div>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
           </>
         )}
       </div>

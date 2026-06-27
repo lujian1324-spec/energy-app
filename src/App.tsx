@@ -23,6 +23,7 @@ import PassthroughPage from './pages/PassthroughPage'
 import DebugParamsPage from './pages/DebugParamsPage'
 import DataExportPage from './pages/DataExportPage'
 import { useRealtimeSimulator } from './hooks/useRealtimeSimulator'
+import { useLowBatteryMonitor } from './hooks/useLowBatteryMonitor'
 import { useAuthStore } from './stores/authStore'
 import { ToastContainer, useToast } from './components/Toast'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -72,6 +73,8 @@ function AppInner() {
   const sessionReady = useAuthStore(s => s.sessionReady)
   const restoreSession = useAuthStore(s => s.restoreSession)
   useRealtimeSimulator()
+  // 全局低电量监控：不依赖具体页面，App 存活即轮询所有设备并推送系统通知
+  useLowBatteryMonitor()
 
   // 首次启动权限引导：session 恢复完成后检查
   const [permissionsDone, setPermissionsDone] = useState(hasAskedPermissions)

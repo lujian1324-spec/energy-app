@@ -539,7 +539,7 @@ export default function DevicePage() {
               <div className="flex-1 min-w-0">
                 <p className="text-body-md font-semibold text-white leading-tight truncate">Low Battery</p>
                 <p className="text-label text-white/90 mt-0.5 leading-snug">
-                  {lowBatteryDevice.name} • Battery below 30%, estimated remaining time: {lowBatteryTimeStr.replace(/ remaining$/, '')}
+                  {lowBatteryDevice.name} • Battery below {lowBatteryThreshold}%, estimated remaining time: {lowBatteryTimeStr.replace(/ remaining$/, '')}
                 </p>
               </div>
               <button

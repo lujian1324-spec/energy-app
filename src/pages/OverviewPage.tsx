@@ -50,7 +50,6 @@ import { batteryTimeLabel } from '../utils/batteryTime'
 import {
   showPowerOutageNotification,
   showSolarChargingNotification,
-  showLowBatteryNotification,
   getNotificationPermission,
   requestNotificationPermission,
   getIOSPushStatus,
@@ -517,17 +516,8 @@ export default function OverviewPage() {
   }, [solarPower, pushPermission, settings.pushSolarStatus])
 
   // ─── Low Battery notification ────────────────────────────────────────────────
-  const prevLowBatteryRef = useRef(false)
-  useEffect(() => {
-    const threshold = settings.lowBatteryThreshold ?? 30
-    const isLow = remainingBatteryCapacity > 0 && remainingBatteryCapacity < threshold
-    const wasLow = prevLowBatteryRef.current
-    prevLowBatteryRef.current = isLow
-
-    if (isLow && !wasLow && (settings.pushLowBattery ?? false) && pushPermission === 'granted') {
-      showLowBatteryNotification(Math.round(remainingBatteryCapacity), threshold)
-    }
-  }, [remainingBatteryCapacity, settings.pushLowBattery, settings.lowBatteryThreshold, pushPermission])
+  // 已迁移到全局 useLowBatteryMonitor（App 根部挂载，覆盖所有设备且不依赖本页），
+  // 此处不再单独触发，避免重复通知。
 
   // ─── Power Outage notification ──────────────────────────────────────────────
   // Trigger on EITHER a total AC loss (voltage collapse) OR a mains/grid fault
