@@ -4,7 +4,12 @@
  * 端点路径见 src/config/webPush.ts，待后端实现后调整。
  */
 import { api, isApiSuccess } from '../utils/apiClient'
-import { PUSH_SUBSCRIBE_PATH, PUSH_UNSUBSCRIBE_PATH } from '../config/webPush'
+import {
+  PUSH_SUBSCRIBE_PATH,
+  PUSH_UNSUBSCRIBE_PATH,
+  NATIVE_TOKEN_PATH,
+  NATIVE_TOKEN_UNREGISTER_PATH,
+} from '../config/webPush'
 
 function getUserId(): string | null {
   return localStorage.getItem('iot_user_id')
@@ -39,6 +44,35 @@ export async function unregisterPushSubscription(endpoint: string): Promise<bool
     return isApiSuccess(res.code)
   } catch (e) {
     console.warn('[WebPush] unregisterPushSubscription failed:', e)
+    return false
+  }
+}
+
+/** 上报原生推送 token（APNs/FCM）到后端，与 userId 绑定。失败静默。 */
+export async function registerNativePushToken(token: string, platform: 'ios' | 'android'): Promise<boolean> {
+  try {
+    const res = await api.post(NATIVE_TOKEN_PATH, {
+      token,
+      platform,
+      userId: getUserId() ?? undefined,
+    })
+    return isApiSuccess(res.code)
+  } catch (e) {
+    console.warn('[NativePush] registerNativePushToken failed:', e)
+    return false
+  }
+}
+
+/** 注销原生推送 token。失败静默。 */
+export async function unregisterNativePushToken(token: string): Promise<boolean> {
+  try {
+    const res = await api.post(NATIVE_TOKEN_UNREGISTER_PATH, {
+      token,
+      userId: getUserId() ?? undefined,
+    })
+    return isApiSuccess(res.code)
+  } catch (e) {
+    console.warn('[NativePush] unregisterNativePushToken failed:', e)
     return false
   }
 }

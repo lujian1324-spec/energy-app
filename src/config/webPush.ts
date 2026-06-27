@@ -21,3 +21,7 @@ export const isWebPushConfigured = (): boolean => VAPID_PUBLIC_KEY.trim().length
 /** 后端订阅上报 / 注销端点（待后端实现后按实际路径调整）。 */
 export const PUSH_SUBSCRIBE_PATH = '/notification/webpush/subscribe'
 export const PUSH_UNSUBSCRIBE_PATH = '/notification/webpush/unsubscribe'
+
+/** 原生推送 token（APNs/FCM）上报 / 注销端点。 */
+export const NATIVE_TOKEN_PATH = '/notification/nativepush/register'
+export const NATIVE_TOKEN_UNREGISTER_PATH = '/notification/nativepush/unregister'

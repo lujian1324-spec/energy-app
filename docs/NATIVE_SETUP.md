@@ -65,8 +65,16 @@ Google services Gradle plugin (per @capacitor/push-notifications docs).
   transfer layer (connect/read/write/notify/reconnect) is code-complete but
   untested in CI here.
 
+- Native push token wiring is done in `src/utils/nativePush.ts`:
+  `initNativePush()` requests permission, `register()`s, listens for
+  `registration` → `registerNativePushToken(token, platform)` (POST
+  `NATIVE_TOKEN_PATH`), `pushNotificationReceived` → LocalNotifications,
+  `pushNotificationActionPerformed` → focus. Called on login / when a push
+  toggle is enabled; `teardownNativePush()` runs on logout. Backend must
+  implement `NATIVE_TOKEN_PATH` and push via APNs (iOS) / FCM (Android).
+
 ## Still TODO for full native parity (needs native build/test)
 - QR scanning (`useQRScanner.ts`) uses `getUserMedia`; works in the WebView once
   CAMERA is granted, but a native scanner plugin gives better UX.
-- Wire `PushNotifications` token listeners (`registration` / `registrationError` /
-  `pushNotificationReceived`) → backend (reuse the `webPushApi` contract).
+- FCM: add `google-services.json` + Gradle plugin; APNs: key/cert in Xcode.
+- Validate native BLE + push on a real device build.

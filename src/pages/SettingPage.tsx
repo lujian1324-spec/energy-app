@@ -29,6 +29,8 @@ import ProfileEditPage from './ProfileEditPage'
 import ToggleSwitch from '../components/ToggleSwitch'
 import type { UserProfile } from '../types/protocol'
 import { requestNotificationPermission, getNotificationPermission, enableWebPush, disableWebPush } from '../utils/pushNotification'
+import { initNativePush, teardownNativePush } from '../utils/nativePush'
+import { Capacitor } from '@capacitor/core'
 
 export default function SettingPage() {
   const navigate = useNavigate()
@@ -64,11 +66,16 @@ export default function SettingPage() {
   const [pushSolarStatus, setPushSolarStatus] = useState(settings.pushSolarStatus ?? false)
   const [lowBatteryThreshold, setLowBatteryThreshold] = useState(settings.lowBatteryThreshold ?? 30)
 
-  // 任一推送开关变化后，编排服务端 Web Push 订阅：
-  // - 打开任一开关 → 请求权限 + 订阅 + 上报后端
-  // - 全部关闭     → 注销订阅
+  // 任一推送开关变化后，编排服务端推送：
+  // - 打开任一开关 → 原生:接线 APNs/FCM 并上报 token;Web:VAPID 订阅 + 上报
+  // - 全部关闭     → 注销
   const syncWebPush = useCallback(async (outage: boolean, lowBat: boolean, solar: boolean) => {
     const anyOn = outage || lowBat || solar
+    if (Capacitor.isNativePlatform()) {
+      if (anyOn) await initNativePush()
+      else await teardownNativePush()
+      return
+    }
     if (anyOn) {
       await enableWebPush()
     } else {

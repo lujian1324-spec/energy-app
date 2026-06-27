@@ -1,8 +1,9 @@
 {
-  "version": "3.17.1",
-  "build": 2542,
+  "version": "3.17.2",
+  "build": 2543,
   "date": "2026-06-26",
   "changelog": [
+    "Native push: APNs/FCM token registration listeners (registration/received/action) report token to backend (nativePush.ts); wired on login + push-toggle, torn down on logout",
     "Native BLE: bleManager now has dual backend - Web Bluetooth (PWA) + @capacitor-community/bluetooth-le (native), selected by isNativePlatform; same GATT UUIDs/callbacks (native transfer layer needs real-device validation)",
     "Native (Capacitor) permissions: permissions.ts + notifications now use native plugins on iOS/Android (push/local-notifications, camera, bluetooth-le) via isNativePlatform branch; Android manifest permissions added; iOS Info.plist + setup documented in docs/NATIVE_SETUP.md",
     "iOS/Android adaptation: ship real PNG icons (192/512/apple-touch-180/badge-96) — iOS ignores SVG home-screen icons and Android notification icons must be raster; manifest now PNG + maskable; apple-touch-icon PNG + apple-mobile-web-app-title; notifications use existing PNG icon/badge; outage notif goes through SW (iOS PWA compatible)",

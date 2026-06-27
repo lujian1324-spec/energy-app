@@ -27,6 +27,8 @@ import { useLowBatteryMonitor } from './hooks/useLowBatteryMonitor'
 import { useAuthStore } from './stores/authStore'
 import { usePowerStationStore } from './stores/powerStationStore'
 import { syncWebPushSubscription, refreshNotificationPermission } from './utils/pushNotification'
+import { initNativePush } from './utils/nativePush'
+import { Capacitor } from '@capacitor/core'
 import { ToastContainer, useToast } from './components/Toast'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { Zap, Loader2 } from 'lucide-react'
@@ -96,6 +98,8 @@ function AppInner() {
     const anyPushEnabled =
       !!s.pushNotifications || !!s.pushLowBattery || !!s.pushSolarStatus
     syncWebPushSubscription(anyPushEnabled)
+    // 原生平台：登录后接线 APNs/FCM 推送并上报 token
+    if (Capacitor.isNativePlatform() && anyPushEnabled) initNativePush()
   }, [isAuthenticated])
 
   // 等待会话恢复完成
