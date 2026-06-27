@@ -12,7 +12,7 @@ export default function BottomNavigation() {
     <div
       className="flex justify-center items-end pt-2 bg-transparent pointer-events-none"
       // 不预留 iOS Home 指示条的安全区，直接贴近底端（仅留少量间距）
-      style={{ paddingBottom: '8px' }}
+      style={{ paddingBottom: '4px' }}
     >
       <nav
         className="flex items-center gap-1 px-2 py-2 rounded-full bg-[#0E3F3A] pointer-events-auto shadow-lg"

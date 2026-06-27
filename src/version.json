@@ -1,8 +1,9 @@
 {
-  "version": "3.20.0",
-  "build": 2559,
+  "version": "3.20.1",
+  "build": 2560,
   "date": "2026-06-26",
   "changelog": [
+    "Bottom nav: reduce bottom gap 8px -> 4px (sit closer to the bottom edge)",
     "All page backgrounds now pure black (#000000): base token/body/manifest/native + page roots ink-12->ink-13; cards stay ink-10 for contrast",
     "Fix e2e: device-card check matched the raw hex class [class*=262626] which the token sweep removed; now matches the ink-10 token class",
     "Bottom nav: align to bottom edge on iOS (drop safe-area-inset reservation; fixed 8px gap) so it no longer floats above the Home indicator",
