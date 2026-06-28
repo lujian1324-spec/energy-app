@@ -1,8 +1,9 @@
 {
-  "version": "3.20.2",
-  "build": 2561,
+  "version": "3.21.0",
+  "build": 2562,
   "date": "2026-06-26",
   "changelog": [
+    "Device list power toggle now actually controls the device via Modbus passthrough: ON writes 0x0080<-0x01AA (AC_POWER_ON), OFF writes 0x0080<-0xAA01 (AC_POWER_OFF); optimistic UI with rollback + error on failure, disabled while in flight",
     "Revert pure-black backgrounds back to #141414 (base token/body/manifest/native + page roots ink-13->ink-12); cards remain ink-10. Kept the e2e selector fix",
     "Bottom nav: reduce bottom gap 8px -> 4px (sit closer to the bottom edge)",
     "All page backgrounds now pure black (#000000): base token/body/manifest/native + page roots ink-12->ink-13; cards stay ink-10 for contrast",

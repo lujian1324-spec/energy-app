@@ -37,7 +37,9 @@ import { useAuthStore } from '../stores/authStore'
 import { useNotificationStore } from '../stores/notificationStore'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import sierro2000Img from '../assets/sierro-2000-product.webp'
-import { mapFieldsToRealtime, fetchDeviceState } from '../api/deviceApi'
+import { mapFieldsToRealtime, fetchDeviceState, passthroughDevice } from '../api/deviceApi'
+import { FRAMES } from '../protocols/modbusProtocol'
+import { isApiSuccess } from '../utils/apiClient'
 import { formatTemp } from '../utils/localization'
 import { batteryTimeLabel } from '../utils/batteryTime'
 import { loadRatedParams } from '../db/powerflowDB'
@@ -349,11 +351,36 @@ export default function DevicePage() {
     return '#FF3B30'
   }
 
-  // 电源开关切换（本地 UI 状态）
-  const togglePower = (deviceId: string | number, e: React.MouseEvent) => {
+  // 正在下发开关指令的设备（防抖，避免重复点击）
+  const [togglingPower, setTogglingPower] = useState<Set<string>>(new Set())
+
+  // 电源开关切换：通过 Modbus 透传写 0x0080
+  //   开机 → 0x01AA (FRAMES.AC_POWER_ON)，关机 → 0xAA01 (FRAMES.AC_POWER_OFF)
+  const togglePower = async (deviceId: string | number, e: React.MouseEvent) => {
     e.stopPropagation()
     const idStr = String(deviceId)
-    setPowerStates(prev => ({ ...prev, [idStr]: !(prev[idStr] ?? true) }))
+    if (togglingPower.has(idStr)) return
+
+    const current = powerStates[idStr] ?? true
+    const next = !current
+    // 乐观更新 UI
+    setPowerStates(prev => ({ ...prev, [idStr]: next }))
+    setTogglingPower(prev => new Set(prev).add(idStr))
+    try {
+      const res = await passthroughDevice(idStr, {
+        data: next ? FRAMES.AC_POWER_ON : FRAMES.AC_POWER_OFF,
+        noOutput: true,
+      })
+      if (!isApiSuccess(res.code)) {
+        throw new Error(res.message ?? res.msg ?? 'Power command rejected')
+      }
+    } catch (err) {
+      // 失败回滚 + 提示
+      setPowerStates(prev => ({ ...prev, [idStr]: current }))
+      setError(err instanceof Error ? err.message : 'Failed to switch power')
+    } finally {
+      setTogglingPower(prev => { const s = new Set(prev); s.delete(idStr); return s })
+    }
   }
 
   // 是否有低电量设备（用于最新通知 Banner）
@@ -628,7 +655,7 @@ export default function DevicePage() {
 
                   {/* Power toggle (disabled when disconnected) */}
                   <div className="flex justify-end mt-3" onClick={(e) => e.stopPropagation()}>
-                    <PowerToggle deviceId={device.id} on={powerOn} disabled={!connected} />
+                    <PowerToggle deviceId={device.id} on={powerOn} disabled={!connected || togglingPower.has(String(device.id))} />
                   </div>
                 </motion.div>
               )
