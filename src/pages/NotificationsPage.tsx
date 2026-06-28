@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, AlertTriangle, CheckCircle, Info, Loader2, Bell, Check, Zap } from 'lucide-react'
 import { useDeviceStore } from '../stores/deviceStore'
 import type { AlarmItem } from '../api/deviceApi'
+import { describeAlarmCode } from '../utils/alarmText'
 
 // Real-time firing alarm shape (from selectedDeviceState.firingAlarms)
 interface FiringAlarm {
@@ -27,7 +28,7 @@ function severityConfig(severity: string): { color: string; bg: string } {
 
 function FiringAlarmRow({ alarm }: { alarm: FiringAlarm }) {
   const cfg = severityConfig(alarm.severity)
-  const title = alarm.alarmMessage || alarm.alarmCode || (alarm.alarmId ? `Alarm ${alarm.alarmId}` : 'Device Alarm')
+  const title = alarm.alarmMessage || describeAlarmCode(alarm.alarmCode) || (alarm.alarmId ? `Alarm ${alarm.alarmId}` : 'Device Alarm')
   const time = alarm.timestamp ? new Date(alarm.timestamp).toLocaleString() : 'Active now'
   return (
     <motion.div
@@ -75,14 +76,15 @@ function resolveAlarmTitle(alarm: AlarmItem): string {
   const i18n = alarm.nameI18n
     ? (alarm.nameI18n.en ?? alarm.nameI18n.zh ?? Object.values(alarm.nameI18n)[0])
     : undefined
-  const code = alarm.alarmCode ?? alarm.key ?? alarm.id
+  // 优先后端可读名；否则把 key/alarmCode 解析成可读文案（字典 + 人性化兜底）
   return (
     alarm.name ||
     i18n ||
     alarm.alarmMessage ||
     alarm.description ||
-    alarm.key ||
-    (code ? `Alarm ${code}` : 'Device Alarm')
+    describeAlarmCode(alarm.alarmCode ?? alarm.key) ||
+    describeAlarmCode(alarm.id) ||
+    'Device Alarm'
   )
 }
 
@@ -185,8 +187,10 @@ export default function NotificationsPage() {
     () => new Set(firingAlarms.map(a => a.alarmCode)),
     [firingAlarms]
   )
+  // 历史只剔除「当前正在触发且未处理」的同一条（避免与 Active Now 重复）；
+  // key 为空时绝不剔除，防止误把整批无 key 的历史记录隐藏。
   const historyAlarms = useMemo(
-    () => alarms.filter(a => !(firingKeys.has(a.key ?? '') && !a.isProcessed && !a.disappearedAt)),
+    () => alarms.filter(a => !(a.key && firingKeys.has(a.key) && !a.isProcessed && !a.disappearedAt)),
     [alarms, firingKeys]
   )
 

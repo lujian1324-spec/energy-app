@@ -44,6 +44,7 @@ import { usePowerStationStore } from '../stores/powerStationStore'
 import { mapFieldsToRealtime, mapFiringAlarms } from '../api/deviceApi'
 import { useHistoryFetcher } from '../hooks/useHistoryFetcher'
 import { loadRatedParams } from '../db/powerflowDB'
+import { describeAlarmCode } from '../utils/alarmText'
 import type { DeviceAlert } from '../types'
 import { detectOutageFromFields } from '../utils/powerOutageNotification'
 import { batteryTimeLabel } from '../utils/batteryTime'
@@ -1229,7 +1230,7 @@ export default function OverviewPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className={`text-body-md font-semibold text-ink-1`}>
-                            {alert.alarmMessage || (alert.alarmCode ? `Alarm ${alert.alarmCode}` : 'Device Alarm')}
+                            {alert.alarmMessage || describeAlarmCode(alert.alarmCode) || 'Device Alarm'}
                           </span>
                           <span className={`text-[10px] px-1.5 py-0.5 rounded ${colors.bg} ${colors.text} font-medium`}>
                             LIVE
@@ -1271,7 +1272,7 @@ export default function OverviewPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className={`text-body-md font-semibold ${alarm.isProcessed ? 'text-ink-7' : 'text-ink-1'}`}>
-                          {alarm.alarmMessage || alarm.name || (alarm.alarmCode ? `Alarm ${alarm.alarmCode}` : 'Device Alarm')}
+                          {alarm.alarmMessage || alarm.name || describeAlarmCode(alarm.alarmCode ?? alarm.key) || 'Device Alarm'}
                         </div>
                         <div className="text-[11px] mt-0.5 text-ink-6">
                           Code: {alarm.alarmCode ?? alarm.key ?? '--'} · Level: {alarm.alarmLevel ?? alarm.levelDict ?? '--'}
