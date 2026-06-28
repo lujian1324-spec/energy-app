@@ -588,6 +588,54 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             </button>
           </div>
         </div>
+
+        {/* Device Model Bottom Sheet (lives in the Device Info screen) */}
+        {showModelSheet && (
+          <div
+            className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60"
+            onClick={() => setShowModelSheet(false)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="w-full bg-ink-11 rounded-t-2xl overflow-hidden pb-8"
+            >
+              <div className="flex justify-center pt-3 pb-1">
+                <div className="w-10 h-1 rounded-full bg-white/20" />
+              </div>
+              <div className="flex items-center justify-between px-6 pt-3 pb-2">
+                <span className="text-title-md font-semibold text-white flex-1 text-center">Select Device Model</span>
+                <button
+                  onClick={() => setShowModelSheet(false)}
+                  className="absolute right-4 w-9 h-9 rounded-full bg-[#3A3A3C] flex items-center justify-center"
+                >
+                  <X size={16} className="text-white" />
+                </button>
+              </div>
+              <p className="text-caption text-ink-6 text-center px-6 pb-2">
+                Sets the serial number prefix and default rated parameters.
+              </p>
+              <div className="px-4 pt-3 space-y-3">
+                {SIERRO_MODEL_LIST.map(spec => {
+                  const selected = (ratedParams?.model || realDevice?.model || 'Sierro 1000') === spec.model
+                  return (
+                    <button
+                      key={spec.model}
+                      onClick={() => applyModel(spec.model)}
+                      className={`w-full rounded-l border px-4 py-4 text-left transition-colors ${
+                        selected ? 'border-primary bg-primary/15' : 'border-white/15 bg-transparent'
+                      }`}
+                    >
+                      <p className={`text-title-md font-semibold ${selected ? 'text-white' : 'text-ink-7'}`}>{spec.model}</p>
+                      <p className={`text-body-md mt-0.5 ${selected ? 'text-ink-5' : 'text-ink-7'}`}>
+                        {spec.ratedPower}W · {(spec.ratedCapacityWh / 1000).toFixed(1)}kWh · charge {spec.ratedChargePower}W · {spec.batteryType}
+                      </p>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     )
   }
@@ -809,54 +857,6 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           </button>
         </div>
       </div>
-
-      {/* Device Model Bottom Sheet */}
-      {showModelSheet && (
-        <div
-          className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60"
-          onClick={() => setShowModelSheet(false)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="w-full bg-ink-11 rounded-t-2xl overflow-hidden pb-8"
-          >
-            <div className="flex justify-center pt-3 pb-1">
-              <div className="w-10 h-1 rounded-full bg-white/20" />
-            </div>
-            <div className="flex items-center justify-between px-6 pt-3 pb-2">
-              <span className="text-title-md font-semibold text-white flex-1 text-center">Select Device Model</span>
-              <button
-                onClick={() => setShowModelSheet(false)}
-                className="absolute right-4 w-9 h-9 rounded-full bg-[#3A3A3C] flex items-center justify-center"
-              >
-                <X size={16} className="text-white" />
-              </button>
-            </div>
-            <p className="text-caption text-ink-6 text-center px-6 pb-2">
-              Sets the serial number prefix and default rated parameters.
-            </p>
-            <div className="px-4 pt-3 space-y-3">
-              {SIERRO_MODEL_LIST.map(spec => {
-                const selected = (ratedParams?.model || realDevice?.model || 'Sierro 1000') === spec.model
-                return (
-                  <button
-                    key={spec.model}
-                    onClick={() => applyModel(spec.model)}
-                    className={`w-full rounded-l border px-4 py-4 text-left transition-colors ${
-                      selected ? 'border-primary bg-primary/15' : 'border-white/15 bg-transparent'
-                    }`}
-                  >
-                    <p className={`text-title-md font-semibold ${selected ? 'text-white' : 'text-ink-7'}`}>{spec.model}</p>
-                    <p className={`text-body-md mt-0.5 ${selected ? 'text-ink-5' : 'text-ink-7'}`}>
-                      {spec.ratedPower}W · {(spec.ratedCapacityWh / 1000).toFixed(1)}kWh · charge {spec.ratedChargePower}W · {spec.batteryType}
-                    </p>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Battery Priority Bottom Sheet */}
       {showWorkModeMenu && (
