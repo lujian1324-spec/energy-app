@@ -26,12 +26,27 @@ export interface ProvisionCallbacks {
   onDisconnected?: () => void
 }
 
+/** 扫描到的附近蓝牙设备 */
+export interface ProvisionScanDevice {
+  deviceId: string
+  name?: string
+  rssi?: number
+}
+
+/** 是否支持在 App 内列出附近设备（原生 BLE 扫描）。Web 只能用系统选择器。 */
+export const supportsDeviceListScan = (): boolean => Capacitor.isNativePlatform()
+
 /** UI 依赖的公共接口（Web / 原生共享） */
 export interface IBleProvisionManager {
   connect(dtuid?: string): Promise<void>
   disconnect(): Promise<void>
   getDuid(): string | null
   readonly deviceName: string | undefined
+  /** 原生：扫描并回调附近 SSL_ 设备；Web：抛出（不支持列表扫描） */
+  scanDevices(onFound: (d: ProvisionScanDevice) => void): Promise<void>
+  stopScan(): Promise<void>
+  /** 原生：连接指定 deviceId（来自 scanDevices）；Web：抛出 */
+  connectTo(deviceId: string, name?: string): Promise<void>
   getVersion(): Promise<BleProvisionResponse<{ SV: string; HV: string }>>
   scanAp(): Promise<BleProvisionResponse<BleWifiAp[]>>
   configWifi(ssid: string, key: string): Promise<BleProvisionResponse>
@@ -57,6 +72,15 @@ abstract class BaseProvisionManager implements IBleProvisionManager {
   abstract disconnect(): Promise<void>
   /** 子类实现：写一个分包到 FED5 */
   protected abstract writePacket(bytes: Uint8Array): Promise<void>
+
+  // 列表扫描默认不支持（Web）；原生子类覆盖
+  async scanDevices(_onFound: (d: ProvisionScanDevice) => void): Promise<void> {
+    throw new Error('Device-list scan is only available in the native app')
+  }
+  async stopScan(): Promise<void> { /* no-op on web */ }
+  async connectTo(_deviceId: string, _name?: string): Promise<void> {
+    throw new Error('connectTo is only available in the native app')
+  }
 
   get deviceName(): string | undefined { return this._deviceName }
   getDuid(): string | null { return this.dtuid }
@@ -291,6 +315,34 @@ class NativeBleProvisionManager extends BaseProvisionManager {
     this.log(`正在连接 ${device.name}...`)
     await this.openLink()
     this.parseName(device.name)
+    this.log('GATT 连接成功')
+  }
+
+  /** 扫描附近 SSL_ 设备并回调（App 内列表）。约 10s 后自动停止。 */
+  async scanDevices(onFound: (d: ProvisionScanDevice) => void): Promise<void> {
+    const BleClient = await this.ble()
+    await BleClient.initialize({ androidNeverForLocation: true })
+    this.log('开始扫描附近设备...')
+    await BleClient.requestLEScan(
+      { namePrefix: 'SSL_', allowDuplicates: false },
+      (result) => {
+        if (!result?.device?.deviceId) return
+        onFound({ deviceId: result.device.deviceId, name: result.device.name ?? result.localName, rssi: result.rssi })
+      },
+    )
+  }
+
+  async stopScan(): Promise<void> {
+    try { const BleClient = await this.ble(); await BleClient.stopLEScan() } catch { /* ignore */ }
+  }
+
+  /** 连接扫描列表中选定的设备 */
+  async connectTo(deviceId: string, name?: string): Promise<void> {
+    await this.stopScan()
+    this.deviceId = deviceId
+    this.log(`正在连接 ${name ?? deviceId}...`)
+    await this.openLink()
+    this.parseName(name)
     this.log('GATT 连接成功')
   }
 

@@ -13,7 +13,7 @@ import {
 import jsQR from 'jsqr'
 import { toast } from '../components/Toast'
 import { useProvisionStore, type ProvisionStep } from '../stores/provisionStore'
-import { getProvisionManager, destroyProvisionManager } from '../protocols/bleProvision'
+import { getProvisionManager, destroyProvisionManager, supportsDeviceListScan } from '../protocols/bleProvision'
 import { useDeviceStore } from '../stores/deviceStore'
 import { openAppSettings } from '../utils/openAppSettings'
 
@@ -172,7 +172,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   const [selectedIcon, setSelectedIcon] = useState<string>('power')
 
   // Simulate found devices list on top of real BLE scan
-  const [foundDevices, setFoundDevices] = useState<{ name: string; serial: string }[]>([])
+  const [foundDevices, setFoundDevices] = useState<{ name: string; serial: string; deviceId?: string }[]>([])
   const [showNotifSheet, setShowNotifSheet] = useState(false)
 
 
@@ -182,6 +182,8 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     const check = async () => {
+      // 原生 App：蓝牙由 Capacitor 插件处理（权限在扫描时请求），直接视为就绪
+      if (supportsDeviceListScan()) { setBleStatus('ready'); return }
       if (!('bluetooth' in navigator)) { setBleStatus('no_permission'); return }
       try {
         // @ts-ignore — navigator.bluetooth.getAvailability() is standard
@@ -196,18 +198,44 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
 
   // ─── BLE Scan ────────────────────────────────────────────────────────────
 
+  const scanStopRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const handleScan = useCallback(async () => {
     store.setIsOperating(true)
     store.setErrorMessage(null)
     store.addLog('Starting BLE scan...')
     setFoundDevices([])
-    // Always destroy stale singleton before a new scan
     destroyProvisionManager()
+    const manager = getProvisionManager({
+      onLog: (msg) => store.addLog(msg),
+      onDisconnected: () => store.setErrorMessage('Device disconnected'),
+    })
+
+    // 原生：App 内实时列出附近 SSL_ 设备，由用户点选
+    if (supportsDeviceListScan()) {
+      try {
+        const seen = new Set<string>()
+        await manager.scanDevices((d) => {
+          if (seen.has(d.deviceId)) return
+          seen.add(d.deviceId)
+          setFoundDevices(prev => [...prev, { name: d.name || 'Sierro Device', serial: d.deviceId, deviceId: d.deviceId }])
+        })
+        // 10s 后自动停止扫描
+        if (scanStopRef.current) clearTimeout(scanStopRef.current)
+        scanStopRef.current = setTimeout(async () => {
+          try { await manager.stopScan() } catch { /* ignore */ }
+          store.setIsOperating(false)
+        }, 10000)
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Scan failed'
+        store.setErrorMessage(msg); store.addLog(`Scan failed: ${err}`); toast.error(msg)
+        store.setIsOperating(false)
+      }
+      return
+    }
+
+    // Web：只能用系统蓝牙选择器（单设备）
     try {
-      const manager = getProvisionManager({
-        onLog: (msg) => store.addLog(msg),
-        onDisconnected: () => store.setErrorMessage('Device disconnected'),
-      })
       await manager.connect()
       const name = manager.deviceName ?? 'Sierro Device'
       const duid = manager.getDuid()
@@ -406,11 +434,33 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
 
   // ─── Connect to a found device ───────────────────────────────────────────
 
-  const handleConnect = useCallback(() => {
+  const goToNaming = useCallback(() => {
     setDeviceNameInput(store.deviceName ?? 'My Device')
     setNameError('')
     setUiScreen('naming')
   }, [store.deviceName])
+
+  // 点选某个扫描到的设备：原生先连接该 deviceId，再进入命名→WiFi 配置流程
+  const handleSelectDevice = useCallback(async (device: { name: string; serial: string; deviceId?: string }) => {
+    if (device.deviceId && supportsDeviceListScan()) {
+      store.setIsOperating(true)
+      store.setErrorMessage(null)
+      try {
+        const manager = getProvisionManager()
+        await manager.connectTo(device.deviceId, device.name)
+        store.setDeviceInfo(manager.deviceName ?? device.name, manager.getDuid())
+        goToNaming()
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Connection failed'
+        store.setErrorMessage(msg); toast.error(msg)
+      } finally {
+        store.setIsOperating(false)
+      }
+    } else {
+      // Web：系统选择器已连接，直接进入命名
+      goToNaming()
+    }
+  }, [store, goToNaming])
 
   // ─── Name confirmed → start provisioning ─────────────────────────────────
 
@@ -594,8 +644,8 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                         <p className="text-caption text-ink-6 mt-0.5">{device.serial}</p>
                       </div>
                       <button
-                        onClick={handleConnect}
-                        className="px-4 h-9 rounded-full border border-primary text-primary text-body-md font-semibold"
+                        onClick={() => handleSelectDevice(device)}
+                        className="px-4 h-9 rounded-full border border-primary text-primary text-body-md font-semibold active:scale-[0.96] transition-transform"
                       >
                         Connect
                       </button>
