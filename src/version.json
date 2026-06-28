@@ -1,8 +1,9 @@
 {
-  "version": "3.24.0",
-  "build": 2565,
+  "version": "3.24.1",
+  "build": 2566,
   "date": "2026-06-26",
   "changelog": [
+    "Device Info: tap Model to manually select Sierro 1000/2000 — applies that model's default rated params (capacity/power/charge power/battery type/health) and serial prefix to the current device, for devices added before model selection existed",
     "Add Device: choose model (Sierro 1000 / 2000) -> auto-generate serial number + default rated params (Rated Power, Rated Capacity, Rated Charging Power, Battery Type LFP, Battery Health 100%); saved per device and shown on Device Info (new Rated Charging Power row). BLE param sync now merges, preserving the model profile",
     "Notifications: parse alarm code/key into readable text (alarmText dictionary + humanize fallback) so all history records show a description, not just Mains power failure; harden history filter so empty-key records are never hidden; same parsing in Overview alerts",
     "WiFi setup: native app now scans and lists nearby BLE (SSL_) devices in-app (BleClient.requestLEScan); tap a device to connect and proceed to its Wi-Fi SSID/password config. Web keeps the OS Bluetooth picker. Fixed native being blocked by the navigator.bluetooth permission check",
