@@ -69,7 +69,8 @@ async function fetchAndCacheRatedParams(deviceId: string): Promise<void> {
     if (!parsed || parsed.registers.length < 11) return
     const acInvOutputPower = parsed.registers[10]  // offset 10 = register 0x000A
     if (acInvOutputPower === undefined || acInvOutputPower === 0) return
-    await saveRatedParams({ deviceId, acInvOutputPower, fetchedAt: Date.now() })
+    // 合并保存：保留新增设备时写入的型号默认参数（model/ratedPower/等），仅更新实测容量
+    await saveRatedParams({ ...(cached ?? {}), deviceId, acInvOutputPower, fetchedAt: Date.now() })
   } catch {
     // non-critical — silently ignore
   }

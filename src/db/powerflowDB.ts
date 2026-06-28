@@ -30,6 +30,13 @@ export interface RatedParams {
   deviceId: string
   acInvOutputPower: number  // 交流逆变输出功率 (W), register 0x000A
   fetchedAt: number         // unix ms
+  // ── 型号默认参数（新增设备时按所选型号写入；BLE 抓到的实参可覆盖 acInvOutputPower）──
+  model?: string
+  ratedPower?: number         // 额定功率 W
+  ratedChargePower?: number   // 额定充电功率 W
+  batteryType?: string        // 电池类型，如 LFP
+  batteryHealth?: number      // 电池健康度 %
+  serialNumber?: string       // 自动生成的序列号
 }
 
 /** 最大保留条数（避免无限增长） */

@@ -487,10 +487,10 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
         {/* Info list */}
         <div className="flex-1 overflow-y-auto px-4 pt-2">
           <div className="rounded-l bg-ink-10 overflow-hidden">
-            <InfoRow label="Model" value={realDevice?.model || powerStation.model || 'Sierro 1000'} />
+            <InfoRow label="Model" value={ratedParams?.model || realDevice?.model || powerStation.model || 'Sierro 1000'} />
             <InfoRow
               label="Serial Number"
-              value={realDevice?.serialNumber || (powerStation as any).serialNumber || 'SNXXXX'}
+              value={realDevice?.serialNumber || ratedParams?.serialNumber || (powerStation as any).serialNumber || 'SNXXXX'}
             />
             <InfoRow
               label="Rated Capacity"
@@ -502,20 +502,24 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                     : '--'
               }
             />
-            <InfoRow label="Battery Type" value="LFP" />
+            <InfoRow label="Battery Type" value={ratedParams?.batteryType || 'LFP'} />
             <InfoRow
               label="Firmware Version"
               value={realDevice?.softwareVersion || appVersion.version || '--'}
             />
             <InfoRow
               label="Rated Output Power"
-              value={realDevice?.ratedPower ? `${realDevice.ratedPower}W` : '--'}
+              value={(ratedParams?.ratedPower ?? realDevice?.ratedPower) ? `${ratedParams?.ratedPower ?? realDevice?.ratedPower}W` : '--'}
+            />
+            <InfoRow
+              label="Rated Charging Power"
+              value={ratedParams?.ratedChargePower != null ? `${ratedParams.ratedChargePower}W` : '--'}
             />
             <InfoRow label="Rated Voltage" value="120V" />
             <InfoRow label="Frequency" value="60Hz" />
             <InfoRow
               label="Battery Health"
-              value={rtField('batteryHealth') || (realtime?.remainingBatteryCapacity !== undefined ? '98%' : '98%')}
+              value={rtField('batteryHealth') || (ratedParams?.batteryHealth != null ? `${ratedParams.batteryHealth}%` : '100%')}
             />
             <InfoRow
               label="Cycles"

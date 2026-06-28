@@ -14,6 +14,8 @@ import jsQR from 'jsqr'
 import { toast } from '../components/Toast'
 import { useProvisionStore, type ProvisionStep } from '../stores/provisionStore'
 import { getProvisionManager, destroyProvisionManager, supportsDeviceListScan } from '../protocols/bleProvision'
+import { SIERRO_MODELS, SIERRO_MODEL_LIST, generateSerial, type SierroModel } from '../data/deviceModels'
+import { saveRatedParams } from '../db/powerflowDB'
 import { useDeviceStore } from '../stores/deviceStore'
 import { openAppSettings } from '../utils/openAppSettings'
 
@@ -166,6 +168,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
 
   const [uiScreen, setUiScreen] = useState<UiScreen>('scan')
   const [deviceNameInput, setDeviceNameInput] = useState('')
+  const [selectedModel, setSelectedModel] = useState<SierroModel>('Sierro 1000')
   const [nameError, setNameError] = useState('')
   const [bleKeyInput, setBleKeyInput] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -367,16 +370,19 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
         const dtuDtuid = store.dtuid ?? ''
         const isOk = (c: number | string | undefined) => c === 0 || c === '0'
 
+        // 按所选型号自动生成序列号 + 默认额定参数
+        const spec = SIERRO_MODELS[selectedModel]
+        const serialNumber = generateSerial(spec, dtuDtuid)
+
         await ds.loadStations().catch(() => {})
         const stationId = useDeviceStore.getState().stations[0]?.id
 
-        // 配网仅能拿到 DTUID（采集器唯一 ID），无独立逆变器 SN，故以 DTUID 作为
-        // 设备序列号并标记为虚拟 SN（与 ManualAddDeviceModal 的兜底一致）。
         const base = {
           deviceName,
           dtuDtuid,
-          deviceSerialNumber: dtuDtuid,
+          deviceSerialNumber: serialNumber,
           isVirtualSerialNumber: true,
+          ratedPower: spec.ratedPower,
         }
         const devResult = stationId != null
           ? await ds.addNewDevice({ ...base, stationId }).catch(() => null)
@@ -384,6 +390,26 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
 
         if (devResult && isOk(devResult.code)) {
           await ds.loadDevices()
+          // 找到刚添加的设备（按生成的序列号或 DTUID 匹配），写入型号默认参数到本地，
+          // Device Info 页据此显示 Rated Capacity / Power / Charge Power / Battery Type / Health
+          try {
+            const added = useDeviceStore.getState().devices.find(
+              d => d.serialNumber === serialNumber || String((d as any).dtuDtuid ?? '') === dtuDtuid
+            )
+            if (added) {
+              await saveRatedParams({
+                deviceId: String(added.id),
+                acInvOutputPower: spec.acInvOutputPower,   // 容量 = ×2
+                fetchedAt: Date.now(),
+                model: spec.model,
+                ratedPower: spec.ratedPower,
+                ratedChargePower: spec.ratedChargePower,
+                batteryType: spec.batteryType,
+                batteryHealth: spec.batteryHealth,
+                serialNumber,
+              })
+            }
+          } catch { /* 本地写入失败不影响添加结果 */ }
         } else {
           // Wi-Fi config succeeded but binding the device to the account failed —
           // tell the user instead of silently showing success with an empty list.
@@ -404,7 +430,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     } finally {
       store.setIsOperating(false)
     }
-  }, [store, deviceNameInput])
+  }, [store, deviceNameInput, selectedModel])
 
   const handleCheckStatus = useCallback(async () => {
     if (!store.dtuid) return
@@ -743,6 +769,25 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
           {nameError && (
             <p className="text-danger text-body-md mt-1">{nameError}</p>
           )}
+
+          {/* Model selector — drives auto serial number + default rated params */}
+          <p className="text-caption font-bold text-ink-6 tracking-widest uppercase mt-8 mb-3">Device Model</p>
+          <div className="grid grid-cols-2 gap-3">
+            {SIERRO_MODEL_LIST.map(spec => {
+              const active = selectedModel === spec.model
+              return (
+                <button
+                  key={spec.model}
+                  onClick={() => setSelectedModel(spec.model)}
+                  className={`text-left rounded-l px-4 py-3 border active:scale-[0.98] transition-[border-color,background-color,transform]
+                    ${active ? 'border-primary bg-[rgba(1,214,190,0.10)]' : 'border-[rgba(255,255,255,0.10)] bg-ink-10'}`}
+                >
+                  <div className={`text-body-lg font-semibold ${active ? 'text-primary' : 'text-white'}`}>{spec.model}</div>
+                  <div className="text-caption text-ink-6 mt-0.5">{spec.ratedPower}W · {(spec.ratedCapacityWh/1000).toFixed(1)}kWh</div>
+                </button>
+              )
+            })}
+          </div>
         </div>
 
         {/* Next button */}
