@@ -1,8 +1,9 @@
 {
-  "version": "3.24.2",
-  "build": 2567,
+  "version": "3.25.0",
+  "build": 2568,
   "date": "2026-06-26",
   "changelog": [
+    "Overview: add pull-to-refresh (fetches live AC input / Solar input / AC output + online state); 30s poll now also refreshes device details so isOnline stays fresh (params no longer appear stuck). Confirmed field mapping is correct: AC=exchangeChargingPower, Solar=generationPower, Output=outputPower",
     "Fix: model picker sheet was rendered in the Device Settings screen, so tapping Model on Device Info did nothing until going back; moved the sheet into the Device Info screen where the Model row lives",
     "Device Info: tap Model to manually select Sierro 1000/2000 — applies that model's default rated params (capacity/power/charge power/battery type/health) and serial prefix to the current device, for devices added before model selection existed",
     "Add Device: choose model (Sierro 1000 / 2000) -> auto-generate serial number + default rated params (Rated Power, Rated Capacity, Rated Charging Power, Battery Type LFP, Battery Health 100%); saved per device and shown on Device Info (new Rated Charging Power row). BLE param sync now merges, preserving the model profile",

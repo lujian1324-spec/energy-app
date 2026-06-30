@@ -45,6 +45,7 @@ import { mapFieldsToRealtime, mapFiringAlarms } from '../api/deviceApi'
 import { useHistoryFetcher } from '../hooks/useHistoryFetcher'
 import { loadRatedParams } from '../db/powerflowDB'
 import { describeAlarmCode } from '../utils/alarmText'
+import PullToRefresh from '../components/PullToRefresh'
 import type { DeviceAlert } from '../types'
 import { detectOutageFromFields } from '../utils/powerOutageNotification'
 import { batteryTimeLabel } from '../utils/batteryTime'
@@ -76,6 +77,7 @@ export default function OverviewPage() {
     alarmLoading,
     dismissAlarm,
     loadDeviceState,
+    loadDeviceDetails,
     energyFlow,
     energyFlowLoading,
     energyFlowError,
@@ -145,6 +147,7 @@ export default function OverviewPage() {
     if (selectedDeviceId) {
       pollRef.current = setInterval(() => {
         loadDeviceState(selectedDeviceId)
+        loadDeviceDetails(selectedDeviceId)  // 同时刷新 isOnline，避免显示卡在离线/"-"
       }, 30000)
       return () => {
         if (pollRef.current) clearInterval(pollRef.current)
@@ -284,10 +287,13 @@ export default function OverviewPage() {
     }
   }
 
-  // ─── 手动刷新 ───
+  // ─── 手动刷新（下拉刷新 / Demo 重试）：拉取 AC/Solar/Output 等实时状态 + 在线状态 ───
   const handleRefresh = async () => {
     if (!selectedDeviceId) return
-    await loadDeviceState(selectedDeviceId)
+    await Promise.all([
+      loadDeviceState(selectedDeviceId),
+      loadDeviceDetails(selectedDeviceId),
+    ])
   }
 
   // ─── Notifications permission ───
@@ -577,8 +583,8 @@ export default function OverviewPage() {
         <span className="text-[12px] text-ink-1">{remainingBatteryCapacity}%</span>
       </div>
 
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide">
+      {/* Scrollable content — pull down to refresh AC/Solar/Output + online state */}
+      <PullToRefresh onRefresh={handleRefresh}>
         {/* Header */}
         <div className="flex justify-between items-center px-5 py-3">
           {/* Left: Back */}
@@ -1155,7 +1161,7 @@ export default function OverviewPage() {
             </motion.div>
           </>
         )}
-      </div>
+      </PullToRefresh>
 
       {/* ===== Alert Panel (real-time firingAlarms + history alarms) ===== */}
       <AnimatePresence>
