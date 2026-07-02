@@ -97,5 +97,7 @@ app/src/main/assets/public
 
 # Generated Config files
 app/src/main/assets/capacitor.config.json
-app/src/main/assets/capacitor.plugins.json
+# NOTE: capacitor.plugins.json is intentionally tracked so a build that skips
+# `npx cap sync` still registers every native plugin (BLE, camera, push, local
+# notifications). A stale copy here silently drops native plugins from the APK.
 app/src/main/res/xml/config.xml

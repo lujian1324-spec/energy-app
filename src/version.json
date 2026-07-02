@@ -1,8 +1,9 @@
 {
-  "version": "3.27.1",
-  "build": 2573,
-  "date": "2026-06-26",
+  "version": "3.27.2",
+  "build": 2574,
+  "date": "2026-07-02",
   "changelog": [
+    "Fix Android APK not requesting Bluetooth permission: the git-tracked Capacitor build files (capacitor.settings.gradle / capacitor.build.gradle) were stale and listed only 2 of 6 plugins, and capacitor.plugins.json was git-ignored — so a build that skipped `cap sync` shipped an APK with NO native BLE/camera/push/local-notification plugin. BleClient.initialize() then failed and the runtime permission prompt never appeared. Regenerated the build files (all 6 plugins) and now track capacitor.plugins.json so the native plugins are always compiled in and registered",
     "Sleep Mode screen: translate remaining Chinese to English (AC 充电功率 -> AC charging power; 降至/恢复 -> arrows)",
     "Overview: while on the page, poll live params via Modbus passthrough (READ_ALL_STATUS 0x0100) every 5s and update AC/Solar/Output/Battery/Temp (decodeLiveStatus); stops when leaving the page. Live values take priority over the 30s cloud state; a passthrough reply marks the device online",
     "Battery Priority now drives PV/Battery Priority (0x86) via passthrough: Savings -> enable 0x01AA, Backup -> disable 0xAA01 (sent on Save alongside setWorkMode)",
