@@ -712,7 +712,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 <div className="flex items-center justify-between px-4 py-4 border-b border-white/5">
                   <div>
                     <p className="text-body-lg text-white">Sleep</p>
-                    <p className="text-caption text-ink-7">AC 充电功率 → {schedulerPowers.sleepW}W</p>
+                    <p className="text-caption text-ink-7">AC charging power → {schedulerPowers.sleepW}W</p>
                   </div>
                   <input
                     type="time"
@@ -725,7 +725,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 <div className="flex items-center justify-between px-4 py-4">
                   <div>
                     <p className="text-body-lg text-white">Wake</p>
-                    <p className="text-caption text-ink-7">AC 充电功率 → {schedulerPowers.wakeW}W</p>
+                    <p className="text-caption text-ink-7">AC charging power → {schedulerPowers.wakeW}W</p>
                   </div>
                   <input
                     type="time"
@@ -736,7 +736,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 </div>
               </div>
               <p className="text-caption text-ink-7 mt-2 px-1">
-                {fmt(sleepFrom)} 降至 {schedulerPowers.sleepW}W · {fmt(sleepTo)} 恢复 {schedulerPowers.wakeW}W
+                {fmt(sleepFrom)} → {schedulerPowers.sleepW}W · {fmt(sleepTo)} → {schedulerPowers.wakeW}W
               </p>
             </div>
           )}
