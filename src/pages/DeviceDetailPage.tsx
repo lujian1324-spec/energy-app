@@ -20,7 +20,8 @@ import {
 import { useNavigate, useParams } from 'react-router-dom'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useDeviceStore } from '../stores/deviceStore'
-import { mapFieldsToRealtime, toggleSleepMode, setWorkMode } from '../api/deviceApi'
+import { mapFieldsToRealtime, toggleSleepMode, setWorkMode, passthroughDevice } from '../api/deviceApi'
+import { FRAMES } from '../protocols/modbusProtocol'
 import { loadRatedParams, saveRatedParams, type RatedParams } from '../db/powerflowDB'
 import { SIERRO_MODELS, SIERRO_MODEL_LIST, generateSerial, type SierroModel } from '../data/deviceModels'
 import sierro1000Img from '../assets/sierro-1000.webp'
@@ -918,6 +919,12 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                   const deviceId = routeId ?? selectedDeviceId
                   if (deviceId) {
                     try { await setWorkMode(deviceId, workModeDraft) } catch { /* noop */ }
+                    // Battery Priority → PV/电池优先操作 (0x86)：
+                    //   Savings(2) → 使能 0x01AA；Backup(1) → 禁用 0xAA01
+                    try {
+                      const frame = workModeDraft === 2 ? FRAMES.PV_BATT_PRIORITY_ON : FRAMES.PV_BATT_PRIORITY_OFF
+                      await passthroughDevice(deviceId, { data: frame, noOutput: true })
+                    } catch { /* noop */ }
                   }
                 }}
                 className="w-full h-12 rounded-l bg-primary text-black font-semibold text-body-lg active:scale-95 transition-transform"
