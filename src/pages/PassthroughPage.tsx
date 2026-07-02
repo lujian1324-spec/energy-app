@@ -55,6 +55,8 @@ const PRESET_GROUPS: { title: string; presets: Preset[] }[] = [
       { label: 'AC Off', frame: FRAMES.AC_POWER_OFF, desc: '0x0080 write 0xAA01', type: 'ctrl' },
       { label: 'DC On', frame: FRAMES.DC_POWER_ON,  desc: '0x0080 write 0x02AA', type: 'ctrl' },
       { label: 'DC Off', frame: FRAMES.DC_POWER_OFF, desc: '0x0080 write 0xAA02', type: 'ctrl' },
+      { label: 'PV/Battery Priority On', frame: FRAMES.PV_BATT_PRIORITY_ON, desc: '0x0086 write 0x01AA', type: 'ctrl' },
+      { label: 'PV/Battery Priority Off', frame: FRAMES.PV_BATT_PRIORITY_OFF, desc: '0x0086 write 0xAA01', type: 'ctrl' },
     ],
   },
   {
@@ -83,6 +85,20 @@ const PRESET_GROUPS: { title: string; presets: Preset[] }[] = [
         label: 'Set AC Charge Power 300W',
         frame: toHexString(buildWriteSingleFrame(REG_CONFIG.AC_CHARGE_POWER, 300)),
         desc: '0x0024 write 300 (W), customize below',
+        type: 'write',
+      },
+      {
+        // AC 实时充电功率：0x0085，默认 400W，单位 1W
+        label: 'Set AC Realtime Charge 400W',
+        frame: FRAMES.setAcChargePowerRt(400),
+        desc: '0x0085 write 400 (W), customize below',
+        type: 'write',
+      },
+      {
+        // PV/电池优先操作最小 SOC：0x0054，默认 30%
+        label: 'Set PV/Batt Priority Min SOC 30%',
+        frame: FRAMES.setPvBattPriorityMinSoc(30),
+        desc: '0x0054 write 30 (%), customize below',
         type: 'write',
       },
     ],

@@ -253,6 +253,9 @@ export const REG_CONFIG = {
   // 特殊控制
   COMPLETE_FULL_CHARGE:    0x0050,  // 完成一次完整充电（写 1 触发）
   DISABLE_POWER_ON:        0x0051,  // 禁止开机（写 1）
+
+  // PV/电池优先操作最小 SOC（0x54，2/RWF，Uint16，默认 30=0x1E，单位 %）
+  PV_BATT_PRIORITY_MIN_SOC: 0x0054,
 } as const
 
 /**
@@ -270,6 +273,14 @@ export const REG_CTRL = {
   FAN_CTRL:                0x0081,
 
   DC_TEMPERATURE:          0x0082,  // DC 温度
+
+  // 0x85：AC 实时充电功率 Uint16（2/RW，默认 400=0x0190，单位 1W）
+  AC_CHARGE_POWER_RT:      0x0085,
+
+  // 0x86：PV/电池优先操作（2/RW）
+  //   高字节开机 turn on / 低字节关机 turn off
+  //   0x01AA = PV/电池优先使能；0xAA01 = PV/电池优先禁止
+  PV_BATT_PRIORITY:        0x0086,
 } as const
 
 /** 0x80 高字节：开机标志 */
@@ -484,6 +495,20 @@ export const FRAMES = {
 
   /** 允许开机（0x51，写 0） */
   ENABLE_POWER_ON: toHexString(buildWriteSingleFrame(0x0051, 0x0000)),
+
+  /** PV/电池优先使能（0x86，写 0x01AA） */
+  PV_BATT_PRIORITY_ON: toHexString(buildWriteSingleFrame(0x0086, 0x01AA)),
+
+  /** PV/电池优先禁止（0x86，写 0xAA01） */
+  PV_BATT_PRIORITY_OFF: toHexString(buildWriteSingleFrame(0x0086, 0xAA01)),
+
+  /** 设置 AC 实时充电功率（0x85，单位 1W，默认 400=0x0190） */
+  setAcChargePowerRt: (watts: number): string =>
+    toHexString(buildWriteSingleFrame(0x0085, Math.max(0, Math.min(0xFFFF, Math.round(watts))))),
+
+  /** 设置 PV/电池优先操作最小 SOC（0x54，单位 %，默认 30） */
+  setPvBattPriorityMinSoc: (soc: number): string =>
+    toHexString(buildWriteSingleFrame(0x0054, Math.max(0, Math.min(100, Math.round(soc))))),
 } as const
 
 // ─────────────────────────────────────────────
@@ -558,6 +583,10 @@ const REG_DESC: Record<number, RegDesc> = {
   0x002C: { name: 'Charge Total Time',         group: 'Battery Config', scale: 1,   unit: 'h' },
   0x002D: { name: 'Discharge Total Time',         group: 'Battery Config', scale: 1,   unit: 'h' },
   0x002E: { name: 'Re-Wake After Full',       group: 'Battery Config', scale: 1,   unit: 'h' },
+  0x0054: { name: 'PV/Battery Priority Min SOC', group: 'Battery Config', scale: 1, unit: '%' },
+  0x0085: { name: 'AC Realtime Charge Power',   group: 'PV Config',   scale: 1,   unit: 'W' },
+  0x0086: { name: 'PV/Battery Priority',        group: 'Mode/Version',
+            fmt: (raw) => raw === 0x01AA ? 'Enabled' : raw === 0xAA01 ? 'Disabled' : `0x${raw.toString(16).toUpperCase()}` },
   // ── Status 0x100-0x107 ──────────────────────
   0x0100: { name: 'AC Input Voltage',         group: 'AC Live',   scale: 0.1, unit: 'V' },
   0x0101: { name: 'AC Input Frequency',         group: 'AC Live',   scale: 0.1, unit: 'Hz' },
