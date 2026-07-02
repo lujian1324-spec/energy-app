@@ -1,8 +1,9 @@
 {
-  "version": "3.25.1",
-  "build": 2569,
+  "version": "3.26.0",
+  "build": 2570,
   "date": "2026-06-26",
   "changelog": [
+    "Sleep Mode now drives AC realtime charge power (0x0085) via passthrough: at sleep time -> Sierro 1000 150W / Sierro 2000 300W; at wake time -> 400W / 800W. Uses the device model profile (was writing rated 0x0024 and 1000W for 2000)",
     "Passthrough protocol: add registers 0x54 (PV/Battery Priority Min SOC, %, default 30), 0x85 (AC realtime charge power, W, default 400), 0x86 (PV/Battery Priority on=0x01AA/off=0xAA01); new FRAMES + Passthrough page presets + REG_DESC parsing",
     "Overview: add pull-to-refresh (fetches live AC input / Solar input / AC output + online state); 30s poll now also refreshes device details so isOnline stays fresh (params no longer appear stuck). Confirmed field mapping is correct: AC=exchangeChargingPower, Solar=generationPower, Output=outputPower",
     "Fix: model picker sheet was rendered in the Device Settings screen, so tapping Model on Device Info did nothing until going back; moved the sheet into the Device Info screen where the Model row lives",

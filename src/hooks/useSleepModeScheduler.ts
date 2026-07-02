@@ -5,8 +5,9 @@
  * sleepFrom / sleepTo, it continuously derives the *desired phase* from the
  * current time relative to the [sleepFrom, sleepTo) window and enforces it.
  *
+ * Writes AC realtime charge power (register 0x0085) via passthrough:
  * - Inside the window  → "sleep" power (150W Sierro 1000, 300W Sierro 2000)
- * - Outside the window → "wake"  power (400W Sierro 1000, 1000W Sierro 2000)
+ * - Outside the window → "wake"  power (400W Sierro 1000, 800W Sierro 2000)
  *
  * A command is only sent when the desired phase differs from the last applied
  * phase (edge detection), so it doesn't spam every tick. The applied phase is
@@ -19,7 +20,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react'
-import { buildWriteSingleFrame, toHexString, REG_CONFIG } from '../protocols/modbusProtocol'
+import { buildWriteSingleFrame, toHexString, REG_CTRL } from '../protocols/modbusProtocol'
 import { passthroughDevice } from '../api/deviceApi'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -48,7 +49,7 @@ export interface UseSleepModeSchedulerReturn {
 // ─── Helper: model → power values ────────────────────────────────────────────
 
 function getPowers(model: string): { sleepW: number; wakeW: number } {
-  if (model.includes('2000')) return { sleepW: 300, wakeW: 1000 }
+  if (model.includes('2000')) return { sleepW: 300, wakeW: 800 }
   return { sleepW: 150, wakeW: 400 }  // default = Sierro 1000
 }
 
@@ -187,7 +188,8 @@ export function useSleepModeScheduler(
     const { deviceId: did } = paramsRef.current
     if (!did) return
     try {
-      const frame = buildWriteSingleFrame(REG_CONFIG.AC_CHARGE_POWER, watts)
+      // 写 AC 实时充电功率寄存器 0x0085（AC_CHARGE_POWER_RT），而非额定 0x0024
+      const frame = buildWriteSingleFrame(REG_CTRL.AC_CHARGE_POWER_RT, watts)
       const hexFrame = toHexString(frame)
       await passthroughDevice(did, { data: hexFrame })
       setLastSentAt(new Date())

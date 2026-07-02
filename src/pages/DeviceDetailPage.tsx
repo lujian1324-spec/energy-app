@@ -146,9 +146,9 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
 
   // ── Sleep Mode Scheduler ────────────────────────────────────────────────────
   const deviceIdForScheduler = routeId ?? selectedDeviceId ?? ''
-  const model = realDevice?.model ?? powerStation.model ?? 'Sierro 1000'
+  const model = ratedParams?.model ?? realDevice?.model ?? powerStation.model ?? 'Sierro 1000'
   const schedulerPowers = model.includes('2000')
-    ? { sleepW: 300, wakeW: 1000 }
+    ? { sleepW: 300, wakeW: 800 }
     : { sleepW: 150, wakeW: 400 }
 
   // Load persisted schedule on mount
