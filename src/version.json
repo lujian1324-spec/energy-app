@@ -1,8 +1,9 @@
 {
-  "version": "3.26.1",
-  "build": 2571,
+  "version": "3.27.0",
+  "build": 2572,
   "date": "2026-06-26",
   "changelog": [
+    "Overview: while on the page, poll live params via Modbus passthrough (READ_ALL_STATUS 0x0100) every 5s and update AC/Solar/Output/Battery/Temp (decodeLiveStatus); stops when leaving the page. Live values take priority over the 30s cloud state; a passthrough reply marks the device online",
     "Battery Priority now drives PV/Battery Priority (0x86) via passthrough: Savings -> enable 0x01AA, Backup -> disable 0xAA01 (sent on Save alongside setWorkMode)",
     "Sleep Mode now drives AC realtime charge power (0x0085) via passthrough: at sleep time -> Sierro 1000 150W / Sierro 2000 300W; at wake time -> 400W / 800W. Uses the device model profile (was writing rated 0x0024 and 1000W for 2000)",
     "Passthrough protocol: add registers 0x54 (PV/Battery Priority Min SOC, %, default 30), 0x85 (AC realtime charge power, W, default 400), 0x86 (PV/Battery Priority on=0x01AA/off=0xAA01); new FRAMES + Passthrough page presets + REG_DESC parsing",

@@ -164,6 +164,33 @@ export function parseReadResponse(buf: Uint8Array): ReadResponse | null {
   }
 }
 
+/** READ_ALL_STATUS(0x0100 起) 解析出的实时功率/电量子集 */
+export interface LiveStatus {
+  acPower: number       // 交流充电功率 W (0x0107)
+  solarPower: number    // 光伏充电功率 W (0x0106)
+  outputPower: number   // 交流输出功率 W (0x0104)
+  soc: number           // 电量 % (0x011A, ×0.1%)
+  batteryTemp: number   // 电芯温度 ℃ (0x0123, Int16 ×0.1)
+  batteryPower: number  // 电池功率 W = AC + Solar − Output（充电为正）
+}
+
+/**
+ * 将 READ_ALL_STATUS 的寄存器数组（基址 0x0100）解析为实时参数子集。
+ * registers[i] 对应寄存器 0x0100+i。长度不足时对应项为 0。
+ */
+export function decodeLiveStatus(registers: number[]): LiveStatus {
+  const at = (offset: number) => registers[offset] ?? 0
+  const outputPower = at(0x04)
+  const solarPower = at(0x06)
+  const acPower = at(0x07)
+  const soc = at(0x1A) / 10
+  const batteryTemp = toInt16(at(0x23)) / 10
+  return {
+    acPower, solarPower, outputPower, soc, batteryTemp,
+    batteryPower: acPower + solarPower - outputPower,
+  }
+}
+
 /** 解析有符号 Int16（高位为 1 表示负数，取反+1） */
 export function toInt16(raw: number): number {
   return raw > 0x7fff ? raw - 0x10000 : raw

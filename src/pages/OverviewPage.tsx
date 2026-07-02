@@ -41,7 +41,9 @@ import { formatTemp } from '../utils/localization'
 import DeviceDetailPage from './DeviceDetailPage'
 import { useDeviceStore } from '../stores/deviceStore'
 import { usePowerStationStore } from '../stores/powerStationStore'
-import { mapFieldsToRealtime, mapFiringAlarms } from '../api/deviceApi'
+import { mapFieldsToRealtime, mapFiringAlarms, passthroughDevice } from '../api/deviceApi'
+import { FRAMES, fromHexString, parseReadResponse, decodeLiveStatus, type LiveStatus } from '../protocols/modbusProtocol'
+import { isApiSuccess } from '../utils/apiClient'
 import { useHistoryFetcher } from '../hooks/useHistoryFetcher'
 import { loadRatedParams } from '../db/powerflowDB'
 import { describeAlarmCode } from '../utils/alarmText'
@@ -140,6 +142,33 @@ export default function OverviewPage() {
     return () => window.removeEventListener('popstate', onPopState)
   }, [backToDevices])
 
+  // ─── 停留本页时，每 5s 通过 Modbus 透传读取实时状态；退出页面即停止 ───
+  useEffect(() => {
+    if (!selectedDeviceId) { setLivePt(null); return }
+    let cancelled = false
+    const decodePt = (b64?: string): LiveStatus | null => {
+      if (!b64) return null
+      try {
+        const bytes = atob(b64)
+        const hex = Array.from(bytes).map(c => c.charCodeAt(0).toString(16).padStart(2, '0')).join('')
+        const parsed = parseReadResponse(fromHexString(hex))
+        if (!parsed || parsed.registers.length < 8) return null
+        return decodeLiveStatus(parsed.registers)
+      } catch { return null }
+    }
+    const readOnce = async () => {
+      try {
+        const res = await passthroughDevice(selectedDeviceId, { data: FRAMES.READ_ALL_STATUS })
+        if (cancelled || !isApiSuccess(res.code)) return
+        const live = decodePt(res.data?.base64Output ?? res.data?.content ?? res.data?.data)
+        if (live && !cancelled) setLivePt(live)
+      } catch { /* 忽略单次失败，下个周期重试 */ }
+    }
+    readOnce()                                   // 立即读一次
+    const iv = setInterval(readOnce, 5000)       // 之后每 5s
+    return () => { cancelled = true; clearInterval(iv); setLivePt(null) }
+  }, [selectedDeviceId])
+
   // ─── 每 30 秒自动刷新设备状态 ───
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   useEffect(() => {
@@ -210,13 +239,16 @@ export default function OverviewPage() {
     return mapFieldsToRealtime(selectedDeviceState.fields)
   }, [selectedDeviceState])
 
-  // ─── 计算显示值（带 fallback） ───
-  const remainingBatteryCapacity = realtime?.remainingBatteryCapacity ?? 0
-  const batteryPower = realtime?.batteryPower ?? 0
-  const acPower = realtime?.acPower ?? 0
-  const solarPower = realtime?.solarPower ?? 0
-  const outputPower = realtime?.outputPower ?? 0
-  const batteryTemp = realtime?.batteryTemp ?? 0
+  // ─── 5s Modbus 透传实时状态（停留本页时轮询，退出即停）───
+  const [livePt, setLivePt] = useState<LiveStatus | null>(null)
+
+  // ─── 计算显示值：优先透传实时值 livePt，回退到云端 selectedDeviceState ───
+  const remainingBatteryCapacity = livePt?.soc ?? realtime?.remainingBatteryCapacity ?? 0
+  const batteryPower = livePt?.batteryPower ?? realtime?.batteryPower ?? 0
+  const acPower = livePt?.acPower ?? realtime?.acPower ?? 0
+  const solarPower = livePt?.solarPower ?? realtime?.solarPower ?? 0
+  const outputPower = livePt?.outputPower ?? realtime?.outputPower ?? 0
+  const batteryTemp = livePt?.batteryTemp ?? realtime?.batteryTemp ?? 0
   const currentDeviceListItem = devices.find(d => String(d.id) === selectedDeviceId)
 
   // ─── 额定容量（Wh）= acInvOutputPower × 2，与 Device Info 页 Rated Capacity 同源 ───
@@ -242,7 +274,8 @@ export default function OverviewPage() {
   const workMode = realtime?.workMode ?? 0
   const isCharging = batteryPower > 0
   const deviceName = selectedDeviceDetails?.name ?? currentDeviceListItem?.name ?? 'Device'
-  const isOnline = selectedDeviceDetails?.isOnline ?? false
+  // 收到透传实时数据即视为在线（透传能通说明设备可达），否则用云端 isOnline
+  const isOnline = (selectedDeviceDetails?.isOnline ?? false) || livePt != null
 
   // ─── CountUp 动画：功率数值平滑过渡 ───
   const animatedAcPower = useCountUp(isOnline ? acPower : 0)
