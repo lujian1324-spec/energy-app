@@ -76,7 +76,10 @@ export default function LoginPage() {
     setError(null)
     setSending(true)
     try {
-      const result = await sendEmailCaptcha(email.trim(), '3')
+      // Email-code login reuses the REGISTER captcha intent ('1'); the backend
+      // does not issue a separate login captcha for /login/email, so intent '3'
+      // returned a code that /login/email would not accept.
+      const result = await sendEmailCaptcha(email.trim(), '1')
       if (result.code === 0 || result.code === '0') {
         setCaptchaId(result.data?.iotCaptchaId ?? null)
         setOtpSent(true)
