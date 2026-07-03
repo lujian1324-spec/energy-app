@@ -1,8 +1,9 @@
 {
-  "version": "3.28.0",
-  "build": 2579,
+  "version": "3.29.0",
+  "build": 2580,
   "date": "2026-07-03",
   "changelog": [
+    "R1 realtime pipeline: new useLiveDeviceStatus hook is the single live-status entry for Overview. It probes platform fast-report support on entering the page; if supported it starts a fast-report session (device raises its cloud reporting rate) and polls the cheap /state/latest endpoint every 5s instead of occupying the Modbus passthrough channel; unsupported/old-firmware devices automatically fall back to the previous passthrough READ_ALL_STATUS polling. Fast report is stopped on leaving the page. Same safeguards as before: visibility-gated, no overlapping requests, live values cleared after 3 consecutive failures. Protocol decode verified with synthetic frames (good/corrupted-CRC/truncated + Int16 temp + 0x0133 state enum), typecheck clean, 25/25 local e2e passed",
     "Engineering hardening (P1-P3 from architecture review). Typecheck: fixed invalid tsconfig ignoreDeprecations that made tsc unrunnable, fixed all 42 type errors (demoData drifted from DeviceListItem: ids/station/dtu ids are strings, state is a numeric enum, applyMode is a string; LucideIcon prop types; AppSettings.privacyAcknowledged; LoginData.email; PeakValleyEnableRequest.deviceId; PWA virtual module types; NotificationOptions.renotify), and build now runs tsc --noEmit first so type errors fail CI",
     "API client: 5xx and timeouts now retry with backoff (previously only DNS/connection errors retried); HTTP 401 responses now go through the token-refresh flow too (previously only business-code 401/1001/1002 did)",
     "Protocol layer: new decodePassthroughBase64() is the single entry for passthrough base64->registers decode (CRC-checked); OverviewPage live poll and deviceStore rated-params fetch both use it instead of duplicated inline decoding",

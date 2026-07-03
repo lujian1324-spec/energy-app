@@ -41,8 +41,8 @@ import { formatTemp } from '../utils/localization'
 import DeviceDetailPage from './DeviceDetailPage'
 import { useDeviceStore } from '../stores/deviceStore'
 import { usePowerStationStore } from '../stores/powerStationStore'
-import { mapFieldsToRealtime, mapFiringAlarms, passthroughDevice } from '../api/deviceApi'
-import { FRAMES, decodePassthroughBase64, decodeLiveStatus, type LiveStatus } from '../protocols/modbusProtocol'
+import { mapFieldsToRealtime, mapFiringAlarms } from '../api/deviceApi'
+import { useLiveDeviceStatus } from '../hooks/useLiveDeviceStatus'
 import { isApiSuccess } from '../utils/apiClient'
 import { useHistoryFetcher } from '../hooks/useHistoryFetcher'
 import { loadRatedParams } from '../db/powerflowDB'
@@ -142,40 +142,7 @@ export default function OverviewPage() {
     return () => window.removeEventListener('popstate', onPopState)
   }, [backToDevices])
 
-  // ─── 停留本页时，每 5s 通过 Modbus 透传读取实时状态；退出页面即停止 ───
-  useEffect(() => {
-    if (!selectedDeviceId) { setLivePt(null); return }
-    let cancelled = false
-    const decodePt = (b64?: string): LiveStatus | null => {
-      const registers = decodePassthroughBase64(b64, 8)
-      return registers ? decodeLiveStatus(registers) : null
-    }
-    // 连续 3 次读取失败后清空 livePt，让显示值与在线状态如实回退到云端数据，
-    // 避免设备断连后永远残留最后一帧并保持 "Connected"。
-    let failStreak = 0
-    const onFail = () => {
-      failStreak += 1
-      if (failStreak >= 3 && !cancelled) setLivePt(null)
-    }
-    let inFlight = false
-    const readOnce = async () => {
-      // 页面不可见时跳过（切后台不空转）；上一次请求未返回时跳过（不并发透传）
-      if (document.visibilityState === 'hidden' || inFlight) return
-      inFlight = true
-      try {
-        const res = await passthroughDevice(selectedDeviceId, { data: FRAMES.READ_ALL_STATUS })
-        if (cancelled) return
-        if (!isApiSuccess(res.code)) { onFail(); return }
-        const live = decodePt(res.data?.base64Output ?? res.data?.content ?? res.data?.data)
-        if (cancelled) return
-        if (live) { failStreak = 0; setLivePt(live) } else { onFail() }
-      } catch { onFail() }
-      finally { inFlight = false }
-    }
-    readOnce()                                   // 立即读一次
-    const iv = setInterval(readOnce, 5000)       // 之后每 5s
-    return () => { cancelled = true; clearInterval(iv); setLivePt(null) }
-  }, [selectedDeviceId])
+  // ─── 停留本页时的实时状态：速报模式优先，透传轮询回退（useLiveDeviceStatus）───
 
   // ─── 每 30 秒自动刷新设备状态 ───
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -250,8 +217,8 @@ export default function OverviewPage() {
     return mapFieldsToRealtime(selectedDeviceState.fields)
   }, [selectedDeviceState])
 
-  // ─── 5s Modbus 透传实时状态（停留本页时轮询，退出即停）───
-  const [livePt, setLivePt] = useState<LiveStatus | null>(null)
+  // ─── 实时状态：速报模式优先（云端 5s 拉取），透传轮询回退，退出页面即停 ───
+  const { live: livePt } = useLiveDeviceStatus(selectedDeviceId)
 
   // ─── 计算显示值：优先透传实时值 livePt，回退到云端 selectedDeviceState ───
   const remainingBatteryCapacity = livePt?.soc ?? realtime?.remainingBatteryCapacity ?? 0
