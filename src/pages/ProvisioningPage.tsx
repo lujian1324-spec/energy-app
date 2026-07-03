@@ -337,6 +337,19 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     }
   }, [store])
 
+  // 进入设备扫描屏时（原生）自动开始扫描附近蓝牙设备，无需手动点 Scan
+  const autoBleScanRef = useRef(false)
+  useEffect(() => {
+    if (uiScreen === 'scan' && bleStatus === 'ready' && supportsDeviceListScan()) {
+      if (!autoBleScanRef.current && !store.isOperating) {
+        autoBleScanRef.current = true
+        handleScan()
+      }
+    } else if (uiScreen !== 'scan') {
+      autoBleScanRef.current = false // 离开后重置，下次进入重新自动扫描
+    }
+  }, [uiScreen, bleStatus, store.isOperating, handleScan])
+
   // 进入 "Select Wi-Fi" 步骤时自动扫描一次（避免空列表需手动点 Scan）
   const autoScannedRef = useRef(false)
   useEffect(() => {

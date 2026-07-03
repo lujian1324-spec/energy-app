@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import jsQR from 'jsqr'
 import ProvisioningPage from './ProvisioningPage'
+import { supportsDeviceListScan } from '../protocols/bleProvision'
 import {
   AlertTriangle,
   X,
@@ -312,6 +313,14 @@ export default function DevicePage() {
   // ── 蓝牙扫描权限检查 ──
   const handleBleScan = useCallback(async () => {
     setShowAddModal(false)
+
+    // Native app: Bluetooth is handled by the Capacitor plugin (permission is
+    // requested at scan time), so skip the Web Bluetooth checks and go straight
+    // to provisioning, where the in-app device list scan runs.
+    if (supportsDeviceListScan()) {
+      setShowProvisioning(true)
+      return
+    }
 
     // Web Bluetooth not available (iOS Safari / PWA)
     if (!('bluetooth' in navigator)) {
@@ -877,7 +886,7 @@ export default function DevicePage() {
               <div className="flex flex-col gap-3">
                 {[
                   { label: 'Bluetooth Scan', desc: 'Find nearby BLE devices', color: '#01D6BE', icon: '📡', action: handleBleScan },
-                  { label: 'Wi-Fi Setup', desc: 'Connect via local network', color: '#34C759', icon: '📶' },
+                  { label: 'Wi-Fi Setup', desc: 'Scan nearby devices over Bluetooth & set Wi-Fi', color: '#34C759', icon: '📶', action: handleBleScan },
                   { label: 'Manual Entry', desc: 'Enter device code manually', color: '#FF9500', icon: '⌨️', action: () => { setShowAddModal(false); setShowManualAdd(true) } },
                   { label: 'Scan QR Code', desc: 'Scan device QR code', color: '#01D6BE', icon: '📷', action: () => { setShowAddModal(false); setShowQrScan(true) } },
                 ].map((opt) => (
