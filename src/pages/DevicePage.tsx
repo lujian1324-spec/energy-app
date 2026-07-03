@@ -30,6 +30,7 @@ import {
   PlugZap,
   BookOpen,
 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import Icon from '../components/Icon'
 import PullToRefresh from '../components/PullToRefresh'
 import ManualAddDeviceModal from '../components/ManualAddDeviceModal'
@@ -76,7 +77,7 @@ const deviceIcons: Record<string, string> = {
 }
 
 // Lucide icons available in the Display Icon picker (must mirror DeviceDetailPage DISPLAY_ICONS)
-const LUCIDE_ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
+const LUCIDE_ICON_MAP: Record<string, LucideIcon> = {
   zap: Zap,
   refrigerator: Refrigerator,
   server: Server,

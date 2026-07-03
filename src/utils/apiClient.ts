@@ -189,7 +189,6 @@ export async function requestInternal<T = unknown>(
       const resp = await fetch(fullUrl, fetchOptions)
 
       if (!resp.ok) {
-        // HTTP 错误（4xx/5xx）— 不重试
         throw new ApiError(resp.status, `HTTP ${resp.status}: ${resp.statusText}`, resp.status)
       }
 
@@ -200,10 +199,20 @@ export async function requestInternal<T = unknown>(
     } catch (err) {
       lastError = err as Error
 
-      // ApiError（HTTP 4xx/5xx）、AbortError 或 TimeoutError → 不重试
       const errName = (err as Error).name
-      if (err instanceof ApiError || errName === 'AbortError' || errName === 'TimeoutError') {
+      if (err instanceof ApiError) {
+        // 5xx 是瞬态服务端错误 → 走退避重试；4xx 是确定性失败 → 直接抛出
+        if (err.status !== undefined && err.status >= 500) {
+          if (attempt >= maxRetries) throw err
+        } else {
+          throw err
+        }
+      } else if (errName === 'AbortError') {
+        // 调用方主动取消 → 不重试
         throw err
+      } else if (errName === 'TimeoutError') {
+        // 超时是典型瞬态失败 → 走退避重试
+        if (attempt >= maxRetries) throw err
       }
 
       // 最后一次重试失败后抛出
@@ -223,12 +232,31 @@ export async function request<T = unknown>(
   path: string,
   options: RequestOptions = {}
 ): Promise<ApiResponse<T>> {
-  const result = await requestInternal<T>(path, options)
+  let result: ApiResponse<T>
+  try {
+    result = await requestInternal<T>(path, options)
+  } catch (err) {
+    // HTTP 401 也走刷新流程（后端可能用真实 HTTP 状态码表示 Token 过期，
+    // 而不是 HTTP 200 + 业务码）
+    if (
+      err instanceof ApiError && err.status === 401 &&
+      !options._isRefresh && !options.skipAuth && !options._retriedAfterRefresh
+    ) {
+      const newToken = await getOrCreateRefreshPromise()
+      if (newToken) {
+        return requestInternal<T>(path, { ...options, _retriedAfterRefresh: true })
+      }
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('auth:expired'))
+      }
+    }
+    throw err
+  }
 
   // Token 刷新请求本身不拦截
   if (options._isRefresh) return result
 
-  // 检测 auth 过期
+  // 检测 auth 过期（业务码）
   if (isAuthExpired(result.code) && !options.skipAuth && !options._retriedAfterRefresh) {
     const newToken = await getOrCreateRefreshPromise()
     if (newToken) {

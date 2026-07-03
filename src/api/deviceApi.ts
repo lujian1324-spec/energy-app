@@ -545,7 +545,7 @@ export interface PeakValleyCustomizedConfig {
 }
 
 export interface PeakValleyEnableRequest {
-  deviceId: number
+  deviceId: string | number
   isEnabled: boolean
   category?: string
 }

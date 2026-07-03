@@ -9,6 +9,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { HardDrive, Wifi } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import Icon from './Icon'
 import {
   PERMISSION_DEFS,
@@ -19,7 +20,7 @@ import {
 const STORAGE_KEY = 'sierro_permissions_asked'
 
 // Per-permission icon (Icon component name, or a Lucide fallback)
-const ICONS: Record<PermissionId, { name?: string; Lucide?: React.FC<{ size?: number; className?: string }> }> = {
+const ICONS: Record<PermissionId, { name?: string; Lucide?: LucideIcon }> = {
   storage: { Lucide: HardDrive },
   notifications: { name: 'bell' },
   camera: { name: 'scan' },

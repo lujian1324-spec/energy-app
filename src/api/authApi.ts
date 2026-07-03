@@ -42,6 +42,7 @@ export interface LoginData {
   refreshTokenWillExpiredAt?: string
   refreshTokenWillExpiredInMillis?: number
   account?: string
+  email?: string
   authId?: number
   userId?: number
   userType?: number

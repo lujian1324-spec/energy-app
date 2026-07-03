@@ -250,6 +250,8 @@ export interface AppSettings {
   founderBadge?: boolean;
   founderBadgeActivatedAt?: string;
   founderBadgeNumber?: number; // 0-100 之间的唯一身份编码
+  /** Data-export page privacy notice acknowledged */
+  privacyAcknowledged?: boolean;
   /** Low battery push notification toggle (independent of Power Outage) */
   pushLowBattery?: boolean;
   /** Low battery notification threshold: 10 | 20 | 30 (default: 30) */

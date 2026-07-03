@@ -20,7 +20,7 @@ import type {
 
 export const demoDevices: DeviceListItem[] = [
   {
-    id: 10001,
+    id: '10001',
     name: 'NAS',
     serialNumber: 'SN26102503Z6104955',
     model: 'Sierro 1000',
@@ -29,9 +29,9 @@ export const demoDevices: DeviceListItem[] = [
     gatherProtocolNumber: 'GPN-001',
     gatherProtocolNameDisplay: 'Sierro Protocol v2.1',
     softwareVersion: 'V1.0.0',
-    stationId: 5001,
+    stationId: '5001',
     stationName: 'Home Station #1',
-    dtuId: 80001,
+    dtuId: '80001',
     dtuDtuid: 'SIERRO-DEMO-001',
     dtuName: 'SIERRO DTU-001',
     isOnline: true,
@@ -42,8 +42,8 @@ export const demoDevices: DeviceListItem[] = [
     isFirmwareUpgradeEnabled: true,
     isExternalDevice: false,
     isMainMasterDevice: true,
-    applyMode: 0,
-    state: 'normal',
+    applyMode: '0',
+    state: 10,
     stateDict: 'Normal Operation',
     producingPower: 400,
     ratedPower: 500,
@@ -55,7 +55,7 @@ export const demoDevices: DeviceListItem[] = [
     lastOfflineAt: '',
     place: 'Garage',
     iconResid: 'icon_battery',
-    ownerUserId: 9999,
+    ownerUserId: '9999',
     ownerUserName: 'Demo User',
     stationTimezone: 'America/New_York',
     stationCurrencyCode: 'USD',
@@ -68,7 +68,7 @@ export const demoDevices: DeviceListItem[] = [
     summaryProperty: {},
   },
   {
-    id: 10002,
+    id: '10002',
     name: 'Fridge',
     serialNumber: 'SN26102503Z6104955',
     model: 'Sierro 2000',
@@ -77,9 +77,9 @@ export const demoDevices: DeviceListItem[] = [
     gatherProtocolNumber: 'GPN-002',
     gatherProtocolNameDisplay: 'Sierro Protocol v2.1',
     softwareVersion: 'V1.0.0',
-    stationId: 5002,
+    stationId: '5002',
     stationName: 'Home Station #2',
-    dtuId: 80002,
+    dtuId: '80002',
     dtuDtuid: 'SIERRO-DEMO-002',
     dtuName: 'SIERRO DTU-002',
     isOnline: true,
@@ -90,8 +90,8 @@ export const demoDevices: DeviceListItem[] = [
     isFirmwareUpgradeEnabled: true,
     isExternalDevice: false,
     isMainMasterDevice: false,
-    applyMode: 0,
-    state: 'normal',
+    applyMode: '0',
+    state: 20,
     stateDict: 'Charging',
     producingPower: 1000,
     ratedPower: 1000,
@@ -103,7 +103,7 @@ export const demoDevices: DeviceListItem[] = [
     lastOfflineAt: '',
     place: 'Basement',
     iconResid: 'icon_battery',
-    ownerUserId: 9999,
+    ownerUserId: '9999',
     ownerUserName: 'Demo User',
     stationTimezone: 'America/New_York',
     stationCurrencyCode: 'USD',
@@ -116,7 +116,7 @@ export const demoDevices: DeviceListItem[] = [
     summaryProperty: {},
   },
   {
-    id: 10003,
+    id: '10003',
     name: 'WiFi Router',
     serialNumber: 'SN26102503Z6104956',
     model: 'Sierro 1000',
@@ -125,9 +125,9 @@ export const demoDevices: DeviceListItem[] = [
     gatherProtocolNumber: 'GPN-003',
     gatherProtocolNameDisplay: 'Sierro Protocol v2.1',
     softwareVersion: 'V1.0.0',
-    stationId: 5003,
+    stationId: '5003',
     stationName: 'Home Station #3',
-    dtuId: 80003,
+    dtuId: '80003',
     dtuDtuid: 'SIERRO-DEMO-003',
     dtuName: 'SIERRO DTU-003',
     isOnline: false,
@@ -138,8 +138,8 @@ export const demoDevices: DeviceListItem[] = [
     isFirmwareUpgradeEnabled: true,
     isExternalDevice: false,
     isMainMasterDevice: false,
-    applyMode: 0,
-    state: 'normal',
+    applyMode: '0',
+    state: 30,
     stateDict: 'Offline',
     producingPower: 0,
     ratedPower: 500,
@@ -151,7 +151,7 @@ export const demoDevices: DeviceListItem[] = [
     lastOfflineAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
     place: 'Living Room',
     iconResid: 'icon_battery',
-    ownerUserId: 9999,
+    ownerUserId: '9999',
     ownerUserName: 'Demo User',
     stationTimezone: 'America/New_York',
     stationCurrencyCode: 'USD',
@@ -210,15 +210,14 @@ function makeFlowNode(key: string, localeTitle: string, iconResid: string, val: 
 
 /** 为指定设备生成模拟实时状态 */
 export function getDemoDeviceState(deviceId: string | number): DeviceStateResponse | null {
-  const numericId = typeof deviceId === 'string' ? parseInt(deviceId) : deviceId
-  const device = demoDevices.find(d => d.id === numericId)
+  const device = demoDevices.find(d => d.id === String(deviceId))
   if (!device) return null
 
   const now = Date.now()
   const baseTime = Math.floor(now / 1000).toString()
 
-  switch (numericId) {
-    case 10001: // SIERRO 1000 — AC input 400W, Solar 0W, output 168W
+  switch (device.id) {
+    case '10001': // SIERRO 1000 — AC input 400W, Solar 0W, output 168W
       return {
         deviceId: '10001',
         dtuID: device.dtuDtuid,
@@ -274,7 +273,7 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
         ],
       }
 
-    case 10002: // SIERRO 2000 — AC input 80W, Solar 0W, output 231W
+    case '10002': // SIERRO 2000 — AC input 80W, Solar 0W, output 231W
       return {
         deviceId: '10002',
         dtuID: device.dtuDtuid,
@@ -322,7 +321,7 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
         firingAlarms: [],
       }
 
-    case 10003: // WiFi Router — offline, last known state
+    case '10003': // WiFi Router — offline, last known state
       return {
         deviceId: '10003',
         dtuID: device.dtuDtuid,

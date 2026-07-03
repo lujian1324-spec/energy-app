@@ -41,6 +41,24 @@ export function fromHexString(hex: string): Uint8Array {
   return new Uint8Array(bytes.map(b => parseInt(b, 16)))
 }
 
+/**
+ * 解码透传接口返回的 base64 载荷 → Modbus 寄存器数组。
+ * CRC 校验失败或帧不完整时返回 null（损坏帧绝不能当真数据用）。
+ * 统一入口：OverviewPage 实时轮询与 deviceStore 额定参数读取都走这里。
+ */
+export function decodePassthroughBase64(b64: string | undefined, minRegisters = 1): number[] | null {
+  if (!b64) return null
+  try {
+    const bytes = atob(b64)
+    const hex = Array.from(bytes).map(c => c.charCodeAt(0).toString(16).padStart(2, '0')).join('')
+    const parsed = parseReadResponse(fromHexString(hex))
+    if (!parsed || !parsed.crcOk || parsed.registers.length < minRegisters) return null
+    return parsed.registers
+  } catch {
+    return null
+  }
+}
+
 // ─────────────────────────────────────────────
 // 功能码
 // ─────────────────────────────────────────────

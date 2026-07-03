@@ -404,7 +404,13 @@ export function getProvisionManager(callbacks?: ProvisionCallbacks): IBleProvisi
 
 export function destroyProvisionManager(): void {
   if (instance) {
+    instance.stopScan().catch(() => { /* ignore */ })
     instance.disconnect().catch(err => console.error('[bleProvision] disconnect failed:', err))
     instance = null
   }
+}
+
+/** 仅停止扫描（若有活动实例），不创建新实例、不断开连接 */
+export function stopProvisionScan(): void {
+  instance?.stopScan().catch(() => { /* ignore */ })
 }

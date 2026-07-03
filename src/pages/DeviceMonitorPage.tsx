@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ChevronLeft, ChevronDown, Check, Settings, Bell, Sun, PlugZap } from 'lucide-react'
+import type { LucideProps } from 'lucide-react'
 import BatteryRing from '../components/BatteryRing'
 import { useDeviceStore } from '../stores/deviceStore'
 import { mapFieldsToRealtime, type HistoryDataResponse } from '../api/deviceApi'
@@ -15,7 +16,7 @@ type Metric = 'battery' | 'ac' | 'solar' | 'output'
 interface Tab {
   id: Metric
   label: string
-  Icon: React.FC<{ size?: number; className?: string }>
+  Icon: React.FC<LucideProps>
   historyKey: 'remainingBatteryCapacity' | 'exchangeChargingPower' | 'generationPower' | 'outputPower'
   unit: string
   color: string

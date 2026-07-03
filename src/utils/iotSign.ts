@@ -15,10 +15,17 @@
 // ───────── 依赖：crypto-js ─────────
 import CryptoJS from 'crypto-js'
 
-// ───────── 应用凭据（每次调用时从 localStorage 读取，fallback 到前端硬编码默认值） ─────────
+// ───────── 应用凭据 ─────────
+// 优先级：localStorage 覆盖 → 构建期环境变量（VITE_IOT_APP_ID / VITE_IOT_APP_SECRET）→ 内置默认值。
+// 注意：任何打进前端 bundle 的密钥都可被还原，签名只防篡改不防仿冒；
+// 真正的密钥保护需要后端代理签名，这里的默认值应视为公开凭据并定期轮换。
 function getCredentials(): { appId: string; appSecret: string } {
-  const appId = localStorage.getItem('OPEN_APP_ID') ?? 'rYGQpmYU5k'
-  const appSecret = localStorage.getItem('OPEN_APP_SECRET') ?? 'GhJXQYEHphHlyiqYnBGE'
+  const appId = localStorage.getItem('OPEN_APP_ID')
+    ?? (import.meta.env.VITE_IOT_APP_ID as string | undefined)
+    ?? 'rYGQpmYU5k'
+  const appSecret = localStorage.getItem('OPEN_APP_SECRET')
+    ?? (import.meta.env.VITE_IOT_APP_SECRET as string | undefined)
+    ?? 'GhJXQYEHphHlyiqYnBGE'
   return { appId, appSecret }
 }
 

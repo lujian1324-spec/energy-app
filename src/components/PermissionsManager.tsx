@@ -8,6 +8,7 @@
  */
 import { useEffect, useState, useCallback } from 'react'
 import { HardDrive, Wifi, RefreshCw, Loader2, CheckCircle2, XCircle, CircleDashed, MinusCircle } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import Icon from './Icon'
 import {
   PERMISSION_DEFS,
@@ -17,7 +18,7 @@ import {
 } from '../utils/permissions'
 import { openAppSettings } from '../utils/openAppSettings'
 
-const ICONS: Record<PermissionId, { name?: string; Lucide?: React.FC<{ size?: number; className?: string }> }> = {
+const ICONS: Record<PermissionId, { name?: string; Lucide?: LucideIcon }> = {
   storage: { Lucide: HardDrive },
   notifications: { name: 'bell' },
   camera: { name: 'scan' },

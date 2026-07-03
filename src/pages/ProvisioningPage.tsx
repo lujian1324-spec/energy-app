@@ -13,7 +13,7 @@ import {
 import jsQR from 'jsqr'
 import { toast } from '../components/Toast'
 import { useProvisionStore, type ProvisionStep } from '../stores/provisionStore'
-import { getProvisionManager, destroyProvisionManager, supportsDeviceListScan } from '../protocols/bleProvision'
+import { getProvisionManager, destroyProvisionManager, stopProvisionScan, supportsDeviceListScan } from '../protocols/bleProvision'
 import { SIERRO_MODELS, SIERRO_MODEL_LIST, generateSerial, type SierroModel } from '../data/deviceModels'
 import { saveRatedParams } from '../db/powerflowDB'
 import { useDeviceStore } from '../stores/deviceStore'
@@ -50,7 +50,11 @@ function QrScanScreen({ onBack, onScanned }: {
   const [scanned, setScanned] = useState<{ name: string; serial: string } | null>(null)
   const [cameraReady, setCameraReady] = useState(false)
 
+  // scanned == null 时（初次进入或点了 Rescan）重新获取摄像头流。
+  // 扫描成功会 stop 所有 track，因此 Rescan 必须重新 getUserMedia，
+  // 否则画面永远停在冻结的最后一帧、无法再次识别。
   useEffect(() => {
+    if (scanned) return
     let stopped = false
     const start = async () => {
       try {
@@ -72,7 +76,7 @@ function QrScanScreen({ onBack, onScanned }: {
       streamRef.current?.getTracks().forEach(t => t.stop())
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
     }
-  }, [])
+  }, [scanned])
 
   useEffect(() => {
     if (!cameraReady) return
@@ -143,7 +147,7 @@ function QrScanScreen({ onBack, onScanned }: {
             <p className="text-title-md font-bold text-white">{scanned.name}</p>
             <p className="text-caption text-ink-6 mb-5">{scanned.serial}</p>
             <div className="flex gap-3">
-              <button onClick={() => { setScanned(null); setCameraReady(false); setTimeout(() => setCameraReady(true), 100) }}
+              <button onClick={() => { setScanned(null); setCameraReady(false) }}
                 className="flex-1 h-12 rounded-full border border-[rgba(255,255,255,0.3)] text-white font-semibold text-body-md">
                 Rescan
               </button>
@@ -202,6 +206,12 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   // ─── BLE Scan ────────────────────────────────────────────────────────────
 
   const scanStopRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // 卸载/关闭配网页时停止 LE 扫描并清掉 10s 定时器，避免扫描在后台一直跑
+  useEffect(() => () => {
+    if (scanStopRef.current) clearTimeout(scanStopRef.current)
+    stopProvisionScan()
+  }, [])
 
   const handleScan = useCallback(async () => {
     store.setIsOperating(true)

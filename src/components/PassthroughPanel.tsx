@@ -115,7 +115,7 @@ export default function PassthroughPanel({ deviceId }: Props) {
     setLoading(true)
     addLog('tx', payload)
     try {
-      const res = await passthroughDevice(deviceId, { data: payload, protocol: 'modbus' })
+      const res = await passthroughDevice(deviceId, { data: payload })
       if (res.code === 0 || res.code === '0') {
         const raw = res.data?.data ?? JSON.stringify(res.data ?? '(empty)')
         const summary = summarizeResponse(raw, payload)

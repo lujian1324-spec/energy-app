@@ -53,7 +53,7 @@ import {
   getDemoHistoryData,
 } from '../data/demoData'
 import { passthroughDevice } from '../api/deviceApi'
-import { FRAMES, fromHexString, parseReadResponse } from '../protocols/modbusProtocol'
+import { FRAMES, decodePassthroughBase64 } from '../protocols/modbusProtocol'
 import { saveRatedParams, loadRatedParams } from '../db/powerflowDB'
 
 /** 透传读取设备额定参数并缓存到 IndexedDB（24h TTL，fire-and-forget）*/
@@ -63,11 +63,9 @@ async function fetchAndCacheRatedParams(deviceId: string): Promise<void> {
     if (cached && Date.now() - cached.fetchedAt < 86_400_000) return  // 24h cache
     const res = await passthroughDevice(deviceId, { data: FRAMES.READ_ALL_PARAMS })
     const b64 = res.data?.base64Output ?? res.data?.content ?? res.data?.data
-    if (!b64) return
-    const hex = Array.from(atob(b64)).map(c => c.charCodeAt(0).toString(16).padStart(2, '0')).join(' ')
-    const parsed = parseReadResponse(fromHexString(hex))
-    if (!parsed || !parsed.crcOk || parsed.registers.length < 11) return
-    const acInvOutputPower = parsed.registers[10]  // offset 10 = register 0x000A
+    const registers = decodePassthroughBase64(b64, 11)
+    if (!registers) return
+    const acInvOutputPower = registers[10]  // offset 10 = register 0x000A
     if (acInvOutputPower === undefined || acInvOutputPower === 0) return
     // 合并保存：保留新增设备时写入的型号默认参数（model/ratedPower/等），仅更新实测容量
     await saveRatedParams({ ...(cached ?? {}), deviceId, acInvOutputPower, fetchedAt: Date.now() })

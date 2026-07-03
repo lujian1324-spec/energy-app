@@ -42,7 +42,7 @@ import DeviceDetailPage from './DeviceDetailPage'
 import { useDeviceStore } from '../stores/deviceStore'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { mapFieldsToRealtime, mapFiringAlarms, passthroughDevice } from '../api/deviceApi'
-import { FRAMES, fromHexString, parseReadResponse, decodeLiveStatus, type LiveStatus } from '../protocols/modbusProtocol'
+import { FRAMES, decodePassthroughBase64, decodeLiveStatus, type LiveStatus } from '../protocols/modbusProtocol'
 import { isApiSuccess } from '../utils/apiClient'
 import { useHistoryFetcher } from '../hooks/useHistoryFetcher'
 import { loadRatedParams } from '../db/powerflowDB'
@@ -147,14 +147,8 @@ export default function OverviewPage() {
     if (!selectedDeviceId) { setLivePt(null); return }
     let cancelled = false
     const decodePt = (b64?: string): LiveStatus | null => {
-      if (!b64) return null
-      try {
-        const bytes = atob(b64)
-        const hex = Array.from(bytes).map(c => c.charCodeAt(0).toString(16).padStart(2, '0')).join('')
-        const parsed = parseReadResponse(fromHexString(hex))
-        if (!parsed || !parsed.crcOk || parsed.registers.length < 8) return null
-        return decodeLiveStatus(parsed.registers)
-      } catch { return null }
+      const registers = decodePassthroughBase64(b64, 8)
+      return registers ? decodeLiveStatus(registers) : null
     }
     // 连续 3 次读取失败后清空 livePt，让显示值与在线状态如实回退到云端数据，
     // 避免设备断连后永远残留最后一帧并保持 "Connected"。
@@ -163,7 +157,11 @@ export default function OverviewPage() {
       failStreak += 1
       if (failStreak >= 3 && !cancelled) setLivePt(null)
     }
+    let inFlight = false
     const readOnce = async () => {
+      // 页面不可见时跳过（切后台不空转）；上一次请求未返回时跳过（不并发透传）
+      if (document.visibilityState === 'hidden' || inFlight) return
+      inFlight = true
       try {
         const res = await passthroughDevice(selectedDeviceId, { data: FRAMES.READ_ALL_STATUS })
         if (cancelled) return
@@ -172,6 +170,7 @@ export default function OverviewPage() {
         if (cancelled) return
         if (live) { failStreak = 0; setLivePt(live) } else { onFail() }
       } catch { onFail() }
+      finally { inFlight = false }
     }
     readOnce()                                   // 立即读一次
     const iv = setInterval(readOnce, 5000)       // 之后每 5s
@@ -184,6 +183,7 @@ export default function OverviewPage() {
     if (pollRef.current) clearInterval(pollRef.current)
     if (selectedDeviceId) {
       pollRef.current = setInterval(() => {
+        if (document.visibilityState === 'hidden') return
         loadDeviceState(selectedDeviceId)
         loadDeviceDetails(selectedDeviceId)  // 同时刷新 isOnline，避免显示卡在离线/"-"
       }, 30000)
@@ -201,6 +201,7 @@ export default function OverviewPage() {
       // 立即加载一次
       loadAlarms(selectedDeviceId)
       alarmPollRef.current = setInterval(() => {
+        if (document.visibilityState === 'hidden') return
         loadAlarms(selectedDeviceId)
       }, 60000)
       return () => {
@@ -227,6 +228,7 @@ export default function OverviewPage() {
     if (selectedDeviceId) {
       loadEnergyFlow(selectedDeviceId)
       energyFlowPollRef.current = setInterval(() => {
+        if (document.visibilityState === 'hidden') return
         loadEnergyFlow(selectedDeviceId)
       }, 60000)
       return () => {
@@ -1304,7 +1306,7 @@ export default function OverviewPage() {
                     minor: { bg: 'bg-[rgba(255,149,0,0.06)]', dot: '#FF9500', text: 'text-warning' },
                     info: { bg: 'bg-[rgba(1,214,190,0.04)]', dot: '#01D6BE', text: 'text-primary' },
                   }
-                  const colors = levelColors[alarm.alarmLevel] || levelColors.info
+                  const colors = levelColors[alarm.alarmLevel ?? 'info'] || levelColors.info
 
                   return (
                     <div
@@ -1411,7 +1413,7 @@ export default function OverviewPage() {
                       minor: '#FF9500',
                       info: '#01D6BE',
                     }
-                    const dotColor = levelColorMap[alarm.alarmLevel] || '#01D6BE'
+                    const dotColor = levelColorMap[alarm.alarmLevel ?? 'info'] || '#01D6BE'
 
                     return (
                       <div

@@ -327,7 +327,7 @@ export const showLowBatteryNotification = async (
 // 显示太阳能开始充电通知
 export const showSolarChargingNotification = async (solarW: number): Promise<void> => {
   const basePath = getBasePath()
-  const options: NotificationOptions = {
+  const options: NotificationOptions & { renotify?: boolean } = {
     body: `Solar panels are generating ${solarW}W. Your battery is now charging.`,
     icon: `${basePath}/icon-192x192.png`,
     badge: `${basePath}/badge-96.png`,

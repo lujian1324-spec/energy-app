@@ -1,6 +1,7 @@
 ﻿import { useEffect } from 'react'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useConnectionStore } from '../stores/connectionStore'
+import { useDeviceStore } from '../stores/deviceStore'
 import { savePowerHistory } from '../db/powerflowDB'
 
 /**
@@ -15,10 +16,13 @@ export function useRealtimeSimulator() {
   const updatePowerData = usePowerStationStore((s) => s.updatePowerData)
   const updateBatteryLevel = usePowerStationStore((s) => s.updateBatteryLevel)
   const activeDataSource = useConnectionStore((s) => s.activeDataSource)
+  const isDemoMode = useDeviceStore((s) => s.isDemoMode)
 
   useEffect(() => {
  // 连接硬件时暂停模拟，避免覆盖真实数据
  if (activeDataSource !== 'simulator') return
+ // 仅 Demo（游客）模式运行模拟器；真实登录环境绝不写入合成数据/假历史
+ if (!isDemoMode) return
 
  // 每 3 秒波动功率
  const powerInterval = setInterval(() => {
@@ -63,5 +67,5 @@ export function useRealtimeSimulator() {
  clearInterval(historyInterval)
  }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeDataSource])
+  }, [activeDataSource, isDemoMode])
 }
