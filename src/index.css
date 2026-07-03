@@ -74,6 +74,21 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  /* Android WebView 点击不再闪灰色高亮块 */
+  -webkit-tap-highlight-color: transparent;
+  /* 防整页橡皮筋回弹与下拉刷新手势冲突（页内滚动容器不受影响） */
+  overscroll-behavior-y: none;
+}
+
+/* 双击缩放冲突与 300ms 延迟兜底；文本区域除外 */
+button, a, [role="button"], input, select, label {
+  touch-action: manipulation;
+}
+
+/* 控制类元素长按不弹出选字（正文/输入框不受影响） */
+button, [role="button"], nav {
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* ============================================================

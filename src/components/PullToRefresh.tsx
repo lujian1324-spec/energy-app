@@ -1,3 +1,4 @@
+import { hapticMedium } from '../utils/haptics'
 import { useRef, useState, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Loader2 } from 'lucide-react'
@@ -34,6 +35,7 @@ export default function PullToRefresh({ onRefresh, children }: Props) {
     if (pullY >= THRESHOLD && !refreshing) {
       setRefreshing(true)
       setPullY(0)
+      hapticMedium()  // 触发刷新的触觉确认
       try { await onRefresh() } finally { setRefreshing(false) }
     } else {
       setPullY(0)

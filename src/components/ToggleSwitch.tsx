@@ -1,4 +1,5 @@
 ﻿import { motion } from 'framer-motion'
+import { hapticLight } from '../utils/haptics'
 
 interface ToggleSwitchProps {
   isOn: boolean
@@ -22,13 +23,13 @@ export default function ToggleSwitch({
 
   return (
     <button
-      onClick={onToggle}
+      onClick={() => { hapticLight(); onToggle() }}
       disabled={disabled}
       role="switch"
       aria-checked={isOn}
       aria-label={ariaLabel}
       className={`
-        relative rounded-full transition-all duration-300 ease-out
+        relative rounded-full transition-colors duration-300 ease-out
         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-ink-12
         ${isOn
           ? 'bg-primary'

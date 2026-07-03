@@ -591,7 +591,7 @@ export default function OverviewPage() {
 
       {/* Status bar spacer */}
       <div className="h-8 px-5 flex justify-between items-center opacity-0">
-        <span className="text-[12px] text-ink-1">{remainingBatteryCapacity}%</span>
+        <span className="text-[12px] text-ink-1 tnum">{remainingBatteryCapacity}%</span>
       </div>
 
       {/* Scrollable content — pull down to refresh AC/Solar/Output + online state */}
@@ -845,7 +845,7 @@ export default function OverviewPage() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.05 }}
+              transition={{ delay: 0.1 }}
               className="mx-5 mb-4"
             >
               <div className="text-[11px] font-bold text-ink-6 tracking-widest uppercase mb-2.5 px-1">
@@ -924,7 +924,7 @@ export default function OverviewPage() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.08 }}
+              transition={{ delay: 0.2 }}
               className="mx-5 mb-4"
             >
               <div className="text-[11px] font-bold text-ink-6 tracking-widest uppercase mb-2.5 px-1">
@@ -974,7 +974,7 @@ export default function OverviewPage() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.09 }}
+              transition={{ delay: 0.3 }}
               className="mx-5 mb-4"
             >
               <div className="text-[11px] font-bold text-ink-6 tracking-widest uppercase mb-2.5 px-1">
@@ -1010,7 +1010,7 @@ export default function OverviewPage() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
+              transition={{ delay: 0.4 }}
               className="mx-5 mb-5 bg-ink-10 rounded-l p-4"
             >
               {/* Header: title + realtime badge */}

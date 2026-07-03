@@ -1,4 +1,5 @@
 import type { CapacitorConfig } from '@capacitor/cli'
+import { KeyboardResize } from '@capacitor/keyboard'
 
 const config: CapacitorConfig = {
   appId: 'com.sierro.energyapp',
@@ -19,6 +20,9 @@ const config: CapacitorConfig = {
     scrollEnabled: true,
   },
   plugins: {
+    Keyboard: {
+      resize: KeyboardResize.Body,
+    },
     SplashScreen: {
       launchAutoHide: true,
       backgroundColor: '#141414',

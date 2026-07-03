@@ -859,7 +859,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                 <button
                   key={id}
                   onClick={() => setSelectedIcon(id)}
-                  className={`aspect-square rounded-l flex items-center justify-center transition-all active:scale-95
+                  className={`aspect-square rounded-l flex items-center justify-center transition-[transform,background-color,border-color] active:scale-95
                     ${active ? 'bg-primary text-ink-13' : 'bg-ink-10 text-ink-4'}`}
                 >
                   <Icon size={26} />

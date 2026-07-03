@@ -479,7 +479,7 @@ export default function DevicePage() {
       } transition-transform`}
     >
       <span
-        className={`absolute top-[2px] w-[27px] h-[27px] rounded-full bg-white shadow-sm transition-all duration-200 ${
+        className={`absolute top-[2px] w-[27px] h-[27px] rounded-full bg-white shadow-sm transition-[left,transform] duration-200 ${
           on && !disabled ? 'left-[23px]' : 'left-[2px]'
         }`}
       />
@@ -893,7 +893,7 @@ export default function DevicePage() {
                 ].map((opt) => (
                   <button key={opt.label}
                     onClick={() => { if ('action' in opt && opt.action) opt.action(); else setShowAddModal(false) }}
-                    className="flex items-center gap-4 p-4 bg-ink-9 rounded-l text-left transition-all">
+                    className="flex items-center gap-4 p-4 bg-ink-9 rounded-l text-left transition-colors active:scale-[0.98]">
                     <span className="text-2xl">{opt.icon}</span>
                     <div className="flex-1">
                       <div className="text-[14px] font-semibold" style={{ color: opt.color }}>{opt.label}</div>

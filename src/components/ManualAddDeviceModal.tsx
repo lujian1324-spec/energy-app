@@ -231,7 +231,7 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
             className="w-full py-3.5 rounded-l font-semibold text-[14px]
               bg-primary text-ink-13
               disabled:opacity-40 disabled:cursor-not-allowed
-              active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+              active:scale-[0.98] transition-[transform,opacity] flex items-center justify-center gap-2"
           >
             {loading ? (
               <>

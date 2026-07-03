@@ -942,9 +942,9 @@ export default function StatsPage() {
                           const maxVal = Math.max(...chartFrame.input, ...chartFrame.output, 1)
                           return (
                             <div key={i} className="flex-1 flex items-end justify-center gap-1 h-full">
-                              <div className="flex-1 max-w-[12px] rounded-t-s bg-primary min-h-[2px] transition-all duration-500"
+                              <div className="flex-1 max-w-[12px] rounded-t-s bg-primary min-h-[2px] transition-[height] duration-500"
                                 style={{ height: `${(input / maxVal) * 100}%` }} />
-                              <div className="flex-1 max-w-[12px] rounded-t-s bg-warning min-h-[2px] transition-all duration-500"
+                              <div className="flex-1 max-w-[12px] rounded-t-s bg-warning min-h-[2px] transition-[height] duration-500"
                                 style={{ height: `${(chartFrame.output[i] / maxVal) * 100}%` }} />
                             </div>
                           )

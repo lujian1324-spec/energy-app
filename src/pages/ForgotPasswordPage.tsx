@@ -147,7 +147,7 @@ export default function ForgotPasswordPage() {
               disabled={!emailValid || sending || countdown > 0}
               className="w-full mt-14 py-4 rounded-m font-semibold text-title-md text-ink-13
                 bg-primary disabled:bg-primary-dark disabled:text-ink-13/60 disabled:cursor-not-allowed
-                active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                active:scale-[0.98] transition-[transform,opacity] flex items-center justify-center gap-2"
             >
               {sending ? <Loader2 size={18} className="animate-spin" /> : 'Send Verification Code'}
             </button>
@@ -222,7 +222,7 @@ export default function ForgotPasswordPage() {
             disabled={!canReset || loading}
             className="w-full py-4 rounded-m font-semibold text-title-md text-ink-13
               bg-primary disabled:bg-primary-dark disabled:text-ink-13/60 disabled:cursor-not-allowed
-              active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+              active:scale-[0.98] transition-[transform,opacity] flex items-center justify-center gap-2"
           >
             {loading ? <Loader2 size={18} className="animate-spin" /> : 'Reset Password'}
           </button>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App 深色底（= 设计系统 ink-12），用于窗口底色/状态栏/导航栏 -->
+    <color name="appBackground">#141414</color>
+    <color name="colorPrimary">#01D6BE</color>
+    <color name="colorPrimaryDark">#01A18F</color>
+    <color name="colorAccent">#01D6BE</color>
+</resources>

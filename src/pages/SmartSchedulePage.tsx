@@ -675,15 +675,15 @@ export default function SmartSchedulePage() {
           <div className="bg-ink-10 rounded-l p-4 grid grid-cols-3 gap-3 text-center">
             <div>
               <div className="text-caption text-ink-6 mb-1">Daily</div>
-              <div className="text-body-lg font-bold text-primary">${savings.daily.toFixed(2)}</div>
+              <div className="text-body-lg font-bold text-primary tnum">${savings.daily.toFixed(2)}</div>
             </div>
             <div className="border-x border-[rgba(255,255,255,0.06)]">
               <div className="text-caption text-ink-6 mb-1">Monthly</div>
-              <div className="text-body-lg font-bold text-primary">${savings.monthly.toFixed(2)}</div>
+              <div className="text-body-lg font-bold text-primary tnum">${savings.monthly.toFixed(2)}</div>
             </div>
             <div>
               <div className="text-caption text-ink-6 mb-1">Yearly</div>
-              <div className="text-body-lg font-bold text-primary">${savings.yearly.toFixed(2)}</div>
+              <div className="text-body-lg font-bold text-primary tnum">${savings.yearly.toFixed(2)}</div>
             </div>
           </div>
         </div>

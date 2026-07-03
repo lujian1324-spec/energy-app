@@ -147,7 +147,7 @@ export default function PassthroughPanel({ deviceId }: Props) {
           onClick={() => setShowPresets(v => !v)}
           className="w-full flex items-center justify-between px-3 py-2 rounded-m
             bg-ink-12 border border-[rgba(255,255,255,0.06)]
-            text-ink-7 text-[12px] active:scale-[0.98] transition-all"
+            text-ink-7 text-[12px] active:scale-[0.98] transition-[transform,opacity]"
         >
           <span>Select Preset</span>
           <ChevronDown size={13} className={`transition-transform ${showPresets ? 'rotate-180' : ''}`} />
@@ -191,7 +191,7 @@ export default function PassthroughPanel({ deviceId }: Props) {
             onClick={() => sendFrame(data)}
             disabled={loading || !data.trim()}
             className="px-4 py-2 rounded-m bg-primary text-[#000] text-[12px] font-semibold
-              disabled:opacity-40 flex items-center gap-1.5 active:scale-[0.97] transition-all"
+              disabled:opacity-40 flex items-center gap-1.5 active:scale-[0.97] transition-[transform,opacity]"
           >
             {loading ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
             Send

@@ -260,7 +260,7 @@ function ChargePowerSection({ deviceId: _deviceId, sendFrame, loading }: ChargeP
                   onClick={() => write(row)}
                   disabled={loading !== null}
                   className="px-4 py-2 rounded-m bg-primary text-[#000] text-body-md font-semibold
-                    disabled:opacity-40 flex items-center gap-1.5 active:scale-[0.97] transition-all"
+                    disabled:opacity-40 flex items-center gap-1.5 active:scale-[0.97] transition-[transform,opacity]"
                 >
                   {loading === busyKey
                     ? <Loader2 size={14} className="animate-spin" />
@@ -424,7 +424,7 @@ export default function PassthroughPage() {
               onClick={() => sendFrame(customHex, 'custom')}
               disabled={loading !== null || !customHex.trim()}
               className="w-full py-3 rounded-m bg-primary text-[#000] text-body-md font-semibold
-                disabled:opacity-40 flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+                disabled:opacity-40 flex items-center justify-center gap-2 active:scale-[0.98] transition-[transform,opacity]"
             >
               {loading === 'custom'
                 ? <><Loader2 size={15} className="animate-spin" />Sending…</>
