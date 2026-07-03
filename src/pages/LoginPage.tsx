@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Loader2, X } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
-import { sendEmailCaptcha, loginByEmail } from '../api/authApi'
+import { sendEmailCaptcha, loginByEmail, CaptchaIntent } from '../api/authApi'
 
 
 type Tab = 'email' | 'username'
@@ -76,10 +76,8 @@ export default function LoginPage() {
     setError(null)
     setSending(true)
     try {
-      // Email-code login reuses the REGISTER captcha intent ('1'); the backend
-      // does not issue a separate login captcha for /login/email, so intent '3'
-      // returned a code that /login/email would not accept.
-      const result = await sendEmailCaptcha(email.trim(), '1')
+      // Email-code login must request the LOGIN captcha intent, not register.
+      const result = await sendEmailCaptcha(email.trim(), CaptchaIntent.LOGIN)
       if (result.code === 0 || result.code === '0') {
         setCaptchaId(result.data?.iotCaptchaId ?? null)
         setOtpSent(true)
