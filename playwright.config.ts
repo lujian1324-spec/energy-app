@@ -8,7 +8,7 @@ export default defineConfig({
   reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
 
   use: {
-    baseURL: 'https://lujian1324-spec.github.io/energy-app',
+    baseURL: process.env.E2E_BASE_URL ?? 'https://lujian1324-spec.github.io/energy-app',
     headless: true,
     viewport: { width: 390, height: 844 }, // iPhone 14 Pro default
     locale: 'en-US',
@@ -25,8 +25,9 @@ export default defineConfig({
       use: {
         browserName: 'chromium',
         // executablePath only needed in restricted sandbox environments
+        // (must live under launchOptions — top-level executablePath is ignored)
         ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
-          ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH }
+          ? { launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH } }
           : {}),
         viewport: { width: 393, height: 852 },
         userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/120.0.0.0 Mobile/15E148 Safari/604.1',

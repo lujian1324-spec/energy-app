@@ -12,7 +12,7 @@
 import { test, expect } from '@playwright/test'
 import type { Page } from '@playwright/test'
 
-const BASE = 'https://lujian1324-spec.github.io/energy-app'
+const BASE = process.env.E2E_BASE_URL ?? 'https://lujian1324-spec.github.io/energy-app'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
