@@ -152,17 +152,26 @@ export default function OverviewPage() {
         const bytes = atob(b64)
         const hex = Array.from(bytes).map(c => c.charCodeAt(0).toString(16).padStart(2, '0')).join('')
         const parsed = parseReadResponse(fromHexString(hex))
-        if (!parsed || parsed.registers.length < 8) return null
+        if (!parsed || !parsed.crcOk || parsed.registers.length < 8) return null
         return decodeLiveStatus(parsed.registers)
       } catch { return null }
+    }
+    // 连续 3 次读取失败后清空 livePt，让显示值与在线状态如实回退到云端数据，
+    // 避免设备断连后永远残留最后一帧并保持 "Connected"。
+    let failStreak = 0
+    const onFail = () => {
+      failStreak += 1
+      if (failStreak >= 3 && !cancelled) setLivePt(null)
     }
     const readOnce = async () => {
       try {
         const res = await passthroughDevice(selectedDeviceId, { data: FRAMES.READ_ALL_STATUS })
-        if (cancelled || !isApiSuccess(res.code)) return
+        if (cancelled) return
+        if (!isApiSuccess(res.code)) { onFail(); return }
         const live = decodePt(res.data?.base64Output ?? res.data?.content ?? res.data?.data)
-        if (live && !cancelled) setLivePt(live)
-      } catch { /* 忽略单次失败，下个周期重试 */ }
+        if (cancelled) return
+        if (live) { failStreak = 0; setLivePt(live) } else { onFail() }
+      } catch { onFail() }
     }
     readOnce()                                   // 立即读一次
     const iv = setInterval(readOnce, 5000)       // 之后每 5s

@@ -792,8 +792,8 @@ const REG_DESC: Record<number, RegDesc> = {
         6: 'Charging', 7: 'Discharge LLC Soft Start', 8: 'Discharging',
         9: 'Fault', 10: 'Shutdown', 11: 'Online Upgrade',
       }
-      const bit = Math.log2(raw & -raw)  // lowest set bit
-      return states[bit] ?? `State 0x${raw.toString(16).toUpperCase()}`
+      // 状态机是数值枚举（0..11），不是位掩码 —— 直接查表
+      return states[raw] ?? `State 0x${raw.toString(16).toUpperCase()}`
     },
   },
   0x0134: {

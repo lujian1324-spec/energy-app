@@ -66,7 +66,7 @@ async function fetchAndCacheRatedParams(deviceId: string): Promise<void> {
     if (!b64) return
     const hex = Array.from(atob(b64)).map(c => c.charCodeAt(0).toString(16).padStart(2, '0')).join(' ')
     const parsed = parseReadResponse(fromHexString(hex))
-    if (!parsed || parsed.registers.length < 11) return
+    if (!parsed || !parsed.crcOk || parsed.registers.length < 11) return
     const acInvOutputPower = parsed.registers[10]  // offset 10 = register 0x000A
     if (acInvOutputPower === undefined || acInvOutputPower === 0) return
     // 合并保存：保留新增设备时写入的型号默认参数（model/ratedPower/等），仅更新实测容量

@@ -1,8 +1,9 @@
 {
-  "version": "3.27.5",
-  "build": 2577,
+  "version": "3.27.6",
+  "build": 2578,
   "date": "2026-07-03",
   "changelog": [
+    "Data-integrity fixes (P0 from architecture review): 1) passthrough live decode now rejects frames with bad CRC (OverviewPage 5s poll + rated-params fetch) so corrupted responses can no longer show garbage SOC/power or mark the device online; 2) Overview live values (livePt) are cleared after 3 consecutive passthrough failures so a disconnected device falls back to cloud state instead of freezing on the last frame as 'Connected'; 3) fix System State Machine (0x0133) decode — it is a numeric enum, not a bitmask, so states like Charging(6) no longer display as Power-Up",
     "Fix Wi-Fi Setup doing nothing when tapped: the Add-Device sheet's 'Wi-Fi Setup' option had no action (just closed the sheet). It now launches the BLE provisioning flow — scan nearby devices over Bluetooth (added or not), pick one, and set its Wi-Fi SSID/password. Also fixed handleBleScan dead-ending on the native app (navigator.bluetooth is absent in the WebView) by going straight to provisioning on native, and the device-scan screen now auto-starts the Bluetooth scan on entry",
     "Email-code login: Obtain Code now requests the LOGIN captcha intent (CaptchaIntent.LOGIN '3'), not the register captcha, so the emailed code is the correct login verification code",
     "Fix Android APK not requesting Bluetooth permission: the git-tracked Capacitor build files (capacitor.settings.gradle / capacitor.build.gradle) were stale and listed only 2 of 6 plugins, and capacitor.plugins.json was git-ignored — so a build that skipped `cap sync` shipped an APK with NO native BLE/camera/push/local-notification plugin. BleClient.initialize() then failed and the runtime permission prompt never appeared. Regenerated the build files (all 6 plugins) and now track capacitor.plugins.json so the native plugins are always compiled in and registered",
