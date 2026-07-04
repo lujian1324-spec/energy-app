@@ -53,7 +53,13 @@
 	<string>Sierro uses Bluetooth to communicate with your Sierro energy storage device.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Sierro uses the camera to scan device QR codes and update your profile photo.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Sierro accesses your photo library so you can choose a profile photo.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Sierro can save exported device data and reports to your photo library.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Sierro uses the local network to send Wi-Fi credentials to your device during setup.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>

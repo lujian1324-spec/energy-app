@@ -23,6 +23,7 @@ import PassthroughPage from './pages/PassthroughPage'
 import DebugParamsPage from './pages/DebugParamsPage'
 import DataExportPage from './pages/DataExportPage'
 import { useRealtimeSimulator } from './hooks/useRealtimeSimulator'
+import { DEV_TOOLS_ENABLED } from './config/devTools'
 import { useLowBatteryMonitor } from './hooks/useLowBatteryMonitor'
 import { useAuthStore } from './stores/authStore'
 import { usePowerStationStore } from './stores/powerStationStore'
@@ -171,12 +172,18 @@ function AppInner() {
               <Route path="/device/:id" element={<RequireAuth><DeviceMonitorPage /></RequireAuth>} />
               <Route path="/device/:id/settings" element={<RequireAuth><DeviceDetailPage /></RequireAuth>} />
               <Route path="/device/:id/dashboard" element={<RequireAuth><OverviewPage /></RequireAuth>} />
-              <Route path="/device/:id/passthrough" element={<RequireAuth><PassthroughPage /></RequireAuth>} />
-              <Route path="/device/:id/debug-params" element={<RequireAuth><DebugParamsPage /></RequireAuth>} />
+              {DEV_TOOLS_ENABLED && (
+                <Route path="/device/:id/passthrough" element={<RequireAuth><PassthroughPage /></RequireAuth>} />
+              )}
+              {DEV_TOOLS_ENABLED && (
+                <Route path="/device/:id/debug-params" element={<RequireAuth><DebugParamsPage /></RequireAuth>} />
+              )}
               <Route path="/smart-schedule" element={<RequireAuth><SmartSchedulePage /></RequireAuth>} />
               <Route path="/notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
               <Route path="/onboarding" element={<RequireAuth><OnboardingPage /></RequireAuth>} />
-              <Route path="/ble-debug" element={<RequireAuth><BleDebugPage /></RequireAuth>} />
+              {DEV_TOOLS_ENABLED && (
+                <Route path="/ble-debug" element={<RequireAuth><BleDebugPage /></RequireAuth>} />
+              )}
               <Route path="/data-export" element={<RequireAuth><DataExportPage /></RequireAuth>} />
               {/* 首次进入默认登录页，已登录/游客模式则进入 devices */}
               <Route

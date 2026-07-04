@@ -20,7 +20,9 @@ import {
   updateUserEmail,
   updatePassword,
   sendEmailCaptcha,
+  deleteAccount,
 } from '../api/authApi'
+import { isApiSuccess } from '../utils/apiClient'
 import { Lock, Eye, EyeOff } from 'lucide-react'
 import type { UserProfile } from '../types/protocol'
 
@@ -71,6 +73,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
 
   // 二次确认弹窗：'signout' | 'delete' | null
   const [confirmAction, setConfirmAction] = useState<'signout' | 'delete' | null>(null)
+  const [deleteBusy, setDeleteBusy] = useState(false)
 
   // Redeem Founder Badge 弹窗
   const [showRedeem, setShowRedeem] = useState(false)
@@ -224,12 +227,33 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
     setConfirmAction('delete')
   }
 
-  // 弹窗内确认 → 执行登出/删除
-  const handleConfirm = () => {
-    setConfirmAction(null)
-    if (typeof logout === 'function') {
-      logout()
+  // 弹窗内确认 → 执行登出 / 真正删除账号
+  const handleConfirm = async () => {
+    if (confirmAction === 'delete') {
+      // 真正调用注销账户接口（此前只登出，不满足 Apple 5.1.1(v) / Play 删除政策）
+      setDeleteBusy(true)
+      try {
+        const res = await deleteAccount()
+        if (!isApiSuccess(res.code)) {
+          toast.error(res.message || res.msg || 'Failed to delete account. Please try again.')
+          setDeleteBusy(false)
+          return
+        }
+      } catch {
+        toast.error('Failed to delete account. Please try again.')
+        setDeleteBusy(false)
+        return
+      }
+      setDeleteBusy(false)
+      setConfirmAction(null)
+      // 账号已在服务端删除 → 清本地会话/数据并退出
+      if (typeof logout === 'function') logout()
+      onBack()
+      return
     }
+    // signout
+    setConfirmAction(null)
+    if (typeof logout === 'function') logout()
     onBack()
   }
 
@@ -682,7 +706,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-8"
-            onClick={() => setConfirmAction(null)}
+            onClick={() => { if (!deleteBusy) setConfirmAction(null) }}
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.92 }}
@@ -702,20 +726,22 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
               </p>
               <div className="flex gap-3">
                 <button
+                  disabled={deleteBusy}
                   onClick={() => setConfirmAction(null)}
-                  className="flex-1 h-12 rounded-m border-s border-white text-white font-semibold text-body-lg active:scale-95 transition-transform"
+                  className="flex-1 h-12 rounded-m border-s border-white text-white font-semibold text-body-lg active:scale-95 transition-transform disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
+                  disabled={deleteBusy}
                   onClick={handleConfirm}
-                  className={`flex-1 h-12 rounded-m font-semibold text-body-lg active:scale-95 transition-transform ${
+                  className={`flex-1 h-12 rounded-m font-semibold text-body-lg active:scale-95 transition-transform disabled:opacity-60 ${
                     confirmAction === 'signout'
                       ? 'bg-primary text-black'
                       : 'bg-danger text-white'
                   }`}
                 >
-                  {confirmAction === 'signout' ? 'Sign Out' : 'Delete'}
+                  {confirmAction === 'signout' ? 'Sign Out' : deleteBusy ? 'Deleting…' : 'Delete'}
                 </button>
               </div>
             </motion.div>

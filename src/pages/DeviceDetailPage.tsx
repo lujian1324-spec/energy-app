@@ -26,6 +26,7 @@ import { loadRatedParams, saveRatedParams, type RatedParams } from '../db/powerf
 import { SIERRO_MODELS, SIERRO_MODEL_LIST, generateSerial, type SierroModel } from '../data/deviceModels'
 import sierro1000Img from '../assets/sierro-1000.webp'
 import appVersion from '../version.json'
+import { DEV_TOOLS_ENABLED } from '../config/devTools'
 
 interface DeviceDetailPageProps {
   /** When rendered as an overlay (inside OverviewPage) a custom back handler is
@@ -567,7 +568,8 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             />
           </div>
 
-          {/* Modbus 透传入口 */}
+          {/* Modbus 透传入口 — 仅开发/内测包可见 */}
+          {DEV_TOOLS_ENABLED && (
           <div className="mt-4 space-y-2">
             <button
               onClick={() => navigate(`/device/${routeId ?? selectedDeviceId}/passthrough`)}
@@ -588,6 +590,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               <ChevronRight size={18} className="text-ink-6" />
             </button>
           </div>
+          )}
         </div>
 
         {/* Device Model Bottom Sheet (lives in the Device Info screen) */}
