@@ -25,7 +25,8 @@ const config: CapacitorConfig = {
     },
     SplashScreen: {
       launchAutoHide: true,
-      backgroundColor: '#141414',
+      // 品牌启动图为白底黑字 SIERRO（与 App 图标一致）
+      backgroundColor: '#FFFFFF',
       showSpinner: false,
     },
     PushNotifications: {
