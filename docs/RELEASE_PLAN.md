@@ -39,6 +39,12 @@
 
 前两点工程上已相当扎实；本规划的重心是**第 3 点(上架合规 + 安全)**,以及支撑长期迭代的**技术债清偿**。
 
+> **CI 状态说明**：Web 部署(GitHub Pages)、Android APK、E2E 均绿。唯一红叉是 `Build iOS App`
+> 编译烟雾测试(已标记 `continue-on-error`,非阻断)。根因:`@capacitor/status-bar@8.0.2` 的
+> `StatusBar.swift` 通过 `bridge.webView` / `bridge.viewController` 访问 bridge,与 CI 上 SPM 解析的
+> `capacitor-swift-pm` 的 `CAPBridgeProtocol` 不兼容(`has no member 'webView'`)。属 M4 iOS 工作,
+> 需在 macOS + Xcode 上对齐 Capacitor 版本组合(或 patch/替换 status-bar 的状态栏方案)后验证。
+
 ---
 
 ## P0 — 上架阻断项（不修则被拒 / 安全事故，必须最先做）
