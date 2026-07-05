@@ -20,11 +20,11 @@
 | BUG R1 回归：速报模式离线设备显示 Connected+冻结读数 → 修正在线判定 | v3.31.x |
 | BUG R1 回归：速报会话可能被遗留高频上报 → 修正 ref 时序 | v3.31.x |
 | 质量：CI e2e 改测 PR 自身构建（不再测线上）；真实账号凭据移入 env | v3.31.x |
+| P0-3 品牌图标/启动图：SIERRO 字标白底黑字，两端全套 | v3.33.0 |
+| P0-4 推送裁剪：PUSH_ENABLED 总开关（默认关），隐藏推送设置区、启动不申请通知权限、引导不索通知权限 | v3.34.0 |
 
 | 仍待办（需产品决策/外部依赖） | 级别 |
 |---|---|
-| P0-3 品牌图标/启动图（需设计出图） | 阻断 |
-| P0-4 推送首发实现 or 裁剪（需后端 + APNs/FCM 账号） | 阻断 |
 | M4 Android release 签名 + AAB / iOS TestFlight（需证书/keystore） | 阻断 |
 | P2 双 store 退役、API 归一化、实时链路收口 | 债 |
 | P3 单元测试(Vitest)、崩溃监控(Sentry)、代码分割 | 护栏 |
@@ -74,6 +74,7 @@
   - 若首发:开 Apple Push 能力 + 上传 APNs Key + 加 entitlements;建 Firebase 项目 + `google-services.json`;后端实现 token 注册与推送下发。
   - 若延后:**移除/隐藏推送开关和启动时的权限申请**,避免"申请了却不能用"被拒。
 - **工作量**：完整实现 3-5 天(依赖后端);首发裁剪 0.5 天。
+- **✅ 已裁剪 (v3.34.0)**：新增 `PUSH_ENABLED`(`src/config/webPush.ts`,默认关)。关闭时:Settings 隐藏整个推送区(生产包已剥离)、登录后不初始化 APNs/FCM(`App.tsx`)、权限引导排除通知权限(`PermissionsGate`),低电量本地通知因权限未授予而静默不弹。**后端 + APNs Key + `google-services.json` 就绪后**,构建时设 `VITE_PUSH_ENABLED=true` 即恢复完整链路(代码已保留)。
 
 ### P0-5 🟠 iOS 缺相机相册用途声明(链接了 @capacitor/camera)✅
 - **问题**：`Package.swift` 链接了 `CapacitorCamera`,但 `Info.plist` 只有蓝牙/相机/本地网络用途,缺 `NSPhotoLibraryUsageDescription` / `NSPhotoLibraryAddUsageDescription`。而实际拍照走 `getUserMedia`、头像走 `<input type=file>`,插件仅用于权限检查。

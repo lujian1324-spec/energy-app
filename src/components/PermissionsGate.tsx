@@ -10,6 +10,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { HardDrive, Wifi } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import { PUSH_ENABLED } from '../config/webPush'
 import Icon from './Icon'
 import {
   PERMISSION_DEFS,
@@ -47,6 +48,9 @@ interface Props {
   onDone: () => void
 }
 
+// 推送未就绪时不申请通知权限（避免为不可用功能索权，商店拒审风险）
+const GATE_DEFS = PERMISSION_DEFS.filter(d => d.id !== 'notifications' || PUSH_ENABLED)
+
 export default function PermissionsGate({ onDone }: Props) {
   const [step, setStep] = useState<'intro' | 'asking' | 'done'>('intro')
   const [results, setResults] = useState<Record<string, PermissionResult>>({})
@@ -58,7 +62,7 @@ export default function PermissionsGate({ onDone }: Props) {
 
     // Request sequentially so native prompts don't overlap.
     const r: Record<string, PermissionResult> = {}
-    for (const def of PERMISSION_DEFS) {
+    for (const def of GATE_DEFS) {
       r[def.id] = await def.request()
       setResults({ ...r })
     }
@@ -105,7 +109,7 @@ export default function PermissionsGate({ onDone }: Props) {
 
             {/* Permission list */}
             <div className="w-full space-y-3 mb-4">
-              {PERMISSION_DEFS.map(({ id, title, description }) => (
+              {GATE_DEFS.map(({ id, title, description }) => (
                 <div key={id} className="flex items-start gap-4 bg-ink-10 rounded-l px-4 py-4">
                   <div className="w-10 h-10 rounded-l bg-[rgba(1,214,190,0.1)] flex items-center justify-center flex-shrink-0">
                     <PermIcon id={id} />
@@ -151,7 +155,7 @@ export default function PermissionsGate({ onDone }: Props) {
             </p>
 
             <div className="w-full space-y-3 mb-4">
-              {PERMISSION_DEFS.map(({ id, title }) => {
+              {GATE_DEFS.map(({ id, title }) => {
                 const lbl = labelFor(results[id])
                 return (
                   <div key={id} className="flex items-center gap-4 bg-ink-10 rounded-l px-4 py-3.5">

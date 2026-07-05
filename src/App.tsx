@@ -28,6 +28,7 @@ import { useLowBatteryMonitor } from './hooks/useLowBatteryMonitor'
 import { useAuthStore } from './stores/authStore'
 import { usePowerStationStore } from './stores/powerStationStore'
 import { syncWebPushSubscription, refreshNotificationPermission } from './utils/pushNotification'
+import { PUSH_ENABLED } from './config/webPush'
 import { initNativePush } from './utils/nativePush'
 import { Capacitor } from '@capacitor/core'
 import { ToastContainer, useToast } from './components/Toast'
@@ -93,6 +94,8 @@ function AppInner() {
   // 登录后幂等同步 Web Push 订阅（覆盖订阅过期 / 换设备登录；已开启推送才执行）
   useEffect(() => {
     if (!isAuthenticated) return
+    // 推送总开关关闭时完全不接线推送（不申请权限、不初始化 APNs/FCM）
+    if (!PUSH_ENABLED) return
     // 原生平台先刷新通知权限缓存（getNotificationPermission 同步依赖它）
     refreshNotificationPermission()
     const s = usePowerStationStore.getState().settings

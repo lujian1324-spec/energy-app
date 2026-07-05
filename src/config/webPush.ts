@@ -12,6 +12,14 @@
  * 依赖前台/后台存活时的 useLowBatteryMonitor。
  */
 
+/**
+ * 推送功能总开关。默认关闭：APNs 授权文件 / FCM google-services.json / 后端
+ * token 注册与下发尚未就绪，此时推送无法真正送达。关闭时隐藏所有推送开关，
+ * 且启动与权限引导都不申请通知权限（避免"申请了却不能用"被商店拒审）。
+ * 后端与原生推送凭据就绪后，构建时设 VITE_PUSH_ENABLED=true 打开完整链路。
+ */
+export const PUSH_ENABLED: boolean = import.meta.env.VITE_PUSH_ENABLED === 'true'
+
 /** VAPID 公钥（base64url）。由后端提供，部署时通过环境变量注入。 */
 export const VAPID_PUBLIC_KEY: string = import.meta.env.VITE_VAPID_PUBLIC_KEY ?? ''
 

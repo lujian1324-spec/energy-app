@@ -29,6 +29,7 @@ import ProfileEditPage from './ProfileEditPage'
 import ToggleSwitch from '../components/ToggleSwitch'
 import type { UserProfile } from '../types/protocol'
 import { requestNotificationPermission, getNotificationPermission, enableWebPush, disableWebPush } from '../utils/pushNotification'
+import { PUSH_ENABLED } from '../config/webPush'
 import { initNativePush, teardownNativePush } from '../utils/nativePush'
 import { Capacitor } from '@capacitor/core'
 
@@ -204,7 +205,8 @@ export default function SettingPage() {
           )}
         </motion.div>
 
-        {/* Push Notifications */}
+        {/* Push Notifications — hidden until push backend/credentials are ready (PUSH_ENABLED) */}
+        {PUSH_ENABLED && (<>
         <h3 className="text-title-md font-semibold text-ink-1 mb-3">Push Notifications</h3>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
           className="space-y-3 mb-6">
@@ -333,6 +335,7 @@ export default function SettingPage() {
             />
           </div>
         </motion.div>
+        </>)}
 
         {/* Support */}
         <h3 className="text-title-md font-semibold text-ink-1 mb-3">Support</h3>
