@@ -28,8 +28,23 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install chromium --with-deps
 
-      - name: Run E2E tests
-        run: npx playwright test --project="Mobile Chrome (iPhone 16)" --reporter=list,html
+      # Build and serve THIS commit's code, then test it — not the live
+      # production site. baseURL is overridden via E2E_BASE_URL.
+      - name: Build web app
+        run: npm run build
+
+      - name: Serve build
+        run: |
+          npx vite preview --port 4173 &
+          npx wait-on http://localhost:4173 --timeout 60000
+
+      - name: Run E2E tests against the built app
+        env:
+          E2E_BASE_URL: http://localhost:4173
+        # Exclude the real-account group: it needs live backend credentials that
+        # must NOT live in the repo. Run those only in a protected manual
+        # workflow with secrets, never on PRs.
+        run: npx playwright test --project="Mobile Chrome (iPhone 16)" --grep-invert "jason1324" --reporter=list,html
 
       - name: Upload test report
         uses: actions/upload-artifact@v4

@@ -1,9 +1,33 @@
 # Sierro Energy App — 发布审查与开发规划
 
 > 目标：将 App 发布到 **Apple App Store** 与 **Google Play**。
-> 基线版本：v3.30.0。本文档由多维度审查（商店合规 / 架构 / 安全 / 原生就绪 / 测试 / 产品 UX）汇总，
-> 已核实的结论标注 ✅（已读代码确认），需人工确认的标注 ⚠️。
-> 使用方式：按 P0 → P3 阶段推进；每项含"问题 / 影响 / 建议 / 工作量"。
+> 本文档由**七维度审查**（商店合规 / 架构 / 安全 / 原生就绪 / 测试与发布工程 / 产品 UX / 正确性 bug）汇总，
+> 高严重度结论经读码核实。已修复项标注 **✅DONE(版本号)**，待办标注 P 级别。
+> 使用方式：按 P0 → P3 / M1 → M6 推进；每项含"问题 / 影响 / 建议 / 工作量"。
+
+## 进度快照（截至 v3.31.x）
+
+| 已完成 ✅ | 版本 |
+|---|---|
+| P0-1 删除公开泄露的 api-test.html / test_api.py | v3.30.1 |
+| P0-2 删除账号真正调用 API | v3.31.0 |
+| P0-5 iOS 相册用途声明 | v3.31.0 |
+| P1-5 发布版隐藏 Modbus/Debug/BLE 调试页与入口 | v3.31.0 |
+| P1-6 ITSAppUsesNonExemptEncryption + PrivacyInfo.xcprivacy | v3.31.0 / v3.31.x |
+| P1-1 移除虚假分析声明与空开关（隐私一致） | v3.31.x |
+| P1-4 Android versionName 由 version.json 注入、versionCode 由 CI 传入 | v3.31.x |
+| 安全：allowBackup=false + data_extraction_rules（token 不可 adb 导出） | v3.31.x |
+| BUG R1 回归：速报模式离线设备显示 Connected+冻结读数 → 修正在线判定 | v3.31.x |
+| BUG R1 回归：速报会话可能被遗留高频上报 → 修正 ref 时序 | v3.31.x |
+| 质量：CI e2e 改测 PR 自身构建（不再测线上）；真实账号凭据移入 env | v3.31.x |
+
+| 仍待办（需产品决策/外部依赖） | 级别 |
+|---|---|
+| P0-3 品牌图标/启动图（需设计出图） | 阻断 |
+| P0-4 推送首发实现 or 裁剪（需后端 + APNs/FCM 账号） | 阻断 |
+| M4 Android release 签名 + AAB / iOS TestFlight（需证书/keystore） | 阻断 |
+| P2 双 store 退役、API 归一化、实时链路收口 | 债 |
+| P3 单元测试(Vitest)、崩溃监控(Sentry)、代码分割 | 护栏 |
 
 ---
 
@@ -94,7 +118,33 @@
 - **问题**：`Info.plist` 未设 `ITSAppUsesNonExemptEncryption`;iOS 无 `PrivacyInfo.xcprivacy`。
 - **影响**：每次上传都被追问出口合规;2024 起 Apple 要求隐私清单声明 API 使用原因(UserDefaults 等)。
 - **建议**：App 仅用标准 HTTPS/MD5 → `ITSAppUsesNonExemptEncryption=false`;添加 `PrivacyInfo.xcprivacy` 声明 UserDefaults/文件时间戳等 required-reason API。
+- **工作量**：0.5 天。 **✅DONE v3.31.x**(iOS 已加 `PrivacyInfo.xcprivacy`,但需在 Xcode 里把该文件加入 App target 的 Copy Bundle Resources——pbxproj 手改易错,留待 Xcode 打开时确认)。
+
+---
+
+## P1.5 — 七维度审查补充发现（UX / 原生,发布前应处理）
+
+### U-1 🟠 Insights 在历史接口出错时，向真实用户静默展示伪造的 Demo 能源/CO₂ 数据
+- **问题**：`StatsPage.tsx:481` `useDemo = !!historyError && !historyLoading`,出错即回退 `getDemoChartFrame`。真实登录用户历史 API 失败时,页面渲染合成功率曲线,CO₂ 卡片基于伪造数据算环保收益,**无"模拟数据"横幅、无错误+重试**。
+- **影响**：错误被伪装成看似真实的数字——数据可信红线;缺 error+retry 状态。
+- **建议**：真实用户(`!isDemoMode`)出错时显示 error + retry,不回退 demo 数据;demo 数据仅游客模式用。
 - **工作量**：0.5 天。
+
+### U-2 🟡 `text-ink-7`(#595959)正文对比度不达 WCAG AA
+- **问题**：#595959 在 ink-12 背景约 2.6:1、卡片 ink-10 约 2.2:1,低于 AA 4.5:1(正文)/3:1(大字)。用于 Notifications/SmartSchedule/Login/Stats/Terms 的真实内容文本。
+- **影响**：可访问性;部分地区商店/企业采购有硬性要求。
+- **建议**：正文文本从 `ink-7` 提到 `ink-6`(#8C8C8C,约 3.5:1)或更亮;`ink-7` 仅用于超大字或装饰。
+- **工作量**：0.5-1 天(逐页核对)。
+
+### U-3 🟡 DataExport 回收站是硬编码的空壳
+- **问题**：Recycle Bin 为非功能占位 UI。
+- **建议**：实现 30 天软删除回收站,或在发布版隐藏该区块。
+- **工作量**：实现 1-2 天 / 隐藏 0.5 小时。
+
+### N-1 🟡 targetSdk 36 强制 edge-to-edge 与 `setOverlaysWebView({overlay:false})` 冲突
+- **问题**：Android 15+(SDK 35+)强制全面屏沉浸,`overlay:false` 与 App 自有 safe-area 处理可能叠加出错(状态栏区域重复留白或被内容顶穿)。
+- **建议**：真机(Android 15)验证状态栏/导航栏留白;必要时改用 edge-to-edge + WebView 内 safe-area padding 统一方案。
+- **工作量**：0.5-1 天。
 
 ---
 

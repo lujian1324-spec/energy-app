@@ -33,7 +33,7 @@ export default function PrivacyPage() {
         {
           title: '1.2 Device & Usage Data',
           content:
-            'We collect data from connected Sierro devices: battery level, charging/discharging status, power input/output (W), temperature, cycle count, and operational mode. We also collect app usage analytics: feature usage, session duration, crash reports, and performance metrics.',
+            'We collect data from connected Sierro devices: battery level, charging/discharging status, power input/output (W), temperature, cycle count, and operational mode. This data is used to render the app and is stored locally on your device and on the Solar of Things platform your account is registered with. The App does not embed any third-party analytics or advertising SDKs.',
         },
         {
           title: '1.3 Location Data',
@@ -65,9 +65,9 @@ export default function PrivacyPage() {
             'To authenticate your account, connect and control your Sierro devices, display real-time power data, and provide smart scheduling features.',
         },
         {
-          title: '3.2 Improvement & Analytics',
+          title: '3.2 Feedback & Support',
           content:
-            'To analyze usage patterns, identify bugs, and improve the App experience. Aggregated and anonymized data may be used for product development.',
+            'When you submit feedback in the App, the message and your email address are sent through our email provider so we can respond. We do not perform automated behavioral analytics or track usage across sessions.',
         },
         {
           title: '3.3 Communication',

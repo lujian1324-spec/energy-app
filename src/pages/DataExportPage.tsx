@@ -12,11 +12,11 @@ import {
   Check,
   Info,
 } from 'lucide-react'
-import ToggleSwitch from '../components/ToggleSwitch'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useAuthStore } from '../stores/authStore'
 import { useDeviceStore } from '../stores/deviceStore'
 import { toast } from '../components/Toast'
+import appVersion from '../version.json'
 
 /**
  * PRD v1.1 §8.3: Data Sovereignty - 数据主权页
@@ -26,12 +26,11 @@ import { toast } from '../components/Toast'
  */
 export default function DataExportPage() {
   const navigate = useNavigate()
-  const { settings, updateSettings } = usePowerStationStore()
+  const { settings } = usePowerStationStore()
   const { user } = useAuthStore()
   const { devices, historyData, alarms } = useDeviceStore()
 
   const [exportLoading, setExportLoading] = useState<'json' | 'csv' | null>(null)
-  const [privacyAck, setPrivacyAck] = useState(settings.privacyAcknowledged ?? false)
 
   // 导出为 JSON
   const handleExportJson = async () => {
@@ -39,7 +38,7 @@ export default function DataExportPage() {
     try {
       const payload = {
         exportedAt: new Date().toISOString(),
-        appVersion: '1.1.0',
+        appVersion: appVersion.version,
         user: user ? { account: user.account, userId: user.userId } : null,
         devices: devices.map(d => ({
           id: d.id,
@@ -211,38 +210,6 @@ export default function DataExportPage() {
                 Empty
               </span>
             </div>
-          </div>
-        </motion.div>
-
-        {/* Privacy preferences */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="bg-ink-10 rounded-[20px] overflow-hidden mb-4"
-        >
-          <div className="px-4 py-3 border-b border-[rgba(255,255,255,0.06)]">
-            <span className="text-caption font-bold text-ink-6 tracking-widest uppercase">
-              Privacy Preferences
-            </span>
-          </div>
-          <div className="flex items-center gap-3 px-4 py-3.5">
-            <div className="w-9 h-9 rounded-l bg-[rgba(52,199,89,0.1)] flex items-center justify-center flex-shrink-0">
-              <Check size={16} className="text-success" />
-            </div>
-            <div className="flex-1">
-              <div className="text-[13px] font-semibold text-ink-1">Anonymous Analytics</div>
-              <div className="text-caption text-ink-6 mt-0.5">Help improve Sierro (no personal data)</div>
-            </div>
-            <ToggleSwitch
-              isOn={privacyAck}
-              onToggle={() => {
-                const next = !privacyAck
-                setPrivacyAck(next)
-                updateSettings({ privacyAcknowledged: next })
-              }}
-              size="sm"
-            />
           </div>
         </motion.div>
 

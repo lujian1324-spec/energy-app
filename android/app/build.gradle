@@ -1,5 +1,13 @@
 apply plugin: 'com.android.application'
 
+import groovy.json.JsonSlurper
+
+// versionName 取自 src/version.json（单一版本来源）；
+// versionCode 由 CI 传入（-PversionCode=<run number>）以保证 Play 每次上传递增，
+// 本地构建缺省回退到 1。
+def appVersionName = new JsonSlurper().parse(file("$rootDir/../src/version.json")).version
+def appVersionCode = (project.hasProperty('versionCode') ? project.versionCode.toInteger() : 1)
+
 android {
     namespace = "com.sierro.energyapp"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,8 +15,8 @@ android {
         applicationId "com.sierro.energyapp"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode appVersionCode
+        versionName appVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

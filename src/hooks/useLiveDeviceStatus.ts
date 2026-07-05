@@ -125,10 +125,13 @@ export function useLiveDeviceStatus(deviceId: string | null, enabled = true): Li
       try {
         const sup = await checkFastReportSupported(deviceId)
         if (!cancelled && isApiSuccess(sup.code) && parseSupported(sup.data)) {
+          // 关键：在 await startFastReport 之前就置位，这样即使卸载发生在启动往返途中，
+          // cleanup 也会调用 stopFastReport，不会把设备遗留在高频上报状态。
+          fastActiveRef.current = true
           await startFastReport(deviceId, getClientId())
-          if (!cancelled) { mode = 'fastReport'; fastActiveRef.current = true }
+          if (!cancelled) mode = 'fastReport'
         }
-      } catch { /* 探测失败 → 保持透传 */ }
+      } catch { /* 探测/启动失败 → 保持透传（stopFastReport 幂等，多停无害）*/ }
       if (cancelled) return
       tick()
       iv = setInterval(tick, POLL_MS)

@@ -218,7 +218,7 @@ export default function OverviewPage() {
   }, [selectedDeviceState])
 
   // ─── 实时状态：速报模式优先（云端 5s 拉取），透传轮询回退，退出页面即停 ───
-  const { live: livePt } = useLiveDeviceStatus(selectedDeviceId)
+  const { live: livePt, source: liveSource } = useLiveDeviceStatus(selectedDeviceId)
 
   // ─── 计算显示值：优先透传实时值 livePt，回退到云端 selectedDeviceState ───
   const remainingBatteryCapacity = livePt?.soc ?? realtime?.remainingBatteryCapacity ?? 0
@@ -252,8 +252,13 @@ export default function OverviewPage() {
   const workMode = realtime?.workMode ?? 0
   const isCharging = batteryPower > 0
   const deviceName = selectedDeviceDetails?.name ?? currentDeviceListItem?.name ?? 'Device'
-  // 收到透传实时数据即视为在线（透传能通说明设备可达），否则用云端 isOnline
-  const isOnline = (selectedDeviceDetails?.isOnline ?? false) || livePt != null
+  // 在线判定：只有"透传"往返成功才证明设备可达（能通说明在线）。
+  // 速报模式的 livePt 来自云端 /state/latest，设备离线后仍会返回最后一帧旧数据，
+  // 不能据此判在线——那样会把断网设备显示成 Connected 且冻结旧读数。此时以云端
+  // isOnline 权威标志为准（30s 轮询刷新），离线则显示 Disconnected 与 "-"。
+  const isOnline =
+    (selectedDeviceDetails?.isOnline ?? false) ||
+    (liveSource === 'passthrough' && livePt != null)
 
   // ─── CountUp 动画：功率数值平滑过渡 ───
   const animatedAcPower = useCountUp(isOnline ? acPower : 0)

@@ -4,7 +4,7 @@
  * Target: https://lujian1324-spec.github.io/energy-app
  * Accounts:
  *   Guest mode  (demo data, no login required)
- *   jason1324 / jjww1324-LJ  (real API account)
+ *   Real-account creds come from E2E_USER / E2E_PASS env vars (never committed).
  *
  * Run: PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers npx playwright test --reporter=list
  */
@@ -274,16 +274,21 @@ test.describe('[Guest] Device Dashboard', () => {
   })
 })
 
-// ─── jason1324 Real Account Tests ───────────────────────────────────────────
+// ─── Real Account Tests ─────────────────────────────────────────────────────
+// Credentials come from env (E2E_USER / E2E_PASS); the whole group is skipped
+// when they are absent, so no real password ever lives in the repo or runs on PRs.
+const E2E_USER = process.env.E2E_USER
+const E2E_PASS = process.env.E2E_PASS
+const realAccount = test.describe[(E2E_USER && E2E_PASS) ? 'serial' : 'skip']
 
-test.describe('[jason1324] Login & Navigation', () => {
+realAccount('[jason1324] Login & Navigation', () => {
   test('can log in with real account', async ({ page }) => {
-    await loginReal(page, 'jason1324', 'jjww1324-LJ')
+    await loginReal(page, E2E_USER!, E2E_PASS!)
     await expect(page).toHaveURL(/\/(devices|device)/, { timeout: 5000 })
   })
 
   test('devices page loads after real login', async ({ page }) => {
-    await loginReal(page, 'jason1324', 'jjww1324-LJ')
+    await loginReal(page, E2E_USER!, E2E_PASS!)
     await page.goto(`${BASE}/#/devices`)
     await wait(page, 4000)
     await expect(page.locator('h1', { hasText: /^Device$/ })).toBeVisible({ timeout: 8000 })
@@ -293,21 +298,21 @@ test.describe('[jason1324] Login & Navigation', () => {
   })
 
   test('insights page loads after real login', async ({ page }) => {
-    await loginReal(page, 'jason1324', 'jjww1324-LJ')
+    await loginReal(page, E2E_USER!, E2E_PASS!)
     await page.goto(`${BASE}/#/insights`)
     await wait(page, 4000)
     await expect(page.locator('body')).not.toBeEmpty()
   })
 
   test('settings page loads and shows manage account', async ({ page }) => {
-    await loginReal(page, 'jason1324', 'jjww1324-LJ')
+    await loginReal(page, E2E_USER!, E2E_PASS!)
     await page.goto(`${BASE}/#/setting`)
     await wait(page, 2000)
     await expect(page.locator('text=Manage my account')).toBeVisible({ timeout: 5000 })
   })
 
   test('can log out', async ({ page }) => {
-    await loginReal(page, 'jason1324', 'jjww1324-LJ')
+    await loginReal(page, E2E_USER!, E2E_PASS!)
     await logout(page)
     await expect(page).toHaveURL(/login/, { timeout: 10000 })
   })
