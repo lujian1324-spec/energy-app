@@ -1,0 +1,98 @@
+name: Android Release AAB
+
+# Builds a Play-submittable, signed Android App Bundle (.aab).
+# Manual trigger, or push a tag like v3.34.0.
+#
+# Required GitHub repo Secrets (Settings → Secrets and variables → Actions):
+#   ANDROID_KEYSTORE_BASE64   - the upload keystore (.jks) base64-encoded:
+#                               base64 -w0 upload-keystore.jks | pbcopy
+#   ANDROID_KEYSTORE_PASSWORD - keystore (store) password
+#   ANDROID_KEY_ALIAS         - key alias inside the keystore
+#   ANDROID_KEY_PASSWORD      - key password for that alias
+# Without these, the job builds an UNSIGNED bundle (not submittable) and says so.
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Read app version
+        id: ver
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Decode release keystore
+        id: keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Release keystore decoded — building a SIGNED bundle."
+          else
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::ANDROID_KEYSTORE_BASE64 secret is not set — building an UNSIGNED bundle (not Play-submittable). Add the signing secrets to produce a release AAB."
+          fi
+
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      # versionCode uses the run number so every Play upload increments.
+      - name: Build release AAB
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ steps.keystore.outputs.signed == 'true' && format('{0}/release.jks', runner.temp) || '' }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew bundleRelease --no-daemon -PversionCode=${{ github.run_number }}
+
+      - name: Locate AAB
+        id: aab
+        run: |
+          path=$(find android/app/build/outputs/bundle -name '*.aab' | head -1)
+          echo "path=$path" >> "$GITHUB_OUTPUT"
+          cp "$path" "sierro-energy-v${{ steps.ver.outputs.version }}.aab"
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sierro-energy-v${{ steps.ver.outputs.version }}-aab${{ steps.keystore.outputs.signed == 'true' && '-signed' || '-unsigned' }}
+          path: sierro-energy-v${{ steps.ver.outputs.version }}.aab
+          retention-days: 30

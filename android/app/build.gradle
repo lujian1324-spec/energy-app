@@ -8,6 +8,11 @@ import groovy.json.JsonSlurper
 def appVersionName = new JsonSlurper().parse(file("$rootDir/../src/version.json")).version
 def appVersionCode = (project.hasProperty('versionCode') ? project.versionCode.toInteger() : 1)
 
+// Release 签名凭据来自环境变量（CI 从 GitHub Secrets 注入），keystore 本身不入库。
+// 未配置时 signingConfig 为 null，release 构建保持未签名（本地/CI 冒烟不受影响）。
+def releaseStoreFile = System.getenv("ANDROID_KEYSTORE_PATH")
+def hasReleaseSigning = releaseStoreFile != null && !releaseStoreFile.isEmpty() && file(releaseStoreFile).exists()
+
 android {
     namespace = "com.sierro.energyapp"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -24,10 +29,23 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        if (hasReleaseSigning) {
+            release {
+                storeFile file(releaseStoreFile)
+                storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword System.getenv("ANDROID_KEY_PASSWORD")
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }

@@ -50,3 +50,11 @@ test_api.py
 .claude/
 test-results/
 playwright-report/
+
+# Signing material — never commit keystores / certs / provisioning profiles
+*.jks
+*.keystore
+*.p12
+*.mobileprovision
+*.cer
+key.properties
