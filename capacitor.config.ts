@@ -20,6 +20,13 @@ const config: CapacitorConfig = {
     scrollEnabled: true,
   },
   plugins: {
+    // 原生平台把 fetch/XHR 路由到原生 HTTP，绕过 WebView 的 CORS 限制，
+    // 并让 apiClient 设置的 Origin/Referer 等头真正发出（WebView fetch 会丢弃
+    // 这些禁止头，导致后端按 https://localhost 判跨域而拒绝 → 登录超时）。
+    // Web 端为 no-op，行为不变。
+    CapacitorHttp: {
+      enabled: true,
+    },
     Keyboard: {
       resize: KeyboardResize.Body,
     },
