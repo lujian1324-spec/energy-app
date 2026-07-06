@@ -241,8 +241,19 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
         }, 10000)
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Scan failed'
-        store.setErrorMessage(msg); store.addLog(`Scan failed: ${err}`); toast.error(msg)
+        store.addLog(`Scan failed: ${err}`)
         store.setIsOperating(false)
+        // 按错误类型路由到可操作的引导屏（Android 一旦拒绝权限就不再弹窗，
+        // 只能去系统设置里开；蓝牙关则提示打开蓝牙）。
+        const low = msg.toLowerCase()
+        if (low.includes('permission') || low.includes('denied')) {
+          setBleStatus('no_permission')
+        } else if (low.includes('not available') || low.includes('not enabled') ||
+                   low.includes('disabled') || low.includes('bluetooth is off') || low.includes('adapter')) {
+          setBleStatus('bt_off')
+        } else {
+          store.setErrorMessage(msg); toast.error(msg)
+        }
       }
       return
     }
@@ -556,20 +567,28 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
             </div>
             <h2 className="text-headline-md font-bold text-white mb-3">Permission Required</h2>
             <p className="text-body-md text-ink-6 mb-8">
-              Bluetooth and Local Network access are required to connect your Sierro device. Please enable them in Settings.
+              Sierro needs the <span className="text-white font-semibold">Nearby devices</span> (Bluetooth)
+              permission to find your device. Open Settings → Permissions → Nearby devices and allow it,
+              then come back and try again.
             </p>
           </div>
-          <div className="px-6 pb-10 safe-area-bottom">
+          <div className="px-6 pb-10 safe-area-bottom space-y-3">
             <button
               onClick={async () => {
                 const ok = await openAppSettings()
                 if (!ok) {
-                  toast.info('Please open your device Settings and enable Bluetooth & Location for Sierro.')
+                  toast.info('Open Settings → Apps → Sierro → Permissions → Nearby devices, and allow it.')
                 }
               }}
               className="w-full h-14 rounded-full bg-primary text-black text-body-lg font-semibold active:scale-[0.98] transition-transform"
             >
               Open Settings
+            </button>
+            <button
+              onClick={() => { setBleStatus('ready'); store.setErrorMessage(null); handleScan() }}
+              className="w-full h-14 rounded-full bg-ink-10 text-white text-body-lg font-semibold active:scale-[0.98] transition-transform"
+            >
+              I've Allowed It — Try Again
             </button>
           </div>
         </div>
