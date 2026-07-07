@@ -9,8 +9,10 @@
  * - Inside the window  → "sleep" power (150W Sierro 1000, 300W Sierro 2000)
  * - Outside the window → "wake"  power (400W Sierro 1000, 800W Sierro 2000)
  *
- * A command is only sent when the desired phase differs from the last applied
- * phase (edge detection), so it doesn't spam every tick. The applied phase is
+ * The power is applied immediately whenever Sleep Mode is toggled or the
+ * sleepFrom/sleepTo window is edited (not only at the exact boundary minute),
+ * and again at each window boundary (edge-detected so it doesn't spam every
+ * tick). Turning Sleep Mode off restores the wake power. The applied phase is
  * persisted, and the scheduler re-checks on mount and whenever the app becomes
  * visible again — so a transition that happened while the app was suspended is
  * caught up the moment it resumes, rather than missed.
@@ -48,7 +50,7 @@ export interface UseSleepModeSchedulerReturn {
 
 // ─── Helper: model → power values ────────────────────────────────────────────
 
-function getPowers(model: string): { sleepW: number; wakeW: number } {
+export function getPowers(model: string): { sleepW: number; wakeW: number } {
   if (model.includes('2000')) return { sleepW: 300, wakeW: 800 }
   return { sleepW: 150, wakeW: 400 }  // default = Sierro 1000
 }
@@ -211,6 +213,35 @@ export function useSleepModeScheduler(
   useEffect(() => {
     lastPhaseRef.current = deviceId ? loadPhase(deviceId) : null
   }, [deviceId])
+
+  // ── Apply immediately on enable / settings change (not just at time edges) ──
+  //   切 Sleep Mode 开或改 sleepFrom/sleepTo 时，立刻按当前相位强制下发 0x85：
+  //   sleep 相位 → sleepW（1000:150 / 2000:300），wake 相位 → wakeW（400 / 800）。
+  //   关闭时恢复到 wake（正常充电功率）。此前只在时间边界"边沿"发送，导致切换开关
+  //   看不到任何写入。
+  const prevEnabledRef = useRef<boolean>(false)
+  useEffect(() => {
+    const { enabled: en, sleepFrom: sf, sleepTo: st, model: mdl, deviceId: did } = paramsRef.current
+    if (!did) { prevEnabledRef.current = en; return }
+    const { sleepW: sw, wakeW: ww } = getPowers(mdl)
+    const wasEnabled = prevEnabledRef.current
+    prevEnabledRef.current = en
+
+    if (en) {
+      // 开启 / 编辑时段 → 立即应用当前相位对应的充电功率
+      const phase = currentPhase(sf, st)
+      if (phase === 'sleep') sendPower(sw, `Sleep (${sw}W)`)
+      else sendPower(ww, `Wake (${ww}W)`)
+      lastPhaseRef.current = phase
+      savePhase(did, phase)
+    } else if (wasEnabled) {
+      // 由开→关 → 恢复正常（wake）充电功率
+      sendPower(ww, `Wake (${ww}W)`)
+      lastPhaseRef.current = 'wake'
+      savePhase(did, 'wake')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, sleepFrom, sleepTo, model, deviceId])
 
   // ── Enforce the desired phase; only sends on phase change (edge) ──────────
 
