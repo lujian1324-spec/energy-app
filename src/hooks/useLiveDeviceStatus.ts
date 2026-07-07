@@ -45,7 +45,7 @@ function getClientId(): string {
 }
 
 /** supported 接口的 data 形态未文档化，宽松判定：true / 'true' / {supported:true} / {isSupported:true} */
-function parseSupported(data: unknown): boolean {
+export function parseSupported(data: unknown): boolean {
   if (data === true || data === 'true' || data === 1 || data === '1') return true
   if (data && typeof data === 'object') {
     const o = data as Record<string, unknown>
