@@ -10,6 +10,44 @@ devices. Routing via React Router (HashRouter), state via Zustand, API layer in
 
 ---
 
+## Deployment & Release (CI/CD)
+
+Also packaged as native Android/iOS via **Capacitor 8** (`android/` + `ios/` both
+committed). CapacitorHttp enabled (routes native fetch through native HTTP,
+bypasses WebView CORS — this is what fixed native login timeout).
+
+### Git remotes
+- **`gh`** → `github.com/lujian1324-spec/energy-app` (PAT) — **the working remote; push here.**
+- `origin` → local proxy (`127.0.0.1`) — **blocked (403), do not use.**
+- `sierro` → `github.com/lujian1324-spec/sierroApp` (separate repo).
+- Feature branch: `claude/modest-einstein-gqs1rk`. Push there; merge to `main` to deploy.
+- Known-benign: 4 web-UI commits by `noreply@github.com` (fad9a5f/160aa04/d61a17c/3a8a49e)
+  show as "Unverified" — **never amend/rebase them.**
+
+### GitHub Actions workflows (`.github/workflows/`)
+| Workflow | Trigger | Output | Node/Runner |
+|---|---|---|---|
+| `deploy.yml` | push `main` | GitHub Pages (`gh-pages`), `VITE_BASE_PATH=/energy-app/` | node 22 / ubuntu |
+| `android.yml` | push `main` | **debug APK** artifact `sierro-energy-v{ver}-apk` + attached to Release | node 22 / ubuntu |
+| `android-release.yml` | `workflow_dispatch` or tag `v*` | **signed AAB** for Play (`versionCode`=run number) | node 22 / ubuntu |
+| `ios.yml` | push `main` | unsigned simulator build (`continue-on-error`, needs Mac to fully fix) | macos-14 |
+| `e2e.yml` | — | Playwright e2e | ubuntu |
+
+### Android signing (release AAB)
+- `android/app/build.gradle`: `versionName` from `src/version.json` (JsonSlurper),
+  `versionCode` from `-PversionCode`, release `signingConfig` env-driven.
+- Required repo **Secrets**: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`,
+  `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Without them the job builds an
+  **unsigned** (non-submittable) bundle and labels the artifact `-unsigned`.
+- Upload keystore + password held by the user (not in repo). Play submission
+  fields/steps: `docs/PLAY_SUBMISSION.md`; signing steps: `docs/RELEASE_SIGNING.md`;
+  release audit/plan: `docs/RELEASE_PLAN.md`. Store assets in `play-assets/`.
+
+### Native build (local)
+`npm run build && npx cap sync android` (or `ios`), then build via Gradle/Xcode.
+
+---
+
 ## Design System (LOCKED — Figma Handoff)
 
 These tokens come from the official Figma Design System. **Do not change them
