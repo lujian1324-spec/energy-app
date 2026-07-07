@@ -42,7 +42,7 @@ Weights: `regular` (400) and `emphasized` (600 / `font-semibold`).
 - **Yellow / Membership (Founder Badge)** `#FFD700` — `*-membership`
 - **Green / Success** `#34C759` — `*-success`
 - **Orange / Warning / Discharge** `#FF9500` — `*-warning`
-- **Red / Error** `#FF3530` — `*-danger`
+- **Red / Error** `#FF3B30` — `*-danger`
 - **Neutral (black-1…13)** `#FFFFFF, #FCFCFC, #F5F5F5, #F0F0F0, #D9D9D9, #BFBFBF, #8C8C8C, #595959, #454545, #262626, #1F1F1F, #141414, #000000` — `*-ink-{1..13}`
   - App background = `ink-12` `#141414`; card background = `ink-10` `#262626`.
 
@@ -104,10 +104,16 @@ Test-only / CI-only changes that don't alter the shipped bundle do NOT bump.
 | `/notifications` | `NotificationsPage` | no | Alarm center |
 | `/onboarding` `/ble-debug` `/data-export` | `OnboardingPage` `BleDebugPage` `DataExportPage` | no | |
 
+`/device/:id/passthrough`, `/device/:id/debug-params`, and `/ble-debug` are gated by
+`DEV_TOOLS_ENABLED` (`src/config/devTools.ts`) — only registered in Vite dev mode or when
+`VITE_ENABLE_DEV_TOOLS=true` is set at build time; absent entirely from consumer release builds.
+
 Also present but not routed standalone: `ProvisioningPage` (inside DevicePage add-flow).
-- Back navigation on secondary device pages must go to `/devices` via `navigate('/devices',{replace:true})`
-  (plus popstate interceptor) — never `navigate(-1)` — to avoid history flicker. (Horizontal
-  swipe-to-back was removed to prevent accidental navigation.)
+- Back navigation on `OverviewPage` and `DeviceMonitorPage` must go to `/devices` via
+  `navigate('/devices',{replace:true})` (plus popstate interceptor) — never `navigate(-1)` — to
+  avoid history flicker. (Horizontal swipe-to-back was removed to prevent accidental navigation.)
+  Other secondary pages (`DeviceDetailPage`, `PassthroughPage`, `DebugParamsPage`,
+  `SmartSchedulePage`, `NotificationsPage`, `DataExportPage`, `BleDebugPage`) use plain `navigate(-1)`.
 - All non-auth routes share ONE `AnimatePresence`/`Routes` in `App.tsx` (with `initial={false}`).
 
 ### Cards & parameters per page (user-facing label → source field)
@@ -145,6 +151,8 @@ Use the label canon below; same metric = same label everywhere except DebugParam
 **SettingPage** (`/setting`)
 - *Profile card*: avatar, name, account action, founder badge.
 - *Push Notifications*: Power Outage (`pushNotifications`), Low Battery (`pushLowBattery`)+threshold slider (`lowBatteryThreshold`), Solar Status (`pushSolarStatus`). Toggles drive Web Push enable/disable.
+  Whole section is gated by `PUSH_ENABLED` (`src/config/webPush.ts`), currently `false` by default
+  (backend/APNs/FCM credentials not ready — see `version.json` changelog) and hidden in production.
 - *Feedback modal* (EmailJS), *Founder badge modal*, *data export*, legal links + version.
 
 **SmartSchedulePage** (`/smart-schedule`)

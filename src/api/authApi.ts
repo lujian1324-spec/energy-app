@@ -21,7 +21,7 @@
  */
 
 import CryptoJS from 'crypto-js'
-import { api, tokenStore, ApiResponse } from '../utils/apiClient'
+import { api, tokenStore, isApiSuccess, ApiResponse } from '../utils/apiClient'
 
 // ═══════════════════════════════════════════════════════
 // 类型定义
@@ -157,7 +157,7 @@ export async function loginByAccount(
   const result = await api.postSkipAuth<LoginData>('/login/account', payload)
 
   // 仅在业务成功时保存 token
-  if ((result.code === 0 || result.code === '0') && result.data) {
+  if (isApiSuccess(result.code) && result.data) {
     const accessToken = result.data.accessToken
     if (accessToken) tokenStore.set(accessToken)
     const refreshToken = result.data.refreshToken
@@ -178,7 +178,7 @@ export async function loginByEmail(
     captchaId: iotCaptchaId,
     verifyCode,
   })
-  if ((result.code === 0 || result.code === '0') && result.data) {
+  if (isApiSuccess(result.code) && result.data) {
     const accessToken = result.data.accessToken
     if (accessToken) tokenStore.set(accessToken)
     const refreshToken = result.data.refreshToken
@@ -201,7 +201,7 @@ export async function loginBySms(
     captchaId: iotCaptchaId,
     verifyCode,
   })
-  if ((result.code === 0 || result.code === '0') && result.data) {
+  if (isApiSuccess(result.code) && result.data) {
     const accessToken = result.data.accessToken
     if (accessToken) tokenStore.set(accessToken)
     const refreshToken = result.data.refreshToken
@@ -440,7 +440,7 @@ export function isLoggedIn(): boolean {
 export async function verifySession(): Promise<boolean> {
   try {
     const result = await fetchUserInfo()
-    return result.code === 0 || result.code === '0'
+    return isApiSuccess(result.code)
   } catch {
     return false
   }
