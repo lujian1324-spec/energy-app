@@ -232,8 +232,14 @@ export default function DeviceMonitorPage() {
 
   // 拦截浏览器/系统返回手势 → 回到 Device 列表页
   useEffect(() => {
-    window.history.pushState(null, '', window.location.href)
-    const onPopState = () => backToDevices()
+    const guardedHref = window.location.href
+    window.history.pushState(null, '', guardedHref)
+    // 只有 popstate 触发时地址仍停留在本页，才是真实的返回手势（弹出的是我们
+    // 自己占位的历史项）。若地址已经变了（例如推送通知深链等外部导航触发的
+    // 派生 popstate），说明不是用户返回手势，交给路由正常处理，不要抢先跳转。
+    const onPopState = () => {
+      if (window.location.href === guardedHref) backToDevices()
+    }
     window.addEventListener('popstate', onPopState)
     return () => window.removeEventListener('popstate', onPopState)
   }, [backToDevices])
