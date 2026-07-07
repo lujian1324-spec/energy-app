@@ -163,9 +163,24 @@
 
 ---
 
-## 11. 自动化覆盖现状
-- **e2e**(`tests/e2e.spec.ts`,CI 对每次提交构建后跑):认证/导航/游客/PWA 健康,25 项。
-- **单元测试**(`src/**/*.test.ts`,Vitest,`npm run test:unit`):协议解码/CRC/枚举、电池时间、重试分类、速报支持解析等纯逻辑。
-- **未自动化(必须手测)**:所有 BLE/配网、透传控制、原生权限/返回键/触觉、真实设备实时数据、推送。
+## 11. 自动化覆盖现状(全部可在 CLI 运行)
+- **单元 + 接口契约**(`src/**/*.test.ts`,Vitest,`npm run test:unit`,**60 项**):
+  - 纯逻辑:Modbus CRC/解码/0x0133 枚举、电池时间、isApiSuccess、速报探测。
+  - **全接口契约**(`src/api/api-contract.test.ts`,38 项):mock 传输层,逐个断言
+    77 个 API 函数的端点/payload/字段约定(deviceId String、密码 md5、captchaId、
+    邮箱验证码 `address` 字段、国家码去 `+`、无 userId 规则、透传 hex→base64 等)。
+- **e2e**(`tests/e2e.spec.ts`,Playwright,CI 构建后跑):认证/导航/游客/PWA 健康,25 项。
+- **真实后端冒烟**(`scripts/api-smoke.mjs`,`E2E_USER=x E2E_PASS=y npm run test:api:live`):
+  在**联网机器**上真连后端,走 登录→用户信息→设备列表→设备状态,逐步 PASS/FAIL。
+  (沙箱/CI 出网受限时会 403,属正常;在本地/有网环境运行。)
+- **未自动化(必须真机手测)**:BLE/配网、透传控制、原生权限/返回键/触觉、真实设备实时数据、推送。
+
+### CLI 命令速查
+```
+npm run test:unit                                  # 单元 + 接口契约(mock,秒级)
+E2E_USER=账号 E2E_PASS=密码 npm run test:api:live   # 真连后端冒烟(需联网)
+npm run test:e2e                                   # Playwright e2e(需浏览器)
+npm run typecheck                                  # tsc 类型检查
+```
 
 > 建议节奏:每次改动 → CI e2e + 单测自动跑(拦回归)→ 发版前按本文档手动过一遍 P0/P1(尤其原生真机项)。

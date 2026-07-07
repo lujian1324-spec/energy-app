@@ -12,7 +12,8 @@
     "test:e2e:report": "playwright show-report",
     "typecheck": "tsc --noEmit",
     "test:unit": "vitest run",
-    "test:unit:watch": "vitest"
+    "test:unit:watch": "vitest",
+    "test:api:live": "node scripts/api-smoke.mjs"
   },
   "dependencies": {
     "@capacitor-community/bluetooth-le": "^8.2.0",
