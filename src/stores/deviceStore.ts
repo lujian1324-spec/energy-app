@@ -44,6 +44,7 @@ import {
   type EnergyFlowData,
 } from '../api/deviceApi'
 import type { ApiResponse } from '../utils/apiClient'
+import { isApiSuccess } from '../utils/apiClient'
 import { useAuthStore } from './authStore'
 import { checkAndNotifyPowerOutage } from '../utils/powerOutageNotification'
 import {
@@ -87,6 +88,7 @@ interface DeviceStoreState {
   deviceTotal: number
   devicePage: number
   deviceLoading: boolean
+  deviceError: string | null
 
   // 当前选中设备
   selectedDeviceId: string | null
@@ -171,6 +173,7 @@ export const useDeviceStore = create<DeviceStoreState>()(
       deviceTotal: 0,
       devicePage: 1,
       deviceLoading: false,
+      deviceError: null,
 
       selectedDeviceId: null,
       selectedDeviceDetails: null,
@@ -209,24 +212,25 @@ export const useDeviceStore = create<DeviceStoreState>()(
           return
         }
 
-        set({ deviceLoading: true })
+        set({ deviceLoading: true, deviceError: null })
         try {
           const result = await fetchDeviceList(page, count, filters)
-          if ((result.code === 0 || result.code === '0') && result.data) {
+          if (isApiSuccess(result.code) && result.data) {
             const list = result.data.list ?? []
             set({
               devices: list,
               deviceTotal: result.data.total ?? 0,
               devicePage: page,
               deviceLoading: false,
+              deviceError: null,
             })
             // Fire-and-forget: fetch rated params for each device via passthrough
             list.forEach(d => fetchAndCacheRatedParams(String(d.id)))
           } else {
-            set({ deviceLoading: false })
+            set({ deviceLoading: false, deviceError: result.message || 'Failed to load devices' })
           }
-        } catch {
-          set({ deviceLoading: false })
+        } catch (err) {
+          set({ deviceLoading: false, deviceError: err instanceof Error ? err.message : 'Failed to load devices' })
         }
       },
 

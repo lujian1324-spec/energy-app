@@ -174,6 +174,8 @@ export default function DevicePage() {
     setError(null)
     try {
       await loadDevices(1, 50)
+      const loadError = useDeviceStore.getState().deviceError
+      if (loadError) throw new Error(loadError)
       await loadStations(1, 50)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load devices')
@@ -270,6 +272,8 @@ export default function DevicePage() {
     setError(null)
     try {
       await loadDevices(1, 50)
+      const loadError = useDeviceStore.getState().deviceError
+      if (loadError) throw new Error(loadError)
       const latestDevices = useDeviceStore.getState().devices
       for (const d of latestDevices) {
         await fetchDeviceRealtime(d.id)

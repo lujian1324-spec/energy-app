@@ -392,6 +392,7 @@ export default function OverviewPage() {
     loading: historyLoading,
     currentPage: historyPage,
     fromCache: historyFromCache,
+    error: historyError,
   } = useHistoryFetcher(selectedDeviceId, todayFrom, todayTo)
 
   // ─── Chart zoom / pan state (unix ms within today) ───
@@ -1070,6 +1071,16 @@ export default function OverviewPage() {
                         : `${historyFromCache ? 'cache' : 'API'} · ${rawHistoryPoints.length}pts`
                       }
                     </span>
+                  </div>
+                )}
+
+                {/* History fetch failed and there's nothing (cached or partial) to show —
+                    without this the chart falls back to the flat placeholder dash below,
+                    which is visually identical to "no data yet today" and hides a real error. */}
+                {!historyLoading && historyError && rawHistoryPoints.length === 0 && (
+                  <div className="absolute top-1 left-1 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#1a1a1a] border border-[rgba(255,59,48,0.3)]">
+                    <AlertTriangle size={9} className="text-danger" />
+                    <span className="text-[9px] text-danger font-medium">History unavailable</span>
                   </div>
                 )}
 

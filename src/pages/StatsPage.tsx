@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Share2, BarChart3, WifiOff, Zap, ChevronLeft, ChevronRight, Leaf } from 'lucide-react'
 import html2canvas from 'html2canvas'
-import { LastSync, CalcAudit } from '../components/DataTrust'
+import { LastSync, CalcAudit, DemoBanner } from '../components/DataTrust'
 import { useDeviceStore } from '../stores/deviceStore'
 import { type HistoryDataResponse } from '../api/deviceApi'
 import { savePowerHistory, getPowerHistory } from '../db/powerflowDB'
@@ -705,6 +705,11 @@ export default function StatsPage() {
 
   return (
     <div className="h-full flex flex-col bg-ink-12 overflow-hidden pt-6">
+      {/* History failed to load and there's no cache to fall back to — the chart below
+          renders synthetic getDemoChartFrame() numbers in that case, so without this
+          banner a real user sees fake power values with nothing marking them as fake. */}
+      <DemoBanner show={useDemo} onRetry={loadHistory} />
+
       {/* Header */}
       <div className="px-4 pt-8 pb-2 safe-area-top flex justify-between items-start">
         <div>
