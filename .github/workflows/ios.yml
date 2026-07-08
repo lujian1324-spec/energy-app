@@ -35,6 +35,8 @@ jobs:
         run: npm ci
 
       - name: Build web app
+        env:
+          VITE_PUSH_ENABLED: 'true'
         run: npm run build
 
       - name: Sync Capacitor

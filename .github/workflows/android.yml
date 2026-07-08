@@ -45,6 +45,8 @@ jobs:
         run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
 
       - name: Build web app
+        env:
+          VITE_PUSH_ENABLED: 'true'
         run: npm run build
 
       - name: Sync Capacitor

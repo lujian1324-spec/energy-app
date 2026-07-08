@@ -34,6 +34,7 @@ jobs:
       - name: Build
         env:
           VITE_BASE_PATH: /energy-app/
+          VITE_PUSH_ENABLED: 'true'
         run: npm run build
 
       - name: Deploy to GitHub Pages

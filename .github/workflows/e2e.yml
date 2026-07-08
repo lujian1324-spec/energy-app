@@ -37,6 +37,8 @@ jobs:
       # Build and serve THIS commit's code, then test it — not the live
       # production site. baseURL is overridden via E2E_BASE_URL.
       - name: Build web app
+        env:
+          VITE_PUSH_ENABLED: 'true'
         run: npm run build
 
       - name: Serve build
