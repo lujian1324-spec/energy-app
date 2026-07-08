@@ -168,6 +168,16 @@ select:focus-visible {
   border-radius: inherit;
 }
 
+/* text-body-lg's locked line-height (1.2) renders an input's line box at
+   exactly font-size * 1.2 with no extra headroom, so descenders (j, g, y,
+   p, q) get clipped at the bottom edge — unlike a <div>, an <input> doesn't
+   grow to fit its own text. Give text inputs breathing room without
+   touching the shared text-body-lg token used elsewhere (headings, labels). */
+input.text-body-lg,
+textarea.text-body-lg {
+  line-height: 1.5 !important;
+}
+
 /* ============================================================
    WCAG 无障碍 - 动效减弱
 ============================================================ */
