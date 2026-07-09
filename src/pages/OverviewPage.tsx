@@ -36,7 +36,13 @@ import BatteryRing from '../components/BatteryRing'
 import ToggleSwitch from '../components/ToggleSwitch'
 import RealTimePowerChart from '../components/RealTimePowerChart'
 import { DataSourceTag, DemoBanner, type DataSource } from '../components/DataTrust'
-import { formatTemp } from '../utils/localization'
+import {
+  formatTemp,
+  translateEnergyFlowGroupLabel,
+  translateEnergyFlowFieldLabel,
+  translateEnergyFlowFieldValue,
+  translateEnergyFlowUnit,
+} from '../utils/localization'
 import DeviceDetailPage from './DeviceDetailPage'
 import { useDeviceStore } from '../stores/deviceStore'
 import { usePowerStationStore } from '../stores/powerStationStore'
@@ -638,7 +644,7 @@ export default function OverviewPage() {
                   >
                     <div className="flex items-center gap-2">
                       <Icon size={14} className="text-ink-6" />
-                      <span className="text-[12px] font-semibold text-ink-1">{group.name}</span>
+                      <span className="text-[12px] font-semibold text-ink-1">{translateEnergyFlowGroupLabel(group.key, group.name)}</span>
                       <span className="text-[10px] text-ink-7">({visibleItems.length})</span>
                     </div>
                     <ChevronDown
@@ -658,9 +664,9 @@ export default function OverviewPage() {
                         <div className="px-4 pb-3 grid grid-cols-2 gap-x-3 gap-y-1.5">
                           {visibleItems.map(item => (
                             <div key={item.key} className="flex justify-between items-center py-1 border-b border-[rgba(255,255,255,0.03)]">
-                              <span className="text-[10px] text-ink-6 truncate mr-2">{item.nameDisplay}</span>
+                              <span className="text-[10px] text-ink-6 truncate mr-2">{translateEnergyFlowFieldLabel(item.key, item.nameDisplay)}</span>
                               <span className="text-[10px] text-ink-1 font-mono whitespace-nowrap">
-                                {item.valueDisplay}{item.unit ? ` ${item.unit}` : ''}
+                                {translateEnergyFlowFieldValue(item.key, item.value, item.valueDisplay)}{item.unit ? ` ${translateEnergyFlowUnit(item.unit)}` : ''}
                               </span>
                             </div>
                           ))}
