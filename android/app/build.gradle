@@ -41,8 +41,14 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // Packages native debug symbols (from Capacitor/plugin AARs' prebuilt .so) into the
+            // AAB so Play Console can symbolicate native crashes/ANRs without a manual upload.
+            ndk {
+                debugSymbolLevel 'SYMBOL_TABLE'
+            }
             if (hasReleaseSigning) {
                 signingConfig signingConfigs.release
             }

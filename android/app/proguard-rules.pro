@@ -19,3 +19,18 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# ─── R8 enabled for release (v3.35.7) — keep readable crash traces + Capacitor's
+# WebView<->JS bridge intact (plugin classes are invoked via reflection). Most
+# Capacitor/plugin AARs already ship their own consumer-rules.pro; these are a
+# safety net for the parts that aren't covered by that.
+-keepattributes SourceFile,LineNumberTable
+-keep class com.getcapacitor.** { *; }
+-keep class com.sierro.energyapp.** { *; }
+-keep @com.getcapacitor.annotation.CapacitorPlugin class * { *; }
+-keepclassmembers,allowobfuscation class * {
+    @com.getcapacitor.PluginMethod <methods>;
+}
+-keepclassmembers class * extends android.webkit.WebChromeClient {
+    public void openFileChooser(...);
+}
