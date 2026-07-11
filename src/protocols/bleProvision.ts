@@ -11,6 +11,7 @@
  * getProvisionManager() 按 Capacitor.isNativePlatform() 选择，UI 无需感知差异。
  */
 import {
+  BLE_CID,
   BLE_PROVISION_UUIDS,
   type BleProvisionResponse,
   type BleWifiAp,
@@ -53,6 +54,8 @@ export interface IBleProvisionManager {
   restart(): Promise<BleProvisionResponse>
   getWifiStatus(): Promise<BleProvisionResponse<BleWifiStatus>>
   confirmBleKey(bleKey: string): Promise<BleProvisionResponse>
+  /** 直连模式：透传原始 Modbus 帧（十六进制字符串），走 UART 透传 CID（30024/30025） */
+  uartPassthrough(reqHex: string, timeout?: number): Promise<BleProvisionResponse<{ Rsp: string }>>
 }
 
 // ─── 共享基类：编解码 / 分包 / 应答收集 / 便捷命令 ──────────────────────────────
@@ -174,6 +177,19 @@ abstract class BaseProvisionManager implements IBleProvisionManager {
   restart()                          { return this.sendCommand({ CID: 30007 }) }
   getWifiStatus()                    { return this.sendCommand<BleProvisionResponse<BleWifiStatus>>({ CID: 30020 }) }
   confirmBleKey(bleKey: string)      { return this.sendCommand({ CID: 30050, PL: { BleKey: bleKey } }) }
+
+  // 直连模式：把 modbusProtocol.ts 构造的 Modbus 帧（十六进制字符串）透传给设备 UART，
+  // 串口参数固定 9600-8-None-1（见 modbusProtocol.ts 文档注释）。ParityBit 精确取值待
+  // 真机验证 —— 若不匹配，失败表现为响应 CRC 校验不过，不会影响设备本身。
+  uartPassthrough(reqHex: string, timeout = 8000) {
+    return this.sendCommand<BleProvisionResponse<{ Rsp: string }>>(
+      {
+        CID: BLE_CID.GET_UART_ST_REQ,
+        PL: { Req: reqHex, Uart: { BaudRate: 9600, DataBit: 8, ParityBit: 'None', StopBit: 1 } },
+      },
+      undefined, timeout,
+    )
+  }
 
   protected parseName(name: string | undefined): void {
     this._deviceName = name

@@ -23,9 +23,11 @@ import {
   mapFieldsToRealtime,
 } from '../api/deviceApi'
 import { FRAMES, decodePassthroughBase64, decodeLiveStatus, type LiveStatus } from '../protocols/modbusProtocol'
+import { readLiveStatusBle } from '../protocols/bleDirect'
+import type { IBleProvisionManager } from '../protocols/bleProvision'
 import { isApiSuccess } from '../utils/apiClient'
 
-export type LiveSource = 'fastReport' | 'passthrough'
+export type LiveSource = 'fastReport' | 'passthrough' | 'ble'
 
 export interface LiveDeviceStatus {
   live: LiveStatus | null
@@ -57,7 +59,12 @@ export function parseSupported(data: unknown): boolean {
 const POLL_MS = 5000
 const FAIL_LIMIT = 3
 
-export function useLiveDeviceStatus(deviceId: string | null, enabled = true): LiveDeviceStatus {
+export function useLiveDeviceStatus(
+  deviceId: string | null,
+  enabled = true,
+  /** 蓝牙直连模式：传入已连接的 manager 时完全跳过速报探测/透传云端轮询，改为 BLE 透传 */
+  bleManager: IBleProvisionManager | null = null,
+): LiveDeviceStatus {
   const [live, setLive] = useState<LiveStatus | null>(null)
   const [source, setSource] = useState<LiveSource | null>(null)
   // fastReport 会话是否已启动（用于卸载时 stop）
@@ -68,7 +75,7 @@ export function useLiveDeviceStatus(deviceId: string | null, enabled = true): Li
     let cancelled = false
     let inFlight = false
     let failStreak = 0
-    let mode: LiveSource = 'passthrough'
+    let mode: LiveSource = bleManager ? 'ble' : 'passthrough'
 
     const onFail = () => {
       failStreak += 1
@@ -109,11 +116,20 @@ export function useLiveDeviceStatus(deviceId: string | null, enabled = true): Li
       else onFail()
     }
 
+    // ── 蓝牙直连路径：同一 Modbus 帧，走 BLE UART 透传而非云端 ──
+    const readBleOnce = async () => {
+      const v = await readLiveStatusBle(bleManager!)
+      if (cancelled) return
+      if (v) onOk(v)
+      else onFail()
+    }
+
     const tick = async () => {
       if (document.visibilityState === 'hidden' || inFlight || cancelled) return
       inFlight = true
       try {
-        if (mode === 'fastReport') await readCloudOnce()
+        if (mode === 'ble') await readBleOnce()
+        else if (mode === 'fastReport') await readCloudOnce()
         else await readPassthroughOnce()
       } catch { onFail() }
       finally { inFlight = false }
@@ -121,6 +137,12 @@ export function useLiveDeviceStatus(deviceId: string | null, enabled = true): Li
 
     let iv: ReturnType<typeof setInterval> | null = null
     const begin = async () => {
+      // 蓝牙直连：完全绕开云端，不探测速报
+      if (bleManager) {
+        tick()
+        iv = setInterval(tick, POLL_MS)
+        return
+      }
       // 探测速报支持；接口失败/不支持 → 透传回退
       try {
         const sup = await checkFastReportSupported(deviceId)
@@ -148,7 +170,7 @@ export function useLiveDeviceStatus(deviceId: string | null, enabled = true): Li
       setLive(null)
       setSource(null)
     }
-  }, [deviceId, enabled])
+  }, [deviceId, enabled, bleManager])
 
   return { live, source }
 }

@@ -131,6 +131,11 @@ Use the label canon below; same metric = same label everywhere except DebugParam
 - *Energy Management*: Smart Schedule link.
 - *Real-Time Power chart*: top-right badge = realtime value of selected tab (`battery/ac/solar/output` from 30s-polled `selectedDeviceState`); curve = **today's** API history via `useHistoryFetcher` (`batteryPower/exchangeChargingPower/generationPower/outputPower`), real-time X-axis (12am/4am/8am/12pm/4pm/8pm/12am), pinch/wheel zoom (min 1h) + pan.
 - *Alerts panel*: firing alarms (`firingAlarms`) + history alarms.
+- *Bluetooth Direct* (manual toggle, header): bypasses the cloud entirely via BLE UART passthrough
+  (`src/protocols/bleDirect.ts` + `bleProvision.ts`'s `uartPassthrough`, CID 30024/30025) feeding the
+  existing `modbusProtocol.ts` frame builders. Live values come from `useLiveDeviceStatus`'s third
+  `'ble'` source. Ports show only AC/DC (2, register-backed, optimistic — not USB-specific and not a
+  live read); Sleep Mode is a one-shot power write (`0x0085`), not the full time-window schedule.
 
 **DeviceMonitorPage** (`/device/:id`)
 - *SoC card*: ring **Battery** % (`remainingBatteryCapacity`), **AC** W, **Solar** W, **Output** W.

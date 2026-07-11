@@ -31,6 +31,7 @@ import {
   Calendar,
   Sliders,
   ChevronRight,
+  Bluetooth,
 } from 'lucide-react'
 import BatteryRing from '../components/BatteryRing'
 import ToggleSwitch from '../components/ToggleSwitch'
@@ -48,6 +49,19 @@ import { useDeviceStore } from '../stores/deviceStore'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { mapFieldsToRealtime, mapFiringAlarms } from '../api/deviceApi'
 import { useLiveDeviceStatus } from '../hooks/useLiveDeviceStatus'
+import {
+  scanForDirectDevices,
+  connectDirectTo,
+  connectDirectWeb,
+  disconnectDirect,
+  getDirectManager,
+  supportsDeviceListScan,
+  setAcOutputBle,
+  setDcOutputBle,
+  setSleepPowerBle,
+  type ProvisionScanDevice,
+} from '../protocols/bleDirect'
+import type { IBleProvisionManager } from '../protocols/bleProvision'
 import { isApiSuccess } from '../utils/apiClient'
 import { loadRatedParams } from '../db/powerflowDB'
 import { describeAlarmCode } from '../utils/alarmText'
@@ -104,8 +118,81 @@ export default function OverviewPage() {
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [showDeviceDetail, setShowDeviceDetail] = useState(false)
   const [controlLoading, setControlLoading] = useState<string | null>(null)
-  // PRD v1.1 §8: 数据来源标识
-  const [dataSource] = useState<DataSource>('ble')
+
+  // ─── 蓝牙直连模式（手动切换，云端不可达/纯本地场景）───
+  const [bleManager, setBleManager] = useState<IBleProvisionManager | null>(null)
+  const [directConnecting, setDirectConnecting] = useState(false)
+  const [directError, setDirectError] = useState<string | null>(null)
+  const [directPickList, setDirectPickList] = useState<ProvisionScanDevice[]>([])
+  // 直连模式下端口开关是"最后一次动作"的乐观本地态，不是从设备读回的真值——
+  // 原始 Modbus 接口没有单独的端口状态读取；READ_ALL_STATUS 不含端口位。
+  const [directAcOn, setDirectAcOn] = useState(false)
+  const [directDcOn, setDirectDcOn] = useState(false)
+  const bleManagerRef = useRef<IBleProvisionManager | null>(null)
+  useEffect(() => { bleManagerRef.current = bleManager }, [bleManager])
+  // 离开页面时自动断开，不把设备遗留在直连会话中
+  useEffect(() => {
+    return () => { if (bleManagerRef.current) disconnectDirect().catch(() => { /* ignore */ }) }
+  }, [])
+
+  const handleConnectDirect = async () => {
+    setDirectError(null)
+    setDirectConnecting(true)
+    setDirectPickList([])
+    try {
+      if (supportsDeviceListScan()) {
+        const found: ProvisionScanDevice[] = []
+        const seen = new Set<string>()
+        const manager = await scanForDirectDevices((d) => {
+          if (seen.has(d.deviceId)) return
+          seen.add(d.deviceId)
+          found.push(d)
+        })
+        await new Promise(r => setTimeout(r, 4000))
+        await manager.stopScan()
+        if (found.length === 0) {
+          setDirectError('No nearby Sierro device found')
+        } else if (found.length === 1) {
+          await connectDirectTo(found[0].deviceId, found[0].name)
+          setBleManager(manager)
+        } else {
+          setDirectPickList(found)
+        }
+      } else {
+        // Web: 系统蓝牙选择器（单设备，无法预先列表展示）
+        await connectDirectWeb()
+        setBleManager(getDirectManager())
+      }
+    } catch (err) {
+      setDirectError(err instanceof Error ? err.message : 'Connection failed')
+    } finally {
+      setDirectConnecting(false)
+    }
+  }
+
+  const handlePickDirectDevice = async (d: ProvisionScanDevice) => {
+    setDirectError(null)
+    setDirectConnecting(true)
+    try {
+      await connectDirectTo(d.deviceId, d.name)
+      setBleManager(getDirectManager())
+      setDirectPickList([])
+    } catch (err) {
+      setDirectError(err instanceof Error ? err.message : 'Connection failed')
+    } finally {
+      setDirectConnecting(false)
+    }
+  }
+
+  const handleDisconnectDirect = async () => {
+    await disconnectDirect()
+    setBleManager(null)
+    setDirectPickList([])
+    setDirectError(null)
+    setDirectAcOn(false)
+    setDirectDcOn(false)
+  }
+
   // PRD v1.1 §8.2: Demo Mode 检测 (无设备时或离线时)
   const [isNetworkOnline, setIsNetworkOnline] = useState(navigator.onLine)
   useEffect(() => {
@@ -226,8 +313,8 @@ export default function OverviewPage() {
     return mapFieldsToRealtime(selectedDeviceState.fields)
   }, [selectedDeviceState])
 
-  // ─── 实时状态：速报模式优先（云端 5s 拉取），透传轮询回退，退出页面即停 ───
-  const { live: livePt, source: liveSource } = useLiveDeviceStatus(selectedDeviceId)
+  // ─── 实时状态：直连模式优先于云端；否则速报模式优先（云端 5s 拉取），透传轮询回退 ───
+  const { live: livePt, source: liveSource } = useLiveDeviceStatus(selectedDeviceId, true, bleManager)
 
   // ─── 计算显示值：优先透传实时值 livePt，回退到云端 selectedDeviceState ───
   const remainingBatteryCapacity = livePt?.soc ?? realtime?.remainingBatteryCapacity ?? 0
@@ -266,8 +353,18 @@ export default function OverviewPage() {
   // 不能据此判在线——那样会把断网设备显示成 Connected 且冻结旧读数。此时以云端
   // isOnline 权威标志为准（30s 轮询刷新），离线则显示 Disconnected 与 "-"。
   const isOnline =
+    (liveSource === 'ble' && livePt != null) ||
     (selectedDeviceDetails?.isOnline ?? false) ||
     (liveSource === 'passthrough' && livePt != null)
+
+  // PRD v1.1 §8: 数据来源标识 — 直连 BLE 优先，其次云端透传/速报/Demo
+  const dataSource: DataSource = bleManager
+    ? 'ble'
+    : isDemoMode
+      ? 'demo'
+      : liveSource === 'passthrough'
+        ? 'modbus'
+        : 'cloud'
 
   // ─── CountUp 动画：功率数值平滑过渡 ───
   const animatedAcPower = useCountUp(isOnline ? acPower : 0)
@@ -285,13 +382,21 @@ export default function OverviewPage() {
   }, [sleepMode, workMode])
 
   // ─── 设备控制写入 ───
+  // 直连模式：Sleep Mode 是"立即下发一次目标功率"（寄存器 0x0085），不是完整的时间窗口
+  // 调度（那依赖云端保存的排程和持续巡检，不适合一次性 BLE 会话）。
   const handleToggleSleepMode = async () => {
     if (!selectedDeviceId) return
     const newValue = !localSleepMode
     setLocalSleepMode(newValue)
     setControlLoading('sleepMode')
     try {
-      await controlDevice(selectedDeviceId, 'sleepMode', newValue)
+      if (bleManager) {
+        const model = currentDeviceListItem?.model ?? 'Sierro 1000'
+        const ok = await setSleepPowerBle(bleManager, model, newValue)
+        if (!ok) throw new Error('BLE write failed')
+      } else {
+        await controlDevice(selectedDeviceId, 'sleepMode', newValue)
+      }
     } catch {
       setLocalSleepMode(!newValue) // rollback
     } finally {
@@ -465,6 +570,7 @@ export default function OverviewPage() {
               <span className={`text-[12px] mt-0.5 ${isOnline ? 'text-ink-6' : 'text-danger'}`}>
                 {isOnline ? 'Connected' : 'Disconnected'}
               </span>
+              <DataSourceTag source={dataSource} className="mt-1" />
             </button>
 
             {/* Dropdown - real device list */}
@@ -523,8 +629,17 @@ export default function OverviewPage() {
             </AnimatePresence>
           </div>
 
-          {/* Right: Settings + Bell */}
+          {/* Right: Bluetooth Direct + Settings + Bell */}
           <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={bleManager ? handleDisconnectDirect : handleConnectDirect}
+              disabled={directConnecting}
+              title={bleManager ? 'Disconnect Bluetooth Direct' : 'Connect Bluetooth Direct'}
+              className={`w-9 h-9 rounded-full flex items-center justify-center transition-colors disabled:opacity-50
+                ${bleManager ? 'bg-[rgba(1,214,190,0.15)] text-primary' : 'bg-ink-10 text-ink-1 hover:bg-ink-9'}`}
+            >
+              {directConnecting ? <Loader2 size={16} className="animate-spin" /> : <Bluetooth size={18} />}
+            </button>
             <button
               onClick={() => setShowDeviceDetail(true)}
               className="w-9 h-9 rounded-full bg-ink-10 flex items-center justify-center text-ink-1 hover:bg-ink-9 transition-colors"
@@ -543,6 +658,32 @@ export default function OverviewPage() {
             </motion.button>
           </div>
         </div>
+
+        {/* Bluetooth Direct: nearby-device picker (native, multiple found) */}
+        {directPickList.length > 0 && (
+          <div className="mx-5 mb-3 bg-ink-10 rounded-l overflow-hidden">
+            <div className="px-3 py-2 text-[10px] text-ink-6 uppercase tracking-wider">
+              Nearby Sierro Devices
+            </div>
+            {directPickList.map(d => (
+              <button
+                key={d.deviceId}
+                onClick={() => handlePickDirectDevice(d)}
+                className="w-full flex items-center justify-between px-4 py-3 border-t border-[rgba(255,255,255,0.06)] text-left hover:bg-[rgba(255,255,255,0.05)]"
+              >
+                <span className="text-body-md text-ink-1">{d.name || 'Sierro Device'}</span>
+                <span className="text-[10px] text-ink-6">{d.rssi != null ? `${d.rssi} dBm` : ''}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Bluetooth Direct: connection error */}
+        {directError && (
+          <div className="mx-5 mb-3 px-4 py-3 rounded-l bg-[rgba(255,59,48,0.1)] border border-[rgba(255,59,48,0.25)] text-[12px] text-danger">
+            {directError}
+          </div>
+        )}
 
         {/* Loading state */}
         {stateLoading && !realtime ? (
@@ -767,16 +908,27 @@ export default function OverviewPage() {
               <div className="text-[11px] font-bold text-ink-6 tracking-widest uppercase mb-2.5 px-1">
                 Ports
               </div>
+              {bleManager && (
+                <div className="text-[10px] text-ink-6 mb-2 px-1">
+                  Bluetooth Direct: AC/DC only (no USB-specific control) · reflects your last action, not a live read
+                </div>
+              )}
               <div className="bg-ink-10 rounded-l overflow-hidden">
-                {[
-                  { label: 'AC Output 1', enabled: acOut1Enable, key: 'acOut1Enable' },
-                  { label: 'AC Output 2', enabled: acOut2Enable, key: 'acOut2Enable' },
-                  { label: 'USB Output', enabled: usbOut1Enable, key: 'usbOut1Enable' },
-                ].map((port, index) => (
+                {(bleManager
+                  ? [
+                      { label: 'AC Output', enabled: directAcOn, key: 'ac' },
+                      { label: 'DC / USB Output', enabled: directDcOn, key: 'dc' },
+                    ]
+                  : [
+                      { label: 'AC Output 1', enabled: acOut1Enable, key: 'acOut1Enable' },
+                      { label: 'AC Output 2', enabled: acOut2Enable, key: 'acOut2Enable' },
+                      { label: 'USB Output', enabled: usbOut1Enable, key: 'usbOut1Enable' },
+                    ]
+                ).map((port, index, arr) => (
                   <div
                     key={port.key}
                     className={`flex items-center justify-between px-4 py-3.5
-                      ${index < 2 ? 'border-b border-[rgba(255,255,255,0.06)]' : ''}`}
+                      ${index < arr.length - 1 ? 'border-b border-[rgba(255,255,255,0.06)]' : ''}`}
                   >
                     <div className="flex items-center gap-3">
                       <div className={`w-9 h-9 rounded-l flex items-center justify-center transition-colors
@@ -793,8 +945,18 @@ export default function OverviewPage() {
                     <ToggleSwitch
                       isOn={port.enabled}
                       onToggle={() => {
-                        if (!selectedDeviceId) return
                         const newValue = !port.enabled
+                        if (bleManager) {
+                          const isAc = port.key === 'ac'
+                          setControlLoading(port.key)
+                          const write = isAc ? setAcOutputBle : setDcOutputBle
+                          write(bleManager, newValue)
+                            .then(ok => { if (ok) (isAc ? setDirectAcOn : setDirectDcOn)(newValue) })
+                            .catch(() => { /* leave local state unchanged on failure */ })
+                            .finally(() => setControlLoading(null))
+                          return
+                        }
+                        if (!selectedDeviceId) return
                         setControlLoading(port.key)
                         controlDevice(selectedDeviceId, port.key, newValue)
                           .catch(err => console.error('[OverviewPage] controlDevice failed:', err))
