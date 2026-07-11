@@ -13,6 +13,7 @@
  */
 
 import { Capacitor } from '@capacitor/core'
+import { NATIVE_PUSH_READY } from '../config/webPush'
 
 /** True when running inside the native Capacitor shell (Android/iOS app). */
 const isNative = (): boolean => Capacitor.isNativePlatform()
@@ -102,8 +103,9 @@ export async function requestNotifications(): Promise<PermissionResult> {
       const { PushNotifications } = await import('@capacitor/push-notifications')
       const { receive } = await PushNotifications.requestPermissions()
       const st = mapCapState(receive)
-      // 授权后注册 APNs/FCM，使后端 Web/原生推送可达
-      if (st === 'granted') { try { await PushNotifications.register() } catch { /* ignore */ } }
+      // 授权后注册 APNs/FCM，使后端 Web/原生推送可达 — 仅在真实凭据就绪时调用,
+      // 否则 FirebaseMessaging.getInstance() 会因 FirebaseApp 未初始化而失败/崩溃
+      if (st === 'granted' && NATIVE_PUSH_READY) { try { await PushNotifications.register() } catch { /* ignore */ } }
       return st === 'granted' ? ok('Allowed') : st === 'denied' ? no('Blocked') : ask('Dismissed')
     } catch {
       return na('Notifications plugin unavailable')

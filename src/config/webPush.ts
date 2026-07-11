@@ -20,6 +20,19 @@
  */
 export const PUSH_ENABLED: boolean = import.meta.env.VITE_PUSH_ENABLED === 'true'
 
+/**
+ * 原生推送（APNs/FCM）凭据就绪总开关。默认关闭：android/app/google-services.json
+ * 未提交到仓库（build.gradle 检测不到文件时跳过 google-services 插件，
+ * FirebaseApp 从未初始化），iOS 侧 APNs 也未接后端下发。此时调用
+ * PushNotifications.register() → FirebaseMessaging.getInstance() 会因
+ * "Default FirebaseApp is not initialized" 失败/异常。
+ * PUSH_ENABLED 打开后应用会在权限引导/登录后请求通知权限并尝试 register()——
+ * 该权限请求本身无害，但 register() 在没有真实凭据时不安全，所以单独用这个
+ * 开关兜底，与 PUSH_ENABLED 解耦。放好 google-services.json + APNs 证书后，
+ * 构建时设 VITE_NATIVE_PUSH_READY=true 才真正调用 register()。
+ */
+export const NATIVE_PUSH_READY: boolean = import.meta.env.VITE_NATIVE_PUSH_READY === 'true'
+
 /** VAPID 公钥（base64url）。由后端提供，部署时通过环境变量注入。 */
 export const VAPID_PUBLIC_KEY: string = import.meta.env.VITE_VAPID_PUBLIC_KEY ?? ''
 

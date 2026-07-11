@@ -12,6 +12,7 @@
  */
 import { Capacitor } from '@capacitor/core'
 import { registerNativePushToken, unregisterNativePushToken } from '../api/webPushApi'
+import { NATIVE_PUSH_READY } from '../config/webPush'
 
 let initialized = false
 let lastToken: string | null = null
@@ -19,6 +20,9 @@ let lastToken: string | null = null
 /** 初始化原生推送监听并注册 token。重复调用安全（幂等）。 */
 export async function initNativePush(): Promise<void> {
   if (!Capacitor.isNativePlatform() || initialized) return
+  // google-services.json / APNs 证书尚未接入 — register() 会因 FirebaseApp
+  // 未初始化而失败，所以在真实凭据就绪前完全跳过原生 token 注册流程。
+  if (!NATIVE_PUSH_READY) return
   initialized = true
   try {
     const { PushNotifications } = await import('@capacitor/push-notifications')
