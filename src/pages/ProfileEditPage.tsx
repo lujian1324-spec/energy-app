@@ -99,7 +99,9 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
             setUserId(u.userId ?? null)
             setProfile(prev => ({
               ...prev,
-              name: u.nickname ?? u.account ?? prev.name,
+              // Username IS the display name now — no separate editable nickname
+              // (unifies Account/Username/Name into one concept, set at registration).
+              name: u.account ?? prev.name,
               email: u.email ?? prev.email,
             }))
           }
@@ -143,15 +145,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
     setIsSaving(true)
     setFieldError('')
     try {
-      if (editingField === 'name') {
-        const r = await updateUserInfo({ userId: userId ?? undefined, nickname: tempValue })
-        if (r.code !== 0 && r.code !== '0') throw new Error(r.message ?? 'Failed')
-        const newProfile = { ...profile, name: tempValue }
-        setProfile(newProfile)
-        await persistProfile(newProfile)
-        toast.success('Name updated')
-
-      } else if (editingField === 'email') {
+      if (editingField === 'email') {
         if (!emailOtpSent) {
           // Step 1: send OTP
           const r = await sendEmailCaptcha(tempValue, '4')
@@ -272,7 +266,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
 
   // If editing a field, show sub-screen
   if (editingField) {
-    const titleMap: Record<string, string> = { name: 'Name', email: 'Linked Email', password: 'Change Password' }
+    const titleMap: Record<string, string> = { email: 'Linked Email', password: 'Change Password' }
     const title = titleMap[editingField] ?? editingField
 
     return (
@@ -306,26 +300,6 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 pt-6 space-y-4">
-
-          {/* ── NAME ── */}
-          {editingField === 'name' && (
-            <div className="bg-ink-10 rounded-l overflow-hidden">
-              <div className="flex items-center gap-3 px-4 py-3">
-                <User size={16} className="text-ink-6 flex-shrink-0" />
-                <input
-                  type="text"
-                  value={tempValue}
-                  onChange={(e) => setTempValue(e.target.value)}
-                  placeholder="Enter your name"
-                  autoFocus
-                  className="flex-1 bg-transparent text-body-lg text-white placeholder:text-ink-7 focus:outline-none"
-                />
-                {tempValue.length > 0 && (
-                  <button onClick={() => setTempValue('')}><X size={16} className="text-ink-7" /></button>
-                )}
-              </div>
-            </div>
-          )}
 
           {/* ── EMAIL ── */}
           {editingField === 'email' && (
@@ -540,16 +514,12 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
         {/* Personal Info section */}
         <p className="text-body-md font-semibold text-white mt-6 mb-2">Personal Info</p>
         <div className="bg-ink-10 rounded-l overflow-hidden">
-          {/* Name row */}
-          <button
-            onClick={() => handleEdit('name', profile.name)}
-            className="w-full flex items-center gap-3 px-4 py-4 border-b border-white/5 text-left"
-          >
+          {/* Username row — read-only display, set at registration (unified with Account/Name) */}
+          <div className="w-full flex items-center gap-3 px-4 py-4 border-b border-white/5 text-left">
             <User size={18} className="text-ink-6 flex-shrink-0" />
-            <span className="text-body-md text-white flex-1">Name</span>
+            <span className="text-body-md text-white flex-1">Username</span>
             <span className="text-body-md text-ink-6 truncate max-w-[140px]">{profile.name}</span>
-            <ChevronRight size={16} className="text-ink-7 flex-shrink-0" />
-          </button>
+          </div>
 
           {/* Linked Email row */}
           <button

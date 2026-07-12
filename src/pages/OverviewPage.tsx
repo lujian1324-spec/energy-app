@@ -64,6 +64,7 @@ import {
 import type { IBleProvisionManager } from '../protocols/bleProvision'
 import { isApiSuccess } from '../utils/apiClient'
 import { loadRatedParams } from '../db/powerflowDB'
+import { openAppSettings } from '../utils/openAppSettings'
 import { describeAlarmCode } from '../utils/alarmText'
 import PullToRefresh from '../components/PullToRefresh'
 import type { DeviceAlert } from '../types'
@@ -123,6 +124,10 @@ export default function OverviewPage() {
   const [bleManager, setBleManager] = useState<IBleProvisionManager | null>(null)
   const [directConnecting, setDirectConnecting] = useState(false)
   const [directError, setDirectError] = useState<string | null>(null)
+  // 'permission'/'bluetooth_off' 出可操作引导（Open Settings 等），同 ProvisioningPage
+  // 已经修过的 Android BLE 权限流程（v3.34.2）——直连模式是后加的新入口，之前没接这套判断，
+  // 权限被拒时只会显示裸错误文案，用户没有任何可操作的下一步。
+  const [directErrorKind, setDirectErrorKind] = useState<'permission' | 'bluetooth_off' | 'generic'>('generic')
   const [directPickList, setDirectPickList] = useState<ProvisionScanDevice[]>([])
   // 直连模式下端口开关是"最后一次动作"的乐观本地态，不是从设备读回的真值——
   // 原始 Modbus 接口没有单独的端口状态读取；READ_ALL_STATUS 不含端口位。
@@ -135,8 +140,22 @@ export default function OverviewPage() {
     return () => { if (bleManagerRef.current) disconnectDirect().catch(() => { /* ignore */ }) }
   }, [])
 
+  // 同 ProvisioningPage 的分类启发式：Android 一旦拒绝 BLE 权限就不会再弹系统对话框，
+  // 只能引导去系统设置里手动开；蓝牙关闭则是另一种、不需要设置权限的状态。
+  const classifyBleError = (err: unknown): { kind: 'permission' | 'bluetooth_off' | 'generic'; msg: string } => {
+    const msg = err instanceof Error ? err.message : 'Connection failed'
+    const low = msg.toLowerCase()
+    if (low.includes('permission') || low.includes('denied')) return { kind: 'permission', msg }
+    if (low.includes('not available') || low.includes('not enabled') ||
+        low.includes('disabled') || low.includes('bluetooth is off') || low.includes('adapter')) {
+      return { kind: 'bluetooth_off', msg }
+    }
+    return { kind: 'generic', msg }
+  }
+
   const handleConnectDirect = async () => {
     setDirectError(null)
+    setDirectErrorKind('generic')
     setDirectConnecting(true)
     setDirectPickList([])
     try {
@@ -164,7 +183,15 @@ export default function OverviewPage() {
         setBleManager(getDirectManager())
       }
     } catch (err) {
-      setDirectError(err instanceof Error ? err.message : 'Connection failed')
+      const { kind, msg } = classifyBleError(err)
+      setDirectErrorKind(kind)
+      setDirectError(
+        kind === 'permission'
+          ? 'Sierro needs the Nearby devices (Bluetooth) permission to find your device.'
+          : kind === 'bluetooth_off'
+            ? 'Bluetooth is off. Please enable it and try again.'
+            : msg
+      )
     } finally {
       setDirectConnecting(false)
     }
@@ -172,13 +199,22 @@ export default function OverviewPage() {
 
   const handlePickDirectDevice = async (d: ProvisionScanDevice) => {
     setDirectError(null)
+    setDirectErrorKind('generic')
     setDirectConnecting(true)
     try {
       await connectDirectTo(d.deviceId, d.name)
       setBleManager(getDirectManager())
       setDirectPickList([])
     } catch (err) {
-      setDirectError(err instanceof Error ? err.message : 'Connection failed')
+      const { kind, msg } = classifyBleError(err)
+      setDirectErrorKind(kind)
+      setDirectError(
+        kind === 'permission'
+          ? 'Sierro needs the Nearby devices (Bluetooth) permission to find your device.'
+          : kind === 'bluetooth_off'
+            ? 'Bluetooth is off. Please enable it and try again.'
+            : msg
+      )
     } finally {
       setDirectConnecting(false)
     }
@@ -189,6 +225,7 @@ export default function OverviewPage() {
     setBleManager(null)
     setDirectPickList([])
     setDirectError(null)
+    setDirectErrorKind('generic')
     setDirectAcOn(false)
     setDirectDcOn(false)
   }
@@ -678,10 +715,23 @@ export default function OverviewPage() {
           </div>
         )}
 
-        {/* Bluetooth Direct: connection error */}
+        {/* Bluetooth Direct: connection error — permission-denied gets an actionable
+            "Open Settings" button, same as the already-fixed ProvisioningPage flow
+            (Android won't re-prompt for BLE permission once denied). */}
         {directError && (
-          <div className="mx-5 mb-3 px-4 py-3 rounded-l bg-[rgba(255,59,48,0.1)] border border-[rgba(255,59,48,0.25)] text-[12px] text-danger">
-            {directError}
+          <div className="mx-5 mb-3 px-4 py-3 rounded-l bg-[rgba(255,59,48,0.1)] border border-[rgba(255,59,48,0.25)]">
+            <p className="text-[12px] text-danger">{directError}</p>
+            {directErrorKind === 'permission' && (
+              <button
+                onClick={async () => {
+                  const ok = await openAppSettings()
+                  if (!ok) setDirectError('Open Settings → Apps → Sierro → Permissions → Nearby devices, and allow it.')
+                }}
+                className="mt-2 text-[12px] font-semibold text-primary active:opacity-70"
+              >
+                Open Settings
+              </button>
+            )}
           </div>
         )}
 
