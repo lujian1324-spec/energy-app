@@ -111,7 +111,7 @@
 | S-04 | 反馈提交 | P2 | W/A | Feedback | EmailJS 发送成功 | 手动 |
 | S-05 | **删除账号真删** | P0 | W/A | Profile→Delete Account→确认 | 调 deleteAccount API(loading→成功→登出),非仅登出(验证 v3.31.0) | 手动 |
 | S-06 | 数据导出 | P2 | W/A | Data Export→JSON/CSV | 下载文件,版本号正确 | 手动 |
-| S-07 | 隐私/条款链接 | P1 | W/A | 点链接 | 打开 Privacy/Terms 页 | ✅ |
+| S-07 | 隐私/条款链接 | P1 | W/A | 点链接 | 新标签页打开 sierro.us/pages/policy 或 /terms(v4.1.2 起不再是站内路由/本地文本) | ✅ |
 | S-08 | 无虚假分析开关 | P1 | W/A | Data Export | 无 "Anonymous Analytics" 空开关(验证 v3.32.0) | 手动 |
 
 ## 7. 原生适配(Android 重点,验证 v3.30.0)

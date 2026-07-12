@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { ChevronLeft, X, Check, Loader2 } from 'lucide-react'
 import { registerByEmail, sendEmailCaptcha } from '../api/authApi'
 import { useAuthStore } from '../stores/authStore'
+import { TERMS_URL } from '../config/legalLinks'
 
 const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
 const ACCOUNT_RE = /^[a-zA-Z0-9_]+$/
@@ -218,9 +219,15 @@ export default function RegisterPage() {
           </span>
           <span className="text-label text-ink-7 leading-relaxed">
             I have read and agree to the{' '}
-            <Link to="/terms" className="text-primary underline underline-offset-2" onClick={e => e.stopPropagation()}>
+            <a
+              href={TERMS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline underline-offset-2"
+              onClick={e => e.stopPropagation()}
+            >
               User Service Agreement
-            </Link>
+            </a>
           </span>
         </button>
 

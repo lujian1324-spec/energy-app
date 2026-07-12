@@ -17,6 +17,7 @@ import { useAuthStore } from '../stores/authStore'
 import { useDeviceStore } from '../stores/deviceStore'
 import { toast } from '../components/Toast'
 import appVersion from '../version.json'
+import { TERMS_URL, PRIVACY_URL } from '../config/legalLinks'
 
 /**
  * PRD v1.1 §8.3: Data Sovereignty - 数据主权页
@@ -216,11 +217,11 @@ export default function DataExportPage() {
         {/* Legal links */}
         <div className="text-center py-2 text-caption">
           <div className="flex items-center justify-center gap-3 mb-2">
-            <button onClick={() => navigate('/privacy')} className="text-ink-6 hover:text-ink-1 transition-colors">
+            <button onClick={() => window.open(PRIVACY_URL, '_blank')} className="text-ink-6 hover:text-ink-1 transition-colors">
               Privacy Policy
             </button>
             <span className="text-ink-7">|</span>
-            <button onClick={() => navigate('/terms')} className="text-ink-6 hover:text-ink-1 transition-colors">
+            <button onClick={() => window.open(TERMS_URL, '_blank')} className="text-ink-6 hover:text-ink-1 transition-colors">
               Terms of Use
             </button>
           </div>

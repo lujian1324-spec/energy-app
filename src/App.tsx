@@ -10,8 +10,6 @@ import StatsPage from './pages/StatsPage'
 import SettingPage from './pages/SettingPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
-import TermsPage from './pages/TermsPage'
-import PrivacyPage from './pages/PrivacyPage'
 import SmartSchedulePage from './pages/SmartSchedulePage'
 import NotificationsPage from './pages/NotificationsPage'
 import OnboardingPage from './pages/OnboardingPage'
@@ -117,7 +115,7 @@ function AppInner() {
   }
 
   // 登录/注册页单独渲染，不包含底部导航
-  if (location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/terms' || location.pathname === '/privacy' || location.pathname === '/forgot-password') {
+  if (location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/forgot-password') {
     return (
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
@@ -137,8 +135,6 @@ function AppInner() {
               element={isAuthenticated ? <Navigate to="/devices" replace /> : <RegisterPage />}
             />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/terms" element={<TermsPage />} />
-            <Route path="/privacy" element={<PrivacyPage />} />
           </Routes>
         </motion.div>
       </AnimatePresence>

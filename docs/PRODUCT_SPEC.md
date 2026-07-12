@@ -1354,8 +1354,6 @@ HashRouter
 ├── /login                          → LoginPage（RequireGuest）
 ├── /register                       → RegisterPage
 ├── /forgot-password                → ForgotPasswordPage
-├── /terms                          → TermsPage
-├── /privacy                        → PrivacyPage
 ├── /devices                        → DevicePage（RequireAuth，底部导航，登录后默认页）
 ├── /insights                       → StatsPage（RequireAuth，底部导航；/stats 重定向到此）
 ├── /setting                        → SettingPage（RequireAuth，底部导航；/settings 重定向到此）
@@ -1380,6 +1378,12 @@ HashRouter
 `ProfileEditPage`（SettingPage 内叠加层）。
 
 **导航栏（底部 Tab Bar）：** `/devices`、`/insights`、`/setting` 三个 Tab；其余全部隐藏底部导航。
+
+**Terms of Use / Privacy Policy（v4.1.2 起变更）：** 不再是站内路由/本地文本组件——
+`TermsPage.tsx`/`PrivacyPage.tsx` 已删除。所有入口（LoginPage/RegisterPage/SettingPage/
+DataExportPage）改为直接链接到营销网站：`src/config/legalLinks.ts` 的 `TERMS_URL`
+（`https://www.sierro.us/pages/terms`）/`PRIVACY_URL`（`https://www.sierro.us/pages/policy`），
+`<a target="_blank">` 或 `window.open()` 打开，不再占用 App 内路由。
 
 ---
 

@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { Loader2, X } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
 import { sendEmailCaptcha, loginByEmail, CaptchaIntent } from '../api/authApi'
+import { TERMS_URL, PRIVACY_URL } from '../config/legalLinks'
 
 
 type Tab = 'email' | 'username'
@@ -326,9 +327,9 @@ export default function LoginPage() {
       {/* Terms & Privacy */}
       <p className="pb-8 pt-4 text-center text-caption leading-relaxed text-ink-7">
         By continuing, you agree to our{' '}
-        <Link to="/terms" className="text-primary underline underline-offset-2">Terms of Use</Link>
+        <a href={TERMS_URL} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">Terms of Use</a>
         {' '}and{' '}
-        <Link to="/privacy" className="text-primary underline underline-offset-2">Privacy Policy</Link>
+        <a href={PRIVACY_URL} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">Privacy Policy</a>
       </p>
     </div>
   )

@@ -108,20 +108,6 @@ test.describe('Auth Pages', () => {
     ).toBeVisible({ timeout: 20000 })
   })
 
-  test('terms page loads with content', async ({ page }) => {
-    await skipPermissionsGate(page)
-    await page.goto(`${BASE}/#/terms`)
-    await wait(page, 3000)
-    await expect(page.locator('body')).not.toBeEmpty()
-  })
-
-  test('privacy page loads with content', async ({ page }) => {
-    await skipPermissionsGate(page)
-    await page.goto(`${BASE}/#/privacy`)
-    await wait(page, 3000)
-    await expect(page.locator('body')).not.toBeEmpty()
-  })
-
   test('unauthenticated /devices redirects to login', async ({ page }) => {
     await skipPermissionsGate(page)
     await page.goto(`${BASE}/#/devices`)
@@ -357,27 +343,26 @@ test.describe('PWA & Asset Health', () => {
     expect(fatal).toHaveLength(0)
   })
 
-  test('privacy policy link works on login page', async ({ page }) => {
+  // Terms/Privacy now link out to the marketing site (target=_blank) instead of
+  // in-app routes — verify the href points at sierro.us rather than clicking
+  // through (clicking would open a real external tab in the test browser).
+  test('privacy policy link points to marketing site on login page', async ({ page }) => {
     await skipPermissionsGate(page)
     await page.goto(`${BASE}/#/login`)
     await wait(page, 3000)
-    const privacyLink = page.locator('a[href*="privacy"], text=Privacy').first()
-    if (await privacyLink.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await privacyLink.click()
-      await wait(page, 2000)
-      expect(page.url()).toMatch(/privacy/)
-    }
+    const privacyLink = page.locator('a', { hasText: 'Privacy Policy' }).first()
+    await expect(privacyLink).toBeVisible({ timeout: 10000 })
+    expect(await privacyLink.getAttribute('href')).toBe('https://www.sierro.us/pages/policy')
+    expect(await privacyLink.getAttribute('target')).toBe('_blank')
   })
 
-  test('terms link works on login page', async ({ page }) => {
+  test('terms of use link points to marketing site on login page', async ({ page }) => {
     await skipPermissionsGate(page)
     await page.goto(`${BASE}/#/login`)
     await wait(page, 3000)
-    const termsLink = page.locator('a[href*="terms"], text=Terms').first()
-    if (await termsLink.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await termsLink.click()
-      await wait(page, 2000)
-      expect(page.url()).toMatch(/terms/)
-    }
+    const termsLink = page.locator('a', { hasText: 'Terms of Use' }).first()
+    await expect(termsLink).toBeVisible({ timeout: 10000 })
+    expect(await termsLink.getAttribute('href')).toBe('https://www.sierro.us/pages/terms')
+    expect(await termsLink.getAttribute('target')).toBe('_blank')
   })
 })

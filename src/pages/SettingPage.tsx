@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useEffect, useCallback } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
   X,
   Send,
@@ -30,6 +30,7 @@ import ToggleSwitch from '../components/ToggleSwitch'
 import type { UserProfile } from '../types/protocol'
 import { requestNotificationPermission, getNotificationPermission, enableWebPush, disableWebPush } from '../utils/pushNotification'
 import { PUSH_ENABLED } from '../config/webPush'
+import { TERMS_URL, PRIVACY_URL } from '../config/legalLinks'
 import { initNativePush, teardownNativePush } from '../utils/nativePush'
 import { Capacitor } from '@capacitor/core'
 
@@ -408,13 +409,13 @@ export default function SettingPage() {
         {/* Legal + Version */}
         <div className="text-center py-2 leading-relaxed">
           <div className="flex items-center justify-center gap-2 mb-1">
-            <Link to="/privacy" className="text-body-md font-semibold text-primary hover:opacity-80 transition-opacity">
+            <a href={PRIVACY_URL} target="_blank" rel="noopener noreferrer" className="text-body-md font-semibold text-primary hover:opacity-80 transition-opacity">
               Privacy Policy
-            </Link>
+            </a>
             <span className="text-ink-7">|</span>
-            <Link to="/terms" className="text-body-md font-semibold text-primary hover:opacity-80 transition-opacity">
+            <a href={TERMS_URL} target="_blank" rel="noopener noreferrer" className="text-body-md font-semibold text-primary hover:opacity-80 transition-opacity">
               Terms of Use
-            </Link>
+            </a>
           </div>
           <p className="text-caption text-ink-7">
             Sierro App v{appVersion.version} &copy; 2026 Sierro Inc.

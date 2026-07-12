@@ -91,7 +91,7 @@ Test-only / CI-only changes that don't alter the shipped bundle do NOT bump.
 ### Route table
 | Route | Component | Bottom nav | Notes |
 |---|---|---|---|
-| `/login` `/register` `/forgot-password` `/terms` `/privacy` | `LoginPage` `RegisterPage` `ForgotPasswordPage` `TermsPage` `PrivacyPage` | no | Auth — separate `AnimatePresence` branch |
+| `/login` `/register` `/forgot-password` | `LoginPage` `RegisterPage` `ForgotPasswordPage` | no | Auth — separate `AnimatePresence` branch |
 | `/devices` | `DevicePage` | **yes** | Device list (default after login) |
 | `/insights` | `StatsPage` | **yes** | Insights (`/stats` redirects here) |
 | `/setting` | `SettingPage` | **yes** | Settings (`/settings` redirects here); `ProfileEditPage` is an overlay inside it |
@@ -109,6 +109,10 @@ Test-only / CI-only changes that don't alter the shipped bundle do NOT bump.
 `VITE_ENABLE_DEV_TOOLS=true` is set at build time; absent entirely from consumer release builds.
 
 Also present but not routed standalone: `ProvisioningPage` (inside DevicePage add-flow).
+- Terms of Use / Privacy Policy (v4.1.2) are no longer in-app routes/local text — every link
+  (`LoginPage`, `RegisterPage`, `SettingPage`, `DataExportPage`) opens the marketing site directly
+  (`src/config/legalLinks.ts`: `TERMS_URL`/`PRIVACY_URL` → `sierro.us/pages/{terms,policy}`,
+  `target="_blank"`/`window.open`). `TermsPage.tsx`/`PrivacyPage.tsx` were deleted.
 - Back navigation on `OverviewPage` and `DeviceMonitorPage` must go to `/devices` via
   `navigate('/devices',{replace:true})` (plus popstate interceptor) — never `navigate(-1)` — to
   avoid history flicker. (Horizontal swipe-to-back was removed to prevent accidental navigation.)
