@@ -156,8 +156,11 @@ Use the label canon below; same metric = same label everywhere except DebugParam
 **SettingPage** (`/setting`)
 - *Profile card*: avatar, name, account action, founder badge.
 - *Push Notifications*: Power Outage (`pushNotifications`), Low Battery (`pushLowBattery`)+threshold slider (`lowBatteryThreshold`), Solar Status (`pushSolarStatus`). Toggles drive Web Push enable/disable.
-  Whole section is gated by `PUSH_ENABLED` (`src/config/webPush.ts`), currently `false` by default
-  (backend/APNs/FCM credentials not ready — see `version.json` changelog) and hidden in production.
+  Section visibility is gated by `PUSH_ENABLED` (`src/config/webPush.ts`) — `true` in every production
+  build since v3.35.5 (requests the OS notification permission; safe on its own). A **separate** flag,
+  `NATIVE_PUSH_READY` (same file, default `false`), gates whether native `PushNotifications.register()`
+  actually runs — it stays off until `google-services.json`/APNs credentials are real, because calling
+  `register()` without them crashes on Android (fixed in v3.35.8 by adding this second gate).
 - *Feedback modal* (EmailJS), *Founder badge modal*, *data export*, legal links + version.
 
 **SmartSchedulePage** (`/smart-schedule`)
@@ -215,3 +218,22 @@ Canonical names/types for request payloads & query params. Keep these consistent
 - **Pagination**: `page` (1-based) + `count` per page across all list endpoints.
 - **Success check**: backend `code` may be number `0` or string `'0'` — use `isApiSuccess(code)`
   from `apiClient.ts`; do not hand-roll `code === 0 || code === '0'` in new code.
+
+---
+
+## Documentation map
+This file is the always-current source of truth for architecture/routes/conventions. Other docs go
+deeper on a specific concern — keep each one scoped to its purpose instead of letting facts drift
+into duplicates (v4.0.0 deleted three docs — `API_STATUS.md`, `QA_TEST_REPORT.md`,
+`TEST_CHECKLIST.md` — whose entire content had quietly become "already fixed" without being updated;
+don't let it happen again):
+
+| File | Purpose |
+|---|---|
+| `docs/PRODUCT_SPEC.md` | Deep implementation reference (store shapes, per-page `useState`/`useEffect`, IndexedDB schema) — CLAUDE.md wins on routes/pages if they ever disagree. |
+| `docs/RELEASE_PLAN.md` | P0–P4 issue tracker: what's fixed (✅ + version tag), what's still debt/pending. Update in place, don't leave stale "still TODO" claims once something ships. |
+| `docs/TEST_PLAN.md` | The one canonical manual+automated test matrix (supersedes the deleted `TEST_CHECKLIST.md`). |
+| `API_REFERENCE.md` | Full backend API surface (all 41 groups/227 endpoints Sierro's own backend exposes), not just what this app calls — a superset reference. |
+| `docs/NATIVE_SETUP.md` | Capacitor native plugin/permission setup for Android/iOS builds. |
+| `docs/RELEASE_SIGNING.md` / `docs/PLAY_SUBMISSION.md` | Store submission mechanics (signing, Play Console form answers). |
+| `server/README.md` | A separate, optional reference push-relay backend in `server/` — not the main API. |

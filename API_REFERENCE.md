@@ -901,6 +901,10 @@
 
 | Method | Path | Summary | Query Params | Body |
 |--------|------|---------|-------------|------|
+| POST | `/deviceOverView/generationPower/daily` | 获取设备当日发电功率明细 | `deviceId*` | `{time: "yyyy-mm-dd"}` |
+| POST | `/deviceOverView/generatedEnergy/monthly` | 获取设备当月每天发电量 | `deviceId*` | `{time: "yyyy-mm"}` |
+| POST | `/deviceOverView/generatedEnergy/yearly` | 获取设备当年每月发电量 | `deviceId*` | `{time: "yyyy"}` |
+| POST | `/deviceOverView/generatedEnergy/total` | 获取设备历年发电量 | `deviceId*` | - |
 | POST | `/deviceOverView/stateAttributeSummary/category/daily` | 获取状态属性统计类目设备日汇总 | `deviceId*`, `summaryCategoryKey*` | `DailyDtio` |
 | POST | `/deviceOverView/stateAttributeSummary/category/monthly` | 获取状态属性统计类目设备月度汇总 | `deviceId*`, `summaryCategoryKey*` | `MonthlyDtio` |
 | POST | `/deviceOverView/stateAttributeSummary/category/yearly` | 获取状态属性统计类目设备年度汇总 | `deviceId*`, `summaryCategoryKey*` | `YearlyDtio` |
@@ -909,6 +913,12 @@
 | POST | `/deviceOverView/stateAttributeSummary/monthly` | 获取设备状态属性月度汇总 | `deviceId*`, `summaryPropertyKey*` | `MonthlyDtio` |
 | POST | `/deviceOverView/stateAttributeSummary/yearly` | 获取设备状态属性年度汇总 | `deviceId*`, `summaryPropertyKey*` | `YearlyDtio` |
 | POST | `/deviceOverView/stateAttributeSummary/total` | 获取设备状态属性年总计 | `deviceId*`, `summaryPropertyKey*` | - |
+
+> **实测验证（2026-07-12）**：`generationPower/daily`/`generatedEnergy/monthly` 用普通消费者账号
+> （非安装商/厂商角色）的 `IOT-Token` 即可直接调通，无需特殊权限。响应逐条带 `isRealValue` 布尔
+> 字段，标识该数据点是设备真实上报还是后端补的占位值——`/deviceState/attribute/keys/history`
+> （Sierro Insights 页当前用的接口）没有这个能力。Sierro 尚未接入这组接口，评估细节见
+> `RELEASE_PLAN.md` P4 与桌面留存的 `Sierro_App_vs_sise_wifi_config_对比文档.md` 第 11.3 节。
 
 ---
 
@@ -1048,5 +1058,5 @@
 
 ---
 
-> 📊 **共计 41 个服务分组，223 个接口端点**
-> 最后更新: 2026-05-12
+> 📊 **共计 41 个服务分组，227 个接口端点**
+> 最后更新: 2026-07-12（新增 §39 的 4 个 `generationPower`/`generatedEnergy` 端点，实测校验过）

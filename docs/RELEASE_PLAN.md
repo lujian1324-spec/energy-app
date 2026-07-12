@@ -5,7 +5,12 @@
 > 高严重度结论经读码核实。已修复项标注 **✅DONE(版本号)**，待办标注 P 级别。
 > 使用方式：按 P0 → P3 / M1 → M6 推进；每项含"问题 / 影响 / 建议 / 工作量"。
 
-## 进度快照（截至 v3.31.x）
+## 进度快照（截至 v4.0.0）
+
+> 2026-07-12：本文档随 v4.0.0 做了一次整理——`docs/QA_TEST_REPORT.md`（v3.13.0 时的静态审查快照）
+> 和 `docs/API_STATUS.md`（早期 API 对接进度表）已删除：逐条核实后，两份文档里记录的问题
+> （后门测试账号、DataExportPage 不可达、`/peak-shaving` 死路由、历史数据/添加设备/找回密码等
+> "未对接" API）**全部已经修复/实现**，继续留着旧文档只会在以后误导人以为问题还在。
 
 | 已完成 ✅ | 版本 |
 |---|---|
@@ -22,12 +27,18 @@
 | 质量：CI e2e 改测 PR 自身构建（不再测线上）；真实账号凭据移入 env | v3.31.x |
 | P0-3 品牌图标/启动图：SIERRO 字标白底黑字，两端全套 | v3.33.0 |
 | P0-4 推送裁剪：PUSH_ENABLED 总开关（默认关），隐藏推送设置区、启动不申请通知权限、引导不索通知权限 | v3.34.0 |
+| P3-2 单元测试起步（见下方 P3-2 详情，**已从"0"推进到 7 个文件/68 项**） | v3.35.x |
+| Overview 页 Energy Flow Detail Groups 泄漏原始中文寄存器名 → 补全 `localization.ts` 翻译层 | v3.35.6 |
+| Android release AAB 未开 R8/minifyEnabled（Play Console 报"无去混淆文件"）+ 未打包原生调试符号 → 开 R8/shrinkResources + `ndk.debugSymbolLevel` | v3.35.7 |
+| Android 授予 Notifications 权限后闪退 → 根因 `google-services.json` 缺失导致 FirebaseApp 未初始化，`PushNotifications.register()` 无保护地调用；新增 `NATIVE_PUSH_READY` 开关挡住该调用直到真凭据就绪 | v3.35.8 |
+| **蓝牙直连模式**：Overview 页手动切换，云端不可达时经 BLE 直接读实时状态/控关键控制项，复用已有配网 GATT 通道 + Modbus 帧层，零重复代码 | v3.36.0 |
 
 | 仍待办（需产品决策/外部依赖） | 级别 |
 |---|---|
-| M4 Android release 签名 + AAB / iOS TestFlight（需证书/keystore） | 阻断 |
-| P2 双 store 退役、API 归一化、实时链路收口 | 债 |
-| P3 单元测试(Vitest)、崩溃监控(Sentry)、代码分割 | 护栏 |
+| M4 iOS TestFlight（需 Mac + 证书；Android release AAB 已可产出，见下方 P3-1） | 阻断（仅 iOS） |
+| P2 双 store 退役、API 归一化、实时链路收口（DeviceMonitorPage 接入 `useLiveDeviceStatus`/蓝牙直连） | 债 |
+| P3-4 崩溃监控(Sentry)、P3-5 代码分割 | 护栏 |
+| 评估 sise_wifi_config 对比文档里发现的两个真实缺口：头像上传从未真正调后端接口、远程重启设备指令未接（详见文末新增小节） | 待评估 |
 
 ---
 
@@ -191,15 +202,15 @@
 
 ## P3 — 测试与发布工程（护栏,支撑长期迭代）
 
-### P3-1 版本 + 发布自动化
-- 由 `version.json` 注入 Android versionName / iOS MARKETING_VERSION;versionCode/build 用 CI run number 自增。
-- Android CI 目前只出 debug APK → 增加 **release AAB**(签名 keystore 走 CI secret);iOS CI 目前只出无签名模拟器包 → 接 **TestFlight**(fastlane 或 Xcode Cloud,需证书)。
-- **工作量**：1-2 天(不含证书申请)。
+### P3-1 版本 + 发布自动化 ✅（Android 部分完成，iOS 仍待）
+- 由 `version.json` 注入 Android versionName / iOS MARKETING_VERSION;versionCode/build 用 CI run number 自增。**已完成**。
+- Android：`Android Release AAB` workflow 已存在（签名 keystore 走 CI secret，未配置时产出未签名 AAB 供本地冒烟）；v3.35.7 追加开启 R8/minifyEnabled + `ndk.debugSymbolLevel`，解决了 Play Console "无去混淆文件/未打包原生调试符号" 两条上传警告。**Android 这条链路已经打通**，剩下只是走一次真实签名上传验证。
+- iOS：CI 仍只出无签名模拟器包，TestFlight 未接（需 Mac + 证书，见 `RELEASE_SIGNING.md`）。**仍待办**。
 
-### P3-2 单元测试(当前为 0)
-- 最高价值纯函数目标:`modbusProtocol`(CRC/decodeLiveStatus/REG_DESC 枚举)、`batteryTime`、`alarmText`、`iotSign`、`apiClient` 重试。
-- 用 **Vitest**(与 Vite 5 天然契合)。协议层已用合成帧手工验证过,固化为回归测试半天即可起步。
-- **工作量**：起步 0.5 天,持续补充。
+### P3-2 单元测试 ✅ 已从 0 起步（`npm run test:unit`，7 个文件 / 68 项，Vitest）
+- 当前实际覆盖（非计划）：`modbusProtocol`(CRC/`decodeLiveStatus`/寄存器枚举/`parseResponseToParams`)、`bleDirect`(BLE UART 透传解码/端口控制/Sleep 功率写入的合成响应测试)、`parseSupported`(速报探测) 等纯函数/协议层逻辑。
+- **仍值得补充**：`batteryTime`、`alarmText`、`iotSign`、`apiClient` 重试逻辑目前没有专门测试文件——不是"从零开始"，是在已有基础上加宽覆盖面。
+- **工作量**：持续补充，无需再"起步"。
 
 ### P3-3 e2e 扩展
 - 现有 30 个用例覆盖导航/认证/PWA 健康,**未覆盖**:设备控制(开关/充电功率)、配网流程、Smart Schedule、通知。真实账号用例依赖硬编码凭据(应改为 CI secret)。
@@ -213,6 +224,20 @@
 ### P3-5 包体与加载
 - dist 预缓存 ~1.26MB。按路由 `React.lazy` 拆分(尤其重页 Overview/Stats/Provisioning),缩短首屏。
 - **工作量**：1 天。
+
+### P4 — 对照 sise_wifi_config（厂商参考 App）发现的两个真实功能缺口
+> 来源：`Sierro_App_vs_sise_wifi_config_对比文档.md`（本仓库外，桌面留存）第 11 节，逐条核实过代码。
+
+- **头像上传是假的**：`ProfileEditPage.tsx` 的头像"上传"只是把选中图片转成 base64 存进本地
+  React state（`FileReader`），**从未调用任何后端接口**——换设备/重装 App 头像就丢。`authApi.ts`
+  已经预留了 `avatarUrl` 字段，说明后端本来就期望有真实上传。后端有对应端点
+  `/resource/upload/icon`（`multipart`，参考 `sise_wifi_config` 的 `Proto.doUpload`）。
+  **这是本轮唯一一个"前端 UI 已经做了、后端接口没接上"的真实缺口，优先级应高于下面这条。**
+- **远程重启设备未接**：后端有 `/remote/dtu/restart/dev`，成本低（一个 API 调用），对用户排障价值
+  直接（"设备卡住了，远程重启"），`DeviceDetailPage` 目前没有对应入口。
+- 其余对比出来的 82 个"多出接口"（厂商/安装商角色管理、多电站聚合看板、近场协议协商等）判断为
+  **不需要**——服务于完全不同的用户角色，详见对比文档第 11 节。
+- **工作量**：头像上传 0.5-1 天（前端接线 + 后端确认字段）；远程重启 0.5 天。
 
 ---
 
@@ -228,13 +253,13 @@
 
 ## 建议执行顺序（面向"可提交商店的构建"）
 
-| 里程碑 | 内容 | 依赖 |
+| 里程碑 | 内容 | 状态 |
 |---|---|---|
-| **M1 安全止血(本周)** | P0-1 删泄露文件 + 轮换密钥 | 平台方轮换 AppSecret |
-| **M2 合规红线** | P0-2 删账号、P0-3 图标/splash、P0-5 相册声明、P0-6 Demo 账号、P1-1 隐私一致、P1-5 隐藏调试页、P1-6 加密声明 | 品牌设计出图 |
-| **M3 推送决策** | P0-4:首发实现 或 裁剪隐藏 | 后端 + Firebase/APNs |
-| **M4 构建管线** | P1-4 版本同步、P3-1 release AAB + TestFlight | 签名证书/keystore |
-| **M5 提交送审** | 商店素材、审核备注、内测(Play internal / TestFlight) | 前述完成 |
-| **M6 发布后迭代** | P2 架构债 + P3 测试/监控 | — |
+| **M1 安全止血** | P0-1 删泄露文件 + 轮换密钥 | ✅ 完成 |
+| **M2 合规红线** | P0-2 删账号、P0-3 图标/splash、P0-5 相册声明、P0-6 Demo 账号、P1-1 隐私一致、P1-5 隐藏调试页、P1-6 加密声明 | ✅ 完成 |
+| **M3 推送决策** | P0-4 裁剪隐藏（`PUSH_ENABLED`/`NATIVE_PUSH_READY` 双开关，见 v3.34.0/v3.35.8） | ✅ 完成（裁剪路线；首发未实现完整推送） |
+| **M4 构建管线** | P1-4 版本同步 ✅、P3-1 Android release AAB ✅（R8 已开）、iOS TestFlight ⬜ | 仅 iOS 待办，需 Mac + 证书 |
+| **M5 提交送审** | 商店素材、审核备注、内测(Play internal / TestFlight) | Android 侧材料已备（见 `PLAY_SUBMISSION.md`）；iOS 待 M4 |
+| **M6 发布后迭代** | P2 架构债 + P3 测试/监控 + P4 API 缺口 | 进行中 |
 
-> M1–M2 是硬门槛,M3 需产品决策,M4 需证书。M2 里除图标外全部可在代码侧完成。
+> Android 已具备可提交商店的构建管线；剩余唯一阻断项是 iOS 签名/TestFlight（需 Mac + Apple 开发者账号）。

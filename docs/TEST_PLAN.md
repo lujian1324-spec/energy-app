@@ -11,7 +11,8 @@
 | 环境 | 地址 / 来源 |
 |---|---|
 | Web PWA | https://lujian1324-spec.github.io/energy-app/ |
-| Android APK | Actions → Build Android APK → 最新 run 的 artifact(当前 v3.34.2) |
+| Android APK | Actions → Build Android APK → 最新 run 的 artifact(当前 v4.0.0) |
+| Android Release AAB | Actions → Android Release AAB(手动触发/打 tag);已开 R8+原生调试符号(v3.35.7) |
 | iOS | 需 Mac + TestFlight(尚未就绪) |
 | 账号 | 真实测试账号(勿用主账号);游客模式用 "Continue as Guest" |
 
@@ -77,6 +78,11 @@
 | O-09 | 端口开关 | P1 | A | AC1/AC2/USB | 状态切换生效 | 手动 |
 | O-10 | 实时功率图 | P1 | W/A | 看图表 | 当日历史曲线 + 右上实时徽标;缩放/平移 | 手动 |
 | O-11 | 电池时间估算 | P2 | W/A | 看剩余/充满时间 | 用真实容量算,数值合理(非明显错误) | 手动 |
+| O-12 | **能量流分组无中文泄漏** | P1 | W/A | 展开 Energy Flow Detail Groups | 所有分组名/字段名/值/单位均为英文(验证 v3.35.6 修复) | 手动 |
+| O-13 | **蓝牙直连连接** | P1 | A | 点头部蓝牙图标 | 原生列表扫描附近 SSL_ 设备(或 Web 系统选择器);连接成功后徽标变"Direct" | 手动(真机+设备) |
+| O-14 | **蓝牙直连实时数据** | P1 | A | 直连成功后 | Battery/AC/Solar/Output/Temp 与云端模式数值一致或合理 | 手动(真机+设备) |
+| O-15 | **蓝牙直连基础控制** | P1 | A | 直连模式下切 Sleep Mode / AC / DC 端口 | 命令下发成功;Ports 区仅显示 AC + DC 两路(非云端的三路),Sleep Mode 立即生效(非排程) | 手动(真机+设备) |
+| O-16 | **蓝牙直连断开回退** | P2 | A | 点断开 | 回到云端模式(fastReport/passthrough),不遗留 BLE 会话 | 手动 |
 
 ## 5. Device Info / Insights / Smart Schedule / Notifications
 
@@ -100,7 +106,8 @@
 |---|---|---|---|---|---|---|
 | S-01 | Settings 加载 | P1 | W/A | 进 /setting | Profile/推送(见 S-02)/反馈/版本 | ✅ |
 | S-02 | **推送区隐藏** | P0 | W/A | 看 Settings | 无 Push Notifications 区(PUSH_ENABLED=false,验证 v3.34.0) | 手动 |
-| S-03 | 版本号 | P2 | W/A | 底部 | 显示 Sierro App v3.34.2 | 手动 |
+| S-02b | **授予通知权限不崩溃** | P0 | A | Settings → Permissions → Notifications → Allow(或权限引导页 Allow All) | 系统弹窗正常出现并可选择;选允许后 App **不闪退**(验证 v3.35.8 崩溃修复:`NATIVE_PUSH_READY=false` 时跳过不安全的 `PushNotifications.register()`) | 手动(真机,尤其升级过 v3.35.5-v3.35.7 的机器) |
+| S-03 | 版本号 | P2 | W/A | 底部 | 显示 Sierro App v4.0.0 | 手动 |
 | S-04 | 反馈提交 | P2 | W/A | Feedback | EmailJS 发送成功 | 手动 |
 | S-05 | **删除账号真删** | P0 | W/A | Profile→Delete Account→确认 | 调 deleteAccount API(loading→成功→登出),非仅登出(验证 v3.31.0) | 手动 |
 | S-06 | 数据导出 | P2 | W/A | Data Export→JSON/CSV | 下载文件,版本号正确 | 手动 |
@@ -160,12 +167,19 @@
 - [ ] typecheck 42 错清零(v3.28.0)→ CI tsc
 - [ ] API 5xx/超时重试 + 401 刷新(v3.28.0)→ 单测/手动
 - [ ] QR Rescan 不冻结(v3.28.0)→ B-10
+- [ ] Energy Flow 分组无中文泄漏(v3.35.6)→ O-12
+- [ ] Android release AAB 不再报"无去混淆文件"(v3.35.7)→ 上传 Play Console 检查警告
+- [ ] 授予通知权限不闪退(v3.35.8)→ S-02b
+- [ ] 蓝牙直连模式可用(v3.36.0)→ O-13~O-16
 
 ---
 
 ## 11. 自动化覆盖现状(全部可在 CLI 运行)
-- **单元 + 接口契约**(`src/**/*.test.ts`,Vitest,`npm run test:unit`,**60 项**):
+- **单元 + 接口契约**(`src/**/*.test.ts`,Vitest,`npm run test:unit`,**7 个文件,68 项**):
   - 纯逻辑:Modbus CRC/解码/0x0133 枚举、电池时间、isApiSuccess、速报探测。
+  - **BLE 直连解码/控制**(`src/protocols/bleDirect.test.ts`,新增于 v3.36.0):用合成的 UART 透传
+    响应验证 `readLiveStatusBle`(含 CRC 校验失败/RC!==0/传输异常三种失败路径均返回 null,不误信
+    坏数据)、`setAcOutputBle`/`setDcOutputBle`/`setSleepPowerBle` 的成功/失败判定。
   - **全接口契约**(`src/api/api-contract.test.ts`,38 项):mock 传输层,逐个断言
     77 个 API 函数的端点/payload/字段约定(deviceId String、密码 md5、captchaId、
     邮箱验证码 `address` 字段、国家码去 `+`、无 userId 规则、透传 hex→base64 等)。
