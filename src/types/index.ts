@@ -264,6 +264,9 @@ export interface AppSettings {
   batteryMode?: number;
   /** PRD v1.1 §4.6: Solar Status push notification */
   pushSolarStatus?: boolean;
+  /** Any other firing device alarm (not Power Outage/Low Battery/Solar Status) — cloud
+   *  alarm center already shows everything; this is whether it also pushes a notification. */
+  pushDeviceAlarms?: boolean;
 }
 
 // 削峰填谷时间段配置

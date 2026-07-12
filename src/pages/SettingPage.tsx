@@ -65,13 +65,14 @@ export default function SettingPage() {
   const [pushOutage, setPushOutage] = useState(settings.pushNotifications)
   const [pushLowBattery, setPushLowBattery] = useState(settings.pushLowBattery ?? false)
   const [pushSolarStatus, setPushSolarStatus] = useState(settings.pushSolarStatus ?? false)
+  const [pushDeviceAlarms, setPushDeviceAlarms] = useState(settings.pushDeviceAlarms ?? false)
   const [lowBatteryThreshold, setLowBatteryThreshold] = useState(settings.lowBatteryThreshold ?? 30)
 
   // 任一推送开关变化后，编排服务端推送：
   // - 打开任一开关 → 原生:接线 APNs/FCM 并上报 token;Web:VAPID 订阅 + 上报
   // - 全部关闭     → 注销
-  const syncWebPush = useCallback(async (outage: boolean, lowBat: boolean, solar: boolean) => {
-    const anyOn = outage || lowBat || solar
+  const syncWebPush = useCallback(async (outage: boolean, lowBat: boolean, solar: boolean, deviceAlarms: boolean) => {
+    const anyOn = outage || lowBat || solar || deviceAlarms
     if (Capacitor.isNativePlatform()) {
       if (anyOn) await initNativePush()
       else await teardownNativePush()
@@ -228,7 +229,7 @@ export default function SettingPage() {
                 if (next && getNotificationPermission() !== 'granted') {
                   await requestNotificationPermission()
                 }
-                await syncWebPush(next, pushLowBattery, pushSolarStatus)
+                await syncWebPush(next, pushLowBattery, pushSolarStatus, pushDeviceAlarms)
               }}
               ariaLabel="Toggle power outage alerts"
             />
@@ -254,7 +255,7 @@ export default function SettingPage() {
                 if (next && getNotificationPermission() !== 'granted') {
                   await requestNotificationPermission()
                 }
-                await syncWebPush(pushOutage, next, pushSolarStatus)
+                await syncWebPush(pushOutage, next, pushSolarStatus, pushDeviceAlarms)
               }}
               ariaLabel="Toggle low battery alerts"
             />
@@ -329,9 +330,36 @@ export default function SettingPage() {
                 if (next && getNotificationPermission() !== 'granted') {
                   await requestNotificationPermission()
                 }
-                await syncWebPush(pushOutage, pushLowBattery, next)
+                await syncWebPush(pushOutage, pushLowBattery, next, pushDeviceAlarms)
               }}
               ariaLabel="Toggle solar status alerts"
+            />
+          </div>
+
+          {/* Device Alarms — everything else the cloud reports (over-temp, cell fault,
+              bus overvoltage, etc.) that isn't Power Outage/Low Battery/Solar Status.
+              The alarm center (Notifications page) already shows all of these regardless;
+              this only controls whether they also push a notification. */}
+          <div className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 text-left">
+            <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
+              <Icon name="alert" size={16} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-body-lg font-semibold text-ink-1">Device Alarms</div>
+              <div className="text-body-md text-ink-6 mt-0.5">Get alerted for other device faults (over-temp, cell, bus, etc.)</div>
+            </div>
+            <ToggleSwitch
+              isOn={pushDeviceAlarms}
+              onToggle={async () => {
+                const next = !pushDeviceAlarms
+                setPushDeviceAlarms(next)
+                updateSettings({ pushDeviceAlarms: next })
+                if (next && getNotificationPermission() !== 'granted') {
+                  await requestNotificationPermission()
+                }
+                await syncWebPush(pushOutage, pushLowBattery, pushSolarStatus, next)
+              }}
+              ariaLabel="Toggle other device alarm alerts"
             />
           </div>
         </motion.div>

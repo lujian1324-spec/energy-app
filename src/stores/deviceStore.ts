@@ -46,7 +46,9 @@ import {
 import type { ApiResponse } from '../utils/apiClient'
 import { isApiSuccess } from '../utils/apiClient'
 import { useAuthStore } from './authStore'
+import { usePowerStationStore } from './powerStationStore'
 import { checkAndNotifyPowerOutage } from '../utils/powerOutageNotification'
+import { checkAndNotifyDeviceAlarms } from '../utils/deviceAlarmNotification'
 import {
   demoDevices,
   getDemoDeviceState,
@@ -266,14 +268,18 @@ export const useDeviceStore = create<DeviceStoreState>()(
           if (seq !== stateRequestSeq) return
           if ((result.code === 0 || result.code === '0') && result.data) {
             set({ selectedDeviceState: result.data, stateLoading: false })
-            // Power outage push notification
+            // Push notifications for firing alarms (Power Outage has its own toggle;
+            // everything else is covered by the generic Device Alarms toggle)
             const details = get().selectedDeviceDetails
             if (details?.isOnline) {
-              checkAndNotifyPowerOutage(
-                details.name,
-                true,
-                result.data.firingAlarms ?? []
-              )
+              const { settings } = usePowerStationStore.getState()
+              const firingAlarms = result.data.firingAlarms ?? []
+              if (settings.pushNotifications) {
+                checkAndNotifyPowerOutage(details.name, true, firingAlarms)
+              }
+              if (settings.pushDeviceAlarms) {
+                checkAndNotifyDeviceAlarms(details.name, true, firingAlarms)
+              }
             }
           } else {
             set({ stateLoading: false })

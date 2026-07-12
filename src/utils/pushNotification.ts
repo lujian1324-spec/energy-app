@@ -337,6 +337,32 @@ export const showSolarChargingNotification = async (solarW: number): Promise<voi
   await showLocalNotification('Solar charging started ☀️', options)
 }
 
+// 显示通用设备告警通知（覆盖 Power Outage/Low Battery/Solar Status 之外的所有云端告警）
+export const showDeviceAlarmNotification = async (
+  deviceName: string,
+  alarmId: string,
+  alarmText: string,
+  severity?: string
+): Promise<void> => {
+  const basePath = getBasePath()
+  const isIOSDevice = isIOS()
+  const icon = severity && /critical|major|high/i.test(severity) ? '🔴' : '⚠️'
+
+  const options: NotificationOptions & { vibrate?: number[]; renotify?: boolean } = {
+    body: `${deviceName}: ${alarmText}`,
+    icon: `${basePath}/icon-192x192.png`,
+    badge: `${basePath}/badge-96.png`,
+    tag: `device-alarm-${alarmId}`,
+    renotify: false,
+    requireInteraction: !isIOSDevice,
+    silent: false,
+    data: { type: 'device-alarm', alarmId, timestamp: Date.now() },
+  }
+  if (!isIOSDevice) options.vibrate = [200, 100, 200]
+
+  await showLocalNotification(`${icon} Device Alarm`, options)
+}
+
 // 订阅 Push 服务（用于服务器推送）
 export const subscribeToPush = async (
   vapidPublicKey?: string
