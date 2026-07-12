@@ -67,8 +67,14 @@ export default function ForgotPasswordPage() {
     setError('')
     setLoading(true)
     try {
+      // `account` is required by the backend (rejects with "illegal argument: account
+      // must not be blank" if omitted) — it accepts email as the account identifier,
+      // same as the login page's "Username or email" field. Previously sent as '' and
+      // omitted, which made every reset attempt fail validation before the verification
+      // code was ever checked — surfaced to the user as a misleading "invalid/expired
+      // code" message regardless of whether the code was actually correct.
       const result = await resetPassword(
-        '',
+        email.trim(),
         newPassword,
         code.trim(),
         captchaId ?? undefined,

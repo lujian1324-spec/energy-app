@@ -353,9 +353,16 @@ export default function DevicePage() {
     navigate(`/device/${device.id}`)
   }
 
-  // 设备型号显示（Sierro 1000 / Sierro 2000 ...）
-  const getDeviceModel = (device: DeviceListItem): string =>
-    device.model || device.gatherProtocolNameDisplay || 'Sierro'
+  // 设备型号显示（Sierro 1000 / Sierro 2000）。云端 `model` 字段对真实设备常返回 null，
+  // 所以在它和 gatherProtocolNameDisplay 都缺失时，按板载额定功率(ratedPower)推断——
+  // 500W 板 = Sierro 1000，1000W 板 = Sierro 2000（对照 src/data/deviceModels.ts 的规格表），
+  // 这是设备自身真实上报的硬件参数，比云端可能缺失的 model 字符串更可靠。
+  const getDeviceModel = (device: DeviceListItem): string => {
+    if (device.model) return device.model
+    if (device.gatherProtocolNameDisplay) return device.gatherProtocolNameDisplay
+    if (device.ratedPower) return device.ratedPower >= 750 ? 'Sierro 2000' : 'Sierro 1000'
+    return 'Sierro'
+  }
 
   // 电量标签颜色（依 BatteryTag 9 状态规范）
   // 60-100% 绿/主色，20-59% 橘，1-19% 红
