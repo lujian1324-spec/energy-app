@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ChevronLeft, X, Check, Loader2 } from 'lucide-react'
 import { registerByEmail, sendEmailCaptcha } from '../api/authApi'
@@ -23,6 +23,12 @@ export default function RegisterPage() {
   const [sending, setSending] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  // Synchronous lock — `sending` state alone has a render-lag window where a fast
+  // double-tap can fire handleObtainCode twice before the button visually disables,
+  // requesting two codes for the same email. The second request's captchaId silently
+  // overwrites the first in state, invalidating the code from the first email the user
+  // might actually be reading — this ref closes that race regardless of render timing.
+  const obtainingRef = useRef(false)
 
   // Countdown timer
   useEffect(() => {
@@ -40,14 +46,18 @@ export default function RegisterPage() {
   const canSubmit = accountValid && emailValid && codeValid && passwordValid && confirmValid && agreed
 
   const handleObtainCode = async () => {
-    if (countdown > 0) return
+    if (countdown > 0 || obtainingRef.current) return
     if (!emailValid) { setError('Please enter a valid email address.'); return }
+    obtainingRef.current = true
     setError('')
     setSending(true)
     try {
       const result = await sendEmailCaptcha(email.trim(), '1')
       if (result.code === 0 || result.code === '0') {
+        // New code invalidates any previous one for this email — drop the old
+        // captchaId/typed code so a stale retry can't silently fire against it.
         setCaptchaId(result.data?.iotCaptchaId ?? null)
+        setCode('')
         setCountdown(60)
       } else {
         setError(result.message || result.msg || 'Failed to send code.')
@@ -56,6 +66,7 @@ export default function RegisterPage() {
       setError('Failed to send code. Please try again.')
     } finally {
       setSending(false)
+      obtainingRef.current = false
     }
   }
 
@@ -80,13 +91,22 @@ export default function RegisterPage() {
         }
       } else {
         const raw = result.message ?? result.msg ?? ''
+        // Backend code 4 / "Verification code error": confirmed live that this fires
+        // whenever the submitted code doesn't match the *current* captchaId session —
+        // including when the session was already consumed by an earlier attempt (a
+        // retry with a "corrected" code against the same captchaId can still fail).
+        // Force a fresh code rather than letting the user silently retry a dead session.
+        const isCodeMismatch = result.code === 4 || result.code === '4' || /verification code error/i.test(raw)
         const friendly =
-          /account.*exist|already.*exist|duplicate|illegalArgument|illegal.?argument|account.*used|username.*taken/i.test(raw)
+          isCodeMismatch
+            ? 'That code didn’t match. Please request a new code and try again.'
+            : /account.*exist|already.*exist|duplicate|illegalArgument|illegal.?argument|account.*used|username.*taken/i.test(raw)
             ? 'This username is already in use. Please choose another.'
             : /email.*exist|email.*used/i.test(raw)
             ? 'This email is already registered. Please sign in instead.'
             : raw || 'Registration failed. Please try again.'
         setError(friendly)
+        if (isCodeMismatch) { setCaptchaId(null); setCode(''); setCountdown(0) }
       }
     } catch {
       setError('Registration failed. Please try again.')
@@ -111,8 +131,9 @@ export default function RegisterPage() {
         <h1 className="font-display text-headline-lg text-ink-1 mb-1">Create Account</h1>
         <p className="text-body-md text-ink-7 mb-8">Sign up to get started with Sierro.</p>
 
-        {/* Account */}
-        <label className="block text-label text-ink-7 mb-1.5">Account</label>
+        {/* Username (login identifier — sent to the backend as `account`; kept as
+            "Username" everywhere in the UI, matching LoginPage, not "Account") */}
+        <label className="block text-label text-ink-7 mb-1.5">Username</label>
         <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-4 focus-within:ring-1 focus-within:ring-inset focus-within:ring-primary transition-shadow">
           <input
             type="text"
@@ -161,12 +182,12 @@ export default function RegisterPage() {
             placeholder="6-digit code"
             autoComplete="one-time-code"
             maxLength={6}
-            className="flex-1 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
+            className="flex-1 min-w-0 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
           />
           <button
             onClick={handleObtainCode}
             disabled={countdown > 0 || sending || !emailValid}
-            className="shrink-0 text-label font-semibold text-primary disabled:text-ink-7 transition-colors flex items-center gap-1"
+            className="shrink-0 whitespace-nowrap text-label font-semibold text-primary disabled:text-ink-7 transition-colors flex items-center gap-1"
           >
             {sending ? <Loader2 size={14} className="animate-spin" /> : null}
             {countdown > 0 ? `Resend (${countdown})` : 'Obtain Code'}

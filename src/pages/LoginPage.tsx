@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Loader2, X } from 'lucide-react'
 import { useAuthStore } from '../stores/authStore'
+import { useDeviceStore } from '../stores/deviceStore'
 import { sendEmailCaptcha, loginByEmail, CaptchaIntent } from '../api/authApi'
 import { TERMS_URL, PRIVACY_URL } from '../config/legalLinks'
 
@@ -104,6 +105,9 @@ export default function LoginPage() {
       try {
         const result = await loginByEmail(email.trim(), captchaId, otpCode.trim())
         if (result.code === 0 || result.code === '0') {
+          // 同 authStore.login()：必须退出 Demo 模式，否则之前用过 Guest 模式的用户
+          // 真实登录后仍会看到上一次游客会话残留的假设备数据。
+          useDeviceStore.getState().exitDemoMode()
           useAuthStore.setState({ isAuthenticated: true, isGuest: false, user: result.data ?? null })
           navigate('/', { replace: true })
         } else {
@@ -237,12 +241,12 @@ export default function LoginPage() {
               placeholder="Verification code"
               autoComplete="one-time-code"
               maxLength={6}
-              className="flex-1 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
+              className="flex-1 min-w-0 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
             />
             <button
               onClick={handleObtainCode}
               disabled={cooldown > 0 || sending || !emailValid}
-              className="shrink-0 text-label font-semibold text-primary disabled:text-ink-7 transition-colors
+              className="shrink-0 whitespace-nowrap text-label font-semibold text-primary disabled:text-ink-7 transition-colors
                 flex items-center gap-1"
             >
               {sending ? <Loader2 size={14} className="animate-spin" /> : null}

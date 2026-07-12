@@ -14,6 +14,7 @@ import { X } from 'lucide-react'
 import ProvisioningPage from './ProvisioningPage'
 import { saveUserProfile, getUserProfile } from '../db/powerflowDB'
 import { useAuthStore } from '../stores/authStore'
+import { updateUserInfo } from '../api/authApi'
 
 type Step = 'name' | 'device'
 
@@ -40,6 +41,11 @@ export default function OnboardingPage() {
         memberSince: existing?.memberSince ?? new Date().toISOString(),
         updatedAt: Date.now(),
       })
+      // 同步到服务端 nickname，否则这个名字只存在本地 IndexedDB，ProfileEditPage
+      // 下次会显示服务端的 nickname/account（不是这里填的名字），显得"改了又没生效"。
+      try { await updateUserInfo({ nickname: trimmed }) } catch (err) {
+        console.error('[Onboarding] updateUserInfo(nickname) failed:', err)
+      }
     } catch (err) {
       console.error('[Onboarding] saveUserProfile failed:', err)
     } finally {

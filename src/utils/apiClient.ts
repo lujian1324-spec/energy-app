@@ -158,9 +158,14 @@ export async function requestInternal<T = unknown>(
         })
 
     // 构造请求头
+    // Accept-Language 显式固定为英文：不设置时后端似乎按请求方（浏览器/设备系统语言）自动探测
+    // 语言来发送验证码邮件等模板内容，导致同一账号在中文语言环境的设备上收到中文邮件、英文环境
+    // 收到英文邮件——但 App UI 本身是纯英文（见 CLAUDE.md label canon），邮件语言不该随机跟随
+    // 设备语言漂移，统一固定为英文。
     const headers: Record<string, string> = {
       'Accept': 'application/json',
       'Content-Type': 'application/json; charset=utf-8',
+      'Accept-Language': 'en-US,en;q=0.9',
       'Origin': 'https://solar.siseli.com',
       'Referer': 'https://solar.siseli.com/',
       ...signHeaders,

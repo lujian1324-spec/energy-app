@@ -69,6 +69,10 @@ export const useAuthStore = create<AuthState>()(
             }
             // 登录成功必须清除游客标记，否则会出现 isGuest && isAuthenticated
             // 同时为真，导致游客横幅残留、/login 路由被守卫弹回。
+            // 同时必须退出 Demo 模式：isDemoMode 和 demo 设备列表持久化在
+            // powerflow-device-store 里，如果用户之前用过 "Continue as Guest"，
+            // 不清除的话真实登录后仍会显示上一次游客会话残留的假数据（RELEASE_PLAN P1-2）。
+            useDeviceStore.getState().exitDemoMode()
             set({ isAuthenticated: true, isGuest: false, user: result.data, loading: false, error: null })
             return true
           }

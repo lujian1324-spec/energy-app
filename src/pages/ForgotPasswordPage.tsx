@@ -171,12 +171,12 @@ export default function ForgotPasswordPage() {
                 placeholder="6-digit code"
                 autoComplete="one-time-code"
                 maxLength={6}
-                className="flex-1 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
+                className="flex-1 min-w-0 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
               />
               <button
                 onClick={handleSendCode}
                 disabled={countdown > 0 || sending || !emailValid}
-                className="shrink-0 text-label font-semibold text-primary disabled:text-ink-7 transition-colors flex items-center gap-1"
+                className="shrink-0 whitespace-nowrap text-label font-semibold text-primary disabled:text-ink-7 transition-colors flex items-center gap-1"
               >
                 {sending ? <Loader2 size={14} className="animate-spin" /> : null}
                 {countdown > 0 ? `Resend (${countdown})` : 'Resend'}
