@@ -636,7 +636,7 @@ export default function DevicePage() {
                       // Explicit "Device photo" selection — always show the product image
                       if (savedIconId === 'photo') {
                         return (
-                          <div className="w-14 h-14 flex items-center justify-center">
+                          <div className="w-28 h-28 flex items-center justify-center">
                             <img
                               src={sierro2000Img}
                               alt={getDeviceModel(device)}
@@ -648,13 +648,13 @@ export default function DevicePage() {
                       const SavedIcon = savedIconId ? LUCIDE_ICON_MAP[savedIconId] : null
                       if (SavedIcon) {
                         return (
-                          <div className="w-14 h-14 flex items-center justify-center">
-                            <SavedIcon size={36} className="text-primary" />
+                          <div className="w-28 h-28 flex items-center justify-center">
+                            <SavedIcon size={72} className="text-primary" />
                           </div>
                         )
                       }
                       return (
-                        <div className="w-14 h-14 flex items-center justify-center">
+                        <div className="w-28 h-28 flex items-center justify-center">
                           <img
                             src={getDeviceImage(device.deviceSortKey)}
                             alt={getDeviceModel(device)}
@@ -729,7 +729,7 @@ export default function DevicePage() {
               {/* Header */}
               <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-[rgba(255,255,255,0.06)]">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 flex items-center justify-center text-lg">
+                  <div className="w-20 h-20 flex items-center justify-center text-lg">
                     <img
                       src={getDeviceImage(showDeviceParams.deviceSortKey)}
                       alt={showDeviceParams.model || 'Sierro'}
