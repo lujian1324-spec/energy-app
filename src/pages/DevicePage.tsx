@@ -40,7 +40,7 @@ import { useNotificationStore } from '../stores/notificationStore'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import sierro2000Img from '../assets/sierro-2000-product.webp'
 import { mapFieldsToRealtime, fetchDeviceState, passthroughDevice } from '../api/deviceApi'
-import { FRAMES } from '../protocols/modbusProtocol'
+import { FRAMES, decodePassthroughBase64, decodeLiveStatus } from '../protocols/modbusProtocol'
 import { isApiSuccess } from '../utils/apiClient'
 import { formatTemp } from '../utils/localization'
 import { batteryTimeLabel } from '../utils/batteryTime'
@@ -250,7 +250,54 @@ export default function DevicePage() {
     }
   }, [selectedDeviceState])
 
-  // 页面进入后立即获取电池容量等实时状态，并每隔 60s 自动刷新
+  // Passthrough-based battery SOC poll: every 10s per device, replaces the cloud
+  // API for remainingBatteryCapacity (and also updates AC/Solar/Output/Battery-Power
+  // from the same READ_ALL_STATUS frame since it's free). Stops when leaving the page.
+  const fetchBatteryPassthrough = useCallback(async (deviceId: string | number) => {
+    const idStr = String(deviceId)
+    if (useDeviceStore.getState().isDemoMode) return
+    try {
+      const res = await passthroughDevice(idStr, { data: FRAMES.READ_ALL_STATUS })
+      if (!isApiSuccess(res.code)) return
+      const b64 = res.data?.base64Output ?? res.data?.content ?? res.data?.data
+      const registers = decodePassthroughBase64(b64, 8)
+      if (!registers) return
+      const live = decodeLiveStatus(registers)
+      setRealtimeCache(prev => {
+        const existing = prev[idStr]
+        return {
+          ...prev,
+          [idStr]: {
+            fields: existing?.fields ?? {},
+            raw: {
+              ...existing?.raw,
+              remainingBatteryCapacity: live.soc,
+              batteryPower: live.batteryPower,
+              acPower: live.acPower,
+              solarPower: live.solarPower,
+              outputPower: live.outputPower,
+              batteryTemp: live.batteryTemp,
+            },
+            loading: false,
+            lastUpdated: Date.now(),
+          },
+        }
+      })
+    } catch {
+      // passthrough can fail silently — cloud API poll still provides a fallback
+    }
+  }, [])
+
+  // 页面进入后立即 passthrough 获取电池 SOC，之后每 10s 更新一次；离开页面停止
+  useEffect(() => {
+    if (devices.length === 0 || !isAuthenticated) return
+    const pollBattery = () => devices.forEach(d => fetchBatteryPassthrough(d.id))
+    pollBattery()
+    const timer = setInterval(pollBattery, 10_000)
+    return () => clearInterval(timer)
+  }, [devices, isAuthenticated, fetchBatteryPassthrough])
+
+  // Cloud API poll: full device state (fields for params modal, alarms, etc.) every 60s
   useEffect(() => {
     if (devices.length === 0 || !isAuthenticated) return
     const refreshAll = () => devices.forEach(d => fetchDeviceRealtime(d.id))
