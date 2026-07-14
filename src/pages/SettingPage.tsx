@@ -87,8 +87,14 @@ export default function SettingPage() {
   }, [])
 
   const reloadUserProfile = useCallback(() => {
-    getUserProfile().then(p => { if (p) setUserProfile(p) }).catch(err => console.error('[SettingPage] getUserProfile failed:', err))
-  }, [])
+    getUserProfile().then(p => {
+      if (p) {
+        // Always sync display name to the registration account (unified
+        // Account/Username/Name — matches ProfileEditPage's read-only row).
+        setUserProfile({ ...p, name: authUser?.account ?? p.name })
+      }
+    }).catch(err => console.error('[SettingPage] getUserProfile failed:', err))
+  }, [authUser?.account])
 
   useEffect(() => {
     reloadUserProfile()

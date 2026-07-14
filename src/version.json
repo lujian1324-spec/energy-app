@@ -1,8 +1,9 @@
 {
-  "version": "4.1.7",
-  "build": 2607,
+  "version": "4.1.8",
+  "build": 2608,
   "date": "2026-07-14",
   "changelog": [
+    "SettingPage: sync display name to auth account — reloadUserProfile now always overrides the IndexedDB-stored name with `authUser.account`, matching ProfileEditPage's read-only Username row (unified Account/Username/Name concept from v4.1.4). Previously the profile card could show a stale nickname from before the unification.",
     "DevicePage: switch battery remainingBatteryCapacity (%) to Modbus passthrough (READ_ALL_STATUS, 0x0100+0x38 registers) instead of the cloud /state/latest API. Polls every 10s via passthrough (immediate first fetch on page enter, stops on leave); also updates AC/Solar/Output/Battery-Power/Temp from the same frame at no extra cost. The existing 60s cloud API poll still runs for device-params-modal fields and alarm state.",
     "LoginPage: add Terms of Use & Privacy Policy checkbox (ticked by default, gates the Sign In button). Fix the bottom Terms/Privacy text overflowing the page on narrow screens — added break-words on the paragraph and whitespace-nowrap on the link text so the link phrases 'Terms of Use'/'Privacy Policy' stay intact while the surrounding text wraps naturally.",
     "Rename app from 'Sierro Energy'/'Sierro App' to 'Sierro' everywhere: index.html title, Capacitor appName, Android strings.xml (app_name + title_activity_main), iOS CFBundleDisplayName, and PWA manifest name.",
