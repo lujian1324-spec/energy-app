@@ -33,6 +33,7 @@ export default function LoginPage() {
   // ── Status ──
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [termsAccepted, setTermsAccepted] = useState(true)
 
   const emailValid = EMAIL_RE.test(email.trim())
 
@@ -141,6 +142,7 @@ export default function LoginPage() {
 
   // ── Sign-in button disabled state ──
   const signInDisabled = (() => {
+    if (!termsAccepted) return true
     if (tab === 'email' && otpMode) return !captchaId || otpCode.length < 6
     const account = tab === 'email' ? email.trim() : username.trim()
     return !account || !password
@@ -298,6 +300,22 @@ export default function LoginPage() {
 
         {error && <p className="text-label text-danger mt-2">{error}</p>}
 
+        {/* Terms & Privacy checkbox */}
+        <label className="flex items-start gap-2 mt-5 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={termsAccepted}
+            onChange={e => setTermsAccepted(e.target.checked)}
+            className="mt-0.5 w-4 h-4 rounded-s border-s border-ink-7 bg-transparent accent-primary cursor-pointer flex-shrink-0"
+          />
+          <span className="text-caption text-ink-7 leading-snug break-words">
+            I agree to the{' '}
+            <a href={TERMS_URL} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2" onClick={e => e.stopPropagation()}>Terms of Use</a>
+            {' '}and{' '}
+            <a href={PRIVACY_URL} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2" onClick={e => e.stopPropagation()}>Privacy Policy</a>
+          </span>
+        </label>
+
         {/* Sign In */}
         <button
           onClick={handleSignIn}
@@ -329,11 +347,11 @@ export default function LoginPage() {
       </div>
 
       {/* Terms & Privacy */}
-      <p className="pb-8 pt-4 text-center text-caption leading-relaxed text-ink-7">
+      <p className="pb-8 pt-4 text-center text-caption leading-relaxed text-ink-7 break-words max-w-full">
         By continuing, you agree to our{' '}
-        <a href={TERMS_URL} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">Terms of Use</a>
+        <a href={TERMS_URL} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 whitespace-nowrap">Terms of Use</a>
         {' '}and{' '}
-        <a href={PRIVACY_URL} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2">Privacy Policy</a>
+        <a href={PRIVACY_URL} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 whitespace-nowrap">Privacy Policy</a>
       </p>
     </div>
   )
