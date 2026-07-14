@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useSleepModeScheduler, loadSchedule, saveSchedule } from '../hooks/useSleepModeScheduler'
 import {
   ChevronLeft,
@@ -16,6 +16,7 @@ import {
   PlugZap,
   Wifi,
   BookOpen,
+  Camera,
 } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { usePowerStationStore } from '../stores/powerStationStore'
@@ -121,6 +122,15 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const [pendingIcon, setPendingIcon] = useState(() =>
     (routeId ? localStorage.getItem(`sierro-display-icon-${routeId}`) : null) ?? 'zap'
   )
+  // Custom image: stored as base64 data URL per device
+  const customKey = routeId ? `sierro-display-icon-custom-${routeId}` : ''
+  const [customImage, setCustomImage] = useState<string | null>(() =>
+    routeId ? localStorage.getItem(customKey) : null
+  )
+  const [pendingCustomImage, setPendingCustomImage] = useState<string | null>(() =>
+    routeId ? localStorage.getItem(customKey) : null
+  )
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [showModelSheet, setShowModelSheet] = useState(false)
@@ -245,10 +255,35 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
 
   const handleSaveIcon = () => {
     setSelectedIcon(pendingIcon)
+    setCustomImage(pendingCustomImage)
     if (routeId) {
       localStorage.setItem(`sierro-display-icon-${routeId}`, pendingIcon)
+      const ck = `sierro-display-icon-custom-${routeId}`
+      if (pendingCustomImage) {
+        localStorage.setItem(ck, pendingCustomImage)
+      } else {
+        localStorage.removeItem(ck)
+      }
     }
     setScreen('main')
+  }
+
+  const handlePickCustomImage = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleCustomImageFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const dataUrl = reader.result as string
+      setPendingCustomImage(dataUrl)
+      setPendingIcon('custom')
+    }
+    reader.readAsDataURL(file)
+    // Reset so the same file can be re-selected
+    e.target.value = ''
   }
 
   const handleDeleteDevice = async () => {
@@ -425,6 +460,15 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   if (screen === 'displayIcon') {
     return (
       <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
+        {/* Hidden file input for custom image picker */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleCustomImageFile}
+        />
+
         {/* Header */}
         <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
           <BackBtn to="main" />
@@ -438,7 +482,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           <div className="grid grid-cols-4 gap-3">
             {/* Device photo option */}
             <button
-              onClick={() => setPendingIcon('photo')}
+              onClick={() => { setPendingIcon('photo'); setPendingCustomImage(null) }}
               className={`flex flex-col items-center gap-2 py-4 rounded-l transition-colors ${
                 pendingIcon === 'photo' ? 'bg-primary' : 'bg-ink-10'
               }`}
@@ -450,27 +494,50 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               />
               <span
                 className={`text-label ${
-                  pendingIcon === 'photo' ? 'text-black font-semibold' : 'text-ink-6'
+                  pendingIcon === 'photo' ? 'text-black font-semibold' : 'text-white'
                 }`}
               >
                 Device
               </span>
             </button>
+            {/* Custom image option */}
+            <button
+              onClick={handlePickCustomImage}
+              className={`flex flex-col items-center gap-2 py-4 rounded-l transition-colors ${
+                pendingIcon === 'custom' ? 'bg-primary' : 'bg-ink-10'
+              }`}
+            >
+              {pendingCustomImage ? (
+                <img src={pendingCustomImage} alt="Custom" className="w-7 h-7 object-cover rounded-s" />
+              ) : (
+                <Camera
+                  size={28}
+                  className={pendingIcon === 'custom' ? 'text-black' : 'text-white'}
+                />
+              )}
+              <span
+                className={`text-label ${
+                  pendingIcon === 'custom' ? 'text-black font-semibold' : 'text-white'
+                }`}
+              >
+                Custom
+              </span>
+            </button>
             {DISPLAY_ICONS.map(({ id, Icon, label }) => (
               <button
                 key={id}
-                onClick={() => setPendingIcon(id)}
+                onClick={() => { setPendingIcon(id); setPendingCustomImage(null) }}
                 className={`flex flex-col items-center gap-2 py-4 rounded-l transition-colors ${
                   pendingIcon === id ? 'bg-primary' : 'bg-ink-10'
                 }`}
               >
                 <Icon
                   size={28}
-                  className={pendingIcon === id ? 'text-black' : 'text-ink-6'}
+                  className={pendingIcon === id ? 'text-black' : 'text-white'}
                 />
                 <span
                   className={`text-label ${
-                    pendingIcon === id ? 'text-black font-semibold' : 'text-ink-6'
+                    pendingIcon === id ? 'text-black font-semibold' : 'text-white'
                   }`}
                 >
                   {label}
@@ -810,13 +877,16 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             <div className="w-7 h-7 rounded-m bg-primary/10 flex items-center justify-center">
               {selectedIcon === 'photo' ? (
                 <img src={sierro1000Img} alt="Device" className="w-5 h-5 object-contain" />
+              ) : selectedIcon === 'custom' && customImage ? (
+                <img src={customImage} alt="Custom" className="w-5 h-5 object-cover rounded-s" />
               ) : (
-                <CurrentIconComp size={16} className="text-primary" />
+                <CurrentIconComp size={16} className="text-white" />
               )}
             </div>
           }
           onPress={() => {
             setPendingIcon(selectedIcon)
+            setPendingCustomImage(customImage)
             setScreen('displayIcon')
           }}
         />

@@ -680,6 +680,21 @@ export default function DevicePage() {
                   <div className="flex items-start justify-between mb-3">
                     {(() => {
                       const savedIconId = getSavedDisplayIconId(String(device.id))
+                      // Custom image uploaded by user
+                      if (savedIconId === 'custom') {
+                        const customImg = localStorage.getItem(`sierro-display-icon-custom-${device.id}`)
+                        if (customImg) {
+                          return (
+                            <div className="w-14 h-14 flex items-center justify-center">
+                              <img
+                                src={customImg}
+                                alt={device.name}
+                                className="w-full h-full object-cover rounded-m"
+                              />
+                            </div>
+                          )
+                        }
+                      }
                       // Explicit "Device photo" selection — always show the product image
                       if (savedIconId === 'photo') {
                         return (
@@ -696,7 +711,7 @@ export default function DevicePage() {
                       if (SavedIcon) {
                         return (
                           <div className="w-14 h-14 flex items-center justify-center">
-                            <SavedIcon size={36} className="text-primary" />
+                            <SavedIcon size={36} className="text-white" />
                           </div>
                         )
                       }
