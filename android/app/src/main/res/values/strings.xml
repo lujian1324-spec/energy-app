@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Sierro Energy</string>
-    <string name="title_activity_main">Sierro Energy</string>
+    <string name="app_name">Sierro</string>
+    <string name="title_activity_main">Sierro</string>
     <string name="package_name">com.sierro.energyapp</string>
     <string name="custom_url_scheme">com.sierro.energyapp</string>
 </resources>

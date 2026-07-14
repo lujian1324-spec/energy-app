@@ -25,7 +25,7 @@ export default defineConfig({
       },
       includeAssets: ['apple-touch-icon.png', 'sw-push.js', 'badge-96.png', 'icon-192x192.png', 'icon-512x512.png'],
       manifest: {
-        name: 'Sierro App',
+        name: 'Sierro',
         short_name: 'Sierro',
         description: '智能储能设备管理应用',
         theme_color: '#141414',
