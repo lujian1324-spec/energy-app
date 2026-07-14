@@ -1,11 +1,13 @@
 /**
- * 分页拉取设备历史数据 hook
- * - 每页 10 条，逐页请求直到无更多数据
+ * 分页拉取设备当天历史数据 hook（doGetDeviceHistory 模式）。
+ * - 调用 POST /deviceState/attribute/record/list（参考 Dart doGetDeviceHistory）
+ * - 每页 80 条（匹配参考实现 count:80），逐页请求直到无更多数据
  * - 每页到达后立即写入 IndexedDB（去重）
  * - 首次挂载时先检查本地缓存，有则直接返回
  */
 import { useState, useEffect, useRef } from 'react'
-import { fetchHistoryData } from '../api/deviceApi'
+import { fetchDeviceRecordHistory } from '../api/deviceApi'
+import type { DeviceAttributeRecord } from '../api/deviceApi'
 import { isApiSuccess } from '../utils/apiClient'
 import {
   getHistoryByDeviceAndRange,
@@ -33,7 +35,7 @@ export interface UseHistoryFetcherResult {
   error: string | null
 }
 
-const PAGE_SIZE = 10
+const PAGE_SIZE = 80
 const HISTORY_KEYS = [
   'generationPower',
   'outputPower',
@@ -41,6 +43,32 @@ const HISTORY_KEYS = [
   'batteryPower',
   'exchangeChargingPower',
 ] as const
+
+/** 将毫秒时间戳转为 ISO 8601 字符串（带时区偏移） */
+function toIsoTz(ms: number): string {
+  const d = new Date(ms)
+  const tzOffset = -d.getTimezoneOffset()
+  const tzStr = (tzOffset >= 0 ? '+' : '') +
+    String(Math.floor(Math.abs(tzOffset) / 60)).padStart(2, '0') +
+    ':' +
+    String(Math.abs(tzOffset) % 60).padStart(2, '0')
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0') + 'T' +
+    String(d.getHours()).padStart(2, '0') + ':' +
+    String(d.getMinutes()).padStart(2, '0') + ':' +
+    String(d.getSeconds()).padStart(2, '0') +
+    tzStr
+}
+
+/** 从 DeviceAttributeRecord 中提取数值 */
+function extractVal(rec: DeviceAttributeRecord, key: string): number {
+  const v = rec[key]
+  if (v === undefined || v === null) return 0
+  if (typeof v === 'object' && 'value' in v) return Number((v as any).value ?? 0)
+  if (typeof v === 'number') return v
+  return Number(v) || 0
+}
 
 export function useHistoryFetcher(
   deviceId: string | null,
@@ -82,17 +110,18 @@ export function useHistoryFetcher(
           return
         }
 
-        // 2. 无缓存 → 分页从 API 拉取
+        // 2. 无缓存 → 分页从 POST /deviceState/attribute/record/list 拉取
         const existingTs = new Set<number>()
         const allPoints: HistoryPoint[] = []
         let page = 1
+        const fromTimeIso = toIsoTz(fromTime)
+        const toTimeIso = toIsoTz(toTime)
 
         while (!cancelRef.current) {
-          const res = await fetchHistoryData({
+          const res = await fetchDeviceRecordHistory({
             deviceId: deviceId!,
-            keys: [...HISTORY_KEYS],
-            fromTime,
-            toTime,
+            fromTime: fromTimeIso,
+            toTime: toTimeIso,
             page,
             count: PAGE_SIZE,
             orderByTimeAsc: true,
@@ -105,29 +134,30 @@ export function useHistoryFetcher(
             break
           }
 
-          const gen  = res.data['generationPower']           ?? []
-          const out  = res.data['outputPower']                ?? []
-          const soc  = res.data['remainingBatteryCapacity']  ?? []
-          const bat  = res.data['batteryPower']               ?? []
-          const ac   = res.data['exchangeChargingPower']      ?? []
+          const list = res.data.list ?? []
+          if (list.length === 0) break
 
-          const len = Math.max(gen.length, out.length, soc.length, bat.length, ac.length)
-          if (len === 0) break // 无更多数据
-
-          // 构建本页数据点
           const pageRecords: Omit<PowerHistoryRecord, 'id'>[] = []
           const pagePoints: HistoryPoint[] = []
 
-          for (let i = 0; i < len; i++) {
-            const timeStr = gen[i]?.time ?? out[i]?.time ?? soc[i]?.time ?? bat[i]?.time ?? ac[i]?.time ?? ''
-            const ts = timeStr ? new Date(timeStr).getTime() : fromTime + (page - 1) * PAGE_SIZE * 5 * 60000 + i * 5 * 60000
+          for (const rec of list) {
+            const timeStr = (rec.time as string) ?? ''
+            const ts = timeStr ? new Date(timeStr).getTime() : 0
+            if (!ts) continue
+
+            const gen = extractVal(rec, 'generationPower')
+            const out = extractVal(rec, 'outputPower')
+            const soc = extractVal(rec, 'remainingBatteryCapacity')
+            const bat = extractVal(rec, 'batteryPower')
+            const ac = extractVal(rec, 'exchangeChargingPower')
+
             pageRecords.push({
               timestamp: ts,
-              inputPower: Number(gen[i]?.value ?? 0),
-              outputPower: Number(out[i]?.value ?? 0),
-              batteryLevel: Number(soc[i]?.value ?? 0),
-              solarPower: Number(gen[i]?.value ?? 0),
-              remainingBatteryCapacity: Number(soc[i]?.value ?? 0),
+              inputPower: gen,
+              outputPower: out,
+              batteryLevel: soc,
+              solarPower: gen,
+              remainingBatteryCapacity: soc,
               temperature: 0,
               mode: 'normal',
               deviceId: deviceId!,
@@ -135,15 +165,14 @@ export function useHistoryFetcher(
             pagePoints.push({
               time: timeStr,
               timestamp: ts,
-              solar: Number(gen[i]?.value ?? 0),
-              output: Number(out[i]?.value ?? 0),
-              soc: Number(soc[i]?.value ?? 0),
-              battery: Number(bat[i]?.value ?? 0),
-              ac: Number(ac[i]?.value ?? 0),
+              solar: gen,
+              output: out,
+              soc,
+              battery: bat,
+              ac,
             })
           }
 
-          // 写入 IndexedDB（去重）
           const saved = await saveHistoryBatch(pageRecords, existingTs)
           allPoints.push(...pagePoints)
 
@@ -151,7 +180,7 @@ export function useHistoryFetcher(
           setCurrentPage(page)
           setSavedCount(prev => prev + saved)
 
-          if (len < PAGE_SIZE) break // 最后一页
+          if (list.length < PAGE_SIZE) break
           page++
         }
 

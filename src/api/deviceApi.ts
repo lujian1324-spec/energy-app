@@ -425,6 +425,40 @@ export interface HistoryDataResponse {
   [key: string]: HistoryDataPoint[]
 }
 
+// ─── 设备属性记录列表（doGetDeviceHistory 模式）───
+
+export interface DeviceRecordHistoryRequest {
+  deviceId: string | number
+  /** ISO 8601 string with timezone, e.g. "2026-07-14T00:00:00+08:00" */
+  fromTime: string
+  /** ISO 8601 string with timezone */
+  toTime: string
+  page: number
+  count: number
+  orderByTimeAsc?: boolean
+}
+
+/** 单个属性值点 */
+export interface AttributeValuePoint {
+  time?: string
+  value?: unknown
+  unit?: string
+  name?: string
+}
+
+/** 一条时间点记录（包含该时刻所有设备属性） */
+export interface DeviceAttributeRecord {
+  time?: string
+  [attributeKey: string]: AttributeValuePoint | string | undefined
+}
+
+export interface DeviceRecordHistoryResponse {
+  count: number
+  list: DeviceAttributeRecord[]
+  page: number
+  total: number
+}
+
 // ─── 告警 ───
 
 export interface AlarmSearchRequest {
@@ -886,6 +920,21 @@ export async function fetchHistoryData(
 ): Promise<ApiResponse<HistoryDataResponse>> {
   return api.post<HistoryDataResponse>(
     '/deviceState/attribute/keys/history',
+    req
+  )
+}
+
+/**
+ * 获取设备当天全部属性历史记录（doGetDeviceHistory 模式）。
+ * 对应 Dart 参考实现中的 POST /deviceState/attribute/record/list。
+ * 与 fetchHistoryData 的区别：无需 keys 过滤，时间用 ISO 8601 字符串，
+ * 响应为分页的完整时间点记录列表。
+ */
+export async function fetchDeviceRecordHistory(
+  req: DeviceRecordHistoryRequest
+): Promise<ApiResponse<DeviceRecordHistoryResponse>> {
+  return api.post<DeviceRecordHistoryResponse>(
+    '/deviceState/attribute/record/list',
     req
   )
 }

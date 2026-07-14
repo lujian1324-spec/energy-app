@@ -1,8 +1,9 @@
 {
-  "version": "4.1.9",
-  "build": 2609,
+  "version": "4.2.0",
+  "build": 2700,
   "date": "2026-07-14",
   "changelog": [
+    "Switch RealTimePowerChart history data source from POST /deviceState/attribute/keys/history to POST /deviceState/attribute/record/list (Dart doGetDeviceHistory pattern). The new endpoint returns full device attribute records per time point (paginated, ISO 8601 timestamps with timezone), fetching up to 80 records per page. Added fetchDeviceRecordHistory to deviceApi.ts with DeviceRecordHistoryRequest/Response types; updated useHistoryFetcher hook to build HistoryPoints from the record list by extracting the same 5 keys (generationPower/outputPower/remainingBatteryCapacity/batteryPower/exchangeChargingPower) from each DeviceAttributeRecord.",
     "DeviceDetailPage: change all device display icons to pure white (were gray text-ink-6 / teal text-primary). Add custom image option — users can now pick any image from their photo library/camera to use as the device's display icon (saved as base64 per-device in localStorage, shown on both DeviceDetailPage icon picker and DevicePage device cards).",
     "SettingPage: sync display name to auth account — reloadUserProfile now always overrides the IndexedDB-stored name with `authUser.account`, matching ProfileEditPage's read-only Username row (unified Account/Username/Name concept from v4.1.4). Previously the profile card could show a stale nickname from before the unification.",
     "DevicePage: switch battery remainingBatteryCapacity (%) to Modbus passthrough (READ_ALL_STATUS, 0x0100+0x38 registers) instead of the cloud /state/latest API. Polls every 10s via passthrough (immediate first fetch on page enter, stops on leave); also updates AC/Solar/Output/Battery-Power/Temp from the same frame at no extra cost. The existing 60s cloud API poll still runs for device-params-modal fields and alarm state.",
