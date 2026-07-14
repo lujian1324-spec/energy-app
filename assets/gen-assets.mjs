@@ -1,32 +1,32 @@
 import sharp from 'sharp'
 
-const BG = '#000000', FG = '#FFFFFF'  // black background, white SIERRO wordmark
+const BLACK = '#0A0A0A', WHITE = '#FFFFFF'
 const buf = s => Buffer.from(s)
 
 // 白底居中 SIERRO 字标（用于图标与启动图）
 const wordmarkSVG = (w, h, { transparent = false } = {}) => {
   const fontPx = Math.round(Math.min(w, h) * 0.11)
   const ls = Math.max(2, Math.round(fontPx * 0.08))
-  const bg = transparent ? '' : `<rect width="${w}" height="${h}" fill="${BG}"/>`
+  const bg = transparent ? '' : `<rect width="${w}" height="${h}" fill="${WHITE}"/>`
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
     ${bg}
     <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central"
       font-family="Liberation Sans, Arial, DejaVu Sans, sans-serif"
       font-size="${fontPx}" font-weight="700" letter-spacing="${ls}"
-      fill="${FG}">SIERRO</text>
+      fill="${BLACK}">SIERRO</text>
   </svg>`
 }
 // 方形图标：字标占 ~72% 宽；自适应前景：透明底、字标缩进安全区（~48% 宽，圆形遮罩不裁）
 const squareIcon = (size, { transparent = false, widthFrac = 0.72 } = {}) => {
   const fontPx = Math.round(size * widthFrac / 4.6)  // "SIERRO" 约 4.6 字宽
   const ls = Math.max(2, Math.round(fontPx * 0.09))
-  const bg = transparent ? '' : `<rect width="${size}" height="${size}" fill="${BG}"/>`
+  const bg = transparent ? '' : `<rect width="${size}" height="${size}" fill="${WHITE}"/>`
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
     ${bg}
     <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central"
       font-family="Liberation Sans, Arial, DejaVu Sans, sans-serif"
       font-size="${fontPx}" font-weight="700" letter-spacing="${ls}"
-      fill="${FG}">SIERRO</text>
+      fill="${BLACK}">SIERRO</text>
   </svg>`
 }
 const png = (svg, file) => sharp(buf(svg)).png().toFile(file)

@@ -3,7 +3,7 @@ import { KeyboardResize } from '@capacitor/keyboard'
 
 const config: CapacitorConfig = {
   appId: 'com.sierro.energyapp',
-  appName: 'Sierro',
+  appName: 'Sierro Energy',
   webDir: 'dist',
   server: {
     androidScheme: 'https',
@@ -32,8 +32,8 @@ const config: CapacitorConfig = {
     },
     SplashScreen: {
       launchAutoHide: true,
-      // 品牌启动图为黑底白字 SIERRO（与 App 图标一致）
-      backgroundColor: '#000000',
+      // 品牌启动图为白底黑字 SIERRO（与 App 图标一致）
+      backgroundColor: '#FFFFFF',
       showSpinner: false,
     },
     PushNotifications: {
