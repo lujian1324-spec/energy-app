@@ -44,11 +44,11 @@ export default function DeviceMonitorPage() {
 
   const device = devices.find(d => String(d.id) === id)
 
-  // Select this device and load its state
+  // Select this device and load its state（selectDevice 内部已会 loadDeviceState，
+  // 无需再单独调用，避免同一设备重复请求）
   useEffect(() => {
     if (!id) return
     selectDevice(id)
-    loadDeviceState(id)
   }, [id])
 
   // 每 30 秒轮询设备实时状态（与 Overview 一致）
@@ -58,11 +58,14 @@ export default function DeviceMonitorPage() {
     return () => clearInterval(timer)
   }, [id, loadDeviceState])
 
-  // Map realtime fields
+  // Map realtime fields —— 仅当 store 里的实时状态确实属于「当前」设备时才用它。
+  // 切换设备时 store 可能仍短暂持有上一台设备的状态，此时返回 null，卡片显示占位
+  // 而非上一台设备的数据，直到本设备(id)的状态加载完成。
   const rt = useMemo(() => {
     if (!selectedDeviceState?.fields) return null
+    if (id && selectedDeviceState.deviceId && String(selectedDeviceState.deviceId) !== id) return null
     return mapFieldsToRealtime(selectedDeviceState.fields)
-  }, [selectedDeviceState])
+  }, [selectedDeviceState, id])
 
   const remainingBatteryCapacity = rt?.remainingBatteryCapacity ?? 0
   const acPower = rt?.acPower ?? 0

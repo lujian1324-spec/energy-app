@@ -293,7 +293,14 @@ export const useDeviceStore = create<DeviceStoreState>()(
       // ─── 选中设备 ───
 
       selectDevice: (deviceId) => {
-        set({ selectedDeviceId: deviceId })
+        // 切换到「不同」设备时，先清掉上一台设备缓存的实时状态/详情，避免在新
+        // 设备数据加载完成前，页面短暂（或加载失败时长期）显示上一台设备的数据。
+        const prev = get().selectedDeviceId
+        if (deviceId && String(deviceId) !== String(prev)) {
+          set({ selectedDeviceId: deviceId, selectedDeviceState: null, selectedDeviceDetails: null })
+        } else {
+          set({ selectedDeviceId: deviceId })
+        }
         if (deviceId) {
           get().loadDeviceDetails(deviceId)
           get().loadDeviceState(deviceId)
