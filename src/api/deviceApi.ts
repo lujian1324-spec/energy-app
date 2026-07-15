@@ -438,18 +438,26 @@ export interface DeviceRecordHistoryRequest {
   orderByTimeAsc?: boolean
 }
 
-/** 单个属性值点 */
+/** 单个属性值点 —— 与 /state/latest 的 field 同构 */
 export interface AttributeValuePoint {
-  time?: string
+  key?: string
   value?: unknown
+  valueDisplay?: string
   unit?: string
   name?: string
 }
 
-/** 一条时间点记录（包含该时刻所有设备属性） */
+/**
+ * 一条时间点记录。经真实后端验证：每个属性值嵌套在 `fields` 对象里
+ * （`fields[key].value`），而非记录顶层。顶层是 time / deviceId / dtuID 等元数据。
+ */
 export interface DeviceAttributeRecord {
   time?: string
-  [attributeKey: string]: AttributeValuePoint | string | undefined
+  deviceId?: string
+  dtuID?: string
+  fields?: Record<string, AttributeValuePoint>
+  firingAlarms?: unknown[]
+  [k: string]: unknown
 }
 
 export interface DeviceRecordHistoryResponse {

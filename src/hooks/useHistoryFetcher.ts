@@ -61,13 +61,17 @@ function toIsoTz(ms: number): string {
     tzStr
 }
 
-/** 从 DeviceAttributeRecord 中提取数值 */
-function extractVal(rec: DeviceAttributeRecord, key: string): number {
-  const v = rec[key]
-  if (v === undefined || v === null) return 0
-  if (typeof v === 'object' && 'value' in v) return Number((v as any).value ?? 0)
-  if (typeof v === 'number') return v
-  return Number(v) || 0
+/**
+ * 从 DeviceAttributeRecord 提取某属性的数值。经真实后端验证，值嵌套在
+ * `record.fields[key].value`（非记录顶层）。缺失返回 undefined，便于上层区分
+ * 「字段不存在」与「值为 0」。
+ */
+function fieldVal(rec: DeviceAttributeRecord, key: string): number | undefined {
+  const f = rec.fields?.[key]
+  if (f === undefined || f === null) return undefined
+  const raw = typeof f === 'object' && 'value' in f ? (f as { value?: unknown }).value : f
+  const n = Number(raw)
+  return Number.isNaN(n) ? undefined : n
 }
 
 export function useHistoryFetcher(
@@ -145,11 +149,13 @@ export function useHistoryFetcher(
             const ts = timeStr ? new Date(timeStr).getTime() : 0
             if (!ts) continue
 
-            const gen = extractVal(rec, 'generationPower')
-            const out = extractVal(rec, 'outputPower')
-            const soc = extractVal(rec, 'remainingBatteryCapacity')
-            const bat = extractVal(rec, 'batteryPower')
-            const ac = extractVal(rec, 'exchangeChargingPower')
+            const gen = fieldVal(rec, 'generationPower') ?? 0
+            const out = fieldVal(rec, 'outputPower') ?? 0
+            const soc = fieldVal(rec, 'remainingBatteryCapacity') ?? 0
+            const ac = fieldVal(rec, 'exchangeChargingPower') ?? 0
+            // 该接口的记录里没有 batteryPower 字段（真实后端已确认），按与实时链路
+            // 相同的公式推导：电池功率 = AC + Solar − Output（充电为正，放电为负）。
+            const bat = fieldVal(rec, 'batteryPower') ?? (ac + gen - out)
 
             pageRecords.push({
               timestamp: ts,
