@@ -1,12 +1,11 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Share2, BarChart3, WifiOff, Zap, ChevronLeft, ChevronRight, Leaf } from 'lucide-react'
+import { Share2, BarChart3, WifiOff, Zap, ChevronLeft, ChevronRight, Leaf, RefreshCw } from 'lucide-react'
 import html2canvas from 'html2canvas'
-import { LastSync, CalcAudit, DemoBanner } from '../components/DataTrust'
+import { LastSync, CalcAudit } from '../components/DataTrust'
 import { useDeviceStore } from '../stores/deviceStore'
-import { type HistoryDataResponse } from '../api/deviceApi'
-import { savePowerHistory, getPowerHistory } from '../db/powerflowDB'
-import type { PowerHistoryRecord } from '../types/protocol'
+import { fetchDeviceRecordHistory, type DeviceAttributeRecord } from '../api/deviceApi'
+import { isApiSuccess } from '../utils/apiClient'
 
 const periods = ['Day', 'Week', 'Month', 'Range'] as const
 type Period = typeof periods[number]
@@ -20,6 +19,24 @@ function weekStart(d: Date): Date {
   s.setDate(d.getDate() + diff)
   s.setHours(0, 0, 0, 0)
   return s
+}
+
+// ISO 8601 字符串（带本地时区偏移），供 record/list 接口的 fromTime/toTime 使用
+function toIsoTz(d: Date): string {
+  const off = -d.getTimezoneOffset()
+  const sign = off >= 0 ? '+' : '-'
+  const tz = sign + String(Math.floor(Math.abs(off) / 60)).padStart(2, '0') + ':' + String(Math.abs(off) % 60).padStart(2, '0')
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') +
+    'T' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ':' + String(d.getSeconds()).padStart(2, '0') + tz
+}
+
+// 从一条历史记录里取某个属性值（真实后端把值嵌套在 fields[key].value 里）。缺失/非数返回 0。
+function fieldVal(rec: DeviceAttributeRecord, key: string): number {
+  const f = rec.fields?.[key]
+  if (f === undefined || f === null) return 0
+  const raw = typeof f === 'object' && f !== null && 'value' in f ? (f as { value?: unknown }).value : f
+  const n = Number(raw)
+  return Number.isFinite(n) ? n : 0
 }
 
 // ─── DayCalendar component ───
@@ -177,7 +194,7 @@ function MonthGridPicker({ selectedDate, onSelect }: { selectedDate: Date; onSel
   )
 }
 
-// ─── 图表数据结构（从 API 数据转换而来） ───
+// ─── 图表数据结构（从 API 历史记录聚合而来） ───
 
 interface ChartFrame {
   input: number[]
@@ -189,208 +206,113 @@ interface ChartFrame {
   totalOutputKwh: number
   insight: string
   ecoInsight: string
-  dateLabel?: string
+  hasData: boolean
 }
 
-// ─── 按时间段采样/聚合历史数据 ───
+// ─── 把 record/list 历史记录按所选时间段聚合成图表帧 ───
+// 无数据时返回一条全 0 的曲线（保持坐标轴/标签完整），而不是回退到任何模拟数据。
 
-function aggregateHistory(raw: HistoryDataResponse, period: Period): ChartFrame | null {
-  const solar = raw['generationPower'] ?? []
-  const output = raw['outputPower'] ?? []
-  const remainingBatteryCapacityArr = raw['remainingBatteryCapacity'] ?? []
+function buildFrameFromRecords(
+  records: DeviceAttributeRecord[],
+  period: Period,
+  selectedDate: Date,
+  rangeStart: Date | null,
+  rangeEnd: Date | null,
+): ChartFrame {
+  // 1) 固定标签栅格 + 分桶函数（保证无数据也有完整坐标轴）
+  let labels: string[]
+  let bucketCount: number
+  let bucketOf: (d: Date) => number
+  let hoursPerBucket: number
 
-  if (solar.length === 0 && output.length === 0) return null
-
-  const byTime = new Map<string, { solar: number[]; output: number[]; remainingBatteryCapacity: number[] }>()
-
-  const timeToBucket = (ts: string): string => {
-    const d = new Date(ts)
-    if (isNaN(d.getTime())) return ts.slice(0, 10)
-    switch (period) {
-      case 'Day': return `${String(d.getHours()).padStart(2, '0')}:00`
-      case 'Week': { const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']; return days[d.getDay()] }
-      case 'Month': return `${d.getMonth() + 1}/${d.getDate()}`
-      case 'Range': return `${d.getMonth() + 1}/${d.getDate()}`
+  if (period === 'Day') {
+    labels = Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2, '0')}:00`)
+    bucketCount = 24
+    hoursPerBucket = 1
+    const sel = new Date(selectedDate); sel.setHours(0, 0, 0, 0)
+    bucketOf = (d) => {
+      const dd = new Date(d); dd.setHours(0, 0, 0, 0)
+      return dd.getTime() === sel.getTime() ? d.getHours() : -1
+    }
+  } else if (period === 'Week') {
+    labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    bucketCount = 7
+    hoursPerBucket = 24
+    const ws = weekStart(selectedDate)
+    const we = new Date(ws); we.setDate(ws.getDate() + 6); we.setHours(23, 59, 59, 999)
+    bucketOf = (d) => (d >= ws && d <= we ? (d.getDay() + 6) % 7 : -1)
+  } else if (period === 'Month') {
+    const y = selectedDate.getFullYear(), m = selectedDate.getMonth()
+    const days = new Date(y, m + 1, 0).getDate()
+    labels = Array.from({ length: days }, (_, i) => `${m + 1}/${i + 1}`)
+    bucketCount = days
+    hoursPerBucket = 24
+    bucketOf = (d) => (d.getFullYear() === y && d.getMonth() === m ? d.getDate() - 1 : -1)
+  } else {
+    // Range：按天分桶
+    const start = rangeStart ? new Date(rangeStart) : new Date(Date.now() - 30 * 86400000)
+    start.setHours(0, 0, 0, 0)
+    const end = rangeEnd ? new Date(rangeEnd) : new Date()
+    end.setHours(0, 0, 0, 0)
+    const days = Math.max(1, Math.floor((end.getTime() - start.getTime()) / 86400000) + 1)
+    labels = Array.from({ length: days }, (_, i) => {
+      const d = new Date(start); d.setDate(start.getDate() + i)
+      return `${d.getMonth() + 1}/${d.getDate()}`
+    })
+    bucketCount = days
+    hoursPerBucket = 24
+    bucketOf = (d) => {
+      const dd = new Date(d); dd.setHours(0, 0, 0, 0)
+      const idx = Math.floor((dd.getTime() - start.getTime()) / 86400000)
+      return idx >= 0 && idx < days ? idx : -1
     }
   }
 
-  for (const pt of solar) {
-    const bucket = timeToBucket(pt.time)
-    const entry = byTime.get(bucket) ?? { solar: [], output: [], remainingBatteryCapacity: [] }
-    entry.solar.push(Number(pt.value) || 0)
-    byTime.set(bucket, entry)
-  }
-  for (const pt of output) {
-    const bucket = timeToBucket(pt.time)
-    const entry = byTime.get(bucket) ?? { solar: [], output: [], remainingBatteryCapacity: [] }
-    entry.output.push(Number(pt.value) || 0)
-    byTime.set(bucket, entry)
-  }
-  for (const pt of remainingBatteryCapacityArr) {
-    const bucket = timeToBucket(pt.time)
-    const entry = byTime.get(bucket) ?? { solar: [], output: [], remainingBatteryCapacity: [] }
-    entry.remainingBatteryCapacity.push(Number(pt.value) || 0)
-    byTime.set(bucket, entry)
+  // 2) 累加各桶的均值
+  const solarSum = new Array(bucketCount).fill(0)
+  const outSum = new Array(bucketCount).fill(0)
+  const socSum = new Array(bucketCount).fill(0)
+  const cnt = new Array(bucketCount).fill(0)
+
+  for (const rec of records) {
+    const t = rec.time ? new Date(rec.time) : null
+    if (!t || isNaN(t.getTime())) continue
+    const b = bucketOf(t)
+    if (b < 0 || b >= bucketCount) continue
+    solarSum[b] += fieldVal(rec, 'generationPower')
+    outSum[b] += fieldVal(rec, 'outputPower')
+    socSum[b] += fieldVal(rec, 'remainingBatteryCapacity')
+    cnt[b] += 1
   }
 
-  let entries: [string, { solar: number[]; output: number[]; remainingBatteryCapacity: number[] }][]
-  if (period === 'Week') {
-    const dayOrder = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-    entries = [...byTime.entries()].sort(([a], [b]) => dayOrder.indexOf(a) - dayOrder.indexOf(b))
-  } else {
-    entries = [...byTime.entries()].sort()
+  const input = solarSum.map((s, i) => (cnt[i] ? s / cnt[i] : 0))
+  const output = outSum.map((s, i) => (cnt[i] ? s / cnt[i] : 0))
+  const remainingBatteryCapacity = socSum.map((s, i) => (cnt[i] ? s / cnt[i] : 0))
+
+  // 3) 汇总（W 均值 × 桶时长 → kWh）
+  const round1 = (n: number) => Math.round(n * 10) / 10
+  const totalInputKwh = round1(input.reduce((s, v) => s + (v * hoursPerBucket) / 1000, 0))
+  const totalOutputKwh = round1(output.reduce((s, v) => s + (v * hoursPerBucket) / 1000, 0))
+  const co2Kg = round1(totalInputKwh * 0.5)
+
+  const hasData = input.some(v => v > 0) || output.some(v => v > 0)
+
+  let insight = 'No power data for this period'
+  if (hasData) {
+    const maxOutput = Math.max(...output)
+    const idx = output.indexOf(maxOutput)
+    if (idx >= 0) {
+      if (period === 'Day') insight = `Peak output around ${labels[idx]}`
+      else if (period === 'Week') insight = `Highest output on ${labels[idx]}`
+      else insight = `Output peaked on ${labels[idx]}`
+    } else insight = 'Power usage data from device'
   }
-
-  const maxPoints = period === 'Day' ? 24 : period === 'Week' ? 7 : period === 'Month' ? 30 : 12
-  const step = Math.max(1, Math.ceil(entries.length / maxPoints))
-  const sampled: typeof entries = []
-  for (let i = 0; i < entries.length; i += step) sampled.push(entries[i])
-
-  const avg = (arr: number[]) => (arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : 0)
-
-  const inputData = sampled.map(([, v]) => avg(v.solar))
-  const outputData = sampled.map(([, v]) => avg(v.output))
-  const remainingBatteryCapacityData = sampled.map(([, v]) => avg(v.remainingBatteryCapacity))
-  const labels = sampled.map(([k]) => k)
-
-  const hoursPerBucket = period === 'Day' ? 1 : period === 'Week' ? 24 : period === 'Month' ? 24 : 72
-  const totalInputKwh = inputData.reduce((s, v) => s + (v * hoursPerBucket) / 1000, 0)
-  const totalOutputKwh = outputData.reduce((s, v) => s + (v * hoursPerBucket) / 1000, 0)
-  const co2Kg = (totalInputKwh * 0.5).toFixed(1)
-
-  const maxOutput = Math.max(...outputData, 0)
-  const maxOutputIdx = outputData.indexOf(maxOutput)
-  let insight = 'Power usage data from device'
-  if (period === 'Week' && maxOutputIdx >= 0) insight = `Highest output on ${labels[maxOutputIdx]}`
-  else if (period === 'Day' && maxOutputIdx >= 0) insight = `Peak output around ${labels[maxOutputIdx]}`
-  else if (period === 'Month' && maxOutputIdx >= 0) insight = `Output peaked on ${labels[maxOutputIdx]}`
 
   const ecoInsight = totalOutputKwh > 0
     ? `Equivalent to driving ${Math.round(totalOutputKwh * 3.5)} fewer miles`
     : 'Connect solar to reduce carbon footprint'
 
-  return { input: inputData, output: outputData, remainingBatteryCapacity: remainingBatteryCapacityData, labels, co2Kg: parseFloat(co2Kg), totalInputKwh, totalOutputKwh, insight, ecoInsight }
-}
-
-// ─── Demo/Mock 数据 — 来自 Sierro 1000 真实模拟 CSV ───
-
-function smooth(arr: number[], passes = 2): number[] {
-  let out = [...arr]
-  for (let p = 0; p < passes; p++) {
-    const tmp = [...out]
-    for (let i = 0; i < tmp.length; i++) {
-      const prev = tmp[Math.max(0, i - 1)]
-      const next = tmp[Math.min(tmp.length - 1, i + 1)]
-      out[i] = Math.round((prev * 0.25 + tmp[i] * 0.5 + next * 0.25) * 10) / 10
-    }
-  }
-  return out
-}
-
-const DAY_PAGES = [
-  { dateLabel: 'Jul 4, 2026', insight: 'Sunny day — battery topped up by mid-morning',
-    rawInput:  [0,0,1000,0,0,1000,0,1164,1584,1568,1548,1566,1578,1582,1574,1562,1579,1164,0,0,1000,0,0,1000],
-    rawOutput: [77,48,64,47,70,50,82,59,84,68,48,66,78,82,74,62,79,58,67,66,80,64,53,80],
-    rawRemainingBatteryCapacity:    [96.2,93.8,100,97.6,94.2,100,95.9,100,100,100,100,100,100,100,100,100,100,100,96.7,93.4,100,96.8,94.1,100] },
-  { dateLabel: 'Jul 3, 2026', insight: 'Overcast day — relied on grid top-ups, low solar',
-    rawInput:  [0,0,1000,0,0,1000,0,207,399,565,692,772,800,772,692,565,399,207,0,0,1000,0,0,1000],
-    rawOutput: [67,69,60,56,56,74,57,59,52,77,52,47,65,81,77,65,78,47,60,45,59,78,59,75],
-    rawRemainingBatteryCapacity:    [96.6,93.2,100,97.2,94.4,100,97.2,100,100,100,100,100,100,100,100,100,100,100,97,94.8,100,96.1,93.1,100] },
-  { dateLabel: 'Jul 2, 2026', insight: 'Partly cloudy — SOC dipped to 83% overnight',
-    rawInput:  [0,0,1000,0,0,1000,0,517,999,1414,1578,1582,1554,1569,1564,1414,999,517,0,0,0,0,0,1000],
-    rawOutput: [60,74,65,76,74,51,45,60,48,81,78,82,54,69,64,79,80,69,76,48,54,83,77,82],
-    rawRemainingBatteryCapacity:    [97,93.3,100,96.2,92.5,100,97.8,100,100,100,100,100,100,100,100,100,100,100,96.2,93.8,91.1,87,83.1,100] },
-  { dateLabel: 'Jul 1, 2026', insight: 'Full solar day — battery fully charged by morning',
-    rawInput:  [0,0,0,1000,0,0,1000,1294,1557,1573,1547,1558,1572,1577,1552,1577,1552,1294,0,0,1000,0,0,1000],
-    rawOutput: [46,51,71,58,58,74,73,50,57,73,47,58,72,77,52,77,52,65,78,83,70,49,62,54],
-    rawRemainingBatteryCapacity:    [97.7,95.2,91.6,100,97.1,93.4,100,100,100,100,100,100,100,100,100,100,100,100,96.1,92,100,97.6,94.4,100] },
-]
-
-const WEEK_PAGES = [
-  { dateLabel: 'Jul 22 – 28, 2026', insight: 'Best week — steady solar, 90–97% min SOC daily',
-    rawInput:  [3.463, 3.523, 3.461, 3.716, 3.590, 3.654, 3.534],
-    rawOutput: [1.418, 1.514, 1.439, 1.587, 1.525, 1.541, 1.481],
-    rawRemainingBatteryCapacity:    [95, 92, 95, 97, 96, 90, 94] },
-  { dateLabel: 'Jul 15 – 21, 2026', insight: 'Cloudy stretch — solar output nearly halved',
-    rawInput:  [1.676, 1.881, 1.652, 1.638, 1.606, 1.729, 1.684],
-    rawOutput: [1.476, 1.545, 1.450, 1.438, 1.532, 1.529, 1.520],
-    rawRemainingBatteryCapacity:    [84, 91, 96, 80, 97, 75, 93] },
-  { dateLabel: 'Jul 8 – 14, 2026', insight: 'Strong solar week — battery rarely below 91%',
-    rawInput:  [3.636, 3.686, 3.605, 3.505, 3.393, 3.647, 3.685],
-    rawOutput: [1.532, 1.539, 1.459, 1.416, 1.595, 1.544, 1.565],
-    rawRemainingBatteryCapacity:    [95, 93, 95, 93, 91, 97, 97] },
-  { dateLabel: 'Jul 1 – 7, 2026', insight: 'Solid solar week — steady 3.3–3.6 kWh/day input',
-    rawInput:  [3.626, 3.422, 3.520, 3.337, 3.448, 3.489, 3.448],
-    rawOutput: [1.544, 1.293, 1.509, 1.269, 1.328, 1.476, 1.439],
-    rawRemainingBatteryCapacity:    [91, 96, 90, 94, 97, 96, 92] },
-]
-
-function monthSeries(avgW: number, seed: number): number[] {
-  return Array.from({ length: 30 }, (_, i) =>
-    Math.round(avgW * (1 + 0.18 * Math.sin((i + seed) * 0.7)) * 10) / 10
-  )
-}
-
-const MONTH_PAGES = [
-  { dateLabel: 'October 2026', monthNum: 10, totalInputKwh: 42.6, totalOutputKwh: 42.1,
-    insight: 'Oct steady output — 39.8 kWh solar, low grid use',
-    rawInput: monthSeries(57.3, 1), rawOutput: monthSeries(56.6, 4), rawRemainingBatteryCapacity: monthSeries(90, 7) },
-  { dateLabel: 'September 2026', monthNum: 9, totalInputKwh: 45.5, totalOutputKwh: 45.0,
-    insight: 'Sep peak green ratio — 42.0 kWh solar, 3.5 kWh grid',
-    rawInput: monthSeries(63.2, 2), rawOutput: monthSeries(62.5, 5), rawRemainingBatteryCapacity: monthSeries(91, 8) },
-  { dateLabel: 'August 2026', monthNum: 8, totalInputKwh: 49.7, totalOutputKwh: 48.2,
-    insight: 'Aug heaviest grid use (11.2 kWh) — lower solar',
-    rawInput: monthSeries(66.8, 3), rawOutput: monthSeries(64.8, 6), rawRemainingBatteryCapacity: monthSeries(88, 9) },
-  { dateLabel: 'July 2026', monthNum: 7, totalInputKwh: 46.5, totalOutputKwh: 46.5,
-    insight: 'Jul highest combined input — 46.5 kWh total',
-    rawInput: monthSeries(62.5, 4), rawOutput: monthSeries(62.5, 7), rawRemainingBatteryCapacity: monthSeries(92, 10) },
-]
-
-function getDemoChartFrame(period: Period, pageOffset = 0): ChartFrame {
-  const pageIdx = -pageOffset
-
-  if (period === 'Day') {
-    const page = DAY_PAGES[Math.min(pageIdx, DAY_PAGES.length - 1)]
-    const labels = Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2, '0')}:00`)
-    const input = smooth(page.rawInput, 2)
-    const output = smooth(page.rawOutput, 2)
-    const remainingBatteryCapacity = smooth(page.rawRemainingBatteryCapacity, 1)
-    const totalInputKwh = page.rawInput.reduce((s, v) => s + v / 1000, 0)
-    const totalOutputKwh = page.rawOutput.reduce((s, v) => s + v / 1000, 0)
-    return { input, output, remainingBatteryCapacity, labels, co2Kg: parseFloat((totalInputKwh * 0.5).toFixed(1)), totalInputKwh, totalOutputKwh, insight: page.insight, ecoInsight: `Equivalent to driving ${Math.round(totalOutputKwh * 3.5)} fewer miles`, dateLabel: page.dateLabel }
-  }
-
-  if (period === 'Week') {
-    const page = WEEK_PAGES[Math.min(pageIdx, WEEK_PAGES.length - 1)]
-    const labels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-    const input = smooth(page.rawInput, 2)
-    const output = smooth(page.rawOutput, 2)
-    const remainingBatteryCapacity = smooth(page.rawRemainingBatteryCapacity, 1)
-    const totalInputKwh = page.rawInput.reduce((s, v) => s + v, 0)
-    const totalOutputKwh = page.rawOutput.reduce((s, v) => s + v, 0)
-    return { input, output, remainingBatteryCapacity, labels, co2Kg: parseFloat((totalInputKwh * 0.5).toFixed(1)), totalInputKwh, totalOutputKwh, insight: page.insight, ecoInsight: `Equivalent to driving ${Math.round(totalOutputKwh * 3.5)} fewer miles`, dateLabel: page.dateLabel }
-  }
-
-  if (period === 'Month') {
-    const page = MONTH_PAGES[Math.min(pageIdx, MONTH_PAGES.length - 1)]
-    const labels = Array.from({ length: 30 }, (_, i) => `${page.monthNum}/${i + 1}`)
-    const input = smooth(page.rawInput.slice(0, 30), 3)
-    const output = smooth(page.rawOutput.slice(0, 30), 3)
-    const remainingBatteryCapacity = smooth(page.rawRemainingBatteryCapacity.slice(0, 30), 2)
-    return { input, output, remainingBatteryCapacity, labels, co2Kg: parseFloat((page.totalInputKwh * 0.5).toFixed(1)), totalInputKwh: page.totalInputKwh, totalOutputKwh: page.totalOutputKwh, insight: page.insight, ecoInsight: `Equivalent to driving ${Math.round(page.totalOutputKwh * 3.5)} fewer miles`, dateLabel: page.dateLabel }
-  }
-
-  // Range: 4-month summary
-  const labels = ['Jul', 'Aug', 'Sep', 'Oct']
-  const rawInput = [46.5, 49.7, 45.5, 42.6]
-  const rawOutput = [46.5, 48.2, 45.0, 42.1]
-  const rawRemainingBatteryCapacity = [92.0, 88.0, 91.0, 90.0]
-  const input = smooth(rawInput, 1)
-  const output = smooth(rawOutput, 1)
-  const remainingBatteryCapacity = smooth(rawRemainingBatteryCapacity, 1)
-  const totalInputKwh = rawInput.reduce((s, v) => s + v, 0)
-  const totalOutputKwh = rawOutput.reduce((s, v) => s + v, 0)
-  return { input, output, remainingBatteryCapacity, labels, co2Kg: parseFloat((totalInputKwh * 0.5).toFixed(1)), totalInputKwh, totalOutputKwh, insight: 'Sep had the best green energy ratio — 42.0 kWh solar', ecoInsight: `Equivalent to driving ${Math.round(totalOutputKwh * 3.5)} fewer miles` }
+  return { input, output, remainingBatteryCapacity, labels, co2Kg, totalInputKwh, totalOutputKwh, insight, ecoInsight, hasData }
 }
 
 // ─── 加载骨架屏 ───
@@ -431,19 +353,6 @@ function ChartAreaSkeleton() {
   )
 }
 
-function ChartEmptyState({ message }: { message: string }) {
-  return (
-    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col items-center justify-center py-12 px-6 bg-ink-10 rounded-l mb-4">
-      <div className="w-14 h-14 rounded-l bg-[rgba(255,255,255,0.03)] flex items-center justify-center mb-3">
-        <BarChart3 size={28} className="text-ink-7" />
-      </div>
-      <p className="text-body-md font-semibold text-ink-1 mb-1">No history data yet</p>
-      <p className="text-label text-ink-6 text-center">{message}</p>
-    </motion.div>
-  )
-}
-
 // ═══════════════════════════════════════════════════════
 // StatsPage
 // ═══════════════════════════════════════════════════════
@@ -472,18 +381,20 @@ export default function StatsPage() {
     }
   }, [period])
 
-  const [lastSyncAt] = useState<number | undefined>(Date.now())
+  const [lastSyncAt, setLastSyncAt] = useState<number | undefined>(undefined)
   const chartSvgRef = useRef<SVGSVGElement>(null)
   const [scrubIndex, setScrubIndex] = useState<number | null>(null)
 
-  const { devices, loadDevices, historyData, historyLoading, historyError, loadHistoryData } = useDeviceStore()
+  const { devices, loadDevices } = useDeviceStore()
 
-  const useDemo = !!historyError && !historyLoading
+  // 历史记录（record/list）本地状态
+  const [records, setRecords] = useState<DeviceAttributeRecord[] | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // 始终使用第一个添加的设备（按 createdAt 最早排序）
   const deviceId = useMemo(() => {
     if (devices.length === 0) return null
-    // 优先使用有 createdAt 的设备按时间排序，否则取列表第一个
     const sorted = [...devices].sort((a, b) => {
       if (a.createdAt && b.createdAt) return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       return 0
@@ -491,49 +402,9 @@ export default function StatsPage() {
     return String(sorted[0].id)
   }, [devices])
 
-  // 本地缓存的历史数据（IndexedDB）
-  const [cachedHistoryData, setCachedHistoryData] = useState<HistoryDataResponse | null>(null)
-
   useEffect(() => {
     if (devices.length === 0) loadDevices(1, 50, { orderByCreatedAtAsc: true })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // 从 IndexedDB 加载缓存数据（页面初次渲染时立即显示）
-  useEffect(() => {
-    if (!deviceId) return
-    getPowerHistory({ limit: 288 }).then(records => {
-      if (records.length === 0) return
-      // 将 PowerHistoryRecord[] 转换为 HistoryDataResponse 格式
-      const genPower: { time: string; value: number }[] = []
-      const outPower: { time: string; value: number }[] = []
-      const battLevel: { time: string; value: number }[] = []
-      for (const r of [...records].reverse()) {
-        const t = new Date(r.timestamp).toISOString()
-        genPower.push({ time: t, value: r.inputPower })
-        outPower.push({ time: t, value: r.outputPower })
-        battLevel.push({ time: t, value: r.batteryLevel })
-      }
-      setCachedHistoryData({
-        generationPower: genPower,
-        outputPower: outPower,
-        remainingBatteryCapacity: battLevel,
-      } as unknown as HistoryDataResponse)
-    }).catch(() => {/* ignore */})
-  }, [deviceId])
-
-  // ── Derived pageOffset for demo data ──
-  const pageOffset = useMemo(() => {
-    const today = new Date(); today.setHours(0, 0, 0, 0)
-    const sel = new Date(selectedDate); sel.setHours(0, 0, 0, 0)
-    const days = Math.floor((today.getTime() - sel.getTime()) / 86400000)
-    if (period === 'Day') return -Math.min(Math.max(days, 0), 3)
-    if (period === 'Week') return -Math.min(Math.max(Math.floor(days / 7), 0), 3)
-    if (period === 'Month') {
-      const m = (today.getFullYear() - sel.getFullYear()) * 12 + (today.getMonth() - sel.getMonth())
-      return -Math.min(Math.max(m, 0), 3)
-    }
-    return 0
-  }, [period, selectedDate])
 
   // ── Can navigate forward ──
   const canGoForward = useMemo(() => {
@@ -568,76 +439,72 @@ export default function StatsPage() {
     }
   }, [period, selectedDate, rangeStart, rangeEnd])
 
-  // ── Load history ──
+  // ── Load history from POST /deviceState/attribute/record/list ──
   const loadHistory = useCallback(async () => {
-    if (!deviceId) return
-    let from: Date, to: Date, count: number
+    if (!deviceId) { setRecords([]); return }
+
+    // Range 未选完整区间时不请求
+    if (period === 'Range' && (!rangeStart || !rangeEnd)) { setRecords([]); return }
+
+    let from: Date, to: Date
     const now = new Date(); now.setHours(23, 59, 59, 999)
     switch (period) {
       case 'Day':
         from = new Date(selectedDate); from.setHours(0, 0, 0, 0)
         to = new Date(selectedDate); to.setHours(23, 59, 59, 999)
-        count = 288; break
+        break
       case 'Week':
         from = weekStart(selectedDate)
         to = new Date(from); to.setDate(from.getDate() + 6); to.setHours(23, 59, 59, 999)
-        count = 336; break
+        break
       case 'Month':
         from = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)
         to = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0, 23, 59, 59, 999)
-        count = 720; break
-      case 'Range':
-        from = rangeStart ? new Date(rangeStart) : new Date(now.getTime() - 30 * 86400000)
-        to = rangeEnd ? new Date(rangeEnd) : now
-        from.setHours(0, 0, 0, 0); to.setHours(23, 59, 59, 999)
-        count = 720; break
+        break
+      default: // Range
+        from = new Date(rangeStart as Date); from.setHours(0, 0, 0, 0)
+        to = new Date(rangeEnd as Date); to.setHours(23, 59, 59, 999)
+        break
     }
-    loadHistoryData(deviceId, from.toISOString(), to.toISOString(),
-      ['generationPower', 'outputPower', 'remainingBatteryCapacity', 'batteryTemp'], count)
-  }, [deviceId, period, selectedDate, rangeStart, rangeEnd, loadHistoryData])
+
+    setLoading(true); setError(null)
+    try {
+      const all: DeviceAttributeRecord[] = []
+      const PAGE = 300
+      for (let page = 1; page <= 20; page++) {
+        const res = await fetchDeviceRecordHistory({
+          deviceId: String(deviceId),
+          fromTime: toIsoTz(from),
+          toTime: toIsoTz(to),
+          page,
+          count: PAGE,
+          orderByTimeAsc: true,
+        })
+        if (!isApiSuccess(res.code)) {
+          if (page === 1) throw new Error(res.message || 'Failed to load history')
+          break
+        }
+        const listPage = res.data?.list ?? []
+        all.push(...listPage)
+        const totalPages = res.data?.total ?? 1
+        if (page >= totalPages || listPage.length === 0) break
+      }
+      setRecords(all)
+      setLastSyncAt(Date.now())
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e))
+      setRecords([])
+    } finally {
+      setLoading(false)
+    }
+  }, [deviceId, period, selectedDate, rangeStart, rangeEnd])
 
   useEffect(() => { loadHistory() }, [loadHistory])
 
-  // API 数据返回后保存到 IndexedDB
-  useEffect(() => {
-    if (!historyData || !deviceId) return
-    const genPoints = (historyData as unknown as Record<string, { time: string; value: number }[]>)['generationPower'] ?? []
-    const outPoints = (historyData as unknown as Record<string, { time: string; value: number }[]>)['outputPower'] ?? []
-    const battPoints = (historyData as unknown as Record<string, { time: string; value: number }[]>)['remainingBatteryCapacity'] ?? []
-
-    // 构建时间戳 → 值的映射
-    const genMap = new Map(genPoints.map(p => [p.time, p.value]))
-    const outMap = new Map(outPoints.map(p => [p.time, p.value]))
-    const battMap = new Map(battPoints.map(p => [p.time, p.value]))
-
-    // 取所有时间点的并集
-    const allTimes = new Set([...genMap.keys(), ...outMap.keys()])
-    const records: Omit<PowerHistoryRecord, 'id'>[] = []
-    for (const t of allTimes) {
-      records.push({
-        timestamp: new Date(t).getTime(),
-        inputPower: genMap.get(t) ?? 0,
-        outputPower: outMap.get(t) ?? 0,
-        batteryLevel: battMap.get(t) ?? 0,
-        solarPower: genMap.get(t) ?? 0,
-        temperature: 0,
-        mode: 'normal',
-        deviceId,
-      })
-    }
-    // 批量写入（不阻塞 UI）
-    Promise.allSettled(records.map(r => savePowerHistory(r))).catch(() => {/* ignore */})
-  }, [historyData, deviceId])
-
-  const chartFrame = useMemo(() => {
-    // 优先级：API实时数据 → IndexedDB缓存 → Demo数据
-    const source = historyData ?? cachedHistoryData
-    if (source) {
-      const frame = aggregateHistory(source, period)
-      if (frame) return frame
-    }
-    return getDemoChartFrame(period, pageOffset)
-  }, [historyData, cachedHistoryData, period, pageOffset])
+  const chartFrame = useMemo(
+    () => buildFrameFromRecords(records ?? [], period, selectedDate, rangeStart, rangeEnd),
+    [records, period, selectedDate, rangeStart, rangeEnd],
+  )
 
   const generateAreaPath = (data: number[], width: number, height: number) => {
     const max = Math.max(...data, 1)
@@ -674,13 +541,6 @@ export default function StatsPage() {
   }
 
   const hasDevice = deviceId !== null
-  const isDataLoaded = true
-
-  const deviceName = useMemo(() => {
-    if (!deviceId) return null
-    const dev = devices.find(d => String(d.id) === String(deviceId))
-    return dev?.name ?? dev?.serialNumber ?? `Device #${deviceId}`
-  }, [deviceId, devices])
 
   const deviceDays = useMemo(() => {
     if (!deviceId) return 0
@@ -699,17 +559,8 @@ export default function StatsPage() {
     return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
   }, [deviceId, devices])
 
-  const emptyHistory = !historyLoading && !historyData && !useDemo
-    ? <ChartEmptyState message={hasDevice ? 'Historical power data will appear here after your device has been running for a while.' : 'Select a device to view its energy statistics.'} />
-    : null
-
   return (
     <div className="h-full flex flex-col bg-ink-12 overflow-hidden pt-6">
-      {/* History failed to load and there's no cache to fall back to — the chart below
-          renders synthetic getDemoChartFrame() numbers in that case, so without this
-          banner a real user sees fake power values with nothing marking them as fake. */}
-      <DemoBanner show={useDemo} onRetry={loadHistory} />
-
       {/* Header */}
       <div className="px-4 pt-8 pb-2 safe-area-top flex justify-between items-start">
         <div>
@@ -782,7 +633,7 @@ export default function StatsPage() {
         {hasDevice && (
           <>
             {/* Days overview */}
-            {historyLoading ? <DaysSkeleton /> : (
+            {loading && records === null ? <DaysSkeleton /> : (
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
                 className="flex flex-col items-center text-center py-5">
                 <div className="flex items-baseline justify-center gap-2">
@@ -890,14 +741,22 @@ export default function StatsPage() {
             </div>
 
             {/* Loading skeleton */}
-            {historyLoading && <><ChartSkeleton /><ChartAreaSkeleton /></>}
+            {loading && <><ChartSkeleton /><ChartAreaSkeleton /></>}
 
-            {/* Error or empty */}
-            {!historyLoading && !isDataLoaded && emptyHistory}
-
-            {/* Data loaded */}
-            {!historyLoading && isDataLoaded && chartFrame && (
+            {/* Data loaded — chart always renders; no data => flat 0 line */}
+            {!loading && (
               <>
+                {/* 加载失败时的轻量重试条（真无数据时不显示，只显示 0） */}
+                {error && (
+                  <div className="flex items-center justify-between gap-2 bg-ink-10 rounded-l px-4 py-3 mb-4">
+                    <span className="text-label text-ink-6">Couldn't load history data.</span>
+                    <button onClick={loadHistory}
+                      className="flex items-center gap-1.5 text-label font-semibold text-primary active:opacity-70">
+                      <RefreshCw size={13} /> Retry
+                    </button>
+                  </div>
+                )}
+
                 {/* CO2 Card */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                   className="bg-ink-10 rounded-l p-5 mb-4">
@@ -991,8 +850,8 @@ export default function StatsPage() {
                           if (!inPt || !outPt) return null
                           const inVal = chartFrame.input[scrubIndex] ?? 0
                           const outVal = chartFrame.output[scrubIndex] ?? 0
-                          const text1 = `In ${inVal.toFixed(1)} kWh`
-                          const text2 = `Out ${outVal.toFixed(1)} kWh`
+                          const text1 = `In ${Math.round(inVal)} W`
+                          const text2 = `Out ${Math.round(outVal)} W`
                           const boxW = Math.max(text1.length, text2.length) * 5.6 + 14
                           const boxX = Math.min(Math.max(inPt.x - boxW / 2, 2), 340 - boxW - 2)
                           return (
@@ -1014,10 +873,16 @@ export default function StatsPage() {
                       </div>
                     </div>
                   )}
+
+                  {/* 无数据时的说明（曲线保持在 0） */}
+                  {!chartFrame.hasData && (
+                    <p className="text-label text-ink-7 text-center mt-3">
+                      No power history for this period yet.
+                    </p>
+                  )}
                 </motion.div>
               </>
             )}
-
           </>
         )}
       </div>
