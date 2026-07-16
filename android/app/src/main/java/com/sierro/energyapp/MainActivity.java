@@ -20,6 +20,15 @@ public class MainActivity extends BridgeActivity {
         // "Sierro logo" users see on launch. Installing it here makes android:background take
         // over as intended on every API level.
         SplashScreen.installSplashScreen(this);
+        // After the splash screen dismisses, switch the Activity theme from
+        // NoActionBarLaunch (which has android:background="@drawable/splash" —
+        // the Sierro wordmark) to NoActionBar (which uses the dark #141414
+        // appBackground).  If we don't do this, the splash drawable stays as
+        // the window background forever; normally it's hidden behind the
+        // opaque WebView, but when the soft keyboard appears KeyboardResize.Body
+        // shrinks the WebView and the splash image becomes visible — that's
+        // the "large Sierro logo takes over the screen" bug on Android.
+        setTheme(R.style.AppTheme_NoActionBar);
         super.onCreate(savedInstanceState);
         // Android's Autofill Framework (API 26+) shows a small suggestion strip above the
         // keyboard branded with this app's launcher icon whenever the WebView detects a

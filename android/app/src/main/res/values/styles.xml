@@ -14,6 +14,10 @@
         <item name="windowNoTitle">true</item>
         <!-- WebView 首帧前窗口底色与 App 背景一致，消除启动闪白 -->
         <item name="android:windowBackground">@color/appBackground</item>
+        <!-- 显式覆盖 android:background，确保 setTheme() 从 NoActionBarLaunch
+             （其 android:background="@drawable/splash"）切换后，不再有任何
+             splash 图片残留。配合 KeyboardResize.Body 键盘缩小时也不会露出白底 logo。 -->
+        <item name="android:background">@color/appBackground</item>
         <!-- 状态栏/导航栏与深色主题一体化（浅色图标） -->
         <item name="android:statusBarColor">@color/appBackground</item>
         <item name="android:navigationBarColor">@color/appBackground</item>
