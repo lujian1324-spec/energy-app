@@ -330,6 +330,33 @@ export async function requestStorage(): Promise<PermissionResult> {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// BLE 错误分类（ProvisioningPage & OverviewPage 共用）
+// ═══════════════════════════════════════════════════════════════════════════
+
+export type BLErrorKind = 'permission' | 'bluetooth_off' | 'generic'
+
+export interface ClassifiedBLError {
+  kind: BLErrorKind
+  msg: string
+}
+
+/** 从 BLE 错误消息/对象中提取错误类型，驱动 UI：
+ *  - 'permission' → 显示 "Open Settings" 引导去系统设置
+ *  - 'bluetooth_off' → 显示 "Enable Bluetooth" 重试按钮
+ *  - 'generic' → 显示错误文本
+ */
+export function classifyBleError(err: unknown): ClassifiedBLError {
+  const msg = err instanceof Error ? err.message : 'Connection failed'
+  const low = msg.toLowerCase()
+  if (low.includes('permission') || low.includes('denied')) return { kind: 'permission', msg }
+  if (low.includes('not available') || low.includes('not enabled') ||
+      low.includes('disabled') || low.includes('bluetooth is off') || low.includes('adapter')) {
+    return { kind: 'bluetooth_off', msg }
+  }
+  return { kind: 'generic', msg }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Registry
 // ═══════════════════════════════════════════════════════════════════════════
 

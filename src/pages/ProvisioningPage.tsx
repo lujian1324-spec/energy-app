@@ -18,7 +18,7 @@ import { SIERRO_MODELS, SIERRO_MODEL_LIST, generateSerial, type SierroModel } fr
 import { saveRatedParams } from '../db/powerflowDB'
 import { useDeviceStore } from '../stores/deviceStore'
 import { openAppSettings } from '../utils/openAppSettings'
-import { checkBluetooth } from '../utils/permissions'
+import { checkBluetooth, classifyBleError } from '../utils/permissions'
 
 // Local UI screens — the multi-step store flow lives inside 'provisioning'
 type UiScreen = 'scan' | 'qr' | 'naming' | 'icon' | 'provisioning'
@@ -249,20 +249,12 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
           store.setIsOperating(false)
         }, 10000)
       } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Scan failed'
-        store.addLog(`Scan failed: ${err}`)
+        const { kind, msg } = classifyBleError(err)
+        store.addLog(`Scan failed: ${msg}`)
         store.setIsOperating(false)
-        // 按错误类型路由到可操作的引导屏（Android 一旦拒绝权限就不再弹窗，
-        // 只能去系统设置里开；蓝牙关则提示打开蓝牙）。
-        const low = msg.toLowerCase()
-        if (low.includes('permission') || low.includes('denied')) {
-          setBleStatus('no_permission')
-        } else if (low.includes('not available') || low.includes('not enabled') ||
-                   low.includes('disabled') || low.includes('bluetooth is off') || low.includes('adapter')) {
-          setBleStatus('bt_off')
-        } else {
-          store.setErrorMessage(msg); toast.error(msg)
-        }
+        if (kind === 'permission') { setBleStatus('no_permission') }
+        else if (kind === 'bluetooth_off') { setBleStatus('bt_off') }
+        else { store.setErrorMessage(msg); toast.error(msg) }
       }
       return
     }

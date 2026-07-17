@@ -63,6 +63,7 @@ import {
 } from '../protocols/bleDirect'
 import type { IBleProvisionManager } from '../protocols/bleProvision'
 import { isApiSuccess } from '../utils/apiClient'
+import { classifyBleError, type BLErrorKind } from '../utils/permissions'
 import { loadRatedParams } from '../db/powerflowDB'
 import { openAppSettings } from '../utils/openAppSettings'
 import { describeAlarmCode } from '../utils/alarmText'
@@ -127,7 +128,7 @@ export default function OverviewPage() {
   // 'permission'/'bluetooth_off' 出可操作引导（Open Settings 等），同 ProvisioningPage
   // 已经修过的 Android BLE 权限流程（v3.34.2）——直连模式是后加的新入口，之前没接这套判断，
   // 权限被拒时只会显示裸错误文案，用户没有任何可操作的下一步。
-  const [directErrorKind, setDirectErrorKind] = useState<'permission' | 'bluetooth_off' | 'generic'>('generic')
+  const [directErrorKind, setDirectErrorKind] = useState<BLErrorKind>('generic')
   const [directPickList, setDirectPickList] = useState<ProvisionScanDevice[]>([])
   // 直连模式下端口开关是"最后一次动作"的乐观本地态，不是从设备读回的真值——
   // 原始 Modbus 接口没有单独的端口状态读取；READ_ALL_STATUS 不含端口位。
@@ -139,19 +140,6 @@ export default function OverviewPage() {
   useEffect(() => {
     return () => { if (bleManagerRef.current) disconnectDirect().catch(() => { /* ignore */ }) }
   }, [])
-
-  // 同 ProvisioningPage 的分类启发式：Android 一旦拒绝 BLE 权限就不会再弹系统对话框，
-  // 只能引导去系统设置里手动开；蓝牙关闭则是另一种、不需要设置权限的状态。
-  const classifyBleError = (err: unknown): { kind: 'permission' | 'bluetooth_off' | 'generic'; msg: string } => {
-    const msg = err instanceof Error ? err.message : 'Connection failed'
-    const low = msg.toLowerCase()
-    if (low.includes('permission') || low.includes('denied')) return { kind: 'permission', msg }
-    if (low.includes('not available') || low.includes('not enabled') ||
-        low.includes('disabled') || low.includes('bluetooth is off') || low.includes('adapter')) {
-      return { kind: 'bluetooth_off', msg }
-    }
-    return { kind: 'generic', msg }
-  }
 
   const handleConnectDirect = async () => {
     setDirectError(null)
