@@ -26,6 +26,7 @@
 # safety net for the parts that aren't covered by that.
 -keepattributes SourceFile,LineNumberTable
 -keep class com.getcapacitor.** { *; }
+-keep class com.capacitorjs.** { *; }
 -keep class com.sierro.energyapp.** { *; }
 -keep @com.getcapacitor.annotation.CapacitorPlugin class * { *; }
 -keepclassmembers,allowobfuscation class * {

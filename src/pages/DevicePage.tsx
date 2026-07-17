@@ -374,24 +374,16 @@ export default function DevicePage() {
       return
     }
 
-    // Web Bluetooth not available (iOS Safari / PWA)
+    // Web Bluetooth not available (iOS Safari / Firefox)
     if (!('bluetooth' in navigator)) {
       setBlePermissionType('unsupported')
       return
     }
 
-    // Check if Bluetooth hardware is on / accessible
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const available = await (navigator as any).bluetooth.getAvailability()
-      if (!available) {
-        setBlePermissionType('denied')
-        return
-      }
-    } catch {
-      // getAvailability not supported in this browser — proceed optimistically
-    }
-
+    // getAvailability() is just a hint — it may return false in newer Chrome
+    // when the Permissions-Policy header isn't set, even with Bluetooth on.
+    // Don't block the user here; the actual permission prompt happens when
+    // navigator.bluetooth.requestDevice() is called inside ProvisioningPage.
     setShowProvisioning(true)
   }, [])
 

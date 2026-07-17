@@ -48,8 +48,10 @@ interface Props {
   onDone: () => void
 }
 
-// 推送未就绪时不申请通知权限（避免为不可用功能索权，商店拒审风险）
-const GATE_DEFS = PERMISSION_DEFS.filter(d => d.id !== 'notifications' || PUSH_ENABLED)
+// 推送未就绪时不申请通知权限（避免为不可用功能索权，商店拒审风险）。
+// 蓝牙权限不在首次启动时申请 — 改为在实际触发 BLE 扫描时才请求，
+// 避免用户尚未尝试添加设备就弹出蓝牙权限对话框导致高拒绝率。
+const GATE_DEFS = PERMISSION_DEFS.filter(d => d.id !== 'notifications' || PUSH_ENABLED).filter(d => d.id !== 'bluetooth')
 
 export default function PermissionsGate({ onDone }: Props) {
   const [step, setStep] = useState<'intro' | 'asking' | 'done'>('intro')

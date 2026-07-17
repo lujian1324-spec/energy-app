@@ -184,11 +184,17 @@ export async function checkBluetooth(): Promise<PermissionResult> {
   if (isNative()) {
     try {
       const { BleClient } = await import('@capacitor-community/bluetooth-le')
+      // initialize() is the permission gate on both platforms:
+      // - Android: triggers BLUETOOTH_SCAN / BLUETOOTH_CONNECT prompts (API 31+)
+      // - iOS: triggers the CoreBluetooth authorization dialog
       await BleClient.initialize({ androidNeverForLocation: true })
+      // After init, check radio state — separate from permission state
       const enabled = await withTimeout(BleClient.isEnabled(), 4000, false)
-      return enabled ? ask('Adapter ready — pick a device to pair') : no('Bluetooth is off')
+      if (!enabled) return no('Bluetooth is off')
+      return ok('Bluetooth ready')
     } catch {
-      return na('Bluetooth plugin unavailable')
+      // initialize() throws when permission is denied at the OS level
+      return no('Blocked — enable in system settings')
     }
   }
   const bt = (navigator as any).bluetooth
@@ -207,13 +213,16 @@ export async function requestBluetooth(): Promise<PermissionResult> {
   if (isNative()) {
     try {
       const { BleClient } = await import('@capacitor-community/bluetooth-le')
-      // initialize() triggers the runtime BLE/Location permission prompts on Android;
-      // isEnabled() then reflects radio state. (Pairing happens later in bleManager.)
+      // initialize() triggers the OS Bluetooth permission dialog on both platforms.
+      // Android: BLUETOOTH_SCAN + BLUETOOTH_CONNECT (API 31+)
+      // iOS: CoreBluetooth authorization
       await BleClient.initialize({ androidNeverForLocation: true })
       const enabled = await withTimeout(BleClient.isEnabled(), 6000, false)
-      return enabled ? ok('Bluetooth ready') : no('Bluetooth is off — enable it in system settings')
+      if (!enabled) return no('Bluetooth is off — enable it in system settings')
+      return ok('Bluetooth ready')
     } catch {
-      return na('Bluetooth plugin unavailable')
+      // initialize() throws when user denies the OS permission dialog
+      return no('Bluetooth permission denied — enable in system settings')
     }
   }
   const bt = (navigator as any).bluetooth

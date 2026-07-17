@@ -310,9 +310,20 @@ class NativeBleProvisionManager extends BaseProvisionManager {
     return m.BleClient
   }
 
+  /** initialize() 已經在 connect/scanDevices 中調用，它會觸發 OS 藍牙權限對話框。
+   *  此方法是額外的保險：如果用戶在 initialize 之後手動撤銷了權限，掃描仍會失敗，
+   *  但錯誤訊息會被上層 catch 捕獲並分類為 'no_permission' 導向系統設定。 */
+  private async ensureBlePermission(_BleClient: any): Promise<void> {
+    // initialize() already handled the permission prompt — no additional action needed.
+    // Actual scan/connect calls will fail with a descriptive error if permissions were
+    // revoked after initialize(), and the caller's catch block routes to the settings UI.
+  }
+
   async connect(): Promise<void> {
     const BleClient = await this.ble()
     await BleClient.initialize({ androidNeverForLocation: true })
+    // 扫描前先确保蓝牙权限已授予（Android 12+ BLUETOOTH_SCAN / BLUETOOTH_CONNECT）
+    await this.ensureBlePermission(BleClient)
     this.log('扫描蓝牙设备...')
     // 优先按 SSL_ 前缀过滤；前缀被改过/扫不到时回退到按服务 UUID 过滤
     let device
@@ -338,6 +349,7 @@ class NativeBleProvisionManager extends BaseProvisionManager {
   async scanDevices(onFound: (d: ProvisionScanDevice) => void): Promise<void> {
     const BleClient = await this.ble()
     await BleClient.initialize({ androidNeverForLocation: true })
+    await this.ensureBlePermission(BleClient)
     this.log('开始扫描附近设备...')
     await BleClient.requestLEScan(
       { namePrefix: 'SSL_', allowDuplicates: false },

@@ -18,6 +18,7 @@ import { SIERRO_MODELS, SIERRO_MODEL_LIST, generateSerial, type SierroModel } fr
 import { saveRatedParams } from '../db/powerflowDB'
 import { useDeviceStore } from '../stores/deviceStore'
 import { openAppSettings } from '../utils/openAppSettings'
+import { checkBluetooth } from '../utils/permissions'
 
 // Local UI screens — the multi-step store flow lives inside 'provisioning'
 type UiScreen = 'scan' | 'qr' | 'naming' | 'icon' | 'provisioning'
@@ -189,16 +190,24 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     const check = async () => {
-      // 原生 App：蓝牙由 Capacitor 插件处理（权限在扫描时请求），直接视为就绪
-      if (supportsDeviceListScan()) { setBleStatus('ready'); return }
-      if (!('bluetooth' in navigator)) { setBleStatus('no_permission'); return }
-      try {
-        // @ts-ignore — navigator.bluetooth.getAvailability() is standard
-        const available = await (navigator as any).bluetooth.getAvailability()
-        setBleStatus(available ? 'ready' : 'bt_off')
-      } catch {
-        setBleStatus('ready') // can't check, assume ready
+      // 原生 App：通过 Capacitor BLE 插件检查实际权限状态，不再无条件跳过
+      if (supportsDeviceListScan()) {
+        try {
+          const result = await checkBluetooth()
+          if (result.state === 'granted') { setBleStatus('ready') }
+          else if (result.state === 'denied') { setBleStatus('no_permission') }
+          else { setBleStatus('ready') } // 'prompt' — 扫描时会触发权限对话框
+        } catch {
+          setBleStatus('ready') // 插件不可用时回退，让扫描自行报错
+        }
+        return
       }
+      // Web: navigator.bluetooth 不存在（iOS Safari / Firefox）
+      if (!('bluetooth' in navigator)) { setBleStatus('no_permission'); return }
+      // getAvailability() 只是 hint，新版 Chrome 在缺少 Permissions-Policy
+      // 时可能直接返回 false，不应阻塞用户进入扫描。始终设为 ready；
+      // 真正的权限检查在 navigator.bluetooth.requestDevice() 时进行。
+      setBleStatus('ready')
     }
     check()
   }, [])
