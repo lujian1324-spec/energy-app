@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { openAppSettings } from '../utils/openAppSettings'
+import { toast } from '../components/Toast'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import jsQR from 'jsqr'
@@ -1056,7 +1057,10 @@ export default function DevicePage() {
                       <p className="text-[14px] text-danger mb-4">{qrError}</p>
                       {cameraDenied ? (
                         <button
-                          onClick={() => openAppSettings()}
+                          onClick={async () => {
+                            const ok = await openAppSettings()
+                            if (!ok) toast.info('Camera is blocked. In your browser, tap the site-info icon in the address bar and allow Camera, then retry.')
+                          }}
                           className="px-5 py-2 bg-primary rounded-full text-ink-13 text-body-md font-semibold"
                         >
                           Open Settings
@@ -1173,7 +1177,8 @@ export default function DevicePage() {
                 <button
                   onClick={async () => {
                     setBlePermissionType(null)
-                    await openAppSettings()
+                    const ok = await openAppSettings()
+                    if (!ok) toast.info('Open Settings → Apps → Sierro → Permissions → Nearby devices, and allow it.')
                   }}
                   className="w-full h-12 rounded-m bg-primary text-ink-13 text-body-lg font-semibold active:scale-95 transition-transform"
                 >

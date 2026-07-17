@@ -300,6 +300,23 @@ class WebBleProvisionManager extends BaseProvisionManager {
   }
 }
 
+/**
+ * 判断一个 BLE 扫描结果是否是 Sierro 设备。
+ * 不在 OS 层按 namePrefix 硬过滤：很多设备的广播包里并没有以 SSL_ 开头的 local name
+ * （名称要连上 GATT 才读得到，或只出现在 scan response 里），OS 名称过滤会让列表永远为空。
+ * 改为收下全部广播、在这里客户端过滤：名称以 SSL_ 开头，或广播了 FEE7 配网服务。
+ */
+export function isSierroScanResult(r: {
+  device?: { name?: string }
+  localName?: string
+  uuids?: string[]
+}): boolean {
+  const name = (r.device?.name ?? r.localName ?? '').toUpperCase()
+  if (name.startsWith('SSL_')) return true
+  // BLE_PROVISION_UUIDS.SERVICE = 0000fee7-... ；插件回传的是全长小写 UUID
+  return (r.uuids ?? []).some(u => u.toLowerCase().includes('fee7'))
+}
+
 // ─── 原生 Capacitor BLE 后端 ──────────────────────────────────────────────────
 class NativeBleProvisionManager extends BaseProvisionManager {
   private deviceId: string | null = null
@@ -310,13 +327,14 @@ class NativeBleProvisionManager extends BaseProvisionManager {
     return m.BleClient
   }
 
-  /** initialize() 已經在 connect/scanDevices 中調用，它會觸發 OS 藍牙權限對話框。
-   *  此方法是額外的保險：如果用戶在 initialize 之後手動撤銷了權限，掃描仍會失敗，
-   *  但錯誤訊息會被上層 catch 捕獲並分類為 'no_permission' 導向系統設定。 */
+  /** initialize() 已經在 connect/scanDevices 中調用，它是此插件在 Android 上請求
+   *  BLUETOOTH_SCAN/BLUETOOTH_CONNECT 的方式（内部会 requestPermissionForAliases），iOS 则触发
+   *  CoreBluetooth 授权。@capacitor-community/bluetooth-le@8.2.0 的 BleClient 并没有独立的
+   *  checkPermissions()/requestPermissions() 方法（不同于 Camera/Push 插件），所以这里没有额外调用。
+   *  若用户在 initialize 之后手动撤销了权限，随后的 scan/connect 会带描述性错误抛出，
+   *  由上层 catch → classifyBleError 分类为 'permission' 导向系统设置。 */
   private async ensureBlePermission(_BleClient: any): Promise<void> {
-    // initialize() already handled the permission prompt — no additional action needed.
-    // Actual scan/connect calls will fail with a descriptive error if permissions were
-    // revoked after initialize(), and the caller's catch block routes to the settings UI.
+    // No-op by design — see doc comment above.
   }
 
   async connect(): Promise<void> {
@@ -345,16 +363,26 @@ class NativeBleProvisionManager extends BaseProvisionManager {
     this.log('GATT 连接成功')
   }
 
-  /** 扫描附近 SSL_ 设备并回调（App 内列表）。约 10s 后自动停止。 */
+  /** 扫描附近 Sierro 设备并回调（App 内列表）。约 10s 后自动停止。
+   *  收下全部广播，在回调里用 isSierroScanResult 客户端过滤（SSL_ 名 或 FEE7 服务），
+   *  避免 OS 层 namePrefix 过滤把不广播名称的设备全部漏掉导致列表永远为空。 */
   async scanDevices(onFound: (d: ProvisionScanDevice) => void): Promise<void> {
     const BleClient = await this.ble()
     await BleClient.initialize({ androidNeverForLocation: true })
     await this.ensureBlePermission(BleClient)
+    // Android：系统「位置」服务关闭时 BLE 扫描会静默返回空——提前明确报错，交由上层引导去开定位。
+    if (Capacitor.getPlatform() === 'android') {
+      let locationOn = true
+      try { locationOn = await BleClient.isLocationEnabled() }
+      catch { /* 查询失败时不阻断扫描，让扫描自行进行 */ }
+      if (!locationOn) throw new Error('Location services are off — enable location to scan for Bluetooth devices.')
+    }
     this.log('开始扫描附近设备...')
     await BleClient.requestLEScan(
-      { namePrefix: 'SSL_', allowDuplicates: false },
+      { allowDuplicates: false },
       (result) => {
         if (!result?.device?.deviceId) return
+        if (!isSierroScanResult(result)) return
         onFound({ deviceId: result.device.deviceId, name: result.device.name ?? result.localName, rssi: result.rssi })
       },
     )

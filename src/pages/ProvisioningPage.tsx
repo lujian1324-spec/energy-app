@@ -233,27 +233,36 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
       onDisconnected: () => store.setErrorMessage('Device disconnected'),
     })
 
-    // 原生：App 内实时列出附近 SSL_ 设备，由用户点选
+    // 原生：App 内实时列出附近 Sierro 设备，由用户点选
     if (supportsDeviceListScan()) {
+      const seen = new Set<string>()
+      // 先挂好 10s 逾时：即使 scanDevices 迟迟不返回，也能停止扫描并解除「搜寻中」状态；
+      // 若期间没扫到任何设备，给出明确的「找不到设备」而不是停在含糊的 Ready 状态（避免感觉像一直在搜寻）。
+      if (scanStopRef.current) clearTimeout(scanStopRef.current)
+      scanStopRef.current = setTimeout(async () => {
+        try { await manager.stopScan() } catch { /* ignore */ }
+        store.setIsOperating(false)
+        if (seen.size === 0) {
+          store.setErrorMessage('No nearby Sierro devices found. Make sure the device is powered on and close by.')
+        }
+      }, 10000)
       try {
-        const seen = new Set<string>()
         await manager.scanDevices((d) => {
           if (seen.has(d.deviceId)) return
           seen.add(d.deviceId)
           setFoundDevices(prev => [...prev, { name: d.name || 'Sierro Device', serial: d.deviceId, deviceId: d.deviceId }])
         })
-        // 10s 后自动停止扫描
-        if (scanStopRef.current) clearTimeout(scanStopRef.current)
-        scanStopRef.current = setTimeout(async () => {
-          try { await manager.stopScan() } catch { /* ignore */ }
-          store.setIsOperating(false)
-        }, 10000)
       } catch (err) {
+        if (scanStopRef.current) { clearTimeout(scanStopRef.current); scanStopRef.current = null }
         const { kind, msg } = classifyBleError(err)
         store.addLog(`Scan failed: ${msg}`)
         store.setIsOperating(false)
         if (kind === 'permission') { setBleStatus('no_permission') }
-        else if (kind === 'bluetooth_off') { setBleStatus('bt_off') }
+        else if (kind === 'bluetooth_off') {
+          // 定位服务关闭是 Android 扫描静默失败的常见原因；bt_off 画面文案偏「开蓝牙」，用 toast 补充定位提示
+          if (/location/i.test(msg)) toast.info('Turn on Location (system setting) so Android can scan for Bluetooth devices, then try again.')
+          setBleStatus('bt_off')
+        }
         else { store.setErrorMessage(msg); toast.error(msg) }
       }
       return
