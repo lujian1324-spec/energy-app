@@ -236,6 +236,8 @@ export default function DeviceMonitorPage() {
             deviceId={id ?? null}
             isOnline={isOnline}
             values={{ battery: batteryPower, ac: acPower, solar: solarPower, output: outputPower }}
+            batteryAsSoc
+            batterySoc={remainingBatteryCapacity}
             lastSyncAt={selectedDeviceState?.time ? new Date(selectedDeviceState.time).getTime() : undefined}
           />
         </motion.div>
