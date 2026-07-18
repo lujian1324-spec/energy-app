@@ -1,5 +1,6 @@
 package com.sierro.energyapp;
 
+import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
@@ -30,13 +31,23 @@ public class MainActivity extends BridgeActivity {
         // the "large Sierro logo takes over the screen" bug on Android.
         setTheme(R.style.AppTheme_NoActionBar);
         super.onCreate(savedInstanceState);
-        // Android's Autofill Framework (API 26+) shows a small suggestion strip above the
-        // keyboard branded with this app's launcher icon whenever the WebView detects a
-        // login-style form (username/password/verification-code fields) — that's the
-        // "Sierro logo above the keyboard" users see on Login/Register/Forgot Password.
-        // Opting the WebView out of autofill importance suppresses that OS-level UI.
+        // Belt-and-suspenders for the same bug: force the window background to the dark
+        // app color programmatically, so no @drawable/splash can ever be revealed behind
+        // the WebView when KeyboardResize.Body shrinks it — independent of theme timing.
+        getWindow().setBackgroundDrawable(new ColorDrawable(0xFF141414));
+        // Android's Autofill Framework (API 26+) shows a branded suggestion strip / overlay
+        // above the keyboard (with this app's launcher icon) whenever the WebView detects a
+        // login-style form (username/password/verification-code fields) — the "logo above the
+        // keyboard" on Login/Register/Forgot Password. IMPORTANT_FOR_AUTOFILL_NO alone only
+        // opts out the WebView view itself, NOT its virtual children (the HTML inputs), so the
+        // strip could still appear; NO_EXCLUDE_DESCENDANTS opts out the whole subtree. Apply it
+        // to the decor view too so the entire window is excluded from the Autofill Framework.
+        // (The IME's own password-manager suggestions, driven by the inputs' autocomplete
+        // attributes, are a separate mechanism and are unaffected.)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            getBridge().getWebView().setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);
+            int noAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS;
+            getBridge().getWebView().setImportantForAutofill(noAutofill);
+            getWindow().getDecorView().setImportantForAutofill(noAutofill);
         }
     }
 }

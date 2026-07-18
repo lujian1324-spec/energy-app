@@ -22,6 +22,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useDeviceStore } from '../stores/deviceStore'
 import { mapFieldsToRealtime, toggleSleepMode, setWorkMode, passthroughDevice } from '../api/deviceApi'
+import { formatTemp } from '../utils/localization'
 import { FRAMES } from '../protocols/modbusProtocol'
 import { loadRatedParams, saveRatedParams, type RatedParams } from '../db/powerflowDB'
 import { SIERRO_MODELS, SIERRO_MODEL_LIST, generateSerial, type SierroModel } from '../data/deviceModels'
@@ -88,6 +89,20 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     [selectedDeviceState]
   )
   const rtField = (key: string): string | undefined => selectedDeviceState?.fields?.[key]?.valueDisplay
+
+  // Temperature: the device reports battery temp in °C (API cellTemperature1 / demo
+  // batteryTemp field / powerStation.temperature are all Celsius). The app displays °F,
+  // so convert via formatTemp instead of showing the raw °C value with a °F suffix.
+  const batteryTempCelsius =
+    realtime?.batteryTemp ??
+    (selectedDeviceState?.fields?.batteryTemp?.value != null
+      ? Number(selectedDeviceState.fields.batteryTemp.value)
+      : undefined) ??
+    powerStation.temperature
+  const temperatureDisplay =
+    batteryTempCelsius != null && !Number.isNaN(batteryTempCelsius)
+      ? formatTemp(batteryTempCelsius, 'F')
+      : '--'
 
   // Rated params fetched from IndexedDB (populated by deviceStore after login/add)
   const [ratedParams, setRatedParams] = useState<RatedParams | null>(null)
@@ -627,7 +642,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             />
             <InfoRow
               label="Temperature"
-              value={rtField('batteryTemp') || `${powerStation.temperature || '82.4'}°F`}
+              value={temperatureDisplay}
             />
             <InfoRow
               label="Wi-Fi Status"
