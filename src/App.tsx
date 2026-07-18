@@ -1,9 +1,8 @@
 ﻿import { Routes, Route, Navigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useLocation } from 'react-router-dom'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import BottomNavigation from './components/BottomNavigation'
-import PermissionsGate, { hasAskedPermissions } from './components/PermissionsGate'
 import DevicePage from './pages/DevicePage'
 import OverviewPage from './pages/OverviewPage'
 import StatsPage from './pages/StatsPage'
@@ -80,9 +79,6 @@ function AppInner() {
   // 全局低电量监控：不依赖具体页面，App 存活即轮询所有设备并推送系统通知
   useLowBatteryMonitor()
 
-  // 首次启动权限引导：session 恢复完成后检查
-  const [permissionsDone, setPermissionsDone] = useState(hasAskedPermissions)
-
   // 启动时恢复会话 + 刷新原生通知权限缓存
   useEffect(() => {
     restoreSession()
@@ -107,11 +103,6 @@ function AppInner() {
   // 等待会话恢复完成
   if (!sessionReady) {
     return <SessionLoadingScreen />
-  }
-
-  // 首次启动 → 显示权限引导页
-  if (!permissionsDone) {
-    return <PermissionsGate onDone={() => setPermissionsDone(true)} />
   }
 
   // 登录/注册页单独渲染，不包含底部导航
