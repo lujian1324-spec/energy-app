@@ -11,6 +11,14 @@ export interface RealTimePowerChartProps {
   isOnline: boolean
   /** Current live readings for the top-right badge: battery is charge/discharge power (W). */
   values: { battery: number; ac: number; solar: number; output: number }
+  /**
+   * When true, the Battery tab plots battery state-of-charge (SOC %,
+   * `remainingBatteryCapacity`) instead of charge/discharge power (W) — used by
+   * DeviceMonitorPage. `batterySoc` supplies the live SOC for the badge.
+   * Defaults to the power view (unchanged, as OverviewPage uses it).
+   */
+  batteryAsSoc?: boolean
+  batterySoc?: number
   lastSyncAt?: number
   className?: string
 }
@@ -22,15 +30,17 @@ export interface RealTimePowerChartProps {
  * OverviewPage and DeviceMonitorPage so both pages plot the same metric the
  * same way instead of two divergent chart implementations.
  */
-export default function RealTimePowerChart({ deviceId, isOnline, values, lastSyncAt, className }: RealTimePowerChartProps) {
+export default function RealTimePowerChart({ deviceId, isOnline, values, batteryAsSoc = false, batterySoc = 0, lastSyncAt, className }: RealTimePowerChartProps) {
   const [powerDataSource, setPowerDataSource] = useState<PowerTab>('battery')
 
   const powerChartData = useMemo(() => ({
-    battery: { value: values.battery, color: '#34C759' },
-    ac: { value: values.ac, color: '#01D6BE' },
-    solar: { value: values.solar, color: '#FF9500' },
-    output: { value: values.output, color: '#BFBFBF' },
-  }), [values.battery, values.ac, values.solar, values.output])
+    battery: batteryAsSoc
+      ? { value: Math.round(batterySoc), unit: '%', color: '#34C759' }
+      : { value: values.battery, unit: 'W', color: '#34C759' },
+    ac: { value: values.ac, unit: 'W', color: '#01D6BE' },
+    solar: { value: values.solar, unit: 'W', color: '#FF9500' },
+    output: { value: values.output, unit: 'W', color: '#BFBFBF' },
+  }), [values.battery, values.ac, values.solar, values.output, batteryAsSoc, batterySoc])
 
   const currentChartData = powerChartData[powerDataSource]
 
@@ -166,13 +176,13 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, lastSyn
       .filter(p => p.timestamp >= viewStart - win * 0.05 && p.timestamp <= viewEnd + win * 0.05)
       .map(p => {
         const x = ((p.timestamp - viewStart) / win) * 300
-        const val = powerDataSource === 'battery' ? p.battery
+        const val = powerDataSource === 'battery' ? (batteryAsSoc ? p.soc : p.battery)
                   : powerDataSource === 'ac'      ? p.ac
                   : powerDataSource === 'solar'   ? p.solar
                   :                                 p.output
         return { x, val }
       })
-  }, [rawHistoryPoints, viewStart, viewEnd, powerDataSource])
+  }, [rawHistoryPoints, viewStart, viewEnd, powerDataSource, batteryAsSoc])
 
   const chartMax = useMemo(() => Math.max(...chartPoints.map(p => Math.abs(p.val)), 1), [chartPoints])
 
@@ -219,7 +229,7 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, lastSyn
             color: isOnline ? currentChartData.color : '#BFBFBF'
           }}
         >
-          {isOnline ? `${currentChartData.value}W` : '-'}
+          {isOnline ? `${currentChartData.value}${currentChartData.unit}` : '-'}
         </motion.span>
       </div>
 

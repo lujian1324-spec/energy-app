@@ -17,6 +17,7 @@ import {
   type PermissionState,
 } from '../utils/permissions'
 import { openAppSettings } from '../utils/openAppSettings'
+import { toast } from './Toast'
 
 const ICONS: Record<PermissionId, { name?: string; Lucide?: LucideIcon }> = {
   storage: { Lucide: HardDrive },
@@ -113,7 +114,10 @@ export default function PermissionsManager() {
                 {res?.state !== 'unsupported' && (
                   blocked ? (
                     <button
-                      onClick={() => openAppSettings()}
+                      onClick={async () => {
+                        const ok = await openAppSettings()
+                        if (!ok) toast.info('This permission is managed by your browser — open the site settings (address-bar icon) to change it.')
+                      }}
                       className="flex-shrink-0 text-label font-semibold text-primary active:opacity-70"
                     >
                       Open Settings

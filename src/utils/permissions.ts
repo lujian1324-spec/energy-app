@@ -180,14 +180,29 @@ export async function requestCamera(): Promise<PermissionResult> {
 // Bluetooth (Web Bluetooth)
 // ═══════════════════════════════════════════════════════════════════════════
 
+/**
+ * initialize() is this plugin's permission gate on native:
+ *  - Android: internally calls requestPermissionForAliases(BLUETOOTH_SCAN/CONNECT) — the OS prompt
+ *  - iOS: creates the CBCentralManager → triggers CoreBluetooth authorization
+ * It throws when the permission is denied. @capacitor-community/bluetooth-le@8.2.0 has NO separate
+ * checkPermissions()/requestPermissions() (unlike Camera/Push), so initialize() is all we have.
+ * We remember success in a module flag so a passive check() and a following scan don't re-prompt /
+ * re-enter the native permission callback concurrently.
+ */
+let bleInitialized = false
+async function ensureBleInitialized(
+  BleClient: { initialize: (o?: { androidNeverForLocation?: boolean }) => Promise<void> },
+): Promise<void> {
+  if (bleInitialized) return
+  await BleClient.initialize({ androidNeverForLocation: true })
+  bleInitialized = true
+}
+
 export async function checkBluetooth(): Promise<PermissionResult> {
   if (isNative()) {
     try {
       const { BleClient } = await import('@capacitor-community/bluetooth-le')
-      // initialize() is the permission gate on both platforms:
-      // - Android: triggers BLUETOOTH_SCAN / BLUETOOTH_CONNECT prompts (API 31+)
-      // - iOS: triggers the CoreBluetooth authorization dialog
-      await BleClient.initialize({ androidNeverForLocation: true })
+      await ensureBleInitialized(BleClient)
       // After init, check radio state — separate from permission state
       const enabled = await withTimeout(BleClient.isEnabled(), 4000, false)
       if (!enabled) return no('Bluetooth is off')
@@ -213,11 +228,17 @@ export async function requestBluetooth(): Promise<PermissionResult> {
   if (isNative()) {
     try {
       const { BleClient } = await import('@capacitor-community/bluetooth-le')
-      // initialize() triggers the OS Bluetooth permission dialog on both platforms.
-      // Android: BLUETOOTH_SCAN + BLUETOOTH_CONNECT (API 31+)
-      // iOS: CoreBluetooth authorization
-      await BleClient.initialize({ androidNeverForLocation: true })
-      const enabled = await withTimeout(BleClient.isEnabled(), 6000, false)
+      // initialize() triggers the OS Bluetooth permission dialog (see ensureBleInitialized).
+      await ensureBleInitialized(BleClient)
+      let enabled = await withTimeout(BleClient.isEnabled(), 6000, false)
+      // Android: offer the system "turn on Bluetooth?" dialog when the radio is off.
+      // iOS has no such API (requestEnable → 'unavailable'), so we skip it there.
+      if (!enabled && Capacitor.getPlatform() === 'android') {
+        try {
+          await withTimeout(BleClient.requestEnable(), 15000, undefined)
+          enabled = await withTimeout(BleClient.isEnabled(), 4000, false)
+        } catch { /* user declined to turn Bluetooth on */ }
+      }
       if (!enabled) return no('Bluetooth is off — enable it in system settings')
       return ok('Bluetooth ready')
     } catch {
@@ -348,9 +369,16 @@ export interface ClassifiedBLError {
 export function classifyBleError(err: unknown): ClassifiedBLError {
   const msg = err instanceof Error ? err.message : 'Connection failed'
   const low = msg.toLowerCase()
-  if (low.includes('permission') || low.includes('denied')) return { kind: 'permission', msg }
-  if (low.includes('not available') || low.includes('not enabled') ||
-      low.includes('disabled') || low.includes('bluetooth is off') || low.includes('adapter')) {
+  // 权限被拒：Android "Permission denied." / iOS 授权拒绝 / Web NotAllowedError
+  if (low.includes('permission') || low.includes('denied') ||
+      low.includes('unauthorized') || low.includes('notallowed')) {
+    return { kind: 'permission', msg }
+  }
+  // 无法扫描的前置条件：蓝牙关闭 / 适配器不可用 / 定位服务关闭(Android) / 插件未初始化 / 不支持
+  if (low.includes('not available') || low.includes('not enabled') || low.includes('unavailable') ||
+      low.includes('disabled') || low.includes('bluetooth is off') || low.includes('adapter') ||
+      low.includes('not initialized') || low.includes('location') ||
+      low.includes('not supported') || low.includes('not turned on')) {
     return { kind: 'bluetooth_off', msg }
   }
   return { kind: 'generic', msg }
