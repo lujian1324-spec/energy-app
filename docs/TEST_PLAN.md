@@ -63,6 +63,25 @@
 | B-11 | 手动添加 | P2 | W/A | Manual Entry | 输设备码可添加 | 手动 |
 | B-12 | 选型号自动填参 | P1 | W/A | 添加选 Sierro 1000/2000 | 自动生成序列号 + 默认额定参数 | 手动 |
 
+## 3b. 权限按需申请 / 首启无权限页(v4.4.3 / v4.4.4)
+
+v4.4.4 移除首启"App Permissions"引导页,改为各功能首次使用时才申请对应系统权限;
+v4.4.3 修复 Android 扫不到设备(客户端过滤)与 PWA Open Settings 跳坏网址。逻辑层已被单测覆盖
+(见第 11 节),下列为需真机确认的"系统实际弹窗行为"。
+
+| ID | 用例 | P | 平台 | 步骤 | 预期 | 自动化 |
+|---|---|---|---|---|---|---|
+| PG-01 | **首启无权限页** | P0 | W/A/I | 全新安装(或清 localStorage `sierro_permissions_asked`)首次打开 | **不出现 App Permissions 引导页**,直接进登录/设备页;启动时不弹任何权限 | ✅(结构:PermissionsGate 已删除+无引用;tsc/单测) + 手动 |
+| PG-02 | 蓝牙按需申请 | P0 | A/I | 首次进"添加设备/蓝牙直连"扫描 | 此时(且仅此时)弹系统蓝牙权限;允许后开始扫描 | ✅(native 单测:initialize 为权限入口、只 init 一次)+ 手动 |
+| PG-03 | **Android 扫描列出设备** | P0 | A | 附近有 Sierro 设备(名称含/不含 SSL_ 均测) | 列表实时出现设备(不再"一直搜索中"空列表);收全部广播后按 SSL_ 名或 FEE7 服务客户端过滤 | ✅(单测:isSierroScanResult + scanDevices 过滤)+ 手动(真机) |
+| PG-04 | Android 定位关闭引导 | P1 | A | 关系统"位置"服务后扫描 | 提示"开启定位以扫描蓝牙"(非静默空列表) | ✅(单测:location off→抛错)+ 手动 |
+| PG-05 | Android 蓝牙关闭引导 | P1 | A | 关蓝牙后触发连接 | 弹系统"开启蓝牙?"对话框(requestEnable);iOS 不弹该对话框走系统设置引导 | ✅(native 单测:android requestEnable / iOS 跳过)+ 手动 |
+| PG-06 | **PWA Open Settings 不跳坏网址** | P0 | W | PWA 权限被拒后点 Open Settings | **不打开 `app-settings:` 坏标签页**;显示 toast 文字引导去浏览器站点权限设置 | ✅(单测:web 返回 false 且不 window.open)+ 手动 |
+| PG-07 | 相机按需申请 | P0 | A/I | 首次点"扫描二维码" | 此时才弹相机权限;允许后开镜头 | ✅(单测:getUserMedia/native Camera 映射)+ 手动 |
+| PG-08 | 推送按需申请 | P0 | A/I | Settings 首次打开任一推送开关 | 此时才弹通知权限;`NATIVE_PUSH_READY=false` 时不注册 APNs/FCM 不崩溃 | ✅(native 单测:register 门控)+ 手动 |
+| PG-09 | 头像换图无多余权限 | P2 | A/I | 点头像换图 | 直接开系统相簿选择器(选一张才给一张),无 App 级相簿权限弹窗 | 手动 |
+| PG-10 | 权限被拒可恢复 | P1 | A/I | 拒绝某权限后再次使用该功能 | 出现可操作引导(Open Settings / 重试),分类正确(permission vs bluetooth_off) | ✅(单测:classifyBleError)+ 手动 |
+
 ## 4. Overview 概览(实时链路重点)
 
 | ID | 用例 | P | 平台 | 步骤 | 预期 | 自动化 |
@@ -171,15 +190,32 @@
 - [ ] Android release AAB 不再报"无去混淆文件"(v3.35.7)→ 上传 Play Console 检查警告
 - [ ] 授予通知权限不闪退(v3.35.8)→ S-02b
 - [ ] 蓝牙直连模式可用(v3.36.0)→ O-13~O-16
+- [ ] Android 扫描客户端过滤(收全部广播,按 SSL_ 名或 FEE7 服务过滤,不再空列表)(v4.4.3)→ PG-03 / 单测
+- [ ] Android 定位关闭明确报错(非静默空)(v4.4.3)→ PG-04 / 单测
+- [ ] Android 蓝牙关闭 requestEnable / iOS 跳过(v4.4.3)→ PG-05 / 单测
+- [ ] PWA Open Settings 不再跳 `app-settings:` 坏网址(v4.4.3)→ PG-06 / 单测
+- [ ] classifyBleError 分类正确导向 UI(v4.4.2/4.4.3)→ PG-10 / 单测
+- [ ] 首启无 App Permissions 页 + 权限纯按需(v4.4.4)→ PG-01/02/07/08 / 单测
 
 ---
 
 ## 11. 自动化覆盖现状(全部可在 CLI 运行)
-- **单元 + 接口契约**(`src/**/*.test.ts`,Vitest,`npm run test:unit`,**7 个文件,68 项**):
+- **单元 + 接口契约**(`src/**/*.test.ts`,Vitest,`npm run test:unit`,**14 个文件,125 项**):
   - 纯逻辑:Modbus CRC/解码/0x0133 枚举、电池时间、isApiSuccess、速报探测。
   - **BLE 直连解码/控制**(`src/protocols/bleDirect.test.ts`,新增于 v3.36.0):用合成的 UART 透传
     响应验证 `readLiveStatusBle`(含 CRC 校验失败/RC!==0/传输异常三种失败路径均返回 null,不误信
     坏数据)、`setAcOutputBle`/`setDcOutputBle`/`setSleepPowerBle` 的成功/失败判定。
+  - **权限层**(v4.4.2~v4.4.4,共 57 项,新增于本轮):
+    - `permissions.web.test.ts`(28):PWA/web 分支——withTimeout、通知/相机/蓝牙/Wi-Fi/存储
+      的 check+request(用 stub 的浏览器全局)。
+    - `permissions.native.test.ts`(14):Capacitor mock 的原生分支——initialize() 是 BLE 权限入口
+      且至多调用一次、Android 无线电关闭时 requestEnable()、iOS 不调用 requestEnable()、
+      initialize() 拒绝→denied、相机/通知映射含 NATIVE_PUSH_READY 门控 register()。
+    - `bleProvision.native.test.ts`(4):scanDevices() 无 OS 名称过滤、客户端只转发 Sierro 结果、
+      Android 定位关闭抛 location 错误、定位查询异常仍扫描、iOS 跳过定位检查。
+    - `permissions.test.ts`(4,classifyBleError)、`bleProvision.test.ts`(3,isSierroScanResult)、
+      `openAppSettings.test.ts`(1,web 返回 false 不 open)、`openAppSettings.native.test.ts`(3,
+      原生深链 Android/iOS + 失败回 false)。
   - **全接口契约**(`src/api/api-contract.test.ts`,38 项):mock 传输层,逐个断言
     77 个 API 函数的端点/payload/字段约定(deviceId String、密码 md5、captchaId、
     邮箱验证码 `address` 字段、国家码去 `+`、无 userId 规则、透传 hex→base64 等)。
