@@ -1,8 +1,10 @@
 {
-  "version": "4.4.6",
-  "build": 2711,
+  "version": "4.4.7",
+  "build": 2712,
   "date": "2026-07-18",
   "changelog": [
+    "Remove the unused Overview dashboard page (OverviewPage, route /device/:id/dashboard). The route had no navigation path pointing at it anywhere in the app — it was dead/unreachable — so the page component and its route/import were deleted. The shared plumbing it referenced (bleDirect.ts BLE-direct, modbusProtocol.ts, useLiveDeviceStatus, decodePassthroughBase64, RealTimePowerChart, batteryTime, classifyBleError) is used elsewhere and is untouched; DeviceDetailPage (rendered as an overlay inside Overview) keeps its own /device/:id/settings route.",
+    "Device Monitor Real-Time Power chart: the Battery(SOC) tab now uses a FIXED 0–100% y-axis instead of auto-scaling to the window's max value, so a partial SOC range (e.g. 40–50%) no longer stretches to fill the chart height and misrepresent the level. Power tabs (AC/Solar/Output) still auto-scale to their own max.",
     "Device Monitor (DeviceMonitorPage) Real-Time Power chart: the Battery tab now shows battery state-of-charge (SOC %, remainingBatteryCapacity) instead of charge/discharge power (W). The top-right badge reads the live SOC with a % unit, and the history curve plots the per-record SOC (already carried as HistoryPoint.soc). Implemented via an opt-in batteryAsSoc/batterySoc prop on the shared RealTimePowerChart so OverviewPage's Battery tab keeps showing battery power (W) unchanged; the AC/Solar/Output tabs are unaffected on both pages.",
     "Device Info (DeviceDetailPage): fix the Temperature row showing a raw Celsius number labelled °F. The device reports battery temperature in °C (API cellTemperature1 / demo batteryTemp / powerStation.temperature are all Celsius), but the row previously printed the backend's Celsius valueDisplay as-is and its fallback appended a °F suffix without converting. It now converts to Fahrenheit via formatTemp(c,'F') — matching how OverviewPage and DevicePage already display Temperature — reading the numeric °C from realtime.batteryTemp → fields.batteryTemp.value → powerStation.temperature.",
     "PWA app icon / favicon changed to the white-font SIERRO logo. Regenerated public/icon-192x192.png, icon-512x512.png and apple-touch-icon.png from the uploaded white wordmark on a solid black background (matches the manifest theme), and pointed index.html's favicon at the PNG icons (was an SVG). Native Android/iOS launcher icons and the in-app login wordmark are unchanged.",

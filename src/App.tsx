@@ -4,7 +4,6 @@ import { useLocation } from 'react-router-dom'
 import { useEffect, useRef } from 'react'
 import BottomNavigation from './components/BottomNavigation'
 import DevicePage from './pages/DevicePage'
-import OverviewPage from './pages/OverviewPage'
 import StatsPage from './pages/StatsPage'
 import SettingPage from './pages/SettingPage'
 import LoginPage from './pages/LoginPage'
@@ -161,7 +160,6 @@ function AppInner() {
               {/* 二级页面（无底部导航） */}
               <Route path="/device/:id" element={<RequireAuth><DeviceMonitorPage /></RequireAuth>} />
               <Route path="/device/:id/settings" element={<RequireAuth><DeviceDetailPage /></RequireAuth>} />
-              <Route path="/device/:id/dashboard" element={<RequireAuth><OverviewPage /></RequireAuth>} />
               {DEV_TOOLS_ENABLED && (
                 <Route path="/device/:id/passthrough" element={<RequireAuth><PassthroughPage /></RequireAuth>} />
               )}

@@ -96,7 +96,6 @@ Test-only / CI-only changes that don't alter the shipped bundle do NOT bump.
 | `/insights` | `StatsPage` | **yes** | Insights (`/stats` redirects here) |
 | `/setting` | `SettingPage` | **yes** | Settings (`/settings` redirects here); `ProfileEditPage` is an overlay inside it |
 | `/device/:id` | `DeviceMonitorPage` | no | Live monitor |
-| `/device/:id/dashboard` | `OverviewPage` | no | Overview dashboard |
 | `/device/:id/settings` | `DeviceDetailPage` | no | Device Info (live) |
 | `/device/:id/passthrough` | `PassthroughPage` | no | Modbus passthrough |
 | `/device/:id/debug-params` | `DebugParamsPage` | no | Developer debug view (raw register names — exempt from label canon) |
@@ -113,7 +112,7 @@ Also present but not routed standalone: `ProvisioningPage` (inside DevicePage ad
   (`LoginPage`, `RegisterPage`, `SettingPage`, `DataExportPage`) opens the marketing site directly
   (`src/config/legalLinks.ts`: `TERMS_URL`/`PRIVACY_URL` → `sierro.us/pages/{terms,policy}`,
   `target="_blank"`/`window.open`). `TermsPage.tsx`/`PrivacyPage.tsx` were deleted.
-- Back navigation on `OverviewPage` and `DeviceMonitorPage` must go to `/devices` via
+- Back navigation on `DeviceMonitorPage` must go to `/devices` via
   `navigate('/devices',{replace:true})` (plus popstate interceptor) — never `navigate(-1)` — to
   avoid history flicker. (Horizontal swipe-to-back was removed to prevent accidental navigation.)
   Other secondary pages (`DeviceDetailPage`, `PassthroughPage`, `DebugParamsPage`,
@@ -128,22 +127,18 @@ Use the label canon below; same metric = same label everywhere except DebugParam
 - *Low Battery banner*: name, `Battery below {lowBatteryThreshold}%`, remaining time (`batteryTimeLabel`).
 - *Device params modal*: **Battery** % (`remainingBatteryCapacity`), **Battery Power** W (`batteryPower`), **AC** W (`acPower`), **Solar** W (`solarPower`), **Output** W (`outputPower`), **Temperature** °F (`batteryTemp`); port states (`acOut1/2Enable`,`usbOut1Enable`,`sleepMode`,`workMode`).
 
-**OverviewPage** (`/device/:id/dashboard`)
-- *Battery Hero*: ring **Battery** % (`remainingBatteryCapacity`), time to full/remaining (`batteryTimeLabel`); Input block **AC** W (`acPower`)+**Solar** W (`solarPower`), Output block **Output** W (`outputPower`); **Temperature** °F (`batteryTemp`).
-- *Quick Controls*: Sleep Mode (`sleepMode`), Backup/Saving (`workMode`).
-- *Ports*: AC Output 1/2 (`acOut1/2Enable`), USB (`usbOut1Enable`).
-- *Energy Management*: Smart Schedule link.
-- *Real-Time Power chart*: top-right badge = realtime value of selected tab (`battery/ac/solar/output` from 30s-polled `selectedDeviceState`); curve = **today's** API history via `useHistoryFetcher` (`batteryPower/exchangeChargingPower/generationPower/outputPower`), real-time X-axis (12am/4am/8am/12pm/4pm/8pm/12am), pinch/wheel zoom (min 1h) + pan.
-- *Alerts panel*: firing alarms (`firingAlarms`) + history alarms.
-- *Bluetooth Direct* (manual toggle, header): bypasses the cloud entirely via BLE UART passthrough
-  (`src/protocols/bleDirect.ts` + `bleProvision.ts`'s `uartPassthrough`, CID 30024/30025) feeding the
-  existing `modbusProtocol.ts` frame builders. Live values come from `useLiveDeviceStatus`'s third
-  `'ble'` source. Ports show only AC/DC (2, register-backed, optimistic — not USB-specific and not a
-  live read); Sleep Mode is a one-shot power write (`0x0085`), not the full time-window schedule.
+(OverviewPage / `/device/:id/dashboard` was removed in v4.4.7 — it had become an
+unreachable, unused route. The BLE-direct / passthrough plumbing it used
+(`bleDirect.ts`, `modbusProtocol.ts`, `useLiveDeviceStatus`, `decodePassthroughBase64`)
+lives on independently and is still referenced elsewhere.)
 
 **DeviceMonitorPage** (`/device/:id`)
 - *SoC card*: ring **Battery** % (`remainingBatteryCapacity`), **AC** W, **Solar** W, **Output** W.
 - *Real-Time Power chart*: badge + area chart, tabs battery/ac/solar/output, 12am–12am axis.
+  The **Battery** tab shows **Battery** SOC % (`remainingBatteryCapacity`) on a fixed 0–100% y-axis
+  (badge in %, curve from `HistoryPoint.soc`); AC/Solar/Output tabs show power (W), auto-scaled.
+  Driven by `RealTimePowerChart`'s `batteryAsSoc`/`batterySoc` props (the shared chart still defaults
+  to the power view for the Battery tab).
 
 **DeviceDetailPage** (`/device/:id/settings` — Device Info)
 - *Name edit*, *icon picker*.

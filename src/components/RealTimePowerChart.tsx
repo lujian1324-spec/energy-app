@@ -13,9 +13,9 @@ export interface RealTimePowerChartProps {
   values: { battery: number; ac: number; solar: number; output: number }
   /**
    * When true, the Battery tab plots battery state-of-charge (SOC %,
-   * `remainingBatteryCapacity`) instead of charge/discharge power (W) — used by
-   * DeviceMonitorPage. `batterySoc` supplies the live SOC for the badge.
-   * Defaults to the power view (unchanged, as OverviewPage uses it).
+   * `remainingBatteryCapacity`) on a fixed 0–100% axis instead of charge/discharge
+   * power (W) — used by DeviceMonitorPage. `batterySoc` supplies the live SOC for
+   * the badge. Defaults to the power view.
    */
   batteryAsSoc?: boolean
   batterySoc?: number
@@ -26,9 +26,9 @@ export interface RealTimePowerChartProps {
 /**
  * Same-day Real-Time Power chart: real API timestamps (not evenly re-spaced),
  * a fixed 12am–4am–8am–12pm–4pm–8pm–12am x-axis regardless of how much of the
- * day has data yet, and pinch/wheel zoom down to a 1-hour window. Shared by
- * OverviewPage and DeviceMonitorPage so both pages plot the same metric the
- * same way instead of two divergent chart implementations.
+ * day has data yet, and pinch/wheel zoom down to a 1-hour window. Rendered by
+ * DeviceMonitorPage; the Battery tab can plot SOC (%) instead of power via the
+ * batteryAsSoc prop.
  */
 export default function RealTimePowerChart({ deviceId, isOnline, values, batteryAsSoc = false, batterySoc = 0, lastSyncAt, className }: RealTimePowerChartProps) {
   const [powerDataSource, setPowerDataSource] = useState<PowerTab>('battery')
@@ -184,7 +184,14 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
       })
   }, [rawHistoryPoints, viewStart, viewEnd, powerDataSource, batteryAsSoc])
 
-  const chartMax = useMemo(() => Math.max(...chartPoints.map(p => Math.abs(p.val)), 1), [chartPoints])
+  // The Battery-as-SOC view uses a FIXED 0–100% y-axis (SOC is a percentage, so
+  // auto-scaling to the window's max would misleadingly stretch e.g. a 40–50%
+  // range to full height). Power tabs keep auto-scaling to their own max.
+  const isSocView = batteryAsSoc && powerDataSource === 'battery'
+  const chartMax = useMemo(
+    () => (isSocView ? 100 : Math.max(...chartPoints.map(p => Math.abs(p.val)), 1)),
+    [chartPoints, isSocView]
+  )
 
   const chartSvgPts = useMemo(() => {
     return chartPoints
