@@ -12,13 +12,19 @@
  *
  * Channels: Web Push (VAPID), FCM (Android), APNs (iOS). Each is optional —
  * only the channels you configure via env are used.
+ *
+ * A built-in poller (poller.js, gated by POLLER_ENABLED) runs in THIS process:
+ * it watches every subscribed user's devices and calls sendToUser() directly, so
+ * alerts reach a closed app even though the official backend has no push API.
  */
 import express from 'express'
 import cors from 'cors'
 import webpush from 'web-push'
 import {
   addWebPush, removeWebPush, addNative, removeNative, getWebPush, getNative,
+  setUserAuth,
 } from './store.js'
+import { startPoller } from './poller.js'
 
 const app = express()
 app.use(cors())
@@ -67,9 +73,14 @@ async function getApn() {
 
 // ── Subscription endpoints (called by the app) ───────────────────────────────
 app.post('/notification/webpush/subscribe', (req, res) => {
-  const { endpoint, p256dh, auth, userId } = req.body || {}
+  const { endpoint, p256dh, auth, userId, refreshToken, accessToken, accessExpiresAt, prefs } = req.body || {}
   if (!endpoint) return res.status(400).json({ code: 1, message: 'endpoint required' })
   addWebPush(userId, { endpoint, keys: { p256dh, auth } })
+  // Store the dedicated poller session (access + refresh pair) + push prefs so the
+  // poller can watch this user's devices while the app is closed. Refresh token is
+  // encrypted at rest (store.js). accessToken lets the poller work ~2h before it
+  // needs to refresh (which requires the pair).
+  if (refreshToken || accessToken || prefs) setUserAuth(userId, { refreshToken, accessToken, accessExpiresAt, prefs })
   ok(res)
 })
 app.post('/notification/webpush/unsubscribe', (req, res) => {
@@ -87,12 +98,9 @@ app.post('/notification/nativepush/unregister', (req, res) => {
   ok(res)
 })
 
-// ── Internal trigger: push an alert to a user across all their devices ────────
-app.post('/notify', async (req, res) => {
-  if (process.env.INTERNAL_KEY && req.get('X-Internal-Key') !== process.env.INTERNAL_KEY) {
-    return res.status(401).json({ code: 1, message: 'unauthorized' })
-  }
-  const { userId, title = 'Sierro', body = '', data = {} } = req.body || {}
+// ── Fan-out core: push an alert to a user across all their channels ───────────
+// Shared by the /notify route and the in-process poller.
+export async function sendToUser(userId, { title = 'Sierro', body = '', data = {} } = {}) {
   const results = { webpush: 0, fcm: 0, apns: 0, errors: [] }
 
   // Web Push
@@ -132,6 +140,16 @@ app.post('/notify', async (req, res) => {
       } catch (e) { results.errors.push('apns:' + e.message) }
     }
   }
+  return results
+}
+
+// ── Internal trigger: push an alert to a user across all their devices ────────
+app.post('/notify', async (req, res) => {
+  if (process.env.INTERNAL_KEY && req.get('X-Internal-Key') !== process.env.INTERNAL_KEY) {
+    return res.status(401).json({ code: 1, message: 'unauthorized' })
+  }
+  const { userId, title, body, data } = req.body || {}
+  const results = await sendToUser(userId, { title, body, data })
   ok(res, results)
 })
 
@@ -144,4 +162,9 @@ function stringifyData(d) {
 app.get('/health', (_req, res) => ok(res, { up: true }))
 
 const PORT = process.env.PORT || 8787
-app.listen(PORT, () => console.log(`[push] listening on :${PORT}`))
+app.listen(PORT, () => {
+  console.log(`[push] listening on :${PORT}`)
+  // Start the in-process poller (closed-app delivery). Off unless POLLER_ENABLED=true.
+  if (process.env.POLLER_ENABLED === 'true') startPoller(sendToUser)
+  else console.log('[poller] disabled (set POLLER_ENABLED=true to enable)')
+})

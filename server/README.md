@@ -9,7 +9,7 @@
 ## Endpoints (already called by the app — see `src/config/webPush.ts`)
 | Method | Path | Body |
 |---|---|---|
-| POST | `/notification/webpush/subscribe` | `{ endpoint, p256dh, auth, userId }` |
+| POST | `/notification/webpush/subscribe` | `{ endpoint, p256dh, auth, userId, refreshToken?, prefs? }` |
 | POST | `/notification/webpush/unsubscribe` | `{ endpoint, userId }` |
 | POST | `/notification/nativepush/register` | `{ token, platform, userId }` |
 | POST | `/notification/nativepush/unregister` | `{ token, userId }` |
@@ -17,6 +17,32 @@
 | GET  | `/health` | — |
 
 All success responses use `{ code: 0 }` (matches the app's `isApiSuccess`).
+
+`refreshToken` + `prefs` on subscribe are what the built-in **poller** needs (see
+below). They're optional — without them the relay is a pure fan-out and something
+else must call `/notify`.
+
+## Built-in poller (closed-app delivery)
+The official `solar.siseli.com` backend has **no push API** and stops nothing when
+the app is killed, so this relay ships an in-process **poller** (`poller.js`) that
+makes closed-app alerts actually work:
+
+- On subscribe, the app uploads each user's IoT **refreshToken** + push **prefs**
+  (`pushNotifications` / `pushLowBattery` / `lowBatteryThreshold` / `pushSolarStatus`).
+  The refresh token is **encrypted at rest** (AES-256-GCM, `TOKEN_ENC_KEY`).
+- Every `POLL_INTERVAL_MS` the poller, per user: refreshes an access token
+  (`/login/refresh/access/token`, persisting any rotation), lists devices, reads
+  `/remote/device/state/latest`, and runs the same detection rules as the app
+  (`detect.js`: outage / low battery / solar edge). New firings are pushed via
+  `sendToUser()` (the same fan-out as `/notify`), with a 30-min per-device throttle.
+- Enable with `POLLER_ENABLED=true`. A user with no remaining subscriptions has
+  their stored credentials pruned automatically.
+
+> **Privacy:** enabling the poller means storing users' IoT refresh tokens
+> server-side. Always set `TOKEN_ENC_KEY`, deploy over **HTTPS**, and keep
+> `tokens.json` off any public path. Tokens are never logged.
+
+Detection unit tests: `node --test server/detect.test.js`.
 
 ## Run
 ```bash
