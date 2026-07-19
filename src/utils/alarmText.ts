@@ -106,13 +106,15 @@ export function describeAlarmCode(code: string | undefined | null): string {
  *   2) 后端 name；3) 后端 alarmMessage；4) 未知代码人性化；5) 兜底 Alarm{id}/Device Alarm。
  * NotificationsPage 显示与 deviceAlarmNotification 推播共用，保证文案一致。
  */
-export function resolveAlarmText(alarm: {
+export interface ResolvableAlarm {
   key?: string
   alarmCode?: string
   name?: string
   alarmMessage?: string
   alarmId?: string
-}): string {
+}
+
+export function resolveAlarmText(alarm: ResolvableAlarm): string {
   const code = alarm.key ?? alarm.alarmCode ?? ''
   const known = knownAlarmText(code)
   if (known) return known
@@ -123,4 +125,36 @@ export function resolveAlarmText(alarm: {
   const humanized = describeAlarmCode(code)
   if (humanized) return humanized
   return alarm.alarmId ? `Alarm ${alarm.alarmId}` : 'Device Alarm'
+}
+
+// ── Alarm-center display rules (dedupe + correlated-symptom suppression) ──
+/** Resolved display text of the mains-outage root cause. */
+const MAINS_POWER_FAILURE = 'Mains power failure'
+/**
+ * Symptoms a grid outage always trips alongside the root cause — Mains undervoltage
+ * (gridVoltLows) and Bypass undervoltage (bypassUndervoltageFault). Hidden ONLY when
+ * a Mains power failure is also firing; on their own they still surface as genuine
+ * independent faults. Matched on the resolved display text (curated in ALARM_TEXT).
+ */
+const MAINS_FAILURE_SYMPTOMS = new Set(['Mains undervoltage', 'Bypass undervoltage'])
+
+/**
+ * Prepare firing alarms for the alarm center: resolve each to its display title,
+ * drop exact duplicates (same title — collapses e.g. lineLoss + mainsFailure that
+ * both read "Mains power failure"), and, when a Mains power failure is present, hide
+ * its correlated undervoltage symptoms. Preserves order; each kept alarm is annotated
+ * with the resolved `title` so callers don't re-resolve.
+ */
+export function dedupeAndFilterAlarms<T extends ResolvableAlarm>(alarms: T[]): Array<T & { title: string }> {
+  const withTitle = alarms.map(a => ({ ...a, title: resolveAlarmText(a) }))
+  const hasMainsFailure = withTitle.some(a => a.title === MAINS_POWER_FAILURE)
+  const seen = new Set<string>()
+  const out: Array<T & { title: string }> = []
+  for (const a of withTitle) {
+    if (hasMainsFailure && MAINS_FAILURE_SYMPTOMS.has(a.title)) continue
+    if (seen.has(a.title)) continue
+    seen.add(a.title)
+    out.push(a)
+  }
+  return out
 }

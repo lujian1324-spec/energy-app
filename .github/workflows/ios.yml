@@ -32,11 +32,24 @@ on:
 
 jobs:
   build:
-    runs-on: macos-14
+    # macos-15 ships Xcode 26+. This is REQUIRED: the Capacitor 8.4.x SPM binary
+    # (capacitor-swift-pm's Capacitor.xcframework) is built with Swift 6.2, and an
+    # older Xcode (e.g. 15.4 on macos-14, Swift 5.10) cannot parse its .swiftinterface
+    # — the Capacitor module imports with missing members and the plugins fail to
+    # compile ("value of type 'any CAPBridgeProtocol' has no member 'webView'").
+    runs-on: macos-15
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Select latest Xcode
+        run: |
+          latest=$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -1)
+          echo "Using $latest"
+          sudo xcode-select -s "$latest/Contents/Developer"
+          xcodebuild -version
+          swift --version
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
