@@ -12,7 +12,7 @@
  * covered by the power-outage-specific matcher, deduplicated by alarmId.
  */
 import { showDeviceAlarmNotification } from './pushNotification'
-import { describeAlarmCode } from './alarmText'
+import { resolveAlarmText } from './alarmText'
 import { POWER_OUTAGE_KEYS, type FiringAlarm } from './powerOutageNotification'
 
 function isPowerOutageAlarm(alarmCode: string): boolean {
@@ -59,8 +59,8 @@ export async function checkAndNotifyDeviceAlarms(
     if (notifiedAlarmIds.has(alarm.alarmId)) continue
     notifiedAlarmIds.add(alarm.alarmId)
 
-    const text = alarm.name || alarm.alarmMessage || describeAlarmCode(alarm.key ?? alarm.alarmCode)
-    await showDeviceAlarmNotification(deviceName, alarm.alarmId, text || 'Device alarm', alarm.severity)
+    const text = resolveAlarmText(alarm)
+    await showDeviceAlarmNotification(deviceName, alarm.alarmId, text, alarm.severity)
   }
 }
 

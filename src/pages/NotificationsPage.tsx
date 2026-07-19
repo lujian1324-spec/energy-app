@@ -3,16 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, AlertTriangle, Bell, Zap } from 'lucide-react'
 import { useDeviceStore } from '../stores/deviceStore'
-import { describeAlarmCode } from '../utils/alarmText'
-
-// Real-time firing alarm shape (from selectedDeviceState.firingAlarms)
-interface FiringAlarm {
-  alarmId: string
-  alarmCode: string
-  alarmMessage: string
-  severity: string
-  timestamp: string
-}
+import { resolveAlarmText } from '../utils/alarmText'
+import type { FiringAlarm } from '../utils/powerOutageNotification'
 
 function severityConfig(severity: string): { color: string; bg: string } {
   const s = (severity ?? '').toLowerCase()
@@ -27,9 +19,10 @@ function severityConfig(severity: string): { color: string; bg: string } {
 
 function FiringAlarmRow({ alarm }: { alarm: FiringAlarm }) {
   const cfg = severityConfig(alarm.severity)
-  // English description first: resolve alarm code via the alarmText dictionary,
-  // fall back to the backend's alarmMessage (may be Chinese) or alarm ID.
-  const title = describeAlarmCode(alarm.alarmCode) || alarm.alarmMessage || (alarm.alarmId ? `Alarm ${alarm.alarmId}` : 'Device Alarm')
+  // Resolve the real, human-readable description. The backend reports each firing
+  // alarm with key/name (not the legacy alarmCode/alarmMessage), so read all of
+  // them via the shared resolver — otherwise the row fell back to "Device Alarm".
+  const title = resolveAlarmText(alarm)
   const time = alarm.timestamp ? new Date(alarm.timestamp).toLocaleString() : 'Active now'
   return (
     <motion.div
