@@ -1,10 +1,16 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { Loader2, History, AlertTriangle, Battery, LayoutGrid, Sun, TrendingUp } from 'lucide-react'
+import { Loader2, AlertTriangle, Battery, LayoutGrid, Sun, TrendingUp } from 'lucide-react'
 import { useHistoryFetcher } from '../hooks/useHistoryFetcher'
 import { LastSync, SampleRate } from './DataTrust'
 
 type PowerTab = 'battery' | 'ac' | 'solar' | 'output'
+
+/** Compact Y-axis number: integers, with a k suffix at ≥1000 so the narrow axis gutter never wraps. */
+function fmtAxis(v: number): string {
+  const n = Math.round(v)
+  return Math.abs(n) >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n)
+}
 
 export interface RealTimePowerChartProps {
   deviceId: string | null
@@ -13,9 +19,9 @@ export interface RealTimePowerChartProps {
   values: { battery: number; ac: number; solar: number; output: number }
   /**
    * When true, the Battery tab plots battery state-of-charge (SOC %,
-   * `remainingBatteryCapacity`) instead of charge/discharge power (W) — used by
-   * DeviceMonitorPage. `batterySoc` supplies the live SOC for the badge.
-   * Defaults to the power view (unchanged, as OverviewPage uses it).
+   * `remainingBatteryCapacity`) on a fixed 0–100% axis instead of charge/discharge
+   * power (W) — used by DeviceMonitorPage. `batterySoc` supplies the live SOC for
+   * the badge. Defaults to the power view.
    */
   batteryAsSoc?: boolean
   batterySoc?: number
@@ -26,9 +32,9 @@ export interface RealTimePowerChartProps {
 /**
  * Same-day Real-Time Power chart: real API timestamps (not evenly re-spaced),
  * a fixed 12am–4am–8am–12pm–4pm–8pm–12am x-axis regardless of how much of the
- * day has data yet, and pinch/wheel zoom down to a 1-hour window. Shared by
- * OverviewPage and DeviceMonitorPage so both pages plot the same metric the
- * same way instead of two divergent chart implementations.
+ * day has data yet, and pinch/wheel zoom down to a 1-hour window. Rendered by
+ * DeviceMonitorPage; the Battery tab can plot SOC (%) instead of power via the
+ * batteryAsSoc prop.
  */
 export default function RealTimePowerChart({ deviceId, isOnline, values, batteryAsSoc = false, batterySoc = 0, lastSyncAt, className }: RealTimePowerChartProps) {
   const [powerDataSource, setPowerDataSource] = useState<PowerTab>('battery')
@@ -55,8 +61,6 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
   const {
     points: rawHistoryPoints,
     loading: historyLoading,
-    currentPage: historyPage,
-    fromCache: historyFromCache,
     error: historyError,
   } = useHistoryFetcher(deviceId, todayFrom, todayTo)
 
@@ -184,7 +188,14 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
       })
   }, [rawHistoryPoints, viewStart, viewEnd, powerDataSource, batteryAsSoc])
 
-  const chartMax = useMemo(() => Math.max(...chartPoints.map(p => Math.abs(p.val)), 1), [chartPoints])
+  // The Battery-as-SOC view uses a FIXED 0–100% y-axis (SOC is a percentage, so
+  // auto-scaling to the window's max would misleadingly stretch e.g. a 40–50%
+  // range to full height). Power tabs keep auto-scaling to their own max.
+  const isSocView = batteryAsSoc && powerDataSource === 'battery'
+  const chartMax = useMemo(
+    () => (isSocView ? 100 : Math.max(...chartPoints.map(p => Math.abs(p.val)), 1)),
+    [chartPoints, isSocView]
+  )
 
   const chartSvgPts = useMemo(() => {
     return chartPoints
@@ -194,6 +205,19 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
         return [p.x, y] as const
       })
   }, [chartPoints, chartMax])
+
+  // ─── Y-axis scale labels (2 levels: max at top, 0 at bottom) ───
+  // Rendered as an HTML overlay (like the X-axis labels) because the SVG uses
+  // preserveAspectRatio="none", which would distort any <text> inside it. The
+  // SVG is 78px tall over a 0..70 viewBox, so a viewBox y maps to y*(78/70) px.
+  const SVG_PX_H = 78
+  const Y_TICKS = useMemo(() => {
+    const unit = currentChartData.unit
+    return [
+      { label: `${fmtAxis(chartMax)}${unit}`, vy: 5 },   // top = chartMax
+      { label: '0', vy: 60 },                            // bottom = zero baseline
+    ].map(t => ({ label: t.label, py: t.vy * (SVG_PX_H / 70) }))
+  }, [chartMax, currentChartData.unit])
 
   const chartLinePoints = chartSvgPts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ')
   const chartAreaPoints = chartSvgPts.length >= 2
@@ -233,35 +257,36 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
         </motion.span>
       </div>
 
-      {/* Chart area with time X-axis — gestures captured on the whole area */}
-      <div
-        className="relative mb-1"
-        style={{ height: 96, touchAction: 'none' }}
-        onTouchStart={onChartTouchStart}
-        onTouchMove={onChartTouchMove}
-        onTouchEnd={onChartTouchEnd}
-        onWheel={onChartWheel}
-      >
+      {/* Chart area: left Y-axis scale gutter + plot region */}
+      <div className="relative mb-1 flex items-start" style={{ height: 96 }}>
+        {/* Y-axis scale labels (max at top, 0 at bottom) — HTML overlay, aligned to
+            the SVG's 78px height (the SVG's preserveAspectRatio="none" would distort
+            <text>, so labels live outside it like the X-axis labels). */}
+        <div className="relative flex-shrink-0" style={{ width: 30, height: 78 }}>
+          {Y_TICKS.map((tick, i) => (
+            <span
+              key={i}
+              className="absolute right-1 text-[9px] text-ink-8 font-medium tnum"
+              style={{ top: tick.py, transform: 'translateY(-50%)', whiteSpace: 'nowrap' }}
+            >
+              {tick.label}
+            </span>
+          ))}
+        </div>
+
+        {/* Plot region — gestures captured here */}
+        <div
+          className="relative flex-1 self-stretch"
+          style={{ touchAction: 'none' }}
+          onTouchStart={onChartTouchStart}
+          onTouchMove={onChartTouchMove}
+          onTouchEnd={onChartTouchEnd}
+          onWheel={onChartWheel}
+        >
         {/* Loading spinner overlay */}
         {historyLoading && rawHistoryPoints.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center z-10">
             <Loader2 size={20} className="text-primary animate-spin" />
-          </div>
-        )}
-
-        {/* Data status badge (top-left) */}
-        {(rawHistoryPoints.length > 0 || historyLoading) && (
-          <div className="absolute top-1 left-1 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#1a1a1a] border border-[rgba(1,214,190,0.25)]">
-            {historyLoading
-              ? <Loader2 size={9} className="text-primary animate-spin" />
-              : <History size={9} className="text-primary" />
-            }
-            <span className="text-[9px] text-primary font-medium">
-              {historyLoading
-                ? `p.${historyPage} · ${rawHistoryPoints.length}pts`
-                : `${historyFromCache ? 'cache' : 'API'} · ${rawHistoryPoints.length}pts`
-              }
-            </span>
           </div>
         )}
 
@@ -283,10 +308,11 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
           preserveAspectRatio="none"
           style={{ display: 'block', touchAction: 'none' }}
         >
-          {/* Y grid lines */}
-          <line x1="0" y1="15" x2="300" y2="15" stroke="rgba(255,255,255,0.05)" strokeWidth="0.8" />
-          <line x1="0" y1="35" x2="300" y2="35" stroke="rgba(255,255,255,0.05)" strokeWidth="0.8" />
-          <line x1="0" y1="55" x2="300" y2="55" stroke="rgba(255,255,255,0.05)" strokeWidth="0.8" />
+          {/* Y grid lines — aligned to the Y-axis labels: max (y=5) and 0 baseline
+              (y=60), plus a fainter unlabeled mid line (y=32.5) for readability. */}
+          <line x1="0" y1="5" x2="300" y2="5" stroke="rgba(255,255,255,0.06)" strokeWidth="0.8" />
+          <line x1="0" y1="32.5" x2="300" y2="32.5" stroke="rgba(255,255,255,0.04)" strokeWidth="0.8" />
+          <line x1="0" y1="60" x2="300" y2="60" stroke="rgba(255,255,255,0.08)" strokeWidth="0.8" />
 
           {/* X-axis tick lines at 4-hour boundaries */}
           {X_TICKS.map(tick => tick.x >= -2 && tick.x <= 302 ? (
@@ -348,6 +374,7 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
               </span>
             )
           })}
+        </div>
         </div>
       </div>
 
