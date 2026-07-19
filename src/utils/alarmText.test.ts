@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { resolveAlarmText, describeAlarmCode, knownAlarmText } from './alarmText'
+import { resolveAlarmText, describeAlarmCode, knownAlarmText, dedupeAndFilterAlarms } from './alarmText'
 
 /**
  * resolveAlarmText is the single entry that turns a firing-alarm object into a
@@ -40,6 +40,42 @@ describe('resolveAlarmText', () => {
   it('falls back to the alarm id, then a generic label, when empty', () => {
     expect(resolveAlarmText({ alarmId: 'A-1' })).toBe('Alarm A-1')
     expect(resolveAlarmText({})).toBe('Device Alarm')
+  })
+})
+
+describe('dedupeAndFilterAlarms', () => {
+  const titles = (arr: Array<{ title: string }>) => arr.map(a => a.title)
+
+  it('collapses duplicate descriptions (e.g. lineLoss + mainsFailure)', () => {
+    const out = dedupeAndFilterAlarms([
+      { key: 'lineLoss', alarmId: '1' },
+      { key: 'mainsFailure', alarmId: '2' },
+    ])
+    expect(titles(out)).toEqual(['Mains power failure'])
+  })
+
+  it('hides Mains/Bypass undervoltage when a Mains power failure is present', () => {
+    const out = dedupeAndFilterAlarms([
+      { key: 'lineLoss', alarmId: '1' },
+      { key: 'gridVoltLows', alarmId: '2' },        // Mains undervoltage
+      { key: 'bypassUndervoltageFault', alarmId: '3' }, // Bypass undervoltage
+      { key: 'cellOverVoltage', alarmId: '4' },     // unrelated → kept
+    ])
+    expect(titles(out)).toEqual(['Mains power failure', 'Cell overvoltage'])
+  })
+
+  it('keeps undervoltage alarms when there is no Mains power failure', () => {
+    const out = dedupeAndFilterAlarms([
+      { key: 'gridVoltLows', alarmId: '1' },
+      { key: 'bypassUndervoltageFault', alarmId: '2' },
+    ])
+    expect(titles(out)).toEqual(['Mains undervoltage', 'Bypass undervoltage'])
+  })
+
+  it('annotates each kept alarm with its resolved title and preserves other fields', () => {
+    const out = dedupeAndFilterAlarms([{ key: 'fanFault', alarmId: '9', severity: 'high' } as any])
+    expect(out[0].title).toBe('Fan fault')
+    expect((out[0] as any).severity).toBe('high')
   })
 })
 

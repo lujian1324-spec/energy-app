@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, AlertTriangle, Bell, Zap } from 'lucide-react'
 import { useDeviceStore } from '../stores/deviceStore'
-import { resolveAlarmText } from '../utils/alarmText'
+import { dedupeAndFilterAlarms } from '../utils/alarmText'
 import type { FiringAlarm } from '../utils/powerOutageNotification'
 
 function severityConfig(severity: string): { color: string; bg: string } {
@@ -17,12 +17,10 @@ function severityConfig(severity: string): { color: string; bg: string } {
   return { color: '#01D6BE', bg: 'rgba(1,214,190,0.08)' }
 }
 
-function FiringAlarmRow({ alarm }: { alarm: FiringAlarm }) {
+function FiringAlarmRow({ alarm }: { alarm: FiringAlarm & { title: string } }) {
   const cfg = severityConfig(alarm.severity)
-  // Resolve the real, human-readable description. The backend reports each firing
-  // alarm with key/name (not the legacy alarmCode/alarmMessage), so read all of
-  // them via the shared resolver — otherwise the row fell back to "Device Alarm".
-  const title = resolveAlarmText(alarm)
+  // Title is pre-resolved by dedupeAndFilterAlarms (which also deduped/suppressed).
+  const title = alarm.title
   const time = alarm.timestamp ? new Date(alarm.timestamp).toLocaleString() : 'Active now'
   return (
     <motion.div
@@ -71,9 +69,10 @@ export default function NotificationsPage() {
     if (selectedDeviceId) loadDeviceState(selectedDeviceId)
   }, [selectedDeviceId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Real-time firing alarms from the live device state
-  const firingAlarms = useMemo<FiringAlarm[]>(
-    () => (selectedDeviceState?.firingAlarms ?? []) as FiringAlarm[],
+  // Real-time firing alarms from the live device state, deduped by description and
+  // with a Mains power failure's correlated undervoltage symptoms suppressed.
+  const activeAlarms = useMemo(
+    () => dedupeAndFilterAlarms((selectedDeviceState?.firingAlarms ?? []) as FiringAlarm[]),
     [selectedDeviceState?.firingAlarms]
   )
 
@@ -90,8 +89,8 @@ export default function NotificationsPage() {
         </button>
         <div className="flex-1">
           <h2 className="text-lg font-bold text-ink-1">Notifications</h2>
-          {firingAlarms.length > 0 ? (
-            <p className="text-caption text-danger">{firingAlarms.length} active now</p>
+          {activeAlarms.length > 0 ? (
+            <p className="text-caption text-danger">{activeAlarms.length} active now</p>
           ) : (
             <p className="text-caption text-ink-7">No active alarms</p>
           )}
@@ -101,7 +100,7 @@ export default function NotificationsPage() {
       {/* List */}
       <div className="flex-1 overflow-y-auto scrollbar-hide">
         {/* Empty state */}
-        {firingAlarms.length === 0 && (
+        {activeAlarms.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -116,12 +115,12 @@ export default function NotificationsPage() {
         )}
 
         {/* Active alarms */}
-        {firingAlarms.length > 0 && (
+        {activeAlarms.length > 0 && (
           <>
-            <SectionHeader icon={Zap} label="Active Now" count={firingAlarms.length} color="#FF3B30" />
+            <SectionHeader icon={Zap} label="Active Now" count={activeAlarms.length} color="#FF3B30" />
             <AnimatePresence initial={false}>
-              {firingAlarms.map(a => (
-                <FiringAlarmRow key={`firing-${a.alarmId}`} alarm={a} />
+              {activeAlarms.map(a => (
+                <FiringAlarmRow key={`firing-${a.title}`} alarm={a} />
               ))}
             </AnimatePresence>
           </>
