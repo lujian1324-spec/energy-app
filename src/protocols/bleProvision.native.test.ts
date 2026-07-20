@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import type { ProvisionScanDevice } from './bleProvision'
 
 /**
@@ -6,10 +6,16 @@ import type { ProvisionScanDevice } from './bleProvision'
  * fix. We mock Capacitor (native) + the bluetooth-le plugin and assert:
  *  - requestLEScan runs with NO OS name filter; results are filtered client-side
  *    via isSierroScanResult (SSL_ name OR FEE7 service), dropping unrelated devices.
- *  - Android pre-checks isLocationEnabled() and throws a 'location' error when off
- *    (Android silently returns zero scan results otherwise).
+ *  - The Location gate is VERSION-GATED: on Android 11 and below (where BLE scan
+ *    silently returns zero results when Location is off) scanDevices() pre-checks
+ *    isLocationEnabled() and throws a 'location' error; on Android 12+
+ *    (BLUETOOTH_SCAN neverForLocation decouples scan from Location) it is skipped.
  *  - iOS never calls isLocationEnabled().
+ * Android version is read from navigator.userAgent, stubbed per test.
  */
+
+const UA_ANDROID_13 = 'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36'
+const UA_ANDROID_11 = 'Mozilla/5.0 (Linux; Android 11; SM-G991B) AppleWebKit/537.36'
 
 const FEE7 = '0000fee7-0000-1000-8000-00805f9b34fb'
 
@@ -39,6 +45,8 @@ beforeEach(() => {
   h.platform = 'android'
   h.scanResults = []
   vi.clearAllMocks()
+  // Default to Android 13 (12+) — the common modern case where Location is not required.
+  vi.stubGlobal('navigator', { userAgent: UA_ANDROID_13 })
   h.ble.initialize.mockResolvedValue(undefined)
   h.ble.isLocationEnabled.mockResolvedValue(true)
   h.ble.stopLEScan.mockResolvedValue(undefined)
@@ -47,6 +55,8 @@ beforeEach(() => {
     for (const r of h.scanResults) cb(r)
   })
 })
+
+afterEach(() => { vi.unstubAllGlobals() })
 
 describe('NativeBleProvisionManager.scanDevices', () => {
   it('forwards only Sierro devices (SSL_ name or FEE7 service) and drops the rest', async () => {
@@ -65,14 +75,29 @@ describe('NativeBleProvisionManager.scanDevices', () => {
     expect(h.ble.requestLEScan).toHaveBeenCalledWith({ allowDuplicates: false }, expect.any(Function))
   })
 
-  it('throws a location error on Android when Location services are off', async () => {
+  it('Android 11-: throws a location error when Location services are off', async () => {
+    vi.stubGlobal('navigator', { userAgent: UA_ANDROID_11 })
     h.ble.isLocationEnabled.mockResolvedValue(false)
     const mgr = await loadManager()
     await expect(mgr.scanDevices(() => {})).rejects.toThrow(/location/i)
     expect(h.ble.requestLEScan).not.toHaveBeenCalled()
   })
 
-  it('still scans on Android when a location query throws (does not block scanning)', async () => {
+  it('Android 12+: does NOT require Location (neverForLocation) — scans even when it is off', async () => {
+    // Default UA is Android 13. Location reported off must NOT block; isLocationEnabled
+    // should not even be consulted, and the scan proceeds.
+    h.ble.isLocationEnabled.mockResolvedValue(false)
+    h.scanResults = [{ device: { deviceId: 'a', name: 'SSL_1' } }]
+    const mgr = await loadManager()
+    const found: ProvisionScanDevice[] = []
+    await mgr.scanDevices(d => found.push(d))
+    expect(found.map(d => d.deviceId)).toEqual(['a'])
+    expect(h.ble.isLocationEnabled).not.toHaveBeenCalled()
+    expect(h.ble.requestLEScan).toHaveBeenCalled()
+  })
+
+  it('Android 11-: still scans when a location query throws (does not block scanning)', async () => {
+    vi.stubGlobal('navigator', { userAgent: UA_ANDROID_11 })
     h.ble.isLocationEnabled.mockRejectedValue(new Error('not supported'))
     h.scanResults = [{ device: { deviceId: 'a', name: 'SSL_1' } }]
     const mgr = await loadManager()
