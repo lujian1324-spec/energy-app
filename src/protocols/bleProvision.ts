@@ -317,6 +317,14 @@ export function isSierroScanResult(r: {
   return (r.uuids ?? []).some(u => u.toLowerCase().includes('fee7'))
 }
 
+/** Android 主版本号（如 13），从 WebView UA 的 "Android <n>" 解析；解析不到返回 null。
+ *  用于区分 Android 11-（扫描需开定位）与 12+（neverForLocation，扫描不需定位）。 */
+export function androidMajorVersion(): number | null {
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent : ''
+  const m = /Android (\d+)/.exec(ua || '')
+  return m ? parseInt(m[1], 10) : null
+}
+
 // ─── 原生 Capacitor BLE 后端 ──────────────────────────────────────────────────
 class NativeBleProvisionManager extends BaseProvisionManager {
   private deviceId: string | null = null
@@ -370,8 +378,11 @@ class NativeBleProvisionManager extends BaseProvisionManager {
     const BleClient = await this.ble()
     await BleClient.initialize({ androidNeverForLocation: true })
     await this.ensureBlePermission(BleClient)
-    // Android：系统「位置」服务关闭时 BLE 扫描会静默返回空——提前明确报错，交由上层引导去开定位。
-    if (Capacitor.getPlatform() === 'android') {
+    // 定位闸只对 Android 11 及以下有意义：那些系统上定位一关，BLE 扫描会静默返回空，
+    // 所以提前明确报错、引导去开定位。Android 12+（API 31+）的 Manifest 已用
+    // BLUETOOTH_SCAN + neverForLocation 把「蓝牙扫描」与「定位」解耦——定位关着也能扫，
+    // 若在此仍强制开定位，会误报「Turn on Location」并把用户推到「蓝牙关闭」画面。
+    if (Capacitor.getPlatform() === 'android' && androidMajorVersion() !== null && androidMajorVersion()! <= 11) {
       let locationOn = true
       try { locationOn = await BleClient.isLocationEnabled() }
       catch { /* 查询失败时不阻断扫描，让扫描自行进行 */ }
