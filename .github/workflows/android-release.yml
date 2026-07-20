@@ -1,7 +1,8 @@
 name: Android Release AAB
 
-# Builds a Play-submittable, signed Android App Bundle (.aab).
-# Manual trigger, or push a tag like v3.34.0.
+# Builds a Play-submittable, signed Android App Bundle (.aab) AND — when Play
+# credentials are configured — auto-publishes it to a Google Play closed-testing
+# track. Manual trigger, or push a tag like v3.34.0.
 #
 # Required GitHub repo Secrets (Settings → Secrets and variables → Actions):
 #   ANDROID_KEYSTORE_BASE64   - the upload keystore (.jks) base64-encoded:
@@ -10,6 +11,15 @@ name: Android Release AAB
 #   ANDROID_KEY_ALIAS         - key alias inside the keystore
 #   ANDROID_KEY_PASSWORD      - key password for that alias
 # Without these, the job builds an UNSIGNED bundle (not submittable) and says so.
+#
+# Optional — for auto-publishing to Google Play (see docs/RELEASE_SIGNING.md):
+#   PLAY_SERVICE_ACCOUNT_JSON - Play Developer API service-account JSON (full text).
+#                               When absent, the publish step is skipped (build-only).
+# Optional repo Variables (Settings → Secrets and variables → Actions → Variables):
+#   PLAY_TRACK                - Play track name to release to (default: alpha).
+#   PLAY_VERSION_CODE_OFFSET  - added to github.run_number for versionCode, to clear
+#                               any higher versionCode used by past manual uploads
+#                               (default: 0).
 
 on:
   workflow_dispatch:
@@ -75,7 +85,7 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
-      # versionCode uses the run number so every Play upload increments.
+      # versionCode = run_number (+ optional offset) so every Play upload increments.
       - name: Build release AAB
         working-directory: android
         env:
@@ -83,7 +93,7 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: ./gradlew bundleRelease --no-daemon -PversionCode=${{ github.run_number }}
+        run: ./gradlew bundleRelease --no-daemon -PversionCode=$(( ${{ github.run_number }} + ${{ vars.PLAY_VERSION_CODE_OFFSET || 0 }} ))
 
       - name: Locate AAB
         id: aab
@@ -98,3 +108,31 @@ jobs:
           name: sierro-energy-v${{ steps.ver.outputs.version }}-aab${{ steps.keystore.outputs.signed == 'true' && '-signed' || '-unsigned' }}
           path: sierro-energy-v${{ steps.ver.outputs.version }}.aab
           retention-days: 30
+
+      # ── Auto-publish to Google Play (closed testing) ──────────────────────────
+      # Only when the bundle is signed AND a Play service-account secret is present.
+      - name: Check Play credentials
+        id: play
+        run: echo "has_sa=${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare Play release notes
+        if: steps.keystore.outputs.signed == 'true' && steps.play.outputs.has_sa == 'true'
+        run: |
+          mkdir -p distribution/whatsnew
+          printf 'Sierro Energy v%s. See in-app Settings for the full changelog.' \
+            "${{ steps.ver.outputs.version }}" > distribution/whatsnew/whatsnew-en-US
+
+      - name: Publish to Google Play (closed testing)
+        if: steps.keystore.outputs.signed == 'true' && steps.play.outputs.has_sa == 'true'
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.sierro.energyapp
+          releaseFiles: sierro-energy-v${{ steps.ver.outputs.version }}.aab
+          track: ${{ vars.PLAY_TRACK || 'alpha' }}
+          status: completed
+          whatsNewDirectory: distribution/whatsnew
+
+      - name: Publish skipped notice
+        if: steps.keystore.outputs.signed != 'true' || steps.play.outputs.has_sa != 'true'
+        run: echo "::notice::Google Play publish skipped (needs a signed bundle AND the PLAY_SERVICE_ACCOUNT_JSON secret). Built AAB is available as an artifact."
