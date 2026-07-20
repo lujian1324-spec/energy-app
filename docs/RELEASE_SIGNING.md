@@ -39,12 +39,65 @@ base64 -i upload-keystore.jks    # macOS
 产物在该 run 的 Artifacts:`sierro-energy-v<版本>.aab`(带 `-signed` 后缀)。
 `versionCode` 用 CI run number 自增,保证每次上传 Play 递增。
 
-### 5. 上传 Play
-Play Console → 创建应用 → 内部测试(Internal testing)→ 上传 `.aab` → 填 Data safety / 内容分级 / 隐私政策 URL → 发布内测。
+### 5. 上传 Play(首次手动)
+Play Console → 创建应用 → 内部/封闭测试 → 上传 `.aab` → 填 Data safety / 内容分级 / 隐私政策 URL → 发布。
 > 首次建议走 **Play App Signing**(Google 托管发布签名,你的 `upload-keystore` 只作上传密钥)。
+> **首次必须手动传一次**:Play API 不允许为全新包名做首次上传。之后即可用下面的自动发布。
 
 ### 未配置 Secret 时
 `Android Release AAB` 仍会跑,但产出**未签名** AAB(不可上架),并在日志里 `::warning::` 提示。本地/CI 冒烟不受影响。
+
+---
+
+## Android — 自动发布到 Google Play（closed 测试轨道）
+
+配好后:**打一个 `vX.Y.Z` tag(或手动 Run workflow)→ CI 自动构建签名 AAB 并发布到你的
+closed 轨道**(`status=completed`,上传即生效)。GitHub 与 Play 之间没有原生「关联」按钮——
+靠一个 **Play 服务账号(JSON 密钥)**打通,由 `android-release.yml` 的发布步骤调用。
+
+### 前置(已满足):应用已在 Play Console 创建且**手动上传过至少一次**、已启用 Play App Signing。
+
+### 1. Google Cloud:启用 API
+- 打开 [Google Cloud Console](https://console.cloud.google.com/) → 选一个项目(或新建)。
+- **APIs & Services → Enable APIs** → 启用 **Google Play Android Developer API**。
+  > 若你从 Play Console → **Setup → API access** 进入,可自动关联/新建 GCP 项目,更省事。
+
+### 2. 建服务账号 + JSON 密钥
+- GCP → **IAM & Admin → Service Accounts → Create service account**(名字随意,如 `play-publisher`)。
+- 建好后 → 该账号 → **Keys → Add key → Create new key → JSON** → 下载 JSON(**只存 GitHub Secret,勿入库**)。
+- 记下服务账号邮箱:形如 `play-publisher@<项目>.iam.gserviceaccount.com`。
+
+### 3. 在 Play Console 授权该服务账号
+- Play Console → **Users and permissions → Invite new users** → 填上一步的服务账号邮箱。
+- 授予**该应用**权限:至少勾选
+  **Release to testing tracks** 与 **Manage testing track releases**(封闭测试轨道所需)。
+- 该 **closed 轨道要先在 Play Console 建好**(Testing → Closed testing → 建 alpha/beta 或自定义轨道并加测试人员)。
+- 授权可能需几分钟到数十分钟生效。
+
+### 4. 配 GitHub Secret / Variable
+仓库 → Settings → Secrets and variables → Actions:
+| 类型 | 名称 | 值 |
+|---|---|---|
+| **Secret** | `PLAY_SERVICE_ACCOUNT_JSON` | 第 2 步下载的 JSON **全文** |
+| Variable(可选) | `PLAY_TRACK` | 你的 closed 轨道名(默认 `alpha`) |
+| Variable(可选) | `PLAY_VERSION_CODE_OFFSET` | 若历史手动上传用过更高 versionCode,设一个正整数把地板抬到其上(默认 `0`) |
+
+> 4 个 `ANDROID_KEYSTORE_*` 签名 Secret 必须仍是**与首次手动上传同一把 upload key**,否则 Play 拒收。
+
+### 5. 触发发布
+- 打 tag:`git tag v4.5.0 && git push <remote> v4.5.0`;或
+- Actions → **Android Release AAB** → Run workflow。
+- 看 CI:构建签名 AAB → **Publish to Google Play (closed testing)** 绿 → Play Console 对应
+  closed 轨道出现该 versionCode 的 release。
+
+### 未配置 `PLAY_SERVICE_ACCOUNT_JSON` 时
+发布步骤自动 **skip**(日志有 `::notice::`),workflow 照常构建 + 出 AAB artifact,零影响。
+
+### 常见报错
+- `The caller does not have permission` → 服务账号在 Play Console 的授权未生效/权限不足(回第 3 步)。
+- `Version code N has already been used` / 必须更高 → 设 `PLAY_VERSION_CODE_OFFSET` 抬高地板。
+- `Track ... could not be found` → `PLAY_TRACK` 名与 Play Console 里的轨道名不一致。
+- `APK/AAB ... not allowed`(全新包)→ 该包名还没手动传过首个包(回第 5 节「首次手动」)。
 
 ---
 

@@ -4,6 +4,8 @@
  * 端点路径见 src/config/webPush.ts，待后端实现后调整。
  */
 import { api, isApiSuccess } from '../utils/apiClient'
+import { POLLER_REFRESH_PENDING_KEY } from './authApi'
+import { usePowerStationStore } from '../stores/powerStationStore'
 import {
   PUSH_SUBSCRIBE_PATH,
   PUSH_UNSUBSCRIBE_PATH,
@@ -15,10 +17,33 @@ function getUserId(): string | null {
   return localStorage.getItem('iot_user_id')
 }
 
+/**
+ * Push preferences the server-side poller needs to watch this user's devices
+ * while the app is CLOSED (matches the Settings > Push Notifications toggles).
+ */
+function getPushPrefs() {
+  const s = usePowerStationStore.getState().settings
+  return {
+    pushNotifications: s.pushNotifications ?? false,
+    pushLowBattery: s.pushLowBattery ?? false,
+    lowBatteryThreshold: s.lowBatteryThreshold ?? 30,
+    pushSolarStatus: s.pushSolarStatus ?? false,
+    pushDeviceAlarms: s.pushDeviceAlarms ?? false,
+  }
+}
+
 /** 上报订阅到后端。成功返回 true；后端未就绪/失败返回 false（不抛错）。 */
 export async function registerPushSubscription(sub: PushSubscription): Promise<boolean> {
   try {
     const json = sub.toJSON()
+    // One-time bootstrap: the access+refresh pair of the dedicated poller session
+    // minted at password login (see authApi.provisionPollerSession). Sent ONLY on
+    // the first subscribe after login — thereafter the relay's poller owns and
+    // rotates it, so we must NOT re-upload a now-stale copy. Absent for email/SMS
+    // logins (no password to mint a second session).
+    let boot: { accessToken?: string; refreshToken?: string; accessExpiresAt?: number } = {}
+    const rawBoot = localStorage.getItem(POLLER_REFRESH_PENDING_KEY)
+    if (rawBoot) { try { boot = JSON.parse(rawBoot) } catch { /* ignore malformed */ } }
     const res = await api.post(PUSH_SUBSCRIBE_PATH, {
       endpoint: json.endpoint,
       p256dh: json.keys?.p256dh,
@@ -26,8 +51,18 @@ export async function registerPushSubscription(sub: PushSubscription): Promise<b
       userId: getUserId() ?? undefined,
       platform: 'web',
       expirationTime: sub.expirationTime ?? null,
+      // Lets the poller read this user's device state via its own independent
+      // session; refreshToken stored encrypted by the relay. undefined => relay
+      // keeps its own (poller-rotated) copy.
+      refreshToken: boot.refreshToken ?? undefined,
+      accessToken: boot.accessToken ?? undefined,
+      accessExpiresAt: boot.accessExpiresAt ?? undefined,
+      prefs: getPushPrefs(),
     })
-    return isApiSuccess(res.code)
+    const ok = isApiSuccess(res.code)
+    // Consume the bootstrap once the relay has it, so we never re-upload a stale one.
+    if (ok && rawBoot) localStorage.removeItem(POLLER_REFRESH_PENDING_KEY)
+    return ok
   } catch (e) {
     console.warn('[WebPush] registerPushSubscription failed:', e)
     return false

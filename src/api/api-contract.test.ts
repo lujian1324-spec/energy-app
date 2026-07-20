@@ -70,12 +70,17 @@ describe('helpers', () => {
 // Auth 接口
 // ─────────────────────────────────────────────────────────────
 describe('authApi contracts', () => {
-  it('loginByAccount → POST(skipAuth) /login/account, password md5', async () => {
+  it('loginByAccount → POST(skipAuth) /login/account, password md5 (+ mints poller session)', async () => {
     await auth.loginByAccount('benson', 'pw123')
-    const c = only()
+    const c = h.calls[0]
     expect([c.method, c.path]).toEqual(['postSkipAuth', '/login/account'])
     expect(c.body.account).toBe('benson')
     expect(c.body.password).toBe(md5Password('pw123'))
+    // Also mints a second, independent session for the server-side poller
+    // (provisionPollerSession) — two /login/account calls total, same md5 password.
+    const logins = h.calls.filter(x => x.path === '/login/account')
+    expect(logins.length).toBe(2)
+    expect(logins[1].body.password).toBe(md5Password('pw123'))
   })
 
   it('loginByEmail → /login/email, iotCaptchaId mapped to captchaId', async () => {

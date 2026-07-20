@@ -145,6 +145,40 @@ export const CaptchaIntent = {
 // 登录
 // ═══════════════════════════════════════════════════════
 
+/**
+ * 服务端 poller 用的「专属会话」refreshToken 的暂存键。
+ *
+ * 实测平台特性:refreshToken 单次使用(用一次即轮换、旧的立即失效),但【同账号
+ * 可并存多条互相独立的会话】。所以不能把 App 自己会话的 refreshToken 交给 poller
+ * ——那会和 App 抢同一条会话、一刷新就把 App 踢下线。正解是登录时(手上有密码)
+ * 额外再登一次,生成一条【专供 poller 的独立会话】,把它的 refreshToken 作为
+ * 一次性 bootstrap 暂存于此,首次推送订阅时上报给 relay;之后由 poller 独占轮换,
+ * App 侧永不再动它。仅密码登录可用(邮箱/短信验证码登录无密码,无法再登一次)。
+ */
+export const POLLER_REFRESH_PENDING_KEY = 'iot_poller_refresh_pending'
+
+/** 铸造一条专供 poller 的独立会话并暂存其令牌(best-effort,失败静默)。 */
+async function provisionPollerSession(username: string, plainPassword: string): Promise<void> {
+  try {
+    // 独立再登一次,拿到一条与 App 自己会话互不影响的新会话;不写 tokenStore。
+    const res = await api.postSkipAuth<LoginData>('/login/account', {
+      account: username,
+      password: md5Password(plainPassword),
+    })
+    // 存【access + refresh 成对】:平台刷新接口要求成对提交,poller 起步先直接用
+    // accessToken(约 2h),临期才用这对去刷新。附上 access 过期时刻供 poller 判断。
+    if (isApiSuccess(res.code) && res.data?.accessToken && res.data?.refreshToken) {
+      localStorage.setItem(POLLER_REFRESH_PENDING_KEY, JSON.stringify({
+        accessToken: res.data.accessToken,
+        refreshToken: res.data.refreshToken,
+        accessExpiresAt: Date.now() + (res.data.accessTokenWillExpiredInMillis ?? 2 * 60 * 60 * 1000),
+      }))
+    }
+  } catch {
+    /* poller 仅在下次登录时再尝试补铸;不影响正常登录 */
+  }
+}
+
 /** 账号密码登录 */
 export async function loginByAccount(
   username: string,
@@ -162,6 +196,8 @@ export async function loginByAccount(
     if (accessToken) tokenStore.set(accessToken)
     const refreshToken = result.data.refreshToken
     if (refreshToken) tokenStore.setRefresh(refreshToken)
+    // 顺手为服务端 poller 铸造一条独立会话(fire-and-forget)。
+    void provisionPollerSession(username, plainPassword)
   }
 
   return result
