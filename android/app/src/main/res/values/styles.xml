@@ -14,9 +14,9 @@
         <item name="windowNoTitle">true</item>
         <!-- WebView 首帧前窗口底色与 App 背景一致，消除启动闪白 -->
         <item name="android:windowBackground">@color/appBackground</item>
-        <!-- 显式覆盖 android:background，确保 setTheme() 从 NoActionBarLaunch
-             （其 android:background="@drawable/splash"）切换后，不再有任何
-             splash 图片残留。配合 KeyboardResize.Body 键盘缩小时也不会露出白底 logo。 -->
+        <!-- 显式把窗口底色钉成深色：splash（postSplashScreenTheme）交接到本主题后，
+             即使 KeyboardResize.Body 键盘缩小 WebView，露出的也只是深色底，绝不会闪出
+             白底 splash。与 MainActivity 里 getWindow().setBackgroundDrawable(#141414) 双保险。 -->
         <item name="android:background">@color/appBackground</item>
         <!-- 状态栏/导航栏与深色主题一体化（浅色图标） -->
         <item name="android:statusBarColor">@color/appBackground</item>
@@ -25,7 +25,21 @@
     </style>
 
 
+    <!--
+      Android 12+（API 31+）强制「背景色 + 居中图标」的 splash 模型：旧式的
+      android:background="@drawable/splash"（全屏铺满的白底 SIERRO 字样图）在 12+ 上会被系统
+      忽略，导致启动图残留成顶部一条白带、且被拉伸（drawable/splash.png 曾是横向 480x320）。
+      改用 androidx.core.splashscreen 标准配置，三项缺一不可：
+        - windowSplashScreenBackground：splash 背景色（白，品牌一致）
+        - windowSplashScreenAnimatedIcon：居中的 SIERRO logo（@drawable/splash_logo，含留白，
+          不会被圆形遮罩裁切、不会拉伸）
+        - postSplashScreenTheme：splash 消失后交接回的真正主题（深色、无 ActionBar）——
+          缺这一项 splash 就无法可靠收掉（这是本次 bug 的直接原因）。
+      MainActivity.onCreate() 仍调用 SplashScreen.installSplashScreen(this) 让本配置在各 API 生效。
+    -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="android:background">@drawable/splash</item>
+        <item name="windowSplashScreenBackground">@color/splashBackground</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_logo</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 </resources>
