@@ -1,0 +1,22 @@
+# AWS App Runner build/run config for the Sierro relay (server/).
+# Use with App Runner → "Source: GitHub", Source directory: server
+# Secrets (TOKEN_ENC_KEY, and any push-channel keys) are set in the App Runner
+# console as environment variables — NEVER commit them here.
+version: 1.0
+runtime: nodejs18
+build:
+  commands:
+    build:
+      - npm install
+run:
+  command: node index.js
+  network:
+    port: 8787
+  env:
+    # Non-secret runtime config. TOKEN_ENC_KEY is added in the console.
+    - name: POLLER_ENABLED
+      value: "true"
+    - name: PORT
+      value: "8787"
+    - name: POLL_INTERVAL_MS
+      value: "60000"
