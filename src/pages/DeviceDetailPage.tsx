@@ -29,6 +29,7 @@ import { SIERRO_MODELS, SIERRO_MODEL_LIST, generateSerial, type SierroModel } fr
 import sierro1000Img from '../assets/sierro-1000.webp'
 import appVersion from '../version.json'
 import { DEV_TOOLS_ENABLED } from '../config/devTools'
+import { uploadSleepSchedule } from '../api/scheduleApi'
 
 interface DeviceDetailPageProps {
   /** When rendered as an overlay (inside OverviewPage) a custom back handler is
@@ -737,8 +738,14 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
       const deviceId = routeId ?? selectedDeviceId
       if (deviceId) {
         try { await toggleSleepMode(deviceId, enabled) } catch { /* noop */ }
-        // Persist schedule to localStorage
+        // Persist schedule to localStorage (drives the client-side scheduler, which
+        // stays as the always-on fallback + gives instant feedback while the app runs).
         saveSchedule(deviceId, { enabled, sleepFrom, sleepTo })
+        // Upload the schedule to the self-hosted relay so the charge-power switch
+        // also fires when the app is CLOSED (relay's poller applies it on time).
+        // No-ops when VITE_RELAY_URL isn't configured. Best-effort/fire-and-forget:
+        // never blocks Save; the client scheduler covers us regardless.
+        void uploadSleepSchedule(String(deviceId), { enabled, sleepFrom, sleepTo, model })
       }
       setScreen('main')
     }

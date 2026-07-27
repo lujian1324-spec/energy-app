@@ -104,8 +104,32 @@ export function getAllUsers() {
     accessToken: u.accessToken,
     accessExpiresAt: u.accessExpiresAt,
     prefs: u.prefs || {},
+    schedules: u.schedules || {},
     failCount: u.failCount || 0,
   }))
+}
+
+// ── Per-device Sleep schedules (drives the server-side schedule executor) ─────
+/** Store/replace one device's sleep schedule for a user (merged per device). */
+export function setUserSchedule(userId, deviceId, schedule) {
+  const k = uid(userId)
+  const u = db.users[k]
+  if (!u) return // schedule upload always carries the auth bootstrap, so setUserAuth ran first
+  u.schedules ||= {}
+  u.schedules[String(deviceId)] = schedule // { enabled, sleepFrom, sleepTo, model, tz }
+  u.updatedAt = Date.now()
+  save(db)
+}
+/** Last charge-power phase we actually applied for a (user,device): 'sleep' | 'wake'. */
+export function getSchedulePhase(userId, deviceId) {
+  return db.users[uid(userId)]?.phaseState?.[String(deviceId)] ?? null
+}
+export function setSchedulePhase(userId, deviceId, phase) {
+  const u = db.users[uid(userId)]
+  if (!u) return
+  u.phaseState ||= {}
+  u.phaseState[String(deviceId)] = phase
+  save(db)
 }
 export function getUser(userId) {
   const u = db.users[uid(userId)]
@@ -127,10 +151,13 @@ export function setNotifyTs(userId, deviceId, type, ts) {
   save(db)
 }
 
-// Drop stored credentials once a user has no push subscriptions left at all,
-// so we never retain a refresh token for someone who unsubscribed everywhere.
+// Drop stored credentials once a user has no push subscriptions AND no active
+// sleep schedule left, so we never retain a refresh token for someone who has
+// nothing running server-side. (A user may keep only a sleep schedule with no push.)
 function pruneUserIfNoSubs(k) {
   const noWeb = !(db.webpush[k] && db.webpush[k].length)
   const noNative = !(db.native[k] && db.native[k].length)
-  if (noWeb && noNative) delete db.users[k]
+  const schedules = db.users[k]?.schedules || {}
+  const noSchedule = !Object.values(schedules).some((s) => s && s.enabled)
+  if (noWeb && noNative && noSchedule) delete db.users[k]
 }

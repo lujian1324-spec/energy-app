@@ -35,6 +35,7 @@ jobs:
         env:
           VITE_BASE_PATH: /energy-app/
           VITE_PUSH_ENABLED: 'true'
+          VITE_RELAY_URL: 'https://d1qw91oh1yc80u.cloudfront.net'
         run: npm run build
 
       - name: Deploy to GitHub Pages

@@ -1150,6 +1150,13 @@ const canReset = codeValid && passwordValid && confirmValid
 - **Sleep Mode**：直连模式下是"立即下发一次目标充电功率"（寄存器 `0x0085`，复用
   `useSleepModeScheduler.ts` 里按机型（Sierro 1000/2000）已验证过的取值），不会启动/维持完整的时间
   窗口调度（那依赖云端保存的排程和持续巡检）。
+  - **服务器端定时（App 关闭也生效）**：`useSleepModeScheduler` 的到点切换只在 App 存活时生效。
+    官方 timed 自动化指令（`/instruction/*`）被厂商关闭且无法开启（code 70247，见 `API_REFERENCE.md` §40），
+    故改由**自建 relay**（`server/`，与推送同一台）到点执行：App 保存 Sleep Mode 时经
+    `src/api/scheduleApi.ts` 把时段 + IANA 时区上传 relay（`POST /schedule`），relay 的 poller 每 tick
+    用 `server/sleepSchedule.js` 算当前相位、边沿变化时呼叫 `/remote/device/config/write` 写
+    `ratedACChargingPower`（**额定**充电功率 ≈`0x0024`，非实时 `0x0085`）。由 `VITE_RELAY_URL` 是否
+    配置来开关；仅密码登录用户（有可托管的 poller 会话）；客户端调度始终保留作即时反馈 + 兜底。
 
 **平台范围：** 仅 OverviewPage 一个页面；`DeviceMonitorPage` 尚未接入（P2-3 技术债，见
 `RELEASE_PLAN.md`）。

@@ -7,10 +7,33 @@
 // smoke script can pass a dry-run collector instead of really pushing.
 import {
   getAllUsers, updateUserTokens, noteUserFailure, removeUserAuth,
-  getNotifyTs, setNotifyTs,
+  getNotifyTs, setNotifyTs, getSchedulePhase, setSchedulePhase,
 } from './store.js'
-import { refreshAccessToken, listDevices, getLatestState } from './iotClient.js'
+import { refreshAccessToken, listDevices, getLatestState, writeDeviceConfig } from './iotClient.js'
 import { detectOutage, detectLowBattery, detectSolar } from './detect.js'
+import { phaseFor, chargePowerForPhase } from './sleepSchedule.js'
+
+// Device config attribute that sets AC charge power (W). See API_REFERENCE.md §40.
+const CHARGE_POWER_KEY = 'ratedACChargingPower'
+
+/**
+ * Server-side Sleep Mode: apply the device's charge power for the current phase,
+ * but only on a phase CHANGE (edge). Runs inside the per-device tick (token +
+ * deviceId already in hand). On write failure (e.g. device offline) we do NOT
+ * advance the stored phase, so the next tick retries until it lands.
+ * @returns a log entry if it wrote, else null.
+ */
+async function enforceSchedule(userId, deviceId, schedule, token, now, dryRun) {
+  if (!schedule || !schedule.enabled) return null
+  const phase = phaseFor(schedule, now)
+  if (phase === getSchedulePhase(userId, deviceId)) return null // already applied
+  const watts = chargePowerForPhase(schedule.model, phase)
+  if (!dryRun) {
+    await writeDeviceConfig(token, deviceId, CHARGE_POWER_KEY, watts) // throws on failure → retried next tick
+    setSchedulePhase(userId, deviceId, phase)
+  }
+  return { userId, deviceId, phase, watts }
+}
 
 const POLL_INTERVAL_MS = Number(process.env.POLL_INTERVAL_MS) || 60_000
 const RENOTIFY_THROTTLE_MS = Number(process.env.RENOTIFY_THROTTLE_MS) || 30 * 60_000
@@ -78,6 +101,7 @@ export async function runTick(sendToUser, { dryRun = false } = {}) {
   const now = Date.now()
   const ACCESS_SKEW_MS = 60_000 // refresh a minute before expiry
   const fired = []
+  const scheduled = [] // sleep-schedule charge-power writes that happened this tick
   for (const u of getAllUsers()) {
     try {
       if (!u.refreshToken && !u.accessToken) continue
@@ -113,6 +137,11 @@ export async function runTick(sendToUser, { dryRun = false } = {}) {
               await sendToUser(u.userId, { title: note.title, body: note.body, data: note.data })
             }
           }
+          // Server-side Sleep Mode: apply charge power for the current phase (edge-only).
+          try {
+            const w = await enforceSchedule(u.userId, deviceId, u.schedules?.[deviceId], token, now, dryRun)
+            if (w) { scheduled.push(w); console.log(`[poller] sleep-schedule ${w.userId}/${w.deviceId} → ${w.phase} (${w.watts}W)`) }
+          } catch (e) { console.warn(`[poller] schedule ${deviceId} write failed (will retry): ${e.message}`) }
         } catch (e) { console.warn(`[poller] device ${deviceId} error: ${e.message}`) }
       }
     } catch (e) {
@@ -121,7 +150,7 @@ export async function runTick(sendToUser, { dryRun = false } = {}) {
   }
   if (fired.length) console.log(`[poller] ${dryRun ? '[dry-run] would fire' : 'fired'} ${fired.length}: ` +
     fired.map(f => `${f.userId}/${f.deviceId}:${f.type}`).join(', '))
-  return fired
+  return { fired, scheduled }
 }
 
 let timer = null

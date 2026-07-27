@@ -22,7 +22,7 @@ import cors from 'cors'
 import webpush from 'web-push'
 import {
   addWebPush, removeWebPush, addNative, removeNative, getWebPush, getNative,
-  setUserAuth,
+  setUserAuth, setUserSchedule,
 } from './store.js'
 import { startPoller } from './poller.js'
 
@@ -95,6 +95,18 @@ app.post('/notification/nativepush/register', (req, res) => {
 })
 app.post('/notification/nativepush/unregister', (req, res) => {
   removeNative(req.body?.userId, req.body?.token)
+  ok(res)
+})
+
+// ── Sleep Mode schedule (server-side charge-power switching) ──────────────────
+// The app uploads one device's sleep window when the user saves Sleep Mode. Like
+// subscribe, it may carry the one-time poller-session bootstrap (access+refresh
+// pair) so the poller can control this user's device while the app is closed.
+app.post('/schedule', (req, res) => {
+  const { userId, deviceId, schedule, refreshToken, accessToken, accessExpiresAt, prefs } = req.body || {}
+  if (!deviceId || !schedule) return res.status(400).json({ code: 1, message: 'deviceId and schedule required' })
+  if (refreshToken || accessToken || prefs) setUserAuth(userId, { refreshToken, accessToken, accessExpiresAt, prefs })
+  setUserSchedule(userId, deviceId, schedule) // { enabled, sleepFrom, sleepTo, model, tz }
   ok(res)
 })
 

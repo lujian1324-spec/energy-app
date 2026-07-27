@@ -41,7 +41,7 @@ try {
   })
   console.log(`  prefs: outage+lowBattery(<${threshold}%)+solar 全开\n`)
 
-  const fired = await runTick(async () => {}, { dryRun: true })
+  const { fired } = await runTick(async () => {}, { dryRun: true })
 
   console.log('\n──── 结论 ────')
   if (!fired.length) {
