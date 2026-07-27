@@ -1150,12 +1150,13 @@ const canReset = codeValid && passwordValid && confirmValid
 - **Sleep Mode**：直连模式下是"立即下发一次目标充电功率"（寄存器 `0x0085`，复用
   `useSleepModeScheduler.ts` 里按机型（Sierro 1000/2000）已验证过的取值），不会启动/维持完整的时间
   窗口调度（那依赖云端保存的排程和持续巡检）。
-  - **云端定时（groundwork，默认关闭）**：`useSleepModeScheduler` 的到点切换只在 App 存活时生效。
-    `src/api/instructionApi.ts` 可把排程登记为官方后端「自动化指令」(`/instruction/*`)，由服务器端到点
-    执行（App 关闭也生效）。由 `src/config/scheduling.ts` 的 `CLOUD_SLEEP_SCHEDULE_ENABLED` 门控，
-    **默认关**——因 timed auto-instruction 目前被厂商关闭（code 70247）。云端只能设**额定**充电功率
-    `ratedACChargingPower`（≈`0x0024`），非实时 `0x0085`。开启前须待厂商放开并在真机验证窗口语义，
-    详见 `API_REFERENCE.md` §40。客户端调度始终保留作即时反馈 + 兜底。
+  - **服务器端定时（App 关闭也生效）**：`useSleepModeScheduler` 的到点切换只在 App 存活时生效。
+    官方 timed 自动化指令（`/instruction/*`）被厂商关闭且无法开启（code 70247，见 `API_REFERENCE.md` §40），
+    故改由**自建 relay**（`server/`，与推送同一台）到点执行：App 保存 Sleep Mode 时经
+    `src/api/scheduleApi.ts` 把时段 + IANA 时区上传 relay（`POST /schedule`），relay 的 poller 每 tick
+    用 `server/sleepSchedule.js` 算当前相位、边沿变化时呼叫 `/remote/device/config/write` 写
+    `ratedACChargingPower`（**额定**充电功率 ≈`0x0024`，非实时 `0x0085`）。由 `VITE_RELAY_URL` 是否
+    配置来开关；仅密码登录用户（有可托管的 poller 会话）；客户端调度始终保留作即时反馈 + 兜底。
 
 **平台范围：** 仅 OverviewPage 一个页面；`DeviceMonitorPage` 尚未接入（P2-3 技术债，见
 `RELEASE_PLAN.md`）。

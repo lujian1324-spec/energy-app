@@ -956,12 +956,16 @@
   renderIn=Device Control，单位 W）——注意这是**额定/持久**充电功率（≈Modbus `0x0024`），
   **不是** App 客户端 Sleep Mode 走 passthrough 写的**实时** `0x0085`（实时寄存器不在属性层暴露）。
   相关键还有 `RatedPhotovoltaicChargingPower`、`ratedAcAndPhotovoltaicChargingPower`。
-- **⚠️ 厂商门（2026-07 实测）**：创建**定时**指令返回 `70247 "This instruction's manufacturer have
-  been close instructionOpen!"` —— 厂商已对 Sierro 关闭 timed auto-instruction。需 siseli 重新
-  开启 `instructionOpen` 才能用。因无法创建，**定时窗口的实际执行语义（startTime 触发后是否在
-  endTime 自动恢复）尚未验证**，开启后须先用 add→读回→真机触发 确认。
+- **⚠️ 厂商门（2026-07 实测，结论：此服务不可用于本 App）**：创建**定时**指令返回
+  `70247 "This instruction's manufacturer have been close instructionOpen!"` —— 厂商已对 Sierro
+  关闭 timed auto-instruction，且确认**无法开启**。条件触发（`triggerMode '1'`）未被关，但它按
+  设备状态触发、**无法表达「到某时刻」**。故本 App **不使用** `/instruction/*` 做 Sleep 定时。
+- **改用自建 relay 做服务器端 Sleep 定时**：常驻的 `server/`（推送那台）在 poller tick 里按上传的
+  时区到点呼叫 `/remote/device/config/write`（`ratedACChargingPower`）写充电功率——见
+  `server/sleepSchedule.js` / `server/poller.js` / `server/index.js` `POST /schedule`，客户端上传见
+  `src/api/scheduleApi.ts`（由 `VITE_RELAY_URL` 是否配置来开关）。
 - 鉴权/base 与其它接口相同（`…/apis` + IOT-Open 签名 + IOT-Token）。分页用 `pageNo/pageSize`
-  （非全局 `page/count`）。前端封装见 `src/api/instructionApi.ts`（默认由 `CLOUD_SLEEP_SCHEDULE_ENABLED` 关闭）。
+  （非全局 `page/count`）。以上 `InstructionVijo` schema 仅作存档参考。
 
 ---
 

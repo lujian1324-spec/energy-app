@@ -13,6 +13,7 @@
 | POST | `/notification/webpush/unsubscribe` | `{ endpoint, userId }` |
 | POST | `/notification/nativepush/register` | `{ token, platform, userId }` |
 | POST | `/notification/nativepush/unregister` | `{ token, userId }` |
+| POST | `/schedule` | `{ userId, deviceId, schedule, refreshToken?, accessToken?, accessExpiresAt? }` |
 | POST | `/notify` *(internal)* | `{ userId, title, body, data? }` + header `X-Internal-Key` |
 | GET  | `/health` | — |
 
@@ -42,7 +43,25 @@ makes closed-app alerts actually work:
 > server-side. Always set `TOKEN_ENC_KEY`, deploy over **HTTPS**, and keep
 > `tokens.json` off any public path. Tokens are never logged.
 
-Detection unit tests: `node --test server/detect.test.js`.
+## Server-side Sleep Mode scheduling (closed-app charge-power switching)
+The official timed auto-instruction service (`/instruction/*`) is **manufacturer-disabled**
+for Sierro (returns code 70247), so this relay does the scheduling itself — reusing the
+same poller loop, session, and encrypted store:
+
+- On saving Sleep Mode, the app `POST /schedule`s that device's window
+  `{ enabled, sleepFrom, sleepTo, model, tz }` (IANA `tz`), optionally carrying the
+  one-time poller-session bootstrap (same as subscribe). Client: `src/api/scheduleApi.ts`,
+  enabled by `VITE_RELAY_URL`.
+- Each poller tick, for every device with an enabled schedule, `sleepSchedule.js` computes
+  the current phase (`sleep`/`wake`) **in the device's tz**; on a phase change it calls
+  `/remote/device/config/write` with `ratedACChargingPower` = per-model watts
+  (Sierro 1000 150/400, Sierro 2000 300/800). Edge-only (no repeat writes); a failed write
+  (device offline) is retried next tick.
+- Only works for **password-login** users (they have a hostable session). A user is kept
+  from pruning while any schedule is enabled. This sets the **rated/persistent** AC charge
+  power (≈Modbus `0x0024`), not the realtime `0x0085` the client scheduler uses.
+
+Unit tests: `node --test server/detect.test.js server/sleepSchedule.test.js`.
 
 ## Run
 ```bash

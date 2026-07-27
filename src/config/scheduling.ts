@@ -1,22 +1,21 @@
 /**
  * 服务器端定时（云端 Sleep Mode 排程）配置
  *
- * Sleep Mode 目前靠客户端 useSleepModeScheduler 到点切换充电功率——只有 App 存活
- * 时才生效。理想做法是把排程登记成官方后端的「自动化指令（timed auto-instruction，
- * /instruction/*）」，由 siseli 后端在服务器端到点执行，App 关闭也生效
- * （见 src/api/instructionApi.ts）。
+ * Sleep Mode 到点切换充电功率,客户端 useSleepModeScheduler 只在 App 存活时生效。
+ * 要「App 关闭也生效」,唯一可行做法是让一台常驻的 relay（server/,与推送同一台）
+ * 到点呼叫设备控制 API 写充电功率——官方的 timed 自动化指令被厂商关闭
+ * （instructionOpen off,详见 API_REFERENCE.md §40）,所以走自建 relay。
  *
- * ⚠️ 默认关闭。实测（2026-07）发现官方 timed auto-instruction 已被【厂商关闭】
- * （instructionOpen off，创建返回 code 70247）。在 siseli 重新开启该开关、且我们
- * 在真机上确认了 timed 窗口指令的实际语义（startTime 触发后是否在 endTime 自动
- * 恢复）之前，绝不能打开此开关——否则可能在错误时间对真实设备写错功率。
- *
- * 打开条件（两者都满足后，构建时设 VITE_CLOUD_SLEEP_SCHEDULE=true）：
- *   1) 厂商已开启 timed instructionOpen；
- *   2) 已用 add→read-back→真机触发 验证过窗口语义并据此校正
- *      buildSleepWindowInstruction。
- *
- * 关闭时：DeviceDetailPage 完全走现有客户端调度（零行为变化）。
+ * 本功能由 relay 地址是否配置来开关：设了 VITE_RELAY_URL（指向你部署的 server/）
+ * 就启用；没设则前端完全空跑,行为与从前一致（仅客户端调度）。客户端调度始终保留
+ * 作即时反馈 + 兜底。
  */
-export const CLOUD_SLEEP_SCHEDULE_ENABLED: boolean =
-  import.meta.env.VITE_CLOUD_SLEEP_SCHEDULE === 'true'
+
+/** 你部署的 relay 基址(server/)。空 = 关闭云端排程,前端 no-op。 */
+export const RELAY_BASE_URL: string = (import.meta.env.VITE_RELAY_URL ?? '').replace(/\/+$/, '')
+
+/** relay 上的 Sleep 排程端点。 */
+export const SCHEDULE_PATH = '/schedule'
+
+/** 是否已配置 relay（有基址才上报排程）。 */
+export const isRelayConfigured = (): boolean => RELAY_BASE_URL.length > 0

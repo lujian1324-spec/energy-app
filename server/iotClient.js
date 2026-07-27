@@ -93,4 +93,20 @@ export async function getLatestState(token, deviceId) {
   return { fields: r.json.data?.fields || {} }
 }
 
+/**
+ * Write a single device config attribute (the {key,value} control model). Used by
+ * the sleep-schedule executor to set AC charge power server-side (key
+ * `ratedACChargingPower`, value in W). This is the FIRST write path in this client
+ * (everything else is read-only). Throws on a non-success business code.
+ */
+export async function writeDeviceConfig(token, deviceId, key, value) {
+  const r = await call('POST', `/remote/device/config/write?deviceId=${deviceId}`, {
+    data: { key, value: String(value) }, token,
+  })
+  if (!ok(r.json.code)) {
+    throw new Error(`config/write failed: code=${r.json.code} msg=${r.json.message || r.json.msg}`)
+  }
+  return true
+}
+
 export { BASE, APP_ID }
