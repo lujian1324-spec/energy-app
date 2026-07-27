@@ -1150,6 +1150,12 @@ const canReset = codeValid && passwordValid && confirmValid
 - **Sleep Mode**：直连模式下是"立即下发一次目标充电功率"（寄存器 `0x0085`，复用
   `useSleepModeScheduler.ts` 里按机型（Sierro 1000/2000）已验证过的取值），不会启动/维持完整的时间
   窗口调度（那依赖云端保存的排程和持续巡检）。
+  - **云端定时（groundwork，默认关闭）**：`useSleepModeScheduler` 的到点切换只在 App 存活时生效。
+    `src/api/instructionApi.ts` 可把排程登记为官方后端「自动化指令」(`/instruction/*`)，由服务器端到点
+    执行（App 关闭也生效）。由 `src/config/scheduling.ts` 的 `CLOUD_SLEEP_SCHEDULE_ENABLED` 门控，
+    **默认关**——因 timed auto-instruction 目前被厂商关闭（code 70247）。云端只能设**额定**充电功率
+    `ratedACChargingPower`（≈`0x0024`），非实时 `0x0085`。开启前须待厂商放开并在真机验证窗口语义，
+    详见 `API_REFERENCE.md` §40。客户端调度始终保留作即时反馈 + 兜底。
 
 **平台范围：** 仅 OverviewPage 一个页面；`DeviceMonitorPage` 尚未接入（P2-3 技术债，见
 `RELEASE_PLAN.md`）。

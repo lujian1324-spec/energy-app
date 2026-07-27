@@ -935,6 +935,34 @@
 | POST | `/instruction/historyList` | 分页查询指令执行历史 | - | `AutoInstructionLogDtio` |
 | GET | `/instruction/historyListOfinstruction` | 分页查询指令执行历史（按指令ID） | `instructionId*`, `pageNo`, `pageSize` | - |
 
+### `InstructionVijo` (add/update body) — verified live 2026-07
+
+```jsonc
+{
+  "deviceId": "500154243766779904",   // string (Java Long)
+  "name": "sierro-sleep-<deviceId>",  // 任意；用确定性名字便于幂等 upsert
+  "triggerMode": "0",                 // byte string: '0'=定时(timed) '1'=条件(condition)
+  "repeatMode": { "mode": "1", "modeData": [] },  // mode '1'=每日 daily
+  "startTime": "22:00",               // "HH:mm"
+  "endTime": "09:00",                 // 定时指令必须同时有 start+end（否则 70224 "timerange size must be 2 or empty"）
+  "actions": [ { "key": "ratedACChargingPower", "value": "150" } ],  // 见下
+  "condition": { "key": "...", "operator": "...", "value": "..." }   // 仅 triggerMode='1' 需要
+}
+```
+
+- **`triggerMode`**：`'0'`=定时（按时间/时间窗），`'1'`=条件（按设备状态触发，需 `condition`），其余 → `70260 "trigger mode error"`。
+- **`actions[].key`** = 可写设备属性（`GET /deviceState/gatherAttributes?deviceId=&category=3` 中
+  `isWritableConfigAttribute=true` 者）。**交流充电功率 = `ratedACChargingPower`**（Read+Write，
+  renderIn=Device Control，单位 W）——注意这是**额定/持久**充电功率（≈Modbus `0x0024`），
+  **不是** App 客户端 Sleep Mode 走 passthrough 写的**实时** `0x0085`（实时寄存器不在属性层暴露）。
+  相关键还有 `RatedPhotovoltaicChargingPower`、`ratedAcAndPhotovoltaicChargingPower`。
+- **⚠️ 厂商门（2026-07 实测）**：创建**定时**指令返回 `70247 "This instruction's manufacturer have
+  been close instructionOpen!"` —— 厂商已对 Sierro 关闭 timed auto-instruction。需 siseli 重新
+  开启 `instructionOpen` 才能用。因无法创建，**定时窗口的实际执行语义（startTime 触发后是否在
+  endTime 自动恢复）尚未验证**，开启后须先用 add→读回→真机触发 确认。
+- 鉴权/base 与其它接口相同（`…/apis` + IOT-Open 签名 + IOT-Token）。分页用 `pageNo/pageSize`
+  （非全局 `page/count`）。前端封装见 `src/api/instructionApi.ts`（默认由 `CLOUD_SLEEP_SCHEDULE_ENABLED` 关闭）。
+
 ---
 
 ## 四十一、电站能量流动 StationEnergyFlowDtoo
