@@ -36,6 +36,12 @@ makes closed-app alerts actually work:
   `/remote/device/state/latest`, and runs the same detection rules as the app
   (`detect.js`: outage / low battery / solar edge). New firings are pushed via
   `sendToUser()` (the same fan-out as `/notify`), with a 30-min per-device throttle.
+- **Scaling:** users are polled through a bounded-concurrency pool (`POLL_CONCURRENCY`,
+  default 25) so a tick finishes inside its window and upstream load stays capped.
+  Polling is **adaptive** — online devices are read every tick, but offline devices,
+  and all-offline users with no active schedule, drop to the `IDLE_POLL_MS` cadence
+  (default 5 min), cutting the bulk of upstream calls for idle fleets. Sleep-schedule
+  enforcement still runs every tick (it only calls the backend on a phase edge).
 - Enable with `POLLER_ENABLED=true`. A user with no remaining subscriptions has
   their stored credentials pruned automatically.
 

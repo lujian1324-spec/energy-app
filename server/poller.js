@@ -3,6 +3,15 @@
 // token, reads each device's latest state, runs the detection rules (gated by the
 // user's push prefs), and calls sendToUser() for anything newly firing.
 //
+// Scaling (T0): users are polled through a BOUNDED-CONCURRENCY pool (POLL_CONCURRENCY)
+// instead of one-at-a-time, so a tick finishes inside its window even with many
+// users, and instantaneous load on the upstream backend is capped. ADAPTIVE polling
+// backs off idle work: online devices are read every tick, but offline devices — and
+// users whose devices were all offline (and who have no active schedule) — are read
+// only every IDLE_POLL_MS, cutting the bulk of upstream calls for idle fleets.
+// (The token store is a single in-memory object persisted per mutation, so concurrent
+// per-user tasks touch distinct keys safely; batching those writes is a later step.)
+//
 // sendToUser is injected (from index.js) so this module stays decoupled and the
 // smoke script can pass a dry-run collector instead of really pushing.
 import {
@@ -38,12 +47,34 @@ async function enforceSchedule(userId, deviceId, schedule, token, now, dryRun) {
 const POLL_INTERVAL_MS = Number(process.env.POLL_INTERVAL_MS) || 60_000
 const RENOTIFY_THROTTLE_MS = Number(process.env.RENOTIFY_THROTTLE_MS) || 30 * 60_000
 const MAX_REFRESH_FAILS = 5
+const ACCESS_SKEW_MS = 60_000 // refresh a minute before expiry
+
+// T0 scaling knobs:
+const POLL_CONCURRENCY = Math.max(1, Number(process.env.POLL_CONCURRENCY) || 25) // users polled in parallel
+const IDLE_POLL_MS = Number(process.env.IDLE_POLL_MS) || 5 * 60_000               // cadence for offline/idle work
 
 // In-memory edge state (survives across ticks within one process):
 //   prevCond: `${userId}|${deviceId}|${type}` -> boolean  (was-in-condition, for level alarms)
 //   solarPrev: same key -> last generationPower (for the 0-crossing edge)
 const prevCond = new Map()
 const solarPrev = new Map()
+
+// Adaptive-poll bookkeeping (survives across ticks):
+//   deviceSeen: `${userId}|${deviceId}` -> { online, lastStatePoll }
+//   userSeen:   userId -> { anyOnline, lastList }
+const deviceSeen = new Map()
+const userSeen = new Map()
+
+/** Run async `fn` over `items` with at most `limit` in flight; preserves order. */
+async function mapLimit(items, limit, fn) {
+  const out = new Array(items.length)
+  let i = 0
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (i < items.length) { const idx = i++; out[idx] = await fn(items[idx], idx) }
+  })
+  await Promise.all(workers)
+  return out
+}
 
 const online = (d) => d.isOnline === true || d.isOnline === 1 || d.isOnline === 'true'
 
@@ -94,60 +125,97 @@ function shouldFire(userId, deviceId, note, now) {
 }
 
 /**
- * Run one poll cycle. Returns the list of notifications that fired (or, in
- * dryRun, that WOULD fire) — useful for the smoke test and logging.
+ * Poll ONE user: refresh token if needed, list devices, and (for devices due this
+ * tick) read state + run detection + enforce the sleep schedule. Returns the
+ * notifications that fired (or, in dryRun, that WOULD fire) plus any schedule writes.
+ * Never throws — upstream errors are logged and skipped so one user can't stall others.
+ */
+async function processUser(u, now, sendToUser, dryRun) {
+  const fired = []
+  const scheduled = []
+  if (!u.refreshToken && !u.accessToken) return { fired, scheduled }
+
+  // Adaptive: a user whose devices were all offline last tick — and who has no active
+  // sleep schedule (schedules need tight phase timing) — is polled at the idle cadence.
+  const hasSchedule = Object.values(u.schedules || {}).some((s) => s && s.enabled)
+  const um = userSeen.get(u.userId)
+  const listDue = hasSchedule || !um || um.anyOnline || now - um.lastList >= IDLE_POLL_MS
+  if (!listDue) return { fired, scheduled }
+
+  // Use the stored access token while it's still valid (~2h); only refresh when it's
+  // missing or near expiry. Refresh needs the access+refresh PAIR and rotates it —
+  // persist the rotation so we own the dedicated poller session.
+  let token = u.accessToken
+  const needRefresh = !token || !u.accessExpiresAt || now >= u.accessExpiresAt - ACCESS_SKEW_MS
+  if (needRefresh) {
+    try {
+      const tokens = await refreshAccessToken({ accessToken: u.accessToken, refreshToken: u.refreshToken })
+      if (!dryRun) updateUserTokens(u.userId, tokens)
+      token = tokens.accessToken
+    } catch (e) {
+      const fails = noteUserFailure(u.userId)
+      console.warn(`[poller] refresh failed for user ${u.userId} (${fails}/${MAX_REFRESH_FAILS}): ${e.message}`)
+      if (fails >= MAX_REFRESH_FAILS) { removeUserAuth(u.userId); console.warn(`[poller] dropped stale auth for user ${u.userId}`) }
+      return { fired, scheduled }
+    }
+  }
+
+  let devices
+  try { devices = await listDevices(token) }
+  catch (e) { console.warn(`[poller] user ${u.userId} listDevices error: ${e.message}`); return { fired, scheduled } }
+
+  let anyOnline = false
+  for (const d of devices) {
+    const deviceId = String(d.id)
+    const isOnline = online(d)
+    if (isOnline) anyOnline = true
+    const dkey = `${u.userId}|${deviceId}`
+    try {
+      // Adaptive: online devices every tick; offline devices only every IDLE_POLL_MS.
+      const seen = deviceSeen.get(dkey)
+      const stateDue = isOnline || !seen || now - seen.lastStatePoll >= IDLE_POLL_MS
+      if (stateDue) {
+        const { fields } = await getLatestState(token, deviceId)
+        deviceSeen.set(dkey, { online: isOnline, lastStatePoll: now })
+        const notes = evaluateDevice({ deviceId, name: d.name || deviceId, isOnline, fields, prefs: u.prefs })
+        for (const note of notes) {
+          if (!shouldFire(u.userId, deviceId, note, now)) continue
+          fired.push({ userId: u.userId, deviceId, type: note.type, title: note.title, body: note.body })
+          if (!dryRun) {
+            setNotifyTs(u.userId, deviceId, note.type, now)
+            await sendToUser(u.userId, { title: note.title, body: note.body, data: note.data })
+          }
+        }
+      } else if (seen) {
+        deviceSeen.set(dkey, { online: isOnline, lastStatePoll: seen.lastStatePoll }) // keep the backoff clock
+      }
+      // Server-side Sleep Mode runs every tick — it only calls the backend on a phase
+      // edge (rare), so it's near-free and keeps sleep/wake timing tight.
+      try {
+        const w = await enforceSchedule(u.userId, deviceId, u.schedules?.[deviceId], token, now, dryRun)
+        if (w) { scheduled.push(w); console.log(`[poller] sleep-schedule ${w.userId}/${w.deviceId} → ${w.phase} (${w.watts}W)`) }
+      } catch (e) { console.warn(`[poller] schedule ${deviceId} write failed (will retry): ${e.message}`) }
+    } catch (e) { console.warn(`[poller] device ${deviceId} error: ${e.message}`) }
+  }
+  userSeen.set(u.userId, { anyOnline, lastList: now })
+  return { fired, scheduled }
+}
+
+/**
+ * Run one poll cycle over all users through a bounded-concurrency pool. Returns the
+ * list of notifications that fired (or, in dryRun, that WOULD fire) — useful for the
+ * smoke test and logging.
  */
 export async function runTick(sendToUser, { dryRun = false } = {}) {
   const now = Date.now()
-  const ACCESS_SKEW_MS = 60_000 // refresh a minute before expiry
-  const fired = []
-  const scheduled = [] // sleep-schedule charge-power writes that happened this tick
-  for (const u of getAllUsers()) {
-    try {
-      if (!u.refreshToken && !u.accessToken) continue
-      // Use the stored access token while it's still valid (~2h); only refresh when
-      // it's missing or near expiry. Refresh needs the access+refresh PAIR and
-      // rotates it — persist the rotation so we own the dedicated poller session.
-      let token = u.accessToken
-      const needRefresh = !token || !u.accessExpiresAt || now >= u.accessExpiresAt - ACCESS_SKEW_MS
-      if (needRefresh) {
-        try {
-          const tokens = await refreshAccessToken({ accessToken: u.accessToken, refreshToken: u.refreshToken })
-          if (!dryRun) updateUserTokens(u.userId, tokens)
-          token = tokens.accessToken
-        } catch (e) {
-          const fails = noteUserFailure(u.userId)
-          console.warn(`[poller] refresh failed for user ${u.userId} (${fails}/${MAX_REFRESH_FAILS}): ${e.message}`)
-          if (fails >= MAX_REFRESH_FAILS) { removeUserAuth(u.userId); console.warn(`[poller] dropped stale auth for user ${u.userId}`) }
-          continue
-        }
-      }
-
-      const devices = await listDevices(token)
-      for (const d of devices) {
-        const deviceId = String(d.id)
-        try {
-          const { fields } = await getLatestState(token, deviceId)
-          const notes = evaluateDevice({ deviceId, name: d.name || deviceId, isOnline: online(d), fields, prefs: u.prefs })
-          for (const note of notes) {
-            if (!shouldFire(u.userId, deviceId, note, now)) continue
-            fired.push({ userId: u.userId, deviceId, type: note.type, title: note.title, body: note.body })
-            if (!dryRun) {
-              setNotifyTs(u.userId, deviceId, note.type, now)
-              await sendToUser(u.userId, { title: note.title, body: note.body, data: note.data })
-            }
-          }
-          // Server-side Sleep Mode: apply charge power for the current phase (edge-only).
-          try {
-            const w = await enforceSchedule(u.userId, deviceId, u.schedules?.[deviceId], token, now, dryRun)
-            if (w) { scheduled.push(w); console.log(`[poller] sleep-schedule ${w.userId}/${w.deviceId} → ${w.phase} (${w.watts}W)`) }
-          } catch (e) { console.warn(`[poller] schedule ${deviceId} write failed (will retry): ${e.message}`) }
-        } catch (e) { console.warn(`[poller] device ${deviceId} error: ${e.message}`) }
-      }
-    } catch (e) {
+  const users = getAllUsers()
+  const parts = await mapLimit(users, POLL_CONCURRENCY, (u) =>
+    processUser(u, now, sendToUser, dryRun).catch((e) => {
       console.warn(`[poller] user ${u.userId} tick error: ${e.message}`)
-    }
-  }
+      return { fired: [], scheduled: [] }
+    }))
+  const fired = parts.flatMap((p) => p.fired)
+  const scheduled = parts.flatMap((p) => p.scheduled)
   if (fired.length) console.log(`[poller] ${dryRun ? '[dry-run] would fire' : 'fired'} ${fired.length}: ` +
     fired.map(f => `${f.userId}/${f.deviceId}:${f.type}`).join(', '))
   return { fired, scheduled }
@@ -157,7 +225,7 @@ let timer = null
 /** Start the recurring poll loop (no-op if already running). */
 export function startPoller(sendToUser) {
   if (timer) return
-  console.log(`[poller] starting — every ${POLL_INTERVAL_MS}ms, renotify throttle ${RENOTIFY_THROTTLE_MS}ms`)
+  console.log(`[poller] starting — every ${POLL_INTERVAL_MS}ms, concurrency ${POLL_CONCURRENCY}, idle backoff ${IDLE_POLL_MS}ms, renotify throttle ${RENOTIFY_THROTTLE_MS}ms`)
   const tick = () => runTick(sendToUser).catch(e => console.warn('[poller] tick failed:', e.message))
   tick() // run once at startup
   timer = setInterval(tick, POLL_INTERVAL_MS)
