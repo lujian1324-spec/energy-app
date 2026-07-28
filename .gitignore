@@ -58,3 +58,9 @@ playwright-report/
 *.mobileprovision
 *.cer
 key.properties
+
+# Firebase — google-services.json is injected from a CI secret (GOOGLE_SERVICES_JSON_BASE64)
+# or dropped locally; keep it out of the repo. The service-account private key never belongs here.
+android/app/google-services.json
+firebase-service-account.json
+*.p8

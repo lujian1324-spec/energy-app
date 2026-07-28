@@ -63,8 +63,23 @@ jobs:
       - name: Build web app
         env:
           VITE_PUSH_ENABLED: 'true'
+          # Android native push (FCM) is enabled ONLY when the Firebase config secret is
+          # present. Turning the flag on without google-services.json makes
+          # PushNotifications.register() crash (no FirebaseApp), so it stays off by default.
+          VITE_NATIVE_PUSH_READY: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 != '' && 'true' || 'false' }}
           VITE_RELAY_URL: 'https://d1qw91oh1yc80u.cloudfront.net'
         run: npm run build
+
+      - name: Add Firebase config (google-services.json)
+        env:
+          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON_BASE64" ]; then
+            echo "$GOOGLE_SERVICES_JSON_BASE64" | base64 -d > android/app/google-services.json
+            echo "::notice::google-services.json injected — Android native push (FCM) enabled."
+          else
+            echo "::warning::GOOGLE_SERVICES_JSON_BASE64 secret absent — Android native push disabled (FCM register() gated off)."
+          fi
 
       - name: Sync Capacitor
         run: npx cap sync android
