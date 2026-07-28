@@ -31,7 +31,7 @@ import type { UserProfile } from '../types/protocol'
 import { requestNotificationPermission, getNotificationPermission, enableWebPush, disableWebPush } from '../utils/pushNotification'
 import { PUSH_ENABLED } from '../config/webPush'
 import { TERMS_URL, PRIVACY_URL } from '../config/legalLinks'
-import { initNativePush, teardownNativePush } from '../utils/nativePush'
+import { initNativePush, teardownNativePush, reuploadNativePushPrefs } from '../utils/nativePush'
 import { Capacitor } from '@capacitor/core'
 
 export default function SettingPage() {
@@ -75,7 +75,7 @@ export default function SettingPage() {
   const syncWebPush = useCallback(async (outage: boolean, lowBat: boolean, solar: boolean, deviceAlarms: boolean) => {
     const anyOn = outage || lowBat || solar || deviceAlarms
     if (Capacitor.isNativePlatform()) {
-      if (anyOn) await initNativePush()
+      if (anyOn) { await initNativePush(); await reuploadNativePushPrefs() }
       else await teardownNativePush()
       return
     }
@@ -293,6 +293,7 @@ export default function SettingPage() {
                         const val = parseInt(e.target.value)
                         setLowBatteryThreshold(val)
                         updateSettings({ lowBatteryThreshold: val })
+                        void reuploadNativePushPrefs()
                       }}
                       className="w-full h-1.5 bg-ink-9 rounded-pill appearance-none cursor-pointer accent-primary"
                       style={{
@@ -306,6 +307,7 @@ export default function SettingPage() {
                           onClick={() => {
                             setLowBatteryThreshold(val)
                             updateSettings({ lowBatteryThreshold: val })
+                            void reuploadNativePushPrefs()
                           }}
                           className={`text-tiny transition-colors ${lowBatteryThreshold === val ? 'text-primary font-semibold' : 'text-ink-7'}`}
                         >

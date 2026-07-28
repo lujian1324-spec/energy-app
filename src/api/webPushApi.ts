@@ -12,6 +12,7 @@ import {
   NATIVE_TOKEN_PATH,
   NATIVE_TOKEN_UNREGISTER_PATH,
 } from '../config/webPush'
+import { RELAY_BASE_URL, isRelayConfigured } from '../config/scheduling'
 
 function getUserId(): string | null {
   return localStorage.getItem('iot_user_id')
@@ -83,29 +84,64 @@ export async function unregisterPushSubscription(endpoint: string): Promise<bool
   }
 }
 
-/** 上报原生推送 token（APNs/FCM）到后端，与 userId 绑定。失败静默。 */
+/** relay 直连 POST（走 VITE_RELAY_URL，非官方 api——relay 不校验 IOT-Token/签名）。 */
+async function relayPost(path: string, body: unknown): Promise<Response | null> {
+  if (!isRelayConfigured()) return null
+  return fetch(`${RELAY_BASE_URL}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+}
+
+/** 读取密码登录时 provisionPollerSession 存下的一次性 poller 会话 bootstrap。 */
+function readPollerBootstrap(): { accessToken?: string; refreshToken?: string; accessExpiresAt?: number } {
+  try {
+    const raw = localStorage.getItem(POLLER_REFRESH_PENDING_KEY)
+    return raw ? JSON.parse(raw) : {}
+  } catch {
+    return {}
+  }
+}
+
+/**
+ * 上报原生推送 token（APNs/FCM）到 RELAY，并附带 poller 会话 bootstrap + 当前推送
+ * prefs——relay 的 poller 据此在 App 关闭时轮询该用户设备、按 prefs 判断三类告警
+ * （市电故障/低电量/光伏状态）并推送。会话为一次性 bootstrap（成功后消费），之后的
+ * prefs 变更再次调用本函数即可（不带会话，relay 侧只更新 prefs）。未配置 relay 时
+ * 安全空跑。失败静默。
+ */
 export async function registerNativePushToken(token: string, platform: 'ios' | 'android'): Promise<boolean> {
   try {
-    const res = await api.post(NATIVE_TOKEN_PATH, {
+    const boot = readPollerBootstrap()
+    const hadBoot = !!(boot.refreshToken || boot.accessToken)
+    const res = await relayPost(NATIVE_TOKEN_PATH, {
       token,
       platform,
       userId: getUserId() ?? undefined,
+      prefs: getPushPrefs(),
+      refreshToken: boot.refreshToken ?? undefined,
+      accessToken: boot.accessToken ?? undefined,
+      accessExpiresAt: boot.accessExpiresAt ?? undefined,
     })
-    return isApiSuccess(res.code)
+    const ok = !!res && res.ok
+    // 消费一次性 bootstrap，避免之后重传已被 poller 轮换的旧副本。
+    if (ok && hadBoot) { try { localStorage.removeItem(POLLER_REFRESH_PENDING_KEY) } catch { /* ignore */ } }
+    return ok
   } catch (e) {
     console.warn('[NativePush] registerNativePushToken failed:', e)
     return false
   }
 }
 
-/** 注销原生推送 token。失败静默。 */
+/** 通知 relay 注销该原生 token。失败静默。 */
 export async function unregisterNativePushToken(token: string): Promise<boolean> {
   try {
-    const res = await api.post(NATIVE_TOKEN_UNREGISTER_PATH, {
+    const res = await relayPost(NATIVE_TOKEN_UNREGISTER_PATH, {
       token,
       userId: getUserId() ?? undefined,
     })
-    return isApiSuccess(res.code)
+    return !!res && res.ok
   } catch (e) {
     console.warn('[NativePush] unregisterNativePushToken failed:', e)
     return false
