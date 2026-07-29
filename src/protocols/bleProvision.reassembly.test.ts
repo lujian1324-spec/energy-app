@@ -147,4 +147,29 @@ describe('BLE provisioning multi-packet reassembly', () => {
     expect(resp.RC).toBe(0)
     expect((resp.PL as { SV: string }).SV).toBe('1.2.3')
   })
+
+  it('resolves when the device replies DURING the write (resolver armed before write)', async () => {
+    const mgr = await connectManager()
+    // configWifi-style single-packet reply, delivered from inside the write call —
+    // i.e. the device answers the instant the last write resolves. The old code
+    // armed the resolver only AFTER the write, so this reply was dropped → timeout.
+    const reply = makeResponsePackets({ CID: 30006, RC: 0 } as unknown as BleProvisionResponse)
+    h.ble.writeWithoutResponse.mockImplementation(async () => { for (const pkt of reply) deliver(pkt) })
+    const resp = await mgr.configWifi('MyWifi', 'secret')
+    expect(resp.RC).toBe(0)
+  })
+
+  it('ignores unsolicited packets when no command is pending (no buffer pollution)', async () => {
+    const mgr = await connectManager()
+    // Stray notification with no command in flight — must be ignored, not buffered.
+    for (const pkt of makeResponsePackets({ CID: 30004, RC: 0, PL: [] } as unknown as BleProvisionResponse)) deliver(pkt)
+    // The next real command must still work cleanly.
+    const packets = makeResponsePackets(WIFI_RESP)
+    const p = mgr.scanAp()
+    await tick()
+    for (const pkt of packets) deliver(pkt)
+    const resp = await p
+    expect(resp.RC).toBe(0)
+    expect(Array.isArray(resp.PL) && resp.PL).toHaveLength(16)
+  })
 })

@@ -273,8 +273,13 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
       await manager.connect()
       const name = manager.deviceName ?? 'Sierro Device'
       const duid = manager.getDuid()
+      if (!duid) {
+        const msg = "Couldn't read this device's ID. Make sure it's a Sierro device and try again."
+        store.setErrorMessage(msg); toast.error(msg)
+        return
+      }
       store.setDeviceInfo(name, duid)
-      setFoundDevices([{ name, serial: duid ?? 'Unknown' }])
+      setFoundDevices([{ name, serial: duid }])
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Scan failed'
       store.setErrorMessage(msg)
@@ -518,7 +523,13 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
       try {
         const manager = getProvisionManager()
         await manager.connectTo(device.deviceId, device.name)
-        store.setDeviceInfo(manager.deviceName ?? device.name, manager.getDuid())
+        const duid = manager.getDuid()
+        if (!duid) {
+          const msg = "Couldn't read this device's ID. Move closer to the device and try again."
+          store.setErrorMessage(msg); toast.error(msg)
+          return
+        }
+        store.setDeviceInfo(manager.deviceName ?? device.name, duid)
         goToNaming()
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Connection failed'
