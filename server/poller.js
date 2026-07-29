@@ -48,6 +48,7 @@ const POLL_INTERVAL_MS = Number(process.env.POLL_INTERVAL_MS) || 60_000
 const RENOTIFY_THROTTLE_MS = Number(process.env.RENOTIFY_THROTTLE_MS) || 30 * 60_000
 const MAX_REFRESH_FAILS = 5
 const ACCESS_SKEW_MS = 60_000 // refresh a minute before expiry
+const MAX_PLAUSIBLE_TTL_MS = 12 * 60 * 60_000 // reject a bogus far-future accessExpiresAt (access tokens ~2h)
 
 // T0 scaling knobs:
 const POLL_CONCURRENCY = Math.max(1, Number(process.env.POLL_CONCURRENCY) || 25) // users polled in parallel
@@ -145,13 +146,24 @@ async function processUser(u, now, sendToUser, dryRun) {
   // Use the stored access token while it's still valid (~2h); only refresh when it's
   // missing or near expiry. Refresh needs the access+refresh PAIR and rotates it —
   // persist the rotation so we own the dedicated poller session.
+  // Sanitise accessExpiresAt: a bogus value (non-finite, or implausibly far in the
+  // future from an old client string-concat bug) must NOT read as "still valid",
+  // otherwise we never refresh and every call fails "Token expired" forever.
   let token = u.accessToken
-  const needRefresh = !token || !u.accessExpiresAt || now >= u.accessExpiresAt - ACCESS_SKEW_MS
+  const exp = Number(u.accessExpiresAt)
+  const validExp = Number.isFinite(exp) && exp <= now + MAX_PLAUSIBLE_TTL_MS
+  let refreshedThisTick = false
+  const doRefresh = async () => {
+    const tokens = await refreshAccessToken({ accessToken: u.accessToken, refreshToken: u.refreshToken })
+    if (!dryRun) updateUserTokens(u.userId, tokens)
+    token = tokens.accessToken
+    refreshedThisTick = true
+  }
+
+  const needRefresh = !token || !validExp || now >= exp - ACCESS_SKEW_MS
   if (needRefresh) {
     try {
-      const tokens = await refreshAccessToken({ accessToken: u.accessToken, refreshToken: u.refreshToken })
-      if (!dryRun) updateUserTokens(u.userId, tokens)
-      token = tokens.accessToken
+      await doRefresh()
     } catch (e) {
       const fails = noteUserFailure(u.userId)
       console.warn(`[poller] refresh failed for user ${u.userId} (${fails}/${MAX_REFRESH_FAILS}): ${e.message}`)
@@ -161,8 +173,26 @@ async function processUser(u, now, sendToUser, dryRun) {
   }
 
   let devices
-  try { devices = await listDevices(token) }
-  catch (e) { console.warn(`[poller] user ${u.userId} listDevices error: ${e.message}`); return { fired, scheduled } }
+  try {
+    devices = await listDevices(token)
+  } catch (e) {
+    // Defence in depth: if the token is rejected as expired but we didn't already
+    // refresh this tick (e.g. our expiry bookkeeping was wrong), refresh once and retry.
+    if (!refreshedThisTick && /expired|token|code=9/i.test(e.message || '')) {
+      try {
+        await doRefresh()
+        devices = await listDevices(token)
+      } catch (e2) {
+        const fails = noteUserFailure(u.userId)
+        console.warn(`[poller] user ${u.userId} refresh-on-expired failed (${fails}/${MAX_REFRESH_FAILS}): ${e2.message}`)
+        if (fails >= MAX_REFRESH_FAILS) { removeUserAuth(u.userId); console.warn(`[poller] dropped stale auth for user ${u.userId}`) }
+        return { fired, scheduled }
+      }
+    } else {
+      console.warn(`[poller] user ${u.userId} listDevices error: ${e.message}`)
+      return { fired, scheduled }
+    }
+  }
 
   let anyOnline = false
   for (const d of devices) {
