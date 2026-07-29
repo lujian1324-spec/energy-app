@@ -247,11 +247,17 @@ describe('deviceApi contracts', () => {
     expect(typeof last().body.id).toBe('string')
   })
 
-  it('addDevice / addDeviceWithStation → pass payload through', async () => {
-    await dev.addDevice({ deviceName: 'D' } as any)
+  it('addDevice / addDeviceWithStation → pass payload through, stationId as string (Long-safe)', async () => {
+    // stationId is a Java Long — it must be sent as an exact decimal string so a
+    // big id can't be corrupted into a backend "illegal argument".
+    await dev.addDevice({ deviceName: 'D', dtuDtuid: 'x', stationId: '7300000000000000123' } as any)
     expect(last().path).toBe('/device/add/single')
+    expect(last().body.stationId).toBe('7300000000000000123')
+    expect(typeof last().body.stationId).toBe('string')
+
     await dev.addDeviceWithStation({ deviceName: 'D', stationId: 1 } as any)
     expect(last().path).toBe('/device/add/single/addStationTogether')
+    expect(last().body.stationId).toBe('1')
   })
 
   it('pin / unpin → ids array', async () => {

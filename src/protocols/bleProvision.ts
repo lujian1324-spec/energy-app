@@ -110,22 +110,10 @@ abstract class BaseProvisionManager implements IBleProvisionManager {
     this.cleanupResponse()
     this.resetPackets()
 
-    // 发送所有分包；若中途 GATT 断开，重连一次后整条命令重发
-    try {
-      await this.writeAllPackets(packets)
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      if (/disconnect|GATT|not connected/i.test(msg)) {
-        this.log('写入时断开，重连后重发...')
-        await this.ensureReady()
-        this.resetPackets()
-        await this.writeAllPackets(packets)
-      } else {
-        throw err
-      }
-    }
-
-    return new Promise<T>((resolve, reject) => {
+    // 关键：在「写入之前」就装好应答等待器。设备对单包命令(如 configWifi)可能在
+    // 最后一个写入 resolve 的同一时刻就回应；若此时 responseResolve 还没设好，
+    // onIncoming 会丢弃该应答 → 白等到 15s 超时。故先 arm、再写。
+    const pending = new Promise<T>((resolve, reject) => {
       this.responseResolve = resolve as (v: BleProvisionResponse) => void
       this.responseReject = reject
       this.responseTimeout = setTimeout(() => {
@@ -133,6 +121,31 @@ abstract class BaseProvisionManager implements IBleProvisionManager {
         reject(new Error('等待设备应答超时'))
       }, timeout)
     })
+
+    // 发送所有分包；若中途 GATT 断开，重连一次后整条命令重发
+    try {
+      await this.writeAllPackets(packets)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      if (/disconnect|GATT|not connected/i.test(msg)) {
+        this.log('写入时断开，重连后重发...')
+        try {
+          await this.ensureReady()
+          this.resetPackets()
+          await this.writeAllPackets(packets)
+        } catch (err2) {
+          this.clearResponseTimeout()
+          this.cleanupResponse()
+          throw err2
+        }
+      } else {
+        this.clearResponseTimeout()
+        this.cleanupResponse()
+        throw err
+      }
+    }
+
+    return pending
   }
 
   private async writeAllPackets(packets: Uint8Array[]): Promise<void> {
@@ -146,6 +159,8 @@ abstract class BaseProvisionManager implements IBleProvisionManager {
   /** 子类在收到 FED6 indication 分包时调用 */
   protected onIncoming(data: Uint8Array): void {
     if (data.length < BLE_PACKET_HEADER_SIZE) return
+    // 没有命令在等待时，忽略不请自来 / 迟到的分包，避免污染下一条命令的组包缓冲。
+    if (!this.responseResolve) return
     const seqNo = data[0]
     const seqNum = data[1]
     const dataLen = data[2]
@@ -313,7 +328,7 @@ class WebBleProvisionManager extends BaseProvisionManager {
 
   private handleIndication = (event: Event): void => {
     const v = (event.target as BluetoothRemoteGATTCharacteristic).value
-    if (v) this.onIncoming(new Uint8Array(v.buffer))
+    if (v) this.onIncoming(new Uint8Array(v.buffer, v.byteOffset, v.byteLength))
   }
   private handleDisconnect = (): void => {
     this.log('设备已断开连接')
@@ -390,6 +405,7 @@ class NativeBleProvisionManager extends BaseProvisionManager {
     this.log(`正在连接 ${device.name}...`)
     await this.openLink()
     this.parseName(device.name)
+    await this.resolveDtuidViaGap()
     this.log('GATT 连接成功')
   }
 
@@ -432,7 +448,25 @@ class NativeBleProvisionManager extends BaseProvisionManager {
     this.log(`正在连接 ${name ?? deviceId}...`)
     await this.openLink()
     this.parseName(name)
+    await this.resolveDtuidViaGap()
     this.log('GATT 连接成功')
+  }
+
+  /** 扫描结果里没有可解析出 DTUID 的名称时（有些设备只广播 FEE7 服务、名称要连上
+   *  才读得到），连上后再读标准 GAP「Device Name」特征(0x2A00)兜底解析。best-effort，
+   *  失败不影响后续（上层会因 dtuid 为空给出明确错误）。 */
+  private async resolveDtuidViaGap(): Promise<void> {
+    if (this.dtuid || !this.deviceId) return
+    const GENERIC_ACCESS = '00001800-0000-1000-8000-00805f9b34fb'
+    const DEVICE_NAME = '00002a00-0000-1000-8000-00805f9b34fb'
+    try {
+      const BleClient = await this.ble()
+      const v = await BleClient.read(this.deviceId, GENERIC_ACCESS, DEVICE_NAME)
+      const name = new TextDecoder().decode(new Uint8Array(v.buffer, v.byteOffset, v.byteLength)).replace(/\0+$/, '')
+      if (name) { this.log(`GAP 读取设备名: ${name}`); this.parseName(name) }
+    } catch (e) {
+      this.log(`GAP 读取设备名失败（忽略）: ${e instanceof Error ? e.message : String(e)}`)
+    }
   }
 
   /** 建立连接 + 订阅（连接与重连共用） */

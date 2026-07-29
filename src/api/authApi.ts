@@ -171,7 +171,11 @@ async function provisionPollerSession(username: string, plainPassword: string): 
       localStorage.setItem(POLLER_REFRESH_PENDING_KEY, JSON.stringify({
         accessToken: res.data.accessToken,
         refreshToken: res.data.refreshToken,
-        accessExpiresAt: Date.now() + (res.data.accessTokenWillExpiredInMillis ?? 2 * 60 * 60 * 1000),
+        // Coerce to Number FIRST: the backend often returns this as a string, and
+        // `Date.now() + "7199991"` would string-concat into a bogus 20-digit value
+        // (e.g. "17852537909297199991"), which the poller reads as "expires far in
+        // the future" → it never refreshes → permanent "Token expired".
+        accessExpiresAt: Date.now() + (Number(res.data.accessTokenWillExpiredInMillis) || 2 * 60 * 60 * 1000),
       }))
     }
   } catch {

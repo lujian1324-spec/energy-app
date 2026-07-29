@@ -59,13 +59,15 @@ same poller loop, session, and encrypted store:
   one-time poller-session bootstrap (same as subscribe). Client: `src/api/scheduleApi.ts`,
   enabled by `VITE_RELAY_URL`.
 - Each poller tick, for every device with an enabled schedule, `sleepSchedule.js` computes
-  the current phase (`sleep`/`wake`) **in the device's tz**; on a phase change it calls
-  `/remote/device/config/write` with `ratedACChargingPower` = per-model watts
+  the current phase (`sleep`/`wake`) **in the device's tz**; on a phase change it writes the
+  **realtime AC charge-power register `0x0085`** via Modbus passthrough (`modbus.js` builds an
+  FC06 write-single frame + CRC16 → base64 → `/remote/device/passthrough`) with per-model watts
   (Sierro 1000 150/400, Sierro 2000 300/800). Edge-only (no repeat writes); a failed write
-  (device offline) is retried next tick.
+  (device offline) is retried next tick. This mirrors the client `useSleepModeScheduler` and
+  **actually changes the device** — the earlier `config/write ratedACChargingPower` path
+  (≈rated `0x0024`) returned Success but the device treated it as a no-op.
 - Only works for **password-login** users (they have a hostable session). A user is kept
-  from pruning while any schedule is enabled. This sets the **rated/persistent** AC charge
-  power (≈Modbus `0x0024`), not the realtime `0x0085` the client scheduler uses.
+  from pruning while any schedule is enabled.
 
 Unit tests: `node --test server/detect.test.js server/sleepSchedule.test.js`.
 
