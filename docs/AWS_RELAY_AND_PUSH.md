@@ -252,6 +252,7 @@ instant feedback + fallback.
 |---|---|
 | Relay deployed (EC2 + CloudFront), `/health` ok, poller running | ✅ |
 | Register endpoint stores poller session + prefs (v4.7.1, `feat/ios-push-relay`) | ✅ |
+| **T0 scaling** — bounded poller concurrency (`POLL_CONCURRENCY`) + adaptive idle backoff (`IDLE_POLL_MS`); holds to ~1000 users on t3.micro | ✅ deployed (452afda) |
 | **FCM (Android)** credential configured + validated (`messaging/invalid-argument` on fake token) | ✅ |
 | Client: Android native‑push flag + CI `google-services.json` injection (v4.7.1) | ✅ committed |
 | **APNs (iOS)** credential (`.p8` + Key ID + Team ID) | ⏳ pending user `.p8` |
@@ -267,7 +268,10 @@ instant feedback + fallback.
 - **iOS = sandbox APNs** (`aps-environment=development`, Xcode dev signing). TestFlight /
   App Store need `aps-environment=production` + `APNS_PRODUCTION=true` + full signing.
 - Device must be **online and reporting** (outage additionally requires `isOnline`).
-- Single relay instance / file store — fine for current scale; no HA.
+- Single relay instance / file store (`tokens.json`) — with **T0 scaling** applied
+  (bounded concurrency + adaptive polling) a t3.micro tick stays inside its 60 s window
+  up to ~1000 users; beyond that, **T1** (SQLite/Redis store + multi-instance HA) is
+  the next step (deferred for now).
 
 ---
 
