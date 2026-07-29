@@ -12,6 +12,7 @@
  */
 import {
   BLE_CID,
+  BLE_PACKET_HEADER_SIZE,
   BLE_PROVISION_UUIDS,
   type BleProvisionResponse,
   type BleWifiAp,
@@ -65,7 +66,9 @@ abstract class BaseProvisionManager implements IBleProvisionManager {
 
   private responseResolve: ((value: BleProvisionResponse) => void) | null = null
   private responseReject: ((reason: Error) => void) | null = null
-  private receivedPackets: Uint8Array[] = []
+  // 按分包序号(seqNo, 1-based)索引收到的应答分包；用 Map 而非数组，才能在
+  // 乱序到达 / 重复 / 丢包时正确判定「是否收齐」并按序号重排后再组包。
+  private receivedPackets: Map<number, Uint8Array> = new Map()
   private responseTimeout: ReturnType<typeof setTimeout> | null = null
 
   protected cb: ProvisionCallbacks
@@ -105,7 +108,7 @@ abstract class BaseProvisionManager implements IBleProvisionManager {
     this.log(`分包 ${packets.length} 包，数据长度 ${encrypted.length}`)
 
     this.cleanupResponse()
-    this.receivedPackets = []
+    this.resetPackets()
 
     // 发送所有分包；若中途 GATT 断开，重连一次后整条命令重发
     try {
@@ -115,7 +118,7 @@ abstract class BaseProvisionManager implements IBleProvisionManager {
       if (/disconnect|GATT|not connected/i.test(msg)) {
         this.log('写入时断开，重连后重发...')
         await this.ensureReady()
-        this.receivedPackets = []
+        this.resetPackets()
         await this.writeAllPackets(packets)
       } else {
         throw err
@@ -142,31 +145,47 @@ abstract class BaseProvisionManager implements IBleProvisionManager {
 
   /** 子类在收到 FED6 indication 分包时调用 */
   protected onIncoming(data: Uint8Array): void {
-    if (data.length < 3) return
+    if (data.length < BLE_PACKET_HEADER_SIZE) return
     const seqNo = data[0]
     const seqNum = data[1]
     const dataLen = data[2]
     this.log(`收到应答包 ${seqNo}/${seqNum}, 数据长度 ${dataLen}`)
-    this.receivedPackets.push(data)
+    this.receivedPackets.set(seqNo, data)
 
-    if (seqNo >= seqNum) {
-      const rawStr = reassemblePackets(this.receivedPackets)
-      this.log(`应答数据合并完成，长度 ${rawStr.length}`)
-      try {
-        const response = decrypt<BleProvisionResponse>(rawStr, this.dtuid!)
-        this.log(`应答: CID=${response.CID}, RC=${response.RC}`)
-        this.clearResponseTimeout()
-        const resolve = this.responseResolve
-        this.cleanupResponse()
-        resolve?.(response)
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err)
-        this.log(`解密失败: ${msg}`)
-        this.clearResponseTimeout()
-        const reject = this.responseReject
-        this.cleanupResponse()
-        reject?.(new Error(`应答解密失败: ${msg}`))
+    // 单包应答(seqNum 0 或 1，如版本号)直接完成——保持与旧逻辑一致，不误等超时。
+    // 多包应答须收齐 1..seqNum 全部分包才组包：此前的实现只要收到「最后一包」
+    // (seqNo>=seqNum) 就立刻组包，一旦分包丢失/乱序，就会拿残缺或错位的密文去
+    // AES 解密 → 解出乱码 → toString(Utf8) 抛「Malformed UTF-8 data」。长应答
+    // (如 Wi-Fi 扫描列表)分包多，最易触发；短应答几乎单包故看不出。
+    let ordered: Uint8Array[]
+    if (seqNum <= 1) {
+      ordered = [data]
+    } else {
+      if (this.receivedPackets.size < seqNum) return
+      ordered = []
+      for (let i = 1; i <= seqNum; i++) {
+        const p = this.receivedPackets.get(i)
+        if (!p) return // 仍缺某个中间分包 —— 继续等待，超时由 responseTimeout 兜底
+        ordered.push(p)
       }
+    }
+
+    const rawStr = reassemblePackets(ordered)
+    this.log(`应答数据合并完成(${ordered.length} 包)，长度 ${rawStr.length}`)
+    try {
+      const response = decrypt<BleProvisionResponse>(rawStr, this.dtuid!)
+      this.log(`应答: CID=${response.CID}, RC=${response.RC}`)
+      this.clearResponseTimeout()
+      const resolve = this.responseResolve
+      this.cleanupResponse()
+      resolve?.(response)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      this.log(`解密失败: ${msg}`)
+      this.clearResponseTimeout()
+      const reject = this.responseReject
+      this.cleanupResponse()
+      reject?.(new Error(`应答解密失败: ${msg}`))
     }
   }
 
@@ -209,7 +228,10 @@ abstract class BaseProvisionManager implements IBleProvisionManager {
   protected cleanupResponse(): void {
     this.responseResolve = null
     this.responseReject = null
-    this.receivedPackets = []
+    this.resetPackets()
+  }
+  private resetPackets(): void {
+    this.receivedPackets.clear()
   }
   protected log(msg: string): void { this.cb.onLog?.(msg) }
   protected sleep(ms: number): Promise<void> { return new Promise(r => setTimeout(r, ms)) }
