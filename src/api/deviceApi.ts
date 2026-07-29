@@ -176,7 +176,7 @@ export interface DeviceListResponse {
 
 export interface AddDeviceRequest {
   deviceName: string        // *required*
-  stationId: number         // *required*
+  stationId: string | number // *required* — Java Long; send as String() for big ids
   dtuDtuid: string          // *required* 采集器 ID
   deviceSerialNumber?: string
   ratedPower?: number
@@ -615,7 +615,7 @@ export interface StationListRequest {
 }
 
 export interface StationItem {
-  id: number
+  id: string | number   // Java Long — big ids arrive as a string (see parseLossless)
   name: string
   stationType: number
   connectedGridType: number
@@ -696,14 +696,16 @@ export async function fetchDeviceDetails(
 export async function addDevice(
   data: AddDeviceRequest
 ): Promise<ApiResponse<unknown>> {
-  return api.post<unknown>('/device/add/single', data)
+  // stationId is a Java Long — always send it as an exact decimal string so a
+  // big id can't be corrupted (JS number) into a backend "illegal argument".
+  return api.post<unknown>('/device/add/single', { ...data, stationId: String(data.stationId) })
 }
 
 /** 添加设备同时创建电站 */
 export async function addDeviceWithStation(
   data: AddDeviceWithStationRequest
 ): Promise<ApiResponse<unknown>> {
-  return api.post<unknown>('/device/add/single/addStationTogether', data)
+  return api.post<unknown>('/device/add/single/addStationTogether', { ...data, stationId: String(data.stationId) })
 }
 
 /** 删除设备（解绑）— 参数为单个 id（非数组） */

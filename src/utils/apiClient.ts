@@ -6,6 +6,7 @@
  */
 
 import { calcSign, parseUrlParams } from './iotSign'
+import { parseLossless } from './losslessJson'
 
 // ─── 平台 Base URL ───
 export const BASE_URL = 'https://solar.siseli.com/apis'
@@ -197,7 +198,12 @@ export async function requestInternal<T = unknown>(
         throw new ApiError(resp.status, `HTTP ${resp.status}: ${resp.statusText}`, resp.status)
       }
 
-      const json = await resp.json() as ApiResponse<T>
+      // Parse losslessly so Java Long ids beyond MAX_SAFE_INTEGER (e.g. the
+      // station id from /station/list, returned as a bare JSON number) survive
+      // as exact strings instead of being rounded — a rounded id sent back on
+      // add-device makes the backend reject it with "illegal argument".
+      const text = await resp.text()
+      const json = (text ? parseLossless(text) : {}) as ApiResponse<T>
 
       // 业务错误码（code !== 0）— 不重试，直接返回让调用方处理
       return json
