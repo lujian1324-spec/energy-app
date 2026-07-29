@@ -109,4 +109,21 @@ export async function writeDeviceConfig(token, deviceId, key, value) {
   return true
 }
 
+/**
+ * Passthrough a raw frame (base64-encoded Modbus RTU) to the device UART. Used by
+ * the sleep-schedule executor to write the realtime AC charge-power register
+ * (0x0085), which actually takes effect on the device — unlike the config/write
+ * `ratedACChargingPower` path, which the backend accepts but the device ignores.
+ * Throws on a non-success business code (e.g. device offline) → retried next tick.
+ */
+export async function writePassthrough(token, deviceId, base64Input, noOutput = false) {
+  const r = await call('POST', `/remote/device/passthrough?deviceId=${deviceId}`, {
+    data: { base64Input, noOutput }, token,
+  })
+  if (!ok(r.json.code)) {
+    throw new Error(`passthrough failed: code=${r.json.code} msg=${r.json.message || r.json.msg}`)
+  }
+  return r.json.data
+}
+
 export { BASE, APP_ID }

@@ -18,12 +18,10 @@ import {
   getAllUsers, updateUserTokens, noteUserFailure, removeUserAuth,
   getNotifyTs, setNotifyTs, getSchedulePhase, setSchedulePhase,
 } from './store.js'
-import { refreshAccessToken, listDevices, getLatestState, writeDeviceConfig } from './iotClient.js'
+import { refreshAccessToken, listDevices, getLatestState, writePassthrough } from './iotClient.js'
 import { detectOutage, detectLowBattery, detectSolar } from './detect.js'
 import { phaseFor, chargePowerForPhase } from './sleepSchedule.js'
-
-// Device config attribute that sets AC charge power (W). See API_REFERENCE.md §40.
-const CHARGE_POWER_KEY = 'ratedACChargingPower'
+import { acChargePowerBase64 } from './modbus.js'
 
 /**
  * Server-side Sleep Mode: apply the device's charge power for the current phase,
@@ -38,7 +36,10 @@ async function enforceSchedule(userId, deviceId, schedule, token, now, dryRun) {
   if (phase === getSchedulePhase(userId, deviceId)) return null // already applied
   const watts = chargePowerForPhase(schedule.model, phase)
   if (!dryRun) {
-    await writeDeviceConfig(token, deviceId, CHARGE_POWER_KEY, watts) // throws on failure → retried next tick
+    // Write the realtime AC charge-power register 0x0085 via Modbus passthrough —
+    // this actually changes the device (the config/write ratedACChargingPower path
+    // returns Success but is a device no-op). Mirrors the client useSleepModeScheduler.
+    await writePassthrough(token, deviceId, acChargePowerBase64(watts)) // throws on failure → retried next tick
     setSchedulePhase(userId, deviceId, phase)
   }
   return { userId, deviceId, phase, watts }
@@ -213,7 +214,11 @@ async function processUser(u, now, sendToUser, dryRun) {
           fired.push({ userId: u.userId, deviceId, type: note.type, title: note.title, body: note.body })
           if (!dryRun) {
             setNotifyTs(u.userId, deviceId, note.type, now)
-            await sendToUser(u.userId, { title: note.title, body: note.body, data: note.data })
+            // Log the fan-out result so delivery is observable (which channels sent, any errors).
+            const r = (await sendToUser(u.userId, { title: note.title, body: note.body, data: note.data })) || {}
+            const sent = [r.webpush && `web:${r.webpush}`, r.fcm && `fcm:${r.fcm}`, r.apns && `apns:${r.apns}`].filter(Boolean).join(' ') || 'none'
+            if (r.errors && r.errors.length) console.warn(`[poller] push ${u.userId}/${deviceId} ${note.type} sent(${sent}) errors: ${r.errors.join('; ')}`)
+            else console.log(`[poller] push ${u.userId}/${deviceId} ${note.type} sent ${sent}`)
           }
         }
       } else if (seen) {

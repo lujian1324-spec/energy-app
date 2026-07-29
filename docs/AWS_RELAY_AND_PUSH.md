@@ -258,7 +258,7 @@ instant feedback + fallback.
 | **APNs (iOS)** credential (`.p8` + Key ID + Team ID) | ⏳ pending user `.p8` |
 | Android APK build + on‑device E2E | ⏳ needs `GOOGLE_SERVICES_JSON_BASE64` repo secret + CI run |
 | Merge `feat/ios-push-relay` → `main` (go‑live for all users) | ⏳ needs explicit authorization |
-| Sleep‑Mode passthrough‑0x0085 write fix | ⏳ separate task |
+| Sleep‑Mode passthrough‑0x0085 write fix (realtime AC charge power via Modbus passthrough) | ✅ |
 
 ---
 
