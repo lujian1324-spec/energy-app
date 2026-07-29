@@ -28,6 +28,13 @@ vi.mock('../utils/apiClient', () => ({
   isApiSuccess: (c: unknown) => c === 0 || c === '0',
 }))
 
+// native push 走 relay 直连(fetch → VITE_RELAY_URL),非官方 api —— mock 成已配置
+vi.mock('../config/scheduling', () => ({
+  RELAY_BASE_URL: 'https://relay.test',
+  isRelayConfigured: () => true,
+  SCHEDULE_PATH: '/schedule',
+}))
+
 // node 环境无 localStorage —— 提供最小 stub(logout / webpush getUserId 需要)
 const store: Record<string, string> = { iot_user_id: '9999' }
 ;(globalThis as any).localStorage = {
@@ -35,6 +42,13 @@ const store: Record<string, string> = { iot_user_id: '9999' }
   setItem: (k: string, v: string) => { store[k] = v },
   removeItem: (k: string) => { delete store[k] },
   clear: () => { for (const k of Object.keys(store)) delete store[k] },
+}
+
+// relay 直连调用记录(native push 走 fetch)
+const relayCalls: { url: string; body: any }[] = []
+;(globalThis as any).fetch = (url: string, init: any) => {
+  relayCalls.push({ url: String(url), body: init?.body ? JSON.parse(init.body) : undefined })
+  return Promise.resolve({ ok: true, status: 200 } as any)
 }
 
 import * as auth from './authApi'
@@ -46,6 +60,7 @@ const last = () => h.calls[h.calls.length - 1]
 const only = () => { expect(h.calls.length).toBe(1); return h.calls[0] }
 beforeEach(() => {
   h.calls.length = 0
+  relayCalls.length = 0
   // 复位 localStorage(logout() 会清 iot_user_id,避免污染后续用例)
   for (const k of Object.keys(store)) delete store[k]
   store.iot_user_id = '9999'
@@ -329,13 +344,17 @@ describe('deviceApi contracts', () => {
 // Web/Native Push 接口
 // ─────────────────────────────────────────────────────────────
 describe('webPushApi contracts', () => {
-  it('registerNativePushToken → posts token + platform + userId', async () => {
+  it('registerNativePushToken → posts token + platform + userId + prefs to relay', async () => {
     await push.registerNativePushToken('tok', 'android')
-    const c = only()
-    expect(c.body).toMatchObject({ token: 'tok', platform: 'android', userId: '9999' })
+    expect(relayCalls.length).toBe(1)
+    expect(relayCalls[0].url).toContain('/notification/nativepush/register')
+    expect(relayCalls[0].body).toMatchObject({ token: 'tok', platform: 'android', userId: '9999' })
+    expect(relayCalls[0].body).toHaveProperty('prefs') // poller 据此判断三类告警
   })
-  it('unregisterNativePushToken → posts token', async () => {
+  it('unregisterNativePushToken → posts token to relay', async () => {
     await push.unregisterNativePushToken('tok')
-    expect(only().body).toMatchObject({ token: 'tok' })
+    expect(relayCalls.length).toBe(1)
+    expect(relayCalls[0].url).toContain('/notification/nativepush/unregister')
+    expect(relayCalls[0].body).toMatchObject({ token: 'tok' })
   })
 })

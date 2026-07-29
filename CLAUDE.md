@@ -236,3 +236,4 @@ don't let it happen again):
 | `docs/NATIVE_SETUP.md` | Capacitor native plugin/permission setup for Android/iOS builds. |
 | `docs/RELEASE_SIGNING.md` / `docs/PLAY_SUBMISSION.md` | Store submission mechanics (signing, Play Console form answers). |
 | `server/README.md` | A separate, optional reference push-relay backend in `server/` — not the main API. |
+| `docs/AWS_RELAY_AND_PUSH.md` | How the self-hosted relay is deployed on AWS (EC2 + CloudFront) and how background push (Outage/Low Battery/Solar over Web Push/FCM/APNs) + closed-app Sleep scheduling work end-to-end, incl. the SSM ops runbook and credential model. |

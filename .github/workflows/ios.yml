@@ -67,6 +67,7 @@ jobs:
       - name: Build web app
         env:
           VITE_PUSH_ENABLED: 'true'
+          VITE_NATIVE_PUSH_READY: 'true'
           VITE_RELAY_URL: 'https://d1qw91oh1yc80u.cloudfront.net'
         run: npm run build
 

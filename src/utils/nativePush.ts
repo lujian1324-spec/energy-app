@@ -75,6 +75,16 @@ export async function initNativePush(): Promise<void> {
   }
 }
 
+/**
+ * 推送 prefs（三类告警开关 / 低电量阈值）变更后，把最新 prefs 重新上报 relay。
+ * 仅在原生平台且 token 已注册时生效（否则空跑——首次注册流程本身已带上 prefs）。
+ */
+export async function reuploadNativePushPrefs(): Promise<void> {
+  if (!Capacitor.isNativePlatform() || !lastToken) return
+  const platform = Capacitor.getPlatform() === 'ios' ? 'ios' : 'android'
+  await registerNativePushToken(lastToken, platform)
+}
+
 /** 登出时注销 token，并移除监听。 */
 export async function teardownNativePush(): Promise<void> {
   if (!Capacitor.isNativePlatform()) return

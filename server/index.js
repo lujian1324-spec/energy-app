@@ -88,9 +88,13 @@ app.post('/notification/webpush/unsubscribe', (req, res) => {
   ok(res)
 })
 app.post('/notification/nativepush/register', (req, res) => {
-  const { token, platform, userId } = req.body || {}
+  const { token, platform, userId, refreshToken, accessToken, accessExpiresAt, prefs } = req.body || {}
   if (!token) return res.status(400).json({ code: 1, message: 'token required' })
   addNative(userId, token, platform === 'ios' ? 'ios' : 'android')
+  // Seed the poller session + push prefs so the poller can watch this user's
+  // devices while the app is CLOSED (mirrors /notification/webpush/subscribe).
+  // Also lets a later prefs-only re-register update which alarms are watched.
+  if (refreshToken || accessToken || prefs) setUserAuth(userId, { refreshToken, accessToken, accessExpiresAt, prefs })
   ok(res)
 })
 app.post('/notification/nativepush/unregister', (req, res) => {
