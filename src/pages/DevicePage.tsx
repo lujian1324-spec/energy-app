@@ -37,8 +37,10 @@ import PullToRefresh from '../components/PullToRefresh'
 import ManualAddDeviceModal from '../components/ManualAddDeviceModal'
 import { useDeviceStore } from '../stores/deviceStore'
 import { useAuthStore } from '../stores/authStore'
-import { useNotificationStore } from '../stores/notificationStore'
+import { useAlarmDismissStore, alarmKey } from '../stores/alarmDismissStore'
 import { usePowerStationStore } from '../stores/powerStationStore'
+import { dedupeAndFilterAlarms } from '../utils/alarmText'
+import type { FiringAlarm } from '../utils/powerOutageNotification'
 import sierro2000Img from '../assets/sierro-2000-product.webp'
 import { mapFieldsToRealtime, fetchDeviceState, passthroughDevice } from '../api/deviceApi'
 import { FRAMES, decodePassthroughBase64, decodeLiveStatus } from '../protocols/modbusProtocol'
@@ -61,6 +63,7 @@ interface DeviceRealtimeCache {
   [deviceId: string]: {
     fields: Record<string, DeviceStateField>
     raw: ReturnType<typeof mapFieldsToRealtime>
+    firingAlarms?: unknown[]
     loading: boolean
     lastUpdated: number
   }
@@ -199,7 +202,7 @@ export default function DevicePage() {
       if (state) {
         setRealtimeCache(prev => ({
           ...prev,
-          [idStr]: { fields: state.fields, raw: mapFieldsToRealtime(state.fields), loading: false, lastUpdated: Date.now() },
+          [idStr]: { fields: state.fields, raw: mapFieldsToRealtime(state.fields), firingAlarms: state.firingAlarms ?? [], loading: false, lastUpdated: Date.now() },
         }))
       }
       return
@@ -218,6 +221,7 @@ export default function DevicePage() {
           [idStr]: {
             fields: result.data!.fields,
             raw: mapFieldsToRealtime(result.data!.fields),
+            firingAlarms: result.data!.firingAlarms ?? [],
             loading: false,
             lastUpdated: Date.now(),
           },
@@ -244,6 +248,7 @@ export default function DevicePage() {
         [idStr]: {
           fields: selectedDeviceState.fields,
           raw: mapped,
+          firingAlarms: selectedDeviceState.firingAlarms ?? [],
           loading: false,
           lastUpdated: Date.now(),
         },
@@ -471,8 +476,19 @@ export default function DevicePage() {
       })
     : '--'
 
-  // 未读通知红点（查看通知页后清零）
-  const hasUnreadNotifications = useNotificationStore(s => s.unreadCount()) > 0
+  // 铃铛红点：仅在存在「未清除的实时告警」时显示（与 Notifications 列表同源）。
+  // 跨所有已缓存设备统计 firing 告警，去重后再扣掉用户已点掉的那些。
+  const dismissedAlarms = useAlarmDismissStore(s => s.dismissed)
+  const activeAlarmCount = useMemo(() => {
+    let count = 0
+    for (const [idStr, entry] of Object.entries(realtimeCache)) {
+      const firing = dedupeAndFilterAlarms((entry.firingAlarms ?? []) as FiringAlarm[])
+      for (const a of firing) {
+        if (!dismissedAlarms.includes(alarmKey(idStr, a.title))) count++
+      }
+    }
+    return count
+  }, [realtimeCache, dismissedAlarms])
 
   // ── BatteryTag 电量标签（横式电池 + 充电闪电 + 百分比 / Disconnected） ──
   const BatteryTag = ({ level, connected, charging, unknown }: { level: number; connected: boolean; charging: boolean; unknown?: boolean }) => {
@@ -584,7 +600,7 @@ export default function DevicePage() {
               className="relative w-11 h-11 rounded-full bg-ink-10 flex items-center justify-center text-white hover:bg-ink-9 transition-colors active:scale-95"
             >
               <Icon name="bell" size={20} />
-              {(hasUnreadNotifications || lowBatteryDevice || devices.some(d => d.isAlarmed)) && (
+              {activeAlarmCount > 0 && (
                 <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-danger border-2 border-ink-12" />
               )}
             </button>

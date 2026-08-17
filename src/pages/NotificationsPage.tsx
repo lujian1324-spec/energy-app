@@ -1,8 +1,9 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, AlertTriangle, Bell, Zap } from 'lucide-react'
+import { ChevronLeft, AlertTriangle, Bell, Zap, X } from 'lucide-react'
 import { useDeviceStore } from '../stores/deviceStore'
+import { useAlarmDismissStore, alarmKey } from '../stores/alarmDismissStore'
 import { dedupeAndFilterAlarms } from '../utils/alarmText'
 import type { FiringAlarm } from '../utils/powerOutageNotification'
 
@@ -17,17 +18,21 @@ function severityConfig(severity: string): { color: string; bg: string } {
   return { color: '#01D6BE', bg: 'rgba(1,214,190,0.08)' }
 }
 
-function FiringAlarmRow({ alarm }: { alarm: FiringAlarm & { title: string } }) {
+function FiringAlarmRow({ alarm, onDismiss }: { alarm: FiringAlarm & { title: string }; onDismiss: () => void }) {
   const cfg = severityConfig(alarm.severity)
   // Title is pre-resolved by dedupeAndFilterAlarms (which also deduped/suppressed).
   const title = alarm.title
   const time = alarm.timestamp ? new Date(alarm.timestamp).toLocaleString() : 'Active now'
   return (
-    <motion.div
+    <motion.button
+      type="button"
       layout
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex items-start gap-3 px-4 py-3.5 border-b border-[rgba(255,255,255,0.06)]"
+      exit={{ opacity: 0, height: 0, marginTop: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 }}
+      onClick={onDismiss}
+      aria-label={`Clear alarm: ${title}`}
+      className="w-full text-left flex items-start gap-3 px-4 py-3.5 border-b border-[rgba(255,255,255,0.06)] active:opacity-70 transition-opacity"
       style={{ backgroundColor: cfg.bg }}
     >
       <div className="mt-0.5 flex-shrink-0" style={{ color: cfg.color }}>
@@ -36,15 +41,15 @@ function FiringAlarmRow({ alarm }: { alarm: FiringAlarm & { title: string } }) {
       <div className="flex-1 min-w-0">
         <div className="text-body-md font-semibold text-ink-1 leading-tight">{title}</div>
         {alarm.severity && <div className="text-[11px] text-ink-7 mt-0.5 capitalize">{alarm.severity}</div>}
-        <div className="text-[10px] text-ink-7 mt-1.5">{time}</div>
+        <div className="text-[10px] text-ink-7 mt-1.5">{time} · Tap to clear</div>
       </div>
       <span
-        className="flex-shrink-0 mt-0.5 text-[10px] font-semibold px-2 py-1 rounded-full"
+        className="flex-shrink-0 mt-0.5 flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-full"
         style={{ color: cfg.color, backgroundColor: cfg.bg }}
       >
-        ACTIVE
+        <X size={11} />Clear
       </span>
-    </motion.div>
+    </motion.button>
   )
 }
 
@@ -63,6 +68,9 @@ function SectionHeader({ icon: SIcon, label, count, color }: {
 export default function NotificationsPage() {
   const navigate = useNavigate()
   const { selectedDeviceId, selectedDeviceState, loadDeviceState } = useDeviceStore()
+  const dismissed = useAlarmDismissStore(s => s.dismissed)
+  const dismiss = useAlarmDismissStore(s => s.dismiss)
+  const syncActive = useAlarmDismissStore(s => s.syncActive)
 
   // Refresh live device state so firing alarms are current on entering the page
   useMemo(() => {
@@ -74,6 +82,18 @@ export default function NotificationsPage() {
   const activeAlarms = useMemo(
     () => dedupeAndFilterAlarms((selectedDeviceState?.firingAlarms ?? []) as FiringAlarm[]),
     [selectedDeviceState?.firingAlarms]
+  )
+
+  // Forget dismissals for alarms that are no longer firing (so a genuinely
+  // recurring alarm reappears instead of being permanently silenced).
+  useEffect(() => {
+    syncActive(selectedDeviceId, activeAlarms.map(a => alarmKey(selectedDeviceId, a.title)))
+  }, [activeAlarms, selectedDeviceId, syncActive])
+
+  // What the user actually sees: active alarms minus the ones they tapped to clear.
+  const visibleAlarms = useMemo(
+    () => activeAlarms.filter(a => !dismissed.includes(alarmKey(selectedDeviceId, a.title))),
+    [activeAlarms, dismissed, selectedDeviceId]
   )
 
   return (
@@ -89,8 +109,8 @@ export default function NotificationsPage() {
         </button>
         <div className="flex-1">
           <h2 className="text-lg font-bold text-ink-1">Notifications</h2>
-          {activeAlarms.length > 0 ? (
-            <p className="text-caption text-danger">{activeAlarms.length} active now</p>
+          {visibleAlarms.length > 0 ? (
+            <p className="text-caption text-danger">{visibleAlarms.length} active now</p>
           ) : (
             <p className="text-caption text-ink-7">No active alarms</p>
           )}
@@ -100,7 +120,7 @@ export default function NotificationsPage() {
       {/* List */}
       <div className="flex-1 overflow-y-auto scrollbar-hide">
         {/* Empty state */}
-        {activeAlarms.length === 0 && (
+        {visibleAlarms.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -115,12 +135,16 @@ export default function NotificationsPage() {
         )}
 
         {/* Active alarms */}
-        {activeAlarms.length > 0 && (
+        {visibleAlarms.length > 0 && (
           <>
-            <SectionHeader icon={Zap} label="Active Now" count={activeAlarms.length} color="#FF3B30" />
+            <SectionHeader icon={Zap} label="Active Now" count={visibleAlarms.length} color="#FF3B30" />
             <AnimatePresence initial={false}>
-              {activeAlarms.map(a => (
-                <FiringAlarmRow key={`firing-${a.title}`} alarm={a} />
+              {visibleAlarms.map(a => (
+                <FiringAlarmRow
+                  key={`firing-${a.title}`}
+                  alarm={a}
+                  onDismiss={() => dismiss(alarmKey(selectedDeviceId, a.title))}
+                />
               ))}
             </AnimatePresence>
           </>
