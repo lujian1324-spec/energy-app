@@ -154,13 +154,13 @@ lives on independently and is still referenced elsewhere.)
 
 **SettingPage** (`/setting`)
 - *Profile card*: avatar, name, account action, founder badge.
-- *Push Notifications*: Power Outage (`pushNotifications`), Low Battery (`pushLowBattery`)+threshold slider (`lowBatteryThreshold`), Solar Status (`pushSolarStatus`), Device Alarms (`pushDeviceAlarms`, v4.1.0 — notifies for any other firing cloud alarm not covered by the first three; the alarm center itself already shows every alarm type regardless of these toggles). Toggles drive Web Push enable/disable.
+- *Push Notifications*: Power Outage (`pushNotifications`), Low Battery (`pushLowBattery`)+threshold slider (`lowBatteryThreshold`), Solar Status (`pushSolarStatus`). Toggles drive Web Push enable/disable. (The `pushDeviceAlarms` "Device Alarms" toggle was removed from the UI in v4.7.7 — the setting field and relay/notification plumbing remain, but it no longer surfaces so it stays at its default `false`; the Notifications alarm center still lists every alarm type regardless.)
   Section visibility is gated by `PUSH_ENABLED` (`src/config/webPush.ts`) — `true` in every production
   build since v3.35.5 (requests the OS notification permission; safe on its own). A **separate** flag,
   `NATIVE_PUSH_READY` (same file, default `false`), gates whether native `PushNotifications.register()`
   actually runs — it stays off until `google-services.json`/APNs credentials are real, because calling
   `register()` without them crashes on Android (fixed in v3.35.8 by adding this second gate).
-- *Feedback modal* (EmailJS), *Founder badge modal*, *data export*, legal links + version.
+- *Feedback modal* (EmailJS), *Founder badge modal*, legal links + version. (The inline "Export My Data" button was removed in v4.7.7; full export lives on `/data-export`.) `ProfileEditPage`'s "Link Accounts" (Google/Apple placeholder rows) was also removed in v4.7.7.
 
 **SmartSchedulePage** (`/smart-schedule`)
 - *Enable toggle*, *24h clock donut* (charge/discharge/idle arcs).
