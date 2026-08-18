@@ -661,7 +661,7 @@ export default function DevicePage() {
         {deviceLoading && devices.length === 0 ? (
           <div className="flex flex-col gap-3">
             {[0, 1, 2].map(i => (
-              <div key={i} className="rounded-l p-5 bg-ink-10 animate-pulse h-[150px]" />
+              <div key={i} className="rounded-l p-4 bg-ink-10 animate-pulse h-[112px]" />
             ))}
           </div>
         ) : devices.length > 0 ? (
@@ -683,10 +683,11 @@ export default function DevicePage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4, delay: index * 0.06, ease: [0.25, 0.46, 0.45, 0.94] }}
                   onClick={() => handleDeviceClick(device)}
-                  className="bg-ink-10 rounded-l p-5 cursor-pointer active:scale-[0.99] transition-transform"
+                  className="bg-ink-10 rounded-l p-4 cursor-pointer active:scale-[0.99] transition-transform"
                 >
-                  {/* Top row: Display icon/photo + BatteryTag */}
-                  <div className="flex items-start justify-between mb-3">
+                  {/* Top row: icon + name/model grouped & left-aligned; BatteryTag on the right */}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                     {(() => {
                       const savedIconId = getSavedDisplayIconId(String(device.id))
                       // Custom image uploaded by user
@@ -734,16 +735,16 @@ export default function DevicePage() {
                         </div>
                       )
                     })()}
+                      {/* Name (up to 2 lines) + model, left-aligned beside the icon */}
+                      <div className="min-w-0">
+                        <h3 className="text-title-lg font-semibold text-white leading-tight line-clamp-2 break-words">
+                          {device.name}
+                        </h3>
+                        <p className="text-body-md text-ink-7 mt-0.5">{getDeviceModel(device)}</p>
+                      </div>
+                    </div>
                     <BatteryTag level={remainingBatteryCapacity} unknown={!remainingBatteryCapacityKnown} connected={connected} charging={isCharging} />
                   </div>
-
-                  {/* Name (up to 2 lines, then ...) */}
-                  <h3 className="text-title-lg font-semibold text-white leading-tight line-clamp-2 break-words">
-                    {device.name}
-                  </h3>
-
-                  {/* Model */}
-                  <p className="text-body-md text-ink-7 mt-0.5">{getDeviceModel(device)}</p>
 
                   {/* Power toggle (disabled when disconnected) */}
                   <div className="flex justify-end mt-3" onClick={(e) => e.stopPropagation()}>
