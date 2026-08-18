@@ -71,7 +71,10 @@ export default function SettingPage() {
   // - 打开任一开关 → 原生:接线 APNs/FCM 并上报 token;Web:VAPID 订阅 + 上报
   // - 全部关闭     → 注销
   const syncWebPush = useCallback(async (outage: boolean, lowBat: boolean, solar: boolean) => {
-    const anyOn = outage || lowBat || solar
+    // pushDeviceAlarms 的开关虽已隐藏，但其偏好与投递链路仍生效；隐藏的通道若为开，
+    // 也应算作「已开启推送」，否则切换其它开关时会把只开该通道的老用户误退订。
+    const alarms = usePowerStationStore.getState().settings.pushDeviceAlarms ?? false
+    const anyOn = outage || lowBat || solar || alarms
     if (Capacitor.isNativePlatform()) {
       if (anyOn) { await initNativePush(); await reuploadNativePushPrefs() }
       else await teardownNativePush()

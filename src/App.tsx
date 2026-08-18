@@ -92,8 +92,12 @@ function AppInner() {
     // 原生平台先刷新通知权限缓存（getNotificationPermission 同步依赖它）
     refreshNotificationPermission()
     const s = usePowerStationStore.getState().settings
+    // pushDeviceAlarms 的开关虽在 v4.7.7 从设置页隐藏（默认关），但底层偏好与
+    // 投递链路（deviceStore 前台通知 + webPushApi 上报给 relay 轮询）仍在读它。
+    // 若这里漏算，只开该通道的老用户重启/重登后会被 syncWebPushSubscription(false)
+    // 静默退订，导致再也收不到任何推送——必须一并计入总开关。
     const anyPushEnabled =
-      !!s.pushNotifications || !!s.pushLowBattery || !!s.pushSolarStatus
+      !!s.pushNotifications || !!s.pushLowBattery || !!s.pushSolarStatus || !!s.pushDeviceAlarms
     syncWebPushSubscription(anyPushEnabled)
     // 原生平台：登录后接线 APNs/FCM 推送并上报 token
     if (Capacitor.isNativePlatform() && anyPushEnabled) initNativePush()
