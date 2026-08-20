@@ -18,6 +18,7 @@ import { SIERRO_MODELS, SIERRO_MODEL_LIST, generateSerial, type SierroModel } fr
 import { saveRatedParams } from '../db/powerflowDB'
 import { useDeviceStore } from '../stores/deviceStore'
 import { openAppSettings } from '../utils/openAppSettings'
+import { extractDtuid } from '../utils/dtuidParser'
 import { checkBluetooth, classifyBleError } from '../utils/permissions'
 
 // Local UI screens — the multi-step store flow lives inside 'provisioning'
@@ -250,7 +251,10 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
         await manager.scanDevices((d) => {
           if (seen.has(d.deviceId)) return
           seen.add(d.deviceId)
-          setFoundDevices(prev => [...prev, { name: d.name || 'Sierro Device', serial: d.deviceId, deviceId: d.deviceId }])
+          // 显示解析出的数字 DTUID（采集器唯一标识，20 位纯数字）作为设备 ID，
+          // 而非原生 BLE 的 MAC/UUID 字符串；名称无法解析时回退到原始 deviceId。
+          const dtuid = d.name ? extractDtuid(d.name) : null
+          setFoundDevices(prev => [...prev, { name: d.name || 'Sierro Device', serial: dtuid ?? d.deviceId, deviceId: d.deviceId }])
         })
       } catch (err) {
         if (scanStopRef.current) { clearTimeout(scanStopRef.current); scanStopRef.current = null }
