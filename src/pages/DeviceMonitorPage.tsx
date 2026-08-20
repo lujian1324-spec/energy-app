@@ -9,6 +9,22 @@ import { mapFieldsToRealtime } from '../api/deviceApi'
 import { batteryTimeLabel } from '../utils/batteryTime'
 import { loadRatedParams } from '../db/powerflowDB'
 
+/**
+ * /state/latest 的 `time` 是「Unix 秒的字串」（见 demoData.getDemoDeviceState），
+ * 直接丢给 `new Date('1755705600')` 会得到 Invalid Date → NaN。这里容错解析：
+ * 纯数字按 epoch 处理（>=13 位当毫秒，否则当秒 *1000），其余按 ISO 字串解析。
+ * 返回毫秒时间戳；无法解析时返回 undefined。
+ */
+function parseDeviceStateTime(time: string | undefined): number | undefined {
+  if (!time) return undefined
+  if (/^\d+$/.test(time)) {
+    const n = Number(time)
+    return time.length >= 13 ? n : n * 1000
+  }
+  const ms = new Date(time).getTime()
+  return Number.isNaN(ms) ? undefined : ms
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function DeviceMonitorPage() {
   const { id } = useParams<{ id: string }>()
@@ -238,7 +254,7 @@ export default function DeviceMonitorPage() {
             values={{ battery: batteryPower, ac: acPower, solar: solarPower, output: outputPower }}
             batteryAsSoc
             batterySoc={remainingBatteryCapacity}
-            lastSyncAt={selectedDeviceState?.time ? new Date(selectedDeviceState.time).getTime() : undefined}
+            lastSyncAt={parseDeviceStateTime(selectedDeviceState?.time)}
           />
         </motion.div>
       </div>

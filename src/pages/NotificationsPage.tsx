@@ -72,8 +72,10 @@ export default function NotificationsPage() {
   const dismiss = useAlarmDismissStore(s => s.dismiss)
   const syncActive = useAlarmDismissStore(s => s.syncActive)
 
-  // Refresh live device state so firing alarms are current on entering the page
-  useMemo(() => {
+  // Refresh live device state so firing alarms are current on entering the page.
+  // This is a side effect (a store fetch), so it belongs in useEffect — a useMemo
+  // must stay pure and React may skip/re-run it (e.g. StrictMode) without warning.
+  useEffect(() => {
     if (selectedDeviceId) loadDeviceState(selectedDeviceId)
   }, [selectedDeviceId]) // eslint-disable-line react-hooks/exhaustive-deps
 

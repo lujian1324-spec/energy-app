@@ -599,33 +599,6 @@ export function getDemoHistoryData(
 }
 
 // ═══════════════════════════════════════════════════════
-// Demo 通知数据（Notifications 模块）
-// ═══════════════════════════════════════════════════════
-
-export type DemoNotificationType =
-  | 'low_battery'
-  | 'power_outage'
-  | 'solar_connected'
-  | 'solar_disconnected'
-
-export interface DemoNotification {
-  id: number
-  type: DemoNotificationType
-  deviceName: string
-  deviceSerial: string
-  description: string
-  time: string
-  date: string
-}
-
-export const demoNotifications: DemoNotification[] = [
-  { id: 1, type: 'low_battery',        deviceName: 'Fish Tank', deviceSerial: 'SN10001', description: 'Battery below 30%, estimated remaining time: 1h 24m', time: '2 mins ago',  date: 'Today' },
-  { id: 2, type: 'solar_connected',    deviceName: 'Fridge',    deviceSerial: 'SN10002', description: 'Solar input detected, charging started.',               time: 'Today 3:42 PM', date: 'Today' },
-  { id: 3, type: 'solar_disconnected', deviceName: 'CPAP',      deviceSerial: 'SN10003', description: 'Solar input lost, charging stopped.',                  time: 'May 3',       date: 'May' },
-  { id: 4, type: 'power_outage',       deviceName: 'NAS',       deviceSerial: 'SN10004', description: 'Switched to backup power automatically. Estimated runtime: 10h.', time: 'April 5', date: 'April' },
-]
-
-// ═══════════════════════════════════════════════════════
 // Demo 用户资料（Profile / Setting 模块）
 // ═══════════════════════════════════════════════════════
 
