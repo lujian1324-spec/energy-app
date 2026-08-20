@@ -49,7 +49,7 @@ export function DemoBanner({ show, onRetry }: DemoBannerProps) {
       {onRetry && (
         <button
           onClick={onRetry}
-          className="ml-2 underline text-[11px] hover:text-[#FFB84D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+          className="ml-2 underline text-caption hover:text-[#FFB84D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
           aria-label="Retry connecting to real device"
         >
           Retry
@@ -78,7 +78,7 @@ export function LastSync({ lastSyncAt, className = '' }: LastSyncProps) {
 
   return (
     <span
-      className={`text-[10px] text-ink-7 tracking-wide ${className}`}
+      className={`text-tiny text-ink-7 tracking-wide ${className}`}
       title={`Last sync: ${new Date(lastSyncAt).toLocaleString()}`}
     >
       Last sync: {text}
@@ -94,12 +94,12 @@ interface CalcAuditProps {
 /** PRD v1.1 §8.3: 计算逻辑可审计 - ℹ️ 展开计算公式 */
 export function CalcAudit({ formula, label = 'How we calculated this' }: CalcAuditProps) {
   return (
-    <details className="text-[11px] text-ink-6 group">
+    <details className="text-caption text-ink-6 group">
       <summary className="cursor-pointer list-none flex items-center gap-1 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded">
         <span aria-hidden="true">ℹ️</span>
         <span className="underline">{label}</span>
       </summary>
-      <pre className="mt-2 p-3 bg-[#1A1A1A] rounded-m text-[10px] text-ink-6 whitespace-pre-wrap font-mono leading-relaxed">
+      <pre className="mt-2 p-3 bg-[#1A1A1A] rounded-m text-tiny text-ink-6 whitespace-pre-wrap font-mono leading-relaxed">
 {formula}
       </pre>
     </details>
@@ -114,7 +114,7 @@ interface SampleRateProps {
 /** PRD v1.1 §8.2: 功率曲线底部标注 Updated every 1s */
 export function SampleRate({ intervalSec = 1, className = '' }: SampleRateProps) {
   return (
-    <span className={`text-[10px] text-ink-7 tracking-wide ${className}`}>
+    <span className={`text-tiny text-ink-7 tracking-wide ${className}`}>
       Updated every {intervalSec}s
     </span>
   )

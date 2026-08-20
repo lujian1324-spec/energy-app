@@ -1104,7 +1104,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
             <motion.div key="result" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <div className="flex flex-col items-center py-10">
                 <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6
-                  ${store.configResult === 'success' ? 'bg-[rgba(52,199,89,0.15)]' : 'bg-[rgba(255,53,48,0.1)]'}`}>
+                  ${store.configResult === 'success' ? 'bg-[rgba(52,199,89,0.15)]' : 'bg-[rgba(255,59,48,0.1)]'}`}>
                   {store.configResult === 'success'
                     ? <CheckCircle size={36} className="text-success" />
                     : <XCircle size={36} className="text-danger" />
@@ -1199,7 +1199,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
           {store.errorMessage && store.step !== 'result' && (
             <motion.div
               initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className="mt-4 flex items-start gap-2 bg-[rgba(255,53,48,0.08)] rounded-l px-4 py-3"
+              className="mt-4 flex items-start gap-2 bg-[rgba(255,59,48,0.08)] rounded-l px-4 py-3"
             >
               <AlertCircle size={16} className="text-danger mt-0.5 flex-shrink-0" />
               <span className="text-body-md text-danger">{store.errorMessage}</span>

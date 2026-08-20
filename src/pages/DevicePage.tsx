@@ -617,7 +617,7 @@ export default function DevicePage() {
               className="bg-[rgba(255,59,48,0.08)] border border-[rgba(255,59,48,0.15)] rounded-l px-4 py-2.5 flex items-center gap-2 mb-1"
             >
               <AlertTriangle size={14} className="text-danger flex-shrink-0" />
-              <span className="text-[12px] text-danger flex-1">{error}</span>
+              <span className="text-label text-danger flex-1">{error}</span>
               <button onClick={() => setError(null)} className="text-danger">
                 <X size={14} />
               </button>
@@ -809,7 +809,7 @@ export default function DevicePage() {
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-ink-1">{showDeviceParams.name}</h3>
-                    <div className="text-[11px] text-ink-6">{showDeviceParams.gatherProtocolNameDisplay || showDeviceParams.model}</div>
+                    <div className="text-caption text-ink-6">{showDeviceParams.gatherProtocolNameDisplay || showDeviceParams.model}</div>
                   </div>
                 </div>
                 <button
@@ -825,7 +825,7 @@ export default function DevicePage() {
               <div className="flex-1 overflow-y-auto scrollbar-hide p-5 space-y-4">
                 {/* Device Meta Info */}
                 <div className="space-y-3">
-                  <h4 className="text-[11px] font-bold text-ink-6 tracking-widest uppercase">Device Info</h4>
+                  <h4 className="text-caption font-bold text-ink-6 tracking-widest uppercase">Device Info</h4>
                   <div className="bg-ink-12 rounded-l divide-y divide-[rgba(255,255,255,0.06)]">
                     {[
                       { icon: Hash, label: 'Serial Number', value: showDeviceParams.serialNumber || '--' },
@@ -855,13 +855,13 @@ export default function DevicePage() {
                 {/* Real-time Parameters */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-[11px] font-bold text-ink-6 tracking-widest uppercase">Real-Time Parameters</h4>
+                    <h4 className="text-caption font-bold text-ink-6 tracking-widest uppercase">Real-Time Parameters</h4>
                     {realtimeCache[String(showDeviceParams.id)]?.loading ? (
                       <RefreshCw size={12} className="text-primary animate-spin" />
                     ) : (
                       <button
                         onClick={() => fetchDeviceRealtime(showDeviceParams.id)}
-                        className="text-[11px] text-primary flex items-center gap-1"
+                        className="text-caption text-primary flex items-center gap-1"
                       >
                         <RefreshCw size={11} /> Refresh
                       </button>
@@ -880,7 +880,7 @@ export default function DevicePage() {
                       return (
                         <div key={item.label} className="bg-ink-12 rounded-l p-3 flex flex-col items-center">
                           <Icon size={14} style={{ color: item.color }} className="mb-1.5" />
-                          <div className="text-[14px] font-bold text-ink-1">{item.value}</div>
+                          <div className="text-body-md font-bold text-ink-1">{item.value}</div>
                           <div className="text-tiny text-ink-6 mt-0.5">{item.label}</div>
                         </div>
                       )
@@ -890,7 +890,7 @@ export default function DevicePage() {
 
                 {/* Port Status */}
                 <div className="space-y-3">
-                  <h4 className="text-[11px] font-bold text-ink-6 tracking-widest uppercase">Port Controls</h4>
+                  <h4 className="text-caption font-bold text-ink-6 tracking-widest uppercase">Port Controls</h4>
                   <div className="bg-ink-12 rounded-l divide-y divide-[rgba(255,255,255,0.06)]">
                     {[
                       { label: 'AC Output 1', key: 'acOut1Enable' },
@@ -903,7 +903,7 @@ export default function DevicePage() {
                       return (
                         <div key={port.key} className="flex items-center justify-between px-4 py-3">
                           <span className="text-body-md text-ink-1">{port.label}</span>
-                          <span className={`text-[12px] px-2 py-0.5 rounded-full font-medium ${
+                          <span className={`text-label px-2 py-0.5 rounded-full font-medium ${
                             isEnabled ? 'bg-[rgba(52,199,89,0.15)] text-success' : 'bg-[rgba(255,255,255,0.06)] text-ink-7'
                           }`}>
                             {isEnabled ? 'ON' : 'OFF'}
@@ -914,7 +914,7 @@ export default function DevicePage() {
                   </div>
                   <div className="bg-ink-12 rounded-l px-4 py-3 flex items-center justify-between">
                     <span className="text-body-md text-ink-1">Work Mode</span>
-                    <span className="text-[12px] px-2 py-0.5 rounded-full bg-[rgba(1,214,190,0.1)] text-primary font-medium">
+                    <span className="text-label px-2 py-0.5 rounded-full bg-[rgba(1,214,190,0.1)] text-primary font-medium">
                       {getWorkModeLabel(getDeviceNum(showDeviceParams.id, 'workMode'))}
                     </span>
                   </div>
@@ -923,14 +923,14 @@ export default function DevicePage() {
                 {/* All API Fields (for debugging) */}
                 {realtimeCache[String(showDeviceParams.id)]?.fields && (
                   <div className="space-y-3">
-                    <h4 className="text-[11px] font-bold text-ink-6 tracking-widest uppercase">All Parameters</h4>
+                    <h4 className="text-caption font-bold text-ink-6 tracking-widest uppercase">All Parameters</h4>
                     <div className="bg-ink-12 rounded-l divide-y divide-[rgba(255,255,255,0.04)]">
                       {Object.entries(realtimeCache[String(showDeviceParams.id)].fields)
                         .sort((a, b) => a[0].localeCompare(b[0]))
                         .map(([key, field]) => (
                           <div key={key} className="flex items-center justify-between px-4 py-2.5">
-                            <span className="text-[12px] text-ink-6 font-mono">{field.name || key}</span>
-                            <span className="text-[12px] text-ink-1 font-mono">
+                            <span className="text-label text-ink-6 font-mono">{field.name || key}</span>
+                            <span className="text-label text-ink-1 font-mono">
                               {field.valueDisplay ?? String(field.value ?? '--')}
                             </span>
                           </div>
@@ -945,7 +945,7 @@ export default function DevicePage() {
               <div className="p-5 border-t border-[rgba(255,255,255,0.06)]">
                 <button
                   onClick={() => { setShowDeviceParams(null); navigate(`/device/${showDeviceParams.id}`) }}
-                  className="w-full py-3 rounded-l bg-primary text-ink-13 text-[14px] font-semibold flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-l bg-primary text-ink-13 text-body-md font-semibold flex items-center justify-center gap-2"
                 >
                   View Full Dashboard <Icon name="chevron-right" size={16} />
                 </button>
@@ -979,8 +979,8 @@ export default function DevicePage() {
                     className="flex items-center gap-4 p-4 bg-ink-9 rounded-l text-left transition-colors active:scale-[0.98]">
                     <span className="text-2xl">{opt.icon}</span>
                     <div className="flex-1">
-                      <div className="text-[14px] font-semibold" style={{ color: opt.color }}>{opt.label}</div>
-                      <div className="text-[11px] text-ink-6 mt-0.5">{opt.desc}</div>
+                      <div className="text-body-md font-semibold" style={{ color: opt.color }}>{opt.label}</div>
+                      <div className="text-caption text-ink-6 mt-0.5">{opt.desc}</div>
                     </div>
                   </button>
                 ))}
@@ -1016,7 +1016,7 @@ export default function DevicePage() {
                 <div className="flex flex-col items-center justify-center py-10">
                   <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
                     className="w-12 h-12 rounded-full border-2 border-primary border-t-transparent mb-4" />
-                  <p className="text-[14px] text-ink-6">Scanning for devices...</p>
+                  <p className="text-body-md text-ink-6">Scanning for devices...</p>
                 </div>
               )}
               {scanError && (
@@ -1024,8 +1024,8 @@ export default function DevicePage() {
                   <div className="w-12 h-12 rounded-full bg-[rgba(255,59,48,0.15)] flex items-center justify-center mb-3">
                     <Icon name="bluetooth" size={24} />
                   </div>
-                  <p className="text-[14px] text-danger text-center mb-1">Scan Failed</p>
-                  <p className="text-[12px] text-ink-6 text-center px-4">{scanError}</p>
+                  <p className="text-body-md text-danger text-center mb-1">Scan Failed</p>
+                  <p className="text-label text-ink-6 text-center px-4">{scanError}</p>
                 </div>
               )}
               {!isScanning && !scanError && scannedDevices.length === 0 && (
@@ -1033,7 +1033,7 @@ export default function DevicePage() {
                   <div className="w-12 h-12 rounded-full bg-ink-9 flex items-center justify-center mb-3">
                     <Icon name="bluetooth" size={24} />
                   </div>
-                  <p className="text-[14px] text-ink-6">No devices found</p>
+                  <p className="text-body-md text-ink-6">No devices found</p>
                 </div>
               )}
             </motion.div>
@@ -1073,7 +1073,7 @@ export default function DevicePage() {
                   </div>
                   {qrError ? (
                     <div className="text-center px-2">
-                      <p className="text-[14px] text-danger mb-4">{qrError}</p>
+                      <p className="text-body-md text-danger mb-4">{qrError}</p>
                       {cameraDenied ? (
                         <button
                           onClick={async () => {
@@ -1091,7 +1091,7 @@ export default function DevicePage() {
                   ) : (
                     <>
                       <p className="text-body-lg font-semibold text-ink-1 mb-1">Point camera at QR code</p>
-                      <p className="text-[12px] text-ink-6">The code will be scanned automatically</p>
+                      <p className="text-label text-ink-6">The code will be scanned automatically</p>
                     </>
                   )}
                 </>
@@ -1103,17 +1103,17 @@ export default function DevicePage() {
                   <h4 className="text-lg font-bold text-ink-1 text-center mb-2">QR Code Scanned!</h4>
                   {/* 识别出的设备 ID */}
                   <div className="bg-ink-12 rounded-l p-4 mb-3">
-                    <p className="text-[11px] text-ink-7 mb-1">Device ID / Serial Number</p>
+                    <p className="text-caption text-ink-7 mb-1">Device ID / Serial Number</p>
                     <p className="text-body-lg font-semibold text-primary break-all">{scannedSerial || '--'}</p>
-                    {scannedName && <p className="text-[12px] text-ink-6 mt-1">{scannedName}</p>}
+                    {scannedName && <p className="text-label text-ink-6 mt-1">{scannedName}</p>}
                   </div>
                   {/* 原始内容（折叠展示） */}
                   <div className="bg-ink-9 rounded-l p-3 mb-5">
-                    <p className="text-[10px] text-ink-7 mb-1">Raw</p>
-                    <pre className="text-[11px] text-ink-6 whitespace-pre-wrap break-all">{qrResult}</pre>
+                    <p className="text-tiny text-ink-7 mb-1">Raw</p>
+                    <pre className="text-caption text-ink-6 whitespace-pre-wrap break-all">{qrResult}</pre>
                   </div>
                   <div className="flex gap-3">
-                    <button onClick={() => { setQrResult(null); startQrScan() }} className="flex-1 h-11 rounded-l bg-ink-9 text-ink-1 text-[14px] font-medium">Scan Again</button>
+                    <button onClick={() => { setQrResult(null); startQrScan() }} className="flex-1 h-11 rounded-l bg-ink-9 text-ink-1 text-body-md font-medium">Scan Again</button>
                     <button
                       onClick={() => {
                         stopQrScan()
@@ -1123,7 +1123,7 @@ export default function DevicePage() {
                         // 跳转到录入弹窗，预填扫码得到的设备 ID
                         setShowManualAdd(true)
                       }}
-                      className="flex-1 h-11 rounded-l bg-primary text-ink-13 text-[14px] font-semibold"
+                      className="flex-1 h-11 rounded-l bg-primary text-ink-13 text-body-md font-semibold"
                     >
                       Add Device
                     </button>
@@ -1132,7 +1132,7 @@ export default function DevicePage() {
               )}
             </div>
             <div className="p-5 safe-area-bottom text-center">
-              <p className="text-[11px] text-ink-7">Make sure the QR code is well-lit and in focus</p>
+              <p className="text-caption text-ink-7">Make sure the QR code is well-lit and in focus</p>
             </div>
           </motion.div>
         )}

@@ -619,13 +619,13 @@ export default function StatsPage() {
             <div className="w-16 h-16 rounded-2xl bg-ink-10 flex items-center justify-center mb-4">
               <BarChart3 size={32} className="text-ink-7" />
             </div>
-            <h3 className="text-[16px] font-bold text-ink-1 mb-2">No Data Yet</h3>
+            <h3 className="text-body-lg font-bold text-ink-1 mb-2">No Data Yet</h3>
             <p className="text-body-md text-ink-6 text-center leading-relaxed mb-6">
               Connect a device to start tracking energy usage and statistics.
             </p>
             <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-ink-10 border border-[rgba(255,255,255,0.06)]">
               <WifiOff size={14} className="text-ink-7" />
-              <span className="text-[12px] text-ink-7">No device connected</span>
+              <span className="text-label text-ink-7">No device connected</span>
             </div>
           </motion.div>
         )}

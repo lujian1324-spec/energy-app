@@ -247,7 +247,7 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
           key={isOnline ? currentChartData.value : 'offline'}
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="text-[11px] px-2 py-0.5 rounded-full font-semibold tnum"
+          className="text-caption px-2 py-0.5 rounded-full font-semibold tnum"
           style={{
             backgroundColor: isOnline ? `${currentChartData.color}26` : 'rgba(160,160,165,0.15)',
             color: isOnline ? currentChartData.color : '#BFBFBF'
@@ -402,7 +402,7 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
                 ${isActive ? 'bg-[rgba(1,214,190,0.15)]' : 'hover:bg-[rgba(255,255,255,0.03)]'}`}
             >
               <Icon size={18} className={isActive ? 'text-primary' : 'text-ink-6'} />
-              <span className={`text-[10px] font-medium ${isActive ? 'text-primary' : 'text-ink-6'}`}>
+              <span className={`text-tiny font-medium ${isActive ? 'text-primary' : 'text-ink-6'}`}>
                 {item.label}
               </span>
             </button>

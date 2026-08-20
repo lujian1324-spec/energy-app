@@ -40,11 +40,11 @@ function FiringAlarmRow({ alarm, onDismiss }: { alarm: FiringAlarm & { title: st
       </div>
       <div className="flex-1 min-w-0">
         <div className="text-body-md font-semibold text-ink-1 leading-tight">{title}</div>
-        {alarm.severity && <div className="text-[11px] text-ink-7 mt-0.5 capitalize">{alarm.severity}</div>}
-        <div className="text-[10px] text-ink-7 mt-1.5">{time} · Tap to clear</div>
+        {alarm.severity && <div className="text-caption text-ink-7 mt-0.5 capitalize">{alarm.severity}</div>}
+        <div className="text-tiny text-ink-7 mt-1.5">{time} · Tap to clear</div>
       </div>
       <span
-        className="flex-shrink-0 mt-0.5 flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-full"
+        className="flex-shrink-0 mt-0.5 flex items-center gap-1 text-tiny font-semibold px-2 py-1 rounded-full"
         style={{ color: cfg.color, backgroundColor: cfg.bg }}
       >
         <X size={11} />Clear
@@ -59,8 +59,8 @@ function SectionHeader({ icon: SIcon, label, count, color }: {
   return (
     <div className="flex items-center gap-2 px-4 pt-4 pb-2">
       <SIcon size={14} style={{ color }} />
-      <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color }}>{label}</span>
-      <span className="text-[11px] text-ink-7">({count})</span>
+      <span className="text-caption font-bold uppercase tracking-wide" style={{ color }}>{label}</span>
+      <span className="text-caption text-ink-7">({count})</span>
     </div>
   )
 }

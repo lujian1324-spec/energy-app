@@ -59,7 +59,7 @@ const PARAM_GROUPS: { title: string; color: string; params: ParamDef[] }[] = [
   },
   {
     title: 'Temperature',
-    color: '#FF3530',
+    color: '#FF3B30',
     params: [
       { label: 'Cell 1 Temp (cellTemperature1)', key: 'batteryTemp', unit: '℃', fmt: fmt1 },
       { label: 'Cell 2 Temp (cellTemperature2)', key: 'cellTemperature2', unit: '℃', fmt: fmt1 },

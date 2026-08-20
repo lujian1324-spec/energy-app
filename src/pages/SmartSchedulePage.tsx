@@ -874,7 +874,7 @@ export default function SmartSchedulePage() {
                   setEditingSchedule(null)
                   handleDeleteClick({ id: editingSchedule.id, name: editingSchedule.name } as PeakShavingSchedule)
                 }}
-                className="w-full mt-3 h-11 rounded-m border border-[rgba(255,53,48,0.3)] text-danger text-body-md font-medium flex items-center justify-center gap-2"
+                className="w-full mt-3 h-11 rounded-m border border-[rgba(255,59,48,0.3)] text-danger text-body-md font-medium flex items-center justify-center gap-2"
               >
                 <Trash2 size={14} />
                 Delete
@@ -902,7 +902,7 @@ export default function SmartSchedulePage() {
               className="w-full max-w-sm bg-ink-10 rounded-l p-6"
             >
               <div className="flex flex-col items-center mb-5">
-                <div className="w-14 h-14 rounded-full bg-[rgba(255,53,48,0.12)] flex items-center justify-center mb-4">
+                <div className="w-14 h-14 rounded-full bg-[rgba(255,59,48,0.12)] flex items-center justify-center mb-4">
                   <AlertTriangle size={28} className="text-danger" />
                 </div>
                 <h3 className="text-body-lg font-bold text-white mb-1">Delete Schedule?</h3>
