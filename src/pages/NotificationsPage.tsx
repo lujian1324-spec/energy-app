@@ -104,7 +104,7 @@ export default function NotificationsPage() {
       <div className="px-5 pt-4 pb-3 safe-area-top flex items-center gap-3">
         <button
           onClick={() => navigate(-1)}
-          className="w-9 h-9 rounded-full bg-ink-10 flex items-center justify-center text-ink-1 active:scale-95 transition-transform"
+          className="relative w-9 h-9 rounded-full bg-ink-10 flex items-center justify-center text-ink-1 active:scale-95 transition-transform before:absolute before:content-[''] before:-inset-1.5"
           aria-label="Back"
         >
           <ChevronLeft size={20} />

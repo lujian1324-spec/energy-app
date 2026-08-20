@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { HashRouter } from 'react-router-dom'
+import { MotionConfig } from 'framer-motion'
 import App from './App'
 import './index.css'
 import { registerSW } from 'virtual:pwa-register'
@@ -20,8 +21,12 @@ setupNativeUx()
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <HashRouter>
-      <App />
-    </HashRouter>
+    {/* reducedMotion="user" — 尊重系统「减少动态」无障碍设置：开启时 framer-motion
+        自动降级所有 transform/layout 动画（保留 opacity），全域一处生效 */}
+    <MotionConfig reducedMotion="user">
+      <HashRouter>
+        <App />
+      </HashRouter>
+    </MotionConfig>
   </React.StrictMode>,
 )

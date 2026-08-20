@@ -117,7 +117,8 @@ export default function DeviceMonitorPage() {
       <div className="px-4 pt-5 pb-3 safe-area-top flex items-center gap-3">
         <button
           onClick={backToDevices}
-          className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center active:scale-95 transition-transform flex-shrink-0"
+          className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center active:scale-95 transition-transform flex-shrink-0 before:absolute before:content-[''] before:-inset-1"
+          aria-label="Back"
         >
           <ChevronLeft size={20} className="text-white" />
         </button>
@@ -169,13 +170,15 @@ export default function DeviceMonitorPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => navigate(`/device/${id}/settings`)}
-            className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center active:scale-95 transition-transform"
+            className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center active:scale-95 transition-transform before:absolute before:content-[''] before:-inset-1"
+            aria-label="Device settings"
           >
             <Settings size={18} className="text-white" />
           </button>
           <button
             onClick={() => navigate('/notifications')}
-            className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center active:scale-95 transition-transform"
+            className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center active:scale-95 transition-transform before:absolute before:content-[''] before:-inset-1"
+            aria-label="Notifications"
           >
             <Bell size={18} className="text-white" />
             {device?.isAlarmed && (

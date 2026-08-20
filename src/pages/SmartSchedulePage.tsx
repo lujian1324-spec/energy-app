@@ -316,13 +316,15 @@ export default function SmartSchedulePage() {
       <div className="px-4 pt-4 pb-3 safe-area-top flex items-center gap-3">
         <button
           onClick={() => navigate(-1)}
-          className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-white active:scale-95 transition-transform flex-shrink-0"
+          className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-white active:scale-95 transition-transform flex-shrink-0 before:absolute before:content-[''] before:-inset-1"
+          aria-label="Back"
         >
           <ChevronLeft size={20} />
         </button>
         <h2 className="flex-1 text-center text-body-lg font-semibold text-white">Smart Schedule</h2>
         <button
-          className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-ink-6 flex-shrink-0"
+          className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-ink-6 flex-shrink-0 before:absolute before:content-[''] before:-inset-1"
+          aria-label="About Smart Schedule"
         >
           <Info size={18} />
         </button>
@@ -523,7 +525,7 @@ export default function SmartSchedulePage() {
                   </button>
                   <button
                     onClick={() => handleDeleteClick(s)}
-                    className="w-8 h-8 rounded-full bg-ink-9 flex items-center justify-center text-danger flex-shrink-0 active:scale-95 transition-transform"
+                    className="relative w-8 h-8 rounded-full bg-ink-9 flex items-center justify-center text-danger flex-shrink-0 active:scale-95 transition-transform before:absolute before:content-[''] before:-inset-2"
                     aria-label={`Delete ${s.name}`}
                   >
                     <Trash2 size={14} />
@@ -806,7 +808,7 @@ export default function SmartSchedulePage() {
               <div className="w-10 h-1 bg-[rgba(255,255,255,0.15)] rounded-full mx-auto mb-5" />
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-body-lg font-bold text-white">Edit Schedule</h3>
-                <button onClick={() => setEditingSchedule(null)} className="w-8 h-8 rounded-full bg-ink-9 flex items-center justify-center text-ink-6">
+                <button onClick={() => setEditingSchedule(null)} aria-label="Close" className="relative w-8 h-8 rounded-full bg-ink-9 flex items-center justify-center text-ink-6 before:absolute before:content-[''] before:-inset-2">
                   <X size={18} />
                 </button>
               </div>

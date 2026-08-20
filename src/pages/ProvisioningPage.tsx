@@ -110,7 +110,7 @@ function QrScanScreen({ onBack, onScanned }: {
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
       <div className="px-4 pt-5 pb-4 flex items-center gap-3 safe-area-top absolute top-0 left-0 right-0 z-10">
-        <button onClick={onBack} className="w-10 h-10 rounded-full bg-[rgba(0,0,0,0.5)] flex items-center justify-center">
+        <button onClick={onBack} aria-label="Back" className="relative w-10 h-10 rounded-full bg-[rgba(0,0,0,0.5)] flex items-center justify-center before:absolute before:content-[''] before:-inset-1">
           <ChevronLeft size={20} className="text-white" />
         </button>
         <h1 className="text-title-lg font-semibold text-white">Scan QR Code</h1>
@@ -488,14 +488,15 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
       const manager = getProvisionManager()
       const resp = await manager.getWifiStatus()
       if (resp.RC === 0 && resp.PL) store.setWifiStatus(resp.PL)
-    } catch {}
+    } catch (e) { console.warn('[Provisioning] getWifiStatus failed:', e) }
     finally { store.setIsOperating(false) }
   }, [store])
 
   const handleRestart = useCallback(async () => {
     if (!store.dtuid) return
     store.setIsOperating(true)
-    try { await getProvisionManager().restart() } catch {}
+    try { await getProvisionManager().restart() }
+    catch (e) { console.warn('[Provisioning] restart failed:', e); toast.error('Restart failed. Please try again.') }
     finally { store.setIsOperating(false) }
   }, [store])
 
@@ -577,7 +578,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
       return (
         <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
           <div className="px-4 pt-5 pb-4 flex items-center safe-area-top">
-            <button onClick={handleClose} className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center">
+            <button onClick={handleClose} aria-label="Back" className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center before:absolute before:content-[''] before:-inset-1">
               <ChevronLeft size={20} className="text-white" />
             </button>
             <h1 className="text-title-lg font-semibold text-white ml-3">Add Device</h1>
@@ -621,7 +622,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
       return (
         <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
           <div className="px-4 pt-5 pb-4 flex items-center safe-area-top">
-            <button onClick={handleClose} className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center">
+            <button onClick={handleClose} aria-label="Back" className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center before:absolute before:content-[''] before:-inset-1">
               <ChevronLeft size={20} className="text-white" />
             </button>
             <h1 className="text-title-lg font-semibold text-white ml-3">Add Device</h1>
@@ -653,7 +654,8 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
         <div className="px-4 pt-5 pb-4 flex items-center justify-between safe-area-top">
           <button
             onClick={handleClose}
-            className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center"
+            aria-label="Back"
+            className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center before:absolute before:content-[''] before:-inset-1"
           >
             <ChevronLeft size={20} className="text-white" />
           </button>
@@ -798,7 +800,8 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
         <div className="px-4 pt-5 pb-4 flex items-center gap-3 safe-area-top">
           <button
             onClick={() => setUiScreen('scan')}
-            className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center"
+            aria-label="Back"
+            className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center before:absolute before:content-[''] before:-inset-1"
           >
             <ChevronLeft size={20} className="text-white" />
           </button>
@@ -879,7 +882,8 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
         <div className="px-4 pt-5 pb-4 flex items-center gap-3 safe-area-top">
           <button
             onClick={() => setUiScreen('naming')}
-            className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center"
+            aria-label="Back"
+            className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center before:absolute before:content-[''] before:-inset-1"
           >
             <ChevronLeft size={20} className="text-white" />
           </button>
@@ -933,7 +937,8 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
       <div className="px-4 pt-5 pb-4 flex items-center gap-3 safe-area-top">
         <button
           onClick={() => setUiScreen('naming')}
-          className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center"
+          aria-label="Back"
+          className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center before:absolute before:content-[''] before:-inset-1"
         >
           <ChevronLeft size={20} className="text-white" />
         </button>

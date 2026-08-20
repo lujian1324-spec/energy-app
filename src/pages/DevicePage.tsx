@@ -814,7 +814,8 @@ export default function DevicePage() {
                 </div>
                 <button
                   onClick={() => setShowDeviceParams(null)}
-                  className="w-8 h-8 rounded-full bg-ink-9 flex items-center justify-center text-ink-6"
+                  aria-label="Close"
+                  className="relative w-8 h-8 rounded-full bg-ink-9 flex items-center justify-center text-ink-6 before:absolute before:content-[''] before:-inset-2"
                 >
                   <X size={18} />
                 </button>
@@ -1006,7 +1007,8 @@ export default function DevicePage() {
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-lg font-bold text-ink-1">Bluetooth Devices</h3>
                 <button onClick={() => { setShowBleScan(false); setIsScanning(false); setScanError(null); setScannedDevices([]) }}
-                  className="w-8 h-8 rounded-full bg-ink-9 flex items-center justify-center text-ink-6">
+                  aria-label="Close"
+                  className="relative w-8 h-8 rounded-full bg-ink-9 flex items-center justify-center text-ink-6 before:absolute before:content-[''] before:-inset-2">
                   <X size={18} />
                 </button>
               </div>
@@ -1047,7 +1049,8 @@ export default function DevicePage() {
             <div className="flex items-center justify-between p-5 safe-area-top">
               <h3 className="text-lg font-bold text-ink-1">Scan QR Code</h3>
               <button onClick={() => { stopQrScan(); setShowQrScan(false); setQrResult(null); setQrError(null) }}
-                className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center text-ink-1">
+                aria-label="Close"
+                className="relative w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center text-ink-1 before:absolute before:content-[''] before:-inset-1.5">
                 <X size={20} />
               </button>
             </div>
