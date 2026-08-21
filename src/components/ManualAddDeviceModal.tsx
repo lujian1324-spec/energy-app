@@ -133,9 +133,9 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
               value={deviceName}
               onChange={e => { setDeviceName(e.target.value); setError(null) }}
               placeholder="e.g. Sierro 1000"
-              className="w-full px-4 py-3 rounded-l bg-ink-12 border border-[rgba(1,214,190,0.15)]
+              className="w-full px-4 py-3 rounded-l bg-ink-12 border border-primary/[0.15]
                 text-ink-1 text-body-md placeholder:text-ink-7
-                focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
+                focus:outline-none focus:border-primary/[0.5] transition-colors"
             />
           </div>
 
@@ -149,9 +149,9 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
               value={serialNumber}
               onChange={e => { setSerialNumber(e.target.value); setError(null) }}
               placeholder="e.g. 999256001232612"
-              className="w-full px-4 py-3 rounded-l bg-ink-12 border border-[rgba(1,214,190,0.15)]
+              className="w-full px-4 py-3 rounded-l bg-ink-12 border border-primary/[0.15]
                 text-ink-1 text-body-md placeholder:text-ink-7
-                focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
+                focus:outline-none focus:border-primary/[0.5] transition-colors"
             />
           </div>
 
@@ -165,9 +165,9 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
               value={dtuDtuid}
               onChange={e => { setDtuDtuid(e.target.value); setError(null) }}
               placeholder="e.g. DTU serial number"
-              className="w-full px-4 py-3 rounded-l bg-ink-12 border border-[rgba(1,214,190,0.15)]
+              className="w-full px-4 py-3 rounded-l bg-ink-12 border border-primary/[0.15]
                 text-ink-1 text-body-md placeholder:text-ink-7
-                focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
+                focus:outline-none focus:border-primary/[0.5] transition-colors"
             />
           </div>
 
@@ -180,8 +180,8 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
               <select
                 value={stationId}
                 onChange={e => setStationId(Number(e.target.value))}
-                className="w-full px-4 py-3 rounded-l bg-ink-12 border border-[rgba(1,214,190,0.15)]
-                  text-ink-1 text-body-md focus:outline-none focus:border-[rgba(1,214,190,0.5)]"
+                className="w-full px-4 py-3 rounded-l bg-ink-12 border border-primary/[0.15]
+                  text-ink-1 text-body-md focus:outline-none focus:border-primary/[0.5]"
               >
                 {stations.map(s => (
                   <option key={s.id} value={s.id}>{s.name}</option>
@@ -208,9 +208,9 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
                 value={newStationName}
                 onChange={e => setNewStationName(e.target.value)}
                 placeholder="e.g. Home Solar Station"
-                className="w-full px-4 py-3 rounded-l bg-ink-12 border border-[rgba(1,214,190,0.15)]
+                className="w-full px-4 py-3 rounded-l bg-ink-12 border border-primary/[0.15]
                   text-ink-1 text-body-md placeholder:text-ink-7
-                  focus:outline-none focus:border-[rgba(1,214,190,0.5)] transition-colors"
+                  focus:outline-none focus:border-primary/[0.5] transition-colors"
               />
             </div>
           )}
@@ -218,7 +218,7 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
           {/* 错误提示 */}
           {error && (
             <div className="flex items-center gap-2 px-3 py-2.5 rounded-l
-              bg-[rgba(255,59,48,0.08)] border border-[rgba(255,59,48,0.2)]">
+              bg-danger/[0.08] border border-danger/[0.2]">
               <AlertCircle size={14} className="text-danger flex-shrink-0" />
               <p className="text-label text-danger">{error}</p>
             </div>

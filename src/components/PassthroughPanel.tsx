@@ -162,7 +162,7 @@ export default function PassthroughPanel({ deviceId }: Props) {
                   setData(p.frame)
                   setShowPresets(false)
                 }}
-                className="w-full text-left px-3 py-2.5 hover:bg-[rgba(1,214,190,0.06)] transition-colors"
+                className="w-full text-left px-3 py-2.5 hover:bg-primary/[0.06] transition-colors"
               >
                 <div className="text-label text-ink-6 font-medium">{p.label}</div>
                 <div className="text-tiny text-ink-8 mt-0.5 font-mono">{p.frame}</div>
@@ -185,7 +185,7 @@ export default function PassthroughPanel({ deviceId }: Props) {
             placeholder="e.g. 01 03 00 00 00 12 C5 C7"
             className="flex-1 px-3 py-2 rounded-m bg-ink-12 border border-[rgba(255,255,255,0.06)]
               text-ink-6 text-label placeholder:text-ink-9
-              focus:outline-none focus:border-[rgba(1,214,190,0.4)] font-mono"
+              focus:outline-none focus:border-primary/[0.4] font-mono"
           />
           <button
             onClick={() => sendFrame(data)}

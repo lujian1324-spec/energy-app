@@ -180,8 +180,8 @@ export default function SettingPage() {
             className="relative flex-shrink-0 active:scale-[0.96] transition-transform">
             <div className={`w-[52px] h-[52px] rounded-full flex items-center justify-center overflow-hidden border-m
               ${settings.founderBadge
-                ? 'border-membership bg-[rgba(255,215,0,0.06)]'
-                : 'border-primary bg-[rgba(1,214,190,0.06)]'}`}>
+                ? 'border-membership bg-membership/[0.06]'
+                : 'border-primary bg-primary/[0.06]'}`}>
               {userProfile.avatar ? (
                 <img src={userProfile.avatar} alt={userProfile.name} className="w-full h-full object-cover" />
               ) : settings.founderBadge ? (
@@ -206,7 +206,7 @@ export default function SettingPage() {
           {settings.founderBadge && (
             <button
               onClick={() => setShowFounderModal(true)}
-              className="flex-shrink-0 px-3 py-1 rounded-pill bg-[rgba(255,215,0,0.18)] border-s border-membership active:scale-[0.96] transition-transform">
+              className="flex-shrink-0 px-3 py-1 rounded-pill bg-membership/[0.18] border-s border-membership active:scale-[0.96] transition-transform">
               <span className="text-label font-semibold text-membership whitespace-nowrap">
                 Founding Member #{settings.founderBadgeNumber}
               </span>
@@ -390,11 +390,11 @@ export default function SettingPage() {
             onClick={() => setShowSupport(false)}>
             <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="w-full max-w-md bg-ink-10 rounded-[28px] border border-[rgba(255,149,0,0.15)] overflow-hidden"
+              className="w-full max-w-md bg-ink-10 rounded-[28px] border border-warning/[0.15] overflow-hidden"
               onClick={e => e.stopPropagation()}>
-              <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(255,149,0,0.1)]">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-warning/[0.1]">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-l bg-[rgba(255,149,0,0.1)] flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-l bg-warning/[0.1] flex items-center justify-center">
                     <Headphones size={20} className="text-warning" />
                   </div>
                   <div>
@@ -407,7 +407,7 @@ export default function SettingPage() {
               <div className="p-5">
                 {supportSubmitted ? (
                   <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-8">
-                    <div className="w-16 h-16 rounded-full bg-[rgba(52,199,89,0.1)] flex items-center justify-center mx-auto mb-4">
+                    <div className="w-16 h-16 rounded-full bg-success/[0.1] flex items-center justify-center mx-auto mb-4">
                       <CheckCircle size={32} className="text-success" />
                     </div>
                     <h4 className="text-body-lg font-bold text-ink-1 mb-2">Feedback Submitted!</h4>
@@ -418,17 +418,17 @@ export default function SettingPage() {
                     <div>
                       <label className="text-label font-semibold text-ink-6 mb-2 flex items-center gap-2"><Icon name="email" size={14} />Your Email</label>
                       <input type="email" required value={supportEmail} onChange={e => setSupportEmail(e.target.value)} placeholder="you@example.com"
-                        className="w-full px-4 py-3 rounded-l bg-ink-12 border border-[rgba(1,214,190,0.15)] text-ink-1 text-body-md placeholder:text-ink-7 focus:outline-none focus:border-[rgba(1,214,190,0.4)] transition-colors" />
+                        className="w-full px-4 py-3 rounded-l bg-ink-12 border border-primary/[0.15] text-ink-1 text-body-md placeholder:text-ink-7 focus:outline-none focus:border-primary/[0.4] transition-colors" />
                     </div>
                     <div>
                       <label className="text-label font-semibold text-ink-6 mb-2 flex items-center gap-2"><Icon name="feedback" size={14} />Your Feedback</label>
                       <textarea required value={supportMessage} onChange={e => setSupportMessage(e.target.value)} placeholder="Describe your issue or suggestion..." rows={4}
-                        className="w-full px-4 py-3 rounded-l bg-ink-12 border border-[rgba(1,214,190,0.15)] text-ink-1 text-body-md placeholder:text-ink-7 resize-none focus:outline-none focus:border-[rgba(1,214,190,0.4)] transition-colors" />
+                        className="w-full px-4 py-3 rounded-l bg-ink-12 border border-primary/[0.15] text-ink-1 text-body-md placeholder:text-ink-7 resize-none focus:outline-none focus:border-primary/[0.4] transition-colors" />
                     </div>
                     {supportError && (
                       <p className="text-label text-danger text-center">{supportError}</p>
                     )}
-                    <button type="submit" disabled={supportSending} className="w-full py-3.5 rounded-l bg-[rgba(255,149,0,0.12)] text-warning font-semibold text-body-md flex items-center justify-center gap-2 active:scale-95 transition-transform border border-[rgba(255,149,0,0.2)] disabled:opacity-50">
+                    <button type="submit" disabled={supportSending} className="w-full py-3.5 rounded-l bg-warning/[0.12] text-warning font-semibold text-body-md flex items-center justify-center gap-2 active:scale-95 transition-transform border border-warning/[0.2] disabled:opacity-50">
                       {supportSending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                       {supportSending ? 'Sending...' : 'Submit Feedback'}
                     </button>
@@ -448,11 +448,11 @@ export default function SettingPage() {
             onClick={() => !deleteLoading && setShowDeleteConfirm(false)}>
             <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="w-full max-w-md bg-ink-10 rounded-[28px] border border-[rgba(255,59,48,0.2)] overflow-hidden"
+              className="w-full max-w-md bg-ink-10 rounded-[28px] border border-danger/[0.2] overflow-hidden"
               onClick={e => e.stopPropagation()}>
               <div className="p-5 space-y-4">
                 <div className="text-center">
-                  <div className="w-12 h-12 rounded-full bg-[rgba(255,59,48,0.1)] flex items-center justify-center mx-auto mb-3">
+                  <div className="w-12 h-12 rounded-full bg-danger/[0.1] flex items-center justify-center mx-auto mb-3">
                     <Icon name="trash" size={24} />
                   </div>
                   <h3 className="text-base font-bold text-ink-1 mb-2">Delete Account</h3>
@@ -472,7 +472,7 @@ export default function SettingPage() {
                     setShowDeleteConfirm(false)
                     setDeleteLoading(false)
                   }}
-                    className="flex-1 py-3 rounded-l bg-[rgba(255,59,48,0.15)] text-danger font-semibold text-body-md border border-[rgba(255,59,48,0.3)] flex items-center justify-center gap-2 disabled:opacity-50">
+                    className="flex-1 py-3 rounded-l bg-danger/[0.15] text-danger font-semibold text-body-md border border-danger/[0.3] flex items-center justify-center gap-2 disabled:opacity-50">
                     {deleteLoading ? <Loader2 size={16} className="animate-spin" /> : 'Delete'}
                   </button>
                 </div>
@@ -490,11 +490,11 @@ export default function SettingPage() {
             onClick={() => setShowFounderModal(false)}>
             <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="w-full max-w-md bg-ink-10 rounded-[28px] border border-[rgba(255,215,0,0.2)] overflow-hidden"
+              className="w-full max-w-md bg-ink-10 rounded-[28px] border border-membership/[0.2] overflow-hidden"
               onClick={e => e.stopPropagation()}>
-              <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(255,215,0,0.1)]">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-membership/[0.1]">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-l bg-[rgba(255,215,0,0.1)] flex items-center justify-center"><Crown size={20} className="text-membership" /></div>
+                  <div className="w-10 h-10 rounded-l bg-membership/[0.1] flex items-center justify-center"><Crown size={20} className="text-membership" /></div>
                   <div>
                     <h3 className="text-base font-bold text-ink-1">Founder Badge</h3>
                     <p className="text-caption text-ink-6">Unlock exclusive benefits</p>
@@ -505,7 +505,7 @@ export default function SettingPage() {
               <div className="p-5">
                 {founderSuccess ? (
                   <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-8">
-                    <div className="w-16 h-16 rounded-full bg-[rgba(255,215,0,0.15)] flex items-center justify-center mx-auto mb-4"><Crown size={32} className="text-membership" /></div>
+                    <div className="w-16 h-16 rounded-full bg-membership/[0.15] flex items-center justify-center mx-auto mb-4"><Crown size={32} className="text-membership" /></div>
                     <h4 className="text-body-lg font-bold text-membership mb-2">Welcome, Founding Member!</h4>
                     <p className="text-label text-ink-6">Your exclusive benefits are now active.</p>
                   </motion.div>
@@ -515,7 +515,7 @@ export default function SettingPage() {
                       <p className="text-label text-ink-6 mb-3">Founding Members enjoy:</p>
                       <div className="grid grid-cols-2 gap-2">
                         {founderBenefits.map(b => { const Icon = b.icon; return (
-                          <div key={b.label} className="flex items-center gap-2 bg-[rgba(255,215,0,0.05)] rounded-l p-2">
+                          <div key={b.label} className="flex items-center gap-2 bg-membership/[0.05] rounded-l p-2">
                             <Icon size={14} className="text-membership" /><span className="text-caption text-ink-1">{b.label}</span>
                           </div>
                         )})}
@@ -525,10 +525,10 @@ export default function SettingPage() {
                       <div>
                         <label className="text-label font-semibold text-ink-6 mb-2 flex items-center gap-2"><Sparkles size={14} />Enter Code</label>
                         <input type="text" required value={founderCode} onChange={e => setFounderCode(e.target.value)} placeholder="e.g., FOUNDER2024"
-                          className="w-full px-4 py-3 rounded-l bg-ink-12 border border-[rgba(255,215,0,0.2)] text-ink-1 text-body-md placeholder:text-ink-7 uppercase focus:outline-none focus:border-[rgba(255,215,0,0.5)] transition-colors" />
+                          className="w-full px-4 py-3 rounded-l bg-ink-12 border border-membership/[0.2] text-ink-1 text-body-md placeholder:text-ink-7 uppercase focus:outline-none focus:border-membership/[0.5] transition-colors" />
                       </div>
                       {founderMessage && <div className={`text-caption text-center ${founderSuccess ? 'text-success' : 'text-danger'}`}>{founderMessage}</div>}
-                      <button type="submit" className="w-full py-3.5 rounded-l bg-[rgba(255,215,0,0.12)] text-membership font-semibold text-body-md flex items-center justify-center gap-2 active:scale-95 transition-transform border border-[rgba(255,215,0,0.25)]">
+                      <button type="submit" className="w-full py-3.5 rounded-l bg-membership/[0.12] text-membership font-semibold text-body-md flex items-center justify-center gap-2 active:scale-95 transition-transform border border-membership/[0.25]">
                         <Crown size={16} />Activate Badge
                       </button>
                     </form>

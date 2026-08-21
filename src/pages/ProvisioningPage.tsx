@@ -588,7 +588,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
             <h1 className="text-title-lg font-semibold text-white ml-3">Add Device</h1>
           </div>
           <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
-            <div className="w-20 h-20 rounded-[28px] bg-[rgba(255,59,48,0.1)] flex items-center justify-center mb-6">
+            <div className="w-20 h-20 rounded-[28px] bg-danger/[0.1] flex items-center justify-center mb-6">
               <AlertCircle size={36} className="text-danger" />
             </div>
             <h2 className="text-headline-md font-bold text-white mb-3">Permission Required</h2>
@@ -632,7 +632,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
             <h1 className="text-title-lg font-semibold text-white ml-3">Add Device</h1>
           </div>
           <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
-            <div className="w-20 h-20 rounded-[28px] bg-[rgba(1,214,190,0.1)] flex items-center justify-center mb-6">
+            <div className="w-20 h-20 rounded-[28px] bg-primary/[0.1] flex items-center justify-center mb-6">
               <WifiOff size={36} className="text-primary" />
             </div>
             <h2 className="text-headline-md font-bold text-white mb-3">Bluetooth is Off</h2>
@@ -850,7 +850,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                   key={spec.model}
                   onClick={() => setSelectedModel(spec.model)}
                   className={`text-left rounded-l px-4 py-3 border active:scale-[0.98] transition-[border-color,background-color,transform]
-                    ${active ? 'border-primary bg-[rgba(1,214,190,0.10)]' : 'border-[rgba(255,255,255,0.10)] bg-ink-10'}`}
+                    ${active ? 'border-primary bg-primary/[0.10]' : 'border-[rgba(255,255,255,0.10)] bg-ink-10'}`}
                 >
                   <div className={`text-body-lg font-semibold ${active ? 'text-primary' : 'text-white'}`}>{spec.model}</div>
                   <div className="text-caption text-ink-6 mt-0.5">{spec.ratedPower}W · {(spec.ratedCapacityWh/1000).toFixed(1)}kWh</div>
@@ -962,7 +962,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
           {store.step === 'verify' && (
             <motion.div key="verify" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <div className="flex flex-col items-center py-10">
-                <div className="w-16 h-16 rounded-l bg-[rgba(1,214,190,0.12)] flex items-center justify-center mb-4">
+                <div className="w-16 h-16 rounded-l bg-primary/[0.12] flex items-center justify-center mb-4">
                   <CheckCircle size={28} className="text-primary" />
                 </div>
                 <p className="text-body-lg font-semibold text-white mb-1">{store.deviceName}</p>
@@ -1104,7 +1104,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
             <motion.div key="result" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <div className="flex flex-col items-center py-10">
                 <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6
-                  ${store.configResult === 'success' ? 'bg-[rgba(52,199,89,0.15)]' : 'bg-[rgba(255,59,48,0.1)]'}`}>
+                  ${store.configResult === 'success' ? 'bg-success/[0.15]' : 'bg-danger/[0.1]'}`}>
                   {store.configResult === 'success'
                     ? <CheckCircle size={36} className="text-success" />
                     : <XCircle size={36} className="text-danger" />
@@ -1199,7 +1199,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
           {store.errorMessage && store.step !== 'result' && (
             <motion.div
               initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              className="mt-4 flex items-start gap-2 bg-[rgba(255,59,48,0.08)] rounded-l px-4 py-3"
+              className="mt-4 flex items-start gap-2 bg-danger/[0.08] rounded-l px-4 py-3"
             >
               <AlertCircle size={16} className="text-danger mt-0.5 flex-shrink-0" />
               <span className="text-body-md text-danger">{store.errorMessage}</span>
@@ -1223,7 +1223,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
               className="absolute bottom-0 left-0 right-0 z-50 bg-ink-11 rounded-t-[24px] px-6 pt-3 pb-10 safe-area-bottom"
             >
               <div className="w-10 h-1 bg-[rgba(255,255,255,0.2)] rounded-full mx-auto mb-6" />
-              <div className="w-14 h-14 rounded-[18px] bg-[rgba(1,214,190,0.12)] flex items-center justify-center mb-4">
+              <div className="w-14 h-14 rounded-[18px] bg-primary/[0.12] flex items-center justify-center mb-4">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" stroke="#01D6BE" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>

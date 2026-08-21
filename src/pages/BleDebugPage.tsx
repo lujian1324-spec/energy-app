@@ -234,7 +234,7 @@ export default function BleDebugPage() {
           <p className="text-caption text-ink-6">Temporary debug page · /ble-debug</p>
         </div>
         <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-caption font-semibold
-          ${connected ? 'bg-[rgba(52,199,89,0.15)] text-success' : 'bg-ink-10 text-ink-6'}`}>
+          ${connected ? 'bg-success/[0.15] text-success' : 'bg-ink-10 text-ink-6'}`}>
           <span className={`w-2 h-2 rounded-full ${connected ? 'bg-success' : 'bg-ink-6'}`} />
           {connected ? 'Connected' : 'Disconnected'}
         </div>
@@ -243,7 +243,7 @@ export default function BleDebugPage() {
       <div className="flex-1 overflow-y-auto scrollbar-hide">
         {/* 浏览器支持提示 */}
         {!supported && (
-          <div className="m-4 flex items-start gap-2 bg-[rgba(255,59,48,0.08)] rounded-l px-4 py-3">
+          <div className="m-4 flex items-start gap-2 bg-danger/[0.08] rounded-l px-4 py-3">
             <AlertTriangle size={16} className="text-danger mt-0.5 flex-shrink-0" />
             <span className="text-body-md text-danger">
               This browser does not support Web Bluetooth. Use Chrome or Edge on Android/desktop (iOS Safari is not supported).

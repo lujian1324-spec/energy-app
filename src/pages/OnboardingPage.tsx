@@ -43,7 +43,7 @@ export default function OnboardingPage() {
 
       <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
         {/* Illustration */}
-        <div className="w-28 h-28 rounded-[28px] bg-[rgba(1,214,190,0.12)] flex items-center justify-center mb-8">
+        <div className="w-28 h-28 rounded-[28px] bg-primary/[0.12] flex items-center justify-center mb-8">
           <svg width="52" height="52" viewBox="0 0 24 24" fill="none">
             <rect x="6" y="2" width="12" height="20" rx="3" stroke="#01D6BE" strokeWidth="1.5" />
             <path d="M13 7l-3 5h4l-3 5" stroke="#01D6BE" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />

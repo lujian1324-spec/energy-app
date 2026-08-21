@@ -614,7 +614,7 @@ export default function DevicePage() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="bg-[rgba(255,59,48,0.08)] border border-[rgba(255,59,48,0.15)] rounded-l px-4 py-2.5 flex items-center gap-2 mb-1"
+              className="bg-danger/[0.08] border border-danger/[0.15] rounded-l px-4 py-2.5 flex items-center gap-2 mb-1"
             >
               <AlertTriangle size={14} className="text-danger flex-shrink-0" />
               <span className="text-label text-danger flex-1">{error}</span>
@@ -904,7 +904,7 @@ export default function DevicePage() {
                         <div key={port.key} className="flex items-center justify-between px-4 py-3">
                           <span className="text-body-md text-ink-1">{port.label}</span>
                           <span className={`text-label px-2 py-0.5 rounded-full font-medium ${
-                            isEnabled ? 'bg-[rgba(52,199,89,0.15)] text-success' : 'bg-[rgba(255,255,255,0.06)] text-ink-7'
+                            isEnabled ? 'bg-success/[0.15] text-success' : 'bg-[rgba(255,255,255,0.06)] text-ink-7'
                           }`}>
                             {isEnabled ? 'ON' : 'OFF'}
                           </span>
@@ -914,7 +914,7 @@ export default function DevicePage() {
                   </div>
                   <div className="bg-ink-12 rounded-l px-4 py-3 flex items-center justify-between">
                     <span className="text-body-md text-ink-1">Work Mode</span>
-                    <span className="text-label px-2 py-0.5 rounded-full bg-[rgba(1,214,190,0.1)] text-primary font-medium">
+                    <span className="text-label px-2 py-0.5 rounded-full bg-primary/[0.1] text-primary font-medium">
                       {getWorkModeLabel(getDeviceNum(showDeviceParams.id, 'workMode'))}
                     </span>
                   </div>
@@ -1021,7 +1021,7 @@ export default function DevicePage() {
               )}
               {scanError && (
                 <div className="flex flex-col items-center justify-center py-8">
-                  <div className="w-12 h-12 rounded-full bg-[rgba(255,59,48,0.15)] flex items-center justify-center mb-3">
+                  <div className="w-12 h-12 rounded-full bg-danger/[0.15] flex items-center justify-center mb-3">
                     <Icon name="bluetooth" size={24} />
                   </div>
                   <p className="text-body-md text-danger text-center mb-1">Scan Failed</p>
@@ -1097,7 +1097,7 @@ export default function DevicePage() {
                 </>
               ) : (
                 <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-sm bg-ink-10 rounded-l p-6">
-                  <div className="w-16 h-16 rounded-full bg-[rgba(52,199,89,0.15)] flex items-center justify-center mx-auto mb-4">
+                  <div className="w-16 h-16 rounded-full bg-success/[0.15] flex items-center justify-center mx-auto mb-4">
                     <Icon name="scan" size={32} />
                   </div>
                   <h4 className="text-lg font-bold text-ink-1 text-center mb-2">QR Code Scanned!</h4>
@@ -1178,7 +1178,7 @@ export default function DevicePage() {
             >
               <div className="w-10 h-1 bg-[rgba(255,255,255,0.15)] rounded-full mx-auto mb-5" />
               <div className="flex flex-col items-center text-center mb-6">
-                <div className="w-16 h-16 rounded-full bg-[rgba(1,214,190,0.12)] flex items-center justify-center mb-4">
+                <div className="w-16 h-16 rounded-full bg-primary/[0.12] flex items-center justify-center mb-4">
                   <Icon name="bluetooth" size={32} />
                 </div>
                 <h3 className="text-title-lg font-semibold text-white mb-2">Bluetooth Permission Required</h3>

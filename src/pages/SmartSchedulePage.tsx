@@ -453,7 +453,7 @@ export default function SmartSchedulePage() {
         {/* Peak / Off-Peak / Idle cards */}
         <div className="grid grid-cols-2 gap-3 mb-4">
           {/* Peak card */}
-          <div className="bg-ink-10 rounded-l p-3 border border-[rgba(255,149,0,0.3)]">
+          <div className="bg-ink-10 rounded-l p-3 border border-warning/[0.3]">
             <div className="flex items-center gap-1.5 mb-2">
               <div className="w-2 h-2 rounded-full bg-warning" />
               <span className="text-caption font-semibold text-warning">Peak</span>
@@ -469,7 +469,7 @@ export default function SmartSchedulePage() {
           </div>
 
           {/* Off-Peak card */}
-          <div className="bg-ink-10 rounded-l p-3 border border-[rgba(1,214,190,0.3)]">
+          <div className="bg-ink-10 rounded-l p-3 border border-primary/[0.3]">
             <div className="flex items-center gap-1.5 mb-2">
               <div className="w-2 h-2 rounded-full bg-primary" />
               <span className="text-caption font-semibold text-primary">Off-Peak</span>
@@ -500,7 +500,7 @@ export default function SmartSchedulePage() {
             <span className="text-body-md font-semibold text-white">Time Periods</span>
             <button
               onClick={() => setShowAddModal(true)}
-              className="text-tiny text-primary border border-[rgba(1,214,190,0.4)] rounded-full px-3 py-1 flex items-center gap-1"
+              className="text-tiny text-primary border border-primary/[0.4] rounded-full px-3 py-1 flex items-center gap-1"
             >
               <Plus size={12} />
               Add
@@ -543,7 +543,7 @@ export default function SmartSchedulePage() {
             {!showPartPeak && (
               <button
                 onClick={() => setShowPartPeak(true)}
-                className="text-tiny text-primary border border-[rgba(1,214,190,0.4)] rounded-full px-3 py-1"
+                className="text-tiny text-primary border border-primary/[0.4] rounded-full px-3 py-1"
               >
                 Add Part-Peak Price
               </button>
@@ -601,7 +601,7 @@ export default function SmartSchedulePage() {
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-body-md font-semibold text-white">Parameters</span>
-            <button className="text-tiny text-primary border border-[rgba(1,214,190,0.4)] rounded-full px-3 py-1">
+            <button className="text-tiny text-primary border border-primary/[0.4] rounded-full px-3 py-1">
               Optimize
             </button>
           </div>
@@ -766,7 +766,7 @@ export default function SmartSchedulePage() {
                   </div>
                 </div>
                 {conflictResult.conflict && (
-                  <div className="flex items-start gap-2 p-3 bg-[rgba(255,149,0,0.1)] rounded-m border border-[rgba(255,149,0,0.2)]">
+                  <div className="flex items-start gap-2 p-3 bg-warning/[0.1] rounded-m border border-warning/[0.2]">
                     <AlertTriangle size={16} className="text-warning flex-shrink-0 mt-0.5" />
                     <div>
                       <div className="text-caption font-semibold text-warning">Schedule Conflict</div>
@@ -853,7 +853,7 @@ export default function SmartSchedulePage() {
                   </div>
                 </div>
                 {editConflict.conflict && (
-                  <div className="flex items-start gap-2 p-3 bg-[rgba(255,149,0,0.1)] rounded-m border border-[rgba(255,149,0,0.2)]">
+                  <div className="flex items-start gap-2 p-3 bg-warning/[0.1] rounded-m border border-warning/[0.2]">
                     <AlertTriangle size={16} className="text-warning flex-shrink-0 mt-0.5" />
                     <div>
                       <div className="text-caption font-semibold text-warning">Conflict</div>
@@ -874,7 +874,7 @@ export default function SmartSchedulePage() {
                   setEditingSchedule(null)
                   handleDeleteClick({ id: editingSchedule.id, name: editingSchedule.name } as PeakShavingSchedule)
                 }}
-                className="w-full mt-3 h-11 rounded-m border border-[rgba(255,59,48,0.3)] text-danger text-body-md font-medium flex items-center justify-center gap-2"
+                className="w-full mt-3 h-11 rounded-m border border-danger/[0.3] text-danger text-body-md font-medium flex items-center justify-center gap-2"
               >
                 <Trash2 size={14} />
                 Delete
@@ -902,7 +902,7 @@ export default function SmartSchedulePage() {
               className="w-full max-w-sm bg-ink-10 rounded-l p-6"
             >
               <div className="flex flex-col items-center mb-5">
-                <div className="w-14 h-14 rounded-full bg-[rgba(255,59,48,0.12)] flex items-center justify-center mb-4">
+                <div className="w-14 h-14 rounded-full bg-danger/[0.12] flex items-center justify-center mb-4">
                   <AlertTriangle size={28} className="text-danger" />
                 </div>
                 <h3 className="text-body-lg font-bold text-white mb-1">Delete Schedule?</h3>

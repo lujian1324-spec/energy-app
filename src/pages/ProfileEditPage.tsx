@@ -505,7 +505,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
 
           {/* Founder badge pill */}
           {settings.founderBadge && (
-            <span className="mt-3 flex items-center gap-1 px-3 py-1 rounded-full bg-[rgba(255,215,0,0.15)] text-membership border border-membership text-caption">
+            <span className="mt-3 flex items-center gap-1 px-3 py-1 rounded-full bg-membership/[0.15] text-membership border border-membership text-caption">
               👑 Founding Member #{settings.founderBadgeNumber}
             </span>
           )}

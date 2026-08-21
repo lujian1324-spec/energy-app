@@ -234,7 +234,7 @@ function ChargePowerSection({ deviceId: _deviceId, sendFrame, loading }: ChargeP
                     className={`px-3 py-1 rounded-pill text-caption font-semibold transition-colors
                       ${Number(values[row.reg]) === v
                         ? 'bg-primary text-[#000]'
-                        : 'bg-[rgba(255,255,255,0.06)] text-ink-7 active:bg-[rgba(1,214,190,0.15)]'
+                        : 'bg-[rgba(255,255,255,0.06)] text-ink-7 active:bg-primary/[0.15]'
                       }`}
                   >
                     {v}W
@@ -244,7 +244,7 @@ function ChargePowerSection({ deviceId: _deviceId, sendFrame, loading }: ChargeP
 
               {/* 输入 + 写入 */}
               <div className="flex gap-2">
-                <div className="flex-1 flex items-center bg-ink-12 border border-[rgba(1,214,190,0.2)] rounded-m px-3">
+                <div className="flex-1 flex items-center bg-ink-12 border border-primary/[0.2] rounded-m px-3">
                   <input
                     type="number"
                     min={0}
@@ -344,8 +344,8 @@ export default function PassthroughPage() {
     dir === 'tx' ? 'text-primary' : dir === 'rx' ? 'text-success' : 'text-danger'
 
   const typeColor = (type: Preset['type']) =>
-    type === 'read' ? 'text-primary bg-[rgba(1,214,190,0.1)]'
-    : type === 'ctrl' ? 'text-warning bg-[rgba(255,149,0,0.1)]'
+    type === 'read' ? 'text-primary bg-primary/[0.1]'
+    : type === 'ctrl' ? 'text-warning bg-warning/[0.1]'
     : 'text-ink-7 bg-[rgba(255,255,255,0.06)]'
 
   return (
@@ -418,7 +418,7 @@ export default function PassthroughPage() {
               rows={2}
               className="w-full px-3 py-2.5 rounded-m bg-ink-12 border border-[rgba(255,255,255,0.06)]
                 text-ink-6 text-caption placeholder:text-ink-9 font-mono
-                focus:outline-none focus:border-[rgba(1,214,190,0.4)] resize-none"
+                focus:outline-none focus:border-primary/[0.4] resize-none"
             />
             <button
               onClick={() => sendFrame(customHex, 'custom')}
@@ -457,7 +457,7 @@ export default function PassthroughPage() {
               <div className="space-y-3">
                 {ordered.map(grp => (
                   <div key={grp} className="rounded-l bg-ink-10 overflow-hidden">
-                    <div className="px-3 py-2 bg-[rgba(1,214,190,0.08)] border-b border-[rgba(255,255,255,0.04)]">
+                    <div className="px-3 py-2 bg-primary/[0.08] border-b border-[rgba(255,255,255,0.04)]">
                       <span className="text-caption font-semibold text-primary">{grp}</span>
                     </div>
                     <div className="divide-y divide-[rgba(255,255,255,0.04)]">
@@ -520,7 +520,7 @@ export default function PassthroughPage() {
                     <span className={`${dirColor(l.dir)} break-all`}>{l.text}</span>
                   </div>
                   {l.summary && (
-                    <div className="ml-[4.5rem] text-tiny text-primary bg-[rgba(1,214,190,0.06)] rounded px-2 py-0.5">
+                    <div className="ml-[4.5rem] text-tiny text-primary bg-primary/[0.06] rounded px-2 py-0.5">
                       {l.summary}
                     </div>
                   )}

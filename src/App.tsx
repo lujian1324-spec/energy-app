@@ -55,14 +55,14 @@ function SessionLoadingScreen() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-[#141414] flex items-center justify-center" role="status" aria-live="polite">
+    <div className="min-h-screen bg-ink-12 flex items-center justify-center" role="status" aria-live="polite">
       <div className="flex flex-col items-center gap-4">
-        <div className="w-16 h-16 rounded-l bg-[rgba(1,214,190,0.12)] border border-[rgba(1,214,190,0.3)]
+        <div className="w-16 h-16 rounded-l bg-primary/[0.12] border border-primary/[0.3]
           flex items-center justify-center">
-          <Zap size={32} className="text-[#01D6BE]" aria-hidden="true" />
+          <Zap size={32} className="text-primary" aria-hidden="true" />
         </div>
-        <Loader2 size={20} className="animate-spin text-[#01D6BE]" aria-hidden="true" />
-        <p className="text-body-md text-[#BFBFBF]">Restoring session...</p>
+        <Loader2 size={20} className="animate-spin text-primary" aria-hidden="true" />
+        <p className="text-body-md text-ink-6">Restoring session...</p>
       </div>
     </div>
   )

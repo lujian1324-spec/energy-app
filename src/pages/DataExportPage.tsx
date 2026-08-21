@@ -115,7 +115,7 @@ export default function DataExportPage() {
           <h2 className="text-lg font-bold text-ink-1">Privacy & Data</h2>
           <p className="text-caption text-ink-6">Export and manage your data</p>
         </div>
-        <div className="w-9 h-9 rounded-full bg-[rgba(1,214,190,0.12)] flex items-center justify-center">
+        <div className="w-9 h-9 rounded-full bg-primary/[0.12] flex items-center justify-center">
           <Shield size={18} className="text-primary" />
         </div>
       </div>
@@ -125,7 +125,7 @@ export default function DataExportPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-[rgba(1,214,190,0.06)] border border-[rgba(1,214,190,0.2)] rounded-[20px] p-4 mb-4"
+          className="bg-primary/[0.06] border border-primary/[0.2] rounded-[20px] p-4 mb-4"
         >
           <div className="flex items-start gap-3">
             <Info size={18} className="text-primary flex-shrink-0 mt-0.5" />
@@ -155,7 +155,7 @@ export default function DataExportPage() {
               disabled={!!exportLoading}
               className="w-full flex items-center gap-3.5 p-4 bg-ink-10 rounded-l active:scale-[0.99] transition-transform disabled:opacity-50"
             >
-              <div className="w-11 h-11 rounded-l bg-[rgba(1,214,190,0.12)] flex items-center justify-center flex-shrink-0">
+              <div className="w-11 h-11 rounded-l bg-primary/[0.12] flex items-center justify-center flex-shrink-0">
                 <FileJson size={20} className="text-primary" />
               </div>
               <div className="flex-1 text-left">
@@ -173,7 +173,7 @@ export default function DataExportPage() {
               disabled={!!exportLoading}
               className="w-full flex items-center gap-3.5 p-4 bg-ink-10 rounded-l active:scale-[0.99] transition-transform disabled:opacity-50"
             >
-              <div className="w-11 h-11 rounded-l bg-[rgba(255,149,0,0.12)] flex items-center justify-center flex-shrink-0">
+              <div className="w-11 h-11 rounded-l bg-warning/[0.12] flex items-center justify-center flex-shrink-0">
                 <FileText size={20} className="text-warning" />
               </div>
               <div className="flex-1 text-left">
