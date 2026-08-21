@@ -294,7 +294,7 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
             without this the chart falls back to the flat placeholder dash below,
             which is visually identical to "no data yet today" and hides a real error. */}
         {!historyLoading && historyError && rawHistoryPoints.length === 0 && (
-          <div className="absolute top-1 left-1 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-[#1a1a1a] border border-danger/[0.3]">
+          <div className="absolute top-1 left-1 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-ink-11 border border-danger/[0.3]">
             <AlertTriangle size={9} className="text-danger" />
             <span className="text-[9px] text-danger font-medium">History unavailable</span>
           </div>
@@ -385,7 +385,7 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
       </div>
 
       {/* Bottom 4 tabs */}
-      <div className="flex justify-around pt-3 border-t border-[rgba(255,255,255,0.06)]">
+      <div className="flex justify-around pt-3 border-t border-white/[0.06]">
         {[
           { key: 'battery' as const, label: 'Battery', icon: Battery },
           { key: 'ac' as const, label: 'AC', icon: LayoutGrid },
@@ -399,7 +399,7 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
               key={item.key}
               onClick={() => setPowerDataSource(item.key)}
               className={`flex flex-col items-center gap-1 px-4 py-1 rounded-l active:scale-[0.96] transition-[background-color,transform] duration-150
-                ${isActive ? 'bg-primary/[0.15]' : 'hover:bg-[rgba(255,255,255,0.03)]'}`}
+                ${isActive ? 'bg-primary/[0.15]' : 'hover:bg-white/[0.03]'}`}
             >
               <Icon size={18} className={isActive ? 'text-primary' : 'text-ink-6'} />
               <span className={`text-tiny font-medium ${isActive ? 'text-primary' : 'text-ink-6'}`}>

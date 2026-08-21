@@ -32,7 +32,7 @@ function FiringAlarmRow({ alarm, onDismiss }: { alarm: FiringAlarm & { title: st
       exit={{ opacity: 0, height: 0, marginTop: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 }}
       onClick={onDismiss}
       aria-label={`Clear alarm: ${title}`}
-      className="w-full text-left flex items-start gap-3 px-4 py-3.5 border-b border-[rgba(255,255,255,0.06)] active:opacity-70 transition-opacity"
+      className="w-full text-left flex items-start gap-3 px-4 py-3.5 border-b border-white/[0.06] active:opacity-70 transition-opacity"
       style={{ backgroundColor: cfg.bg }}
     >
       <div className="mt-0.5 flex-shrink-0" style={{ color: cfg.color }}>

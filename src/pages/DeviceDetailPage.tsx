@@ -392,7 +392,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             onClick={handleSaveName}
             disabled={!nameChanged || savingName}
             className={`ml-auto text-body-lg font-semibold transition-colors flex items-center gap-1.5 ${
-              nameChanged && !savingName ? 'text-primary' : 'text-[#4A4A4A] cursor-not-allowed'
+              nameChanged && !savingName ? 'text-primary' : 'text-ink-9 cursor-not-allowed'
             }`}
           >
             {savingName && <Loader2 size={16} className="animate-spin" />}
@@ -693,7 +693,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 <span className="text-title-md font-semibold text-white flex-1 text-center">Select Device Model</span>
                 <button
                   onClick={() => setShowModelSheet(false)}
-                  className="absolute right-4 w-9 h-9 rounded-full bg-[#3A3A3C] flex items-center justify-center"
+                  className="absolute right-4 w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center"
                 >
                   <X size={16} className="text-white" />
                 </button>
@@ -786,7 +786,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               </div>
               <button
                 onClick={() => setSleepMode(enabled ? 'Off' : 'On')}
-                className={`relative w-12 h-7 rounded-full transition-colors duration-200 ${enabled ? 'bg-primary' : 'bg-[#3A3A3C]'}`}
+                className={`relative w-12 h-7 rounded-full transition-colors duration-200 ${enabled ? 'bg-primary' : 'bg-ink-9'}`}
               >
                 <span
                   className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow-sm transition-transform duration-200 ${enabled ? 'translate-x-5' : 'translate-x-0'}`}
@@ -810,7 +810,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                     type="time"
                     value={sleepFrom}
                     onChange={e => setSleepFrom(e.target.value)}
-                    className="bg-[#3A3A3C] text-white text-body-md rounded-m px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary [color-scheme:dark]"
+                    className="bg-ink-9 text-white text-body-md rounded-m px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary [color-scheme:dark]"
                   />
                 </div>
                 {/* Wake end → full power */}
@@ -823,7 +823,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                     type="time"
                     value={sleepTo}
                     onChange={e => setSleepTo(e.target.value)}
-                    className="bg-[#3A3A3C] text-white text-body-md rounded-m px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary [color-scheme:dark]"
+                    className="bg-ink-9 text-white text-body-md rounded-m px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary [color-scheme:dark]"
                   />
                 </div>
               </div>
@@ -976,7 +976,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               </span>
               <button
                 onClick={() => setShowWorkModeMenu(false)}
-                className="absolute right-4 w-9 h-9 rounded-full bg-[#3A3A3C] flex items-center justify-center"
+                className="absolute right-4 w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center"
               >
                 <X size={16} className="text-white" />
               </button>

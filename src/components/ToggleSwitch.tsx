@@ -33,7 +33,7 @@ export default function ToggleSwitch({
         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-ink-12
         ${isOn
           ? 'bg-primary'
-          : 'bg-[#39393D]'
+          : 'bg-ink-9'
         }
         ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
       `}

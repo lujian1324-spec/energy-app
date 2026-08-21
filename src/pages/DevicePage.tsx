@@ -502,7 +502,7 @@ export default function DevicePage() {
     // No realtime data fetched yet — show a neutral placeholder instead of a misleading 0%.
     if (unknown) {
       return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#3A3A3A]">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-ink-9">
           <span className="w-[22px] h-[12px] rounded-s border-s animate-pulse" style={{ borderColor: '#8C8C8C' }} />
           <span className="text-body-md font-semibold text-ink-7">--%</span>
         </span>
@@ -511,7 +511,7 @@ export default function DevicePage() {
     const color = getTagColor(level)
     const fill = Math.max(4, Math.min(100, level))
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#3A3A3A]">
+      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-ink-9">
         {/* 横式电池 */}
         <span className="relative inline-flex items-center">
           <span className="relative w-[22px] h-[12px] rounded-s border-s flex items-center" style={{ borderColor: '#8C8C8C' }}>
@@ -756,7 +756,7 @@ export default function DevicePage() {
         ) : (
           /* Empty State */
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center text-center pt-24 px-6">
-            <div className="w-40 h-40 rounded-l bg-[#3A3A3A] mb-7 flex items-center justify-center">
+            <div className="w-40 h-40 rounded-l bg-ink-9 mb-7 flex items-center justify-center">
               <Icon name="battery" size={56} className="opacity-40" />
             </div>
             <h2 className="text-headline-md font-semibold text-white mb-2">
@@ -786,7 +786,7 @@ export default function DevicePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-[rgba(0,0,0,0.7)] z-50 flex items-end"
+            className="absolute inset-0 bg-black/[0.7] z-50 flex items-end"
             onClick={() => setShowDeviceParams(null)}
           >
             <motion.div
@@ -798,7 +798,7 @@ export default function DevicePage() {
               className="w-full max-h-[85vh] bg-ink-10 rounded-t-[28px] overflow-hidden flex flex-col"
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-[rgba(255,255,255,0.06)]">
+              <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-white/[0.06]">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 flex items-center justify-center text-lg">
                     <img
@@ -826,7 +826,7 @@ export default function DevicePage() {
                 {/* Device Meta Info */}
                 <div className="space-y-3">
                   <h4 className="text-caption font-bold text-ink-6 tracking-widest uppercase">Device Info</h4>
-                  <div className="bg-ink-12 rounded-l divide-y divide-[rgba(255,255,255,0.06)]">
+                  <div className="bg-ink-12 rounded-l divide-y divide-white/[0.06]">
                     {[
                       { icon: Hash, label: 'Serial Number', value: showDeviceParams.serialNumber || '--' },
                       { icon: Server, label: 'Station', value: showDeviceParams.stationName || '--' },
@@ -891,7 +891,7 @@ export default function DevicePage() {
                 {/* Port Status */}
                 <div className="space-y-3">
                   <h4 className="text-caption font-bold text-ink-6 tracking-widest uppercase">Port Controls</h4>
-                  <div className="bg-ink-12 rounded-l divide-y divide-[rgba(255,255,255,0.06)]">
+                  <div className="bg-ink-12 rounded-l divide-y divide-white/[0.06]">
                     {[
                       { label: 'AC Output 1', key: 'acOut1Enable' },
                       { label: 'AC Output 2', key: 'acOut2Enable' },
@@ -904,7 +904,7 @@ export default function DevicePage() {
                         <div key={port.key} className="flex items-center justify-between px-4 py-3">
                           <span className="text-body-md text-ink-1">{port.label}</span>
                           <span className={`text-label px-2 py-0.5 rounded-full font-medium ${
-                            isEnabled ? 'bg-success/[0.15] text-success' : 'bg-[rgba(255,255,255,0.06)] text-ink-7'
+                            isEnabled ? 'bg-success/[0.15] text-success' : 'bg-white/[0.06] text-ink-7'
                           }`}>
                             {isEnabled ? 'ON' : 'OFF'}
                           </span>
@@ -924,7 +924,7 @@ export default function DevicePage() {
                 {realtimeCache[String(showDeviceParams.id)]?.fields && (
                   <div className="space-y-3">
                     <h4 className="text-caption font-bold text-ink-6 tracking-widest uppercase">All Parameters</h4>
-                    <div className="bg-ink-12 rounded-l divide-y divide-[rgba(255,255,255,0.04)]">
+                    <div className="bg-ink-12 rounded-l divide-y divide-white/[0.04]">
                       {Object.entries(realtimeCache[String(showDeviceParams.id)].fields)
                         .sort((a, b) => a[0].localeCompare(b[0]))
                         .map(([key, field]) => (
@@ -942,7 +942,7 @@ export default function DevicePage() {
               </div>
 
               {/* Bottom: Go to device detail */}
-              <div className="p-5 border-t border-[rgba(255,255,255,0.06)]">
+              <div className="p-5 border-t border-white/[0.06]">
                 <button
                   onClick={() => { setShowDeviceParams(null); navigate(`/device/${showDeviceParams.id}`) }}
                   className="w-full py-3 rounded-l bg-primary text-ink-13 text-body-md font-semibold flex items-center justify-center gap-2"
@@ -959,13 +959,13 @@ export default function DevicePage() {
       <AnimatePresence>
         {showAddModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-[rgba(0,0,0,0.7)] z-50 flex items-end"
+            className="absolute inset-0 bg-black/[0.7] z-50 flex items-end"
             onClick={() => setShowAddModal(false)}>
             <motion.div initial={{ y: 300, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 300, opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
               className="w-full bg-ink-10 rounded-t-[28px] p-6 pb-10">
-              <div className="w-10 h-1 bg-[rgba(255,255,255,0.15)] rounded-full mx-auto mb-5" />
+              <div className="w-10 h-1 bg-white/[0.15] rounded-full mx-auto mb-5" />
               <h3 className="text-base font-bold text-ink-1 mb-5">Add New Device</h3>
               <div className="flex flex-col gap-3">
                 {[
@@ -986,7 +986,7 @@ export default function DevicePage() {
                 ))}
               </div>
               <button onClick={() => setShowAddModal(false)}
-                className="w-full mt-4 h-11 rounded-l bg-[rgba(255,255,255,0.06)] text-ink-6 text-sm font-medium">
+                className="w-full mt-4 h-11 rounded-l bg-white/[0.06] text-ink-6 text-sm font-medium">
                 Cancel
               </button>
             </motion.div>
@@ -998,7 +998,7 @@ export default function DevicePage() {
       <AnimatePresence>
         {showBleScan && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-[rgba(0,0,0,0.8)] z-50 flex items-center justify-center p-5"
+            className="absolute inset-0 bg-black/[0.8] z-50 flex items-center justify-center p-5"
             onClick={() => { setShowBleScan(false); setIsScanning(false); setScanError(null); setScannedDevices([]) }}>
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
@@ -1045,7 +1045,7 @@ export default function DevicePage() {
       <AnimatePresence>
         {showQrScan && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-[rgba(0,0,0,0.9)] z-50 flex flex-col">
+            className="absolute inset-0 bg-black/[0.9] z-50 flex flex-col">
             <div className="flex items-center justify-between p-5 safe-area-top">
               <h3 className="text-lg font-bold text-ink-1">Scan QR Code</h3>
               <button onClick={() => { stopQrScan(); setShowQrScan(false); setQrResult(null); setQrError(null) }}
@@ -1165,7 +1165,7 @@ export default function DevicePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-[rgba(0,0,0,0.7)] z-50 flex items-end"
+            className="absolute inset-0 bg-black/[0.7] z-50 flex items-end"
             onClick={() => setBlePermissionType(null)}
           >
             <motion.div
@@ -1176,7 +1176,7 @@ export default function DevicePage() {
               onClick={(e) => e.stopPropagation()}
               className="w-full bg-ink-10 rounded-t-[28px] p-6 pb-10"
             >
-              <div className="w-10 h-1 bg-[rgba(255,255,255,0.15)] rounded-full mx-auto mb-5" />
+              <div className="w-10 h-1 bg-white/[0.15] rounded-full mx-auto mb-5" />
               <div className="flex flex-col items-center text-center mb-6">
                 <div className="w-16 h-16 rounded-full bg-primary/[0.12] flex items-center justify-center mb-4">
                   <Icon name="bluetooth" size={32} />
@@ -1205,7 +1205,7 @@ export default function DevicePage() {
                 </button>
                 <button
                   onClick={() => setBlePermissionType(null)}
-                  className="w-full h-12 rounded-m bg-[rgba(255,255,255,0.06)] text-ink-7 text-body-lg font-medium active:scale-95 transition-transform"
+                  className="w-full h-12 rounded-m bg-white/[0.06] text-ink-7 text-body-lg font-medium active:scale-95 transition-transform"
                 >
                   Cancel
                 </button>

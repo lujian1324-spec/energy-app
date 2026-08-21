@@ -331,10 +331,10 @@ function ChartSkeleton() {
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-ink-10 rounded-l p-5 mb-4">
       <div className="flex items-start justify-between">
         <div>
-          <div className="h-11 w-28 bg-[rgba(255,255,255,0.05)] rounded-m animate-pulse" />
-          <div className="h-3 w-40 bg-[rgba(255,255,255,0.03)] rounded-s animate-pulse mt-3" />
+          <div className="h-11 w-28 bg-white/[0.05] rounded-m animate-pulse" />
+          <div className="h-3 w-40 bg-white/[0.03] rounded-s animate-pulse mt-3" />
         </div>
-        <div className="h-4 w-24 bg-[rgba(255,255,255,0.05)] rounded-s animate-pulse mt-2" />
+        <div className="h-4 w-24 bg-white/[0.05] rounded-s animate-pulse mt-2" />
       </div>
     </motion.div>
   )
@@ -344,11 +344,11 @@ function ChartAreaSkeleton() {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-ink-10 rounded-l p-5 mb-4">
       <div className="flex items-center justify-between mb-2">
-        <div className="h-5 w-32 bg-[rgba(255,255,255,0.05)] rounded-s animate-pulse" />
-        <div className="h-3 w-28 bg-[rgba(255,255,255,0.03)] rounded-s animate-pulse" />
+        <div className="h-5 w-32 bg-white/[0.05] rounded-s animate-pulse" />
+        <div className="h-3 w-28 bg-white/[0.03] rounded-s animate-pulse" />
       </div>
-      <div className="h-3 w-40 bg-[rgba(255,255,255,0.03)] rounded-s animate-pulse mb-4" />
-      <div className="h-[160px] bg-[rgba(255,255,255,0.02)] rounded-m animate-pulse" />
+      <div className="h-3 w-40 bg-white/[0.03] rounded-s animate-pulse mb-4" />
+      <div className="h-[160px] bg-white/[0.02] rounded-m animate-pulse" />
     </motion.div>
   )
 }
@@ -623,7 +623,7 @@ export default function StatsPage() {
             <p className="text-body-md text-ink-6 text-center leading-relaxed mb-6">
               Connect a device to start tracking energy usage and statistics.
             </p>
-            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-ink-10 border border-[rgba(255,255,255,0.06)]">
+            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-ink-10 border border-white/[0.06]">
               <WifiOff size={14} className="text-ink-7" />
               <span className="text-label text-ink-7">No device connected</span>
             </div>
@@ -814,7 +814,7 @@ export default function StatsPage() {
                           )
                         })}
                       </div>
-                      <div className="h-px bg-[rgba(255,255,255,0.08)] my-2" />
+                      <div className="h-px bg-white/[0.08] my-2" />
                       <div className="flex gap-2">
                         {chartFrame.labels.map((day) => (
                           <div key={day} className="flex-1 text-center text-tiny text-ink-6">{day}</div>

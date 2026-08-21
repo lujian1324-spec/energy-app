@@ -134,7 +134,7 @@ export default function PassthroughPanel({ deviceId }: Props) {
     dir === 'tx' ? 'text-primary' : dir === 'rx' ? 'text-success' : 'text-danger'
 
   return (
-    <div className="bg-ink-11 rounded-l border border-[rgba(255,255,255,0.06)] p-4 space-y-3">
+    <div className="bg-ink-11 rounded-l border border-white/[0.06] p-4 space-y-3">
       {/* Header */}
       <div className="flex items-center gap-2">
         <Terminal size={14} className="text-primary" />
@@ -146,7 +146,7 @@ export default function PassthroughPanel({ deviceId }: Props) {
         <button
           onClick={() => setShowPresets(v => !v)}
           className="w-full flex items-center justify-between px-3 py-2 rounded-m
-            bg-ink-12 border border-[rgba(255,255,255,0.06)]
+            bg-ink-12 border border-white/[0.06]
             text-ink-7 text-label active:scale-[0.98] transition-[transform,opacity]"
         >
           <span>Select Preset</span>
@@ -154,7 +154,7 @@ export default function PassthroughPanel({ deviceId }: Props) {
         </button>
 
         {showPresets && (
-          <div className="mt-1 rounded-m bg-ink-12 border border-[rgba(255,255,255,0.06)] divide-y divide-[rgba(255,255,255,0.04)] max-h-52 overflow-y-auto">
+          <div className="mt-1 rounded-m bg-ink-12 border border-white/[0.06] divide-y divide-white/[0.04] max-h-52 overflow-y-auto">
             {PRESETS.map(p => (
               <button
                 key={p.label}
@@ -183,7 +183,7 @@ export default function PassthroughPanel({ deviceId }: Props) {
             onChange={e => setData(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') sendFrame(data) }}
             placeholder="e.g. 01 03 00 00 00 12 C5 C7"
-            className="flex-1 px-3 py-2 rounded-m bg-ink-12 border border-[rgba(255,255,255,0.06)]
+            className="flex-1 px-3 py-2 rounded-m bg-ink-12 border border-white/[0.06]
               text-ink-6 text-label placeholder:text-ink-9
               focus:outline-none focus:border-primary/[0.4] font-mono"
           />
@@ -200,7 +200,7 @@ export default function PassthroughPanel({ deviceId }: Props) {
       </div>
 
       {/* 收发日志 */}
-      <div className="rounded-m bg-ink-12 border border-[rgba(255,255,255,0.04)] p-3 min-h-[60px] max-h-56 overflow-y-auto font-mono space-y-1.5">
+      <div className="rounded-m bg-ink-12 border border-white/[0.04] p-3 min-h-[60px] max-h-56 overflow-y-auto font-mono space-y-1.5">
         {logs.length === 0 ? (
           <p className="text-caption text-ink-9 text-center py-2">No data</p>
         ) : (

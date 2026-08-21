@@ -209,7 +209,7 @@ function ChargePowerSection({ deviceId: _deviceId, sendFrame, loading }: ChargeP
       <p className="text-caption font-semibold text-ink-7 mb-2 uppercase tracking-wide">
         Charge Power Settings
       </p>
-      <div className="rounded-l bg-ink-10 overflow-hidden divide-y divide-[rgba(255,255,255,0.04)]">
+      <div className="rounded-l bg-ink-10 overflow-hidden divide-y divide-white/[0.04]">
         {POWER_ROWS.map(row => {
           const cur = Math.max(0, Math.min(row.max, Number(values[row.reg]) || 0))
           const frame = toHexString(buildWriteSingleFrame(row.reg, cur))
@@ -234,7 +234,7 @@ function ChargePowerSection({ deviceId: _deviceId, sendFrame, loading }: ChargeP
                     className={`px-3 py-1 rounded-pill text-caption font-semibold transition-colors
                       ${Number(values[row.reg]) === v
                         ? 'bg-primary text-[#000]'
-                        : 'bg-[rgba(255,255,255,0.06)] text-ink-7 active:bg-primary/[0.15]'
+                        : 'bg-white/[0.06] text-ink-7 active:bg-primary/[0.15]'
                       }`}
                   >
                     {v}W
@@ -346,12 +346,12 @@ export default function PassthroughPage() {
   const typeColor = (type: Preset['type']) =>
     type === 'read' ? 'text-primary bg-primary/[0.1]'
     : type === 'ctrl' ? 'text-warning bg-warning/[0.1]'
-    : 'text-ink-7 bg-[rgba(255,255,255,0.06)]'
+    : 'text-ink-7 bg-white/[0.06]'
 
   return (
     <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
       {/* Header */}
-      <div className="px-4 pt-5 pb-3 flex items-center gap-3 relative border-b border-[rgba(255,255,255,0.06)]">
+      <div className="px-4 pt-5 pb-3 flex items-center gap-3 relative border-b border-white/[0.06]">
         <button
           onClick={() => navigate(-1)}
           className="w-9 h-9 flex items-center justify-center rounded-full bg-ink-10"
@@ -372,7 +372,7 @@ export default function PassthroughPage() {
             <p className="text-caption font-semibold text-ink-7 mb-2 uppercase tracking-wide">
               {group.title}
             </p>
-            <div className="rounded-l bg-ink-10 overflow-hidden divide-y divide-[rgba(255,255,255,0.04)]">
+            <div className="rounded-l bg-ink-10 overflow-hidden divide-y divide-white/[0.04]">
               {group.presets.map(p => {
                 const isBusy = loading === p.label
                 return (
@@ -380,7 +380,7 @@ export default function PassthroughPage() {
                     key={p.label}
                     onClick={() => sendFrame(p.frame, p.label)}
                     disabled={loading !== null}
-                    className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-[rgba(255,255,255,0.04)] transition-colors disabled:opacity-50"
+                    className="w-full flex items-center gap-3 px-4 py-3.5 active:bg-white/[0.04] transition-colors disabled:opacity-50"
                   >
                     <div className="flex-1 text-left">
                       <div className="flex items-center gap-2">
@@ -416,7 +416,7 @@ export default function PassthroughPage() {
               onChange={e => setCustomHex(e.target.value)}
               placeholder={'e.g. 01 03 01 00 00 12 XX XX\nwith or without spaces'}
               rows={2}
-              className="w-full px-3 py-2.5 rounded-m bg-ink-12 border border-[rgba(255,255,255,0.06)]
+              className="w-full px-3 py-2.5 rounded-m bg-ink-12 border border-white/[0.06]
                 text-ink-6 text-caption placeholder:text-ink-9 font-mono
                 focus:outline-none focus:border-primary/[0.4] resize-none"
             />
@@ -457,10 +457,10 @@ export default function PassthroughPage() {
               <div className="space-y-3">
                 {ordered.map(grp => (
                   <div key={grp} className="rounded-l bg-ink-10 overflow-hidden">
-                    <div className="px-3 py-2 bg-primary/[0.08] border-b border-[rgba(255,255,255,0.04)]">
+                    <div className="px-3 py-2 bg-primary/[0.08] border-b border-white/[0.04]">
                       <span className="text-caption font-semibold text-primary">{grp}</span>
                     </div>
-                    <div className="divide-y divide-[rgba(255,255,255,0.04)]">
+                    <div className="divide-y divide-white/[0.04]">
                       {groups[grp].map(p => (
                         <div key={p.addr} className="flex items-center justify-between px-3 py-2.5 gap-2">
                           <div className="flex-1 min-w-0">
@@ -501,7 +501,7 @@ export default function PassthroughPage() {
               </button>
             )}
           </div>
-          <div className="rounded-l bg-[#1A1A1A] border border-[rgba(255,255,255,0.04)] p-3 min-h-[80px] max-h-80 overflow-y-auto font-mono space-y-2">
+          <div className="rounded-l bg-ink-11 border border-white/[0.04] p-3 min-h-[80px] max-h-80 overflow-y-auto font-mono space-y-2">
             {logs.length === 0 ? (
               <p className="text-caption text-ink-9 text-center py-4">No data — tap a button above to send a frame</p>
             ) : (

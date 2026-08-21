@@ -224,7 +224,7 @@ export default function BleDebugPage() {
   return (
     <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
       {/* Header */}
-      <div className="px-4 pt-5 pb-3 flex items-center gap-3 safe-area-top border-b border-[rgba(255,255,255,0.06)]">
+      <div className="px-4 pt-5 pb-3 flex items-center gap-3 safe-area-top border-b border-white/[0.06]">
         <button onClick={() => navigate(-1)}
           className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center">
           <ChevronLeft size={20} className="text-white" />
@@ -304,7 +304,7 @@ export default function BleDebugPage() {
             <p className="text-caption font-bold text-ink-6 tracking-widest uppercase mb-2">
               WiFi List ({apList.length})
             </p>
-            <div className="bg-ink-10 rounded-l divide-y divide-[rgba(255,255,255,0.06)]">
+            <div className="bg-ink-10 rounded-l divide-y divide-white/[0.06]">
               {apList.map((ap, i) => (
                 <button key={`${ap.SSID}-${i}`} onClick={() => setSsid(ap.SSID)}
                   className="w-full px-3 py-2.5 flex items-center justify-between active:opacity-70">

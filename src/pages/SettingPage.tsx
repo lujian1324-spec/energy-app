@@ -402,7 +402,7 @@ export default function SettingPage() {
                     <p className="text-caption text-ink-6">We'd love to hear from you</p>
                   </div>
                 </div>
-                <button onClick={() => setShowSupport(false)} className="p-2 rounded-full hover:bg-[rgba(255,255,255,0.05)]"><X size={20} className="text-ink-6" /></button>
+                <button onClick={() => setShowSupport(false)} className="p-2 rounded-full hover:bg-white/[0.05]"><X size={20} className="text-ink-6" /></button>
               </div>
               <div className="p-5">
                 {supportSubmitted ? (
@@ -460,7 +460,7 @@ export default function SettingPage() {
                 </div>
                 <div className="flex gap-3">
                   <button disabled={deleteLoading} onClick={() => setShowDeleteConfirm(false)}
-                    className="flex-1 py-3 rounded-l bg-[rgba(255,255,255,0.06)] text-ink-1 font-semibold text-body-md disabled:opacity-50">
+                    className="flex-1 py-3 rounded-l bg-white/[0.06] text-ink-1 font-semibold text-body-md disabled:opacity-50">
                     Cancel
                   </button>
                   <button disabled={deleteLoading} onClick={async () => {
@@ -500,7 +500,7 @@ export default function SettingPage() {
                     <p className="text-caption text-ink-6">Unlock exclusive benefits</p>
                   </div>
                 </div>
-                <button onClick={() => setShowFounderModal(false)} className="p-2 rounded-full hover:bg-[rgba(255,255,255,0.05)]"><X size={20} className="text-ink-6" /></button>
+                <button onClick={() => setShowFounderModal(false)} className="p-2 rounded-full hover:bg-white/[0.05]"><X size={20} className="text-ink-6" /></button>
               </div>
               <div className="p-5">
                 {founderSuccess ? (

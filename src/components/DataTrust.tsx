@@ -99,7 +99,7 @@ export function CalcAudit({ formula, label = 'How we calculated this' }: CalcAud
         <span aria-hidden="true">ℹ️</span>
         <span className="underline">{label}</span>
       </summary>
-      <pre className="mt-2 p-3 bg-[#1A1A1A] rounded-m text-tiny text-ink-6 whitespace-pre-wrap font-mono leading-relaxed">
+      <pre className="mt-2 p-3 bg-ink-11 rounded-m text-tiny text-ink-6 whitespace-pre-wrap font-mono leading-relaxed">
 {formula}
       </pre>
     </details>

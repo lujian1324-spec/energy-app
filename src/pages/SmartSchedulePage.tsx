@@ -559,7 +559,7 @@ export default function SmartSchedulePage() {
                   step="0.01"
                   value={peakShavingSettings.peakPrice}
                   onChange={(e) => updatePeakShavingSettings({ peakPrice: parseFloat(e.target.value) || 0 })}
-                  className="flex-1 bg-transparent text-body-md text-white outline-none border-b border-[rgba(255,255,255,0.12)] pb-1"
+                  className="flex-1 bg-transparent text-body-md text-white outline-none border-b border-white/[0.12] pb-1"
                 />
                 <span className="text-caption text-ink-7">/kWh</span>
               </div>
@@ -573,7 +573,7 @@ export default function SmartSchedulePage() {
                   step="0.01"
                   value={peakShavingSettings.offPeakPrice}
                   onChange={(e) => updatePeakShavingSettings({ offPeakPrice: parseFloat(e.target.value) || 0 })}
-                  className="flex-1 bg-transparent text-body-md text-white outline-none border-b border-[rgba(255,255,255,0.12)] pb-1"
+                  className="flex-1 bg-transparent text-body-md text-white outline-none border-b border-white/[0.12] pb-1"
                 />
                 <span className="text-caption text-ink-7">/kWh</span>
               </div>
@@ -588,7 +588,7 @@ export default function SmartSchedulePage() {
                     step="0.01"
                     value={peakShavingSettings.partPeakPrice || 0.28}
                     onChange={(e) => updatePeakShavingSettings({ partPeakPrice: parseFloat(e.target.value) || 0 })}
-                    className="flex-1 bg-transparent text-body-md text-white outline-none border-b border-[rgba(255,255,255,0.12)] pb-1"
+                    className="flex-1 bg-transparent text-body-md text-white outline-none border-b border-white/[0.12] pb-1"
                   />
                   <span className="text-caption text-ink-7">/kWh</span>
                 </div>
@@ -615,7 +615,7 @@ export default function SmartSchedulePage() {
                   type="number"
                   value={peakShavingSettings.maxChargePower}
                   onChange={(e) => updatePeakShavingSettings({ maxChargePower: parseInt(e.target.value) || 0 })}
-                  className="w-full bg-transparent text-body-md text-white outline-none border-b border-[rgba(255,255,255,0.12)] pb-1"
+                  className="w-full bg-transparent text-body-md text-white outline-none border-b border-white/[0.12] pb-1"
                 />
                 <span className="text-caption text-ink-7 flex-shrink-0">W</span>
               </div>
@@ -630,7 +630,7 @@ export default function SmartSchedulePage() {
                   type="number"
                   value={peakShavingSettings.maxDischargePower}
                   onChange={(e) => updatePeakShavingSettings({ maxDischargePower: parseInt(e.target.value) || 0 })}
-                  className="w-full bg-transparent text-body-md text-white outline-none border-b border-[rgba(255,255,255,0.12)] pb-1"
+                  className="w-full bg-transparent text-body-md text-white outline-none border-b border-white/[0.12] pb-1"
                 />
                 <span className="text-caption text-ink-7 flex-shrink-0">W</span>
               </div>
@@ -646,7 +646,7 @@ export default function SmartSchedulePage() {
                   min="0" max="100"
                   value={peakShavingSettings.minBatteryLevel}
                   onChange={(e) => updatePeakShavingSettings({ minBatteryLevel: parseInt(e.target.value) || 0 })}
-                  className="w-full bg-transparent text-body-md text-white outline-none border-b border-[rgba(255,255,255,0.12)] pb-1"
+                  className="w-full bg-transparent text-body-md text-white outline-none border-b border-white/[0.12] pb-1"
                 />
                 <span className="text-caption text-ink-7 flex-shrink-0">%</span>
               </div>
@@ -662,7 +662,7 @@ export default function SmartSchedulePage() {
                   min="0" max="100"
                   value={peakShavingSettings.maxBatteryLevel}
                   onChange={(e) => updatePeakShavingSettings({ maxBatteryLevel: parseInt(e.target.value) || 0 })}
-                  className="w-full bg-transparent text-body-md text-white outline-none border-b border-[rgba(255,255,255,0.12)] pb-1"
+                  className="w-full bg-transparent text-body-md text-white outline-none border-b border-white/[0.12] pb-1"
                 />
                 <span className="text-caption text-ink-7 flex-shrink-0">%</span>
               </div>
@@ -679,7 +679,7 @@ export default function SmartSchedulePage() {
               <div className="text-caption text-ink-6 mb-1">Daily</div>
               <div className="text-body-lg font-bold text-primary tnum">${savings.daily.toFixed(2)}</div>
             </div>
-            <div className="border-x border-[rgba(255,255,255,0.06)]">
+            <div className="border-x border-white/[0.06]">
               <div className="text-caption text-ink-6 mb-1">Monthly</div>
               <div className="text-body-lg font-bold text-primary tnum">${savings.monthly.toFixed(2)}</div>
             </div>
@@ -711,7 +711,7 @@ export default function SmartSchedulePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-[rgba(0,0,0,0.8)] z-50 flex items-end"
+            className="absolute inset-0 bg-black/[0.8] z-50 flex items-end"
             onClick={() => setShowAddModal(false)}
           >
             <motion.div
@@ -722,7 +722,7 @@ export default function SmartSchedulePage() {
               onClick={(e) => e.stopPropagation()}
               className="w-full bg-ink-10 rounded-t-[28px] p-6 pb-10"
             >
-              <div className="w-10 h-1 bg-[rgba(255,255,255,0.15)] rounded-full mx-auto mb-5" />
+              <div className="w-10 h-1 bg-white/[0.15] rounded-full mx-auto mb-5" />
               <h3 className="text-body-lg font-bold text-white mb-5">Add Schedule</h3>
               <div className="space-y-4">
                 <div>
@@ -743,7 +743,7 @@ export default function SmartSchedulePage() {
                         key={type}
                         onClick={() => setNewSchedule({ ...newSchedule, type: type as PeakShavingSchedule['type'] })}
                         className={`flex items-center gap-2 p-3 rounded-m transition-colors
-                          ${newSchedule.type === type ? 'bg-[#3A3A3A] border border-primary' : 'bg-ink-9'}`}
+                          ${newSchedule.type === type ? 'bg-ink-9 border border-primary' : 'bg-ink-9'}`}
                       >
                         <config.icon size={16} style={{ color: config.color }} />
                         <span className="text-body-md text-white">{config.label}</span>
@@ -794,7 +794,7 @@ export default function SmartSchedulePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-[rgba(0,0,0,0.8)] z-50 flex items-end"
+            className="absolute inset-0 bg-black/[0.8] z-50 flex items-end"
             onClick={() => setEditingSchedule(null)}
           >
             <motion.div
@@ -805,7 +805,7 @@ export default function SmartSchedulePage() {
               onClick={(e) => e.stopPropagation()}
               className="w-full bg-ink-10 rounded-t-[28px] p-6 pb-10"
             >
-              <div className="w-10 h-1 bg-[rgba(255,255,255,0.15)] rounded-full mx-auto mb-5" />
+              <div className="w-10 h-1 bg-white/[0.15] rounded-full mx-auto mb-5" />
               <div className="flex items-center justify-between mb-5">
                 <h3 className="text-body-lg font-bold text-white">Edit Schedule</h3>
                 <button onClick={() => setEditingSchedule(null)} aria-label="Close" className="relative w-8 h-8 rounded-full bg-ink-9 flex items-center justify-center text-ink-6 before:absolute before:content-[''] before:-inset-2">
@@ -830,7 +830,7 @@ export default function SmartSchedulePage() {
                         key={type}
                         onClick={() => handleEditFormChange({ type: type as PeakShavingSchedule['type'] })}
                         className={`flex items-center gap-2 p-3 rounded-m transition-colors
-                          ${editForm.type === type ? 'bg-[#3A3A3A] border border-primary' : 'bg-ink-9'}`}
+                          ${editForm.type === type ? 'bg-ink-9 border border-primary' : 'bg-ink-9'}`}
                       >
                         <config.icon size={16} style={{ color: config.color }} />
                         <span className="text-body-md text-white">{config.label}</span>
@@ -891,7 +891,7 @@ export default function SmartSchedulePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-[rgba(0,0,0,0.8)] z-[60] flex items-center justify-center p-5"
+            className="absolute inset-0 bg-black/[0.8] z-[60] flex items-center justify-center p-5"
             onClick={() => setDeleteConfirm({ show: false, scheduleId: '', scheduleName: '' })}
           >
             <motion.div

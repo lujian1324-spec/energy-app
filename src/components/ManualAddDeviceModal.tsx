@@ -96,7 +96,7 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-[rgba(0,0,0,0.7)] z-50 flex items-end"
+      className="fixed inset-0 bg-black/[0.7] z-50 flex items-end"
       onClick={onClose}
     >
       <motion.div
@@ -107,7 +107,7 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
         onClick={(e) => e.stopPropagation()}
         className="w-full bg-ink-10 rounded-t-[28px] p-6 pb-10 max-h-[85vh] overflow-y-auto"
       >
-        <div className="w-10 h-1 bg-[rgba(255,255,255,0.15)] rounded-full mx-auto mb-5" />
+        <div className="w-10 h-1 bg-white/[0.15] rounded-full mx-auto mb-5" />
 
         <div className="flex items-center justify-between mb-5">
           <h3 className="text-base font-bold text-ink-1 flex items-center gap-2">

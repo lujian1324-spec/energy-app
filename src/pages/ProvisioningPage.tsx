@@ -111,7 +111,7 @@ function QrScanScreen({ onBack, onScanned }: {
   return (
     <div className="fixed inset-0 z-50 bg-black flex flex-col">
       <div className="px-4 pt-5 pb-4 flex items-center gap-3 safe-area-top absolute top-0 left-0 right-0 z-10">
-        <button onClick={onBack} aria-label="Back" className="relative w-10 h-10 rounded-full bg-[rgba(0,0,0,0.5)] flex items-center justify-center before:absolute before:content-[''] before:-inset-1">
+        <button onClick={onBack} aria-label="Back" className="relative w-10 h-10 rounded-full bg-black/[0.5] flex items-center justify-center before:absolute before:content-[''] before:-inset-1">
           <ChevronLeft size={20} className="text-white" />
         </button>
         <h1 className="text-title-lg font-semibold text-white">Scan QR Code</h1>
@@ -144,13 +144,13 @@ function QrScanScreen({ onBack, onScanned }: {
             <button onClick={onBack} className="mt-3 text-white font-semibold underline text-body-md">Go Back</button>
           </div>
         ) : scanned ? (
-          <div className="bg-[rgba(0,0,0,0.85)] rounded-l p-5">
+          <div className="bg-black/[0.85] rounded-l p-5">
             <p className="text-caption text-primary font-semibold uppercase tracking-widest mb-1">Device Scanned</p>
             <p className="text-title-md font-bold text-white">{scanned.name}</p>
             <p className="text-caption text-ink-6 mb-5">{scanned.serial}</p>
             <div className="flex gap-3">
               <button onClick={() => { setScanned(null); setCameraReady(false) }}
-                className="flex-1 h-12 rounded-full border border-[rgba(255,255,255,0.3)] text-white font-semibold text-body-md">
+                className="flex-1 h-12 rounded-full border border-white/[0.3] text-white font-semibold text-body-md">
                 Rescan
               </button>
               <button onClick={() => onScanned(scanned.name, scanned.serial)}
@@ -160,7 +160,7 @@ function QrScanScreen({ onBack, onScanned }: {
             </div>
           </div>
         ) : (
-          <p className="text-center text-[rgba(255,255,255,0.7)] text-body-md">
+          <p className="text-center text-white/[0.7] text-body-md">
             Point your camera at the QR code on your Sierro device
           </p>
         )}
@@ -758,7 +758,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                 onClick={handleScan}
                 disabled={isSearching}
                 className="w-full h-14 rounded-full bg-primary text-black text-body-lg font-semibold
-                  disabled:bg-primary-dark disabled:text-[rgba(0,0,0,0.4)] transition-colors"
+                  disabled:bg-primary-dark disabled:text-black/[0.4] transition-colors"
               >
                 {hasError ? 'Search Again' : 'Search for Devices'}
               </button>
@@ -766,7 +766,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
             {isSearching && (
               <button
                 disabled
-                className="w-full h-14 rounded-full bg-primary-dark text-[rgba(0,0,0,0.4)] text-body-lg font-semibold flex items-center justify-center gap-2"
+                className="w-full h-14 rounded-full bg-primary-dark text-black/[0.4] text-body-lg font-semibold flex items-center justify-center gap-2"
               >
                 <Loader2 size={18} className="animate-spin" />
                 Searching...
@@ -850,7 +850,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                   key={spec.model}
                   onClick={() => setSelectedModel(spec.model)}
                   className={`text-left rounded-l px-4 py-3 border active:scale-[0.98] transition-[border-color,background-color,transform]
-                    ${active ? 'border-primary bg-primary/[0.10]' : 'border-[rgba(255,255,255,0.10)] bg-ink-10'}`}
+                    ${active ? 'border-primary bg-primary/[0.10]' : 'border-white/[0.10] bg-ink-10'}`}
                 >
                   <div className={`text-body-lg font-semibold ${active ? 'text-primary' : 'text-white'}`}>{spec.model}</div>
                   <div className="text-caption text-ink-6 mt-0.5">{spec.ratedPower}W · {(spec.ratedCapacityWh/1000).toFixed(1)}kWh</div>
@@ -866,7 +866,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
             onClick={handleNameNext}
             disabled={!deviceNameInput.trim()}
             className="w-full h-14 rounded-full bg-primary text-black text-body-lg font-semibold
-              disabled:bg-primary-dark disabled:text-[rgba(0,0,0,0.4)] transition-colors"
+              disabled:bg-primary-dark disabled:text-black/[0.4] transition-colors"
           >
             Next
           </button>
@@ -922,7 +922,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
           <button
             onClick={handleIconNext}
             className="w-full h-14 rounded-full bg-primary text-black text-body-lg font-semibold
-              disabled:bg-primary-dark disabled:text-[rgba(0,0,0,0.4)] transition-colors"
+              disabled:bg-primary-dark disabled:text-black/[0.4] transition-colors"
           >
             Finish
           </button>
@@ -977,7 +977,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                     value={bleKeyInput}
                     onChange={(e) => setBleKeyInput(e.target.value)}
                     placeholder="Enter BLE key"
-                    className="w-full bg-[#1A1A1A] rounded-m px-4 py-3 text-body-md text-white placeholder:text-ink-7 outline-none border border-[rgba(255,255,255,0.08)] focus:border-primary mb-3"
+                    className="w-full bg-ink-11 rounded-m px-4 py-3 text-body-md text-white placeholder:text-ink-7 outline-none border border-white/[0.08] focus:border-primary mb-3"
                   />
                   <button
                     onClick={handleConfirmBleKey}
@@ -1081,7 +1081,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                 onClick={handleConfig}
                 disabled={store.isOperating || !store.wifiPassword}
                 className="w-full h-14 rounded-full bg-primary text-black text-body-lg font-semibold
-                  disabled:bg-primary-dark disabled:text-[rgba(0,0,0,0.4)] transition-colors"
+                  disabled:bg-primary-dark disabled:text-black/[0.4] transition-colors"
               >
                 Connect
               </button>
@@ -1222,7 +1222,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
               transition={{ type: 'spring', stiffness: 400, damping: 40 }}
               className="absolute bottom-0 left-0 right-0 z-50 bg-ink-11 rounded-t-[24px] px-6 pt-3 pb-10 safe-area-bottom"
             >
-              <div className="w-10 h-1 bg-[rgba(255,255,255,0.2)] rounded-full mx-auto mb-6" />
+              <div className="w-10 h-1 bg-white/[0.2] rounded-full mx-auto mb-6" />
               <div className="w-14 h-14 rounded-[18px] bg-primary/[0.12] flex items-center justify-center mb-4">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" stroke="#01D6BE" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>

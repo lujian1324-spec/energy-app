@@ -588,21 +588,21 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
               className="w-full bg-ink-10 rounded-t-[24px] px-6 pt-3 pb-8 safe-area-bottom"
             >
               {/* Grabber */}
-              <div className="w-9 h-1 rounded-full bg-[#5A5A5A] mx-auto mb-5" />
+              <div className="w-9 h-1 rounded-full bg-ink-8 mx-auto mb-5" />
 
               {/* Header */}
               <div className="flex items-start justify-between mb-5">
                 <h3 className="text-headline-md font-bold text-white">Redeem Founder Badge</h3>
                 <button
                   onClick={() => setShowRedeem(false)}
-                  className="w-8 h-8 rounded-full bg-[#3A3A3A] flex items-center justify-center flex-shrink-0"
+                  className="w-8 h-8 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0"
                 >
                   <X size={16} className="text-ink-6" />
                 </button>
               </div>
 
               {/* Activation Code input */}
-              <div className={`rounded-m border px-4 pt-2.5 pb-3 mb-4 ${founderError ? 'border-danger' : 'border-[#4A4A4A]'}`}>
+              <div className={`rounded-m border px-4 pt-2.5 pb-3 mb-4 ${founderError ? 'border-danger' : 'border-ink-9'}`}>
                 <label className="text-label text-ink-6">Activation Code</label>
                 <input
                   type="text"

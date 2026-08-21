@@ -216,7 +216,7 @@ export default function DebugParamsPage() {
   return (
     <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
       {/* Header */}
-      <div className="px-4 pt-5 pb-3 flex items-center gap-3 border-b border-[rgba(255,255,255,0.06)]">
+      <div className="px-4 pt-5 pb-3 flex items-center gap-3 border-b border-white/[0.06]">
         <button
           onClick={() => navigate(-1)}
           className="w-9 h-9 flex items-center justify-center rounded-full bg-ink-10"
@@ -240,7 +240,7 @@ export default function DebugParamsPage() {
         {/* 设备元数据 */}
         <div className="px-4 pt-4">
           <p className="text-caption font-semibold text-ink-7 uppercase tracking-wide mb-2">Device Info</p>
-          <div className="rounded-l bg-ink-10 overflow-hidden divide-y divide-[rgba(255,255,255,0.04)]">
+          <div className="rounded-l bg-ink-10 overflow-hidden divide-y divide-white/[0.04]">
             {[
               { label: 'Device ID', value: String(device?.id ?? id ?? '--') },
               { label: 'Name (name)', value: device?.name ?? '--' },
@@ -264,7 +264,7 @@ export default function DebugParamsPage() {
             <p className="text-caption font-semibold uppercase tracking-wide mb-2" style={{ color: group.color }}>
               {group.title}
             </p>
-            <div className="rounded-l bg-ink-10 overflow-hidden divide-y divide-[rgba(255,255,255,0.04)]">
+            <div className="rounded-l bg-ink-10 overflow-hidden divide-y divide-white/[0.04]">
               {group.params.map(p => {
                 const val = getValue(p)
                 const missing = val === '--'
@@ -291,7 +291,7 @@ export default function DebugParamsPage() {
           <p className="text-caption font-semibold uppercase tracking-wide mb-2" style={{ color: '#01D6BE' }}>
             UI Derived / Computed Params
           </p>
-          <div className="rounded-l bg-ink-10 overflow-hidden divide-y divide-[rgba(255,255,255,0.04)]">
+          <div className="rounded-l bg-ink-10 overflow-hidden divide-y divide-white/[0.04]">
             {derivedRows.map(row => {
               const missing = row.value === '--'
               return (
@@ -333,7 +333,7 @@ export default function DebugParamsPage() {
           {history && (
             <>
               {/* 统计摘要 */}
-              <div className="rounded-l bg-ink-10 overflow-hidden divide-y divide-[rgba(255,255,255,0.04)] mb-3">
+              <div className="rounded-l bg-ink-10 overflow-hidden divide-y divide-white/[0.04] mb-3">
                 <div className="flex items-center justify-between px-4 py-2.5">
                   <span className="text-caption text-ink-7">Samples</span>
                   <span className="text-body-md font-semibold text-white">
@@ -374,7 +374,7 @@ export default function DebugParamsPage() {
                         { k: 'Avg', v: s.avg },
                         { k: 'Sum', v: s.total },
                       ].map(({ k, v }) => (
-                        <div key={k} className="flex flex-col items-center bg-[#1A1A1A] rounded-m py-1.5">
+                        <div key={k} className="flex flex-col items-center bg-ink-11 rounded-m py-1.5">
                           <span className="text-tiny text-ink-8">{k}</span>
                           <span className="text-caption font-semibold text-white">{Math.round(v)}</span>
                           <span className="text-tiny text-ink-8">{unit}</span>
@@ -395,7 +395,7 @@ export default function DebugParamsPage() {
                       { k: 'Max', v: history.soc.max },
                       { k: 'Avg', v: history.soc.avg },
                     ].map(({ k, v }) => (
-                      <div key={k} className="flex flex-col items-center bg-[#1A1A1A] rounded-m py-1.5">
+                      <div key={k} className="flex flex-col items-center bg-ink-11 rounded-m py-1.5">
                         <span className="text-tiny text-ink-8">{k}</span>
                         <span className="text-caption font-semibold text-white">{Math.round(v)}</span>
                         <span className="text-tiny text-ink-8">%</span>
@@ -415,15 +415,15 @@ export default function DebugParamsPage() {
               </button>
 
               {showRawHistory && (
-                <div className="rounded-l bg-[#1A1A1A] overflow-hidden mb-3">
+                <div className="rounded-l bg-ink-11 overflow-hidden mb-3">
                   {/* 表头 */}
-                  <div className="grid grid-cols-4 px-3 py-2 border-b border-[rgba(255,255,255,0.06)]">
+                  <div className="grid grid-cols-4 px-3 py-2 border-b border-white/[0.06]">
                     {['Time', 'Solar W', 'Output W', 'SOC %'].map(h => (
                       <span key={h} className="text-tiny text-ink-8 text-center">{h}</span>
                     ))}
                   </div>
                   {historyPoints.map((p, i) => (
-                    <div key={i} className="grid grid-cols-4 px-3 py-1.5 border-b border-[rgba(255,255,255,0.03)]">
+                    <div key={i} className="grid grid-cols-4 px-3 py-1.5 border-b border-white/[0.03]">
                       <span className="text-tiny font-mono text-ink-8">{p.time.slice(11, 16)}</span>
                       <span className="text-tiny text-warning text-center">{Math.round(p.solar)}</span>
                       <span className="text-tiny text-ink-6 text-center">{Math.round(p.output)}</span>
@@ -441,7 +441,7 @@ export default function DebugParamsPage() {
           <p className="text-caption font-semibold text-ink-7 uppercase tracking-wide mb-2">
             Raw API Fields (/remote/device/state/latest)
           </p>
-          <div className="rounded-l bg-[#1A1A1A] overflow-hidden divide-y divide-[rgba(255,255,255,0.03)]">
+          <div className="rounded-l bg-ink-11 overflow-hidden divide-y divide-white/[0.03]">
             {Object.keys(rawFields).length === 0 ? (
               <p className="text-caption text-ink-9 text-center py-4">No data</p>
             ) : (

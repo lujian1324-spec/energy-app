@@ -56,7 +56,7 @@ function ToastCard({ toast, onDismiss }: { toast: ToastItem; onDismiss: (id: str
       </div>
       <button
         onClick={() => onDismiss(toast.id)}
-        className="flex-shrink-0 w-5 h-5 rounded-full bg-[rgba(255,255,255,0.08)] flex items-center justify-center mt-0.5"
+        className="flex-shrink-0 w-5 h-5 rounded-full bg-white/[0.08] flex items-center justify-center mt-0.5"
       >
         <X size={10} className="text-ink-6" />
       </button>
