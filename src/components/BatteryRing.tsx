@@ -1,5 +1,6 @@
 ﻿import { motion } from 'framer-motion'
 import { Zap, BatteryMedium, AlertTriangle, BatteryWarning, BatteryLow, Plug } from 'lucide-react'
+import { useCountUp } from '../hooks/useCountUp'
 
 interface BatteryRingProps {
   percentage: number
@@ -74,6 +75,8 @@ export default function BatteryRing({
   const radius = (size - strokeWidth) / 2
   const circumference = 2 * Math.PI * radius
   const safePercent = Math.max(0, Math.min(100, percentage))
+  // 数字 count-up：电量变化时百分比平滑滚动到新值（尊重「减少动态」）
+  const displayPercent = useCountUp(safePercent)
   // PRD §5.1: Disconnected → grey ring, no progress, "-" / "Disconnected"
   const safeDashoffset = connected ? circumference - (safePercent / 100) * circumference : circumference
 
@@ -144,7 +147,7 @@ export default function BatteryRing({
         {/* 电量百分比 — Disconnected/0 显示 - (PRD §5.1) */}
         <div className="text-headline-xl font-extrabold text-ink-1 leading-none tracking-tight tnum">
           {connected ? (
-            <>{safePercent}<span className="text-lg font-medium text-ink-6">%</span></>
+            <>{displayPercent}<span className="text-lg font-medium text-ink-6">%</span></>
           ) : (
             <span className="text-ink-7">-</span>
           )}

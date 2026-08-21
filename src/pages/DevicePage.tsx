@@ -47,6 +47,7 @@ import { FRAMES, decodePassthroughBase64, decodeLiveStatus } from '../protocols/
 import { isApiSuccess } from '../utils/apiClient'
 import { formatTemp } from '../utils/localization'
 import { batteryTimeLabel } from '../utils/batteryTime'
+import { hapticMedium } from '../utils/haptics'
 import { loadRatedParams } from '../db/powerflowDB'
 import type { DeviceListItem, DeviceStateField } from '../api/deviceApi'
 import { getDemoDeviceState } from '../data/demoData'
@@ -426,6 +427,7 @@ export default function DevicePage() {
     e.stopPropagation()
     const idStr = String(deviceId)
     if (togglingPower.has(idStr)) return
+    hapticMedium() // 设备电源开关：中触反馈确认操作
 
     const current = powerStates[idStr] ?? true
     const next = !current

@@ -6,6 +6,7 @@ import { LastSync, CalcAudit } from '../components/DataTrust'
 import { useDeviceStore } from '../stores/deviceStore'
 import { fetchDeviceRecordHistory, type DeviceAttributeRecord } from '../api/deviceApi'
 import { isApiSuccess } from '../utils/apiClient'
+import { useCountUp } from '../hooks/useCountUp'
 
 const periods = ['Day', 'Week', 'Month', 'Range'] as const
 type Period = typeof periods[number]
@@ -551,6 +552,10 @@ export default function StatsPage() {
     return Math.max(1, Math.floor((Date.now() - installed.getTime()) / (24 * 3600 * 1000)))
   }, [deviceId, devices])
 
+  // 数字 count-up：服役天数（整数）与 CO₂ 减排（1 位小数）平滑滚动
+  const displayDeviceDays = useCountUp(deviceDays)
+  const displayCo2 = useCountUp(chartFrame?.co2Kg ?? 0, 400, 1)
+
   const installedYearLabel = useMemo(() => {
     const dev = devices.find(d => String(d.id) === String(deviceId))
     if (!dev?.installedAt) return null
@@ -638,7 +643,7 @@ export default function StatsPage() {
                 className="flex flex-col items-center text-center py-5">
                 <div className="flex items-baseline justify-center gap-2">
                   <Zap size={32} className="text-primary fill-primary self-center" />
-                  <span className="text-headline-xl font-semibold text-ink-1 leading-none tnum">{deviceDays}</span>
+                  <span className="text-headline-xl font-semibold text-ink-1 leading-none tnum">{displayDeviceDays}</span>
                   <span className="text-title-md text-ink-6">Days</span>
                 </div>
                 <p className="text-body-md text-ink-6 mt-3">
@@ -763,7 +768,7 @@ export default function StatsPage() {
                   <div className="flex items-start justify-between">
                     <div>
                       <div className="flex items-baseline gap-1.5">
-                        <span className="text-headline-lg font-semibold text-ink-1 leading-none tnum">{chartFrame.co2Kg}</span>
+                        <span className="text-headline-lg font-semibold text-ink-1 leading-none tnum">{displayCo2}</span>
                         <span className="text-body-md text-ink-6">Kg</span>
                       </div>
                       <p className="text-body-md text-ink-6 mt-2">{chartFrame.ecoInsight}</p>

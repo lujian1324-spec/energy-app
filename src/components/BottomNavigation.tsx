@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import Icon from './Icon'
+import { hapticLight } from '../utils/haptics'
 
 const navItems = [
   { path: '/devices', label: 'Devices', icon: 'home', tabId: 'nav-devices' },
@@ -25,6 +26,7 @@ export default function BottomNavigation() {
             to={item.path}
             id={item.tabId}
             aria-label={item.label}
+            onClick={() => hapticLight()}
             className={({ isActive }) =>
               `flex items-center justify-center min-w-[48px] min-h-[48px] px-4 py-2 rounded-full transition-colors duration-200
               ${isActive ? 'bg-primary' : 'bg-transparent hover:bg-primary/15'}`
