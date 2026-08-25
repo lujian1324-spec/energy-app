@@ -154,6 +154,7 @@ jobs:
             -exportPath "$RUNNER_TEMP/export"
 
           cp "$RUNNER_TEMP/export/App.ipa" "sierro-energy-v${VERSION}.ipa"
+          cp "$RUNNER_TEMP/export/App.ipa" "$GITHUB_WORKSPACE/sierro-energy-v${VERSION}.ipa"
 
       - name: Upload IPA artifact
         if: steps.signing.outputs.signed == 'true'
@@ -176,10 +177,11 @@ jobs:
           mkdir -p "$API_PRIVATE_KEYS_DIR"
           echo "$ASC_API_KEY_P8_BASE64" | base64 -d > "$API_PRIVATE_KEYS_DIR/AuthKey_${ASC_KEY_ID}.p8"
           xcrun altool --upload-app \
-            -f "sierro-energy-v${VERSION}.ipa" \
+            -f "$GITHUB_WORKSPACE/sierro-energy-v${VERSION}.ipa" \
             --type ios \
             --apiKey "$ASC_KEY_ID" \
             --apiIssuer "$ASC_ISSUER_ID"
+          test -f "$GITHUB_WORKSPACE/sierro-energy-v${VERSION}.ipa"
 
       # ─────────────────────── UNSIGNED fallback ───────────────────────
       # Proves the iOS project compiles without any Apple credentials.
