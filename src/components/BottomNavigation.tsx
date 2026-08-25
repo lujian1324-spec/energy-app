@@ -12,8 +12,9 @@ export default function BottomNavigation() {
   return (
     <div
       className="flex justify-center items-end pt-2 bg-transparent pointer-events-none"
-      // 不预留 iOS Home 指示条的安全区，直接贴近底端（仅留少量间距）
-      style={{ paddingBottom: '4px' }}
+      // Sit just above the system gesture/nav bar. --safe-area-inset-bottom is
+      // injected on Android; env() works on iOS. 4px minimum so it never hugs the pixel edge.
+      style={{ paddingBottom: 'max(4px, var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)))' }}
     >
       <nav
         className="flex items-center gap-1 px-2 py-2 rounded-full bg-[#0E3F3A] pointer-events-auto shadow-lg"
