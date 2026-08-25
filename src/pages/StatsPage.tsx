@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Share2, BarChart3, WifiOff, Zap, ChevronLeft, ChevronRight, Leaf, RefreshCw } from 'lucide-react'
+import { Share2, Loader2, BarChart3, WifiOff, Zap, ChevronLeft, ChevronRight, Leaf, RefreshCw } from 'lucide-react'
 import html2canvas from 'html2canvas'
+import { toast } from '../components/Toast'
 import { LastSync, CalcAudit } from '../components/DataTrust'
 import { useDeviceStore } from '../stores/deviceStore'
 import { fetchDeviceRecordHistory, type DeviceAttributeRecord } from '../api/deviceApi'
@@ -579,9 +580,13 @@ export default function StatsPage() {
           disabled={sharing}
           className="w-10 h-10 flex items-center justify-center rounded-full bg-ink-10 text-ink-6 hover:text-primary transition-colors disabled:opacity-50"
           onClick={async () => {
-            if (!shareRef.current || sharing) return
+            if (sharing) return
             setSharing(true)
             try {
+              if (!shareRef.current) {
+                toast.error('Nothing to share')
+                return
+              }
               const canvas = await html2canvas(shareRef.current, {
                 backgroundColor: '#141414',
                 scale: 2,
@@ -596,24 +601,52 @@ export default function StatsPage() {
               ctx.fillText('Sierro Energy', canvas.width - 24, canvas.height - 24)
 
               const blob = await new Promise<Blob | null>(res => canvas.toBlob(res, 'image/png'))
-              if (!blob) return
+              if (!blob) {
+                toast.error("Couldn't create image")
+                return
+              }
               const file = new File([blob], 'sierro-insights.png', { type: 'image/png' })
-              if (navigator.canShare?.({ files: [file] })) {
-                await navigator.share({ files: [file], title: 'Sierro Energy Insights' })
+
+              let canShareFiles = false
+              try {
+                canShareFiles = !!navigator.canShare?.({ files: [file] })
+              } catch {
+                canShareFiles = false
+              }
+
+              const isAbort = (err: unknown) =>
+                !!err && typeof err === 'object' && 'name' in err && (err as { name: string }).name === 'AbortError'
+
+              if (canShareFiles) {
+                try {
+                  await navigator.share({ files: [file], title: 'Sierro Energy Insights' })
+                } catch (err) {
+                  if (isAbort(err)) return
+                  throw err
+                }
+              } else if (typeof navigator.share === 'function') {
+                try {
+                  await navigator.share({ title: 'Sierro Energy Insights', text: 'My Sierro energy insights' })
+                } catch (err) {
+                  if (isAbort(err)) return
+                  throw err
+                }
               } else {
                 const url = URL.createObjectURL(blob)
                 const a = document.createElement('a')
                 a.href = url; a.download = 'sierro-insights.png'; a.click()
                 URL.revokeObjectURL(url)
+                toast.success('Image saved')
               }
             } catch (err) {
               console.error('[StatsPage] Share failed:', err)
+              toast.error("Couldn't share. Try again.")
             } finally {
               setSharing(false)
             }
           }}
         >
-          <Share2 size={18} />
+          {sharing ? <Loader2 size={18} className="animate-spin" /> : <Share2 size={18} />}
         </button>
       </div>
 
