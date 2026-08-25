@@ -18,7 +18,7 @@ import { SIERRO_MODELS, SIERRO_MODEL_LIST, generateSerial, type SierroModel } fr
 import { saveRatedParams } from '../db/powerflowDB'
 import { useDeviceStore } from '../stores/deviceStore'
 import { openAppSettings } from '../utils/openAppSettings'
-import { extractDtuid } from '../utils/dtuidParser'
+import { extractDtuid, isDtuid } from '../utils/dtuidParser'
 import { checkBluetooth, classifyBleError } from '../utils/permissions'
 
 // Local UI screens — the multi-step store flow lives inside 'provisioning'
@@ -249,12 +249,27 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
       }, 10000)
       try {
         await manager.scanDevices((d) => {
-          if (seen.has(d.deviceId)) return
-          seen.add(d.deviceId)
-          // 显示解析出的数字 DTUID（采集器唯一标识，20 位纯数字）作为设备 ID，
-          // 而非原生 BLE 的 MAC/UUID 字符串；名称无法解析时回退到原始 deviceId。
           const dtuid = d.name ? extractDtuid(d.name) : null
-          setFoundDevices(prev => [...prev, { name: d.name || 'Sierro Device', serial: dtuid ?? d.deviceId, deviceId: d.deviceId }])
+          seen.add(d.deviceId)
+          setFoundDevices(prev => {
+            const idx = prev.findIndex(x => x.deviceId === d.deviceId)
+            const next = {
+              // keep raw BLE name for connectTo() / parseName(); UI shows serial
+              name: d.name || (idx >= 0 ? prev[idx].name : 'Sierro Device'),
+              serial: dtuid ?? (idx >= 0 ? prev[idx].serial : d.deviceId),
+              deviceId: d.deviceId,
+            }
+            if (idx >= 0) {
+              const cur = prev[idx]
+              const betterName = d.name && cur.name === 'Sierro Device'
+              const betterId = dtuid && !isDtuid(cur.serial)
+              if (!betterName && !betterId) return prev
+              const copy = [...prev]
+              copy[idx] = next
+              return copy
+            }
+            return [...prev, next]
+          })
         })
       } catch (err) {
         if (scanStopRef.current) { clearTimeout(scanStopRef.current); scanStopRef.current = null }
@@ -735,8 +750,12 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                       className="bg-ink-10 rounded-l px-4 py-4 flex items-center justify-between"
                     >
                       <div>
-                        <p className="text-body-lg font-semibold text-white">{device.name}</p>
-                        <p className="text-caption text-ink-6 mt-0.5">{device.serial}</p>
+                        <p className="text-body-lg font-semibold text-white tracking-wide">
+                          {isDtuid(device.serial) ? device.serial : (device.name || 'Sierro Device')}
+                        </p>
+                        {isDtuid(device.serial) ? null : (
+                          <p className="text-caption text-ink-6 mt-0.5">{device.serial}</p>
+                        )}
                       </div>
                       <button
                         onClick={() => handleSelectDevice(device)}
