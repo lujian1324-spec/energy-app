@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isSierroScanResult } from './bleProvision'
+import { isSierroScanResult, parseRawAdvertisement } from './bleProvision'
 
 // v4.4.3 Android "no devices found" fix: scanDevices() no longer OS-filters by namePrefix.
 // isSierroScanResult() is the client-side filter — a device qualifies if its name starts
@@ -24,5 +24,17 @@ describe('isSierroScanResult', () => {
     expect(isSierroScanResult({})).toBe(false)
     expect(isSierroScanResult({ device: {}, uuids: [] })).toBe(false)
     expect(isSierroScanResult({ localName: 'MyPhone' })).toBe(false)
+
+  it('accepts FEE7 / SSL_ encoded in rawAdvertisement (iOS first-packet gap)', () => {
+    // Complete 16-bit service UUID list: len=3, type=0x03, uuid FEE7 LE = E7 FE
+    const fee7 = new DataView(new Uint8Array([3, 0x03, 0xe7, 0xfe]).buffer)
+    expect(isSierroScanResult({ device: { name: '' }, rawAdvertisement: fee7 })).toBe(true)
+    // Complete local name SSL_0X: len=7, type=0x09, "SSL_0X"
+    const nameBytes = [7, 0x09, ...Array.from(new TextEncoder().encode('SSL_0X'))]
+    const named = new DataView(new Uint8Array(nameBytes).buffer)
+    expect(isSierroScanResult({ rawAdvertisement: named })).toBe(true)
+    expect(parseRawAdvertisement(fee7).uuids.some(u => u.includes('fee7'))).toBe(true)
+  })
+
   })
 })
