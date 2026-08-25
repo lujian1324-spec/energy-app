@@ -341,17 +341,63 @@ class WebBleProvisionManager extends BaseProvisionManager {
  * 判断一个 BLE 扫描结果是否是 Sierro 设备。
  * 不在 OS 层按 namePrefix 硬过滤：很多设备的广播包里并没有以 SSL_ 开头的 local name
  * （名称要连上 GATT 才读得到，或只出现在 scan response 里），OS 名称过滤会让列表永远为空。
- * 改为收下全部广播、在这里客户端过滤：名称以 SSL_ 开头，或广播了 FEE7 配网服务。
+ * 改为收下全部广播、在这里客户端过滤：名称以 SSL_ 开头 / 能 parseBleName，或广播了 FEE7 配网服务。
+ *
+ * iOS 注意：第一包 ADV 经常既没有 localName 也没有 service UUID，名字和 FEE7 在 scan
+ * response 里才出现。配合 scanDevices() 在 iOS 上 allowDuplicates:true，后续包才能进到这里。
+ * 再从 rawAdvertisement 兜底解析，避免插件没填 uuids/localName。
  */
 export function isSierroScanResult(r: {
   device?: { name?: string }
   localName?: string
   uuids?: string[]
+  rawAdvertisement?: DataView
 }): boolean {
-  const name = (r.device?.name ?? r.localName ?? '').toUpperCase()
-  if (name.startsWith('SSL_')) return true
-  // BLE_PROVISION_UUIDS.SERVICE = 0000fee7-... ；插件回传的是全长小写 UUID
-  return (r.uuids ?? []).some(u => u.toLowerCase().includes('fee7'))
+  const fromRaw = parseRawAdvertisement(r.rawAdvertisement)
+  const name = (r.device?.name ?? r.localName ?? fromRaw.name ?? '').trim()
+  if (looksLikeSierroName(name)) return true
+  const uuids = [...(r.uuids ?? []), ...fromRaw.uuids]
+  return uuids.some(u => u.toLowerCase().includes('fee7'))
+}
+
+function looksLikeSierroName(name: string): boolean {
+  if (!name) return false
+  if (name.toUpperCase().startsWith('SSL_')) return true
+  return parseBleName(name) != null
+}
+
+/** Parse BLE AD structure for Complete/Shortened Local Name and 16/128-bit service UUIDs. */
+export function parseRawAdvertisement(raw?: DataView): { name: string; uuids: string[] } {
+  if (!raw || raw.byteLength < 2) return { name: '', uuids: [] }
+  const bytes = new Uint8Array(raw.buffer, raw.byteOffset, raw.byteLength)
+  let i = 0
+  let name = ''
+  const uuids: string[] = []
+  while (i < bytes.length) {
+    const len = bytes[i]
+    if (len === 0) break
+    if (i + len >= bytes.length) break
+    const type = bytes[i + 1]
+    const data = bytes.subarray(i + 2, i + 1 + len)
+    if (type === 0x08 || type === 0x09) {
+      try { name = new TextDecoder().decode(data) } catch { /* ignore */ }
+    } else if (type === 0x02 || type === 0x03) {
+      for (let j = 0; j + 1 < data.length; j += 2) {
+        const uuid16 = data[j] | (data[j + 1] << 8)
+        uuids.push(uuid16.toString(16).padStart(4, '0'))
+      }
+    } else if (type === 0x06 || type === 0x07) {
+      if (data.length >= 16) {
+        const b = Array.from(data.subarray(0, 16))
+        // 128-bit UUID is little-endian in AD
+        const le = [...b.slice(0, 4).reverse(), ...b.slice(4, 6).reverse(), ...b.slice(6, 8).reverse(), ...b.slice(8)]
+        const hex = le.map(x => x.toString(16).padStart(2, '0')).join('')
+        uuids.push(`${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`)
+      }
+    }
+    i += len + 1
+  }
+  return { name, uuids }
 }
 
 /** Android 主版本号（如 13），从 WebView UA 的 "Android <n>" 解析；解析不到返回 null。
@@ -427,12 +473,21 @@ class NativeBleProvisionManager extends BaseProvisionManager {
       if (!locationOn) throw new Error('Location services are off — enable location to scan for Bluetooth devices.')
     }
     this.log('开始扫描附近设备...')
+    // iOS: first ADV packet often has neither localName nor service UUIDs (those
+    // arrive in the scan response). allowDuplicates:false would deliver only that
+    // empty packet, isSierroScanResult would drop it, and the device never appears.
+    // Android merges ADV+scan-response into one callback, so false is fine there.
+    const ios = Capacitor.getPlatform() === 'ios'
     await BleClient.requestLEScan(
-      { allowDuplicates: false },
+      { allowDuplicates: ios },
       (result) => {
         if (!result?.device?.deviceId) return
         if (!isSierroScanResult(result)) return
-        onFound({ deviceId: result.device.deviceId, name: result.device.name ?? result.localName, rssi: result.rssi })
+        onFound({
+          deviceId: result.device.deviceId,
+          name: result.device.name ?? result.localName,
+          rssi: result.rssi,
+        })
       },
     )
   }
