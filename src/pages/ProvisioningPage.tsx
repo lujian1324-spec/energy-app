@@ -753,9 +753,9 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                         <p className="text-body-lg font-semibold text-white tracking-wide">
                           {isDtuid(device.serial) ? device.serial : (device.name || 'Sierro Device')}
                         </p>
-                        {isDtuid(device.serial) ? null : (
-                          <p className="text-caption text-ink-6 mt-0.5">{device.serial}</p>
-                        )}
+                        <p className="text-caption text-ink-6 mt-0.5">
+                          {isDtuid(device.serial) ? 'Sierro' : device.serial}
+                        </p>
                       </div>
                       <button
                         onClick={() => handleSelectDevice(device)}
