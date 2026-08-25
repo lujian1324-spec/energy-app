@@ -4,7 +4,13 @@ import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
+import androidx.activity.EdgeToEdge;
+import androidx.core.graphics.Insets;
 import androidx.core.splashscreen.SplashScreen;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
@@ -30,11 +36,33 @@ public class MainActivity extends BridgeActivity {
         // shrinks the WebView and the splash image becomes visible — that's
         // the "large Sierro logo takes over the screen" bug on Android.
         setTheme(R.style.AppTheme_NoActionBar);
+        // Android 15+ (targetSdk 35+) draws edge-to-edge by default. Calling
+        // EdgeToEdge.enable() makes that behavior consistent on older APIs and
+        // avoids relying on the deprecated Window.setStatusBarColor /
+        // setNavigationBarColor APIs that Play Console flagged.
+        EdgeToEdge.enable(this);
         super.onCreate(savedInstanceState);
         // Belt-and-suspenders for the same bug: force the window background to the dark
         // app color programmatically, so no @drawable/splash can ever be revealed behind
         // the WebView when KeyboardResize.Body shrinks it — independent of theme timing.
         getWindow().setBackgroundDrawable(new ColorDrawable(0xFF141414));
+        // Light icons on our dark #141414 chrome (replaces theme statusBarColor /
+        // navigationBarColor, which are deprecated on Android 15).
+        WindowInsetsControllerCompat insetsController =
+                WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+        if (insetsController != null) {
+            insetsController.setAppearanceLightStatusBars(false);
+            insetsController.setAppearanceLightNavigationBars(false);
+        }
+        // Pad the WebView for system bars so content is not drawn under the
+        // status / navigation bars after going edge-to-edge.
+        View webView = getBridge().getWebView();
+        ViewCompat.setOnApplyWindowInsetsListener(webView, (v, windowInsets) -> {
+            Insets bars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+            return windowInsets;
+        });
+        ViewCompat.requestApplyInsets(webView);
         // Android's Autofill Framework (API 26+) shows a branded suggestion strip / overlay
         // above the keyboard (with this app's launcher icon) whenever the WebView detects a
         // login-style form (username/password/verification-code fields) — the "logo above the
@@ -46,7 +74,7 @@ public class MainActivity extends BridgeActivity {
         // attributes, are a separate mechanism and are unaffected.)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             int noAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS;
-            getBridge().getWebView().setImportantForAutofill(noAutofill);
+            webView.setImportantForAutofill(noAutofill);
             getWindow().getDecorView().setImportantForAutofill(noAutofill);
         }
     }
