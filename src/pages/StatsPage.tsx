@@ -657,7 +657,7 @@ export default function StatsPage() {
               {periods.map((p) => (
                 <button key={p} onClick={() => setPeriod(p)}
                   className={`flex-1 text-body-md font-semibold py-2 rounded-pill active:scale-[0.96] transition-[color,background-color,transform] duration-200
-                    ${period === p ? 'bg-ink-3 text-ink-13' : 'text-ink-6 hover:text-ink-1'}`}>
+                    ${period === p ? 'bg-primary text-ink-13' : 'text-ink-6 hover:text-ink-1'}`}>
                   {p}
                 </button>
               ))}

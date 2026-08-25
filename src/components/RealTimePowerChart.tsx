@@ -24,7 +24,7 @@ export interface RealTimePowerChartProps {
    * the badge. Defaults to the power view.
    */
   batteryAsSoc?: boolean
-  batterySoc?: number
+  batterySoc?: number | null
   lastSyncAt?: number
   className?: string
 }
@@ -36,12 +36,14 @@ export interface RealTimePowerChartProps {
  * DeviceMonitorPage; the Battery tab can plot SOC (%) instead of power via the
  * batteryAsSoc prop.
  */
-export default function RealTimePowerChart({ deviceId, isOnline, values, batteryAsSoc = false, batterySoc = 0, lastSyncAt, className }: RealTimePowerChartProps) {
+export default function RealTimePowerChart({ deviceId, isOnline, values, batteryAsSoc = false, batterySoc, lastSyncAt, className }: RealTimePowerChartProps) {
   const [powerDataSource, setPowerDataSource] = useState<PowerTab>('battery')
 
   const powerChartData = useMemo(() => ({
     battery: batteryAsSoc
-      ? { value: Math.round(batterySoc), unit: '%', color: '#34C759' }
+      ? (batterySoc == null
+          ? { value: null as number | null, unit: '%', color: '#8C8C8C' }
+          : { value: Math.round(batterySoc), unit: '%', color: '#34C759' })
       : { value: values.battery, unit: 'W', color: '#34C759' },
     ac: { value: values.ac, unit: 'W', color: '#01D6BE' },
     solar: { value: values.solar, unit: 'W', color: '#FF9500' },
@@ -244,7 +246,7 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
       <div className="flex items-center justify-between mb-3">
         <span className="text-body-md font-semibold text-ink-1">Real-Time Power</span>
         <motion.span
-          key={isOnline ? currentChartData.value : 'offline'}
+          key={isOnline ? (currentChartData.value == null ? 'nodata' : currentChartData.value) : 'offline'}
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           className="text-caption px-2 py-0.5 rounded-full font-semibold tnum"
@@ -253,7 +255,7 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
             color: isOnline ? currentChartData.color : '#BFBFBF'
           }}
         >
-          {isOnline ? `${currentChartData.value}${currentChartData.unit}` : '-'}
+          {isOnline ? (currentChartData.value == null ? '--' : `${currentChartData.value}${currentChartData.unit}`) : '-'}
         </motion.span>
       </div>
 
@@ -398,11 +400,11 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
             <button
               key={item.key}
               onClick={() => setPowerDataSource(item.key)}
-              className={`flex flex-col items-center gap-1 px-4 py-1 rounded-l active:scale-[0.96] transition-[background-color,transform] duration-150
-                ${isActive ? 'bg-primary/[0.15]' : 'hover:bg-white/[0.03]'}`}
+              className={`flex flex-col items-center gap-1 px-4 py-1 rounded-l active:scale-[0.96] transition-[background-color,color,transform] duration-150
+                ${isActive ? 'bg-primary text-ink-13' : 'text-ink-6 bg-transparent'}`}
             >
-              <Icon size={18} className={isActive ? 'text-primary' : 'text-ink-6'} />
-              <span className={`text-tiny font-medium ${isActive ? 'text-primary' : 'text-ink-6'}`}>
+              <Icon size={18} className={isActive ? 'text-ink-13' : 'text-ink-6'} />
+              <span className={`text-tiny font-medium ${isActive ? 'text-ink-13' : 'text-ink-6'}`}>
                 {item.label}
               </span>
             </button>

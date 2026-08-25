@@ -11,13 +11,13 @@ const navItems = [
 export default function BottomNavigation() {
   return (
     <div
-      className="flex justify-center items-end pt-2 bg-transparent pointer-events-none"
+      className="relative z-10 flex justify-center items-end pt-2 bg-transparent pointer-events-none"
       // Sit just above the system gesture/nav bar. env() is a sibling in max() so a
       // SET --safe-area-inset-bottom of 0px cannot hide the iOS inset. +4px breathing room.
       style={{ paddingBottom: 'calc(max(8px, var(--safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px)) + 4px)' }}
     >
       <nav
-        className="flex items-center gap-1 px-2 py-2 rounded-full bg-[#0E3F3A] pointer-events-auto shadow-lg"
+        className="flex items-center gap-1 px-2 py-2 rounded-full bg-ink-11 pointer-events-auto shadow-lg"
         role="navigation"
         aria-label="Main navigation"
       >
@@ -30,7 +30,7 @@ export default function BottomNavigation() {
             onClick={() => hapticLight()}
             className={({ isActive }) =>
               `flex items-center justify-center min-w-[48px] min-h-[48px] px-4 py-2 rounded-full transition-colors duration-200
-              ${isActive ? 'bg-primary' : 'bg-transparent hover:bg-primary/15'}`
+              ${isActive ? 'bg-primary' : 'bg-transparent hover:bg-white/10'}`
             }
           >
             {({ isActive }) => (

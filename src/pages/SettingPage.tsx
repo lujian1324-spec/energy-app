@@ -386,7 +386,7 @@ export default function SettingPage() {
       <AnimatePresence>
         {showSupport && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-4"
+            className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/60 p-4"
             onClick={() => setShowSupport(false)}>
             <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
@@ -444,7 +444,7 @@ export default function SettingPage() {
       <AnimatePresence>
         {showDeleteConfirm && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 p-4"
+            className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/70 p-4"
             onClick={() => !deleteLoading && setShowDeleteConfirm(false)}>
             <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
@@ -486,7 +486,7 @@ export default function SettingPage() {
       <AnimatePresence>
         {showFounderModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-4"
+            className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/60 p-4"
             onClick={() => setShowFounderModal(false)}>
             <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}

@@ -444,6 +444,8 @@ export default function DevicePage() {
   // 电量标签颜色（依 BatteryTag 9 状态规范）
   // 60-100% 绿/主色，20-59% 橘，1-19% 红
   const getTagColor = (level: number): string => {
+    // Real 0% is missing-data's sibling, not Disconnected: gray, not danger red.
+    if (level <= 0) return '#8C8C8C'
     if (level >= 60) return '#34C759'
     if (level >= 20) return '#FF9500'
     return '#FF3B30'
@@ -819,7 +821,7 @@ export default function DevicePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/[0.7] z-50 flex items-end"
+            className="fixed inset-0 z-[60] bg-black/[0.7] flex items-end"
             onClick={() => setShowDeviceParams(null)}
           >
             <motion.div
@@ -992,7 +994,7 @@ export default function DevicePage() {
       <AnimatePresence>
         {showAddModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/[0.7] z-50 flex items-end"
+            className="fixed inset-0 z-[60] bg-black/[0.7] flex items-end"
             onClick={() => setShowAddModal(false)}>
             <motion.div initial={{ y: 300, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 300, opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
@@ -1031,7 +1033,7 @@ export default function DevicePage() {
       <AnimatePresence>
         {showBleScan && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/[0.8] z-50 flex items-center justify-center p-5"
+            className="fixed inset-0 z-[60] bg-black/[0.8] flex items-center justify-center p-5"
             onClick={() => { setShowBleScan(false); setIsScanning(false); setScanError(null); setScannedDevices([]) }}>
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
@@ -1206,7 +1208,7 @@ export default function DevicePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/[0.7] z-50 flex items-end"
+            className="fixed inset-0 z-[60] bg-black/[0.7] flex items-end"
             onClick={() => setBlePermissionType(null)}
           >
             <motion.div

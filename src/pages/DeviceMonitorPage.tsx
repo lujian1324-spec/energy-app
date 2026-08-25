@@ -83,7 +83,7 @@ export default function DeviceMonitorPage() {
     return mapFieldsToRealtime(selectedDeviceState.fields)
   }, [selectedDeviceState, id])
 
-  const remainingBatteryCapacity = rt?.remainingBatteryCapacity ?? 0
+  const remainingBatteryCapacity = rt?.remainingBatteryCapacity ?? null
   const acPower = rt?.acPower ?? 0
   const solarPower = rt?.solarPower ?? 0
   const outputPower = rt?.outputPower ?? 0
@@ -103,7 +103,7 @@ export default function DeviceMonitorPage() {
   // 统一口径：电池剩余/充满时间（见 utils/batteryTime）
   const timeStr = batteryTimeLabel({
     acPower, solarPower, outputPower,
-    soc: remainingBatteryCapacity,
+    soc: remainingBatteryCapacity ?? 0,
     capacityWh: batteryCapacityWh,
     isCharging,
   })

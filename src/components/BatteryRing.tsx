@@ -3,7 +3,8 @@ import { Zap, BatteryMedium, AlertTriangle, BatteryWarning, BatteryLow, Plug } f
 import { useCountUp } from '../hooks/useCountUp'
 
 interface BatteryRingProps {
-  percentage: number
+  /** SoC 0–100. Pass null when telemetry is missing so the ring shows gray `--` / No data, not 0% CRITICAL. */
+  percentage: number | null
   size?: number
   strokeWidth?: number
   isCharging?: boolean
@@ -74,17 +75,19 @@ export default function BatteryRing({
 }: BatteryRingProps) {
   const radius = (size - strokeWidth) / 2
   const circumference = 2 * Math.PI * radius
-  const safePercent = Math.max(0, Math.min(100, percentage))
+  const noData = percentage == null
+  const safePercent = noData ? 0 : Math.max(0, Math.min(100, percentage))
   // 数字 count-up：电量变化时百分比平滑滚动到新值（尊重「减少动态」）
   const displayPercent = useCountUp(safePercent)
-  // PRD §5.1: Disconnected → grey ring, no progress, "-" / "Disconnected"
-  const safeDashoffset = connected ? circumference - (safePercent / 100) * circumference : circumference
+  // Missing SoC (connected but no telemetry) and Disconnected both draw a muted ring with no progress.
+  const showProgress = connected && !noData
+  const safeDashoffset = showProgress ? circumference - (safePercent / 100) * circumference : circumference
 
-  const state = connected ? getBatteryState(safePercent, isCharging, isPlugged) : 'unknown'
+  const state: BatteryState = !connected || noData ? 'unknown' : getBatteryState(safePercent, isCharging, isPlugged)
   const ringColor = STATE_COLOR[state]
-  const stateLabel = connected ? STATE_LABEL[state] : 'Disconnected'
+  const stateLabel = !connected ? 'Disconnected' : noData ? 'No data' : STATE_LABEL[state]
   const isFull = state === 'full'
-  const showTime = connected && !isCharging && !isPlugged && !isFull
+  const showTime = connected && !noData && !isCharging && !isPlugged && !isFull
 
   // 选择状态图标 (色盲友好, PRD v1.1 §9.1)
   const StateIcon = isFull ? BatteryMedium : isCharging ? Zap : isPlugged ? Plug : safePercent <= 15 ? BatteryWarning : safePercent <= 25 ? AlertTriangle : BatteryMedium
@@ -92,6 +95,8 @@ export default function BatteryRing({
   // 可访问性标签 (PRD v1.1 §9.1)
   const ariaLabel = !connected
     ? 'Battery disconnected'
+    : noData
+    ? 'Battery data unavailable'
     : isFull
     ? `Battery full, ${safePercent} percent`
     : isCharging
@@ -146,15 +151,19 @@ export default function BatteryRing({
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         {/* 电量百分比 — Disconnected/0 显示 - (PRD §5.1) */}
         <div className="text-headline-xl font-extrabold text-ink-1 leading-none tracking-tight tnum">
-          {connected ? (
+          {connected && !noData ? (
             <>{displayPercent}<span className="text-lg font-medium text-ink-6">%</span></>
           ) : (
-            <span className="text-ink-7">-</span>
+            <span className="text-ink-7">{noData && connected ? '--' : '-'}</span>
           )}
         </div>
 
-        {/* 状态标签 / 时间 */}
-        {stateLabel ? (
+        {/* 状态标签 / 时间 — unknown SoC is gray "No data", never CRITICAL */}
+        {noData && connected ? (
+          <div className="text-tiny font-semibold tracking-wide text-ink-7 mt-1">
+            No data
+          </div>
+        ) : stateLabel ? (
           <div className="flex items-center gap-1 mt-1">
             <StateIcon size={12} style={{ color: ringColor }} aria-hidden="true" />
             <span
