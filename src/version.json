@@ -1,8 +1,9 @@
 {
-  "version": "4.7.21",
-  "build": 2743,
+  "version": "4.7.22",
+  "build": 2744,
   "date": "2026-08-25",
   "changelog": [
+    "Android screen fit: stop letterboxing the WebView with system-bar padding (MIUI 20:9 showed a gap under the tab bar / overflow). Full-bleed WebView + CSS safe-area vars, max_aspect 2.4, viewport locked to 100%. BLE scan list shows 'Sierro' under a 20-digit DTUID.",
     "BLE scan list shows the 20-digit collector DTUID parsed from the SSL_ advertised name (not the raw base64 BLE name). Parser tolerates missing base64 padding and trailing NULs from iOS. Later scan-response packets can upgrade an unnamed FEE7 hit into a DTUID.",
     "iOS BLE scan: allowDuplicates on iOS so scan-response localName/FEE7 is not dropped (Android merges ADV+scan-response, iOS does not). Also parse rawAdvertisement for SSL_ / FEE7. Fixes iOS finding no devices while Android sees the same product.",
     "Android Play Console production recommendations (4.7.18 live warnings): (1) Edge-to-edge — MainActivity calls EdgeToEdge.enable() and pads the WebView with system-bar WindowInsets so Android 15+ displays correctly. (2) Deprecated bar-color APIs — removed android:statusBarColor/navigationBarColor from AppTheme.NoActionBar; light/dark icons via WindowInsetsControllerCompat. (3) FCM bitmap downsample — pin Firebase BOM 33.16.0 for messaging. (4) R8 — enable android.r8.optimizedResourceShrinking (AGP stays 8.13; AGP 9 deferred). No UI/Figma/iOS changes.",
