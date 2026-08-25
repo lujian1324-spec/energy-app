@@ -3,7 +3,9 @@ package com.sierro.energyapp;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.view.View;
+import android.webkit.WebView;
 import androidx.activity.EdgeToEdge;
 import androidx.core.graphics.Insets;
 import androidx.core.splashscreen.SplashScreen;
@@ -54,15 +56,20 @@ public class MainActivity extends BridgeActivity {
             insetsController.setAppearanceLightStatusBars(false);
             insetsController.setAppearanceLightNavigationBars(false);
         }
-        // Pad the WebView for system bars so content is not drawn under the
-        // status / navigation bars after going edge-to-edge.
+        // Do NOT pad the WebView for system bars. Padding shrinks the HTML viewport and
+        // paints the window background as a black letterbox — on MIUI 20:9 (e.g. Redmi
+        // K30 Ultra) that shows up as a fat gap under the tab bar, or content overflowing
+        // 100vh. Keep the WebView full-bleed and push insets into CSS so the UI insets
+        // itself (status / home indicator) without changing the aspect ratio.
         View webView = getBridge().getWebView();
         ViewCompat.setOnApplyWindowInsetsListener(webView, (v, windowInsets) -> {
             Insets bars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(bars.left, bars.top, bars.right, bars.bottom);
-            return windowInsets;
+            injectSafeAreaVars(v, bars.top, bars.bottom);
+            return WindowInsetsCompat.CONSUMED;
         });
         ViewCompat.requestApplyInsets(webView);
+        webView.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) ->
+                ViewCompat.requestApplyInsets(v));
         // Android's Autofill Framework (API 26+) shows a branded suggestion strip / overlay
         // above the keyboard (with this app's launcher icon) whenever the WebView detects a
         // login-style form (username/password/verification-code fields) — the "logo above the
@@ -77,5 +84,19 @@ public class MainActivity extends BridgeActivity {
             webView.setImportantForAutofill(noAutofill);
             getWindow().getDecorView().setImportantForAutofill(noAutofill);
         }
+    }
+
+    /** CSS px = Android px / density. env(safe-area-*) is 0 in Android WebView. */
+    private static void injectSafeAreaVars(View v, int topPx, int bottomPx) {
+        if (!(v instanceof WebView)) return;
+        DisplayMetrics dm = v.getResources().getDisplayMetrics();
+        float d = dm.density <= 0f ? 1f : dm.density;
+        int top = Math.round(topPx / d);
+        int bottom = Math.round(bottomPx / d);
+        String js = "document.documentElement.style.setProperty('--safe-area-inset-top','"
+                + top + "px');"
+                + "document.documentElement.style.setProperty('--safe-area-inset-bottom','"
+                + bottom + "px');";
+        ((WebView) v).evaluateJavascript(js, null);
     }
 }
