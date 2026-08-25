@@ -190,6 +190,12 @@ export async function requestCamera(): Promise<PermissionResult> {
  * re-enter the native permission callback concurrently.
  */
 let bleInitialized = false
+
+/** Clear the BLE init flag so initialize() re-runs after the user grants Nearby devices in OS settings. */
+export function resetBleInit(): void {
+  bleInitialized = false
+}
+
 async function ensureBleInitialized(
   BleClient: { initialize: (o?: { androidNeverForLocation?: boolean }) => Promise<void> },
 ): Promise<void> {

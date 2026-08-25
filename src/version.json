@@ -1,8 +1,9 @@
 {
-  "version": "4.7.22",
-  "build": 2744,
+  "version": "4.7.23",
+  "build": 2745,
   "date": "2026-08-25",
   "changelog": [
+    "Excel QA APP-001..008: permission resume no black screen; QR scan hides WebView play overlay and uses opaque overlay; login form height stable; Insights header matches Device; DTU ID helper; skip empty-list skeleton; hide founder redeem CTA.",
     "Android screen fit: stop letterboxing the WebView with system-bar padding (MIUI 20:9 showed a gap under the tab bar / overflow). Full-bleed WebView + CSS safe-area vars, max_aspect 2.4, viewport locked to 100%. BLE scan list shows 'Sierro' under a 20-digit DTUID.",
     "BLE scan list shows the 20-digit collector DTUID parsed from the SSL_ advertised name (not the raw base64 BLE name). Parser tolerates missing base64 padding and trailing NULs from iOS. Later scan-response packets can upgrade an unnamed FEE7 hit into a DTUID.",
     "iOS BLE scan: allowDuplicates on iOS so scan-response localName/FEE7 is not dropped (Android merges ADV+scan-response, iOS does not). Also parse rawAdvertisement for SSL_ / FEE7. Fixes iOS finding no devices while Android sees the same product.",

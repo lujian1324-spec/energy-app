@@ -503,11 +503,15 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
             className="hidden"
           />
 
-          {/* Founder badge pill */}
+          {/* Founder badge pill — tap to open redeem modal (APP-005: CTA hidden for non-founders) */}
           {settings.founderBadge && (
-            <span className="mt-3 flex items-center gap-1 px-3 py-1 rounded-full bg-membership/[0.15] text-membership border border-membership text-caption">
+            <button
+              type="button"
+              onClick={() => { setFounderCode(''); setFounderError(''); setShowRedeem(true) }}
+              className="mt-3 flex items-center gap-1 px-3 py-1 rounded-full bg-membership/[0.15] text-membership border border-membership text-caption"
+            >
               👑 Founding Member #{settings.founderBadgeNumber}
-            </span>
+            </button>
           )}
         </div>
 
@@ -555,18 +559,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
           </button>
         </div>
 
-        {/* Footer: founder code */}
-        {!settings.founderBadge && (
-          <p className="mt-6 text-center text-caption text-ink-6">
-            Have a founder code?{' '}
-            <button
-              onClick={() => { setFounderCode(''); setFounderError(''); setShowRedeem(true) }}
-              className="text-primary underline text-caption"
-            >
-              Redeem founder badge
-            </button>
-          </p>
-        )}
+        {/* Footer: founder redeem CTA hidden (APP-005). Modal kept; reachable from gold tag. */}
       </div>
 
       {/* ==================== Redeem Founder Badge 弹窗 (bottom sheet) ==================== */}

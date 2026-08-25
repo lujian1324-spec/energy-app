@@ -158,13 +158,16 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
           {/* DTU ID */}
           <div>
             <label className="text-caption font-semibold text-ink-6 mb-1.5 block">
-              DTU ID (Data Logger)
+              DTU ID <span className="font-normal text-ink-7">(optional)</span>
             </label>
+            <p className="text-caption text-ink-7 mb-1.5">
+              Optional 20-digit collector ID from the device or packaging (same as the BLE scan ID).
+            </p>
             <input
               type="text"
               value={dtuDtuid}
               onChange={e => { setDtuDtuid(e.target.value); setError(null) }}
-              placeholder="e.g. DTU serial number"
+              placeholder="e.g. 20839350917702012920"
               className="w-full px-4 py-3 rounded-l bg-ink-12 border border-primary/[0.15]
                 text-ink-1 text-body-md placeholder:text-ink-7
                 focus:outline-none focus:border-primary/[0.5] transition-colors"

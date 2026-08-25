@@ -187,6 +187,8 @@ export default function LoginPage() {
           ))}
         </div>
 
+        {/* ── Identifier + secret + toggle + forgot: fixed min-height so Sign In / terms don't jump (APP-001) ── */}
+        <div className="min-h-[220px]">
         {/* ── Identifier field ── */}
         {tab === 'email' ? (
           <>
@@ -297,6 +299,7 @@ export default function LoginPage() {
             </Link>
           </div>
         )}
+        </div>
 
         {error && <p className="text-label text-danger mt-2">{error}</p>}
 

@@ -565,11 +565,11 @@ export default function StatsPage() {
   }, [deviceId, devices])
 
   return (
-    <div className="h-full flex flex-col bg-ink-12 overflow-hidden pt-6">
-      {/* Header */}
-      <div className="px-4 pt-8 pb-2 safe-area-top flex justify-between items-start">
+    <div className="h-full flex flex-col bg-ink-12 overflow-hidden">
+      {/* Header — match Device page padding/type (APP-004) */}
+      <div className="px-5 pt-4 pb-3 safe-area-top flex justify-between items-start">
         <div>
-          <h1 className="text-display font-display text-ink-1 leading-none">Insights</h1>
+          <h1 className="text-display font-display text-white leading-none">Insights</h1>
           <div className="flex items-center gap-2 mt-2">
             <LastSync lastSyncAt={lastSyncAt} />
           </div>
@@ -624,8 +624,8 @@ export default function StatsPage() {
             <div className="w-16 h-16 rounded-2xl bg-ink-10 flex items-center justify-center mb-4">
               <BarChart3 size={32} className="text-ink-7" />
             </div>
-            <h3 className="text-body-lg font-bold text-ink-1 mb-2">No Data Yet</h3>
-            <p className="text-body-md text-ink-6 text-center leading-relaxed mb-6">
+            <h3 className="text-headline-md font-semibold text-white mb-2">No Data Yet</h3>
+            <p className="text-body-lg text-ink-7 text-center leading-relaxed mb-6">
               Connect a device to start tracking energy usage and statistics.
             </p>
             <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-ink-10 border border-white/[0.06]">

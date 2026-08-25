@@ -1,5 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { flushSync } from 'react-dom'
+import { Capacitor } from '@capacitor/core'
+import { App } from '@capacitor/app'
 import { openAppSettings } from '../utils/openAppSettings'
+import { requestCamera } from '../utils/permissions'
 import { toast } from '../components/Toast'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
@@ -101,6 +105,7 @@ export default function DevicePage() {
   const {
     devices,
     deviceLoading,
+    devicesListReady,
     loadDevices,
     loadStations,
     selectedDeviceState,
@@ -156,10 +161,16 @@ export default function DevicePage() {
   // QR scan state
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [qrScanning, setQrScanning] = useState(false)
+  const [, setQrScanning] = useState(false)
   const [qrResult, setQrResult] = useState<string | null>(null)
   const [qrError, setQrError] = useState<string | null>(null)
   const [cameraDenied, setCameraDenied] = useState(false)
+  const [qrVideoReady, setQrVideoReady] = useState(false)
+  const qrStreamRef = useRef<MediaStream | null>(null)
+  const cameraDeniedRef = useRef(cameraDenied)
+  cameraDeniedRef.current = cameraDenied
+  const showQrScanRef = useRef(showQrScan)
+  showQrScanRef.current = showQrScan
   // 扫码识别出的设备序列号/ID（用于录入）
   const [scannedSerial, setScannedSerial] = useState('')
   const [scannedName, setScannedName] = useState('')
@@ -173,6 +184,26 @@ export default function DevicePage() {
     return () => { stopQrScan() }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showQrScan])
+
+  // APP-002: returning from OS camera settings while QR overlay is open → auto-retry
+  useEffect(() => {
+    let removed = false
+    let handle: { remove: () => Promise<void> } | undefined
+    const setup = async () => {
+      handle = await App.addListener('appStateChange', ({ isActive }) => {
+        if (!isActive || removed) return
+        if (cameraDeniedRef.current && showQrScanRef.current) {
+          void startQrScan()
+        }
+      })
+    }
+    void setup()
+    return () => {
+      removed = true
+      void handle?.remove()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // ── 加载设备列表 ──
   const fetchDevices = useCallback(async () => {
@@ -660,7 +691,7 @@ export default function DevicePage() {
         </AnimatePresence>
 
         {/* Loading Skeleton */}
-        {deviceLoading && devices.length === 0 ? (
+        {deviceLoading && devices.length === 0 && !devicesListReady ? (
           <div className="flex flex-col gap-3">
             {[0, 1, 2].map(i => (
               <div key={i} className="rounded-l p-4 bg-ink-10 animate-pulse h-[140px]" />
@@ -1043,14 +1074,12 @@ export default function DevicePage() {
         )}
       </AnimatePresence>
 
-      {/* QR Scan Modal */}
-      <AnimatePresence>
-        {showQrScan && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/[0.9] z-50 flex flex-col">
+      {/* QR Scan Modal — opaque full-screen, no fade (APP-003/007) */}
+      {showQrScan && (
+          <div className="fixed inset-0 z-[60] bg-ink-12 flex flex-col">
             <div className="flex items-center justify-between p-5 safe-area-top">
               <h3 className="text-lg font-bold text-ink-1">Scan QR Code</h3>
-              <button onClick={() => { stopQrScan(); setShowQrScan(false); setQrResult(null); setQrError(null) }}
+              <button onClick={() => { stopQrScan(); setQrVideoReady(false); setShowQrScan(false); setQrResult(null); setQrError(null) }}
                 aria-label="Close"
                 className="relative w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center text-ink-1 before:absolute before:content-[''] before:-inset-1.5">
                 <X size={20} />
@@ -1060,14 +1089,24 @@ export default function DevicePage() {
               {!qrResult ? (
                 <>
                   <div className="relative w-64 h-64 mb-6">
-                    <video ref={videoRef} className="absolute inset-0 w-full h-full object-cover rounded-l" playsInline muted />
+                    {qrVideoReady && (
+                      <video
+                        ref={videoRef}
+                        className="absolute inset-0 w-full h-full object-cover rounded-l qr-scan-video"
+                        playsInline
+                        muted
+                        controls={false}
+                        disablePictureInPicture
+                        controlsList="nodownload nofullscreen noremoteplayback"
+                      />
+                    )}
                     <canvas ref={canvasRef} className="hidden" />
                     <div className="absolute inset-0 border-2 border-primary rounded-l">
                       {([['top-0 left-0', 'border-t-4 border-l-4'], ['top-0 right-0', 'border-t-4 border-r-4'], ['bottom-0 left-0', 'border-b-4 border-l-4'], ['bottom-0 right-0', 'border-b-4 border-r-4']] as const).map(([pos, border], i) => (
                         <div key={i} className={`absolute w-8 h-8 ${pos} ${border} border-primary rounded-m`} />
                       ))}
                     </div>
-                    {!qrScanning && !qrError && (
+                    {!qrVideoReady && (
                       <div className="absolute inset-0 bg-ink-10 rounded-l flex items-center justify-center">
                         <Icon name="scan" size={64} className="opacity-50" />
                       </div>
@@ -1119,6 +1158,7 @@ export default function DevicePage() {
                     <button
                       onClick={() => {
                         stopQrScan()
+                        setQrVideoReady(false)
                         setShowQrScan(false)
                         setQrResult(null)
                         setQrError(null)
@@ -1136,9 +1176,8 @@ export default function DevicePage() {
             <div className="p-5 safe-area-bottom text-center">
               <p className="text-caption text-ink-7">Make sure the QR code is well-lit and in focus</p>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+      )}
 
       {/* Manual Add Device Modal（支持扫码预填设备 ID） */}
       <AnimatePresence>
@@ -1267,11 +1306,12 @@ export default function DevicePage() {
 
   function stopQrScan() {
     if (animationFrameRef.current) { cancelAnimationFrame(animationFrameRef.current); animationFrameRef.current = null }
-    if (videoRef.current?.srcObject) {
-      (videoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop())
-      videoRef.current.srcObject = null
-    }
+    const stream = qrStreamRef.current || (videoRef.current?.srcObject as MediaStream | null)
+    stream?.getTracks().forEach(t => t.stop())
+    qrStreamRef.current = null
+    if (videoRef.current) videoRef.current.srcObject = null
     setQrScanning(false)
+    setQrVideoReady(false)
   }
 
   /** 逐帧用 jsQR 解码视频画面，识别到二维码后停止并录入设备 ID */
@@ -1311,15 +1351,31 @@ export default function DevicePage() {
     setQrError(null)
     setQrResult(null)
     setCameraDenied(false)
+    setQrVideoReady(false)
     setScannedSerial('')
     setScannedName('')
     try {
-      // 获取摄像头权限并打开后置摄像头
+      // Native: request OS camera permission BEFORE getUserMedia / mounting <video>
+      // so Android WebView never shows the default media play overlay on the permission dialog.
+      if (Capacitor.isNativePlatform()) {
+        const cam = await requestCamera()
+        if (cam.state === 'denied') {
+          setCameraDenied(true)
+          setQrError('Camera access was denied. Please enable camera permission in Settings to scan QR codes.')
+          setQrScanning(false)
+          return
+        }
+      }
+      qrStreamRef.current?.getTracks().forEach(tr => tr.stop())
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+      qrStreamRef.current = stream
+      // Mount <video> only after we have a stream, then attach + play.
+      flushSync(() => setQrVideoReady(true))
       if (videoRef.current) {
+        videoRef.current.setAttribute('playsinline', 'true')
+        videoRef.current.setAttribute('webkit-playsinline', 'true')
         videoRef.current.srcObject = stream
         await videoRef.current.play()
-        // 启动逐帧识别循环
         if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
         animationFrameRef.current = requestAnimationFrame(tickQrDecode)
       }
@@ -1332,6 +1388,7 @@ export default function DevicePage() {
         setQrError(`Camera error: ${msg}`)
       }
       setQrScanning(false)
+      setQrVideoReady(false)
     }
   }
 }

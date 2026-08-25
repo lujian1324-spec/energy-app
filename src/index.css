@@ -375,3 +375,14 @@ textarea.text-body-lg {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
+
+/* Hide Android WebView default media play overlay on the QR scanner <video> (APP-003) */
+video.qr-scan-video::-webkit-media-controls,
+video.qr-scan-video::-webkit-media-controls-start-playback-button,
+video.qr-scan-video::-webkit-media-controls-overlay-play-button,
+video.qr-scan-video::-webkit-media-controls-enclosure {
+  display: none !important;
+  -webkit-appearance: none;
+  opacity: 0;
+  pointer-events: none;
+}

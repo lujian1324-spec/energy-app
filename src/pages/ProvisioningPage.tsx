@@ -19,7 +19,8 @@ import { saveRatedParams } from '../db/powerflowDB'
 import { useDeviceStore } from '../stores/deviceStore'
 import { openAppSettings } from '../utils/openAppSettings'
 import { extractDtuid, isDtuid } from '../utils/dtuidParser'
-import { checkBluetooth, classifyBleError } from '../utils/permissions'
+import { App } from '@capacitor/app'
+import { checkBluetooth, classifyBleError, resetBleInit } from '../utils/permissions'
 
 // Local UI screens — the multi-step store flow lives inside 'provisioning'
 type UiScreen = 'scan' | 'qr' | 'naming' | 'icon' | 'provisioning'
@@ -188,30 +189,34 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   // ─── BLE permission & availability state ─────────────────────────────────
   type BleStatus = 'checking' | 'no_permission' | 'bt_off' | 'ready'
   const [bleStatus, setBleStatus] = useState<BleStatus>('checking')
+  const bleStatusRef = useRef<BleStatus>(bleStatus)
+  bleStatusRef.current = bleStatus
+  const uiScreenRef = useRef(uiScreen)
+  uiScreenRef.current = uiScreen
 
-  useEffect(() => {
-    const check = async () => {
-      // 原生 App：通过 Capacitor BLE 插件检查实际权限状态，不再无条件跳过
-      if (supportsDeviceListScan()) {
-        try {
-          const result = await checkBluetooth()
-          if (result.state === 'granted') { setBleStatus('ready') }
-          else if (result.state === 'denied') { setBleStatus('no_permission') }
-          else { setBleStatus('ready') } // 'prompt' — 扫描时会触发权限对话框
-        } catch {
-          setBleStatus('ready') // 插件不可用时回退，让扫描自行报错
-        }
-        return
+  const recheckBle = useCallback(async (): Promise<BleStatus> => {
+    // 原生 App：通过 Capacitor BLE 插件检查实际权限状态，不再无条件跳过
+    if (supportsDeviceListScan()) {
+      try {
+        const result = await checkBluetooth()
+        if (result.state === 'granted') { setBleStatus('ready'); return 'ready' }
+        else if (result.state === 'denied') { setBleStatus('no_permission'); return 'no_permission' }
+        else { setBleStatus('ready'); return 'ready' } // 'prompt' — 扫描时会触发权限对话框
+      } catch {
+        setBleStatus('ready') // 插件不可用时回退，让扫描自行报错
+        return 'ready'
       }
-      // Web: navigator.bluetooth 不存在（iOS Safari / Firefox）
-      if (!('bluetooth' in navigator)) { setBleStatus('no_permission'); return }
-      // getAvailability() 只是 hint，新版 Chrome 在缺少 Permissions-Policy
-      // 时可能直接返回 false，不应阻塞用户进入扫描。始终设为 ready；
-      // 真正的权限检查在 navigator.bluetooth.requestDevice() 时进行。
-      setBleStatus('ready')
     }
-    check()
+    // Web: navigator.bluetooth 不存在（iOS Safari / Firefox）
+    if (!('bluetooth' in navigator)) { setBleStatus('no_permission'); return 'no_permission' }
+    // getAvailability() 只是 hint，新版 Chrome 在缺少 Permissions-Policy
+    // 时可能直接返回 false，不应阻塞用户进入扫描。始终设为 ready；
+    // 真正的权限检查在 navigator.bluetooth.requestDevice() 时进行。
+    setBleStatus('ready')
+    return 'ready'
   }, [])
+
+  useEffect(() => { void recheckBle() }, [recheckBle])
 
   // ─── BLE Scan ────────────────────────────────────────────────────────────
 
@@ -308,6 +313,31 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
       store.setIsOperating(false)
     }
   }, [store])
+
+  // Resume from OS settings: re-init BLE and auto-retry scan (APP-002)
+  useEffect(() => {
+    let removed = false
+    let handle: { remove: () => Promise<void> } | undefined
+    const setup = async () => {
+      handle = await App.addListener('appStateChange', async ({ isActive }) => {
+        if (!isActive || removed) return
+        const wasNoPermission = bleStatusRef.current === 'no_permission'
+        const onScan = uiScreenRef.current === 'scan'
+        resetBleInit()
+        if (onScan) setBleStatus('checking')
+        const status = await recheckBle()
+        if (removed) return
+        if (status === 'ready' && (onScan || wasNoPermission) && uiScreenRef.current === 'scan') {
+          void handleScan()
+        }
+      })
+    }
+    void setup()
+    return () => {
+      removed = true
+      void handle?.remove()
+    }
+  }, [recheckBle, handleScan])
 
   // ─── Verify ──────────────────────────────────────────────────────────────
 
@@ -592,6 +622,16 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     const hasDevices = foundDevices.length > 0
     const hasError = !isSearching && store.errorMessage && !hasDevices
 
+    // ── Checking Bluetooth (resume / first mount) ──
+    if (bleStatus === 'checking') {
+      return (
+        <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col items-center justify-center">
+          <Loader2 size={32} className="text-primary animate-spin mb-4" />
+          <p className="text-body-lg text-white">Checking Bluetooth…</p>
+        </div>
+      )
+    }
+
     // ── Permission Required screen ──
     if (bleStatus === 'no_permission') {
       return (
@@ -626,7 +666,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
               Open Settings
             </button>
             <button
-              onClick={() => { setBleStatus('ready'); store.setErrorMessage(null); handleScan() }}
+              onClick={() => { resetBleInit(); setBleStatus('ready'); store.setErrorMessage(null); handleScan() }}
               className="w-full h-14 rounded-full bg-ink-10 text-white text-body-lg font-semibold active:scale-[0.98] transition-transform"
             >
               I've Allowed It — Try Again

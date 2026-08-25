@@ -91,6 +91,8 @@ interface DeviceStoreState {
   devicePage: number
   deviceLoading: boolean
   deviceError: string | null
+  /** True after the first loadDevices() completes this session (success or empty). */
+  devicesListReady: boolean
 
   // 当前选中设备
   selectedDeviceId: string | null
@@ -176,6 +178,7 @@ export const useDeviceStore = create<DeviceStoreState>()(
       devicePage: 1,
       deviceLoading: false,
       deviceError: null,
+      devicesListReady: false,
 
       selectedDeviceId: null,
       selectedDeviceDetails: null,
@@ -210,7 +213,7 @@ export const useDeviceStore = create<DeviceStoreState>()(
       loadDevices: async (page = 1, count = 20, filters) => {
         // Demo 模式：直接返回 demo 设备列表
         if (get().isDemoMode) {
-          set({ deviceLoading: false })
+          set({ deviceLoading: false, devicesListReady: true })
           return
         }
 
@@ -233,6 +236,8 @@ export const useDeviceStore = create<DeviceStoreState>()(
           }
         } catch (err) {
           set({ deviceLoading: false, deviceError: err instanceof Error ? err.message : 'Failed to load devices' })
+        } finally {
+          set({ devicesListReady: true })
         }
       },
 
@@ -628,6 +633,7 @@ export const useDeviceStore = create<DeviceStoreState>()(
           devices: demoDevices,
           deviceTotal: demoDevices.length,
           deviceLoading: false,
+          devicesListReady: true,
           // 自动选中第一个设备
           selectedDeviceId: '10001',
         })
@@ -649,6 +655,7 @@ export const useDeviceStore = create<DeviceStoreState>()(
       exitDemoMode: () => {
         set({
           isDemoMode: false,
+          devicesListReady: false,
           devices: [],
           deviceTotal: 0,
           selectedDeviceId: null,
