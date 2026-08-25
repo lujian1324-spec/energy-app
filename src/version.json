@@ -1,8 +1,9 @@
 {
-  "version": "4.7.26",
-  "build": 2748,
+  "version": "4.7.27",
+  "build": 2749,
   "date": "2026-08-25",
   "changelog": [
+    "Device list cards: horizontal 3-column row (80x80 product photo, name+model, BatteryTag top / PowerToggle bottom). Default device photo is the transparent SIERRO product asset.",
     "Insights Share: spinner while capturing, Web Share file then title/text fallback (opens iOS WKWebView share sheet), toast 'Image saved' on desktop download, and toast on failure. Fixes silent no-op when canShare(files) is false or <a download> does nothing.",
     "Visual pass: near-black bottom nav (selected = cyan circle only), missing SoC is gray -- not CRITICAL red, Insights Day pill is primary cyan, add-device/feedback overlays cover the tab bar (fixed inset-0 z-[60]).",
     "iPhone 15 Pro: iOS contentInset never so WebView is edge-to-edge; CSS safe-area-top is inset+16px; bottom nav uses env() so the home-indicator gap is ~34px not a double black bar. Profile/Device no longer overlap the status bar.",

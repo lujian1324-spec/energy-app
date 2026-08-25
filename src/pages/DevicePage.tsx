@@ -45,7 +45,7 @@ import { useAlarmDismissStore, alarmKey } from '../stores/alarmDismissStore'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { dedupeAndFilterAlarms } from '../utils/alarmText'
 import type { FiringAlarm } from '../utils/powerOutageNotification'
-import sierro2000Img from '../assets/sierro-2000-product.webp'
+import sierroProductImg from '../assets/sierro-product.webp'
 import { mapFieldsToRealtime, fetchDeviceState, passthroughDevice } from '../api/deviceApi'
 import { FRAMES, decodePassthroughBase64, decodeLiveStatus } from '../protocols/modbusProtocol'
 import { isApiSuccess } from '../utils/apiClient'
@@ -391,8 +391,8 @@ export default function DevicePage() {
     return deviceIcons.default
   }
 
-  // Real product photo for all devices — default to Sierro 2000 product image
-  const getDeviceImage = (_sortKey?: string): string => sierro2000Img
+  // Real product photo for all devices — default to transparent SIERRO product image
+  const getDeviceImage = (_sortKey?: string): string => sierroProductImg
 
   const getWorkModeLabel = (mode: number | null | undefined): string => {
     if (mode === 1) return 'Backup'
@@ -720,16 +720,17 @@ export default function DevicePage() {
                   onClick={() => handleDeviceClick(device)}
                   className="bg-ink-10 rounded-l p-4 cursor-pointer active:scale-[0.99] transition-transform"
                 >
-                  {/* Top row: Display icon/photo + BatteryTag */}
-                  <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-stretch gap-3">
+                    {/* LEFT: product photo / display icon 80x80 */}
                     {(() => {
                       const savedIconId = getSavedDisplayIconId(String(device.id))
+                      const slotClass = "w-20 h-20 flex-shrink-0 flex items-center justify-center self-center"
                       // Custom image uploaded by user
                       if (savedIconId === 'custom') {
                         const customImg = localStorage.getItem(`sierro-display-icon-custom-${device.id}`)
                         if (customImg) {
                           return (
-                            <div className="w-14 h-14 flex items-center justify-center">
+                            <div className={slotClass}>
                               <img
                                 src={customImg}
                                 alt={device.name}
@@ -742,9 +743,9 @@ export default function DevicePage() {
                       // Explicit "Device photo" selection — always show the product image
                       if (savedIconId === 'photo') {
                         return (
-                          <div className="w-14 h-14 flex items-center justify-center">
+                          <div className={slotClass}>
                             <img
-                              src={sierro2000Img}
+                              src={getDeviceImage(device.deviceSortKey)}
                               alt={getDeviceModel(device)}
                               className="w-full h-full object-contain drop-shadow-sm"
                             />
@@ -754,13 +755,13 @@ export default function DevicePage() {
                       const SavedIcon = savedIconId ? LUCIDE_ICON_MAP[savedIconId] : null
                       if (SavedIcon) {
                         return (
-                          <div className="w-14 h-14 flex items-center justify-center">
-                            <SavedIcon size={36} className="text-white" />
+                          <div className={slotClass}>
+                            <SavedIcon size={48} className="text-white" />
                           </div>
                         )
                       }
                       return (
-                        <div className="w-14 h-14 flex items-center justify-center">
+                        <div className={slotClass}>
                           <img
                             src={getDeviceImage(device.deviceSortKey)}
                             alt={getDeviceModel(device)}
@@ -769,20 +770,22 @@ export default function DevicePage() {
                         </div>
                       )
                     })()}
-                    <BatteryTag level={remainingBatteryCapacity} unknown={!remainingBatteryCapacityKnown} connected={connected} charging={isCharging} />
-                  </div>
 
-                  {/* Name (up to 2 lines, then ...) */}
-                  <h3 className="text-title-lg font-semibold text-white leading-tight line-clamp-2 break-words">
-                    {device.name}
-                  </h3>
+                    {/* CENTER: name + model, vertically centered */}
+                    <div className="min-w-0 flex-1 flex flex-col justify-center">
+                      <h3 className="text-title-lg font-semibold text-white leading-tight line-clamp-2 break-words">
+                        {device.name}
+                      </h3>
+                      <p className="text-body-md text-ink-7 mt-0.5">{getDeviceModel(device)}</p>
+                    </div>
 
-                  {/* Model */}
-                  <p className="text-body-md text-ink-7 mt-0.5">{getDeviceModel(device)}</p>
-
-                  {/* Power toggle (disabled when disconnected) */}
-                  <div className="flex justify-end mt-2" onClick={(e) => e.stopPropagation()}>
-                    <PowerToggle deviceId={device.id} on={powerOn} disabled={!connected || togglingPower.has(String(device.id))} />
+                    {/* RIGHT: BatteryTag top, PowerToggle bottom */}
+                    <div className="flex flex-col items-end justify-between flex-shrink-0">
+                      <BatteryTag level={remainingBatteryCapacity} unknown={!remainingBatteryCapacityKnown} connected={connected} charging={isCharging} />
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <PowerToggle deviceId={device.id} on={powerOn} disabled={!connected || togglingPower.has(String(device.id))} />
+                      </div>
+                    </div>
                   </div>
                 </motion.div>
               )
