@@ -24,6 +24,7 @@ describe('isSierroScanResult', () => {
     expect(isSierroScanResult({})).toBe(false)
     expect(isSierroScanResult({ device: {}, uuids: [] })).toBe(false)
     expect(isSierroScanResult({ localName: 'MyPhone' })).toBe(false)
+  })
 
   it('accepts FEE7 / SSL_ encoded in rawAdvertisement (iOS first-packet gap)', () => {
     // Complete 16-bit service UUID list: len=3, type=0x03, uuid FEE7 LE = E7 FE
@@ -34,7 +35,5 @@ describe('isSierroScanResult', () => {
     const named = new DataView(new Uint8Array(nameBytes).buffer)
     expect(isSierroScanResult({ rawAdvertisement: named })).toBe(true)
     expect(parseRawAdvertisement(fee7).uuids.some(u => u.includes('fee7'))).toBe(true)
-  })
-
   })
 })
