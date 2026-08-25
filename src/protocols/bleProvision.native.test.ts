@@ -75,6 +75,19 @@ describe('NativeBleProvisionManager.scanDevices', () => {
     expect(h.ble.requestLEScan).toHaveBeenCalledWith({ allowDuplicates: false }, expect.any(Function))
   })
 
+  it('iOS scans with allowDuplicates so scan-response name/UUID packets are not dropped', async () => {
+    h.platform = 'ios'
+    h.scanResults = [
+      { device: { deviceId: 'a' } },                              // first ADV: no name, no UUID → drop
+      { device: { deviceId: 'a' }, localName: 'SSL_0F3A' },       // scan response: keep
+    ]
+    const mgr = await loadManager()
+    const found: ProvisionScanDevice[] = []
+    await mgr.scanDevices(d => found.push(d))
+    expect(h.ble.requestLEScan).toHaveBeenCalledWith({ allowDuplicates: true }, expect.any(Function))
+    expect(found.map(d => d.deviceId)).toEqual(['a'])
+  })
+
   it('Android 11-: throws a location error when Location services are off', async () => {
     vi.stubGlobal('navigator', { userAgent: UA_ANDROID_11 })
     h.ble.isLocationEnabled.mockResolvedValue(false)
