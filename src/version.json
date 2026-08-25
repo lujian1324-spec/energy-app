@@ -1,8 +1,9 @@
 {
-  "version": "4.7.20",
-  "build": 2742,
+  "version": "4.7.21",
+  "build": 2743,
   "date": "2026-08-25",
   "changelog": [
+    "BLE scan list shows the 20-digit collector DTUID parsed from the SSL_ advertised name (not the raw base64 BLE name). Parser tolerates missing base64 padding and trailing NULs from iOS. Later scan-response packets can upgrade an unnamed FEE7 hit into a DTUID.",
     "iOS BLE scan: allowDuplicates on iOS so scan-response localName/FEE7 is not dropped (Android merges ADV+scan-response, iOS does not). Also parse rawAdvertisement for SSL_ / FEE7. Fixes iOS finding no devices while Android sees the same product.",
     "Android Play Console production recommendations (4.7.18 live warnings): (1) Edge-to-edge — MainActivity calls EdgeToEdge.enable() and pads the WebView with system-bar WindowInsets so Android 15+ displays correctly. (2) Deprecated bar-color APIs — removed android:statusBarColor/navigationBarColor from AppTheme.NoActionBar; light/dark icons via WindowInsetsControllerCompat. (3) FCM bitmap downsample — pin Firebase BOM 33.16.0 for messaging. (4) R8 — enable android.r8.optimizedResourceShrinking (AGP stays 8.13; AGP 9 deferred). No UI/Figma/iOS changes.",
     "Flagship polish (Batch D — number count-up + haptics; no energy-flow animation per request). (1) Count-up: hero numbers now smoothly roll to their new value instead of snapping. Enhanced the existing useCountUp hook to respect the OS 'Reduce Motion' setting (snaps instantly when enabled) and to support decimals (it previously Math.round-ed, so it would have shown a wrong final value for fractional metrics). Applied it to the Device Monitor battery-ring SoC % (integer) and the Insights page's days-in-service and CO₂-Reduced Kg (1 decimal) — animates on value change (e.g. a new poll reading or switching the stats period). (2) Haptics: added light haptic feedback on bottom-nav tab switches and a medium haptic on the device power toggle (reusing the existing utils/haptics.ts wrapper — native @capacitor/haptics, web navigator.vibrate fallback, silent no-op elsewhere), joining the existing toggle-switch and pull-to-refresh haptics. Purely additive UX; typecheck + 154 unit tests + build all green.",
