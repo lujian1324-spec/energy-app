@@ -149,7 +149,7 @@ p {
    Android: MainActivity injects --safe-area-inset-* (env() is 0 in the WebView).
    Fallback 0 — never the iPhone 34/47px constants, which letterbox 20:9 Android. */
 .safe-area-top {
-  padding-top: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+  padding-top: calc(max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px)) + 1rem);
 }
 
 .safe-area-bottom {

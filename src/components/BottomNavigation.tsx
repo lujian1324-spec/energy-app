@@ -12,9 +12,9 @@ export default function BottomNavigation() {
   return (
     <div
       className="flex justify-center items-end pt-2 bg-transparent pointer-events-none"
-      // Sit just above the system gesture/nav bar. --safe-area-inset-bottom is
-      // injected on Android; env() works on iOS. 4px minimum so it never hugs the pixel edge.
-      style={{ paddingBottom: 'max(4px, var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)))' }}
+      // Sit just above the system gesture/nav bar. env() is a sibling in max() so a
+      // SET --safe-area-inset-bottom of 0px cannot hide the iOS inset. +4px breathing room.
+      style={{ paddingBottom: 'calc(max(8px, var(--safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px)) + 4px)' }}
     >
       <nav
         className="flex items-center gap-1 px-2 py-2 rounded-full bg-[#0E3F3A] pointer-events-auto shadow-lg"

@@ -14,7 +14,8 @@ const config: CapacitorConfig = {
   },
   ios: {
     backgroundColor: '#141414',
-    contentInset: 'always',
+    contentInset: 'never',
+    // WebView is full-bleed; CSS env(safe-area-inset-*) handles the notch/home indicator (same model as Android 4.7.22).
     // 允许 WKWebView 访问本地文件
     allowsLinkPreview: false,
     scrollEnabled: true,
