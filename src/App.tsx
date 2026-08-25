@@ -55,7 +55,7 @@ function SessionLoadingScreen() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-ink-12 flex items-center justify-center" role="status" aria-live="polite">
+    <div className="h-full w-full bg-ink-12 flex items-center justify-center" role="status" aria-live="polite">
       <div className="flex flex-col items-center gap-4">
         <div className="w-16 h-16 rounded-l bg-primary/[0.12] border border-primary/[0.3]
           flex items-center justify-center">
