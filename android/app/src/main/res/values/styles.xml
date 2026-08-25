@@ -18,9 +18,9 @@
              即使 KeyboardResize.Body 键盘缩小 WebView，露出的也只是深色底，绝不会闪出
              白底 splash。与 MainActivity 里 getWindow().setBackgroundDrawable(#141414) 双保险。 -->
         <item name="android:background">@color/appBackground</item>
-        <!-- 状态栏/导航栏与深色主题一体化（浅色图标） -->
-        <item name="android:statusBarColor">@color/appBackground</item>
-        <item name="android:navigationBarColor">@color/appBackground</item>
+        <!-- Edge-to-edge: do NOT set android:statusBarColor / navigationBarColor
+             (deprecated on Android 15). MainActivity uses EdgeToEdge.enable() +
+             WindowInsetsControllerCompat for light/dark icons instead. -->
         <item name="android:windowLightStatusBar">false</item>
     </style>
 
