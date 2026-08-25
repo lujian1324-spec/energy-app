@@ -64,6 +64,10 @@ html, body, #root {
   height: 100%;
   width: 100%;
   overflow: hidden;
+  /* Lock to the WebView visual viewport. Android 100vh often includes system
+     chrome and overflows after edge-to-edge; position:fixed + inset avoids that. */
+  position: fixed;
+  inset: 0;
 }
 
 body {
@@ -140,13 +144,16 @@ p {
   display: none;
 }
 
-/* 安全区域适配 */
+/* 安全区域适配
+   iOS: env(safe-area-inset-*) from viewport-fit=cover.
+   Android: MainActivity injects --safe-area-inset-* (env() is 0 in the WebView).
+   Fallback 0 — never the iPhone 34/47px constants, which letterbox 20:9 Android. */
 .safe-area-top {
-  padding-top: env(safe-area-inset-top, 47px);
+  padding-top: max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
 }
 
 .safe-area-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 34px);
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
 }
 
 /* ============================================================
