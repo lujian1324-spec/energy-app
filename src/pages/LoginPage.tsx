@@ -149,7 +149,7 @@ export default function LoginPage() {
   })()
 
   return (
-    <div className="min-h-screen bg-ink-12 flex flex-col px-6 safe-area-top safe-area-bottom">
+    <div className="min-h-screen bg-ink-12 flex flex-col px-6 pb-8 safe-area-top safe-area-bottom">
       <div className="flex-1 flex flex-col justify-center">
         {/* Brand */}
         <div className="text-center mb-10">
@@ -348,14 +348,6 @@ export default function LoginPage() {
           </button>
         </div>
       </div>
-
-      {/* Terms & Privacy */}
-      <p className="pb-8 pt-4 text-center text-caption leading-relaxed text-ink-7 break-words max-w-full">
-        By continuing, you agree to our{' '}
-        <a href={TERMS_URL} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 whitespace-nowrap">Terms of Use</a>
-        {' '}and{' '}
-        <a href={PRIVACY_URL} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 whitespace-nowrap">Privacy Policy</a>
-      </p>
     </div>
   )
 }
