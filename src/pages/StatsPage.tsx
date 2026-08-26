@@ -355,9 +355,9 @@ function ChartAreaSkeleton() {
   )
 }
 
-// ═══════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════
 // StatsPage
-// ═══════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════
 
 export default function StatsPage() {
   const [period, setPeriod] = useState<Period>('Day')
@@ -567,14 +567,14 @@ export default function StatsPage() {
 
   return (
     <div className="h-full flex flex-col bg-ink-12 overflow-hidden">
-      {/* Header — same shell as Device (h-11 title row) so tab switch doesn't jump */}
+      {/* Header — same title-row height as Device */}
       <div className="px-5 pt-4 pb-3 safe-area-top">
-        <div className="flex justify-between items-center h-11 mb-3">
-          <h1 className="text-display font-display text-white leading-none">Insights</h1>
+        <div className="flex justify-between items-center mb-3">
+          <h1 className="text-display font-display text-white">Insights</h1>
           <button
             aria-label="Share"
             disabled={sharing}
-            className="w-11 h-11 flex items-center justify-center rounded-full bg-ink-10 text-white hover:bg-ink-9 transition-colors active:scale-95 disabled:opacity-50"
+            className="w-11 h-11 flex items-center justify-center rounded-full bg-ink-10 text-ink-6 hover:text-primary transition-colors disabled:opacity-50"
           onClick={async () => {
             if (sharing) return
             setSharing(true)
@@ -642,7 +642,7 @@ export default function StatsPage() {
             }
           }}
         >
-          {sharing ? <Loader2 size={20} className="animate-spin" /> : <Share2 size={20} />}
+            {sharing ? <Loader2 size={18} className="animate-spin" /> : <Share2 size={18} />}
           </button>
         </div>
       </div>
