@@ -11,18 +11,17 @@ type Tab = 'email' | 'username'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-const FIELD_CLASS =
-  'flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-3 min-h-[56px] h-[56px] box-border focus-within:ring-1 focus-within:ring-inset focus-within:ring-primary transition-shadow'
-
 export default function LoginPage() {
   const { loading, isAuthenticated, login } = useAuthStore()
   const navigate = useNavigate()
 
+  // ── Tab + shared fields ──
   const [tab, setTab] = useState<Tab>('username')
   const [email, setEmail] = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
 
+  // ── Verification-code (OTP) mode ──
   const [otpMode, setOtpMode] = useState(false)
   const [otpCode, setOtpCode] = useState('')
   const [otpSent, setOtpSent] = useState(false)
@@ -31,16 +30,19 @@ export default function LoginPage() {
   const [sending, setSending] = useState(false)
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
+  // ── Status ──
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [termsAccepted, setTermsAccepted] = useState(true)
 
   const emailValid = EMAIL_RE.test(email.trim())
 
+  // ── redirect on auth ──
   useEffect(() => {
     if (isAuthenticated) navigate('/', { replace: true })
   }, [isAuthenticated, navigate])
 
+  // ── cleanup cooldown ──
   useEffect(() => {
     return () => { if (cooldownRef.current) clearInterval(cooldownRef.current) }
   }, [])
@@ -59,6 +61,7 @@ export default function LoginPage() {
     if (next === tab) return
     setTab(next)
     setError(null)
+    // Username tab can't use verification-code login
     if (next === 'username') setOtpMode(false)
   }
 
@@ -70,11 +73,13 @@ export default function LoginPage() {
     setCaptchaId(null)
   }
 
+  // ── Obtain verification code (email OTP) ──
   const handleObtainCode = async () => {
     if (cooldown > 0 || !emailValid) { setError('Please enter a valid email address.'); return }
     setError(null)
     setSending(true)
     try {
+      // Email-code login must request the LOGIN captcha intent, not register.
       const result = await sendEmailCaptcha(email.trim(), CaptchaIntent.LOGIN)
       if (result.code === 0 || result.code === '0') {
         setCaptchaId(result.data?.iotCaptchaId ?? null)
@@ -90,14 +95,19 @@ export default function LoginPage() {
     }
   }
 
+  // ── Sign in ──
   const handleSignIn = async () => {
     setError(null)
+
+    // Email + verification-code login
     if (tab === 'email' && otpMode) {
       if (!captchaId || otpCode.trim().length < 6 || !email.trim()) return
       setBusy(true)
       try {
         const result = await loginByEmail(email.trim(), captchaId, otpCode.trim())
         if (result.code === 0 || result.code === '0') {
+          // 同 authStore.login()：必须退出 Demo 模式，否则之前用过 Guest 模式的用户
+          // 真实登录后仍会看到上一次游客会话残留的假设备数据。
           useDeviceStore.getState().exitDemoMode()
           useAuthStore.setState({ isAuthenticated: true, isGuest: false, user: result.data ?? null })
           navigate('/', { replace: true })
@@ -111,6 +121,8 @@ export default function LoginPage() {
       }
       return
     }
+
+    // Password login (email or username)
     const account = tab === 'email' ? email.trim() : username.trim()
     if (!account || !password) return
     setBusy(true)
@@ -128,6 +140,7 @@ export default function LoginPage() {
     }
   }
 
+  // ── Sign-in button disabled state ──
   const signInDisabled = (() => {
     if (!termsAccepted) return true
     if (tab === 'email' && otpMode) return !captchaId || otpCode.length < 6
@@ -136,8 +149,9 @@ export default function LoginPage() {
   })()
 
   return (
-    <div className="min-h-screen bg-ink-12 flex flex-col px-6 pb-8 safe-area-top safe-area-bottom">
+    <div className="min-h-screen bg-ink-12 flex flex-col px-6 safe-area-top safe-area-bottom">
       <div className="flex-1 flex flex-col justify-center">
+        {/* Brand */}
         <div className="text-center mb-10">
           <div className="flex justify-center mb-2">
             <svg viewBox="0 0 320 56" className="w-4/5 max-w-[280px] h-auto" xmlns="http://www.w3.org/2000/svg">
@@ -156,6 +170,7 @@ export default function LoginPage() {
           <p className="text-body-md text-ink-7 mt-2"></p>
         </div>
 
+        {/* Tab bar */}
         <div className="flex border-b border-ink-9 mb-6">
           {(['username', 'email'] as Tab[]).map(t => (
             <button
@@ -172,10 +187,12 @@ export default function LoginPage() {
           ))}
         </div>
 
+        {/* ── Identifier + secret + toggle + forgot: fixed min-height so Sign In / terms don't jump (APP-001) ── */}
         <div className="min-h-[220px]">
+        {/* ── Identifier field ── */}
         {tab === 'email' ? (
           <>
-            <div className={FIELD_CLASS}>
+            <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-1 focus-within:ring-1 focus-within:ring-inset focus-within:ring-primary transition-shadow">
               <input
                 type="email"
                 value={email}
@@ -184,7 +201,7 @@ export default function LoginPage() {
                 autoComplete="email"
                 autoCapitalize="none"
                 autoCorrect="off"
-                className="flex-1 h-full bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
+                className="flex-1 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
               />
               {email && (
                 <button onClick={() => setEmail('')} aria-label="Clear email">
@@ -193,11 +210,12 @@ export default function LoginPage() {
               )}
             </div>
             {email && !emailValid && (
-              <p className="text-caption text-danger -mt-1 mb-2 px-1">Please enter a valid email address.</p>
+              <p className="text-caption text-danger mb-2 px-1">Please enter a valid email address.</p>
             )}
+            {(!email || emailValid) && <div className="mb-2" />}
           </>
         ) : (
-          <div className={FIELD_CLASS}>
+          <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-3 focus-within:ring-1 focus-within:ring-inset focus-within:ring-primary transition-shadow">
             <input
               type="text"
               value={username}
@@ -206,7 +224,7 @@ export default function LoginPage() {
               autoComplete="username"
               autoCapitalize="none"
               autoCorrect="off"
-              className="flex-1 h-full bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
+              className="flex-1 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
             />
             {username && (
               <button onClick={() => setUsername('')} aria-label="Clear username">
@@ -216,8 +234,9 @@ export default function LoginPage() {
           </div>
         )}
 
+        {/* ── Password OR verification-code field ── */}
         {tab === 'email' && otpMode ? (
-          <div className={FIELD_CLASS}>
+          <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-3 mb-3 focus-within:ring-1 focus-within:ring-inset focus-within:ring-primary transition-shadow">
             <input
               type="text"
               inputMode="numeric"
@@ -226,7 +245,7 @@ export default function LoginPage() {
               placeholder="Verification code"
               autoComplete="one-time-code"
               maxLength={6}
-              className="flex-1 min-w-0 h-full bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
+              className="flex-1 min-w-0 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
             />
             <button
               onClick={handleObtainCode}
@@ -239,7 +258,7 @@ export default function LoginPage() {
             </button>
           </div>
         ) : (
-          <div className={FIELD_CLASS}>
+          <div className="flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-3 focus-within:ring-1 focus-within:ring-inset focus-within:ring-primary transition-shadow">
             <input
               type="password"
               value={password}
@@ -247,11 +266,12 @@ export default function LoginPage() {
               placeholder="Password"
               autoComplete="current-password"
               onKeyDown={e => { if (e.key === 'Enter') handleSignIn() }}
-              className="flex-1 h-full bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
+              className="flex-1 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
             />
           </div>
         )}
 
+        {/* ── With Verification Code toggle (email tab only) ── */}
         {tab === 'email' && (
           <div className="flex items-center justify-between py-1 mb-1">
             <span className="text-body-md text-ink-7">With Verification Code</span>
@@ -271,6 +291,7 @@ export default function LoginPage() {
           </div>
         )}
 
+        {/* Forgot password */}
         {!otpMode && (
           <div className="flex justify-end mt-1">
             <Link to="/forgot-password" className="text-body-md text-primary">
@@ -282,6 +303,7 @@ export default function LoginPage() {
 
         {error && <p className="text-label text-danger mt-2">{error}</p>}
 
+        {/* Terms & Privacy checkbox */}
         <label className="flex items-start gap-2 mt-5 cursor-pointer">
           <input
             type="checkbox"
@@ -297,6 +319,7 @@ export default function LoginPage() {
           </span>
         </label>
 
+        {/* Sign In */}
         <button
           onClick={handleSignIn}
           disabled={signInDisabled || busy || loading}
@@ -307,6 +330,7 @@ export default function LoginPage() {
           {busy ? <Loader2 size={18} className="animate-spin" /> : 'Sign In'}
         </button>
 
+        {/* Sign up + Guest */}
         <div className="text-center mt-5 space-y-3">
           <p className="text-body-md text-ink-7">
             Don't have an account?{' '}
@@ -324,6 +348,14 @@ export default function LoginPage() {
           </button>
         </div>
       </div>
+
+      {/* Terms & Privacy */}
+      <p className="pb-8 pt-4 text-center text-caption leading-relaxed text-ink-7 break-words max-w-full">
+        By continuing, you agree to our{' '}
+        <a href={TERMS_URL} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 whitespace-nowrap">Terms of Use</a>
+        {' '}and{' '}
+        <a href={PRIVACY_URL} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 whitespace-nowrap">Privacy Policy</a>
+      </p>
     </div>
   )
 }
