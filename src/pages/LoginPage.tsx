@@ -11,6 +11,9 @@ type Tab = 'email' | 'username'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+const FIELD_CLASS =
+  'flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-3 min-h-[56px] h-[56px] box-border focus-within:ring-1 focus-within:ring-inset focus-within:ring-primary transition-shadow'
+
 export default function LoginPage() {
   const { loading, isAuthenticated, login } = useAuthStore()
   const navigate = useNavigate()
@@ -132,10 +135,6 @@ export default function LoginPage() {
     return !account || !password
   })()
 
-  const fieldClass = 'flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-3 min-h-[56px] focus-within:ring-1 focus-within:ring-inset focus-within:ring-primary transition-shadow'
-  const emailFieldClass = 'flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-1 focus-within:ring-1 focus-within:ring-inset focus-within:ring-primary transition-shadow'
-  const usernameFieldClass = 'flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-3 focus-within:ring-1 focus-within:ring-inset focus-within:ring-primary transition-shadow'
-
   return (
     <div className="min-h-screen bg-ink-12 flex flex-col px-6 pb-8 safe-area-top safe-area-bottom">
       <div className="flex-1 flex flex-col justify-center">
@@ -176,7 +175,7 @@ export default function LoginPage() {
         <div className="min-h-[220px]">
         {tab === 'email' ? (
           <>
-            <div className={emailFieldClass}>
+            <div className={FIELD_CLASS}>
               <input
                 type="email"
                 value={email}
@@ -185,7 +184,7 @@ export default function LoginPage() {
                 autoComplete="email"
                 autoCapitalize="none"
                 autoCorrect="off"
-                className="flex-1 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
+                className="flex-1 h-full bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
               />
               {email && (
                 <button onClick={() => setEmail('')} aria-label="Clear email">
@@ -194,12 +193,11 @@ export default function LoginPage() {
               )}
             </div>
             {email && !emailValid && (
-              <p className="text-caption text-danger mb-2 px-1">Please enter a valid email address.</p>
+              <p className="text-caption text-danger -mt-1 mb-2 px-1">Please enter a valid email address.</p>
             )}
-            {(!email || emailValid) && <div className="mb-2" />}
           </>
         ) : (
-          <div className={usernameFieldClass}>
+          <div className={FIELD_CLASS}>
             <input
               type="text"
               value={username}
@@ -208,7 +206,7 @@ export default function LoginPage() {
               autoComplete="username"
               autoCapitalize="none"
               autoCorrect="off"
-              className="flex-1 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
+              className="flex-1 h-full bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
             />
             {username && (
               <button onClick={() => setUsername('')} aria-label="Clear username">
@@ -219,7 +217,7 @@ export default function LoginPage() {
         )}
 
         {tab === 'email' && otpMode ? (
-          <div className={fieldClass}>
+          <div className={FIELD_CLASS}>
             <input
               type="text"
               inputMode="numeric"
@@ -228,7 +226,7 @@ export default function LoginPage() {
               placeholder="Verification code"
               autoComplete="one-time-code"
               maxLength={6}
-              className="flex-1 min-w-0 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
+              className="flex-1 min-w-0 h-full bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
             />
             <button
               onClick={handleObtainCode}
@@ -241,7 +239,7 @@ export default function LoginPage() {
             </button>
           </div>
         ) : (
-          <div className={fieldClass}>
+          <div className={FIELD_CLASS}>
             <input
               type="password"
               value={password}
@@ -249,7 +247,7 @@ export default function LoginPage() {
               placeholder="Password"
               autoComplete="current-password"
               onKeyDown={e => { if (e.key === 'Enter') handleSignIn() }}
-              className="flex-1 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
+              className="flex-1 h-full bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
             />
           </div>
         )}
