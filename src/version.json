@@ -1,1 +1,8 @@
-STREAM_FROM_FILE:/tmp/push_files_version_only.json
+{
+  "version": "4.7.28",
+  "build": 2750,
+  "date": "2026-08-26",
+  "changelog": [
+    "Settings: hide the Solar Status push-notification toggle (Power Outage / Low Battery remain). Underlying pushSolarStatus preference and relay/poller plumbing stay, matching the v4.7.7 Device Alarms hide — so existing subscribers are not torn down. Solar power on Device Monitor / Insights charts is unchanged."
+  ]
+}
