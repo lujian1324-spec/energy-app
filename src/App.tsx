@@ -68,13 +68,8 @@ function SessionLoadingScreen() {
   )
 }
 
-const TAB_PATHS = ['/devices', '/insights', '/setting']
-
 function AppInner() {
   const location = useLocation()
-  const prevPathRef = useRef(location.pathname)
-  const isTabSwitch =
-    TAB_PATHS.includes(location.pathname) && TAB_PATHS.includes(prevPathRef.current)
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
   const isGuest = useAuthStore(s => s.isGuest)
   const sessionReady = useAuthStore(s => s.sessionReady)
@@ -88,10 +83,6 @@ function AppInner() {
     restoreSession()
     refreshNotificationPermission()
   }, [restoreSession])
-
-  useEffect(() => {
-    prevPathRef.current = location.pathname
-  }, [location.pathname])
 
   // 登录后幂等同步 Web Push 订阅（覆盖订阅过期 / 换设备登录；已开启推送才执行）
   useEffect(() => {
@@ -159,10 +150,10 @@ function AppInner() {
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={location.pathname}
-            initial={isTabSwitch ? false : { opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={isTabSwitch ? { opacity: 1 } : { opacity: 0, x: -20 }}
-            transition={isTabSwitch ? { duration: 0 } : { duration: 0.3, ease: 'easeOut' }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
             className="h-full w-full"
           >
             <Routes location={location}>
