@@ -1,8 +1,8 @@
 {
-  "version": "4.7.30",
-  "build": 2752,
+  "version": "4.7.31",
+  "build": 2753,
   "date": "2026-08-27",
   "changelog": [
-    "QA pass: email OTP as a field row without a toggle, QR camera gated until permission, BLE list hides non-Sierro names, bind/disconnect/timeout copy, and Insights empty state aligned with Device."
+    "Fix Android bind illegal argument: send the same add-device payload as manual add (collector ID + station only)."
   ]
 }
