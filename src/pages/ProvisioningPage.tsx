@@ -18,9 +18,10 @@ import { SIERRO_MODELS, SIERRO_MODEL_LIST, generateSerial, type SierroModel } fr
 import { saveRatedParams } from '../db/powerflowDB'
 import { useDeviceStore } from '../stores/deviceStore'
 import { openAppSettings } from '../utils/openAppSettings'
-import { extractDtuid, isDtuid } from '../utils/dtuidParser'
+import { Capacitor } from '@capacitor/core'
+import { extractDtuid, isDtuid, parseBleName } from '../utils/dtuidParser'
 import { App } from '@capacitor/app'
-import { checkBluetooth, classifyBleError, resetBleInit } from '../utils/permissions'
+import { checkBluetooth, classifyBleError, resetBleInit, requestCamera } from '../utils/permissions'
 
 // Local UI screens — the multi-step store flow lives inside 'provisioning'
 type UiScreen = 'scan' | 'qr' | 'naming' | 'icon' | 'provisioning'
@@ -40,6 +41,41 @@ const DEVICE_ICONS = [
 // Radar ring animation keyframes via inline style
 const radarRings = [0, 1, 2, 3]
 
+type FoundDevice = {
+  name: string
+  serial: string
+  deviceId?: string
+  bleName?: string
+  status?: number
+}
+
+type FailKind = 'wifi' | 'bind' | 'disconnect' | 'timeout' | null
+type ConfigStage = 'Sending Wi-Fi details' | 'Connecting device' | 'Adding to account'
+
+const BIND_FAIL_COPY = "Device connected to Wi-Fi, but couldn't be added to your account"
+const DISCONNECT_COPY = 'The device disconnected during setup. Keep it powered on, stay close, and check the pairing light.'
+const WIFI_TIMEOUT_COPY = 'Timed out sending Wi-Fi details. Stay close to the device and try again.'
+const BIND_TIMEOUT_COPY = "Device connected to Wi-Fi, but adding it to your account timed out. Try adding again."
+
+function withTimeout<T>(promise: Promise<T>, ms: number, timeoutMessage: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error(timeoutMessage)), ms)
+    promise.then(
+      v => { clearTimeout(t); resolve(v) },
+      e => { clearTimeout(t); reject(e) },
+    )
+  })
+}
+
+function isJunkError(msg?: string | null): boolean {
+  if (!msg) return true
+  return /illegal argument|internal error|internal\/validation|validation|null pointer|stack trace|exception|sql|constraint|undefined|econn|status code|rc=/i.test(msg)
+}
+
+function displayTitleFromDtuid(dtuid: string): string {
+  return `Sierro · ${dtuid.slice(-4)}`
+}
+
 // ─── QR Scanner component (jsQR + getUserMedia) ──────────────────────────
 function QrScanScreen({ onBack, onScanned }: {
   onBack: () => void
@@ -53,33 +89,62 @@ function QrScanScreen({ onBack, onScanned }: {
   const [scanned, setScanned] = useState<{ name: string; serial: string } | null>(null)
   const [cameraReady, setCameraReady] = useState(false)
 
+  const stopCamera = () => {
+    streamRef.current?.getTracks().forEach(t => t.stop())
+    streamRef.current = null
+    if (videoRef.current) videoRef.current.srcObject = null
+    if (rafRef.current !== null) { cancelAnimationFrame(rafRef.current); rafRef.current = null }
+  }
+
+  const handleQrBack = () => {
+    stopCamera()
+    setCameraReady(false)
+    onBack()
+  }
+
   // scanned == null 时（初次进入或点了 Rescan）重新获取摄像头流。
-  // 扫描成功会 stop 所有 track，因此 Rescan 必须重新 getUserMedia，
-  // 否则画面永远停在冻结的最后一帧、无法再次识别。
+  // Native: requestCamera BEFORE getUserMedia / mounting <video> so Android
+  // never shows the default media play overlay on the permission dialog.
   useEffect(() => {
     if (scanned) return
     let stopped = false
     const start = async () => {
+      setError(null)
+      setCameraReady(false)
       try {
+        if (Capacitor.isNativePlatform()) {
+          const cam = await requestCamera()
+          if (stopped) return
+          if (cam.state === 'denied') {
+            setError('Camera access was denied. Please enable camera permission in Settings to scan QR codes.')
+            return
+          }
+        }
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
         if (stopped) { stream.getTracks().forEach(t => t.stop()); return }
         streamRef.current = stream
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream
-          await videoRef.current.play()
-          setCameraReady(true)
-        }
+        setCameraReady(true)
       } catch {
         setError('Camera permission denied. Please allow camera access and try again.')
+        setCameraReady(false)
       }
     }
     start()
     return () => {
       stopped = true
-      streamRef.current?.getTracks().forEach(t => t.stop())
-      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
+      stopCamera()
     }
   }, [scanned])
+
+  // Attach stream only after <video> is mounted (cameraReady).
+  useEffect(() => {
+    if (!cameraReady || !streamRef.current || !videoRef.current) return
+    const video = videoRef.current
+    video.setAttribute('playsinline', 'true')
+    video.setAttribute('webkit-playsinline', 'true')
+    video.srcObject = streamRef.current
+    void video.play().catch(() => {})
+  }, [cameraReady])
 
   useEffect(() => {
     if (!cameraReady) return
@@ -110,16 +175,25 @@ function QrScanScreen({ onBack, onScanned }: {
   }, [cameraReady])
 
   return (
-    <div className="fixed inset-0 z-50 bg-black flex flex-col">
+    <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
       <div className="px-4 pt-5 pb-4 flex items-center gap-3 safe-area-top absolute top-0 left-0 right-0 z-10">
-        <button onClick={onBack} aria-label="Back" className="relative w-10 h-10 rounded-full bg-black/[0.5] flex items-center justify-center before:absolute before:content-[''] before:-inset-1">
+        <button onClick={handleQrBack} aria-label="Back" className="relative w-10 h-10 rounded-full bg-black/[0.5] flex items-center justify-center before:absolute before:content-[''] before:-inset-1">
           <ChevronLeft size={20} className="text-white" />
         </button>
         <h1 className="text-title-lg font-semibold text-white">Scan QR Code</h1>
       </div>
 
-      {/* Camera feed */}
-      <video ref={videoRef} className="absolute inset-0 w-full h-full object-cover" playsInline muted />
+      {/* Camera feed — mount <video> only after permission + stream, matching DevicePage */}
+      {cameraReady && !error && (
+        <video
+          ref={videoRef}
+          className="absolute inset-0 w-full h-full object-cover"
+          playsInline
+          muted
+          controls={false}
+          disablePictureInPicture
+        />
+      )}
       <canvas ref={canvasRef} className="hidden" />
 
       {/* Dark overlay with viewfinder cutout */}
@@ -142,7 +216,7 @@ function QrScanScreen({ onBack, onScanned }: {
         {error ? (
           <div className="bg-danger/90 rounded-l p-4 text-center">
             <p className="text-white text-body-md">{error}</p>
-            <button onClick={onBack} className="mt-3 text-white font-semibold underline text-body-md">Go Back</button>
+            <button onClick={handleQrBack} className="mt-3 text-white font-semibold underline text-body-md">Go Back</button>
           </div>
         ) : scanned ? (
           <div className="bg-black/[0.85] rounded-l p-5">
@@ -182,8 +256,10 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   const [selectedIcon, setSelectedIcon] = useState<string>('power')
 
   // Simulate found devices list on top of real BLE scan
-  const [foundDevices, setFoundDevices] = useState<{ name: string; serial: string; deviceId?: string }[]>([])
+  const [foundDevices, setFoundDevices] = useState<FoundDevice[]>([])
   const [showNotifSheet, setShowNotifSheet] = useState(false)
+  const [configStage, setConfigStage] = useState<ConfigStage>('Sending Wi-Fi details')
+  const [failKind, setFailKind] = useState<FailKind>(null)
 
 
   // ─── BLE permission & availability state ─────────────────────────────────
@@ -193,6 +269,12 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   bleStatusRef.current = bleStatus
   const uiScreenRef = useRef(uiScreen)
   uiScreenRef.current = uiScreen
+  const provisionStepRef = useRef(store.step)
+  provisionStepRef.current = store.step
+  const lastBleRef = useRef<{ deviceId?: string; bleName?: string }>({})
+  const wifiConfiguredRef = useRef(false)
+  const reconnectingRef = useRef(false)
+  const configGuardRef = useRef(false)
 
   const recheckBle = useCallback(async (): Promise<BleStatus> => {
     // 原生 App：通过 Capacitor BLE 插件检查实际权限状态，不再无条件跳过
@@ -233,10 +315,53 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     store.setErrorMessage(null)
     store.addLog('Starting BLE scan...')
     setFoundDevices([])
+    wifiConfiguredRef.current = false
+    setFailKind(null)
     destroyProvisionManager()
     const manager = getProvisionManager({
       onLog: (msg) => store.addLog(msg),
-      onDisconnected: () => store.setErrorMessage('Device disconnected'),
+      onDisconnected: () => {
+        store.addLog('BLE disconnected')
+        const step = provisionStepRef.current
+        if (step === 'configuring') {
+          if (reconnectingRef.current) return
+          reconnectingRef.current = true
+          void (async () => {
+            const mgr = getProvisionManager()
+            const { deviceId, bleName } = lastBleRef.current
+            if (deviceId && typeof mgr.connectTo === 'function') {
+              for (let i = 1; i <= 3; i++) {
+                await new Promise(r => setTimeout(r, 700))
+                try {
+                  await mgr.connectTo(deviceId, bleName)
+                  store.addLog(`Reconnected after disconnect (attempt ${i})`)
+                  reconnectingRef.current = false
+                  return
+                } catch (e) {
+                  store.addLog(`Reconnect attempt ${i} failed: ${e}`)
+                }
+              }
+            } else {
+              // No connect API — wait and let configWifi/bind finish or time out.
+              await new Promise(r => setTimeout(r, 1500))
+              reconnectingRef.current = false
+              return
+            }
+            if (provisionStepRef.current === 'result') { reconnectingRef.current = false; return }
+            setFailKind('disconnect')
+            store.setConfigResult('fail')
+            store.setErrorMessage(DISCONNECT_COPY)
+            store.setStep('result')
+            store.setIsOperating(false)
+            configGuardRef.current = false
+            reconnectingRef.current = false
+          })()
+          return
+        }
+        if (step === 'result') return
+        setFailKind('disconnect')
+        store.setErrorMessage(DISCONNECT_COPY)
+      },
     })
 
     // 原生：App 内实时列出附近 Sierro 设备，由用户点选
@@ -254,26 +379,26 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
       }, 10000)
       try {
         await manager.scanDevices((d) => {
-          const dtuid = d.name ? extractDtuid(d.name) : null
+          const parsed = d.name ? parseBleName(d.name) : null
+          // Ignore non-Sierro advertisements (e.g. SEAT-F190)
+          if (!parsed) return
+          const dtuid = parsed.dtuid
           seen.add(d.deviceId)
           setFoundDevices(prev => {
             const idx = prev.findIndex(x => x.deviceId === d.deviceId)
-            const next = {
-              // keep raw BLE name for connectTo() / parseName(); UI shows serial
-              name: d.name || (idx >= 0 ? prev[idx].name : 'Sierro Device'),
-              serial: dtuid ?? (idx >= 0 ? prev[idx].serial : d.deviceId),
+            const next: FoundDevice = {
+              name: displayTitleFromDtuid(dtuid),
+              serial: dtuid,
               deviceId: d.deviceId,
+              bleName: d.name,
+              status: parsed.status,
             }
             if (idx >= 0) {
-              const cur = prev[idx]
-              const betterName = d.name && cur.name === 'Sierro Device'
-              const betterId = dtuid && !isDtuid(cur.serial)
-              if (!betterName && !betterId) return prev
               const copy = [...prev]
               copy[idx] = next
-              return copy
+              return copy.sort((a, b) => (a.status ?? 99) - (b.status ?? 99))
             }
-            return [...prev, next]
+            return [...prev, next].sort((a, b) => (a.status ?? 99) - (b.status ?? 99))
           })
         })
       } catch (err) {
@@ -295,15 +420,18 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     // Web：只能用系统蓝牙选择器（单设备）
     try {
       await manager.connect()
-      const name = manager.deviceName ?? 'Sierro Device'
-      const duid = manager.getDuid()
+      const rawName = manager.deviceName ?? 'Sierro Device'
+      const parsed = parseBleName(rawName)
+      const duid = manager.getDuid() || parsed?.dtuid
       if (!duid) {
         const msg = "Couldn't read this device's ID. Make sure it's a Sierro device and try again."
         store.setErrorMessage(msg); toast.error(msg)
         return
       }
-      store.setDeviceInfo(name, duid)
-      setFoundDevices([{ name, serial: duid }])
+      const display = isDtuid(duid) ? displayTitleFromDtuid(duid) : rawName
+      lastBleRef.current = { deviceId: undefined, bleName: rawName }
+      store.setDeviceInfo(display, duid)
+      setFoundDevices([{ name: display, serial: duid, bleName: rawName, status: parsed?.status }])
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Scan failed'
       store.setErrorMessage(msg)
@@ -320,7 +448,12 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     let handle: { remove: () => Promise<void> } | undefined
     const setup = async () => {
       handle = await App.addListener('appStateChange', async ({ isActive }) => {
-        if (!isActive || removed) return
+        if (!isActive) {
+          setShowPassword(false)
+          if (removed) return
+          return
+        }
+        if (removed) return
         const wasNoPermission = bleStatusRef.current === 'no_permission'
         const onScan = uiScreenRef.current === 'scan'
         resetBleInit()
@@ -435,6 +568,10 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     }
   }, [uiScreen, bleStatus, store.isOperating, handleScan])
 
+  useEffect(() => {
+    if (store.step !== 'password') setShowPassword(false)
+  }, [store.step])
+
   // 进入 "Select Wi-Fi" 步骤时自动扫描一次（避免空列表需手动点 Scan）
   const autoScannedRef = useRef(false)
   useEffect(() => {
@@ -448,87 +585,158 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     }
   }, [store.step, store.apLoading, handleScanWifi])
 
-  const handleConfig = useCallback(async () => {
-    if (!store.dtuid || !store.selectedSsid) return
+  const handleBindToCloud = useCallback(async () => {
+    if (configGuardRef.current) return
+    configGuardRef.current = true
+    const ds = useDeviceStore.getState()
+    const deviceName = deviceNameInput.trim() || (store.deviceName ?? 'My Device')
+    const dtuDtuid = store.dtuid ?? ''
+    const isOk = (c: number | string | undefined) => c === 0 || c === '0'
+    const spec = SIERRO_MODELS[selectedModel]
+    const serialNumber = generateSerial(spec, dtuDtuid)
+
+    setConfigStage('Adding to account')
     store.setStep('configuring')
     store.setIsOperating(true)
     store.setErrorMessage(null)
+
+    try {
+      await ds.loadStations().catch(() => {})
+      const stationId = useDeviceStore.getState().stations[0]?.id
+      const base = {
+        deviceName,
+        dtuDtuid,
+        deviceSerialNumber: serialNumber,
+        isVirtualSerialNumber: true,
+        ratedPower: spec.ratedPower,
+      }
+      const bindPromise = stationId != null
+        ? ds.addNewDevice({ ...base, stationId })
+        : ds.addNewDeviceWithStation({ ...base, stationId: 0, stationName: deviceName })
+      const devResult = await withTimeout(bindPromise, 25000, 'BIND_TIMEOUT')
+
+      if (devResult && isOk(devResult.code)) {
+        await ds.loadDevices()
+        try {
+          const added = useDeviceStore.getState().devices.find(
+            d => d.serialNumber === serialNumber || String((d as { dtuDtuid?: string }).dtuDtuid ?? '') === dtuDtuid
+          )
+          if (added) {
+            await saveRatedParams({
+              deviceId: String(added.id),
+              acInvOutputPower: spec.acInvOutputPower,
+              fetchedAt: Date.now(),
+              model: spec.model,
+              ratedPower: spec.ratedPower,
+              ratedChargePower: spec.ratedChargePower,
+              batteryType: spec.batteryType,
+              batteryHealth: spec.batteryHealth,
+              serialNumber,
+            })
+          }
+        } catch { /* 本地写入失败不影响添加结果 */ }
+        store.setConfigResult('success')
+        store.setErrorMessage(null)
+        setFailKind(null)
+      } else {
+        const raw = String(devResult?.message ?? devResult?.msg ?? '')
+        store.addLog(`addNewDevice failed: ${isJunkError(raw) ? "[internal] " : ""}${raw || 'unknown'}`)
+        setFailKind('bind')
+        store.setConfigResult('fail')
+        store.setErrorMessage(BIND_FAIL_COPY)
+      }
+    } catch (err) {
+      const m = err instanceof Error ? err.message : 'bind failed'
+      store.addLog(`addNewDevice exception: ${m}`)
+      if (m === 'BIND_TIMEOUT') {
+        setFailKind('bind')
+        store.setConfigResult('fail')
+        store.setErrorMessage(BIND_TIMEOUT_COPY)
+      } else {
+        setFailKind('bind')
+        store.setConfigResult('fail')
+        store.setErrorMessage(BIND_FAIL_COPY)
+      }
+    } finally {
+      store.setStep('result')
+      store.setIsOperating(false)
+      configGuardRef.current = false
+    }
+  }, [store, deviceNameInput, selectedModel])
+
+  const handleConfig = useCallback(async () => {
+    if (!store.dtuid || !store.selectedSsid) return
+    if (configGuardRef.current) return
+    configGuardRef.current = true
+    store.setIsOperating(true)
+    setConfigStage('Sending Wi-Fi details')
+    store.setStep('configuring')
+    store.setErrorMessage(null)
+    setFailKind(null)
     try {
       const manager = getProvisionManager()
-      const resp = await manager.configWifi(store.selectedSsid, store.wifiPassword)
-      store.setConfigResult(resp.RC === 0 ? 'success' : 'fail')
+      const resp = await withTimeout(
+        manager.configWifi(store.selectedSsid, store.wifiPassword),
+        25000,
+        'WIFI_TIMEOUT',
+      )
+      if (provisionStepRef.current === 'result') return
       if (resp.RC !== 0) {
-        store.setErrorMessage(`Config failed: RC=${resp.RC}`)
-      } else {
-        // Register device in the cloud (correct payload: deviceName + dtuDtuid + stationId)
-        // then refresh the list. A device must belong to a station — reuse an
-        // existing one, or create one together with the device for new accounts.
-        const ds = useDeviceStore.getState()
-        const deviceName = deviceNameInput.trim() || (store.deviceName ?? 'My Device')
-        const dtuDtuid = store.dtuid ?? ''
-        const isOk = (c: number | string | undefined) => c === 0 || c === '0'
-
-        // 按所选型号自动生成序列号 + 默认额定参数
-        const spec = SIERRO_MODELS[selectedModel]
-        const serialNumber = generateSerial(spec, dtuDtuid)
-
-        await ds.loadStations().catch(() => {})
-        const stationId = useDeviceStore.getState().stations[0]?.id
-
-        const base = {
-          deviceName,
-          dtuDtuid,
-          deviceSerialNumber: serialNumber,
-          isVirtualSerialNumber: true,
-          ratedPower: spec.ratedPower,
-        }
-        const devResult = stationId != null
-          ? await ds.addNewDevice({ ...base, stationId }).catch(() => null)
-          : await ds.addNewDeviceWithStation({ ...base, stationId: 0, stationName: deviceName }).catch(() => null)
-
-        if (devResult && isOk(devResult.code)) {
-          await ds.loadDevices()
-          // 找到刚添加的设备（按生成的序列号或 DTUID 匹配），写入型号默认参数到本地，
-          // Device Info 页据此显示 Rated Capacity / Power / Charge Power / Battery Type / Health
-          try {
-            const added = useDeviceStore.getState().devices.find(
-              d => d.serialNumber === serialNumber || String((d as any).dtuDtuid ?? '') === dtuDtuid
-            )
-            if (added) {
-              await saveRatedParams({
-                deviceId: String(added.id),
-                acInvOutputPower: spec.acInvOutputPower,   // 容量 = ×2
-                fetchedAt: Date.now(),
-                model: spec.model,
-                ratedPower: spec.ratedPower,
-                ratedChargePower: spec.ratedChargePower,
-                batteryType: spec.batteryType,
-                batteryHealth: spec.batteryHealth,
-                serialNumber,
-              })
-            }
-          } catch { /* 本地写入失败不影响添加结果 */ }
-        } else {
-          // Wi-Fi config succeeded but binding the device to the account failed —
-          // tell the user instead of silently showing success with an empty list.
-          store.setConfigResult('fail')
-          store.setErrorMessage(
-            `Wi-Fi configured, but adding the device failed: ${devResult?.message ?? devResult?.msg ?? 'please try again'}`
-          )
-        }
+        setFailKind('wifi')
+        store.setConfigResult('fail')
+        store.setErrorMessage(`Couldn't connect to Wi-Fi (code ${resp.RC}). Check the password and try again.`)
+        store.setStep('result')
+        return
       }
-      store.setStep('result')
+      wifiConfiguredRef.current = true
+      store.addLog('Wi-Fi config RC=0')
+      setConfigStage('Connecting device')
+      configGuardRef.current = false
+      await handleBindToCloud()
     } catch (err) {
+      if (provisionStepRef.current === 'result') return
       const m = err instanceof Error ? err.message : 'Config failed'
+      store.addLog(`configWifi failed: ${m}`)
       store.setConfigResult('fail')
-      store.setErrorMessage(/disconnect|GATT/i.test(m)
-        ? 'Bluetooth disconnected. Please reconnect the device and try again.'
-        : m)
+      if (m === 'WIFI_TIMEOUT') {
+        setFailKind('timeout')
+        store.setErrorMessage(WIFI_TIMEOUT_COPY)
+      } else if (/disconnect|GATT/i.test(m)) {
+        setFailKind('disconnect')
+        store.setErrorMessage(DISCONNECT_COPY)
+      } else {
+        setFailKind('wifi')
+        store.setErrorMessage(m)
+      }
       store.setStep('result')
     } finally {
       store.setIsOperating(false)
+      configGuardRef.current = false
     }
-  }, [store, deviceNameInput, selectedModel])
+  }, [store, handleBindToCloud])
+
+  const handleRetryCurrentStage = useCallback(async () => {
+    if (configGuardRef.current) return
+    configGuardRef.current = true
+    store.setIsOperating(true)
+    store.setErrorMessage(null)
+    const { deviceId, bleName } = lastBleRef.current
+    if (deviceId) {
+      try {
+        const manager = getProvisionManager()
+        await manager.connectTo(deviceId, bleName)
+        store.addLog('Reconnected before retrying current stage')
+      } catch (e) {
+        store.addLog(`Reconnect before retry failed: ${e}`)
+      }
+    }
+    configGuardRef.current = false
+    if (wifiConfiguredRef.current) {
+      await handleBindToCloud()
+    } else {
+      await handleConfig()
+    }
+  }, [store, handleBindToCloud, handleConfig])
 
   const handleCheckStatus = useCallback(async () => {
     if (!store.dtuid) return
@@ -553,6 +761,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
 
   const handleClose = useCallback(() => {
     destroyProvisionManager()
+    wifiConfiguredRef.current = false
     store.reset()
     onClose()
   }, [store, onClose])
@@ -566,20 +775,22 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   }, [store.deviceName])
 
   // 点选某个扫描到的设备：原生先连接该 deviceId，再进入命名→WiFi 配置流程
-  const handleSelectDevice = useCallback(async (device: { name: string; serial: string; deviceId?: string }) => {
+  const handleSelectDevice = useCallback(async (device: FoundDevice) => {
     if (device.deviceId && supportsDeviceListScan()) {
       store.setIsOperating(true)
       store.setErrorMessage(null)
       try {
         const manager = getProvisionManager()
-        await manager.connectTo(device.deviceId, device.name)
-        const duid = manager.getDuid()
+        const bleName = device.bleName ?? device.name
+        lastBleRef.current = { deviceId: device.deviceId, bleName }
+        await manager.connectTo(device.deviceId, bleName)
+        const duid = manager.getDuid() || (isDtuid(device.serial) ? device.serial : null)
         if (!duid) {
           const msg = "Couldn't read this device's ID. Move closer to the device and try again."
           store.setErrorMessage(msg); toast.error(msg)
           return
         }
-        store.setDeviceInfo(manager.deviceName ?? device.name, duid)
+        store.setDeviceInfo(device.name || displayTitleFromDtuid(duid), duid)
         goToNaming()
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Connection failed'
@@ -622,15 +833,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     const hasDevices = foundDevices.length > 0
     const hasError = !isSearching && store.errorMessage && !hasDevices
 
-    // ── Checking Bluetooth (resume / first mount) ──
-    if (bleStatus === 'checking') {
-      return (
-        <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col items-center justify-center">
-          <Loader2 size={32} className="text-primary animate-spin mb-4" />
-          <p className="text-body-lg text-white">Checking Bluetooth…</p>
-        </div>
-      )
-    }
+    const isCheckingBle = bleStatus === 'checking'
 
     // ── Permission Required screen ──
     if (bleStatus === 'no_permission') {
@@ -709,6 +912,12 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
 
     return (
       <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
+        {isCheckingBle && (
+          <div className="absolute inset-0 z-20 bg-ink-12/85 flex flex-col items-center justify-center">
+            <Loader2 size={32} className="text-primary animate-spin mb-4" />
+            <p className="text-body-lg text-white">Checking Bluetooth…</p>
+          </div>
+        )}
         {/* Header */}
         <div className="px-4 pt-5 pb-4 flex items-center justify-between safe-area-top">
           <button
@@ -791,10 +1000,10 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                     >
                       <div>
                         <p className="text-body-lg font-semibold text-white tracking-wide">
-                          {isDtuid(device.serial) ? device.serial : (device.name || 'Sierro Device')}
+                          {isDtuid(device.serial) ? displayTitleFromDtuid(device.serial) : (device.name || 'Sierro')}
                         </p>
                         <p className="text-caption text-ink-6 mt-0.5">
-                          {isDtuid(device.serial) ? 'Sierro' : device.serial}
+                          {isDtuid(device.serial) ? device.serial : 'Sierro'}
                         </p>
                       </div>
                       <button
@@ -1140,9 +1349,11 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                 onClick={handleConfig}
                 disabled={store.isOperating || !store.wifiPassword}
                 className="w-full h-14 rounded-full bg-primary text-black text-body-lg font-semibold
-                  disabled:bg-primary-dark disabled:text-black/[0.4] transition-colors"
+                  disabled:bg-primary-dark disabled:text-black/[0.4] transition-colors flex items-center justify-center gap-2"
               >
-                Connect
+                {store.isOperating
+                  ? <><Loader2 size={18} className="animate-spin" /> Connecting…</>
+                  : 'Connect'}
               </button>
             </motion.div>
           )}
@@ -1152,7 +1363,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
             <motion.div key="configuring" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <div className="flex flex-col items-center py-16">
                 <Loader2 size={40} className="text-primary animate-spin mb-6" />
-                <p className="text-body-lg font-semibold text-white mb-2">Connecting to Wi-Fi...</p>
+                <p className="text-body-lg font-semibold text-white mb-2">{configStage}</p>
                 <p className="text-body-md text-ink-6">This may take a moment.</p>
               </div>
             </motion.div>
@@ -1232,10 +1443,24 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                 {store.configResult === 'fail' && (
                   <>
                     <button
-                      onClick={() => store.setStep('wifi')}
+                      onClick={() => {
+                        if (failKind === 'disconnect') {
+                          void handleRetryCurrentStage()
+                        } else if (failKind === 'bind' || wifiConfiguredRef.current) {
+                          void handleBindToCloud()
+                        } else {
+                          store.setStep('wifi')
+                        }
+                      }}
+                      disabled={store.isOperating}
                       className="w-full h-12 rounded-l bg-ink-10 text-white text-body-md font-semibold flex items-center justify-center gap-2"
                     >
-                      Try Again
+                      {store.isOperating && <Loader2 size={14} className="animate-spin" />}
+                      {failKind === 'disconnect'
+                        ? 'Reconnect'
+                        : (failKind === 'bind' || wifiConfiguredRef.current)
+                          ? 'Try adding again'
+                          : 'Try Again'}
                     </button>
                     <button
                       onClick={handleRestart}

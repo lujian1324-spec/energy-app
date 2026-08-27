@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Share2, Loader2, BarChart3, WifiOff, Zap, ChevronLeft, ChevronRight, Leaf, RefreshCw } from 'lucide-react'
+import { Share2, Loader2, WifiOff, Zap, ChevronLeft, ChevronRight, Leaf, RefreshCw } from 'lucide-react'
 import html2canvas from 'html2canvas'
 import { toast } from '../components/Toast'
 import { LastSync, CalcAudit } from '../components/DataTrust'
@@ -654,10 +654,8 @@ export default function StatsPage() {
         {!hasDevice && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center justify-center py-20 px-8">
-            <div className="w-16 h-16 rounded-2xl bg-ink-10 flex items-center justify-center mb-4">
-              <BarChart3 size={32} className="text-ink-7" />
-            </div>
-            <h3 className="text-headline-md font-semibold text-white mb-2">No Data Yet</h3>
+            <div className="w-40 h-40 rounded-l bg-ink-9 mb-7" />
+            <h3 className="text-headline-md font-semibold text-white mb-2">No devices yet</h3>
             <p className="text-body-lg text-ink-7 text-center leading-relaxed mb-6">
               Connect a device to start tracking energy usage and statistics.
             </p>
