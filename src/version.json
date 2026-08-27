@@ -1,8 +1,8 @@
 {
-  "version": "4.7.29",
-  "build": 2751,
+  "version": "4.7.30",
+  "build": 2752,
   "date": "2026-08-27",
   "changelog": [
-    "Batch A visual alignment: battery 60–100% uses brand teal #01D6BE; disconnect/low-battery banner #591511 with plug-flash; Device header 40px; Monitor Connected gray; ring remaining/to-full copy; disconnected chart titles; Real-Time Battery curve white / gray tabs; Output block without AC label; Battery Priority Backup Mode/Saving Mode; empty list solid gray square."
+    "QA pass: email OTP as a field row without a toggle, QR camera gated until permission, BLE list hides non-Sierro names, bind/disconnect/timeout copy, and Insights empty state aligned with Device."
   ]
 }
