@@ -235,7 +235,7 @@ export default function LoginPage() {
                 flex items-center gap-1"
             >
               {sending ? <Loader2 size={14} className="animate-spin" /> : null}
-              {cooldown > 0 ? `Resend (${cooldown})` : otpSent ? 'Resend Code' : 'Obtain Code'}
+              {cooldown > 0 ? `Resend (${cooldown})` : otpSent ? 'Resend Code' : 'Send code'}
             </button>
           </div>
         ) : (
@@ -252,27 +252,23 @@ export default function LoginPage() {
           </div>
         )}
 
-        {tab === 'email' && (
-          <div className="flex items-center justify-between py-1 mb-1">
-            <span className="text-body-md text-ink-7">With Verification Code</span>
+        {tab === 'email' ? (
+          <div className="flex items-center justify-between py-1 mb-1 min-h-[28px]">
             <button
+              type="button"
               onClick={toggleOtpMode}
-              role="switch"
-              aria-checked={otpMode}
-              aria-label="With Verification Code"
-              className={`relative w-12 h-7 rounded-pill transition-colors duration-300
-                ${otpMode ? 'bg-primary' : 'bg-ink-9'}`}
+              className="text-body-md text-primary"
             >
-              <span
-                className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-ink-1 transition-transform duration-300
-                  ${otpMode ? 'translate-x-5' : 'translate-x-0'}`}
-              />
+              {otpMode ? 'Sign in with password' : 'Sign in with verification code'}
             </button>
+            {!otpMode && (
+              <Link to="/forgot-password" className="text-body-md text-primary">
+                Forgot password?
+              </Link>
+            )}
           </div>
-        )}
-
-        {!otpMode && (
-          <div className="flex justify-end mt-1">
+        ) : (
+          <div className="flex justify-end mt-1 min-h-[28px]">
             <Link to="/forgot-password" className="text-body-md text-primary">
               Forgot password?
             </Link>

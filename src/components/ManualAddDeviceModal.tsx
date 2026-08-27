@@ -35,7 +35,7 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
 
     if (!deviceName.trim()) { setError('Please enter a device name'); return }
     if (!serialNumber.trim() && !dtuDtuid.trim()) {
-      setError('Please enter a serial number or DTU ID')
+      setError('Please enter a serial number or collector ID')
       return
     }
 
@@ -155,13 +155,13 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
             />
           </div>
 
-          {/* DTU ID */}
+          {/* Collector ID (optional) */}
           <div>
             <label className="text-caption font-semibold text-ink-6 mb-1.5 block">
-              DTU ID <span className="font-normal text-ink-7">(optional)</span>
+              Collector ID <span className="font-normal text-ink-7">(optional)</span>
             </label>
             <p className="text-caption text-ink-7 mb-1.5">
-              Optional 20-digit collector ID from the device or packaging (same as the BLE scan ID).
+              20-digit ID on the device sticker or packaging. Same number shown in Bluetooth setup. Leave blank if you only have the serial number.
             </p>
             <input
               type="text"
