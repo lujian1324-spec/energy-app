@@ -43,11 +43,11 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
     battery: batteryAsSoc
       ? (batterySoc == null
           ? { value: null as number | null, unit: '%', color: '#8C8C8C' }
-          : { value: Math.round(batterySoc), unit: '%', color: '#34C759' })
-      : { value: values.battery, unit: 'W', color: '#34C759' },
+          : { value: Math.round(batterySoc), unit: '%', color: '#FFFFFF' })
+      : { value: values.battery, unit: 'W', color: '#FFFFFF' },
     ac: { value: values.ac, unit: 'W', color: '#01D6BE' },
-    solar: { value: values.solar, unit: 'W', color: '#FF9500' },
-    output: { value: values.output, unit: 'W', color: '#BFBFBF' },
+    solar: { value: values.solar, unit: 'W', color: '#01D6BE' },
+    output: { value: values.output, unit: 'W', color: '#FF9500' },
   }), [values.battery, values.ac, values.solar, values.output, batteryAsSoc, batterySoc])
 
   const currentChartData = powerChartData[powerDataSource]
@@ -251,8 +251,10 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
           animate={{ scale: 1, opacity: 1 }}
           className="text-caption px-2 py-0.5 rounded-full font-semibold tnum"
           style={{
-            backgroundColor: isOnline ? `${currentChartData.color}26` : 'rgba(160,160,165,0.15)',
-            color: isOnline ? currentChartData.color : '#BFBFBF'
+            backgroundColor: !isOnline
+              ? 'rgba(160,160,165,0.15)'
+              : (powerDataSource === 'battery' ? '#454545' : `${currentChartData.color}26`),
+            color: !isOnline ? '#BFBFBF' : (powerDataSource === 'battery' ? '#FFFFFF' : currentChartData.color)
           }}
         >
           {isOnline ? (currentChartData.value == null ? '--' : `${currentChartData.value}${currentChartData.unit}`) : '-'}
@@ -286,7 +288,13 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
           onWheel={onChartWheel}
         >
         {/* Loading spinner overlay */}
-        {historyLoading && rawHistoryPoints.length === 0 && (
+        {!isOnline && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center z-10 text-center px-3">
+            <p className="text-body-md font-semibold text-white">Device disconnected</p>
+            <p className="text-label text-ink-7 mt-1">Reconnect the device to view chart data.</p>
+          </div>
+        )}
+        {isOnline && historyLoading && rawHistoryPoints.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center z-10">
             <Loader2 size={20} className="text-primary animate-spin" />
           </div>
@@ -401,7 +409,7 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
               key={item.key}
               onClick={() => setPowerDataSource(item.key)}
               className={`flex flex-col items-center gap-1 px-4 py-1 rounded-l active:scale-[0.96] transition-[background-color,color,transform] duration-150
-                ${isActive ? 'bg-primary text-ink-13' : 'text-ink-6 bg-transparent'}`}
+                ${isActive ? 'bg-[#D9D9D9] text-ink-13' : 'text-ink-6 bg-transparent'}`}
             >
               <Icon size={18} className={isActive ? 'text-ink-13' : 'text-ink-6'} />
               <span className={`text-tiny font-medium ${isActive ? 'text-ink-13' : 'text-ink-6'}`}>
