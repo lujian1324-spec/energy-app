@@ -30,12 +30,12 @@ export default function BatteryTag({
   const clampedLevel = Math.max(0, Math.min(100, level))
   const displayLevel = Math.round(clampedLevel)
 
-  // 颜色规则: 0 灰色, <20 红, <60 橙, ≥60 绿
+  // 颜色规则: 0 灰色, <20 红, <60 橙, ≥60 品牌青 #01D6BE
   const getColor = () => {
     if (clampedLevel <= 0) return { fill: '#636366', bg: 'rgba(99,99,102,0.15)' }
     if (clampedLevel < 20) return { fill: '#FF3B30', bg: 'rgba(255,59,48,0.15)' }
     if (clampedLevel < 60) return { fill: '#FF9500', bg: 'rgba(255,149,0,0.15)' }
-    return { fill: '#34C759', bg: 'rgba(52,199,89,0.15)' }
+    return { fill: '#01D6BE', bg: 'rgba(1,214,190,0.15)' }
   }
 
   const dims = size === 'md'

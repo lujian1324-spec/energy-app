@@ -1,8 +1,8 @@
 {
-  "version": "4.7.28",
-  "build": 2750,
-  "date": "2026-08-26",
+  "version": "4.7.29",
+  "build": 2751,
+  "date": "2026-08-27",
   "changelog": [
-    "Settings: hide the Solar Status push-notification toggle (Power Outage / Low Battery remain). Underlying pushSolarStatus preference and relay/poller plumbing stay, matching the v4.7.7 Device Alarms hide — so existing subscribers are not torn down. Solar power on Device Monitor / Insights charts is unchanged."
+    "Batch A visual alignment: battery 60–100% uses brand teal #01D6BE; disconnect/low-battery banner #591511 with plug-flash; Device header 40px; Monitor Connected gray; ring remaining/to-full copy; disconnected chart titles; Real-Time Battery curve white / gray tabs; Output block without AC label; Battery Priority Backup Mode/Saving Mode; empty list solid gray square."
   ]
 }

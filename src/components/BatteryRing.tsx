@@ -1,5 +1,5 @@
-﻿import { motion } from 'framer-motion'
-import { Zap, BatteryMedium, AlertTriangle, BatteryWarning, BatteryLow, Plug } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { Zap } from 'lucide-react'
 import { useCountUp } from '../hooks/useCountUp'
 
 interface BatteryRingProps {
@@ -49,18 +49,6 @@ const STATE_COLOR: Record<BatteryState, string> = {
   unknown: '#8C8C8C',
 }
 
-const STATE_LABEL: Record<BatteryState, string> = {
-  critical: 'CRITICAL',
-  low: 'LOW BATTERY',
-  warning: 'LOW',
-  normal: '',
-  good: '',
-  full: 'FULL',
-  charging: 'CHARGING',
-  plugged: 'PLUGGED IN',
-  unknown: '',
-}
-
 export default function BatteryRing({
   percentage,
   size = 160,
@@ -85,12 +73,7 @@ export default function BatteryRing({
 
   const state: BatteryState = !connected || noData ? 'unknown' : getBatteryState(safePercent, isCharging, isPlugged)
   const ringColor = STATE_COLOR[state]
-  const stateLabel = !connected ? 'Disconnected' : noData ? 'No data' : STATE_LABEL[state]
   const isFull = state === 'full'
-  const showTime = connected && !noData && !isCharging && !isPlugged && !isFull
-
-  // 选择状态图标 (色盲友好, PRD v1.1 §9.1)
-  const StateIcon = isFull ? BatteryMedium : isCharging ? Zap : isPlugged ? Plug : safePercent <= 15 ? BatteryWarning : safePercent <= 25 ? AlertTriangle : BatteryMedium
 
   // 可访问性标签 (PRD v1.1 §9.1)
   const ariaLabel = !connected
@@ -158,30 +141,31 @@ export default function BatteryRing({
           )}
         </div>
 
-        {/* 状态标签 / 时间 — unknown SoC is gray "No data", never CRITICAL */}
-        {noData && connected ? (
+        {/* Time sentence (PRD): remaining / to full. Hide at 100%. No CHARGING/FULL/LOW label. */}
+        {!connected ? (
+          <div className="text-tiny font-semibold tracking-wide text-ink-7 mt-1">
+            Disconnected
+          </div>
+        ) : noData ? (
           <div className="text-tiny font-semibold tracking-wide text-ink-7 mt-1">
             No data
           </div>
-        ) : stateLabel ? (
+        ) : safePercent >= 99 ? (
           <div className="flex items-center gap-1 mt-1">
-            <StateIcon size={12} style={{ color: ringColor }} aria-hidden="true" />
-            <span
-              className="text-tiny font-semibold tracking-wide"
-              style={{ color: ringColor }}
-            >
-              {stateLabel}
+            <Zap size={12} style={{ color: '#01D6BE' }} aria-hidden="true" />
+          </div>
+        ) : isCharging ? (
+          <div className="flex items-center gap-1 mt-1">
+            <Zap size={12} style={{ color: '#FFFFFF' }} aria-hidden="true" />
+            <span className="text-tiny text-ink-6 tracking-wide" aria-hidden="true">
+              {rawTimeLabel ? timeToFull : `${timeToFull} to full`}
             </span>
           </div>
-        ) : showTime ? (
+        ) : (
           <div className="text-tiny text-ink-6 mt-1 tracking-wide" aria-hidden="true">
             {rawTimeLabel ? timeRemaining : `${timeRemaining} remaining`}
           </div>
-        ) : isCharging ? (
-          <div className="text-tiny text-ink-6 mt-1 tracking-wide" aria-hidden="true">
-            {rawTimeLabel ? timeToFull : `${timeToFull} to full`}
-          </div>
-        ) : null}
+        )}
       </div>
     </div>
   )
