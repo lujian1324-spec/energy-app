@@ -395,7 +395,7 @@ export default function DevicePage() {
   const getDeviceImage = (_sortKey?: string): string => sierroProductImg
 
   const getWorkModeLabel = (mode: number | null | undefined): string => {
-    if (mode === 1) return 'Backup'
+    if (mode === 1) return 'Backup Mode'
     if (mode === 2) return 'Eco'
     return 'Normal'
   }
@@ -446,7 +446,7 @@ export default function DevicePage() {
   const getTagColor = (level: number): string => {
     // Real 0% is missing-data's sibling, not Disconnected: gray, not danger red.
     if (level <= 0) return '#8C8C8C'
-    if (level >= 60) return '#34C759'
+    if (level >= 60) return '#01D6BE'
     if (level >= 20) return '#FF9500'
     return '#FF3B30'
   }
@@ -529,7 +529,7 @@ export default function DevicePage() {
   const BatteryTag = ({ level, connected, charging, unknown }: { level: number; connected: boolean; charging: boolean; unknown?: boolean }) => {
     if (!connected) {
       return (
-        <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-[#4B1512] text-danger text-body-md font-semibold">
+        <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-[#591511] text-danger text-body-md font-semibold">
           Disconnected
         </span>
       )
@@ -625,14 +625,14 @@ export default function DevicePage() {
             <button
               onClick={() => setShowAddModal(true)}
               aria-label="Add device"
-              className="w-11 h-11 rounded-full bg-ink-10 flex items-center justify-center text-white hover:bg-ink-9 transition-colors active:scale-95"
+              className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-white hover:bg-ink-9 transition-colors active:scale-95"
             >
               <Icon name="add" size={20} />
             </button>
             <button
               onClick={() => navigate('/notifications')}
               aria-label="Notifications"
-              className="relative w-11 h-11 rounded-full bg-ink-10 flex items-center justify-center text-white hover:bg-ink-9 transition-colors active:scale-95"
+              className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-white hover:bg-ink-9 transition-colors active:scale-95"
             >
               <Icon name="bell" size={20} />
               {activeAlarmCount > 0 && (
@@ -672,9 +672,9 @@ export default function DevicePage() {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               onClick={() => navigate('/notifications')}
-              className="mb-3 rounded-l bg-[#4B1512] px-4 py-3.5 flex items-start gap-3 cursor-pointer"
+              className="mb-3 rounded-l bg-[#591511] px-4 py-3.5 flex items-start gap-3 cursor-pointer"
             >
-              <Icon name="low-battery" size={22} className="flex-shrink-0 mt-0.5" />
+              <PlugZap size={22} className="flex-shrink-0 mt-0.5 text-white" />
               <div className="flex-1 min-w-0">
                 <p className="text-body-md font-semibold text-white leading-tight truncate">Low Battery</p>
                 <p className="text-label text-white/90 mt-0.5 leading-snug">
@@ -794,9 +794,7 @@ export default function DevicePage() {
         ) : (
           /* Empty State */
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center text-center pt-24 px-6">
-            <div className="w-40 h-40 rounded-l bg-ink-9 mb-7 flex items-center justify-center">
-              <Icon name="battery" size={56} className="opacity-40" />
-            </div>
+            <div className="w-40 h-40 rounded-l bg-ink-9 mb-7" />
             <h2 className="text-headline-md font-semibold text-white mb-2">
               {error ? 'Something went wrong' : 'No devices yet'}
             </h2>

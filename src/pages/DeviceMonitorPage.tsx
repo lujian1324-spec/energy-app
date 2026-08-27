@@ -138,8 +138,8 @@ export default function DeviceMonitorPage() {
                 className={`text-white transition-transform duration-200 ${showDeviceDropdown ? 'rotate-180' : ''}`}
               />
             </div>
-            <span className="text-label text-primary">
-              {isOnline ? 'Connected' : 'Offline'}
+            <span className="text-label text-ink-7">
+              {isOnline ? 'Connected' : 'Disconnected'}
             </span>
           </button>
           {showDeviceDropdown && devices.length > 1 && (
@@ -239,7 +239,6 @@ export default function DeviceMonitorPage() {
                   <span className="text-title-md font-semibold text-white tnum">{fmtW(outputPower)}</span>
                   <span className="text-label text-ink-6">w</span>
                 </div>
-                <p className="text-tiny text-ink-7 mt-0.5">AC</p>
               </div>
             </div>
           </div>

@@ -128,8 +128,8 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const [showWorkModeMenu, setShowWorkModeMenu] = useState(false)
   const [workModeDraft, setWorkModeDraft] = useState<0 | 1 | 2>(1)
   const WORK_MODES: { label: string; desc: string; value: 0 | 1 | 2 }[] = [
-    { label: 'Backup', desc: 'Reserve 100% for backup', value: 1 },
-    { label: 'Savings', desc: 'Reserve 60% for backup', value: 2 },
+    { label: 'Backup Mode', desc: 'Reserve 100% for backup', value: 1 },
+    { label: 'Saving Mode', desc: 'Reserve 60% for backup', value: 2 },
   ]
   const [workMode, setWorkMode_] = useState<0 | 1 | 2>(1)
   const [selectedIcon, setSelectedIcon] = useState(() =>
@@ -929,7 +929,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
         {/* Battery Priority */}
         <SettingsRow
           label="Battery Priority"
-          value={WORK_MODES.find(m => m.value === workMode)?.label ?? 'Backup'}
+          value={WORK_MODES.find(m => m.value === workMode)?.label ?? 'Backup Mode'}
           onPress={() => {
             setWorkModeDraft(workMode === 2 ? 2 : 1)
             setShowWorkModeMenu(true)
