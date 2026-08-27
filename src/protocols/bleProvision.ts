@@ -94,6 +94,9 @@ abstract class BaseProvisionManager implements IBleProvisionManager {
   /** 子类可重写：发送前确保 GATT 已连接（按需重连）。默认无操作。 */
   protected async ensureReady(): Promise<void> {}
 
+  /** 子类可重写：按协商 MTU 限制单包 payload。默认按规程 240-3=237。 */
+  protected getMaxDataPerPacket(): number { return 237 }
+
   /** 发送命令并等待应答 */
   async sendCommand<T = BleProvisionResponse>(commandJson: object, dtuid?: string, timeout = 15000): Promise<T> {
     const key = dtuid || this.dtuid
@@ -104,8 +107,8 @@ abstract class BaseProvisionManager implements IBleProvisionManager {
 
     this.log(`发送命令: ${JSON.stringify(commandJson)}`)
     const encrypted = encrypt(commandJson, key)
-    const packets = buildPackets(encrypted)
-    this.log(`分包 ${packets.length} 包，数据长度 ${encrypted.length}`)
+    const packets = buildPackets(encrypted, this.getMaxDataPerPacket())
+    this.log(`分包 ${packets.length} 包，数据长度 ${encrypted.length}，单包 ${this.getMaxDataPerPacket()}`)
 
     this.cleanupResponse()
     this.resetPackets()
@@ -412,6 +415,7 @@ export function androidMajorVersion(): number | null {
 class NativeBleProvisionManager extends BaseProvisionManager {
   private deviceId: string | null = null
   private connected = false
+  private maxDataPerPacket = 237
 
   private async ble() {
     const m = await import('@capacitor-community/bluetooth-le')
@@ -533,12 +537,69 @@ class NativeBleProvisionManager extends BaseProvisionManager {
       this.cleanupResponse(); this.clearResponseTimeout()
       this.cb.onDisconnected?.()
     })
-    await BleClient.startNotifications(
-      this.deviceId!, BLE_PROVISION_UUIDS.SERVICE, BLE_PROVISION_UUIDS.INDICATE_RX,
-      (value) => this.onIncoming(new Uint8Array(value.buffer, value.byteOffset, value.byteLength)),
-    )
+    // Android 12 (Xiaomi/Motorola especially) auto-runs service discovery.
+    // startNotifications immediately after connect then throws
+    // IllegalArgumentException / "Characteristic not found".
+    await this.waitForProvisionGatt(BleClient)
+    let lastErr: unknown
+    for (let attempt = 1; attempt <= 4; attempt++) {
+      try {
+        await BleClient.startNotifications(
+          this.deviceId!, BLE_PROVISION_UUIDS.SERVICE, BLE_PROVISION_UUIDS.INDICATE_RX,
+          (value) => this.onIncoming(new Uint8Array(value.buffer, value.byteOffset, value.byteLength)),
+        )
+        lastErr = null
+        break
+      } catch (e) {
+        lastErr = e
+        this.log(`startNotifications 第 ${attempt} 次失败: ${e instanceof Error ? e.message : String(e)}`)
+        try { await BleClient.discoverServices(this.deviceId!) } catch { /* ignore */ }
+        await this.sleep(400 * attempt)
+      }
+    }
+    if (lastErr) throw lastErr
     this.connected = true
   }
+
+  /**
+   * Wait until FEE7 is in getServices(), then size packets to the negotiated MTU.
+   * ATT payload is MTU-3; our frame header is 3 bytes, so max data = MTU-6.
+   */
+  private async waitForProvisionGatt(BleClient: { getServices: (id: string) => Promise<Array<{ uuid: string }>>; discoverServices: (id: string) => Promise<unknown>; getMtu: (id: string) => Promise<number> }): Promise<void> {
+    const want = BLE_PROVISION_UUIDS.SERVICE.toLowerCase()
+    const deadline = Date.now() + 5000
+    let found = false
+    while (Date.now() < deadline) {
+      try {
+        const services = await BleClient.getServices(this.deviceId!)
+        if (services.some(s => (s.uuid || '').toLowerCase() === want || (s.uuid || '').toLowerCase().includes('fee7'))) {
+          found = true
+          break
+        }
+      } catch { /* services not ready yet */ }
+      try { await BleClient.discoverServices(this.deviceId!) } catch { /* ignore */ }
+      await this.sleep(250)
+    }
+    if (!found) this.log('GATT 服务列表暂未出现 FEE7，继续尝试订阅')
+    const ver = Capacitor.getPlatform() === 'android' ? androidMajorVersion() : null
+    if (ver === 12) await this.sleep(600)
+    let mtu = 23
+    try {
+      const n = await BleClient.getMtu(this.deviceId!)
+      if (typeof n === 'number' && n > 0) mtu = n
+    } catch { /* plugin may return -1 until onMtuChanged */ }
+    if (mtu < 50) {
+      await this.sleep(300)
+      try {
+        const n = await BleClient.getMtu(this.deviceId!)
+        if (typeof n === 'number' && n > 0) mtu = n
+      } catch { /* ignore */ }
+    }
+    this.maxDataPerPacket = Math.max(20, Math.min(237, mtu - 6))
+    this.log(`GATT 就绪 MTU=${mtu}，单包 payload=${this.maxDataPerPacket}`)
+  }
+
+  protected getMaxDataPerPacket(): number { return this.maxDataPerPacket }
 
   protected async ensureReady(): Promise<void> {
     if (this.connected || !this.deviceId) return
@@ -549,8 +610,18 @@ class NativeBleProvisionManager extends BaseProvisionManager {
 
   protected async writePacket(bytes: Uint8Array): Promise<void> {
     const BleClient = await this.ble()
-    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength)
-    await BleClient.writeWithoutResponse(this.deviceId!, BLE_PROVISION_UUIDS.SERVICE, BLE_PROVISION_UUIDS.WRITE_TX, view)
+    // Copy onto a tight ArrayBuffer. Passing a DataView over a sliced
+    // Uint8Array lets some Android 12 stacks write the whole underlying
+    // buffer and throw IllegalArgumentException.
+    const copy = new Uint8Array(bytes.byteLength)
+    copy.set(bytes)
+    const view = new DataView(copy.buffer)
+    try {
+      await BleClient.writeWithoutResponse(this.deviceId!, BLE_PROVISION_UUIDS.SERVICE, BLE_PROVISION_UUIDS.WRITE_TX, view)
+    } catch (e) {
+      this.log(`writeWithoutResponse 失败，改 write: ${e instanceof Error ? e.message : String(e)}`)
+      await BleClient.write(this.deviceId!, BLE_PROVISION_UUIDS.SERVICE, BLE_PROVISION_UUIDS.WRITE_TX, view)
+    }
   }
 
   async disconnect(): Promise<void> {
@@ -563,7 +634,7 @@ class NativeBleProvisionManager extends BaseProvisionManager {
         await BleClient.disconnect(this.deviceId)
       } catch { /* ignore */ }
     }
-    this.deviceId = null; this.dtuid = null; this.connected = false
+    this.deviceId = null; this.dtuid = null; this.connected = false; this.maxDataPerPacket = 237
     this.log('已断开连接')
   }
 }
