@@ -3,6 +3,6 @@
   "build": 2753,
   "date": "2026-08-27",
   "changelog": [
-    "Fix Android bind illegal argument: send the same add-device payload as manual add (collector ID + station only)."
+    "Fix Android 12 BLE Wi-Fi add illegal argument: wait for FEE7 after connect, size packets to negotiated MTU, compact GATT writes, tools:targetApi on BLUETOOTH_SCAN."
   ]
 }

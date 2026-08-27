@@ -43,16 +43,17 @@ export function bytesToHex(bytes: Uint8Array): string {
  * 输入: Base64 编码后的字符串
  * 输出: 多个 Uint8Array 包，每个包格式 [seqNo][seqNum][dataLen][data]
  */
-export function buildPackets(data: string): Uint8Array[] {
+export function buildPackets(data: string, maxDataPerPacket = MAX_DATA_PER_PACKET): Uint8Array[] {
+  const chunkSize = Math.max(20, Math.min(MAX_DATA_PER_PACKET, maxDataPerPacket | 0 || MAX_DATA_PER_PACKET))
   const dataBytes = stringToBytes(data)
   const totalLen = dataBytes.length
-  const totalPackets = Math.ceil(totalLen / MAX_DATA_PER_PACKET)
+  const totalPackets = Math.max(1, Math.ceil(totalLen / chunkSize))
 
   const packets: Uint8Array[] = []
 
   for (let i = 0; i < totalPackets; i++) {
-    const start = i * MAX_DATA_PER_PACKET
-    const end = Math.min(start + MAX_DATA_PER_PACKET, totalLen)
+    const start = i * chunkSize
+    const end = Math.min(start + chunkSize, totalLen)
     const chunk = dataBytes.slice(start, end)
 
     const packet = new Uint8Array(BLE_PACKET_HEADER_SIZE + chunk.length)
