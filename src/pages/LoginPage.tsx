@@ -138,24 +138,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-ink-12 flex flex-col px-6 pb-8 safe-area-top safe-area-bottom">
       <div className="flex-1 flex flex-col justify-center">
-        <div className="text-center mb-10">
-          <div className="flex justify-center mb-2">
-            <svg viewBox="0 0 320 56" className="w-4/5 max-w-[280px] h-auto" xmlns="http://www.w3.org/2000/svg">
-              <text
-                x="50%"
-                y="44"
-                textAnchor="middle"
-                fontFamily="'Helvetica Neue', Helvetica, Arial, sans-serif"
-                fontSize="52"
-                fontWeight="700"
-                letterSpacing="12"
-                fill="white"
-              >SIERRO</text>
-            </svg>
-          </div>
-          <p className="text-body-md text-ink-7 mt-2"></p>
-        </div>
-
         <div className="flex border-b border-ink-9 mb-6">
           {(['username', 'email'] as Tab[]).map(t => (
             <button
