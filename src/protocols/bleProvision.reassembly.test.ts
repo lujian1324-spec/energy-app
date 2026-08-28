@@ -29,6 +29,10 @@ const h = vi.hoisted(() => ({
     disconnect: vi.fn(),
     stopLEScan: vi.fn(),
     writeWithoutResponse: vi.fn(),
+    write: vi.fn(),
+    getServices: vi.fn(),
+    discoverServices: vi.fn(),
+    getMtu: vi.fn(),
   },
 }))
 
@@ -79,6 +83,11 @@ beforeEach(() => {
   h.ble.stopNotifications.mockResolvedValue(undefined)
   h.ble.disconnect.mockResolvedValue(undefined)
   h.ble.writeWithoutResponse.mockResolvedValue(undefined)
+  h.ble.write.mockResolvedValue(undefined)
+  // waitForProvisionGatt (Android 12 path) polls these; without them connectTo hangs 5s and tests time out.
+  h.ble.getServices.mockResolvedValue([{ uuid: '0000fee7-0000-1000-8000-00805f9b34fb' }])
+  h.ble.discoverServices.mockResolvedValue(undefined)
+  h.ble.getMtu.mockResolvedValue(243) // 243-6=237, same as default packet payload
   h.ble.startNotifications.mockImplementation(async (_id, _svc, _ch, cb: (v: DataView) => void) => {
     h.notifyCb = cb
   })
