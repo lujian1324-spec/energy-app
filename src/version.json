@@ -1,8 +1,8 @@
 {
-  "version": "4.7.31",
-  "build": 2753,
-  "date": "2026-08-27",
+  "version": "4.7.32",
+  "build": 2754,
+  "date": "2026-08-28",
   "changelog": [
-    "Fix Android 12 BLE Wi-Fi add illegal argument: wait for FEE7 after connect, size packets to negotiated MTU, compact GATT writes, tools:targetApi on BLUETOOTH_SCAN."
+    "Device: teal + button matching Add Device, shorter empty-state copy, taller cards (140px) to match design; hide SIERRO wordmark on Login."
   ]
 }
