@@ -1,4 +1,4 @@
-﻿import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useLocation } from 'react-router-dom'
 import { useEffect, useRef } from 'react'
@@ -21,6 +21,7 @@ import DataExportPage from './pages/DataExportPage'
 import { useRealtimeSimulator } from './hooks/useRealtimeSimulator'
 import { DEV_TOOLS_ENABLED } from './config/devTools'
 import { useLowBatteryMonitor } from './hooks/useLowBatteryMonitor'
+import { useFirstAddBleCapture } from './hooks/captureFirstAddBleLive'
 import { useAuthStore } from './stores/authStore'
 import { usePowerStationStore } from './stores/powerStationStore'
 import { syncWebPushSubscription, refreshNotificationPermission } from './utils/pushNotification'
@@ -77,6 +78,7 @@ function AppInner() {
   useRealtimeSimulator()
   // 全局低电量监控：不依赖具体页面，App 存活即轮询所有设备并推送系统通知
   useLowBatteryMonitor()
+  useFirstAddBleCapture()
 
   // 启动时恢复会话 + 刷新原生通知权限缓存
   useEffect(() => {
