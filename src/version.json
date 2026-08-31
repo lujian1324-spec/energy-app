@@ -1,8 +1,8 @@
 {
-  "version": "4.7.34",
-  "build": 2756,
+  "version": "4.7.35",
+  "build": 2757,
   "date": "2026-08-31",
   "changelog": [
-    "Add Device: Found Devices list scrolls when many BLE devices are nearby."
+    "first-add Device page reads battery via BLE UART passthrough."
   ]
 }
