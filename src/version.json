@@ -1,8 +1,8 @@
 {
-  "version": "4.7.32",
-  "build": 2754,
-  "date": "2026-08-28",
+  "version": "4.7.33",
+  "build": 2755,
+  "date": "2026-08-31",
   "changelog": [
-    "Device: teal + button matching Add Device, shorter empty-state copy, taller cards (140px) to match design; hide SIERRO wordmark on Login."
+    "iOS: copy BLE indication bytes and use write-with-response so Wi-Fi scan after connect works on iPhone 15 Pro."
   ]
 }
