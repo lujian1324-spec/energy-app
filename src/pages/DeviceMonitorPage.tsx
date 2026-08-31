@@ -8,6 +8,7 @@ import { useDeviceStore } from '../stores/deviceStore'
 import { mapFieldsToRealtime } from '../api/deviceApi'
 import { batteryTimeLabel } from '../utils/batteryTime'
 import { loadRatedParams } from '../db/powerflowDB'
+import { useBleLiveStatusStore, lookupBleLiveStatus, mergeCloudWithBle } from '../stores/bleLiveStatusStore'
 
 /**
  * /state/latest 的 `time` 是「Unix 秒的字串」（见 demoData.getDemoDeviceState），
@@ -77,11 +78,14 @@ export default function DeviceMonitorPage() {
   // Map realtime fields —— 仅当 store 里的实时状态确实属于「当前」设备时才用它。
   // 切换设备时 store 可能仍短暂持有上一台设备的状态，此时返回 null，卡片显示占位
   // 而非上一台设备的数据，直到本设备(id)的状态加载完成。
+  const bleEpoch = useBleLiveStatusStore(s => s.epoch)
   const rt = useMemo(() => {
-    if (!selectedDeviceState?.fields) return null
-    if (id && selectedDeviceState.deviceId && String(selectedDeviceState.deviceId) !== id) return null
-    return mapFieldsToRealtime(selectedDeviceState.fields)
-  }, [selectedDeviceState, id])
+    const ble = lookupBleLiveStatus({ deviceId: id })?.live
+    const wrongDevice = !!(id && selectedDeviceState?.deviceId && String(selectedDeviceState.deviceId) !== id)
+    if (wrongDevice) return ble ? mergeCloudWithBle({}, ble) : null
+    if (!selectedDeviceState?.fields) return ble ? mergeCloudWithBle({}, ble) : null
+    return mergeCloudWithBle(mapFieldsToRealtime(selectedDeviceState.fields), ble)
+  }, [selectedDeviceState, id, bleEpoch])
 
   const remainingBatteryCapacity = rt?.remainingBatteryCapacity ?? null
   const acPower = rt?.acPower ?? 0
@@ -152,7 +156,8 @@ export default function DeviceMonitorPage() {
                     onClick={() => {
                       setShowDeviceDropdown(false)
                       if (!isSelected) navigate(`/device/${d.id}`)
-                    }}
+                    }
+                    }
                     className="w-full px-4 py-3 flex items-center justify-between border-b border-white/5 last:border-0 active:bg-white/5"
                   >
                     <span className={`text-body-md ${isSelected ? 'text-primary font-semibold' : 'text-white'}`}>
