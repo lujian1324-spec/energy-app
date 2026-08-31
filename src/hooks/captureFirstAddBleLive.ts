@@ -58,8 +58,22 @@ export async function captureFirstAddBleLive(): Promise<boolean> {
     dtuDtuid: dtuid,
     serialNumber: added?.serialNumber,
   }, live)
-  if (saved) aliasBleLiveFromDevices(useDeviceStore.getState().devices)
-  return saved
+  if (!saved) return false
+  aliasBleLiveFromDevices(useDeviceStore.getState().devices)
+  // Kick DevicePage's existing selectedDeviceState → realtimeCache effect so the
+  // list card shows 透传 SOC without rewriting the 64KB page. apiClient overlays
+  // BLE onto /state/latest; loadDevices retriggers the page's 60s poll too.
+  try {
+    await useDeviceStore.getState().loadDevices()
+    aliasBleLiveFromDevices(useDeviceStore.getState().devices)
+    const bound = added ?? findBoundDevice(dtuid)
+    if (bound?.id != null) {
+      await useDeviceStore.getState().loadDeviceState(bound.id)
+    }
+  } catch {
+    /* Device list/state refresh is best-effort; BLE snapshot is already stored */
+  }
+  return true
 }
 
 export function useFirstAddBleCapture(): void {

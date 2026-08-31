@@ -4,6 +4,7 @@ import type { LiveStatus } from '../protocols/modbusProtocol'
 const readLive = vi.fn()
 const getDuid = vi.fn(() => 'DTU-1')
 const loadDevices = vi.fn(async () => {})
+const loadDeviceState = vi.fn(async () => {})
 
 vi.mock('../protocols/bleDirect', () => ({
   readLiveStatusBle: (...args: unknown[]) => readLive(...args),
@@ -25,6 +26,7 @@ vi.mock('../stores/deviceStore', () => {
     isDemoMode: false,
     devices: [{ id: '55', dtuDtuid: 'DTU-1', serialNumber: 'SN-1' }],
     loadDevices,
+    loadDeviceState,
   }
   return {
     useDeviceStore: Object.assign(
@@ -42,6 +44,7 @@ describe('captureFirstAddBleLive', () => {
   beforeEach(async () => {
     readLive.mockReset()
     loadDevices.mockClear()
+    loadDeviceState.mockClear()
     const { clearBleLiveStatus } = await import('../stores/bleLiveStatusStore')
     clearBleLiveStatus()
   })
@@ -53,6 +56,8 @@ describe('captureFirstAddBleLive', () => {
     expect(await captureFirstAddBleLive()).toBe(true)
     expect(lookupBleLiveStatus({ deviceId: '55' })?.live.soc).toBe(77)
     expect(lookupBleLiveStatus({ dtuDtuid: 'DTU-1' })?.live.soc).toBe(77)
+    expect(loadDevices).toHaveBeenCalled()
+    expect(loadDeviceState).toHaveBeenCalledWith('55')
   })
 
   it('skips guest/demo mode so mock devices stay unchanged', async () => {
