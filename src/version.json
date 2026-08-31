@@ -1,8 +1,8 @@
 {
-  "version": "4.7.33",
-  "build": 2755,
+  "version": "4.7.34",
+  "build": 2756,
   "date": "2026-08-31",
   "changelog": [
-    "iOS: copy BLE indication bytes and use write-with-response so Wi-Fi scan after connect works on iPhone 15 Pro."
+    "Add Device: Found Devices list scrolls when many BLE devices are nearby."
   ]
 }
