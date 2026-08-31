@@ -7,6 +7,7 @@
 
 import { calcSign, parseUrlParams } from './iotSign'
 import { parseLossless } from './losslessJson'
+import { overlayBleOnLatestApiResponse } from '../stores/bleLiveStatusStore'
 
 // ─── 平台 Base URL ───
 export const BASE_URL = 'https://solar.siseli.com/apis'
@@ -206,7 +207,9 @@ export async function requestInternal<T = unknown>(
       const json = (text ? parseLossless(text) : {}) as ApiResponse<T>
 
       // 业务错误码（code !== 0）— 不重试，直接返回让调用方处理
-      return json
+      // First-add BLE UART SOC overlay: empty/0 cloud state/latest gets LiveStatus
+      // until cloud has a real SOC. Auth-expired codes are left untouched.
+      return overlayBleOnLatestApiResponse(path, json)
     } catch (err) {
       lastError = err as Error
 
