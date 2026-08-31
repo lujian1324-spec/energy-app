@@ -56,3 +56,21 @@ import { loadRatedParams } from '../db/powerflowDB'
 import type { DeviceListItem, DeviceStateField } from '../api/deviceApi'
 import { getDemoDeviceState } from '../data/demoData'
 import { useBleLiveStatusStore, lookupBleLiveStatus, mergeCloudWithBle } from '../stores/bleLiveStatusStore'
+
+// BLE device type
+interface BleDevice {
+  id: string
+  name: string
+  rssi?: number
+}
+
+// 设备实时状态缓存（deviceId → fields）
+interface DeviceRealtimeCache {
+  [deviceId: string]: {
+    fields: Record<string, DeviceStateField>
+    raw: ReturnType<typeof mapFieldsToRealtime>
+    firingAlarms?: unknown[]
+    loading: boolean
+    lastUpdated: number
+  }
+}
