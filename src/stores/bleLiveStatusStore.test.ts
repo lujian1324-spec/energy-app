@@ -6,6 +6,7 @@ import {
   hasRealCloudSoc,
   lookupBleLiveStatus,
   mergeCloudWithBle,
+  overlayBleOnLatestApiResponse,
   overlayBleOnStateFields,
   saveBleLiveStatus,
 } from './bleLiveStatusStore'
@@ -120,5 +121,38 @@ describe('overlayBleOnStateFields', () => {
       { remainingBatteryCapacity: { key: 'remainingBatteryCapacity', value: 91, valueDisplay: '91', unit: '%' } },
     )
     expect(out?.remainingBatteryCapacity?.value).toBe(91)
+  })
+})
+
+describe('overlayBleOnLatestApiResponse', () => {
+  const path = '/remote/device/state/latest?deviceId=7'
+
+  it('fills empty cloud state/latest with BLE SOC', () => {
+    saveBleLiveStatus({ deviceId: '7' }, ble)
+    const out = overlayBleOnLatestApiResponse(path, { code: 0, data: { deviceId: '7', fields: {} } })
+    const fields = (out.data as { fields: Record<string, { value: number }> }).fields
+    expect(fields.remainingBatteryCapacity.value).toBe(86.5)
+  })
+
+  it('does not clobber a real cloud SOC', () => {
+    saveBleLiveStatus({ deviceId: '7' }, ble)
+    const out = overlayBleOnLatestApiResponse(path, {
+      code: 0,
+      data: { deviceId: '7', fields: { remainingBatteryCapacity: { value: 91 } } },
+    })
+    const fields = (out.data as { fields: Record<string, { value: number }> }).fields
+    expect(fields.remainingBatteryCapacity.value).toBe(91)
+  })
+
+  it('leaves auth-expired responses untouched', () => {
+    saveBleLiveStatus({ deviceId: '7' }, ble)
+    const src = { code: 401, data: undefined as unknown }
+    expect(overlayBleOnLatestApiResponse(path, src)).toBe(src)
+  })
+
+  it('does not touch unrelated endpoints', () => {
+    saveBleLiveStatus({ deviceId: '7' }, ble)
+    const src = { code: 0, data: { fields: {} } }
+    expect(overlayBleOnLatestApiResponse('/device/list', src)).toBe(src)
   })
 })

@@ -174,3 +174,45 @@ export function overlayBleOnStateFields(
     cellTemperature1: current.cellTemperature1 ?? bleField('cellTemperature1', ble.batteryTemp, '°C'),
   }
 }
+
+/** Overlay BLE SOC onto GET /remote/device/state/latest responses (used by apiClient). */
+export function overlayBleOnLatestApiResponse<T extends { code?: number | string; data?: unknown }>(
+  path: string,
+  result: T,
+): T {
+  if (!path.includes('/remote/device/state/latest')) return result
+  const code = result.code
+  if (code === 401 || code === '401' || code === 1001 || code === '1001' || code === 1002 || code === '1002') {
+    return result
+  }
+  const query = path.includes('?') ? path.slice(path.indexOf('?') + 1) : ''
+  let deviceId = ''
+  for (const part of query.split('&')) {
+    const [k, v] = part.split('=')
+    if (k === 'deviceId' && v) deviceId = decodeURIComponent(v)
+  }
+  const data = result.data as { deviceId?: string; dtuID?: string; fields?: Record<string, LooseStateField> } | undefined
+  const fields = overlayBleOnStateFields(
+    { deviceId: data?.deviceId ?? deviceId, dtuDtuid: data?.dtuID },
+    data?.fields,
+  )
+  if (!fields) return result
+  if (data) return { ...result, data: { ...data, fields } }
+  const ok = code === 0 || code === '0' || code === undefined
+  if (!ok) return result
+  return {
+    ...result,
+    code: 0,
+    data: {
+      deviceId,
+      dtuID: '',
+      time: String(Math.floor(Date.now() / 1000)),
+      stationId: '',
+      gatherProtocolNumber: '',
+      gatherProtocolVersionCode: '',
+      fields,
+      groups: [],
+      firingAlarms: [],
+    },
+  }
+}
