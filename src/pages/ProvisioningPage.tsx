@@ -936,16 +936,19 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        <div className="flex-1 flex flex-col px-6">
-          {/* Radar animation area */}
-          <div className="flex-1 flex flex-col items-center justify-center">
-            <div className="relative w-56 h-56 flex items-center justify-center mb-8">
+        <div className="flex-1 min-h-0 flex flex-col px-6">
+          {/* Radar: compact once devices appear so the list can scroll */}
+          <div className={`flex flex-col items-center shrink-0 ${hasDevices ? 'pt-1 pb-3' : 'flex-1 justify-center'}`}>
+            <div className={`relative flex items-center justify-center ${hasDevices ? 'w-28 h-28 mb-3' : 'w-56 h-56 mb-8'}`}>
               {/* Concentric radar rings */}
               {radarRings.map((i) => (
                 <motion.div
                   key={i}
                   className="absolute rounded-full border border-primary"
-                  style={{ width: 56 + i * 40, height: 56 + i * 40 }}
+                  style={{
+                    width: (hasDevices ? 28 : 56) + i * (hasDevices ? 20 : 40),
+                    height: (hasDevices ? 28 : 56) + i * (hasDevices ? 20 : 40),
+                  }}
                   animate={{ opacity: isSearching ? [0.6, 0.1, 0.6] : 0.15 }}
                   transition={{
                     duration: 2,
@@ -956,16 +959,16 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                 />
               ))}
               {/* Centre phone icon */}
-              <div className="w-16 h-16 rounded-l bg-ink-10 flex items-center justify-center z-10">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+              <div className={`${hasDevices ? 'w-10 h-10' : 'w-16 h-16'} rounded-l bg-ink-10 flex items-center justify-center z-10`}>
+                <svg width={hasDevices ? 18 : 28} height={hasDevices ? 18 : 28} viewBox="0 0 24 24" fill="none">
                   <rect x="5" y="2" width="14" height="20" rx="3" stroke="#01D6BE" strokeWidth="1.5"/>
                   <circle cx="12" cy="18" r="1" fill="#01D6BE"/>
                 </svg>
               </div>
             </div>
 
-            {/* Status text */}
-            {isSearching && (
+            {/* Status text — hide once a list is showing so rows stay tappable */}
+            {isSearching && !hasDevices && (
               <div className="text-center mb-6">
                 <p className="text-body-lg font-semibold text-white mb-1">Searching for nearby devices...</p>
                 <p className="text-body-md text-ink-6">Make sure your device is powered on and nearby.</p>
@@ -985,30 +988,35 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                 <p className="text-body-md text-ink-6">Make sure your device is powered on and Bluetooth is enabled.</p>
               </div>
             )}
+          </div>
 
-            {/* Found devices list */}
-            {hasDevices && (
-              <div className="w-full mb-6">
-                <p className="text-caption font-bold text-ink-6 tracking-widest uppercase mb-3 px-1">
-                  Found Devices ({foundDevices.length})
-                </p>
-                <div className="flex flex-col gap-2">
+          {/* Found devices list — bounded flex child so it scrolls on iOS */}
+          {hasDevices && (
+            <div className="flex-1 min-h-0 flex flex-col mb-3">
+              <p className="text-caption font-bold text-ink-6 tracking-widest uppercase mb-3 px-1 shrink-0">
+                Found Devices ({foundDevices.length})
+              </p>
+              <div
+                className="flex-1 min-h-0 overflow-y-auto overscroll-contain"
+                style={{ WebkitOverflowScrolling: 'touch' }}
+              >
+                <div className="flex flex-col gap-2 pb-2">
                   {foundDevices.map((device, i) => (
                     <div
-                      key={i}
+                      key={device.deviceId || device.serial || i}
                       className="bg-ink-10 rounded-l px-4 py-4 flex items-center justify-between"
                     >
-                      <div>
-                        <p className="text-body-lg font-semibold text-white tracking-wide">
+                      <div className="min-w-0 pr-3">
+                        <p className="text-body-lg font-semibold text-white tracking-wide truncate">
                           {isDtuid(device.serial) ? displayTitleFromDtuid(device.serial) : (device.name || 'Sierro')}
                         </p>
-                        <p className="text-caption text-ink-6 mt-0.5">
+                        <p className="text-caption text-ink-6 mt-0.5 truncate">
                           {isDtuid(device.serial) ? device.serial : 'Sierro'}
                         </p>
                       </div>
                       <button
                         onClick={() => handleSelectDevice(device)}
-                        className="px-4 h-9 rounded-full border border-primary text-primary text-body-md font-semibold active:scale-[0.96] transition-transform"
+                        className="px-4 h-9 shrink-0 rounded-full border border-primary text-primary text-body-md font-semibold active:scale-[0.96] transition-transform"
                       >
                         Connect
                       </button>
@@ -1016,8 +1024,8 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
                   ))}
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Bottom button */}
           <div className="pb-10 safe-area-bottom space-y-3">
