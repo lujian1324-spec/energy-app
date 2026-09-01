@@ -58,6 +58,7 @@ function extractErrorId(code?: number | string | null, message?: string | null):
     const s = String(code)
     if (/^[A-Za-z][\w.-]{1,39}$/.test(s) || /^\d{3,}$/.test(s)) return s
   }
-  const m = String(message ?? '').match(/\b([A-Z]{2,}[-_]\d{3,}|\d{5,}|ERR[_-][A-Z0-9]+)\b/)
+  // ERR_* ids may contain extra underscores (ERR_BIND_42); match those first.
+  const m = String(message ?? '').match(/\b(ERR[_-][A-Z0-9_]+|[A-Z]{2,}[-_]\d{2,}|\d{5,})\b/)
   return m?.[1]
 }
