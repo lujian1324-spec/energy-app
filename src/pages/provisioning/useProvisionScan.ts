@@ -6,6 +6,7 @@ import { toast } from '../../components/Toast'
 import type { ProvisionStoreState, ProvisionStep } from '../../stores/provisionStore'
 import { getProvisionManager, destroyProvisionManager, supportsDeviceListScan } from '../../protocols/bleProvision'
 import { isDtuid, parseBleName } from '../../utils/dtuidParser'
+import { formatScanDisplayName } from '../../utils/scanDisplayName'
 import { classifyBleError } from '../../utils/permissions'
 import { DISCONNECT_COPY } from './useProvisionBind'
 import type { FailKind } from '../../utils/provisionFailCopy'
@@ -19,7 +20,7 @@ export type FoundDevice = {
 }
 
 export function displayTitleFromDtuid(dtuid: string): string {
-  return `Sierro · ${dtuid.slice(-4)}`
+  return formatScanDisplayName({ serial: dtuid })
 }
 
 export function useProvisionScan(opts: {
@@ -154,7 +155,7 @@ export function useProvisionScan(opts: {
         store.setErrorMessage(msg); toast.error(msg)
         return
       }
-      const display = isDtuid(duid) ? displayTitleFromDtuid(duid) : rawName
+      const display = isDtuid(duid) ? displayTitleFromDtuid(duid) : formatScanDisplayName({ serial: duid, name: rawName })
       lastBleRef.current = { deviceId: undefined, bleName: rawName }
       bleGoneRef.current = false
       store.setDeviceInfo(display, duid)
