@@ -1,8 +1,8 @@
 {
-  "version": "4.7.38",
-  "build": 2760,
+  "version": "4.7.39",
+  "build": 2761,
   "date": "2026-09-01",
   "changelog": [
-    "Login Forgot-password row keeps its height in email OTP mode; Device/Insights tabs no longer remount a loading skeleton; BLE/QR scan titles show Sierro · last4 without the model 1000."
+    "Device empty state is gray square + Add Device; notifications empty is No notifications + gray square; low-battery banner is `{name} • Estimated remaining time: …` without `--`."
   ]
 }
