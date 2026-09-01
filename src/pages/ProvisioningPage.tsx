@@ -2,7 +2,7 @@
  * BLE provisioning UI — PRD-aligned redesign.
  * All store/API/protocol logic preserved from original.
  */
-import { useState, useCallback, useEffect, useRef, type MutableRefObject } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { toast } from '../components/Toast'
 import { useProvisionStore } from '../stores/provisionStore'
 import { getProvisionManager, destroyProvisionManager, stopProvisionScan, supportsDeviceListScan } from '../protocols/bleProvision'
@@ -19,7 +19,6 @@ import ScanDevicesScreen from './provisioning/ScanDevicesScreen'
 import { useProvisionBind, type ConfigStage } from './provisioning/useProvisionBind'
 import { useProvisionScan, displayTitleFromDtuid, type FoundDevice } from './provisioning/useProvisionScan'
 
-// Local UI screens — the multi-step store flow lives inside 'provisioning'
 type UiScreen = 'scan' | 'qr' | 'naming' | 'icon' | 'provisioning'
 
 export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
@@ -68,7 +67,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     wifiConfiguredRef,
     lastBleRef,
     bleGoneRef,
-    provisionStepRef: provisionStepRef as MutableRefObject<string>,
+    provisionStepRef,
     setBindRetrying,
     setRestarting,
     setShowRestartHelp,
@@ -107,7 +106,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     wifiConfiguredRef,
     lastBleRef,
     bleGoneRef,
-    provisionStepRef: provisionStepRef as MutableRefObject<string>,
+    provisionStepRef,
     reconnectingRef,
     configGuardRef,
     scanStopRef,
