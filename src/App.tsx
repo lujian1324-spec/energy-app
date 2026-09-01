@@ -149,51 +149,63 @@ function AppInner() {
     <div className="h-full w-full bg-bg-base flex flex-col overflow-hidden">
       {/* 主内容区域 */}
       <div className="flex-1 overflow-hidden relative">
+        {/* APP-008: keep Device/Insights/Setting mounted (no pathname key) so tab
+            switches do not remount a loading skeleton. Header heights unchanged (APP-004). */}
+        <div className={showBottomNav ? 'h-full w-full' : 'hidden'}>
+          <div className={location.pathname === '/devices' ? 'h-full w-full' : 'hidden'}>
+            <RequireAuth><DevicePage /></RequireAuth>
+          </div>
+          <div className={location.pathname === '/insights' ? 'h-full w-full' : 'hidden'}>
+            <RequireAuth><StatsPage /></RequireAuth>
+          </div>
+          <div className={location.pathname === '/setting' ? 'h-full w-full' : 'hidden'}>
+            <RequireAuth><SettingPage /></RequireAuth>
+          </div>
+        </div>
+
         <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={location.pathname}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="h-full w-full"
-          >
-            <Routes location={location}>
-              {/* 带底部导航的主标签页 */}
-              <Route path="/devices" element={<RequireAuth><DevicePage /></RequireAuth>} />
-              <Route path="/insights" element={<RequireAuth><StatsPage /></RequireAuth>} />
-              <Route path="/setting" element={<RequireAuth><SettingPage /></RequireAuth>} />
-              {/* 二级页面（无底部导航） */}
-              <Route path="/device/:id" element={<RequireAuth><DeviceMonitorPage /></RequireAuth>} />
-              <Route path="/device/:id/settings" element={<RequireAuth><DeviceDetailPage /></RequireAuth>} />
-              {DEV_TOOLS_ENABLED && (
-                <Route path="/device/:id/passthrough" element={<RequireAuth><PassthroughPage /></RequireAuth>} />
-              )}
-              {DEV_TOOLS_ENABLED && (
-                <Route path="/device/:id/debug-params" element={<RequireAuth><DebugParamsPage /></RequireAuth>} />
-              )}
-              <Route path="/smart-schedule" element={<RequireAuth><SmartSchedulePage /></RequireAuth>} />
-              <Route path="/notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
-              <Route path="/onboarding" element={<RequireAuth><OnboardingPage /></RequireAuth>} />
-              {DEV_TOOLS_ENABLED && (
-                <Route path="/ble-debug" element={<RequireAuth><BleDebugPage /></RequireAuth>} />
-              )}
-              <Route path="/data-export" element={<RequireAuth><DataExportPage /></RequireAuth>} />
-              {/* 首次进入默认登录页，已登录/游客模式则进入 devices */}
-              <Route
-                path="/"
-                element={<Navigate to={isAuthenticated || isGuest ? '/devices' : '/login'} replace />}
-              />
-              {/* 旧路由重定向到新路由（向后兼容） */}
-              <Route path="/stats" element={<Navigate to="/insights" replace />} />
-              <Route path="/settings" element={<Navigate to="/setting" replace />} />
-              {/* 未匹配路径重定向 */}
-              <Route
-                path="*"
-                element={<Navigate to={isAuthenticated || isGuest ? '/devices' : '/login'} replace />}
-              />
-            </Routes>
-          </motion.div>
+          {!showBottomNav && (
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="h-full w-full"
+            >
+              <Routes location={location}>
+                {/* 二级页面（无底部导航） */}
+                <Route path="/device/:id" element={<RequireAuth><DeviceMonitorPage /></RequireAuth>} />
+                <Route path="/device/:id/settings" element={<RequireAuth><DeviceDetailPage /></RequireAuth>} />
+                {DEV_TOOLS_ENABLED && (
+                  <Route path="/device/:id/passthrough" element={<RequireAuth><PassthroughPage /></RequireAuth>} />
+                )}
+                {DEV_TOOLS_ENABLED && (
+                  <Route path="/device/:id/debug-params" element={<RequireAuth><DebugParamsPage /></RequireAuth>} />
+                )}
+                <Route path="/smart-schedule" element={<RequireAuth><SmartSchedulePage /></RequireAuth>} />
+                <Route path="/notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
+                <Route path="/onboarding" element={<RequireAuth><OnboardingPage /></RequireAuth>} />
+                {DEV_TOOLS_ENABLED && (
+                  <Route path="/ble-debug" element={<RequireAuth><BleDebugPage /></RequireAuth>} />
+                )}
+                <Route path="/data-export" element={<RequireAuth><DataExportPage /></RequireAuth>} />
+                {/* 首次进入默认登录页，已登录/游客模式则进入 devices */}
+                <Route
+                  path="/"
+                  element={<Navigate to={isAuthenticated || isGuest ? '/devices' : '/login'} replace />}
+                />
+                {/* 旧路由重定向到新路由（向后兼容） */}
+                <Route path="/stats" element={<Navigate to="/insights" replace />} />
+                <Route path="/settings" element={<Navigate to="/setting" replace />} />
+                {/* 未匹配路径重定向 */}
+                <Route
+                  path="*"
+                  element={<Navigate to={isAuthenticated || isGuest ? '/devices' : '/login'} replace />}
+                />
+              </Routes>
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
 

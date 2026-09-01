@@ -243,11 +243,14 @@ export default function LoginPage() {
             >
               {otpMode ? 'Sign in with password' : 'Sign in with verification code'}
             </button>
-            {!otpMode && (
-              <Link to="/forgot-password" className="text-body-md text-primary">
-                Forgot password?
-              </Link>
-            )}
+            <Link
+              to="/forgot-password"
+              tabIndex={otpMode ? -1 : undefined}
+              aria-hidden={otpMode}
+              className={`text-body-md text-primary ${otpMode ? 'invisible pointer-events-none' : ''}`}
+            >
+              Forgot password?
+            </Link>
           </div>
         ) : (
           <div className="flex justify-end mt-1 min-h-[28px]">
