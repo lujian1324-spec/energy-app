@@ -14,8 +14,13 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
+import com.getcapacitor.WebViewListener;
 
 public class MainActivity extends BridgeActivity {
+    /** Last system-bar insets in Android px. Survives the Capacitor SPA document swap. */
+    private int lastTopPx;
+    private int lastBottomPx;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         // Must be called before super.onCreate()/setContentView(). Without this call the
@@ -64,12 +69,23 @@ public class MainActivity extends BridgeActivity {
         View webView = getBridge().getWebView();
         ViewCompat.setOnApplyWindowInsetsListener(webView, (v, windowInsets) -> {
             Insets bars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
-            injectSafeAreaVars(v, bars.top, bars.bottom);
+            lastTopPx = bars.top;
+            lastBottomPx = bars.bottom;
+            injectSafeAreaVars(v, lastTopPx, lastBottomPx);
             return WindowInsetsCompat.CONSUMED;
         });
         ViewCompat.requestApplyInsets(webView);
         webView.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) ->
                 ViewCompat.requestApplyInsets(v));
+        // First inset apply often hits about:blank. Capacitor then loads the SPA as a
+        // new document, wiping CSS vars. Layout size usually does not change, so
+        // onLayoutChange never retries. Re-inject on the official page-loaded hook.
+        getBridge().addWebViewListener(new WebViewListener() {
+            @Override
+            public void onPageLoaded(WebView view) {
+                view.post(() -> injectSafeAreaVars(view, lastTopPx, lastBottomPx));
+            }
+        });
         // Android's Autofill Framework (API 26+) shows a branded suggestion strip / overlay
         // above the keyboard (with this app's launcher icon) whenever the WebView detects a
         // login-style form (username/password/verification-code fields) — the "logo above the

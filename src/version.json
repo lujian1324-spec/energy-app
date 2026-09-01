@@ -1,8 +1,8 @@
 {
-  "version": "4.7.35",
-  "build": 2757,
-  "date": "2026-08-31",
+  "version": "4.7.36",
+  "build": 2758,
+  "date": "2026-09-01",
   "changelog": [
-    "first-add Device page reads battery via BLE UART passthrough."
+    "Android: re-inject safe-area CSS vars after SPA load so the Device tab clears status/nav bars; StatusBar overlays WebView to match EdgeToEdge."
   ]
 }
