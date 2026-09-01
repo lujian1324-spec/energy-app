@@ -1,8 +1,8 @@
 {
-  "version": "4.7.36",
-  "build": 2758,
+  "version": "4.7.37",
+  "build": 2759,
   "date": "2026-09-01",
   "changelog": [
-    "Android: re-inject safe-area CSS vars after SPA load so the Device tab clears status/nav bars; StatusBar overlays WebView to match EdgeToEdge."
+    "Bind-fail retry stays on the result screen; title is Couldn't add device when Wi-Fi is already connected; Restart and Try adding again have separate loading spinners; QR scanner uses qr-scan-video overlay class; scan radar height stays stable when devices appear."
   ]
 }
