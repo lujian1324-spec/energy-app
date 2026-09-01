@@ -1,8 +1,8 @@
 {
-  "version": "4.7.39",
-  "build": 2761,
+  "version": "4.7.40",
+  "build": 2762,
   "date": "2026-09-01",
   "changelog": [
-    "Device empty state is gray square + Add Device; notifications empty is No notifications + gray square; low-battery banner is `{name} • Estimated remaining time: …` without `--`."
+    "Wi-Fi setup shows a persistent reminder to switch on the Sierro before connecting to Wi-Fi."
   ]
 }

@@ -68,6 +68,12 @@ export default function ProvisioningFlowScreen(p: FlowProps) {
         </h1>
       </div>
 
+      {(store.step === 'wifi' || store.step === 'password') && (
+        <p className="px-6 text-body-md text-ink-6 pb-1">
+          Please switch on your Sierro before connecting to Wi-Fi
+        </p>
+      )}
+
       <div className="flex-1 overflow-y-auto px-6 pb-10">
         <AnimatePresence mode="wait">
 
