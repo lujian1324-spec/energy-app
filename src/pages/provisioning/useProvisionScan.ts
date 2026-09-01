@@ -3,7 +3,7 @@
  */
 import { useCallback, type Dispatch, type MutableRefObject, type SetStateAction } from 'react'
 import { toast } from '../../components/Toast'
-import { useProvisionStore } from '../../stores/provisionStore'
+import type { ProvisionStoreState, ProvisionStep } from '../../stores/provisionStore'
 import { getProvisionManager, destroyProvisionManager, supportsDeviceListScan } from '../../protocols/bleProvision'
 import { isDtuid, parseBleName } from '../../utils/dtuidParser'
 import { classifyBleError } from '../../utils/permissions'
@@ -23,14 +23,14 @@ export function displayTitleFromDtuid(dtuid: string): string {
 }
 
 export function useProvisionScan(opts: {
-  store: ReturnType<typeof useProvisionStore>
+  store: ProvisionStoreState
   setFoundDevices: Dispatch<SetStateAction<FoundDevice[]>>
   setFailKind: Dispatch<SetStateAction<FailKind>>
   setBleStatus: Dispatch<SetStateAction<'checking' | 'no_permission' | 'bt_off' | 'ready'>>
   wifiConfiguredRef: MutableRefObject<boolean>
   lastBleRef: MutableRefObject<{ deviceId?: string; bleName?: string }>
   bleGoneRef: MutableRefObject<boolean>
-  provisionStepRef: MutableRefObject<string>
+  provisionStepRef: MutableRefObject<ProvisionStep>
   reconnectingRef: MutableRefObject<boolean>
   configGuardRef: MutableRefObject<boolean>
   scanStopRef: MutableRefObject<ReturnType<typeof setTimeout> | null>

@@ -3,7 +3,7 @@
  */
 import { useCallback, type Dispatch, type MutableRefObject, type SetStateAction } from 'react'
 import { toast } from '../../components/Toast'
-import { useProvisionStore } from '../../stores/provisionStore'
+import type { ProvisionStoreState, ProvisionStep } from '../../stores/provisionStore'
 import { getProvisionManager } from '../../protocols/bleProvision'
 import { SIERRO_MODELS, generateSerial, type SierroModel } from '../../data/deviceModels'
 import { saveRatedParams } from '../../db/powerflowDB'
@@ -30,10 +30,8 @@ export function withTimeout<T>(promise: Promise<T>, ms: number, timeoutMessage: 
   })
 }
 
-type Store = ReturnType<typeof useProvisionStore>
-
 export function useProvisionBind(opts: {
-  store: Store
+  store: ProvisionStoreState
   deviceNameInput: string
   selectedModel: SierroModel
   failKind: FailKind
@@ -43,7 +41,7 @@ export function useProvisionBind(opts: {
   wifiConfiguredRef: MutableRefObject<boolean>
   lastBleRef: MutableRefObject<{ deviceId?: string; bleName?: string }>
   bleGoneRef: MutableRefObject<boolean>
-  provisionStepRef: MutableRefObject<string>
+  provisionStepRef: MutableRefObject<ProvisionStep>
   setBindRetrying: Dispatch<SetStateAction<boolean>>
   setRestarting: Dispatch<SetStateAction<boolean>>
   setShowRestartHelp: Dispatch<SetStateAction<boolean>>
@@ -69,7 +67,6 @@ export function useProvisionBind(opts: {
     const spec = SIERRO_MODELS[selectedModel]
     const serialNumber = generateSerial(spec, dtuDtuid)
 
-    // Retry from the bind-fail page: stay on result, spin only "Try adding again".
     const stayOnResult = store.step === 'result' && failKind === 'bind'
     if (stayOnResult) {
       setBindRetrying(true)
@@ -124,7 +121,7 @@ export function useProvisionBind(opts: {
               serialNumber,
             })
           }
-        } catch { /* 本地写入失败不影响添加结果 */ }
+        } catch { /* ignore local write */ }
         store.setConfigResult('success')
         store.setErrorMessage(null)
         setFailKind(null)
