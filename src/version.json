@@ -1,8 +1,8 @@
 {
-  "version": "4.7.37",
-  "build": 2759,
+  "version": "4.7.38",
+  "build": 2760,
   "date": "2026-09-01",
   "changelog": [
-    "Bind-fail retry stays on the result screen; title is Couldn't add device when Wi-Fi is already connected; Restart and Try adding again have separate loading spinners; QR scanner uses qr-scan-video overlay class; scan radar height stays stable when devices appear."
+    "Login Forgot-password row keeps its height in email OTP mode; Device/Insights tabs no longer remount a loading skeleton; BLE/QR scan titles show Sierro · last4 without the model 1000."
   ]
 }
