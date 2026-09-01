@@ -6,6 +6,7 @@ import { ChevronLeft, WifiOff, Loader2, AlertCircle } from 'lucide-react'
 import { toast } from '../../components/Toast'
 import { openAppSettings } from '../../utils/openAppSettings'
 import { isDtuid } from '../../utils/dtuidParser'
+import { formatScanDisplayName } from '../../utils/scanDisplayName'
 import { resetBleInit } from '../../utils/permissions'
 import { useProvisionStore } from '../../stores/provisionStore'
 
@@ -18,10 +19,6 @@ type FoundDevice = {
 }
 
 const radarRings = [0, 1, 2, 3]
-
-function displayTitleFromDtuid(dtuid: string): string {
-  return `Sierro · ${dtuid.slice(-4)}`
-}
 
 type Props = {
   bleStatus: 'checking' | 'no_permission' | 'bt_off' | 'ready'
@@ -208,7 +205,7 @@ export default function ScanDevicesScreen(p: Props) {
                   >
                     <div className="min-w-0 pr-3">
                       <p className="text-body-lg font-semibold text-white tracking-wide truncate">
-                        {isDtuid(device.serial) ? displayTitleFromDtuid(device.serial) : (device.name || 'Sierro')}
+                        {formatScanDisplayName({ name: device.name, serial: device.serial, deviceId: device.deviceId })}
                       </p>
                       <p className="text-caption text-ink-6 mt-0.5 truncate">
                         {isDtuid(device.serial) ? device.serial : 'Sierro'}

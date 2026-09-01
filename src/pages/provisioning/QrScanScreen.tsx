@@ -7,6 +7,7 @@ import { ChevronLeft } from 'lucide-react'
 import jsQR from 'jsqr'
 import { Capacitor } from '@capacitor/core'
 import { requestCamera } from '../../utils/permissions'
+import { formatScanDisplayName } from '../../utils/scanDisplayName'
 
 function QrScanScreen({ onBack, onScanned }: {
   onBack: () => void
@@ -93,8 +94,9 @@ function QrScanScreen({ onBack, onScanned }: {
       if (code?.data) {
         // Sierro QR format: "SIERRO:<model>:<serial>" or plain serial
         const parts = code.data.split(':')
-        const name = parts.length >= 2 ? parts[1] : 'Sierro Device'
+        const rawName = parts.length >= 2 ? parts[1] : 'Sierro Device'
         const serial = parts.length >= 3 ? parts[2] : code.data
+        const name = formatScanDisplayName({ name: rawName, serial })
         streamRef.current?.getTracks().forEach(t => t.stop())
         setScanned({ name, serial })
         return
@@ -134,7 +136,7 @@ function QrScanScreen({ onBack, onScanned }: {
           {[['top-0 left-0', 'M0 20V4C0 1.79 1.79 0 4 0H20'],
             ['top-0 right-0', 'M24 20V4C24 1.79 22.21 0 20 0H4'],
             ['bottom-0 left-0', 'M0 4V20C0 22.21 1.79 24 4 24H20'],
-            ['bottom-0 right-0', 'M24 4V20C24 22.21 22.21 24 20 24H4'],
+            ['bottom-0 right-0', 'M24 4V20C24 22.21 22.21 0 20 24H4'],
           ].map(([pos, d], i) => (
             <svg key={i} className={`absolute ${pos}`} width="36" height="36" viewBox="0 0 24 24" fill="none">
               <path d={d} stroke="#01D6BE" strokeWidth="2.5" strokeLinecap="round"/>
