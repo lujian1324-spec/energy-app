@@ -1,4 +1,4 @@
-﻿@tailwind base;
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -377,6 +377,11 @@ textarea.text-body-lg {
 }
 
 /* Hide Android WebView default media play overlay on the QR scanner <video> (APP-003) */
+video.qr-scan-video {
+  background: #141414;
+  object-fit: cover;
+  -webkit-playsinline: true;
+}
 video.qr-scan-video::-webkit-media-controls,
 video.qr-scan-video::-webkit-media-controls-start-playback-button,
 video.qr-scan-video::-webkit-media-controls-overlay-play-button,
