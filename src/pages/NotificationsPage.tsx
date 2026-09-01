@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, AlertTriangle, Bell, Zap, X } from 'lucide-react'
+import { ChevronLeft, AlertTriangle, Zap, X } from 'lucide-react'
 import { useDeviceStore } from '../stores/deviceStore'
 import { useAlarmDismissStore, alarmKey } from '../stores/alarmDismissStore'
 import { dedupeAndFilterAlarms } from '../utils/alarmText'
@@ -128,11 +128,8 @@ export default function NotificationsPage() {
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center justify-center h-full text-center px-6"
           >
-            <div className="w-20 h-20 rounded-full bg-ink-10 flex items-center justify-center mb-4">
-              <Bell size={32} className="text-ink-9" />
-            </div>
-            <p className="text-body-lg font-semibold text-ink-1">No Alarms</p>
-            <p className="text-body-md text-ink-7 mt-1">All systems are running normally</p>
+            <p className="text-body-lg font-semibold text-ink-1 mb-7">No notifications</p>
+            <div className="w-40 h-40 rounded-l bg-ink-9" />
           </motion.div>
         )}
 
