@@ -14,6 +14,7 @@
  */
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import Icon from '../components/Icon'
 import ProvisioningPage from './ProvisioningPage'
 
 export default function OnboardingPage() {
@@ -28,39 +29,42 @@ export default function OnboardingPage() {
     return <ProvisioningPage onClose={finish} />
   }
 
-  // ─── Add first device ──────────────────────────────────────────────────
+  // ─── Add first device ──────────────────────────────────────────
   return (
     <div className="h-full flex flex-col bg-ink-12">
-      {/* Skip for now */}
-      <div className="px-4 pt-5 flex justify-end safe-area-top">
+      <div className="px-4 pt-5 flex items-center justify-between safe-area-top">
         <button
           onClick={finish}
-          className="text-body-md text-ink-6 active:opacity-70"
+          aria-label="Back"
+          className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center before:absolute before:content-[''] before:-inset-1"
+        >
+          <Icon name="chevron-left" size={20} />
+        </button>
+        <button
+          onClick={finish}
+          className="text-body-md text-primary active:opacity-70"
         >
           Skip for now
         </button>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
-        {/* Illustration */}
-        <div className="w-28 h-28 rounded-[28px] bg-primary/[0.12] flex items-center justify-center mb-8">
-          <svg width="52" height="52" viewBox="0 0 24 24" fill="none">
-            <rect x="6" y="2" width="12" height="20" rx="3" stroke="#01D6BE" strokeWidth="1.5" />
-            <path d="M13 7l-3 5h4l-3 5" stroke="#01D6BE" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </div>
-
-        <h1 className="text-headline-lg font-bold text-white mb-3">Add your first device</h1>
-        <p className="text-body-lg text-ink-6 max-w-[300px]">
-          Connect a Sierro device to start monitoring power, battery, and savings in real time.
+      <div className="flex-1 flex flex-col items-center px-8 text-center pt-6">
+        <h1 className="text-headline-lg font-bold text-white mb-3">Add Your First Device</h1>
+        <p className="text-body-lg text-ink-6 max-w-[300px] mb-8">
+          We'll help you find and connect your Sierro device in a few simple steps.
         </p>
+        <img
+          src={`${import.meta.env.BASE_URL}ds-onboarding.svg`}
+          alt=""
+          className="w-full max-w-[320px] h-auto select-none"
+          draggable={false}
+        />
       </div>
 
-      {/* Connect Device */}
       <div className="px-6 pb-10 safe-area-bottom">
         <button
           onClick={() => setShowProvisioning(true)}
-          className="w-full h-14 rounded-full bg-primary text-black text-body-lg font-semibold active:scale-[0.98] transition-transform"
+          className="w-full h-14 rounded-l bg-primary text-black text-body-lg font-semibold active:scale-[0.98] transition-transform"
         >
           Connect Device
         </button>
