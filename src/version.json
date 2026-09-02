@@ -1,8 +1,8 @@
 {
-  "version": "4.7.45",
-  "build": 2767,
+  "version": "4.7.47",
+  "build": 2769,
   "date": "2026-09-02",
   "changelog": [
-    "Insights Day/Week/Month/Range selected pill is light gray per design; Feedback modal warning/yellow accents are white."
+    "Hide Insights Last sync; days lightning icon is a thin outline to match design."
   ]
 }
