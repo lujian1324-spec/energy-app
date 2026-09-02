@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/authStore'
 import { useDeviceStore } from '../stores/deviceStore'
 import { sendEmailCaptcha, loginByEmail, CaptchaIntent } from '../api/authApi'
 import { TERMS_URL, PRIVACY_URL } from '../config/legalLinks'
+import { sanitizeUiCopy } from '../utils/uiCopy'
 
 
 type Tab = 'email' | 'username'
@@ -81,7 +82,7 @@ export default function LoginPage() {
         setOtpSent(true)
         startCooldown()
       } else {
-        setError(result.message || result.msg || 'Failed to send code.')
+        setError(sanitizeUiCopy(result.message || result.msg, 'Failed to send code.'))
       }
     } catch {
       setError('Failed to send verification code. Please try again.')
@@ -102,7 +103,7 @@ export default function LoginPage() {
           useAuthStore.setState({ isAuthenticated: true, isGuest: false, user: result.data ?? null })
           navigate('/', { replace: true })
         } else {
-          setError(result.message || result.msg || 'Invalid verification code.')
+          setError(sanitizeUiCopy(result.message || result.msg, 'Invalid verification code.'))
         }
       } catch {
         setError('Invalid verification code.')
