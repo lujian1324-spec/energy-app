@@ -370,9 +370,9 @@ export default function DevicePage() {
             <button
               onClick={handleBleScan}
               aria-label="Add device"
-              className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-primary hover:bg-ink-9 transition-colors active:scale-95"
+              className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-white hover:bg-ink-9 transition-colors active:scale-95"
             >
-              <Plus size={20} className="text-primary" strokeWidth={2.5} />
+              <Plus size={20} className="text-white" strokeWidth={2.5} />
             </button>
             <button
               onClick={() => navigate('/notifications')}
