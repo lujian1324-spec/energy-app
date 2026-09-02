@@ -1,8 +1,8 @@
 {
-  "version": "4.7.43",
-  "build": 2765,
+  "version": "4.7.45",
+  "build": 2767,
   "date": "2026-09-02",
   "changelog": [
-    "Header add icon stays white; only the Add Device button plus is cyan."
+    "Insights Day/Week/Month/Range selected pill is light gray per design; Feedback modal warning/yellow accents are white."
   ]
 }

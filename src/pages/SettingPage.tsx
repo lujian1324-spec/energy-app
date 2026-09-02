@@ -367,12 +367,12 @@ export default function SettingPage() {
             onClick={() => setShowSupport(false)}>
             <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="w-full max-w-md bg-ink-10 rounded-[28px] border border-warning/[0.15] overflow-hidden"
+              className="w-full max-w-md bg-ink-10 rounded-[28px] border border-white/[0.15] overflow-hidden"
               onClick={e => e.stopPropagation()}>
-              <div className="flex items-center justify-between px-5 py-4 border-b border-warning/[0.1]">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.15]">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-l bg-warning/[0.1] flex items-center justify-center">
-                    <Headphones size={20} className="text-warning" />
+                  <div className="w-10 h-10 rounded-l bg-white/[0.10] flex items-center justify-center">
+                    <Headphones size={20} className="text-white" />
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-ink-1">Feedback</h3>
@@ -405,7 +405,7 @@ export default function SettingPage() {
                     {supportError && (
                       <p className="text-label text-danger text-center">{supportError}</p>
                     )}
-                    <button type="submit" disabled={supportSending} className="w-full py-3.5 rounded-l bg-warning/[0.12] text-warning font-semibold text-body-md flex items-center justify-center gap-2 active:scale-95 transition-transform border border-warning/[0.2] disabled:opacity-50">
+                    <button type="submit" disabled={supportSending} className="w-full py-3.5 rounded-l bg-white/[0.10] text-white font-semibold text-body-md flex items-center justify-center gap-2 active:scale-95 transition-transform border border-white/[0.15] disabled:opacity-50">
                       {supportSending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                       {supportSending ? 'Sending...' : 'Submit Feedback'}
                     </button>
