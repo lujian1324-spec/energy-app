@@ -13,6 +13,7 @@ import {
   LoginData,
 } from '../api/authApi'
 import { tokenStore } from '../utils/apiClient'
+import { sanitizeUiCopy } from '../utils/uiCopy'
 import { useDeviceStore } from './deviceStore'
 import { disableWebPush } from '../utils/pushNotification'
 import { teardownNativePush } from '../utils/nativePush'
@@ -77,12 +78,13 @@ export const useAuthStore = create<AuthState>()(
             return true
           }
 
-          // 业务失败：展示后端返回的错误信息
-          const msg = result.message ?? result.msg ?? 'Login failed'
+          // 业务失败：展示后端返回的错误信息（中文映射为英文）
+          const msg = sanitizeUiCopy(result.message ?? result.msg, 'Login failed')
           set({ loading: false, error: msg, isAuthenticated: false })
           return false
         } catch (err: unknown) {
-          const msg = err instanceof Error ? err.message : 'Network error — please try again'
+          const raw = err instanceof Error ? err.message : 'Network error — please try again'
+          const msg = err instanceof Error ? sanitizeUiCopy(raw, 'Network error — please try again') : raw
           set({ loading: false, error: msg, isAuthenticated: false })
           return false
         }
