@@ -2,7 +2,6 @@ import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import {
-  ChevronLeft,
   Zap,
   Battery,
   Clock,
@@ -12,13 +11,13 @@ import {
   AlertTriangle,
   Check,
   X,
-  Info,
   Edit2,
   Save,
   Loader2,
   RefreshCw,
   CloudOff,
 } from 'lucide-react'
+import Icon from '../components/Icon'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useDeviceStore } from '../stores/deviceStore'
 import { mapBundleToSettings, mapSettingsToGeneralConfig } from '../api/deviceApi'
@@ -307,14 +306,14 @@ export default function SmartSchedulePage() {
           className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-white active:scale-95 transition-transform flex-shrink-0 before:absolute before:content-[''] before:-inset-1"
           aria-label="Back"
         >
-          <ChevronLeft size={20} />
+          <Icon name="chevron-left" size={20} />
         </button>
         <h2 className="flex-1 text-center text-body-lg font-semibold text-white">Smart Schedule</h2>
         <button
           className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-white flex-shrink-0 before:absolute before:content-[''] before:-inset-1"
           aria-label="About Smart Schedule"
         >
-          <Info size={20} />
+          <Icon name="info-outined" size={20} />
         </button>
       </div>
 
@@ -486,7 +485,7 @@ export default function SmartSchedulePage() {
                     className="relative w-8 h-8 rounded-full bg-ink-9 flex items-center justify-center text-danger flex-shrink-0 active:scale-95 transition-transform before:absolute before:content-[''] before:-inset-2"
                     aria-label={`Delete ${s.name}`}
                   >
-                    <Trash2 size={14} />
+                    <Icon name="trash" size={14} />
                   </button>
                 </div>
               )
