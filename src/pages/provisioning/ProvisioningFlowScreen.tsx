@@ -102,7 +102,7 @@ export default function ProvisioningFlowScreen(p: FlowProps) {
                   <button
                     onClick={handleConfirmBleKey}
                     disabled={store.isOperating || !bleKeyInput.trim()}
-                    className="w-full h-11 rounded-full bg-primary text-black text-body-md font-semibold disabled:opacity-50 flex items-center justify-center"
+                    className="w-full h-11 rounded-l bg-primary text-black text-body-md font-semibold disabled:opacity-50 flex items-center justify-center"
                   >
                     {store.isOperating ? <Loader2 size={16} className="animate-spin" /> : 'Verify Key'}
                   </button>
@@ -113,7 +113,7 @@ export default function ProvisioningFlowScreen(p: FlowProps) {
                 <button
                   onClick={handleScanWifi}
                   disabled={store.isOperating}
-                  className="w-full h-14 rounded-full bg-primary text-black text-body-lg font-semibold
+                  className="w-full h-14 rounded-l bg-primary text-black text-body-lg font-semibold
                     disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {store.isOperating ? <Loader2 size={18} className="animate-spin" /> : 'Scan Wi-Fi Networks'}
@@ -200,7 +200,7 @@ export default function ProvisioningFlowScreen(p: FlowProps) {
               <button
                 onClick={handleConfig}
                 disabled={store.isOperating || !store.wifiPassword}
-                className="w-full h-14 rounded-full bg-primary text-black text-body-lg font-semibold
+                className="w-full h-14 rounded-l bg-primary text-black text-body-lg font-semibold
                   disabled:bg-primary-dark disabled:text-black/[0.4] transition-colors flex items-center justify-center gap-2"
               >
                 {store.isOperating
@@ -309,7 +309,7 @@ export default function ProvisioningFlowScreen(p: FlowProps) {
                         handleClose()
                       }
                     }}
-                    className="w-full h-14 rounded-full bg-primary text-black text-body-lg font-semibold"
+                    className="w-full h-14 rounded-l bg-primary text-black text-body-lg font-semibold"
                   >
                     Done
                   </button>
@@ -397,7 +397,7 @@ export default function ProvisioningFlowScreen(p: FlowProps) {
                   setShowNotifSheet(false)
                   handleClose()
                 }}
-                className="w-full h-14 rounded-full bg-primary text-black text-body-lg font-semibold mb-3"
+                className="w-full h-14 rounded-l bg-primary text-black text-body-lg font-semibold mb-3"
               >
                 Enable Notifications
               </button>
