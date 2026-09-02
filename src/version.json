@@ -1,6 +1,6 @@
 {
-  "version": "4.7.44",
-  "build": 2766,
+  "version": "4.7.46",
+  "build": 2768,
   "date": "2026-09-02",
   "changelog": [
     "Notifications empty state: gray square then \u201cNo notifications\u201d; header drops the empty subtitle.",
