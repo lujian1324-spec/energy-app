@@ -121,9 +121,9 @@ export default function RegisterPage() {
         <button
           onClick={() => navigate(-1)}
           aria-label="Back"
-          className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-ink-1 active:scale-95 transition-transform"
+          className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-white active:scale-95 transition-transform"
         >
-          <ChevronLeft size={22} />
+          <ChevronLeft size={20} />
         </button>
       </div>
 
