@@ -29,7 +29,7 @@ const LUCIDE_ICON_MAP: Record<string, LucideIcon> = {
 const getSavedDisplayIconId = (deviceId: string): string | null =>
   localStorage.getItem(`sierro-display-icon-${deviceId}`)
 
-/** ~32px top-left icon slot (design p3). Product photo stays in this slot, not an 80px side column. */
+/** ~32px top-left icon slot (design p3). Default is a linear icon, not an 80px product photo. */
 function DeviceListIcon({ device, model }: { device: DeviceListItem; model: string }) {
   const savedIconId = getSavedDisplayIconId(String(device.id))
   const slotClass = 'w-8 h-8 flex-shrink-0 flex items-center justify-center'
@@ -61,7 +61,7 @@ function DeviceListIcon({ device, model }: { device: DeviceListItem; model: stri
   }
   return (
     <div className={slotClass}>
-      <img src={sierroProductImg} alt={model} className="w-full h-full object-contain" />
+      <Zap size={28} strokeWidth={1.75} className="text-white" />
     </div>
   )
 }
