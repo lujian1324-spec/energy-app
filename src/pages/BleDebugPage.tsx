@@ -9,9 +9,10 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  ChevronLeft, Bluetooth, Loader2, Trash2, Copy, Download,
+  Bluetooth, Loader2, Trash2, Copy, Download,
   CheckCircle2, XCircle, AlertTriangle, Wifi,
 } from 'lucide-react'
+import Icon from '../components/Icon'
 import { getProvisionManager, destroyProvisionManager } from '../protocols/bleProvision'
 import { computeAesKey } from '../utils/bleCrypto'
 import { parseBleName } from '../utils/dtuidParser'
@@ -227,7 +228,7 @@ export default function BleDebugPage() {
       <div className="px-4 pt-5 pb-3 flex items-center gap-3 safe-area-top border-b border-white/[0.06]">
         <button onClick={() => navigate(-1)}
           className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center">
-          <ChevronLeft size={20} className="text-white" />
+          <Icon name="chevron-left" size={20} />
         </button>
         <div className="flex-1">
           <h1 className="text-title-md font-semibold text-white">BLE Provisioning Debug</h1>
