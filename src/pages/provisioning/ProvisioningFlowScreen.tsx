@@ -5,10 +5,11 @@
 import { type Dispatch, type SetStateAction, type MutableRefObject } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  ChevronLeft, Wifi, WifiOff, Lock, Loader2,
+  Wifi, WifiOff, Lock, Loader2,
   AlertCircle, CheckCircle, XCircle, RefreshCw,
   Eye, EyeOff, Server,
 } from 'lucide-react'
+import Icon from '../../components/Icon'
 import { toast } from '../../components/Toast'
 import { useProvisionStore } from '../../stores/provisionStore'
 import { bindFailTitle, BIND_WIFI_HELPER, RESTART_HELP_COPY, type FailKind } from '../../utils/provisionFailCopy'
@@ -57,7 +58,7 @@ export default function ProvisioningFlowScreen(p: FlowProps) {
           aria-label="Back"
           className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center before:absolute before:content-[''] before:-inset-1"
         >
-          <ChevronLeft size={20} className="text-white" />
+          <Icon name="chevron-left" size={20} />
         </button>
         <h1 className="text-title-lg font-semibold text-white">
           {store.step === 'verify' && 'Verifying Device'}

@@ -2,7 +2,8 @@
  * BLE scan / permission / radar list screens (design p26 searching, p27 BT off).
  */
 import { motion } from 'framer-motion'
-import { ChevronLeft, Loader2, AlertCircle, Scan, Bluetooth } from 'lucide-react'
+import { Loader2, AlertCircle, Bluetooth } from 'lucide-react'
+import Icon from '../../components/Icon'
 import { toast } from '../../components/Toast'
 import { openAppSettings } from '../../utils/openAppSettings'
 import { isDtuid } from '../../utils/dtuidParser'
@@ -39,7 +40,7 @@ function AddDeviceHeader({ onBack }: { onBack: () => void }) {
         aria-label="Back"
         className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center before:absolute before:content-[''] before:-inset-1"
       >
-        <ChevronLeft size={20} className="text-white" />
+        <Icon name="chevron-left" size={20} />
       </button>
       <h1 className="text-title-lg font-semibold text-white text-center">Add Device</h1>
       <div aria-hidden className="w-10 h-10" />
@@ -53,7 +54,7 @@ function ScanQrCta({ onClick }: { onClick: () => void }) {
       onClick={onClick}
       className="w-full h-14 rounded-[20px] bg-ink-10 text-white text-body-lg font-semibold flex items-center justify-center gap-3 active:scale-[0.98] transition-transform"
     >
-      <Scan size={22} strokeWidth={2} />
+      <Icon name="scan" size={22} />
       Scan QR Code
     </button>
   )

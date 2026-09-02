@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ChevronLeft, X, Check, Loader2 } from 'lucide-react'
+import { X, Check, Loader2 } from 'lucide-react'
+import Icon from '../components/Icon'
 import { registerByEmail, sendEmailCaptcha } from '../api/authApi'
 import { useAuthStore } from '../stores/authStore'
 import { TERMS_URL } from '../config/legalLinks'
@@ -123,7 +124,7 @@ export default function RegisterPage() {
           aria-label="Back"
           className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-white active:scale-95 transition-transform"
         >
-          <ChevronLeft size={20} />
+          <Icon name="chevron-left" size={20} />
         </button>
       </div>
 

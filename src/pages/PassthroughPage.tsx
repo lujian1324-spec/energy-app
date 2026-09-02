@@ -9,7 +9,8 @@
  */
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ChevronLeft, Send, Loader2, Terminal, Zap, Settings2 } from 'lucide-react'
+import { Send, Loader2, Terminal, Zap, Settings2 } from 'lucide-react'
+import Icon from '../components/Icon'
 import { passthroughDevice } from '../api/deviceApi'
 import {
   FRAMES,
@@ -356,7 +357,7 @@ export default function PassthroughPage() {
           onClick={() => navigate(-1)}
           className="w-10 h-10 flex items-center justify-center rounded-full bg-ink-10"
         >
-          <ChevronLeft size={20} className="text-white" />
+          <Icon name="chevron-left" size={20} />
         </button>
         <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5">
           <Terminal size={15} className="text-primary" />

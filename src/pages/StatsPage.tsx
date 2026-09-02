@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Share2, Loader2, WifiOff, Zap, ChevronLeft, ChevronRight, Leaf, RefreshCw } from 'lucide-react'
+import { Loader2, WifiOff, Zap, ChevronLeft, ChevronRight, Leaf, RefreshCw } from 'lucide-react'
+import Icon from '../components/Icon'
 import html2canvas from 'html2canvas'
 import { toast } from '../components/Toast'
 import { CalcAudit } from '../components/DataTrust'
@@ -619,7 +620,7 @@ export default function StatsPage() {
             }
           }}
         >
-          {sharing ? <Loader2 size={20} className="animate-spin" /> : <Share2 size={20} />}
+          {sharing ? <Loader2 size={20} className="animate-spin" /> : <Icon name="share" size={20} />}
         </button>
       </div>
 

@@ -1,20 +1,22 @@
 /**
  * Name + icon steps for BLE provisioning.
  */
-import { ChevronLeft, X, Zap, Refrigerator, Lamp, Car, Plug, Fan, BedDouble, Server } from 'lucide-react'
+import { X, Car, Fan, BedDouble } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+import Icon from '../../components/Icon'
 import { SIERRO_MODEL_LIST, type SierroModel } from '../../data/deviceModels'
 
 // Device icon choices (Figma "Choose an Icon")
-const DEVICE_ICONS = [
-  { id: 'power', Icon: Zap },
-  { id: 'fridge', Icon: Refrigerator },
-  { id: 'server', Icon: Server as typeof Zap },
-  { id: 'lamp', Icon: Lamp },
-  { id: 'car', Icon: Car },
-  { id: 'plug', Icon: Plug },
-  { id: 'fan', Icon: Fan },
-  { id: 'bed', Icon: BedDouble },
-] as const
+const DEVICE_ICONS: { id: string; pack?: string; Lucide?: LucideIcon }[] = [
+  { id: 'power', pack: 'thunder' },
+  { id: 'fridge', pack: 'fridge' },
+  { id: 'server', pack: 'NAS' },
+  { id: 'lamp', pack: 'lamp' },
+  { id: 'car', Lucide: Car },
+  { id: 'plug', pack: 'plug' },
+  { id: 'fan', Lucide: Fan },
+  { id: 'bed', Lucide: BedDouble },
+]
 
 
 export function NameDeviceScreen({
@@ -38,7 +40,7 @@ export function NameDeviceScreen({
           aria-label="Back"
           className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center before:absolute before:content-[''] before:-inset-1"
         >
-          <ChevronLeft size={20} className="text-white" />
+          <Icon name="chevron-left" size={20} />
         </button>
       </div>
 
@@ -119,7 +121,7 @@ export function ChooseIconScreen({
           aria-label="Back"
           className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center before:absolute before:content-[''] before:-inset-1"
         >
-          <ChevronLeft size={20} className="text-white" />
+          <Icon name="chevron-left" size={20} />
         </button>
       </div>
 
@@ -130,7 +132,7 @@ export function ChooseIconScreen({
         </p>
 
         <div className="grid grid-cols-4 gap-3">
-          {DEVICE_ICONS.map(({ id, Icon }) => {
+          {DEVICE_ICONS.map(({ id, pack, Lucide }) => {
             const active = selectedIcon === id
             return (
               <button
@@ -139,7 +141,11 @@ export function ChooseIconScreen({
                 className={`aspect-square rounded-l flex items-center justify-center transition-[transform,background-color,border-color] active:scale-95
                   ${active ? 'bg-primary text-ink-13' : 'bg-ink-10 text-ink-4'}`}
               >
-                <Icon size={26} />
+                {pack ? (
+                  <Icon name={pack} size={26} className={active ? 'brightness-0' : ''} />
+                ) : Lucide ? (
+                  <Lucide size={26} />
+                ) : null}
               </button>
             )
           })}

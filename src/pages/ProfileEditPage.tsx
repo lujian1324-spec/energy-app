@@ -1,15 +1,11 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useRef, useEffect } from 'react'
 import {
-  ChevronLeft,
-  User,
   Mail,
   Camera,
-  Check,
-  X,
-  ChevronRight,
   Hash,
 } from 'lucide-react'
+import Icon from '../components/Icon'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useAuthStore } from '../stores/authStore'
 import { saveUserProfile, getUserProfile } from '../db/powerflowDB'
@@ -283,7 +279,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
             onClick={handleCancel}
             className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center"
           >
-            <ChevronLeft size={20} className="text-white" />
+            <Icon name="chevron-left" size={20} />
           </button>
           <span className="text-title-lg font-semibold text-white">{title}</span>
           {editingField !== 'email' && editingField !== 'password' ? (
@@ -292,7 +288,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
               disabled={isSaving}
               className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center disabled:opacity-40"
             >
-              <Check size={18} className="text-primary" />
+              <Icon name="check" size={20} />
             </button>
           ) : (
             <div className="w-10" />
@@ -426,7 +422,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
           onClick={onBack}
           className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center"
         >
-          <ChevronLeft size={20} className="text-white" />
+          <Icon name="chevron-left" size={20} />
         </button>
 
         <span className="text-title-lg font-semibold text-white absolute left-1/2 -translate-x-1/2">
@@ -438,7 +434,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
             onClick={() => setShowMenu((v) => !v)}
             className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center"
           >
-            <span className="text-white text-body-lg leading-none tracking-widest">···</span>
+            <Icon name="more-hor" size={20} />
           </button>
 
           {/* Dropdown menu */}
@@ -485,7 +481,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <User size={40} className="text-ink-6" />
+                <Icon name="user" size={40} />
               )}
             </div>
             {/* Pencil edit overlay bottom-right */}
@@ -520,7 +516,9 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
         <div className="bg-ink-10 rounded-l overflow-hidden">
           {/* Username row — read-only display, set at registration (unified with Account/Name) */}
           <div className="w-full flex items-center gap-3 px-4 py-4 border-b border-white/5 text-left">
-            <User size={18} className="text-ink-6 flex-shrink-0" />
+            <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
+              <Icon name="user" size={20} />
+            </div>
             <span className="text-body-md text-white flex-1">Username</span>
             <span className="text-body-md text-ink-6 truncate max-w-[140px]">{profile.name}</span>
           </div>
@@ -530,10 +528,12 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
             onClick={() => handleEdit('email', profile.email)}
             className="w-full flex items-center gap-3 px-4 py-4 border-b border-white/5 text-left"
           >
-            <Mail size={18} className="text-ink-6 flex-shrink-0" />
+            <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
+              <Icon name="email" size={20} />
+            </div>
             <span className="text-body-md text-white flex-1">Linked Email</span>
             <span className="text-body-md text-ink-6 truncate max-w-[140px]">{profile.email}</span>
-            <ChevronRight size={16} className="text-ink-7 flex-shrink-0" />
+            <Icon name="chevron-right" size={16} />
           </button>
 
           {/* User ID row (read-only) */}
@@ -553,9 +553,11 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
             onClick={() => handleEdit('password', '')}
             className="w-full flex items-center gap-3 px-4 py-4 text-left"
           >
-            <Lock size={18} className="text-ink-6 flex-shrink-0" />
+            <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
+              <Lock size={20} className="text-white" />
+            </div>
             <span className="text-body-md text-white flex-1">Change Password</span>
-            <ChevronRight size={16} className="text-ink-7 flex-shrink-0" />
+            <Icon name="chevron-right" size={16} />
           </button>
         </div>
 
@@ -590,7 +592,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
                   onClick={() => setShowRedeem(false)}
                   className="w-8 h-8 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0"
                 >
-                  <X size={16} className="text-ink-6" />
+                  <Icon name="close" size={16} />
                 </button>
               </div>
 

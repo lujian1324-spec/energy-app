@@ -1,29 +1,19 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import {
-  BookOpen,
-  Fish,
-  Lamp,
-  PlugZap,
-  Refrigerator,
-  Server,
-  Wifi,
-  Zap,
-} from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import Icon from '../../components/Icon'
 import { BatteryTag, PowerToggle } from './DeviceCardControls'
 import type { DeviceListItem } from '../../api/deviceApi'
 import sierroProductImg from '../../assets/sierro-product.webp'
 
-const LUCIDE_ICON_MAP: Record<string, LucideIcon> = {
-  zap: Zap,
-  refrigerator: Refrigerator,
-  server: Server,
-  lamp: Lamp,
-  fish: Fish,
-  plugzap: PlugZap,
-  wifi: Wifi,
-  cpap: BookOpen,
+const PACK_ICON_MAP: Record<string, string> = {
+  zap: 'thunder',
+  refrigerator: 'fridge',
+  server: 'NAS',
+  lamp: 'lamp',
+  fish: 'fish tank',
+  plugzap: 'plug',
+  wifi: 'router',
+  cpap: 'CPAP',
 }
 
 const getSavedDisplayIconId = (deviceId: string): string | null =>
@@ -51,17 +41,17 @@ function DeviceListIcon({ device, model }: { device: DeviceListItem; model: stri
       </div>
     )
   }
-  const SavedIcon = savedIconId ? LUCIDE_ICON_MAP[savedIconId] : null
-  if (SavedIcon) {
+  const packName = savedIconId ? PACK_ICON_MAP[savedIconId] : null
+  if (packName) {
     return (
       <div className={slotClass}>
-        <SavedIcon size={28} strokeWidth={1.75} className="text-white" />
+        <Icon name={packName} size={28} />
       </div>
     )
   }
   return (
     <div className={slotClass}>
-      <Zap size={28} strokeWidth={1.75} className="text-white" />
+      <Icon name="thunder" size={28} />
     </div>
   )
 }

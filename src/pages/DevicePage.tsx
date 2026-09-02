@@ -12,7 +12,6 @@ import ProvisioningPage from './ProvisioningPage'
 import { supportsDeviceListScan } from '../protocols/bleProvision'
 import {
   AlertTriangle,
-  Plus,
   X,
 } from 'lucide-react'
 import Icon from '../components/Icon'
@@ -372,7 +371,7 @@ export default function DevicePage() {
               aria-label="Add device"
               className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-white hover:bg-ink-9 transition-colors active:scale-95"
             >
-              <Plus size={20} className="text-white" strokeWidth={2.5} />
+              <Icon name="add" size={20} />
             </button>
             <button
               onClick={() => navigate('/notifications')}

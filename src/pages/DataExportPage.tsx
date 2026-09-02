@@ -2,7 +2,6 @@ import { motion } from 'framer-motion'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  ChevronLeft,
   Download,
   FileJson,
   FileText,
@@ -12,6 +11,7 @@ import {
   Check,
   Info,
 } from 'lucide-react'
+import Icon from '../components/Icon'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useAuthStore } from '../stores/authStore'
 import { useDeviceStore } from '../stores/deviceStore'
@@ -109,7 +109,7 @@ export default function DataExportPage() {
           className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-white active:scale-95"
           aria-label="Back"
         >
-          <ChevronLeft size={20} />
+          <Icon name="chevron-left" size={20} />
         </button>
         <div className="flex-1">
           <h2 className="text-lg font-bold text-ink-1">Privacy & Data</h2>

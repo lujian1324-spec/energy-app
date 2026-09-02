@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, Loader2, X } from 'lucide-react'
+import { Loader2, X } from 'lucide-react'
+import Icon from '../components/Icon'
 import { sendEmailCaptcha, resetPassword } from '../api/authApi'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -107,7 +108,7 @@ export default function ForgotPasswordPage() {
           className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-white active:scale-95 transition-transform"
           aria-label="Back"
         >
-          <ChevronLeft size={20} />
+          <Icon name="chevron-left" size={20} />
         </button>
       </div>
 

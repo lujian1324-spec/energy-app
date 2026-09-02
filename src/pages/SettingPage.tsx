@@ -6,7 +6,6 @@ import {
   Send,
   Loader2,
   CheckCircle,
-  Headphones,
   Crown,
   Gift,
   Sparkles,
@@ -223,7 +222,7 @@ export default function SettingPage() {
           {/* Power Outage */}
           <div className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 text-left">
             <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
-              <Icon name="outage" size={16} />
+              <Icon name="outage" size={20} />
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-body-lg font-semibold text-ink-1">Power Outage</div>
@@ -247,7 +246,7 @@ export default function SettingPage() {
           {/* Low Battery */}
           <div className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 text-left">
             <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
-              <Icon name="low-battery" size={16} />
+              <Icon name="low-battery" size={20} />
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-body-lg font-semibold text-ink-1">Low Battery</div>
@@ -333,7 +332,7 @@ export default function SettingPage() {
             onClick={() => setShowSupport(true)}
             className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 active:scale-[0.99] transition-transform text-left">
             <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
-              <Icon name="feedback" size={16} />
+              <Icon name="feedback" size={20} />
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-body-lg font-semibold text-ink-1">Feedback</div>
@@ -372,7 +371,7 @@ export default function SettingPage() {
               <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.15]">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center">
-                    <Headphones size={20} className="text-white" />
+                    <Icon name="feedback" size={20} />
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-ink-1">Feedback</h3>

@@ -1,23 +1,13 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useSleepModeScheduler, loadSchedule, saveSchedule } from '../hooks/useSleepModeScheduler'
 import {
-  ChevronLeft,
   ChevronRight,
-  ChevronDown,
   Check,
   X,
   Loader2,
-  Battery,
-  Zap,
-  Refrigerator,
-  Server,
-  Lamp,
-  Fish,
-  PlugZap,
-  Wifi,
-  BookOpen,
   Camera,
 } from 'lucide-react'
+import Icon from '../components/Icon'
 import { useNavigate, useParams } from 'react-router-dom'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useDeviceStore } from '../stores/deviceStore'
@@ -41,14 +31,14 @@ interface DeviceDetailPageProps {
 type Screen = 'main' | 'editName' | 'displayIcon' | 'deviceInfo' | 'sleepMode'
 
 const DISPLAY_ICONS = [
-  { id: 'zap', Icon: Zap, label: 'Power Station' },
-  { id: 'refrigerator', Icon: Refrigerator, label: 'Refrigerator' },
-  { id: 'server', Icon: Server, label: 'Server' },
-  { id: 'lamp', Icon: Lamp, label: 'Lamp' },
-  { id: 'fish', Icon: Fish, label: 'Aquarium' },
-  { id: 'plugzap', Icon: PlugZap, label: 'EV Charger' },
-  { id: 'wifi', Icon: Wifi, label: 'Router' },
-  { id: 'cpap', Icon: BookOpen, label: 'CPAP' },
+  { id: 'zap', pack: 'thunder', label: 'Power Station' },
+  { id: 'refrigerator', pack: 'fridge', label: 'Refrigerator' },
+  { id: 'server', pack: 'NAS', label: 'Server' },
+  { id: 'lamp', pack: 'lamp', label: 'Lamp' },
+  { id: 'fish', pack: 'fish tank', label: 'Aquarium' },
+  { id: 'plugzap', pack: 'plug', label: 'EV Charger' },
+  { id: 'wifi', pack: 'router', label: 'Router' },
+  { id: 'cpap', pack: 'CPAP', label: 'CPAP' },
 ]
 
 export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
@@ -300,15 +290,15 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     handleBack()
   }
 
-  const CurrentIconComp =
-    DISPLAY_ICONS.find((i) => i.id === selectedIcon)?.Icon ?? Battery
+  const currentPack =
+    DISPLAY_ICONS.find((i) => i.id === selectedIcon)?.pack ?? 'thunder'
 
   const BackBtn = ({ to }: { to: Screen | 'parent' }) => (
     <button
       onClick={() => (to === 'parent' ? handleBack() : setScreen(to as Screen))}
       className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center active:scale-95 transition-transform flex-shrink-0"
     >
-      <ChevronLeft size={20} className="text-white" />
+      <Icon name="chevron-left" size={20} />
     </button>
   )
 
@@ -375,9 +365,10 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 <span className="text-body-lg text-white truncate">
                   {editTargetDevice?.name ?? editTargetOriginalName}
                 </span>
-                <ChevronDown
+                <Icon
+                  name="chevron-down"
                   size={18}
-                  className={`text-ink-6 transition-transform ${showDeviceDropdown ? 'rotate-180' : ''}`}
+                  className={`transition-transform ${showDeviceDropdown ? 'rotate-180' : ''}`}
                 />
               </button>
               {showDeviceDropdown && (
@@ -489,7 +480,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 Custom
               </span>
             </button>
-            {DISPLAY_ICONS.map(({ id, Icon, label }) => (
+            {DISPLAY_ICONS.map(({ id, pack, label }) => (
               <button
                 key={id}
                 onClick={() => { setPendingIcon(id); setPendingCustomImage(null) }}
@@ -498,8 +489,9 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 }`}
               >
                 <Icon
+                  name={pack}
                   size={28}
-                  className={pendingIcon === id ? 'text-black' : 'text-white'}
+                  className={pendingIcon === id ? 'brightness-0' : ''}
                 />
                 <span
                   className={`text-label ${
@@ -806,7 +798,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               ) : selectedIcon === 'custom' && customImage ? (
                 <img src={customImage} alt="Custom" className="w-5 h-5 object-cover rounded-s" />
               ) : (
-                <CurrentIconComp size={16} className="text-white" />
+                <Icon name={currentPack} size={16} />
               )}
             </div>
           }
