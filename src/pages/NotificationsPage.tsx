@@ -120,15 +120,23 @@ export default function NotificationsPage() {
 
       {/* List */}
       <div className="flex-1 overflow-y-auto scrollbar-hide">
-        {/* Empty state — design p20: gray square then "No notifications" below */}
+        {/* Empty state — design-system illustration */}
         {visibleAlarms.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center justify-center h-full text-center px-6"
           >
-            <div className="w-40 h-40 rounded-l bg-ink-9" />
-            <p className="text-body-md text-ink-6 mt-4">No notifications</p>
+            <img
+              src={`${import.meta.env.BASE_URL}ds-noti-empty.svg`}
+              alt=""
+              className="w-[180px] h-auto select-none"
+              draggable={false}
+            />
+            <h2 className="text-headline-md font-semibold text-white mt-6 mb-2">You're all caught up</h2>
+            <p className="text-body-md text-ink-6 max-w-[280px]">
+              Battery alerts, outage notifications, and device updates will appear here.
+            </p>
           </motion.div>
         )}
 

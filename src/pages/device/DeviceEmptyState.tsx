@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { Plus, RefreshCw } from 'lucide-react'
 
-/** Device list empty state (design p2): gray square + Add Device. Error keeps title/subtitle. */
+/** Device list empty state: honeycomb illustration + Add Device. Error keeps title/subtitle. */
 export default function DeviceEmptyState({
   error,
   onRetry,
@@ -12,8 +12,13 @@ export default function DeviceEmptyState({
   onAddDevice: () => void
 }) {
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center text-center pt-24 px-6">
-      <div className="w-40 h-40 rounded-l bg-ink-9 mb-7" />
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center text-center pt-16 px-6">
+      <img
+        src={`${import.meta.env.BASE_URL}ds-device-empty.svg`}
+        alt=""
+        className="w-[200px] h-auto mb-7 select-none"
+        draggable={false}
+      />
       {error ? (
         <>
           <h2 className="text-headline-md font-semibold text-white mb-2">
@@ -22,14 +27,22 @@ export default function DeviceEmptyState({
           <p className="text-body-lg text-ink-7 mb-8 max-w-[280px]">
             Check your network connection and try again.
           </p>
-          <button onClick={onRetry} className="px-6 py-3 rounded-m border-m border-primary text-primary text-body-lg font-semibold flex items-center gap-2 active:scale-95 transition-transform">
+          <button onClick={onRetry} className="px-6 py-3 rounded-l border-m border-primary text-primary text-body-lg font-semibold flex items-center gap-2 active:scale-95 transition-transform">
             <RefreshCw size={18} /> Retry
           </button>
         </>
       ) : (
-        <button onClick={onAddDevice} className="px-7 py-3.5 rounded-m border-m border-primary text-primary text-body-lg font-semibold flex items-center gap-2 active:scale-95 transition-transform">
-          <Plus size={20} className="text-primary" strokeWidth={2.5} /> Add Device
-        </button>
+        <>
+          <h2 className="text-headline-md font-semibold text-white mb-2">
+            Ready to get started?
+          </h2>
+          <p className="text-body-md text-ink-6 mb-8 max-w-[280px]">
+            Add your first Sierro device to protect essential devices and stay prepared for outages.
+          </p>
+          <button onClick={onAddDevice} className="px-7 py-3.5 rounded-l border-m border-primary text-primary text-body-lg font-semibold flex items-center gap-2 active:scale-95 transition-transform">
+            <Plus size={20} className="text-primary" strokeWidth={2.5} /> Add Device
+          </button>
+        </>
       )}
     </motion.div>
   )

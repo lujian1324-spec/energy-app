@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Loader2, WifiOff, Zap, ChevronLeft, ChevronRight, Leaf, RefreshCw } from 'lucide-react'
+import { Loader2, Plus, Zap, ChevronLeft, ChevronRight, Leaf, RefreshCw } from 'lucide-react'
 import Icon from '../components/Icon'
 import html2canvas from 'html2canvas'
 import { toast } from '../components/Toast'
@@ -533,6 +534,7 @@ export default function StatsPage() {
     return Math.max(1, Math.floor((Date.now() - installed.getTime()) / (24 * 3600 * 1000)))
   }, [deviceId, devices])
 
+  const navigate = useNavigate()
   const displayDeviceDays = useCountUp(deviceDays)
   const displayCo2 = useCountUp(chartFrame?.co2Kg ?? 0, 400, 1)
 
@@ -628,15 +630,22 @@ export default function StatsPage() {
         {!hasDevice && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center justify-center py-20 px-8">
-            <div className="w-40 h-40 rounded-l bg-ink-9 mb-7" />
-            <h3 className="text-headline-md font-semibold text-white mb-2">No devices yet</h3>
-            <p className="text-body-lg text-ink-7 text-center leading-relaxed mb-6">
-              Connect a device to start tracking energy usage and statistics.
+            <img
+              src={`${import.meta.env.BASE_URL}ds-insights-empty.svg`}
+              alt=""
+              className="w-[180px] h-auto mb-7 select-none"
+              draggable={false}
+            />
+            <h3 className="text-headline-md font-semibold text-white mb-2">Insights will appear here</h3>
+            <p className="text-body-md text-ink-6 text-center leading-relaxed mb-8 max-w-[280px]">
+              Connect a Sierro device to start tracking battery performance and power usage.
             </p>
-            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-ink-10 border border-white/[0.06]">
-              <WifiOff size={14} className="text-ink-7" />
-              <span className="text-label text-ink-7">No device connected</span>
-            </div>
+            <button
+              onClick={() => navigate('/devices')}
+              className="px-7 py-3.5 rounded-l border-m border-primary text-primary text-body-lg font-semibold flex items-center gap-2 active:scale-95 transition-transform"
+            >
+              <Plus size={20} className="text-primary" strokeWidth={2.5} /> Add Device
+            </button>
           </motion.div>
         )}
 

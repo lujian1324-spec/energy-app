@@ -95,7 +95,7 @@ export function NameDeviceScreen({
         <button
           onClick={onNext}
           disabled={!deviceNameInput.trim()}
-          className="w-full h-14 rounded-full bg-primary text-black text-body-lg font-semibold
+          className="w-full h-14 rounded-l bg-primary text-black text-body-lg font-semibold
             disabled:bg-primary-dark disabled:text-black/[0.4] transition-colors"
         >
           Next
@@ -155,7 +155,7 @@ export function ChooseIconScreen({
       <div className="px-6 pb-10 safe-area-bottom">
         <button
           onClick={onNext}
-          className="w-full h-14 rounded-full bg-primary text-black text-body-lg font-semibold
+          className="w-full h-14 rounded-l bg-primary text-black text-body-lg font-semibold
             disabled:bg-primary-dark disabled:text-black/[0.4] transition-colors"
         >
           Finish
