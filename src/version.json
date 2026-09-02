@@ -1,8 +1,10 @@
 {
-  "version": "4.7.43",
-  "build": 2765,
+  "version": "4.7.44",
+  "build": 2766,
   "date": "2026-09-02",
   "changelog": [
-    "Header add icon stays white; only the Add Device button plus is cyan."
+    "Notifications empty state: gray square then \u201cNo notifications\u201d; header drops the empty subtitle.",
+    "Chinese toasts/errors map to English (timed out waiting for the device, leftover CJK hidden).",
+    "Device Info field order and labels match design p70; extras (Firmware Version, debug tools) kept."
   ]
 }
