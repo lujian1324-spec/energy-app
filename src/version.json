@@ -1,8 +1,8 @@
 {
-  "version": "4.7.40",
-  "build": 2762,
-  "date": "2026-09-01",
+  "version": "4.7.41",
+  "build": 2763,
+  "date": "2026-09-02",
   "changelog": [
-    "Wi-Fi setup shows a persistent reminder to switch on the Sierro before connecting to Wi-Fi."
+    "Device list cards match design height/type/layout; header + uses Add Device cyan; empty state has no No-devices-yet copy."
   ]
 }
