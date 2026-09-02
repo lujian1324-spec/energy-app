@@ -10,7 +10,7 @@ import { type SierroModel } from '../data/deviceModels'
 import { useDeviceStore } from '../stores/deviceStore'
 import { isDtuid } from '../utils/dtuidParser'
 import { App } from '@capacitor/app'
-import { checkBluetooth, resetBleInit } from '../utils/permissions'
+import { checkBluetooth, resetBleInit, bleStatusFromCheck } from '../utils/permissions'
 import { type FailKind } from '../utils/provisionFailCopy'
 import QrScanScreen from './provisioning/QrScanScreen'
 import { NameDeviceScreen, ChooseIconScreen } from './provisioning/NameIconScreens'
@@ -78,20 +78,15 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   })
 
   const recheckBle = useCallback(async (): Promise<BleStatus> => {
-    if (supportsDeviceListScan()) {
-      try {
-        const result = await checkBluetooth()
-        if (result.state === 'granted') { setBleStatus('ready'); return 'ready' }
-        else if (result.state === 'denied') { setBleStatus('no_permission'); return 'no_permission' }
-        else { setBleStatus('ready'); return 'ready' }
-      } catch {
-        setBleStatus('ready')
-        return 'ready'
-      }
+    try {
+      const result = await checkBluetooth()
+      const status = bleStatusFromCheck(result)
+      setBleStatus(status)
+      return status
+    } catch {
+      setBleStatus('ready')
+      return 'ready'
     }
-    if (!('bluetooth' in navigator)) { setBleStatus('no_permission'); return 'no_permission' }
-    setBleStatus('ready')
-    return 'ready'
   }, [])
 
   useEffect(() => { void recheckBle() }, [recheckBle])
@@ -128,13 +123,13 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
           return
         }
         if (removed) return
-        const wasNoPermission = bleStatusRef.current === 'no_permission'
+        const wasBlocked = bleStatusRef.current === 'no_permission' || bleStatusRef.current === 'bt_off'
         const onScan = uiScreenRef.current === 'scan'
         resetBleInit()
         if (onScan) setBleStatus('checking')
         const status = await recheckBle()
         if (removed) return
-        if (status === 'ready' && (onScan || wasNoPermission) && uiScreenRef.current === 'scan') {
+        if (status === 'ready' && (onScan || wasBlocked) && uiScreenRef.current === 'scan') {
           void handleScan()
         }
       })
