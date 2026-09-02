@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Share2, Loader2, WifiOff, Zap, ChevronLeft, ChevronRight, Leaf, RefreshCw } from 'lucide-react'
 import html2canvas from 'html2canvas'
 import { toast } from '../components/Toast'
-import { LastSync, CalcAudit } from '../components/DataTrust'
+import { CalcAudit } from '../components/DataTrust'
 import { useDeviceStore } from '../stores/deviceStore'
 import { fetchDeviceRecordHistory, type DeviceAttributeRecord } from '../api/deviceApi'
 import { isApiSuccess } from '../utils/apiClient'
@@ -355,9 +355,9 @@ function ChartAreaSkeleton() {
   )
 }
 
-// ═══════════════════════════════════════════════
+// ═══════════════════════════════════════════
 // StatsPage
-// ═══════════════════════════════════════════════
+// ═══════════════════════════════════════════
 
 export default function StatsPage() {
   const [period, setPeriod] = useState<Period>('Day')
@@ -383,7 +383,6 @@ export default function StatsPage() {
     }
   }, [period])
 
-  const [lastSyncAt, setLastSyncAt] = useState<number | undefined>(undefined)
   const chartSvgRef = useRef<SVGSVGElement>(null)
   const [scrubIndex, setScrubIndex] = useState<number | null>(null)
 
@@ -492,7 +491,6 @@ export default function StatsPage() {
         if (page >= totalPages || listPage.length === 0) break
       }
       setRecords(all)
-      setLastSyncAt(Date.now())
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e))
       setRecords([])
@@ -571,9 +569,6 @@ export default function StatsPage() {
       <div className="px-5 pt-4 pb-3 safe-area-top flex justify-between items-start">
         <div>
           <h1 className="text-display font-display text-white leading-none">Insights</h1>
-          <div className="flex items-center gap-2 mt-2">
-            <LastSync lastSyncAt={lastSyncAt} />
-          </div>
         </div>
         <button
           aria-label="Share"
@@ -673,7 +668,7 @@ export default function StatsPage() {
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
                 className="flex flex-col items-center text-center py-5">
                 <div className="flex items-baseline justify-center gap-2">
-                  <Zap size={32} className="text-primary fill-primary self-center" />
+                  <Zap size={26} strokeWidth={1.5} className="text-primary self-center" />
                   <span className="text-headline-xl font-semibold text-ink-1 leading-none tnum">{displayDeviceDays}</span>
                   <span className="text-title-md text-ink-6">Days</span>
                 </div>
