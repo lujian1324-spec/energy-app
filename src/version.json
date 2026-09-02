@@ -1,8 +1,8 @@
 {
-  "version": "4.7.49",
-  "build": 2771,
+  "version": "4.7.50",
+  "build": 2772,
   "date": "2026-09-02",
   "changelog": [
-    "Unify circular icon tokens: header A 40/20 white, list B 36/16; tab 48 locked; avatar rings unchanged."
+    "Replace lucide with design SVG icons on white-on-dark controls; Profile Token B circles; list glyph 20."
   ]
 }
