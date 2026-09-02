@@ -144,7 +144,9 @@ describe('requestCamera (web)', () => {
 describe('checkBluetooth (web)', () => {
   it('returns unsupported when Web Bluetooth is absent', async () => {
     vi.stubGlobal('navigator', {})
-    expect((await checkBluetooth()).state).toBe('unsupported')
+    const r = await checkBluetooth()
+    expect(r.state).toBe('unsupported')
+    expect(r.detail).toBe('Web Bluetooth unavailable')
   })
 
   it('returns prompt when an adapter is available', async () => {
@@ -154,7 +156,9 @@ describe('checkBluetooth (web)', () => {
 
   it('returns denied when the adapter reports off', async () => {
     vi.stubGlobal('navigator', { bluetooth: { getAvailability: vi.fn().mockResolvedValue(false) } })
-    expect((await checkBluetooth()).state).toBe('denied')
+    const r = await checkBluetooth()
+    expect(r.state).toBe('denied')
+    expect(r.detail).toBe('Bluetooth is off')
   })
 })
 

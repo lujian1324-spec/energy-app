@@ -375,19 +375,36 @@ export interface ClassifiedBLError {
 export function classifyBleError(err: unknown): ClassifiedBLError {
   const msg = err instanceof Error ? err.message : 'Connection failed'
   const low = msg.toLowerCase()
-  // 权限被拒：Android "Permission denied." / iOS 授权拒绝 / Web NotAllowedError
-  if (low.includes('permission') || low.includes('denied') ||
-      low.includes('unauthorized') || low.includes('notallowed')) {
-    return { kind: 'permission', msg }
-  }
-  // 无法扫描的前置条件：蓝牙关闭 / 适配器不可用 / 定位服务关闭(Android) / 插件未初始化 / 不支持
+  // Radio-off BEFORE the generic "denied" keyword so checkBluetooth detail
+  // "Bluetooth is off" (state: denied) maps to p27, not the permission screen.
   if (low.includes('not available') || low.includes('not enabled') || low.includes('unavailable') ||
       low.includes('disabled') || low.includes('bluetooth is off') || low.includes('adapter') ||
       low.includes('not initialized') || low.includes('location') ||
       low.includes('not supported') || low.includes('not turned on')) {
     return { kind: 'bluetooth_off', msg }
   }
+  // 权限被拒：Android "Permission denied." / iOS 授权拒绝 / Web NotAllowedError
+  if (low.includes('permission') || low.includes('denied') ||
+      low.includes('unauthorized') || low.includes('notallowed')) {
+    return { kind: 'permission', msg }
+  }
   return { kind: 'generic', msg }
+}
+
+export type BleUiStatus = 'ready' | 'bt_off' | 'no_permission'
+
+/** Map checkBluetooth() result to provisioning UI.
+ *  Radio off (detail "Bluetooth is off") → bt_off (design p27).
+ *  Permission denied / missing API (unsupported) → no_permission.
+ *  granted or prompt (adapter ready) → ready.
+ *  Do not treat every denied as no_permission — classify via detail.
+ */
+export function bleStatusFromCheck(result: PermissionResult): BleUiStatus {
+  if (result.state === 'granted' || result.state === 'prompt') return 'ready'
+  if (result.state === 'unsupported') return 'no_permission'
+  const classified = classifyBleError(new Error(result.detail || ''))
+  if (classified.kind === 'bluetooth_off') return 'bt_off'
+  return 'no_permission'
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

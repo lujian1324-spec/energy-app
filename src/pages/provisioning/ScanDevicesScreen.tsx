@@ -1,13 +1,14 @@
 /**
- * BLE scan / permission / radar list screens.
+ * BLE scan / permission / radar list screens (design p26 searching, p27 BT off).
  */
 import { motion } from 'framer-motion'
-import { ChevronLeft, WifiOff, Loader2, AlertCircle } from 'lucide-react'
+import { ChevronLeft, Loader2, AlertCircle, Scan, Bluetooth } from 'lucide-react'
 import { toast } from '../../components/Toast'
 import { openAppSettings } from '../../utils/openAppSettings'
 import { isDtuid } from '../../utils/dtuidParser'
 import { formatScanDisplayName } from '../../utils/scanDisplayName'
 import { resetBleInit } from '../../utils/permissions'
+import { supportsDeviceListScan } from '../../protocols/bleProvision'
 import { useProvisionStore } from '../../stores/provisionStore'
 
 type FoundDevice = {
@@ -30,6 +31,94 @@ type Props = {
   setUiScreen: (s: 'scan' | 'qr' | 'naming' | 'icon' | 'provisioning') => void
 }
 
+function AddDeviceHeader({ onBack }: { onBack: () => void }) {
+  return (
+    <div className="px-4 pt-5 pb-4 grid grid-cols-[40px_1fr_40px] items-center safe-area-top">
+      <button
+        onClick={onBack}
+        aria-label="Back"
+        className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center before:absolute before:content-[''] before:-inset-1"
+      >
+        <ChevronLeft size={20} className="text-white" />
+      </button>
+      <h1 className="text-title-lg font-semibold text-white text-center">Add Device</h1>
+      <div aria-hidden className="w-10 h-10" />
+    </div>
+  )
+}
+
+function ScanQrCta({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="w-full h-14 rounded-[20px] bg-ink-10 text-white text-body-lg font-semibold flex items-center justify-center gap-3 active:scale-[0.98] transition-transform"
+    >
+      <Scan size={22} strokeWidth={2} />
+      Scan QR Code
+    </button>
+  )
+}
+
+function PhoneRadar({ compact, searching }: { compact?: boolean; searching: boolean }) {
+  const box = compact ? 'w-28 h-28' : 'w-[280px] h-[280px]'
+  const base = compact ? 28 : 72
+  const step = compact ? 20 : 48
+  const phoneW = compact ? 28 : 58
+  const phoneH = compact ? 54 : 112
+  const radius = compact ? 8 : 16
+  return (
+    <div className={`relative flex items-center justify-center ${box}`}>
+      {radarRings.map((i) => (
+        <motion.div
+          key={i}
+          className="absolute rounded-full border border-white/[0.12]"
+          style={{ width: base + i * step, height: base + i * step }}
+          animate={{ opacity: searching ? [0.38, 0.08, 0.38] : 0.16 }}
+          transition={{ duration: 2.4, repeat: Infinity, delay: i * 0.35, ease: 'easeInOut' }}
+        />
+      ))}
+      <div
+        className="relative z-10 bg-[#141414] border-[2.5px] border-[#C8C8C8]"
+        style={{
+          width: phoneW,
+          height: phoneH,
+          borderRadius: radius,
+          boxShadow: '0 10px 28px rgba(0,0,0,0.45)',
+        }}
+      >
+        <div
+          className="absolute bg-[#C8C8C8] rounded-r-sm"
+          style={{ right: compact ? -3 : -4, top: compact ? 12 : 24, width: compact ? 2 : 3, height: compact ? 10 : 20 }}
+        />
+        <div
+          className="absolute bg-[#C8C8C8] rounded-r-sm"
+          style={{ right: compact ? -3 : -4, top: compact ? 26 : 50, width: compact ? 2 : 3, height: compact ? 7 : 14 }}
+        />
+      </div>
+    </div>
+  )
+}
+
+function BluetoothOffIllustration() {
+  return (
+    <div className="relative w-[220px] h-[280px] flex items-center justify-center">
+      <div className="w-[176px] h-[268px] rounded-[42px] bg-[#1A1A1A] border-[3px] border-[#C8C8C8] relative shadow-[0_16px_40px_rgba(0,0,0,0.5)]">
+        <div className="absolute left-5 top-7 w-[84px] h-[84px] rounded-[22px] bg-[#2A2A2A] grid grid-cols-2 gap-2.5 p-3">
+          <div className="rounded-full bg-[#111]" />
+          <div className="rounded-full bg-[#111]" />
+          <div className="rounded-full bg-[#111]" />
+          <div className="rounded-full bg-[#111]" />
+        </div>
+        <div className="absolute right-5 top-7 w-[84px] h-[84px] rounded-[22px] bg-[#3A3A3A] flex items-center justify-center">
+          <div className="w-11 h-11 rounded-[14px] bg-[#0A84FF] flex items-center justify-center">
+            <Bluetooth size={22} className="text-white" strokeWidth={2.4} />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function ScanDevicesScreen(p: Props) {
   const store = useProvisionStore()
   const { bleStatus, setBleStatus, foundDevices, handleClose, handleScan, handleSelectDevice, setUiScreen } = p
@@ -37,16 +126,13 @@ export default function ScanDevicesScreen(p: Props) {
   const hasDevices = foundDevices.length > 0
   const hasError = !isSearching && store.errorMessage && !hasDevices
   const isCheckingBle = bleStatus === 'checking'
+  const openQr = () => setUiScreen('qr')
+  const showWebPickerCta = !supportsDeviceListScan() && !isSearching && !hasDevices && !hasError
 
   if (bleStatus === 'no_permission') {
     return (
       <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
-        <div className="px-4 pt-5 pb-4 flex items-center safe-area-top">
-          <button onClick={handleClose} aria-label="Back" className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center before:absolute before:content-[''] before:-inset-1">
-            <ChevronLeft size={20} className="text-white" />
-          </button>
-          <h1 className="text-title-lg font-semibold text-white ml-3">Add Device</h1>
-        </div>
+        <AddDeviceHeader onBack={handleClose} />
         <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
           <div className="w-20 h-20 rounded-[28px] bg-danger/[0.1] flex items-center justify-center mb-6">
             <AlertCircle size={36} className="text-danger" />
@@ -74,8 +160,10 @@ export default function ScanDevicesScreen(p: Props) {
             onClick={() => { resetBleInit(); setBleStatus('ready'); store.setErrorMessage(null); handleScan() }}
             className="w-full h-14 rounded-full bg-ink-10 text-white text-body-lg font-semibold active:scale-[0.98] transition-transform"
           >
-            I've Allowed It — Try Again
+            I&apos;ve Allowed It — Try Again
           </button>
+          <p className="text-center text-body-md text-ink-6 pt-1">Can&apos;t use Bluetooth? Scan the QR code instead.</p>
+          <ScanQrCta onClick={openQr} />
         </div>
       </div>
     )
@@ -84,28 +172,19 @@ export default function ScanDevicesScreen(p: Props) {
   if (bleStatus === 'bt_off') {
     return (
       <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
-        <div className="px-4 pt-5 pb-4 flex items-center safe-area-top">
-          <button onClick={handleClose} aria-label="Back" className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center before:absolute before:content-[''] before:-inset-1">
-            <ChevronLeft size={20} className="text-white" />
-          </button>
-          <h1 className="text-title-lg font-semibold text-white ml-3">Add Device</h1>
-        </div>
-        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
-          <div className="w-20 h-20 rounded-[28px] bg-primary/[0.1] flex items-center justify-center mb-6">
-            <WifiOff size={36} className="text-primary" />
-          </div>
-          <h2 className="text-headline-md font-bold text-white mb-3">Bluetooth is Off</h2>
-          <p className="text-body-md text-ink-6 mb-8">
-            Please enable Bluetooth on your device to scan for nearby Sierro devices.
+        <AddDeviceHeader onBack={handleClose} />
+        <div className="flex-1 flex flex-col items-center px-6 text-center pt-6">
+          <h2 className="text-headline-md font-bold text-white mb-2">Turn on Bluetooth</h2>
+          <p className="text-body-md text-ink-6 max-w-[320px] mb-8">
+            Enable Bluetooth from Control Center or Settings to automatically find and connect your device.
           </p>
+          <div className="flex-1 flex items-center justify-center min-h-[220px]">
+            <BluetoothOffIllustration />
+          </div>
         </div>
-        <div className="px-6 pb-10 safe-area-bottom space-y-3">
-          <button
-            onClick={() => setBleStatus('ready')}
-            className="w-full h-14 rounded-full bg-primary text-black text-body-lg font-semibold"
-          >
-            I've Enabled Bluetooth
-          </button>
+        <div className="px-6 pb-10 safe-area-bottom">
+          <p className="text-center text-body-md text-ink-6 mb-4">Can&apos;t use Bluetooth? Scan the QR code instead.</p>
+          <ScanQrCta onClick={openQr} />
         </div>
       </div>
     )
@@ -119,71 +198,25 @@ export default function ScanDevicesScreen(p: Props) {
           <p className="text-body-lg text-white">Checking Bluetooth…</p>
         </div>
       )}
-      <div className="px-4 pt-5 pb-4 flex items-center justify-between safe-area-top">
-        <button
-          onClick={handleClose}
-          aria-label="Back"
-          className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center before:absolute before:content-[''] before:-inset-1"
-        >
-          <ChevronLeft size={20} className="text-white" />
-        </button>
-        <h1 className="text-title-lg font-semibold text-white">Add Device</h1>
-        <button
-          onClick={() => setUiScreen('qr')}
-          className="text-body-md font-semibold text-primary"
-        >
-          Scan QR
-        </button>
-      </div>
+      <AddDeviceHeader onBack={handleClose} />
 
       <div className="flex-1 min-h-0 flex flex-col px-6">
         <div className={`flex flex-col items-center shrink-0 ${hasDevices ? 'pt-1 pb-3' : 'flex-1 justify-center'}`}>
-          <div className="relative flex items-center justify-center w-full min-h-56 mb-2">
-          <div className={`relative flex items-center justify-center ${hasDevices ? 'w-28 h-28' : 'w-56 h-56'}`}>
-            {radarRings.map((i) => (
-              <motion.div
-                key={i}
-                className="absolute rounded-full border border-primary"
-                style={{
-                  width: (hasDevices ? 28 : 56) + i * (hasDevices ? 20 : 40),
-                  height: (hasDevices ? 28 : 56) + i * (hasDevices ? 20 : 40),
-                }}
-                animate={{ opacity: isSearching ? [0.6, 0.1, 0.6] : 0.15 }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  delay: i * 0.4,
-                  ease: 'easeInOut',
-                }}
-              />
-            ))}
-            <div className={`${hasDevices ? 'w-10 h-10' : 'w-16 h-16'} rounded-l bg-ink-10 flex items-center justify-center z-10`}>
-              <svg width={hasDevices ? 18 : 28} height={hasDevices ? 18 : 28} viewBox="0 0 24 24" fill="none">
-                <rect x="5" y="2" width="14" height="20" rx="3" stroke="#01D6BE" strokeWidth="1.5"/>
-                <circle cx="12" cy="18" r="1" fill="#01D6BE"/>
-              </svg>
-            </div>
-          </div>
-          </div>
-
-          {isSearching && !hasDevices && (
-            <div className="text-center mb-6">
-              <p className="text-body-lg font-semibold text-white mb-1">Searching for nearby devices...</p>
-              <p className="text-body-md text-ink-6">Make sure your device is powered on and nearby.</p>
+          {!hasDevices && !hasError && (
+            <div className="text-center mb-6 px-2">
+              <p className="text-headline-md font-bold text-white mb-2">Searching for nearby devices...</p>
+              <p className="text-body-md text-ink-6">Keep your phone near the Sierro device while we search.</p>
             </div>
           )}
 
-          {!isSearching && !hasDevices && !store.errorMessage && (
-            <div className="text-center mb-6">
-              <p className="text-body-lg font-semibold text-white mb-1">Ready to Scan</p>
-              <p className="text-body-md text-ink-6">Tap the button below to search for nearby devices.</p>
-            </div>
-          )}
+          <div className={`relative flex items-center justify-center w-full ${hasDevices ? 'min-h-24 mb-1' : 'min-h-56 mb-2'}`}>
+            <PhoneRadar compact={hasDevices} searching={isSearching || (!hasDevices && !hasError)} />
+          </div>
 
           {hasError && (
-            <div className="text-center mb-6">
+            <div className="text-center mb-2">
               <p className="text-body-lg font-semibold text-white mb-1">No Devices Found</p>
-              <p className="text-body-md text-ink-6">Make sure your device is powered on and Bluetooth is enabled.</p>
+              <p className="text-body-md text-ink-6">Make sure your device is powered on and nearby.</p>
             </div>
           )}
         </div>
@@ -224,26 +257,20 @@ export default function ScanDevicesScreen(p: Props) {
           </div>
         )}
 
-        <div className="pb-10 safe-area-bottom space-y-3">
-          {(hasError || !isSearching) && !hasDevices && (
+        <div className="pb-10 safe-area-bottom">
+          {(hasError || showWebPickerCta) && (
             <button
               onClick={handleScan}
               disabled={isSearching}
-              className="w-full h-14 rounded-full bg-primary text-black text-body-lg font-semibold
-                disabled:bg-primary-dark disabled:text-black/[0.4] transition-colors"
+              className="w-full h-12 rounded-[20px] text-primary text-body-md font-semibold mb-3 active:scale-[0.98] transition-transform disabled:opacity-40"
             >
               {hasError ? 'Search Again' : 'Search for Devices'}
             </button>
           )}
-          {isSearching && (
-            <button
-              disabled
-              className="w-full h-14 rounded-full bg-primary-dark text-black/[0.4] text-body-lg font-semibold flex items-center justify-center gap-2"
-            >
-              <Loader2 size={18} className="animate-spin" />
-              Searching...
-            </button>
-          )}
+          <p className="text-center text-body-md text-ink-6 mb-4">
+            Can&apos;t find your device? Scan the QR code instead
+          </p>
+          <ScanQrCta onClick={openQr} />
         </div>
       </div>
     </div>

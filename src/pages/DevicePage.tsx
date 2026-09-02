@@ -64,7 +64,6 @@ export default function DevicePage() {
   const bleEpoch = useBleLiveStatusStore(s => s.epoch)
   const { settings } = usePowerStationStore()
 
-  const [showAddModal, setShowAddModal] = useState(false)
   const [showManualAdd, setShowManualAdd] = useState(false)
   const [showQrScan, setShowQrScan] = useState(false)
   const [showProvisioning, setShowProvisioning] = useState(false)
@@ -266,7 +265,6 @@ export default function DevicePage() {
   }
 
   const handleBleScan = useCallback(async () => {
-    setShowAddModal(false)
     if (supportsDeviceListScan()) {
       setShowProvisioning(true)
       return
@@ -370,7 +368,7 @@ export default function DevicePage() {
           <h1 className="text-display font-display text-white">Device</h1>
           <div className="flex items-center gap-2.5">
             <button
-              onClick={() => setShowAddModal(true)}
+              onClick={handleBleScan}
               aria-label="Add device"
               className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-primary hover:bg-ink-9 transition-colors active:scale-95"
             >
@@ -457,49 +455,11 @@ export default function DevicePage() {
           <DeviceEmptyState
             error={error}
             onRetry={fetchDevices}
-            onAddDevice={() => setShowAddModal(true)}
+            onAddDevice={handleBleScan}
           />
         )}
       </div>
       </PullToRefresh>
-
-      <AnimatePresence>
-        {showAddModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] bg-black/[0.7] flex items-end"
-            onClick={() => setShowAddModal(false)}>
-            <motion.div initial={{ y: 300, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 300, opacity: 0 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full bg-ink-10 rounded-t-[28px] p-6 pb-10">
-              <div className="w-10 h-1 bg-white/[0.15] rounded-full mx-auto mb-5" />
-              <h3 className="text-base font-bold text-ink-1 mb-5">Add New Device</h3>
-              <div className="flex flex-col gap-3">
-                {[
-                  { label: 'Bluetooth Scan', desc: 'Find nearby BLE devices', color: '#01D6BE', icon: '📡', action: handleBleScan },
-                  { label: 'Wi-Fi Setup', desc: 'Scan nearby devices over Bluetooth & set Wi-Fi', color: '#34C759', icon: '📶', action: handleBleScan },
-                  { label: 'Manual Entry', desc: 'Enter device code manually', color: '#FF9500', icon: '⌨️', action: () => { setShowAddModal(false); setShowManualAdd(true) } },
-                  { label: 'Scan QR Code', desc: 'Scan device QR code', color: '#01D6BE', icon: '📷', action: () => { setShowAddModal(false); setShowQrScan(true) } },
-                ].map((opt) => (
-                  <button key={opt.label}
-                    onClick={() => { if ('action' in opt && opt.action) opt.action(); else setShowAddModal(false) }}
-                    className="flex items-center gap-4 p-4 bg-ink-9 rounded-l text-left transition-colors active:scale-[0.98]">
-                    <span className="text-2xl">{opt.icon}</span>
-                    <div className="flex-1">
-                      <div className="text-body-md font-semibold" style={{ color: opt.color }}>{opt.label}</div>
-                      <div className="text-caption text-ink-6 mt-0.5">{opt.desc}</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-              <button onClick={() => setShowAddModal(false)}
-                className="w-full mt-4 h-11 rounded-l bg-white/[0.06] text-ink-6 text-sm font-medium">
-                Cancel
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       <AnimatePresence>
         {showQrScan && (

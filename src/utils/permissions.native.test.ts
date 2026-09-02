@@ -53,7 +53,7 @@ beforeEach(() => {
   h.ble.isLocationEnabled.mockResolvedValue(true)
 })
 
-// ── checkBluetooth (native) ──────────────────────────────────────────────────
+// ── checkBluetooth (native) ────────────────────────────────────────────────
 describe('checkBluetooth (native)', () => {
   it('is granted when initialize succeeds and the radio is on', async () => {
     const { checkBluetooth } = await loadPerms()
@@ -61,16 +61,22 @@ describe('checkBluetooth (native)', () => {
     expect(h.ble.initialize).toHaveBeenCalledWith({ androidNeverForLocation: true })
   })
 
-  it('is denied when the radio is off', async () => {
+  it('is denied with Bluetooth-is-off detail when the radio is off', async () => {
     h.ble.isEnabled.mockResolvedValue(false)
-    const { checkBluetooth } = await loadPerms()
-    expect((await checkBluetooth()).state).toBe('denied')
+    const { checkBluetooth, bleStatusFromCheck } = await loadPerms()
+    const r = await checkBluetooth()
+    expect(r.state).toBe('denied')
+    expect(r.detail).toBe('Bluetooth is off')
+    expect(bleStatusFromCheck(r)).toBe('bt_off')
   })
 
-  it('is denied when initialize() rejects (OS permission denied)', async () => {
+  it('is denied with settings-blocked detail when initialize() rejects', async () => {
     h.ble.initialize.mockRejectedValue(new Error('Permission denied.'))
-    const { checkBluetooth } = await loadPerms()
-    expect((await checkBluetooth()).state).toBe('denied')
+    const { checkBluetooth, bleStatusFromCheck } = await loadPerms()
+    const r = await checkBluetooth()
+    expect(r.state).toBe('denied')
+    expect(r.detail).toBe('Blocked — enable in system settings')
+    expect(bleStatusFromCheck(r)).toBe('no_permission')
   })
 
   it('initializes at most once across repeated checks (no double prompt)', async () => {
@@ -81,7 +87,7 @@ describe('checkBluetooth (native)', () => {
   })
 })
 
-// ── requestBluetooth (native) ────────────────────────────────────────────────
+// ── requestBluetooth (native) ───────────────────────────────────────────────
 describe('requestBluetooth (native)', () => {
   it('grants without asking to enable when the radio is already on', async () => {
     const { requestBluetooth } = await loadPerms()
@@ -118,7 +124,7 @@ describe('requestBluetooth (native)', () => {
   })
 })
 
-// ── Camera (native) ──────────────────────────────────────────────────────────
+// ── Camera (native) ─────────────────────────────────────────────────────
 describe('camera (native)', () => {
   it('checkCamera maps the plugin granted state', async () => {
     h.camera.checkPermissions.mockResolvedValue({ camera: 'granted' })
@@ -136,7 +142,7 @@ describe('camera (native)', () => {
   })
 })
 
-// ── Notifications (native) ───────────────────────────────────────────────────
+// ── Notifications (native) ───────────────────────────────────────────────
 describe('notifications (native)', () => {
   it('grants without registering APNs/FCM when NATIVE_PUSH_READY is false', async () => {
     h.nativePushReady = false

@@ -1,8 +1,8 @@
 {
-  "version": "4.7.41",
-  "build": 2763,
+  "version": "4.7.42",
+  "build": 2764,
   "date": "2026-09-02",
   "changelog": [
-    "Device list cards match design height/type/layout; header + uses Add Device cyan; empty state has no No-devices-yet copy."
+    "Add Device is fullscreen BLE search (design p26) with Bluetooth-off screen (p27); four-option sheet removed."
   ]
 }
