@@ -24,7 +24,6 @@ import { useDeviceStore } from '../stores/deviceStore'
 import { mapBundleToSettings, mapSettingsToGeneralConfig } from '../api/deviceApi'
 import type { PeakShavingSchedule } from '../types'
 
-// 日程类型配置
 const scheduleTypeConfig = {
   charge: { label: 'Charge', color: '#01D6BE', icon: Battery, bgColor: 'rgba(1,214,190,0.15)' },
   discharge: { label: 'Discharge', color: '#FF9500', icon: Zap, bgColor: 'rgba(255,149,0,0.15)' },
@@ -45,7 +44,6 @@ const minutesToLabel = (mins: number) => {
   return m === 0 ? `${h12} ${ampm}` : `${h12}:${String(m).padStart(2, '0')} ${ampm}`
 }
 
-/** 分钟数 → 整点 HH:00 字符串（时间刻度仅支持整点） */
 const minsToHourTime = (mins: number) => `${String(Math.floor(mins / 60) % 24).padStart(2, '0')}:00`
 
 const checkScheduleConflict = (
@@ -68,7 +66,6 @@ const checkScheduleConflict = (
   return { conflict: false }
 }
 
-// SVG clock donut arc path helper
 function arcPath(cx: number, cy: number, r: number, startDeg: number, endDeg: number): string {
   const toRad = (d: number) => (d * Math.PI) / 180
   const startRad = toRad(startDeg)
@@ -229,38 +226,32 @@ export default function SmartSchedulePage() {
   }
   const savings = calculateSavings()
 
-  // ─── 时钟几何参数（24h 表盘，12am 在顶部）───
-  // Map time (minutes 0-1440) → degrees (0=east), 12 o'clock(0min) = -90 (top)
   const timeToDeg = (mins: number) => (mins / 1440) * 360 - 90
   const cx = 120, cy = 120, r = 92, strokeW = 24
   const innerFaceR = r - strokeW / 2 - 6
 
-  // 极坐标 → SVG 坐标
   const polar = (deg: number): [number, number] => {
     const rad = (deg * Math.PI) / 180
     return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)]
   }
 
-  // Collect schedule arc segments（支持跨午夜环绕）
   const arcs = peakShavingSettings.schedules
     .filter(s => s.enabled)
     .map(s => {
       const startMins = timeToMinutes(s.startTime)
       const endMinsRaw = timeToMinutes(s.endTime)
       let span = endMinsRaw - startMins
-      if (span <= 0) span += 1440 // 跨午夜
+      if (span <= 0) span += 1440
       const startDeg = timeToDeg(startMins)
       const endDeg = startDeg + (span / 1440) * 360
       const color = s.type === 'discharge' ? '#FF9500' : s.type === 'charge' ? '#01D6BE' : '#8C8C8C'
       return { startDeg, endDeg, color, schedule: s, startMins, endMins: endMinsRaw }
     })
 
-  // ─── 拖拽调整时间（参考 iPhone「睡眠」时钟交互）───
   const svgRef = useRef<SVGSVGElement>(null)
   const [drag, setDrag] = useState<{ id: string; which: 'start' | 'end' } | null>(null)
   const [dragLabel, setDragLabel] = useState<string | null>(null)
 
-  // 指针坐标 → 整点分钟数（吸附到整点）
   const pointerToMins = useCallback((clientX: number, clientY: number): number | null => {
     const svg = svgRef.current
     if (!svg) return null
@@ -298,7 +289,6 @@ export default function SmartSchedulePage() {
     }
   }, [drag, pointerToMins, updatePeakShavingSchedule, handleScheduleChanged])
 
-  // Hours labels on clock face
   const clockLabels = [
     { label: '12am', deg: -90 },
     { label: '6am', deg: 0 },
@@ -306,13 +296,11 @@ export default function SmartSchedulePage() {
     { label: '6pm', deg: 180 },
   ]
 
-  // Find peak (discharge) and off-peak (charge) schedules
   const peakSchedule = peakShavingSettings.schedules.find(s => s.type === 'discharge' && s.enabled)
   const offPeakSchedule = peakShavingSettings.schedules.find(s => s.type === 'charge' && s.enabled)
 
   return (
     <div className="h-full flex flex-col bg-ink-12 overflow-hidden">
-      {/* Header */}
       <div className="px-4 pt-4 pb-3 safe-area-top flex items-center gap-3">
         <button
           onClick={() => navigate(-1)}
@@ -323,16 +311,14 @@ export default function SmartSchedulePage() {
         </button>
         <h2 className="flex-1 text-center text-body-lg font-semibold text-white">Smart Schedule</h2>
         <button
-          className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-ink-6 flex-shrink-0 before:absolute before:content-[''] before:-inset-1"
+          className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-white flex-shrink-0 before:absolute before:content-[''] before:-inset-1"
           aria-label="About Smart Schedule"
         >
-          <Info size={18} />
+          <Info size={20} />
         </button>
       </div>
 
       <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pb-24">
-
-        {/* Toggle */}
         <div className="bg-ink-10 rounded-l p-4 mb-4 flex items-center justify-between">
           <span className="text-body-md font-semibold text-white">Smart Schedule</span>
           <button
@@ -347,19 +333,9 @@ export default function SmartSchedulePage() {
           </button>
         </div>
 
-        {/* Clock Donut SVG — draggable handles (iPhone sleep-style) */}
         <div className="flex justify-center mb-4 select-none">
-          <svg
-            ref={svgRef}
-            width={240}
-            height={240}
-            viewBox="0 0 240 240"
-            style={{ touchAction: 'none' }}
-          >
-            {/* Background ring */}
+          <svg ref={svgRef} width={240} height={240} viewBox="0 0 240 240" style={{ touchAction: 'none' }}>
             <circle cx={cx} cy={cy} r={r} fill="none" stroke="#454545" strokeWidth={strokeW} />
-
-            {/* Schedule arcs */}
             {arcs.map(({ startDeg, endDeg, color, schedule }) => (
               <path
                 key={schedule.id}
@@ -372,11 +348,7 @@ export default function SmartSchedulePage() {
                 onClick={() => { if (!drag) openEditModal(schedule) }}
               />
             ))}
-
-            {/* Clock face inner circle */}
             <circle cx={cx} cy={cy} r={innerFaceR} fill="#1A1A1A" />
-
-            {/* Hour tick marks */}
             {Array.from({ length: 24 }, (_, i) => {
               const deg = ((i / 24) * 360 - 90) * (Math.PI / 180)
               const innerR = innerFaceR - 4
@@ -393,8 +365,6 @@ export default function SmartSchedulePage() {
                 />
               )
             })}
-
-            {/* Clock labels */}
             {clockLabels.map(({ label, deg: degNum }) => {
               const rad = (degNum * Math.PI) / 180
               const labelR = innerFaceR - 16
@@ -413,20 +383,14 @@ export default function SmartSchedulePage() {
                 </text>
               )
             })}
-
-            {/* Moon (top / midnight) & Sun (bottom / noon) */}
             <text x={cx} y={cy - innerFaceR + 22} textAnchor="middle" dominantBaseline="middle" fontSize={16}>🌙</text>
             <text x={cx} y={cy + innerFaceR - 22} textAnchor="middle" dominantBaseline="middle" fontSize={16}>☀️</text>
-
-            {/* Center text */}
             <text x={cx} y={cy - 4} textAnchor="middle" fill="#FFFFFF" fontSize={dragLabel ? 15 : 12} fontFamily="Inter, sans-serif" fontWeight="600">
               {dragLabel ?? (peakShavingSettings.enabled ? 'Active' : 'Off')}
             </text>
             <text x={cx} y={cy + 12} textAnchor="middle" fill="#8C8C8C" fontSize={9} fontFamily="Inter, sans-serif">
               {dragLabel ? 'Drag to adjust' : 'Smart Schedule'}
             </text>
-
-            {/* Drag handles (start / end of each arc) */}
             {arcs.map(({ startDeg, endDeg, color, schedule }) => {
               const [sx, sy] = polar(startDeg)
               const [ex, ey] = polar(endDeg)
@@ -450,9 +414,7 @@ export default function SmartSchedulePage() {
           </svg>
         </div>
 
-        {/* Peak / Off-Peak / Idle cards */}
         <div className="grid grid-cols-2 gap-3 mb-4">
-          {/* Peak card */}
           <div className="bg-ink-10 rounded-l p-3 border border-warning/[0.3]">
             <div className="flex items-center gap-1.5 mb-2">
               <div className="w-2 h-2 rounded-full bg-warning" />
@@ -467,8 +429,6 @@ export default function SmartSchedulePage() {
               Sierro discharging, powering your connected devices with stored energy.
             </p>
           </div>
-
-          {/* Off-Peak card */}
           <div className="bg-ink-10 rounded-l p-3 border border-primary/[0.3]">
             <div className="flex items-center gap-1.5 mb-2">
               <div className="w-2 h-2 rounded-full bg-primary" />
@@ -485,7 +445,6 @@ export default function SmartSchedulePage() {
           </div>
         </div>
 
-        {/* Idle hint */}
         <div className="bg-ink-10 rounded-l p-3 mb-3 flex items-center gap-3">
           <div className="w-2 h-2 rounded-full bg-ink-7" />
           <div className="flex-1">
@@ -494,7 +453,6 @@ export default function SmartSchedulePage() {
           </div>
         </div>
 
-        {/* Schedule list — add & delete */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-body-md font-semibold text-white">Time Periods</span>
@@ -536,7 +494,6 @@ export default function SmartSchedulePage() {
           </div>
         </div>
 
-        {/* Price section */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-body-md font-semibold text-white">Price</span>
@@ -597,7 +554,6 @@ export default function SmartSchedulePage() {
           </div>
         </div>
 
-        {/* Parameters section */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-body-md font-semibold text-white">Parameters</span>
@@ -671,7 +627,6 @@ export default function SmartSchedulePage() {
           </div>
         </div>
 
-        {/* Estimated Savings */}
         <div className="mb-6">
           <span className="text-body-md font-semibold text-white block mb-2">Estimated Savings</span>
           <div className="bg-ink-10 rounded-l p-4 grid grid-cols-3 gap-3 text-center">
@@ -691,7 +646,6 @@ export default function SmartSchedulePage() {
         </div>
       </div>
 
-      {/* Save button */}
       <div className="absolute bottom-0 left-0 right-0 px-4 pb-8 pt-3 bg-ink-12">
         <button
           onClick={handleSaveToDevice}
@@ -704,7 +658,6 @@ export default function SmartSchedulePage() {
         </button>
       </div>
 
-      {/* Add Schedule Modal */}
       <AnimatePresence>
         {showAddModal && (
           <motion.div
@@ -787,7 +740,6 @@ export default function SmartSchedulePage() {
         )}
       </AnimatePresence>
 
-      {/* Edit Schedule Modal */}
       <AnimatePresence>
         {editingSchedule && (
           <motion.div
@@ -884,7 +836,6 @@ export default function SmartSchedulePage() {
         )}
       </AnimatePresence>
 
-      {/* Delete Confirm */}
       <AnimatePresence>
         {deleteConfirm.show && (
           <motion.div
