@@ -2,14 +2,12 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { flushSync } from 'react-dom'
 import { Capacitor } from '@capacitor/core'
 import { App } from '@capacitor/app'
-import { openAppSettings } from '../utils/openAppSettings'
 import { requestCamera } from '../utils/permissions'
 import { toast } from '../components/Toast'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import jsQR from 'jsqr'
 import ProvisioningPage from './ProvisioningPage'
-import { supportsDeviceListScan } from '../protocols/bleProvision'
 import {
   AlertTriangle,
   X,
@@ -20,6 +18,8 @@ import DeviceListCard from './device/DeviceListCard'
 import DeviceQrScanOverlay from './device/DeviceQrScanOverlay'
 import LowBatteryBanner from './device/LowBatteryBanner'
 import DeviceSignInGate from './device/DeviceSignInGate'
+import EnableNotiSheet, { ENABLE_NOTI_SEEN_KEY } from './device/EnableNotiSheet'
+import { refreshNotificationPermission } from '../utils/pushNotification'
 import PullToRefresh from '../components/PullToRefresh'
 import ManualAddDeviceModal from '../components/ManualAddDeviceModal'
 import { useDeviceStore } from '../stores/deviceStore'
@@ -86,7 +86,7 @@ export default function DevicePage() {
     }
     return seed
   })
-  const [blePermissionType, setBlePermissionType] = useState<'unsupported' | 'denied' | null>(null)
+  const [showEnableNoti, setShowEnableNoti] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [, setQrScanning] = useState(false)
@@ -263,17 +263,24 @@ export default function DevicePage() {
     return val !== undefined && val !== null ? Number(val) : null
   }
 
-  const handleBleScan = useCallback(async () => {
-    if (supportsDeviceListScan()) {
-      setShowProvisioning(true)
-      return
-    }
-    if (!('bluetooth' in navigator)) {
-      setBlePermissionType('unsupported')
-      return
-    }
+  const handleBleScan = useCallback(() => {
     setShowProvisioning(true)
   }, [])
+  useEffect(() => {
+    if (!isAuthenticated || isGuest || !devicesListReady || devices.length < 1) return
+    try {
+      if (localStorage.getItem(ENABLE_NOTI_SEEN_KEY)) return
+    } catch {
+      return
+    }
+    let cancelled = false
+    void (async () => {
+      const perm = await refreshNotificationPermission()
+      if (!cancelled && perm !== 'granted') setShowEnableNoti(true)
+    })()
+    return () => { cancelled = true }
+  }, [isAuthenticated, isGuest, devicesListReady, devices.length])
+
 
   const handleDeviceClick = (device: DeviceListItem) => {
     useDeviceStore.getState().selectDevice(String(device.id))
@@ -501,58 +508,8 @@ export default function DevicePage() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {blePermissionType && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] bg-black/[0.7] flex items-end"
-            onClick={() => setBlePermissionType(null)}
-          >
-            <motion.div
-              initial={{ y: 240, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 240, opacity: 0 }}
-              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full bg-ink-10 rounded-t-[28px] p-6 pb-10"
-            >
-              <div className="w-10 h-1 bg-white/[0.15] rounded-full mx-auto mb-5" />
-              <div className="flex flex-col items-center text-center mb-6">
-                <div className="w-16 h-16 rounded-full bg-primary/[0.12] flex items-center justify-center mb-4">
-                  <Icon name="bluetooth" size={32} />
-                </div>
-                <h3 className="text-title-lg font-semibold text-white mb-2">Bluetooth Permission Required</h3>
-                {blePermissionType === 'unsupported' ? (
-                  <p className="text-body-md text-ink-7 leading-relaxed max-w-[300px]">
-                    Bluetooth scanning is not supported in this browser. On iOS, please use the Sierro native app, or go to Settings and enable Bluetooth access.
-                  </p>
-                ) : (
-                  <p className="text-body-md text-ink-7 leading-relaxed max-w-[300px]">
-                    Bluetooth is currently unavailable or access was denied. Please enable Bluetooth in your system settings and grant permission to this app.
-                  </p>
-                )}
-              </div>
-              <div className="flex flex-col gap-3">
-                <button
-                  onClick={async () => {
-                    setBlePermissionType(null)
-                    const ok = await openAppSettings()
-                    if (!ok) toast.info('Open Settings → Apps → Sierro → Permissions → Nearby devices, and allow it.')
-                  }}
-                  className="w-full h-12 rounded-m bg-primary text-ink-13 text-body-lg font-semibold active:scale-95 transition-transform"
-                >
-                  Open Settings
-                </button>
-                <button
-                  onClick={() => setBlePermissionType(null)}
-                  className="w-full h-12 rounded-m bg-white/[0.06] text-ink-7 text-body-lg font-medium active:scale-95 transition-transform"
-                >
-                  Cancel
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
+        {showEnableNoti && (
+          <EnableNotiSheet onClose={() => setShowEnableNoti(false)} />
         )}
       </AnimatePresence>
     </div>
