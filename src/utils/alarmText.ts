@@ -8,6 +8,8 @@
  * 使每条告警都能显示可读文案，而不是空白或裸代码。
  */
 
+import { containsCjk, sanitizeUiCopy } from './uiCopy'
+
 /** 已知告警 key/code → 英文描述 */
 export const ALARM_TEXT: Record<string, string> = {
   // ── Mains / grid (市电) ──
@@ -99,11 +101,21 @@ export function describeAlarmCode(code: string | undefined | null): string {
   return humanizeKey(c)
 }
 
+function englishOrSkip(text: string | undefined | null): string {
+  const t = text?.trim() ?? ''
+  if (!t) return ''
+  if (!containsCjk(t)) return t
+  const mapped = sanitizeUiCopy(t, '')
+  return mapped && !containsCjk(mapped) ? mapped : ''
+}
+
 /**
  * 单一入口：把一条 firing alarm 解析成最可读的描述文案。真实后端每条告警用
  * `key`(代码)/`name`(显示名)，旧字段 `alarmCode`/`alarmMessage` 常为空。优先级：
  *   1) 已知代码 → 策展英文（保持「字典优先、避免直出后端中文」）；
- *   2) 后端 name；3) 后端 alarmMessage；4) 未知代码人性化；5) 兜底 Alarm{id}/Device Alarm。
+ *   2) 后端 name（跳过仍含汉字的 name，改用映射英文）；
+ *   3) 后端 alarmMessage（同样跳过汉字）；
+ *   4) 未知代码人性化；5) 兜底 Alarm{id}/Device Alarm。
  * NotificationsPage 显示与 deviceAlarmNotification 推播共用，保证文案一致。
  */
 export interface ResolvableAlarm {
@@ -118,9 +130,9 @@ export function resolveAlarmText(alarm: ResolvableAlarm): string {
   const code = alarm.key ?? alarm.alarmCode ?? ''
   const known = knownAlarmText(code)
   if (known) return known
-  const name = alarm.name?.trim()
+  const name = englishOrSkip(alarm.name)
   if (name) return name
-  const message = alarm.alarmMessage?.trim()
+  const message = englishOrSkip(alarm.alarmMessage)
   if (message) return message
   const humanized = describeAlarmCode(code)
   if (humanized) return humanized

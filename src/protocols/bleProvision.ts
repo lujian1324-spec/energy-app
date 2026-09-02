@@ -59,15 +59,12 @@ export interface IBleProvisionManager {
   uartPassthrough(reqHex: string, timeout?: number): Promise<BleProvisionResponse<{ Rsp: string }>>
 }
 
-// ─── 共享基类：编解码 / 分包 / 应答收集 / 便捷命令 ──────────────────────────────
 abstract class BaseProvisionManager implements IBleProvisionManager {
   protected dtuid: string | null = null
   protected _deviceName: string | undefined
 
   private responseResolve: ((value: BleProvisionResponse) => void) | null = null
   private responseReject: ((reason: Error) => void) | null = null
-  // 按分包序号(seqNo, 1-based)索引收到的应答分包；用 Map 而非数组，才能在
-  // 乱序到达 / 重复 / 丢包时正确判定「是否收齐」并按序号重排后再组包。
   private receivedPackets: Map<number, Uint8Array> = new Map()
   private responseTimeout: ReturnType<typeof setTimeout> | null = null
 
@@ -76,10 +73,8 @@ abstract class BaseProvisionManager implements IBleProvisionManager {
 
   abstract connect(dtuid?: string): Promise<void>
   abstract disconnect(): Promise<void>
-  /** 子类实现：写一个分包到 FED5 */
   protected abstract writePacket(bytes: Uint8Array): Promise<void>
 
-  // 列表扫描默认不支持（Web）；原生子类覆盖
   async scanDevices(_onFound: (d: ProvisionScanDevice) => void): Promise<void> {
     throw new Error('Device-list scan is only available in the native app')
   }
@@ -91,47 +86,38 @@ abstract class BaseProvisionManager implements IBleProvisionManager {
   get deviceName(): string | undefined { return this._deviceName }
   getDuid(): string | null { return this.dtuid }
 
-  /** 子类可重写：发送前确4保 GATT 已连接（按需重连）。默认无操作。 */
   protected async ensureReady(): Promise<void> {}
-
-  /** 子类可重写：按协商 MTU 限制单包 payload。默认按规程 240-3=237。 */
   protected getMaxDataPerPacket(): number { return 237 }
 
-  /** 发送命令并等待应答 */
   async sendCommand<T = BleProvisionResponse>(commandJson: object, dtuid?: string, timeout = 15000): Promise<T> {
     const key = dtuid || this.dtuid
-    if (!key) throw new Error('BLE 未连接或 DTUID 未知')
+    if (!key) throw new Error('Bluetooth is not connected or the device ID is unknown.')
 
-    // GATT 可能在两次命令之间空闲断开（Web Bluetooth 常见）→ 发送前按需重连
     await this.ensureReady()
 
-    this.log(`发送命令: ${JSON.stringify(commandJson)}`)
+    this.log(`Sending command: ${JSON.stringify(commandJson)}`)
     const encrypted = encrypt(commandJson, key)
     const packets = buildPackets(encrypted, this.getMaxDataPerPacket())
-    this.log(`分包 ${packets.length} 包，数据长度 ${encrypted.length}，单包 ${this.getMaxDataPerPacket()}`)
+    this.log(`Split into ${packets.length} packets, payload ${encrypted.length}, max ${this.getMaxDataPerPacket()} per packet`)
 
     this.cleanupResponse()
     this.resetPackets()
 
-    // 关键：在「写入之前」就装好应答等待器。设备对单包命令(如 configWifi)可能在
-    // 最后一个写入 resolve 的同一时刻就回应；若此时 responseResolve 还没设好，
-    // onIncoming 会丢弃该应答 → 白等到 15s 超时。故先 arm、再写。
     const pending = new Promise<T>((resolve, reject) => {
       this.responseResolve = resolve as (v: BleProvisionResponse) => void
       this.responseReject = reject
       this.responseTimeout = setTimeout(() => {
         this.cleanupResponse()
-        reject(new Error('等待设备应答超时'))
+        reject(new Error('Timed out waiting for the device.'))
       }, timeout)
     })
 
-    // 发送所有分包；若中途 GATT 断开，重连一次后整条命令重发
     try {
       await this.writeAllPackets(packets)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       if (/disconnect|GATT|not connected/i.test(msg)) {
-        this.log('写入时断开，重连后重发...')
+        this.log('Disconnected while writing; reconnecting and resending...')
         try {
           await this.ensureReady()
           this.resetPackets()
@@ -153,34 +139,23 @@ abstract class BaseProvisionManager implements IBleProvisionManager {
 
   private async writeAllPackets(packets: Uint8Array[]): Promise<void> {
     for (let i = 0; i < packets.length; i++) {
-      this.log(`发送第 ${i + 1}/${packets.length} 包...`)
+      this.log(`Sending packet ${i + 1}/${packets.length}...`)
       await this.writePacket(packets[i])
       if (i < packets.length - 1) await this.sleep(50)
     }
   }
 
-  /** 子类在收到 FED6 indication 分包时调用 */
   protected onIncoming(data: Uint8Array): void {
     if (data.length < BLE_PACKET_HEADER_SIZE) return
-    // Copy immediately. iOS CoreBluetooth / the Capacitor BLE plugin reuse one
-    // ArrayBuffer for every indication; keeping a view would let the next packet
-    // overwrite earlier ones. getVersion (1 packet) still worked; scanAp (many)
-    // then decrypted garbage and the UI showed an empty Wi-Fi list.
     const pkt = new Uint8Array(data.byteLength)
     pkt.set(data)
-    // 没有命令在等待时，忽略不请自来 / 迟到的分包，避免污染下一条命令的组包缓冲。
     if (!this.responseResolve) return
     const seqNo = pkt[0]
     const seqNum = pkt[1]
     const dataLen = pkt[2]
-    this.log(`收到应答包 ${seqNo}/${seqNum}, 数据长度 ${dataLen}`)
+    this.log(`Received response packet ${seqNo}/${seqNum}, data length ${dataLen}`)
     this.receivedPackets.set(seqNo, pkt)
 
-    // 单包应答(seqNum 0 或 1，如版本号)直接完成——保持与旧逻辑一致，不误等超时。
-    // 多包应答须收齐 1..seqNum 全部分包才组包：此前的实现只要收到「最后一包」
-    // (seqNo>=seqNum) 就立刻组包，一旦分包丢失/乱序，就会拿残缺或错位的密文去
-    // AES 解密 → 解出乱码 → toString(Utf8) 抛「Malformed UTF-8 data」。长应答
-    // (如 Wi-Fi 扫描列表)分包多，最易触发；短应答几乎单包故看不出。
     let ordered: Uint8Array[]
     if (seqNum <= 1) {
       ordered = [pkt]
@@ -189,31 +164,30 @@ abstract class BaseProvisionManager implements IBleProvisionManager {
       ordered = []
       for (let i = 1; i <= seqNum; i++) {
         const p = this.receivedPackets.get(i)
-        if (!p) return // 仍缺某个中间分包 —— 继续等待，超时由 responseTimeout 兜底
+        if (!p) return
         ordered.push(p)
       }
     }
 
     const rawStr = reassemblePackets(ordered)
-    this.log(`应答数据合并完成(${ordered.length} 包)，长度 ${rawStr.length}`)
+    this.log(`Reassembled ${ordered.length} packets, length ${rawStr.length}`)
     try {
       const response = decrypt<BleProvisionResponse>(rawStr, this.dtuid!)
-      this.log(`应答: CID=${response.CID}, RC=${response.RC}`)
+      this.log(`Response: CID=${response.CID}, RC=${response.RC}`)
       this.clearResponseTimeout()
       const resolve = this.responseResolve
       this.cleanupResponse()
       resolve?.(response)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      this.log(`解密失败: ${msg}`)
+      this.log(`Decrypt failed: ${msg}`)
       this.clearResponseTimeout()
       const reject = this.responseReject
       this.cleanupResponse()
-      reject?.(new Error(`应答解密失败: ${msg}`))
+      reject?.(new Error(`Failed to decrypt the device response: ${msg}`))
     }
   }
 
-  // ── 便捷命令（CID 见配网规程）──
   getVersion()                       { return this.sendCommand<BleProvisionResponse<{ SV: string; HV: string }>>({ CID: 30001 }) }
   scanAp()                           { return this.sendCommand<BleProvisionResponse<BleWifiAp[]>>({ CID: 30003 }, undefined, 30000) }
   configWifi(ssid: string, key: string) { return this.sendCommand({ CID: 30005, PL: { SSID: ssid, Key: key } }) }
@@ -221,9 +195,6 @@ abstract class BaseProvisionManager implements IBleProvisionManager {
   getWifiStatus()                    { return this.sendCommand<BleProvisionResponse<BleWifiStatus>>({ CID: 30020 }) }
   confirmBleKey(bleKey: string)      { return this.sendCommand({ CID: 30050, PL: { BleKey: bleKey } }) }
 
-  // 直连模式：把 modbusProtocol.ts 构造的 Modbus 帧（十六进制字符串）透传给设备 UART，
-  // 串口参数固定 9600-8-None-1（见 modbusProtocol.ts 文档注释）。ParityBit 精确取值待
-  // 真机验证 —— 若不匹配，失败表现为响应 CRC 校验不过，不会影响设备本身。
   uartPassthrough(reqHex: string, timeout = 8000) {
     return this.sendCommand<BleProvisionResponse<{ Rsp: string }>>(
       {
@@ -240,9 +211,9 @@ abstract class BaseProvisionManager implements IBleProvisionManager {
     const parsed = parseBleName(name)
     if (parsed) {
       this.dtuid = parsed.dtuid
-      this.log(`设备 DTUID: ${this.dtuid}, WiFi 状态: ${parsed.status}`)
+      this.log(`Device DTUID: ${this.dtuid}, Wi-Fi status: ${parsed.status}`)
     } else {
-      this.log(`警告: 无法解析设备名称 "${name}"`)
+      this.log(`Warning: cannot parse device name "${name}"`)
     }
   }
 
@@ -261,7 +232,6 @@ abstract class BaseProvisionManager implements IBleProvisionManager {
   protected sleep(ms: number): Promise<void> { return new Promise(r => setTimeout(r, ms)) }
 }
 
-// ─── Web Bluetooth 后端 ───────────────────────────────────────────────────
 class WebBleProvisionManager extends BaseProvisionManager {
   private device: BluetoothDevice | null = null
   private server: BluetoothRemoteGATTServer | null = null
@@ -272,7 +242,7 @@ class WebBleProvisionManager extends BaseProvisionManager {
     if (!navigator.bluetooth) {
       throw new Error('Web Bluetooth is not supported in this browser. Use Chrome or Edge on Android/desktop.')
     }
-    this.log('扫描蓝牙设备...')
+    this.log('Scanning for Bluetooth devices...')
     let device: BluetoothDevice
     try {
       device = await navigator.bluetooth.requestDevice({
@@ -290,7 +260,7 @@ class WebBleProvisionManager extends BaseProvisionManager {
     this.device = device
     this.device.addEventListener('gattserverdisconnected', this.handleDisconnect)
 
-    this.log(`正在连接 ${this.device.name}...`)
+    this.log(`Connecting ${this.device.name}...`)
     this.server = await this.device.gatt!.connect()
     const service = await this.server.getPrimaryService(BLE_PROVISION_UUIDS.SERVICE)
     this.writeChar = await service.getCharacteristic(BLE_PROVISION_UUIDS.WRITE_TX)
@@ -298,24 +268,22 @@ class WebBleProvisionManager extends BaseProvisionManager {
     await this.indicateChar.startNotifications()
     this.indicateChar.addEventListener('characteristicvaluechanged', this.handleIndication)
     this.parseName(this.device.name)
-    this.log('GATT 连接成功')
+    this.log('GATT connected')
   }
 
-  /** 按需重连：GATT 空闲断开后重新连接并重新获取特征 / 订阅 */
   protected async ensureReady(): Promise<void> {
-    if (!this.device?.gatt) throw new Error('BLE 未连接，请重新连接设备')
+    if (!this.device?.gatt) throw new Error('Bluetooth is not connected. Reconnect the device.')
     if (this.device.gatt.connected && this.writeChar && this.indicateChar) return
 
-    this.log('GATT 已断开，正在重连...')
+    this.log('GATT disconnected, reconnecting...')
     this.server = await this.device.gatt.connect()
     const service = await this.server.getPrimaryService(BLE_PROVISION_UUIDS.SERVICE)
     this.writeChar = await service.getCharacteristic(BLE_PROVISION_UUIDS.WRITE_TX)
     this.indicateChar = await service.getCharacteristic(BLE_PROVISION_UUIDS.INDICATE_RX)
-    // 避免重复绑定监听
     this.indicateChar.removeEventListener('characteristicvaluechanged', this.handleIndication)
     await this.indicateChar.startNotifications()
     this.indicateChar.addEventListener('characteristicvaluechanged', this.handleIndication)
-    this.log('GATT 重连成功')
+    this.log('GATT reconnected')
   }
 
   protected async writePacket(bytes: Uint8Array): Promise<void> {
@@ -332,7 +300,7 @@ class WebBleProvisionManager extends BaseProvisionManager {
     if (this.device) this.device.removeEventListener('gattserverdisconnected', this.handleDisconnect)
     if (this.device?.gatt?.connected) this.device.gatt.disconnect()
     this.device = null; this.server = null; this.writeChar = null; this.indicateChar = null; this.dtuid = null
-    this.log('已断开连接')
+    this.log('Disconnected')
   }
 
   private handleIndication = (event: Event): void => {
@@ -340,22 +308,12 @@ class WebBleProvisionManager extends BaseProvisionManager {
     if (v) this.onIncoming(new Uint8Array(v.buffer, v.byteOffset, v.byteLength))
   }
   private handleDisconnect = (): void => {
-    this.log('设备已断开连接')
+    this.log('Device disconnected')
     this.cleanupResponse(); this.clearResponseTimeout()
     this.cb.onDisconnected?.()
   }
 }
 
-/**
- * 判断一个 BLE 扫描结果是否是 Sierro 设备。
- * 不在 OS 层按 namePrefix 硬7过滤：很多设备的广播包里并没有以 SSL_ 开头的 local name
- * （名称要连上 GATT 才读得到，或只出现在 scan response 里），OS 名称过滤会让列表永远为空。
- * 改为收下全部广播、在这里客户端过滤：名称以 SSL_ 开头 / 能 parseBleName，或广播了 FEE7 配网服务。
- *
- * iOS 注意：第一包 ADV 经常既没有 localName 也没有 service UUID，名字和 FEE7 在 scan
- * response 里才出现。配合 scanDevices() 在 iOS 上 allowDuplicates:true，后续包才能进到这里。
- * 再从 rawAdvertisement 兜底解析，避免插件没填 uuids/localName。
- */
 export function isSierroScanResult(r: {
   device?: { name?: string }
   localName?: string
@@ -375,7 +333,6 @@ function looksLikeSierroName(name: string): boolean {
   return parseBleName(name) != null
 }
 
-/** Parse BLE AD structure for Complete/Shortened Local Name and 16/128-bit service UUIDs. */
 export function parseRawAdvertisement(raw?: DataView): { name: string; uuids: string[] } {
   if (!raw || raw.byteLength < 2) return { name: '', uuids: [] }
   const bytes = new Uint8Array(raw.buffer, raw.byteOffset, raw.byteLength)
@@ -398,7 +355,6 @@ export function parseRawAdvertisement(raw?: DataView): { name: string; uuids: st
     } else if (type === 0x06 || type === 0x07) {
       if (data.length >= 16) {
         const b = Array.from(data.subarray(0, 16))
-        // 128-bit UUID is little-endian in AD
         const le = [...b.slice(0, 4).reverse(), ...b.slice(4, 6).reverse(), ...b.slice(6, 8).reverse(), ...b.slice(8)]
         const hex = le.map(x => x.toString(16).padStart(2, '0')).join('')
         uuids.push(`${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`)
@@ -409,15 +365,12 @@ export function parseRawAdvertisement(raw?: DataView): { name: string; uuids: st
   return { name, uuids }
 }
 
-/** Android 主版本号（如 13），从 WebView UA 的 "Android <n>" 解析；解析不到返回 null。
- *  用于区分 Android 11-（扫描需开定位）与 12+（neverForLocation，扫描不需定位）。 */
 export function androidMajorVersion(): number | null {
   const ua = typeof navigator !== 'undefined' ? navigator.userAgent : ''
   const m = /Android (\d+)/.exec(ua || '')
   return m ? parseInt(m[1], 10) : null
 }
 
-// ─── 原生 Capacitor BLE 后端 ─────────────────────────────────────────────────
 class NativeBleProvisionManager extends BaseProvisionManager {
   private deviceId: string | null = null
   private connected = false
@@ -428,12 +381,6 @@ class NativeBleProvisionManager extends BaseProvisionManager {
     return m.BleClient
   }
 
-  /** initialize() 已經在 connect/scanDevices 中調用，它是此插件在 Android 上請求
-   *  BLUETOOTH_SCAN/BLUETOOTH_CONNECT 的方式（内部会 requestPermissionForAliases），iOS 则触发
-   *  CoreBluetooth 授权。@capacitor-community/bluetooth-le@8.2.0 的 BleClient 并没有独立的
-   *  checkPermissions()/requestPermissions() 方法（不同于 Camera/Push 插件），所以这里没有额外调用。
-   *  若用户在 initialize 之后手动撤销了权限，随后的 scan/connect 会带描述性错误抛出，
-   *  由上层 catch → classifyBleError 分类为 'permission' 导向系统设置。 */
   private async ensureBlePermission(_BleClient: any): Promise<void> {
     // No-op by design — see doc comment above.
   }
@@ -441,10 +388,8 @@ class NativeBleProvisionManager extends BaseProvisionManager {
   async connect(): Promise<void> {
     const BleClient = await this.ble()
     await BleClient.initialize({ androidNeverForLocation: true })
-    // 扫描前先确保蓝牙权限已授予（Android 12+ BLUETOOTH_SCAN / BLUETOOTH_CONNECT）
     await this.ensureBlePermission(BleClient)
-    this.log('扫描蓝牙设备...')
-    // 优先按 SSL_ 前缀过滤；前缀被改过/扫不到时回退到按服务 UUID 过滤
+    this.log('Scanning for Bluetooth devices...')
     let device
     try {
       device = await BleClient.requestDevice({
@@ -452,41 +397,30 @@ class NativeBleProvisionManager extends BaseProvisionManager {
         optionalServices: [BLE_PROVISION_UUIDS.SERVICE],
       })
     } catch (e) {
-      this.log('SSL_ 前缀未匹配，改用服务 UUID 扫描...')
+      this.log('SSL_ prefix did not match; scanning by service UUID...')
       device = await BleClient.requestDevice({
         services: [BLE_PROVISION_UUIDS.SERVICE],
       })
     }
     this.deviceId = device.deviceId
-    this.log(`正在连接 ${device.name}...`)
+    this.log(`Connecting ${device.name}...`)
     await this.openLink()
     this.parseName(device.name)
     await this.resolveDtuidViaGap()
-    this.log('GATT 连接成功')
+    this.log('GATT connected')
   }
 
-  /** 扫描附近 Sierro 设备并回调（App 内列表）。约 10s 后自动停止。
-   *  收下全部广播，在回调里用 isSierroScanResult 客户端过滤（SSL_ 名 或 FEE7 服务），
-   *  避免 OS 层 namePrefix 过滤把不广播名称的设备全部漏掉导致列表永远为空。 */
   async scanDevices(onFound: (d: ProvisionScanDevice) => void): Promise<void> {
     const BleClient = await this.ble()
     await BleClient.initialize({ androidNeverForLocation: true })
     await this.ensureBlePermission(BleClient)
-    // 定位闸只对 Android 11 及以下有意义：那些系统上定位一关，BLE 扫描会静默返回空，
-    // 所以提前明确报错、引导去开定位。Android 12+（API 31+）的 Manifest 已用
-    // BLUETOOTH_SCAN + neverForLocation 把「蓝牙扫描」与「定位」解耦——定位关着也能扫，
-    // 若在此仍强制开定位，会误报「Turn on Location」并把用户推到「蓝牙关闭」画面。
     if (Capacitor.getPlatform() === 'android' && androidMajorVersion() !== null && androidMajorVersion()! <= 11) {
       let locationOn = true
       try { locationOn = await BleClient.isLocationEnabled() }
-      catch { /* 查询失败时不阻断扫描，让扫描自行进行 */ }
+      catch { /* ignore */ }
       if (!locationOn) throw new Error('Location services are off — enable location to scan for Bluetooth devices.')
     }
-    this.log('开始扫描附近设备...')
-    // iOS: first ADV packet often has neither localName nor service UUIDs (those
-    // arrive in the scan response). allowDuplicates:false would deliver only that
-    // empty packet, isSierroScanResult would drop it, and the device never appears.
-    // Android merges ADV+scan-response into one callback, so false is fine there.
+    this.log('Scanning for nearby devices...')
     const ios = Capacitor.getPlatform() === 'ios'
     await BleClient.requestLEScan(
       { allowDuplicates: ios },
@@ -506,20 +440,16 @@ class NativeBleProvisionManager extends BaseProvisionManager {
     try { const BleClient = await this.ble(); await BleClient.stopLEScan() } catch { /* ignore */ }
   }
 
-  /** 连接扫描列表中选定的设备 */
   async connectTo(deviceId: string, name?: string): Promise<void> {
     await this.stopScan()
     this.deviceId = deviceId
-    this.log(`正在连接 ${name ?? deviceId}...`)
+    this.log(`Connecting ${name ?? deviceId}...`)
     await this.openLink()
     this.parseName(name)
     await this.resolveDtuidViaGap()
-    this.log('GATT 连接成功')
+    this.log('GATT connected')
   }
 
-  /** 扫描结果里没有可解析出 DTUID 的名称时（有些设备只广播 FEE7 服务、名称要连上
-   *  才读得到），连上后再读标准 GAP「Device Name」特征(0x2A00)兜底解析。best-effort，
-   *  失败不影响后续（上层会因 dtuid 为空给出明确错误）。 */
   private async resolveDtuidViaGap(): Promise<void> {
     if (this.dtuid || !this.deviceId) return
     const GENERIC_ACCESS = '00001800-0000-1000-8000-00805f9b34fb'
@@ -528,24 +458,20 @@ class NativeBleProvisionManager extends BaseProvisionManager {
       const BleClient = await this.ble()
       const v = await BleClient.read(this.deviceId, GENERIC_ACCESS, DEVICE_NAME)
       const name = new TextDecoder().decode(new Uint8Array(v.buffer, v.byteOffset, v.byteLength)).replace(/\0+$/, '')
-      if (name) { this.log(`GAP 读取设备名: ${name}`); this.parseName(name) }
+      if (name) { this.log(`GAP device name: ${name}`); this.parseName(name) }
     } catch (e) {
-      this.log(`GAP 读取设备名失败（忽略）: ${e instanceof Error ? e.message : String(e)}`)
+      this.log(`GAP device name read failed (ignored): ${e instanceof Error ? e.message : String(e)}`)
     }
   }
 
-  /** 建立连接 + 订阅（连接与重连共用） */
   private async openLink(): Promise<void> {
     const BleClient = await this.ble()
     await BleClient.connect(this.deviceId!, () => {
       this.connected = false
-      this.log('设备已断开连接')
+      this.log('Device disconnected')
       this.cleanupResponse(); this.clearResponseTimeout()
       this.cb.onDisconnected?.()
     })
-    // Android 12 (Xiaomi/Motorola especially) auto-runs service discovery.
-    // startNotifications immediately after connect then throws
-    // IllegalArgumentException / "Characteristic not found".
     await this.waitForProvisionGatt(BleClient)
     let lastErr: unknown
     for (let attempt = 1; attempt <= 4; attempt++) {
@@ -563,7 +489,7 @@ class NativeBleProvisionManager extends BaseProvisionManager {
         break
       } catch (e) {
         lastErr = e
-        this.log(`startNotifications 第 ${attempt} 次失败: ${e instanceof Error ? e.message : String(e)}`)
+        this.log(`startNotifications attempt ${attempt} failed: ${e instanceof Error ? e.message : String(e)}`)
         try { await BleClient.discoverServices(this.deviceId!) } catch { /* ignore */ }
         await this.sleep(400 * attempt)
       }
@@ -573,10 +499,6 @@ class NativeBleProvisionManager extends BaseProvisionManager {
     if (Capacitor.getPlatform() === 'ios') await this.sleep(300)
   }
 
-  /**
-   * Wait until FEE7 is in getServices(), then size packets to the negotiated MTU.
-   * ATT payload is MTU-3; our frame header is 3 bytes, so max data = MTU-6.
-   */
   private async waitForProvisionGatt(BleClient: { getServices: (id: string) => Promise<Array<{ uuid: string }>>; discoverServices: (id: string) => Promise<unknown>; getMtu: (id: string) => Promise<number> }): Promise<void> {
     const want = BLE_PROVISION_UUIDS.SERVICE.toLowerCase()
     const deadline = Date.now() + 5000
@@ -592,14 +514,14 @@ class NativeBleProvisionManager extends BaseProvisionManager {
       try { await BleClient.discoverServices(this.deviceId!) } catch { /* ignore */ }
       await this.sleep(250)
     }
-    if (!found) this.log('GATT 服务列表暂未出现 FEE7，继续尝试订阅')
+    if (!found) this.log('FEE7 not yet in GATT service list; retrying notifications')
     const ver = Capacitor.getPlatform() === 'android' ? androidMajorVersion() : null
     if (ver === 12) await this.sleep(600)
     let mtu = 23
     try {
       const n = await BleClient.getMtu(this.deviceId!)
       if (typeof n === 'number' && n > 0) mtu = n
-    } catch { /* plugin may return -1 until onMtuChanged */ }
+    } catch { /* ignore */ }
     if (mtu < 50) {
       await this.sleep(300)
       try {
@@ -608,29 +530,23 @@ class NativeBleProvisionManager extends BaseProvisionManager {
       } catch { /* ignore */ }
     }
     this.maxDataPerPacket = Math.max(20, Math.min(237, mtu - 6))
-    this.log(`GATT 就绪 MTU=${mtu}，单包 payload=${this.maxDataPerPacket}`)
+    this.log(`GATT ready MTU=${mtu}, payload per packet=${this.maxDataPerPacket}`)
   }
 
   protected getMaxDataPerPacket(): number { return this.maxDataPerPacket }
 
   protected async ensureReady(): Promise<void> {
     if (this.connected || !this.deviceId) return
-    this.log('GATT 已断开，正在重连...')
+    this.log('GATT disconnected, reconnecting...')
     await this.openLink()
-    this.log('GATT 重连成功')
+    this.log('GATT reconnected')
   }
 
   protected async writePacket(bytes: Uint8Array): Promise<void> {
     const BleClient = await this.ble()
-    // Copy onto a tight ArrayBuffer. Passing a DataView over a sliced
-    // Uint8Array lets some Android 12 stacks write the whole underlying
-    // buffer and throw IllegalArgumentException.
     const copy = new Uint8Array(bytes.byteLength)
     copy.set(bytes)
     const view = new DataView(copy.buffer)
-    // iOS writeWithoutResponse can resolve without delivering (queue full /
-    // no callback). scanAp then times out with an empty Wi-Fi list. Use
-    // write-with-response on iOS; Android keeps the faster without-response path.
     if (Capacitor.getPlatform() === 'ios') {
       await BleClient.write(this.deviceId!, BLE_PROVISION_UUIDS.SERVICE, BLE_PROVISION_UUIDS.WRITE_TX, view)
       return
@@ -638,7 +554,7 @@ class NativeBleProvisionManager extends BaseProvisionManager {
     try {
       await BleClient.writeWithoutResponse(this.deviceId!, BLE_PROVISION_UUIDS.SERVICE, BLE_PROVISION_UUIDS.WRITE_TX, view)
     } catch (e) {
-      this.log(`writeWithoutResponse 失败，改 write: ${e instanceof Error ? e.message : String(e)}`)
+      this.log(`writeWithoutResponse failed, falling back to write: ${e instanceof Error ? e.message : String(e)}`)
       await BleClient.write(this.deviceId!, BLE_PROVISION_UUIDS.SERVICE, BLE_PROVISION_UUIDS.WRITE_TX, view)
     }
   }
@@ -654,11 +570,10 @@ class NativeBleProvisionManager extends BaseProvisionManager {
       } catch { /* ignore */ }
     }
     this.deviceId = null; this.dtuid = null; this.connected = false; this.maxDataPerPacket = 237
-    this.log('已断开连接')
+    this.log('Disconnected')
   }
 }
 
-// ─── 单例（按平台选择实现）─────────────────────────────────────────────────
 let instance: IBleProvisionManager | null = null
 
 export function getProvisionManager(callbacks?: ProvisionCallbacks): IBleProvisionManager {
@@ -678,7 +593,6 @@ export function destroyProvisionManager(): void {
   }
 }
 
-/** 仅停止扫描（若有活动实例），不创建新实例、不断开连接 */
 export function stopProvisionScan(): void {
   instance?.stopScan().catch(() => { /* ignore */ })
 }

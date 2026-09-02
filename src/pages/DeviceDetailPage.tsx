@@ -23,6 +23,7 @@ import { usePowerStationStore } from '../stores/powerStationStore'
 import { useDeviceStore } from '../stores/deviceStore'
 import { mapFieldsToRealtime, toggleSleepMode, setWorkMode, passthroughDevice } from '../api/deviceApi'
 import { formatTemp } from '../utils/localization'
+import { sanitizeUiCopy } from '../utils/uiCopy'
 import { FRAMES } from '../protocols/modbusProtocol'
 import { loadRatedParams, saveRatedParams, type RatedParams } from '../db/powerflowDB'
 import { SIERRO_MODELS, SIERRO_MODEL_LIST, generateSerial, type SierroModel } from '../data/deviceModels'
@@ -60,7 +61,6 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const { devices, selectedDeviceId, selectedDeviceState, selectDevice, loadDeviceState, renameDeviceLocal, removeDevice, updateDeviceInfo, isDemoMode } = useDeviceStore()
   const realDevice = devices.find(d => String(d.id) === routeId)
 
-  // Standalone route: ensure the real device + its realtime state are loaded
   useEffect(() => {
     if (routeId) {
       selectDevice(routeId)
@@ -68,7 +68,6 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     }
   }, [routeId, selectDevice, loadDeviceState])
 
-  // Initialize sleepMode from real device state when it loads
   useEffect(() => {
     const val = selectedDeviceState?.fields?.sleepMode?.value
     if (val !== undefined && val !== null) {
@@ -76,7 +75,6 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     }
   }, [selectedDeviceState])
 
-  // Initialize workMode from real device state when it loads
   useEffect(() => {
     const val = selectedDeviceState?.fields?.workMode?.value
     if (val === 0 || val === 1 || val === 2) {
@@ -84,16 +82,12 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     }
   }, [selectedDeviceState])
 
-  // Realtime fields (battery health / cycles / temp / voltage) for Device Info
   const realtime = useMemo(
     () => (selectedDeviceState?.fields ? mapFieldsToRealtime(selectedDeviceState.fields) : null),
     [selectedDeviceState]
   )
   const rtField = (key: string): string | undefined => selectedDeviceState?.fields?.[key]?.valueDisplay
 
-  // Temperature: the device reports battery temp in °C (API cellTemperature1 / demo
-  // batteryTemp field / powerStation.temperature are all Celsius). The app displays °F,
-  // so convert via formatTemp instead of showing the raw °C value with a °F suffix.
   const batteryTempCelsius =
     realtime?.batteryTemp ??
     (selectedDeviceState?.fields?.batteryTemp?.value != null
@@ -105,7 +99,6 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
       ? formatTemp(batteryTempCelsius, 'F')
       : '--'
 
-  // Rated params fetched from IndexedDB (populated by deviceStore after login/add)
   const [ratedParams, setRatedParams] = useState<RatedParams | null>(null)
   const deviceIdForRated = routeId ?? selectedDeviceId ?? ''
   useEffect(() => {
@@ -113,13 +106,11 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     loadRatedParams(deviceIdForRated).then(p => setRatedParams(p ?? null))
   }, [deviceIdForRated])
 
-  // Prefer real device info, fall back to the mock powerStation profile
   const deviceName = realDevice?.name ?? powerStation.name
   const handleBack = onBack ?? (() => navigate(-1))
 
   const [screen, setScreen] = useState<Screen>('main')
   const [editName, setEditName] = useState(deviceName)
-  // 设备名称编辑：当前正在编辑的目标设备 + 下拉选择器
   const [editTargetId, setEditTargetId] = useState<string>(routeId ?? selectedDeviceId ?? '')
   const [showDeviceDropdown, setShowDeviceDropdown] = useState(false)
   const [sleepMode, setSleepMode] = useState<'Off' | 'On'>('Off')
@@ -138,7 +129,6 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const [pendingIcon, setPendingIcon] = useState(() =>
     (routeId ? localStorage.getItem(`sierro-display-icon-${routeId}`) : null) ?? 'zap'
   )
-  // Custom image: stored as base64 data URL per device
   const customKey = routeId ? `sierro-display-icon-custom-${routeId}` : ''
   const [customImage, setCustomImage] = useState<string | null>(() =>
     routeId ? localStorage.getItem(customKey) : null
@@ -151,7 +141,6 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const [deleting, setDeleting] = useState(false)
   const [showModelSheet, setShowModelSheet] = useState(false)
 
-  // 手动选择型号：写入该型号默认参数到本地档案，并刷新 Device Info
   const applyModel = async (model: SierroModel) => {
     if (!deviceIdForRated) return
     const spec = SIERRO_MODELS[model]
@@ -172,14 +161,12 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   }
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
-  // ── Sleep Mode Scheduler ────────────────────────────────────────────────────
   const deviceIdForScheduler = routeId ?? selectedDeviceId ?? ''
   const model = ratedParams?.model ?? realDevice?.model ?? powerStation.model ?? 'Sierro 1000'
   const schedulerPowers = model.includes('2000')
     ? { sleepW: 300, wakeW: 800 }
     : { sleepW: 150, wakeW: 400 }
 
-  // Load persisted schedule on mount
   useEffect(() => {
     if (!deviceIdForScheduler) return
     const saved = loadSchedule(deviceIdForScheduler)
@@ -213,9 +200,6 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     return d.toLocaleTimeString()
   }
 
-  // ─── Helpers ─────────────────────────────────────────────────────────────
-
-  // 当前正在编辑的目标设备及其原始名称（用于判断 Save 是否可点击）
   const editTargetDevice = devices.find(d => String(d.id) === editTargetId)
   const editTargetOriginalName = editTargetDevice?.name ?? deviceName
   const nameChanged = editName.trim().length > 0 && editName.trim() !== editTargetOriginalName
@@ -228,22 +212,17 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     const trimmed = editName.trim()
     const targetId = editTargetId || routeId || selectedDeviceId
     if (!targetId) return
-
-    // 乐观更新：先同步本地两个 store（home page + 详情/下拉菜单）
     renameDeviceLocal(targetId, trimmed)
     updateDeviceNameById(targetId, trimmed)
-
-    // 持久化到服务端（demo 模式下跳过真实接口）
     if (targetId && !isDemoMode) {
       setSavingName(true)
       setNameError(null)
       try {
         const result = await updateDeviceInfo({ id: targetId, name: trimmed })
         if (!(result.code === 0 || result.code === '0')) {
-          // 回滚本地名称
           renameDeviceLocal(targetId, editTargetOriginalName)
           updateDeviceNameById(targetId, editTargetOriginalName)
-          setNameError(result.message ?? 'Failed to save name')
+          setNameError(sanitizeUiCopy(result.message, 'Failed to save name'))
           setSavingName(false)
           return
         }
@@ -256,12 +235,10 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
       }
       setSavingName(false)
     }
-
     setShowDeviceDropdown(false)
     setScreen('main')
   }
 
-  // 切换下拉中选择的设备：载入其当前名称
   const handleSelectDevice = (id: string) => {
     setEditTargetId(id)
     const dev = devices.find(d => String(d.id) === id)
@@ -298,7 +275,6 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
       setPendingIcon('custom')
     }
     reader.readAsDataURL(file)
-    // Reset so the same file can be re-selected
     e.target.value = ''
   }
 
@@ -310,7 +286,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     try {
       const result = await removeDevice([id])
       if (!(result.code === 0 || result.code === '0')) {
-        setDeleteError(result.message ?? 'Failed to delete device')
+        setDeleteError(sanitizeUiCopy(result.message, 'Failed to delete device'))
         setDeleting(false)
         return
       }
@@ -327,8 +303,6 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const CurrentIconComp =
     DISPLAY_ICONS.find((i) => i.id === selectedIcon)?.Icon ?? Battery
 
-  // ─── Back button (shared) ─────────────────────────────────────────────────
-
   const BackBtn = ({ to }: { to: Screen | 'parent' }) => (
     <button
       onClick={() => (to === 'parent' ? handleBack() : setScreen(to as Screen))}
@@ -338,16 +312,12 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     </button>
   )
 
-  // ─── Info row (Device Info screen) ───────────────────────────────────────
-
   const InfoRow = ({ label, value }: { label: string; value: string }) => (
     <div className="flex items-center justify-between px-4 py-4 border-b border-white/5 last:border-0">
       <span className="text-body-md text-ink-6">{label}</span>
       <span className="text-body-md text-white">{value}</span>
     </div>
   )
-
-  // ─── Settings row (main screen) ───────────────────────────────────────────
 
   const SettingsRow = ({
     label,
@@ -375,14 +345,9 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     </div>
   )
 
-  // ═════════════════════════════════════════════════════════════════════════
-  // SCREEN: Edit Name
-  // ═════════════════════════════════════════════════════════════════════════
-
   if (screen === 'editName') {
     return (
       <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
-        {/* Header */}
         <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
           <BackBtn to="main" />
           <h1 className="text-title-lg font-semibold text-white absolute left-1/2 -translate-x-1/2">
@@ -399,8 +364,6 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             Save
           </button>
         </div>
-
-        {/* Device selector dropdown — pick which device to rename */}
         {devices.length > 1 && (
           <div className="px-4 pt-2">
             <span className="text-caption text-ink-6 block mb-2 px-1">Select Device</span>
@@ -439,8 +402,6 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             </div>
           </div>
         )}
-
-        {/* Input */}
         <div className="px-4 pt-4">
           <span className="text-caption text-ink-6 block mb-2 px-1">Name</span>
           <div className="rounded-l bg-ink-10 px-4 py-4 flex items-center gap-3">
@@ -469,14 +430,9 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     )
   }
 
-  // ═════════════════════════════════════════════════════════════════════════
-  // SCREEN: Display Icon
-  // ═════════════════════════════════════════════════════════════════════════
-
   if (screen === 'displayIcon') {
     return (
       <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
-        {/* Hidden file input for custom image picker */}
         <input
           ref={fileInputRef}
           type="file"
@@ -484,19 +440,14 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           className="hidden"
           onChange={handleCustomImageFile}
         />
-
-        {/* Header */}
         <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
           <BackBtn to="main" />
           <h1 className="text-title-lg font-semibold text-white absolute left-1/2 -translate-x-1/2">
             Select Display Icon
           </h1>
         </div>
-
-        {/* Grid */}
         <div className="flex-1 px-4 pt-4">
           <div className="grid grid-cols-4 gap-3">
-            {/* Device photo option */}
             <button
               onClick={() => { setPendingIcon('photo'); setPendingCustomImage(null) }}
               className={`flex flex-col items-center gap-2 py-4 rounded-l transition-colors ${
@@ -516,7 +467,6 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 Device
               </span>
             </button>
-            {/* Custom image option */}
             <button
               onClick={handlePickCustomImage}
               className={`flex flex-col items-center gap-2 py-4 rounded-l transition-colors ${
@@ -562,8 +512,6 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             ))}
           </div>
         </div>
-
-        {/* Save button */}
         <div className="px-4 pb-8 pt-4">
           <button
             onClick={handleSaveIcon}
@@ -576,22 +524,15 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     )
   }
 
-  // ═════════════════════════════════════════════════════════════════════════
-  // SCREEN: Device Info
-  // ═════════════════════════════════════════════════════════════════════════
-
   if (screen === 'deviceInfo') {
     return (
       <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
-        {/* Header */}
         <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
           <BackBtn to="main" />
           <h1 className="text-title-lg font-semibold text-white absolute left-1/2 -translate-x-1/2">
             Device Info
           </h1>
         </div>
-
-        {/* Info list */}
         <div className="flex-1 overflow-y-auto px-4 pt-2">
           <div className="rounded-l bg-ink-10 overflow-hidden">
             <button
@@ -605,11 +546,23 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               </span>
             </button>
             <InfoRow
+              label="Battery health"
+              value={rtField('batteryHealth') || (ratedParams?.batteryHealth != null ? `${ratedParams.batteryHealth}%` : '100%')}
+            />
+            <InfoRow
+              label="Temperature"
+              value={temperatureDisplay}
+            />
+            <InfoRow
+              label="Cycles"
+              value={rtField('numberOfBatteryUsageCycles') || realtime?.numberOfBatteryUsageCycles?.toString() || '--'}
+            />
+            <InfoRow
               label="Serial Number"
               value={realDevice?.serialNumber || ratedParams?.serialNumber || (powerStation as any).serialNumber || 'SNXXXX'}
             />
             <InfoRow
-              label="Rated Capacity"
+              label="Capacity"
               value={
                 ratedParams
                   ? `${((ratedParams.acInvOutputPower * 2) / 1000).toFixed(1)} kWh`
@@ -624,34 +577,20 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               value={realDevice?.softwareVersion || appVersion.version || '--'}
             />
             <InfoRow
-              label="Rated Output Power"
-              value={(ratedParams?.ratedPower ?? realDevice?.ratedPower) ? `${ratedParams?.ratedPower ?? realDevice?.ratedPower}W` : '--'}
-            />
-            <InfoRow
-              label="Rated Charging Power"
+              label="Charging Power"
               value={ratedParams?.ratedChargePower != null ? `${ratedParams.ratedChargePower}W` : '--'}
             />
-            <InfoRow label="Rated Voltage" value="120V" />
+            <InfoRow
+              label="Output Power"
+              value={(ratedParams?.ratedPower ?? realDevice?.ratedPower) ? `${ratedParams?.ratedPower ?? realDevice?.ratedPower}W` : '--'}
+            />
+            <InfoRow label="Voltage" value="120V" />
             <InfoRow label="Frequency" value="60Hz" />
-            <InfoRow
-              label="Battery Health"
-              value={rtField('batteryHealth') || (ratedParams?.batteryHealth != null ? `${ratedParams.batteryHealth}%` : '100%')}
-            />
-            <InfoRow
-              label="Cycles"
-              value={rtField('numberOfBatteryUsageCycles') || realtime?.numberOfBatteryUsageCycles?.toString() || '--'}
-            />
-            <InfoRow
-              label="Temperature"
-              value={temperatureDisplay}
-            />
             <InfoRow
               label="Wi-Fi Status"
               value={realDevice ? (realDevice.isOnline ? 'Connected' : 'Offline') : 'Connected'}
             />
           </div>
-
-          {/* Modbus 透传入口 — 仅开发/内测包可见 */}
           {DEV_TOOLS_ENABLED && (
           <div className="mt-4 space-y-2">
             <button
@@ -675,8 +614,6 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           </div>
           )}
         </div>
-
-        {/* Device Model Bottom Sheet (lives in the Device Info screen) */}
         {showModelSheet && (
           <div
             className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60"
@@ -727,40 +664,25 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     )
   }
 
-  // ═════════════════════════════════════════════════════════════════════════
-  // SCREEN: Sleep Mode
-  // ═════════════════════════════════════════════════════════════════════════
-
   if (screen === 'sleepMode') {
     const enabled = sleepMode === 'On'
-
     const handleSaveSleepMode = async () => {
       const deviceId = routeId ?? selectedDeviceId
       if (deviceId) {
         try { await toggleSleepMode(deviceId, enabled) } catch { /* noop */ }
-        // Persist schedule to localStorage (drives the client-side scheduler, which
-        // stays as the always-on fallback + gives instant feedback while the app runs).
         saveSchedule(deviceId, { enabled, sleepFrom, sleepTo })
-        // Upload the schedule to the self-hosted relay so the charge-power switch
-        // also fires when the app is CLOSED (relay's poller applies it on time).
-        // No-ops when VITE_RELAY_URL isn't configured. Best-effort/fire-and-forget:
-        // never blocks Save; the client scheduler covers us regardless.
         void uploadSleepSchedule(String(deviceId), { enabled, sleepFrom, sleepTo, model })
       }
       setScreen('main')
     }
-
-    // Format "HH:MM" → "h:MM AM/PM"
     const fmt = (t: string) => {
       const [h, m] = t.split(':').map(Number)
       const ampm = h < 12 ? 'AM' : 'PM'
       const h12 = h % 12 === 0 ? 12 : h % 12
       return `${h12}:${String(m).padStart(2, '0')} ${ampm}`
     }
-
     return (
       <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
-        {/* Header */}
         <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
           <BackBtn to="main" />
           <h1 className="text-title-lg font-semibold text-white absolute left-1/2 -translate-x-1/2">
@@ -773,9 +695,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             Save
           </button>
         </div>
-
         <div className="flex-1 overflow-y-auto px-4 pt-2 pb-8 space-y-6">
-          {/* Toggle row */}
           <div className="rounded-l bg-ink-10 px-4 py-4">
             <div className="flex items-center justify-between">
               <div>
@@ -794,13 +714,10 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               </button>
             </div>
           </div>
-
-          {/* Time section — only shown when enabled */}
           {enabled && (
             <div>
               <p className="text-body-md font-semibold text-white mb-2">Time</p>
               <div className="rounded-l bg-ink-10 overflow-hidden">
-                {/* Sleep start → low power */}
                 <div className="flex items-center justify-between px-4 py-4 border-b border-white/5">
                   <div>
                     <p className="text-body-lg text-white">Sleep</p>
@@ -813,7 +730,6 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                     className="bg-ink-9 text-white text-body-md rounded-m px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary [color-scheme:dark]"
                   />
                 </div>
-                {/* Wake end → full power */}
                 <div className="flex items-center justify-between px-4 py-4">
                   <div>
                     <p className="text-body-lg text-white">Wake</p>
@@ -832,8 +748,6 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               </p>
             </div>
           )}
-
-          {/* Scheduler Status Card — shown when enabled */}
           {enabled && (
             <div>
               <p className="text-body-md font-semibold text-white mb-2">Scheduler Status</p>
@@ -863,23 +777,15 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     )
   }
 
-  // ═════════════════════════════════════════════════════════════════════════
-  // SCREEN: Main — Device Settings
-  // ═════════════════════════════════════════════════════════════════════════
-
   return (
     <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
-      {/* Header */}
       <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
         <BackBtn to="parent" />
         <h1 className="text-title-lg font-semibold text-white absolute left-1/2 -translate-x-1/2">
           Device Settings
         </h1>
       </div>
-
-      {/* Scrollable list */}
       <div className="flex-1 overflow-y-auto px-4 pt-2 pb-8">
-        {/* Device Name */}
         <SettingsRow
           label="Device Name"
           value={deviceName}
@@ -891,8 +797,6 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             setScreen('editName')
           }}
         />
-
-        {/* Display Icon */}
         <SettingsRow
           label="Display Icon"
           preview={
@@ -912,21 +816,15 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             setScreen('displayIcon')
           }}
         />
-
-        {/* Device Info */}
         <SettingsRow
           label="Device Info"
           onPress={() => setScreen('deviceInfo')}
         />
-
-        {/* Sleep Mode */}
         <SettingsRow
           label="Sleep Mode"
           value={sleepMode}
           onPress={() => setScreen('sleepMode')}
         />
-
-        {/* Battery Priority */}
         <SettingsRow
           label="Battery Priority"
           value={WORK_MODES.find(m => m.value === workMode)?.label ?? 'Backup Mode'}
@@ -935,15 +833,11 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             setShowWorkModeMenu(true)
           }}
         />
-
-        {/* Smart Schedule */}
         <SettingsRow
           label="Smart Schedule"
           value={peakShavingSettings?.enabled ? 'On' : 'Off'}
           onPress={() => navigate('/smart-schedule')}
         />
-
-        {/* Delete Device */}
         <div className="mt-4">
           <button
             onClick={() => setShowDeleteConfirm(true)}
@@ -953,8 +847,6 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           </button>
         </div>
       </div>
-
-      {/* Battery Priority Bottom Sheet */}
       {showWorkModeMenu && (
         <div
           className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60"
@@ -964,12 +856,9 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             onClick={(e) => e.stopPropagation()}
             className="w-full bg-ink-11 rounded-t-2xl overflow-hidden pb-8"
           >
-            {/* Drag handle */}
             <div className="flex justify-center pt-3 pb-1">
               <div className="w-10 h-1 rounded-full bg-white/20" />
             </div>
-
-            {/* Header */}
             <div className="flex items-center justify-between px-6 pt-3 pb-2">
               <span className="text-title-md font-semibold text-white flex-1 text-center">
                 Select Battery Priority
@@ -981,7 +870,6 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 <X size={16} className="text-white" />
               </button>
             </div>
-
             <div className="px-4 pt-4 space-y-3">
               {WORK_MODES.map(m => {
                 const selected = workModeDraft === m.value
@@ -1005,7 +893,6 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 )
               })}
             </div>
-
             <div className="px-4 pt-5">
               <button
                 onClick={async () => {
@@ -1014,8 +901,6 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                   const deviceId = routeId ?? selectedDeviceId
                   if (deviceId) {
                     try { await setWorkMode(deviceId, workModeDraft) } catch { /* noop */ }
-                    // Battery Priority → PV/电池优先操作 (0x86)：
-                    //   Savings(2) → 使能 0x01AA；Backup(1) → 禁用 0xAA01
                     try {
                       const frame = workModeDraft === 2 ? FRAMES.PV_BATT_PRIORITY_ON : FRAMES.PV_BATT_PRIORITY_OFF
                       await passthroughDevice(deviceId, { data: frame, noOutput: true })
@@ -1030,8 +915,6 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           </div>
         </div>
       )}
-
-      {/* Delete Confirm Dialog */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60 px-4 pb-8">
           <div className="w-full max-w-sm bg-ink-11 rounded-l overflow-hidden">

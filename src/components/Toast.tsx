@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CheckCircle, AlertTriangle, XCircle, Info, X } from 'lucide-react'
+import { sanitizeUiCopy } from '../utils/uiCopy'
 
 export type ToastType = 'success' | 'warning' | 'error' | 'info'
 
@@ -102,7 +103,12 @@ export function useToast() {
 
   const show = useCallback((t: Omit<ToastItem, 'id'>) => {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
-    setToasts(prev => [{ id, ...t }, ...prev].slice(0, 4)) // 最多4条
+    const fallback = t.type === 'error' ? 'Something went wrong' : t.title
+    const title = sanitizeUiCopy(t.title, fallback)
+    const message = t.message != null && t.message !== ''
+      ? sanitizeUiCopy(t.message, '') || undefined
+      : undefined
+    setToasts(prev => [{ id, ...t, title, message }, ...prev].slice(0, 4)) // 最多4条
   }, [])
 
   const dismiss = useCallback((id: string) => {
