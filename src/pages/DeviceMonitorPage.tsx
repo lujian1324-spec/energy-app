@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ChevronLeft, ChevronDown, Check, Settings } from 'lucide-react'
+import { Check } from 'lucide-react'
 import BatteryRing from '../components/BatteryRing'
 import Icon from '../components/Icon'
 import RealTimePowerChart from '../components/RealTimePowerChart'
@@ -125,7 +125,7 @@ export default function DeviceMonitorPage() {
           className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center active:scale-95 transition-transform flex-shrink-0 before:absolute before:content-[''] before:-inset-1"
           aria-label="Back"
         >
-          <ChevronLeft size={20} className="text-white" />
+          <Icon name="chevron-left" size={20} />
         </button>
 
         {/* Device name + dropdown */}
@@ -138,9 +138,10 @@ export default function DeviceMonitorPage() {
               <span className="text-title-md font-semibold text-white">
                 {device?.name ?? 'Device'}
               </span>
-              <ChevronDown
+              <Icon
+                name="chevron-down"
                 size={16}
-                className={`text-white transition-transform duration-200 ${showDeviceDropdown ? 'rotate-180' : ''}`}
+                className={`transition-transform duration-200 ${showDeviceDropdown ? 'rotate-180' : ''}`}
               />
             </div>
             <span className="text-label text-ink-7">
@@ -179,7 +180,7 @@ export default function DeviceMonitorPage() {
             className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center active:scale-95 transition-transform before:absolute before:content-[''] before:-inset-1"
             aria-label="Device settings"
           >
-            <Settings size={20} className="text-white" />
+            <Icon name="setting" size={20} />
           </button>
           <button
             onClick={() => navigate('/notifications')}
