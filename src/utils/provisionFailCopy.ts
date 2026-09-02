@@ -36,11 +36,11 @@ export function mapBindFailReason(
 ): { kind?: BindFailReasonKind; reason?: string; errorId?: string } {
   const blob = `${code ?? ''} ${message ?? ''}`
   let kind: BindFailReasonKind | undefined
-  if (/already[_\s-]?bound|already[_\s-]?add|already[_\s-]?exist|bound[_\s-]?to|duplicate/i.test(blob)) {
+  if (/already[_\s-]?bound|already[_\s-]?add|already[_\s-]?exist|bound[_\s-]?to|duplicate|已绑定|已经绑定/i.test(blob)) {
     kind = 'already_bound'
-  } else if (/offline|not[_\s-]?online|device[_\s-]?offline/i.test(blob)) {
+  } else if (/offline|not[_\s-]?online|device[_\s-]?offline|离线/i.test(blob)) {
     kind = 'device_offline'
-  } else if (/timeout|timed[_\s-]?out/i.test(blob)) {
+  } else if (/timeout|timed[_\s-]?out|应答超时|等待设备/i.test(blob)) {
     kind = 'timeout'
   } else if (/invalid|bad[_\s-]?request/i.test(blob) && !isJunkError(message)) {
     kind = 'invalid'
