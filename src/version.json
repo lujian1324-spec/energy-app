@@ -1,10 +1,8 @@
 {
-  "version": "4.7.46",
-  "build": 2768,
+  "version": "4.7.45",
+  "build": 2767,
   "date": "2026-09-02",
   "changelog": [
-    "Notifications empty state: gray square then \u201cNo notifications\u201d; header drops the empty subtitle.",
-    "Chinese toasts/errors map to English (timed out waiting for the device, leftover CJK hidden).",
-    "Device Info field order and labels match design p70; extras (Firmware Version, debug tools) kept."
+    "Insights Day/Week/Month/Range selected pill is light gray per design; Feedback modal warning/yellow accents are white."
   ]
 }
