@@ -27,6 +27,12 @@ describe('mapBindFailReason', () => {
     expect(mapBindFailReason(400, 'invalid serial').kind).toBe('invalid')
   })
 
+  it('maps Chinese timeout / offline / already-bound phrases', () => {
+    expect(mapBindFailReason(null, '等待设备应答超时').kind).toBe('timeout')
+    expect(mapBindFailReason(null, '设备离线').kind).toBe('device_offline')
+    expect(mapBindFailReason(null, '设备已绑定').kind).toBe('already_bound')
+  })
+
   it('keeps isJunkError filter so stack traces are not shown as invalid', () => {
     expect(isJunkError('Illegal argument: null pointer')).toBe(true)
     expect(mapBindFailReason(500, 'Illegal argument: null pointer').kind).toBeUndefined()

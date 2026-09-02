@@ -111,25 +111,23 @@ export default function NotificationsPage() {
         </button>
         <div className="flex-1">
           <h2 className="text-lg font-bold text-ink-1">Notifications</h2>
-          {visibleAlarms.length > 0 ? (
+          {visibleAlarms.length > 0 && (
             <p className="text-caption text-danger">{visibleAlarms.length} active now</p>
-          ) : (
-            <p className="text-caption text-ink-7">No active alarms</p>
           )}
         </div>
       </div>
 
       {/* List */}
       <div className="flex-1 overflow-y-auto scrollbar-hide">
-        {/* Empty state */}
+        {/* Empty state — design p20: gray square then "No notifications" below */}
         {visibleAlarms.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center justify-center h-full text-center px-6"
           >
-            <p className="text-body-lg font-semibold text-ink-1 mb-7">No notifications</p>
             <div className="w-40 h-40 rounded-l bg-ink-9" />
+            <p className="text-body-md text-ink-6 mt-4">No notifications</p>
           </motion.div>
         )}
 

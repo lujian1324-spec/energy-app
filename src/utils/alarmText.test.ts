@@ -22,6 +22,18 @@ describe('resolveAlarmText', () => {
       .toBe('Inverter board fault')
   })
 
+  it('skips a CJK backend name and uses the mapped English or humanized key', () => {
+    expect(resolveAlarmText({ key: 'unknownVendorFault', name: '电芯过压' }))
+      .toBe('Cell overvoltage')
+    expect(resolveAlarmText({ key: 'busOverCurrent', name: '未知告警名称' }))
+      .toBe('Bus Over Current')
+  })
+
+  it('maps a Chinese timeout name instead of showing CJK', () => {
+    expect(resolveAlarmText({ name: '等待设备应答超时' }))
+      .toBe('Timed out waiting for the device.')
+  })
+
   it('supports the legacy alarmCode/alarmMessage shape (demo data)', () => {
     expect(resolveAlarmText({
       alarmCode: 'LOW_BATTERY_WIFI_ROUTER',

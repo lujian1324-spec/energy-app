@@ -13,6 +13,7 @@ import {
   isJunkError, mapBindFailReason,
   type FailKind,
 } from '../../utils/provisionFailCopy'
+import { sanitizeUiCopy } from '../../utils/uiCopy'
 
 export type ConfigStage = 'Sending Wi-Fi details' | 'Connecting device' | 'Adding to account'
 
@@ -191,7 +192,7 @@ export function useProvisionBind(opts: {
         store.setErrorMessage(DISCONNECT_COPY)
       } else {
         setFailKind('wifi')
-        store.setErrorMessage(m)
+        store.setErrorMessage(sanitizeUiCopy(m, "Couldn't connect to Wi-Fi. Try again."))
       }
       store.setStep('result')
     } finally {
