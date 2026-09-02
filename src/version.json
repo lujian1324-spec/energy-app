@@ -1,8 +1,8 @@
 {
-  "version": "4.7.50",
-  "build": 2772,
+  "version": "4.7.51",
+  "build": 2773,
   "date": "2026-09-02",
   "changelog": [
-    "Replace lucide with design SVG icons on white-on-dark controls; Profile Token B circles; list glyph 20."
+    "Design-system empty states and illustrations; filled Large primary CTAs."
   ]
 }
