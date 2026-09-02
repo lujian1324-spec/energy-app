@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Loader2, X } from 'lucide-react'
-import Icon from '../components/Icon'
+import { ChevronLeft, Loader2, X } from 'lucide-react'
 import { sendEmailCaptcha, resetPassword } from '../api/authApi'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -105,9 +104,10 @@ export default function ForgotPasswordPage() {
       <div className="px-4 pt-5 safe-area-top shrink-0">
         <button
           onClick={() => (step === 'reset' ? setStep('request') : navigate(-1))}
-          className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-ink-1 active:scale-95 transition-transform"
+          className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-white active:scale-95 transition-transform"
+          aria-label="Back"
         >
-          <Icon name="chevron-left" size={22} />
+          <ChevronLeft size={20} />
         </button>
       </div>
 
