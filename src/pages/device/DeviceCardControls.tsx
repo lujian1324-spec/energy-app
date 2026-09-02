@@ -25,8 +25,9 @@ export function BatteryTag({ level, connected, charging, unknown }: { level: num
       </span>
     )
   }
-  const color = getTagColor(level)
-  const fill = Math.max(4, Math.min(100, level))
+  const pct = Math.round(level)
+  const color = getTagColor(pct)
+  const fill = Math.max(4, Math.min(100, pct))
   return (
     <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-ink-9">
       <span className="relative inline-flex items-center">
@@ -41,7 +42,7 @@ export function BatteryTag({ level, connected, charging, unknown }: { level: num
         </span>
         <span className="w-[2px] h-[5px] rounded-r-[1px] ml-[1px]" style={{ backgroundColor: '#8C8C8C' }} />
       </span>
-      <span className="text-body-md font-semibold text-white tnum">{level}%</span>
+      <span className="text-body-md font-semibold text-white tnum">{pct}%</span>
     </span>
   )
 }

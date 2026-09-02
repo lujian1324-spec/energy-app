@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion'
-import { RefreshCw } from 'lucide-react'
-import Icon from '../../components/Icon'
+import { Plus, RefreshCw } from 'lucide-react'
 
 /** Device list empty state (design p2): gray square + Add Device. Error keeps title/subtitle. */
 export default function DeviceEmptyState({
@@ -29,7 +28,7 @@ export default function DeviceEmptyState({
         </>
       ) : (
         <button onClick={onAddDevice} className="px-7 py-3.5 rounded-m border-m border-primary text-primary text-body-lg font-semibold flex items-center gap-2 active:scale-95 transition-transform">
-          <Icon name="add" size={20} /> Add Device
+          <Plus size={20} className="text-primary" strokeWidth={2.5} /> Add Device
         </button>
       )}
     </motion.div>
