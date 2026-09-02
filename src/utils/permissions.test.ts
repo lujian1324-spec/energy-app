@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { classifyBleError } from './permissions'
+import { classifyBleError, bleStatusFromCheck } from './permissions'
 
 // classifyBleError drives the BLE error UI: 'permission' -> Open Settings,
 // 'bluetooth_off' -> enable Bluetooth/Location retry, 'generic' -> raw text.
@@ -28,5 +28,27 @@ describe('classifyBleError', () => {
 
   it('preserves the original message', () => {
     expect(classifyBleError(new Error('Permission denied.')).msg).toBe('Permission denied.')
+  })
+})
+
+describe('bleStatusFromCheck', () => {
+  it('maps granted and prompt to ready', () => {
+    expect(bleStatusFromCheck({ state: 'granted', detail: 'Bluetooth ready' })).toBe('ready')
+    expect(bleStatusFromCheck({ state: 'prompt', detail: 'Adapter ready — pick a device to pair' })).toBe('ready')
+  })
+
+  it('maps radio-off denied detail to bt_off (design p27)', () => {
+    expect(bleStatusFromCheck({ state: 'denied', detail: 'Bluetooth is off' })).toBe('bt_off')
+    expect(bleStatusFromCheck({ state: 'denied', detail: 'Bluetooth is off — enable it in system settings' })).toBe('bt_off')
+    expect(bleStatusFromCheck({ state: 'denied', detail: 'BLE is not available.' })).toBe('bt_off')
+  })
+
+  it('maps permission denied / settings blocked to no_permission', () => {
+    expect(bleStatusFromCheck({ state: 'denied', detail: 'Blocked — enable in system settings' })).toBe('no_permission')
+    expect(bleStatusFromCheck({ state: 'denied', detail: 'Bluetooth permission denied — enable in system settings' })).toBe('no_permission')
+  })
+
+  it('maps unsupported Web Bluetooth to no_permission, not bt_off', () => {
+    expect(bleStatusFromCheck({ state: 'unsupported', detail: 'Web Bluetooth unavailable' })).toBe('no_permission')
   })
 })
