@@ -1,8 +1,8 @@
 {
-  "version": "4.7.47",
-  "build": 2769,
+  "version": "4.7.48",
+  "build": 2770,
   "date": "2026-09-02",
   "changelog": [
-    "Hide Insights Last sync; days lightning icon is a thin outline to match design."
+    "Bottom tab selected highlight is a true 48px circle (no extra padding oval)."
   ]
 }
