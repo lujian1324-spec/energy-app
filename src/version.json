@@ -1,10 +1,8 @@
 {
-  "version": "4.7.46",
-  "build": 2768,
+  "version": "4.7.47",
+  "build": 2769,
   "date": "2026-09-02",
   "changelog": [
-    "Notifications empty state: gray square then \u201cNo notifications\u201d; header drops the empty subtitle.",
-    "Chinese toasts/errors map to English (timed out waiting for the device, leftover CJK hidden).",
-    "Device Info field order and labels match design p70; extras (Firmware Version, debug tools) kept."
+    "Hide Insights Last sync; days lightning icon is a thin outline to match design."
   ]
 }
