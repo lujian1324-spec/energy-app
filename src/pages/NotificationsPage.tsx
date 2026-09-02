@@ -1,7 +1,8 @@
 import { useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, AlertTriangle, Zap, X } from 'lucide-react'
+import { AlertTriangle, Zap, X } from 'lucide-react'
+import Icon from '../components/Icon'
 import { useDeviceStore } from '../stores/deviceStore'
 import { useAlarmDismissStore, alarmKey } from '../stores/alarmDismissStore'
 import { dedupeAndFilterAlarms } from '../utils/alarmText'
@@ -107,7 +108,7 @@ export default function NotificationsPage() {
           className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-white active:scale-95 transition-transform before:absolute before:content-[''] before:-inset-1.5"
           aria-label="Back"
         >
-          <ChevronLeft size={20} />
+          <Icon name="chevron-left" size={20} />
         </button>
         <div className="flex-1">
           <h2 className="text-lg font-bold text-ink-1">Notifications</h2>
