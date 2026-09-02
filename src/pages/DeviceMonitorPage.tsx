@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ChevronLeft, ChevronDown, Check, Settings, Bell } from 'lucide-react'
+import { ChevronLeft, ChevronDown, Check, Settings } from 'lucide-react'
 import BatteryRing from '../components/BatteryRing'
+import Icon from '../components/Icon'
 import RealTimePowerChart from '../components/RealTimePowerChart'
 import { useDeviceStore } from '../stores/deviceStore'
 import { mapFieldsToRealtime } from '../api/deviceApi'
@@ -178,14 +179,14 @@ export default function DeviceMonitorPage() {
             className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center active:scale-95 transition-transform before:absolute before:content-[''] before:-inset-1"
             aria-label="Device settings"
           >
-            <Settings size={18} className="text-white" />
+            <Settings size={20} className="text-white" />
           </button>
           <button
             onClick={() => navigate('/notifications')}
-            className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center active:scale-95 transition-transform before:absolute before:content-[''] before:-inset-1"
+            className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-white active:scale-95 transition-transform before:absolute before:content-[''] before:-inset-1"
             aria-label="Notifications"
           >
-            <Bell size={18} className="text-white" />
+            <Icon name="bell" size={20} />
             {device?.isAlarmed && (
               <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-danger border-2 border-ink-12" />
             )}

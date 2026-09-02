@@ -221,7 +221,6 @@ function buildFrameFromRecords(
   rangeStart: Date | null,
   rangeEnd: Date | null,
 ): ChartFrame {
-  // 1) 固定标签栅格 + 分桶函数（保证无数据也有完整坐标轴）
   let labels: string[]
   let bucketCount: number
   let bucketOf: (d: Date) => number
@@ -251,7 +250,6 @@ function buildFrameFromRecords(
     hoursPerBucket = 24
     bucketOf = (d) => (d.getFullYear() === y && d.getMonth() === m ? d.getDate() - 1 : -1)
   } else {
-    // Range：按天分桶
     const start = rangeStart ? new Date(rangeStart) : new Date(Date.now() - 30 * 86400000)
     start.setHours(0, 0, 0, 0)
     const end = rangeEnd ? new Date(rangeEnd) : new Date()
@@ -270,7 +268,6 @@ function buildFrameFromRecords(
     }
   }
 
-  // 2) 累加各桶的均值
   const solarSum = new Array(bucketCount).fill(0)
   const outSum = new Array(bucketCount).fill(0)
   const socSum = new Array(bucketCount).fill(0)
@@ -291,7 +288,6 @@ function buildFrameFromRecords(
   const output = outSum.map((s, i) => (cnt[i] ? s / cnt[i] : 0))
   const remainingBatteryCapacity = socSum.map((s, i) => (cnt[i] ? s / cnt[i] : 0))
 
-  // 3) 汇总（W 均值 × 桶时长 → kWh）
   const round1 = (n: number) => Math.round(n * 10) / 10
   const totalInputKwh = round1(input.reduce((s, v) => s + (v * hoursPerBucket) / 1000, 0))
   const totalOutputKwh = round1(output.reduce((s, v) => s + (v * hoursPerBucket) / 1000, 0))
@@ -316,8 +312,6 @@ function buildFrameFromRecords(
 
   return { input, output, remainingBatteryCapacity, labels, co2Kg, totalInputKwh, totalOutputKwh, insight, ecoInsight, hasData }
 }
-
-// ─── 加载骨架屏 ───
 
 function DaysSkeleton() {
   return (
@@ -355,16 +349,11 @@ function ChartAreaSkeleton() {
   )
 }
 
-// ═══════════════════════════════════════════
-// StatsPage
-// ═══════════════════════════════════════════
-
 export default function StatsPage() {
   const [period, setPeriod] = useState<Period>('Day')
   const [sharing, setSharing] = useState(false)
   const shareRef = useRef<HTMLDivElement>(null)
 
-  // ── Date picker state ──
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [rangeStart, setRangeStart] = useState<Date | null>(null)
   const [rangeEnd, setRangeEnd] = useState<Date | null>(null)
@@ -372,7 +361,6 @@ export default function StatsPage() {
   const [rangePickStep, setRangePickStep] = useState<'start' | 'end'>('start')
   const [pickerViewDate, setPickerViewDate] = useState<Date>(new Date())
 
-  // Reset on period change
   useEffect(() => {
     setSelectedDate(new Date())
     setShowPicker(false)
@@ -388,12 +376,10 @@ export default function StatsPage() {
 
   const { devices, loadDevices } = useDeviceStore()
 
-  // 历史记录（record/list）本地状态
   const [records, setRecords] = useState<DeviceAttributeRecord[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // 始终使用第一个添加的设备（按 createdAt 最早排序）
   const deviceId = useMemo(() => {
     if (devices.length === 0) return null
     const sorted = [...devices].sort((a, b) => {
@@ -407,7 +393,6 @@ export default function StatsPage() {
     if (devices.length === 0) loadDevices(1, 50, { orderByCreatedAtAsc: true })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Can navigate forward ──
   const canGoForward = useMemo(() => {
     if (period === 'Range') return false
     const today = new Date(); today.setHours(0, 0, 0, 0)
@@ -419,7 +404,6 @@ export default function StatsPage() {
     return sMonth < tMonth
   }, [period, selectedDate])
 
-  // ── Date label ──
   const dateLabel = useMemo(() => {
     const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     const fmtShort = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
@@ -440,11 +424,8 @@ export default function StatsPage() {
     }
   }, [period, selectedDate, rangeStart, rangeEnd])
 
-  // ── Load history from POST /deviceState/attribute/record/list ──
   const loadHistory = useCallback(async () => {
     if (!deviceId) { setRecords([]); return }
-
-    // Range 未选完整区间时不请求
     if (period === 'Range' && (!rangeStart || !rangeEnd)) { setRecords([]); return }
 
     let from: Date, to: Date
@@ -462,7 +443,7 @@ export default function StatsPage() {
         from = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)
         to = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0, 23, 59, 59, 999)
         break
-      default: // Range
+      default:
         from = new Date(rangeStart as Date); from.setHours(0, 0, 0, 0)
         to = new Date(rangeEnd as Date); to.setHours(23, 59, 59, 999)
         break
@@ -551,7 +532,6 @@ export default function StatsPage() {
     return Math.max(1, Math.floor((Date.now() - installed.getTime()) / (24 * 3600 * 1000)))
   }, [deviceId, devices])
 
-  // 数字 count-up：服役天数（整数）与 CO₂ 减排（1 位小数）平滑滚动
   const displayDeviceDays = useCountUp(deviceDays)
   const displayCo2 = useCountUp(chartFrame?.co2Kg ?? 0, 400, 1)
 
@@ -565,7 +545,6 @@ export default function StatsPage() {
 
   return (
     <div className="h-full flex flex-col bg-ink-12 overflow-hidden">
-      {/* Header — match Device page padding/type (APP-004) */}
       <div className="px-5 pt-4 pb-3 safe-area-top flex justify-between items-start">
         <div>
           <h1 className="text-display font-display text-white leading-none">Insights</h1>
@@ -573,7 +552,7 @@ export default function StatsPage() {
         <button
           aria-label="Share"
           disabled={sharing}
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-ink-10 text-ink-6 hover:text-primary transition-colors disabled:opacity-50"
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-ink-10 text-white hover:text-primary transition-colors disabled:opacity-50"
           onClick={async () => {
             if (sharing) return
             setSharing(true)
@@ -588,7 +567,6 @@ export default function StatsPage() {
                 useCORS: true,
                 logging: false,
               })
-              // Watermark
               const ctx = canvas.getContext('2d')!
               ctx.fillStyle = 'rgba(255,255,255,0.35)'
               ctx.font = `bold ${14 * 2}px Inter, sans-serif`
@@ -641,7 +619,7 @@ export default function StatsPage() {
             }
           }}
         >
-          {sharing ? <Loader2 size={18} className="animate-spin" /> : <Share2 size={18} />}
+          {sharing ? <Loader2 size={20} className="animate-spin" /> : <Share2 size={20} />}
         </button>
       </div>
 
@@ -663,7 +641,6 @@ export default function StatsPage() {
 
         {hasDevice && (
           <>
-            {/* Days overview */}
             {loading && records === null ? <DaysSkeleton /> : (
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
                 className="flex flex-col items-center text-center py-5">
@@ -678,7 +655,6 @@ export default function StatsPage() {
               </motion.div>
             )}
 
-            {/* Segmented period control */}
             <div className="flex bg-ink-10 rounded-pill p-1 mb-3">
               {periods.map((p) => (
                 <button key={p} onClick={() => setPeriod(p)}
@@ -689,7 +665,6 @@ export default function StatsPage() {
               ))}
             </div>
 
-            {/* ── Date navigator ── */}
             <div className="mb-4">
               <div className="flex items-center justify-center gap-3">
                 <button
@@ -730,7 +705,6 @@ export default function StatsPage() {
                 </button>
               </div>
 
-              {/* Inline calendar picker */}
               <AnimatePresence>
                 {showPicker && (
                   <motion.div key="picker"
@@ -771,13 +745,10 @@ export default function StatsPage() {
               </AnimatePresence>
             </div>
 
-            {/* Loading skeleton */}
             {loading && <><ChartSkeleton /><ChartAreaSkeleton /></>}
 
-            {/* Data loaded — chart always renders; no data => flat 0 line */}
             {!loading && (
               <>
-                {/* 加载失败时的轻量重试条（真无数据时不显示，只显示 0） */}
                 {error && (
                   <div className="flex items-center justify-between gap-2 bg-ink-10 rounded-l px-4 py-3 mb-4">
                     <span className="text-label text-ink-6">Couldn't load history data.</span>
@@ -788,7 +759,6 @@ export default function StatsPage() {
                   </div>
                 )}
 
-                {/* CO2 Card */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                   className="bg-ink-10 rounded-l p-5 mb-4">
                   <div className="flex items-start justify-between">
@@ -812,7 +782,6 @@ export default function StatsPage() {
                   </div>
                 </motion.div>
 
-                {/* Input vs Output Chart */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
                   className="bg-ink-10 rounded-l p-4 mb-4">
                   <div className="flex justify-between items-start mb-4">
@@ -905,7 +874,6 @@ export default function StatsPage() {
                     </div>
                   )}
 
-                  {/* 无数据时的说明（曲线保持在 0） */}
                   {!chartFrame.hasData && (
                     <p className="text-label text-ink-7 text-center mt-3">
                       No power history for this period yet.

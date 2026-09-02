@@ -219,7 +219,7 @@ export default function DebugParamsPage() {
       <div className="px-4 pt-5 pb-3 flex items-center gap-3 border-b border-white/[0.06]">
         <button
           onClick={() => navigate(-1)}
-          className="w-9 h-9 flex items-center justify-center rounded-full bg-ink-10"
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-ink-10"
         >
           <ChevronLeft size={20} className="text-white" />
         </button>

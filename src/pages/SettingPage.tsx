@@ -371,7 +371,7 @@ export default function SettingPage() {
               onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.15]">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-l bg-white/[0.10] flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center">
                     <Headphones size={20} className="text-white" />
                   </div>
                   <div>
