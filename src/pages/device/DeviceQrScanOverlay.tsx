@@ -1,6 +1,5 @@
 import type { RefObject } from 'react'
 import { motion } from 'framer-motion'
-import { X } from 'lucide-react'
 import Icon from '../../components/Icon'
 import { openAppSettings } from '../../utils/openAppSettings'
 import { toast } from '../../components/Toast'
@@ -46,7 +45,7 @@ export default function DeviceQrScanOverlay({
         <button onClick={() => { stopQrScan(); setQrVideoReady(false); setShowQrScan(false); setQrResult(null); setQrError(null) }}
           aria-label="Close"
           className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-white before:absolute before:content-[''] before:-inset-1.5">
-          <X size={20} />
+          <Icon name="close" size={20} />
         </button>
       </div>
       <div className="flex-1 flex flex-col items-center justify-center px-5">
