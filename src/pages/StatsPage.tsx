@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Loader2, WifiOff, Zap, ChevronLeft, ChevronRight, Leaf, RefreshCw } from 'lucide-react'
+import { Loader2, Plus, Zap, ChevronLeft, ChevronRight, Leaf, RefreshCw } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import Icon from '../components/Icon'
+import insightsEmptyArt from '../assets/illustrations/insights-empty.png'
 import html2canvas from 'html2canvas'
 import { toast } from '../components/Toast'
 import { CalcAudit } from '../components/DataTrust'
@@ -376,6 +378,7 @@ export default function StatsPage() {
   const [scrubIndex, setScrubIndex] = useState<number | null>(null)
 
   const { devices, loadDevices } = useDeviceStore()
+  const navigate = useNavigate()
 
   const [records, setRecords] = useState<DeviceAttributeRecord[] | null>(null)
   const [loading, setLoading] = useState(false)
@@ -625,18 +628,27 @@ export default function StatsPage() {
       </div>
 
       <div ref={shareRef} className="flex-1 overflow-y-auto scrollbar-hide px-4 pb-4">
+        {/* Empty state — Handoff `C_1.1_Insights Main Page -v Empty State` */}
         {!hasDevice && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center justify-center py-20 px-8">
-            <div className="w-40 h-40 rounded-l bg-ink-9 mb-7" />
-            <h3 className="text-headline-md font-semibold text-white mb-2">No devices yet</h3>
-            <p className="text-body-lg text-ink-7 text-center leading-relaxed mb-6">
-              Connect a device to start tracking energy usage and statistics.
+            className="flex flex-col items-center justify-center py-16 px-5">
+            <img
+              src={insightsEmptyArt}
+              alt=""
+              aria-hidden
+              className="w-[172px] h-[172px] object-contain mb-7 select-none pointer-events-none"
+              draggable={false}
+            />
+            <h3 className="text-headline-md font-semibold text-white mb-2 whitespace-nowrap">Insights will appear here</h3>
+            <p className="text-body-lg text-ink-7 text-center leading-relaxed mb-8 max-w-[300px]">
+              Connect a Sierro device to start tracking battery performance and power usage.
             </p>
-            <div className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-ink-10 border border-white/[0.06]">
-              <WifiOff size={14} className="text-ink-7" />
-              <span className="text-label text-ink-7">No device connected</span>
-            </div>
+            <button
+              onClick={() => navigate('/devices')}
+              className="px-7 py-3.5 rounded-m border-m border-primary text-primary text-body-lg font-semibold flex items-center gap-2 active:scale-95 transition-transform"
+            >
+              <Plus size={20} className="text-primary" strokeWidth={2.5} /> Add Device
+            </button>
           </motion.div>
         )}
 

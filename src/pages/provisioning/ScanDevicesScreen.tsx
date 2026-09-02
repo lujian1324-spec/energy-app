@@ -2,8 +2,9 @@
  * BLE scan / permission / radar list screens (design p26 searching, p27 BT off).
  */
 import { motion } from 'framer-motion'
-import { Loader2, AlertCircle, Bluetooth } from 'lucide-react'
+import { Loader2, Bluetooth } from 'lucide-react'
 import Icon from '../../components/Icon'
+import blePermissionArt from '../../assets/illustrations/ble-network-permission.png'
 import { toast } from '../../components/Toast'
 import { openAppSettings } from '../../utils/openAppSettings'
 import { isDtuid } from '../../utils/dtuidParser'
@@ -32,9 +33,20 @@ type Props = {
   setUiScreen: (s: 'scan' | 'qr' | 'naming' | 'icon' | 'provisioning') => void
 }
 
-function AddDeviceHeader({ onBack }: { onBack: () => void }) {
+/**
+ * Add Device header (handoff `A_1.3.1_Add Device Main Page`).
+ *
+ * Scan QR is a teal text action in the top-right of the bar — it replaced the
+ * grey bottom-sheet button and its "Can't find your device?" hint line. When
+ * Bluetooth is off or its permission was denied, the action reads as disabled.
+ */
+function AddDeviceHeader({ onBack, onScanQr, scanQrDisabled }: {
+  onBack: () => void
+  onScanQr: () => void
+  scanQrDisabled?: boolean
+}) {
   return (
-    <div className="px-4 pt-5 pb-4 grid grid-cols-[40px_1fr_40px] items-center safe-area-top">
+    <div className="px-4 pt-5 pb-4 grid grid-cols-[40px_1fr_auto] items-center gap-3 safe-area-top">
       <button
         onClick={onBack}
         aria-label="Back"
@@ -43,20 +55,14 @@ function AddDeviceHeader({ onBack }: { onBack: () => void }) {
         <Icon name="chevron-left" size={20} />
       </button>
       <h1 className="text-title-lg font-semibold text-white text-center">Add Device</h1>
-      <div aria-hidden className="w-10 h-10" />
+      <button
+        onClick={onScanQr}
+        disabled={scanQrDisabled}
+        className="relative h-10 px-1 text-title-md font-semibold text-primary disabled:text-primary-dark-active active:opacity-70 transition-opacity before:absolute before:content-[''] before:-inset-2"
+      >
+        Scan QR
+      </button>
     </div>
-  )
-}
-
-function ScanQrCta({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="w-full h-14 rounded-[20px] bg-ink-10 text-white text-body-lg font-semibold flex items-center justify-center gap-3 active:scale-[0.98] transition-transform"
-    >
-      <Icon name="scan" size={22} />
-      Scan QR Code
-    </button>
   )
 }
 
@@ -130,20 +136,26 @@ export default function ScanDevicesScreen(p: Props) {
   const openQr = () => setUiScreen('qr')
   const showWebPickerCta = !supportsDeviceListScan() && !isSearching && !hasDevices && !hasError
 
+  // Permission denied — full page (handoff `-v Bluetooth and/or local network Access Denied`),
+  // replacing the old centred-modal treatment.
   if (bleStatus === 'no_permission') {
     return (
       <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
-        <AddDeviceHeader onBack={handleClose} />
-        <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
-          <div className="w-20 h-20 rounded-[28px] bg-danger/[0.1] flex items-center justify-center mb-6">
-            <AlertCircle size={36} className="text-danger" />
-          </div>
-          <h2 className="text-headline-md font-bold text-white mb-3">Permission Required</h2>
-          <p className="text-body-md text-ink-6 mb-8">
-            Sierro needs the <span className="text-white font-semibold">Nearby devices</span> (Bluetooth)
-            permission to find your device. Open Settings → Permissions → Nearby devices and allow it,
-            then come back and try again.
+        <AddDeviceHeader onBack={handleClose} onScanQr={openQr} scanQrDisabled />
+        <div className="flex-1 flex flex-col items-center px-8 text-center pt-6 overflow-y-auto scrollbar-hide">
+          <h2 className="text-headline-md font-bold text-white mb-2 max-w-[320px]">
+            Allow Bluetooth and Local Network Access
+          </h2>
+          <p className="text-body-md text-ink-6 max-w-[320px] mb-6">
+            Required to find, connect, and communicate with your Sierro device.
           </p>
+          <img
+            src={blePermissionArt}
+            alt=""
+            aria-hidden
+            className="w-[240px] h-[240px] object-contain select-none pointer-events-none"
+            draggable={false}
+          />
         </div>
         <div className="px-6 pb-10 safe-area-bottom space-y-3">
           <button
@@ -163,8 +175,6 @@ export default function ScanDevicesScreen(p: Props) {
           >
             I&apos;ve Allowed It — Try Again
           </button>
-          <p className="text-center text-body-md text-ink-6 pt-1">Can&apos;t use Bluetooth? Scan the QR code instead.</p>
-          <ScanQrCta onClick={openQr} />
         </div>
       </div>
     )
@@ -173,7 +183,7 @@ export default function ScanDevicesScreen(p: Props) {
   if (bleStatus === 'bt_off') {
     return (
       <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
-        <AddDeviceHeader onBack={handleClose} />
+        <AddDeviceHeader onBack={handleClose} onScanQr={openQr} scanQrDisabled />
         <div className="flex-1 flex flex-col items-center px-6 text-center pt-6">
           <h2 className="text-headline-md font-bold text-white mb-2">Turn on Bluetooth</h2>
           <p className="text-body-md text-ink-6 max-w-[320px] mb-8">
@@ -183,10 +193,7 @@ export default function ScanDevicesScreen(p: Props) {
             <BluetoothOffIllustration />
           </div>
         </div>
-        <div className="px-6 pb-10 safe-area-bottom">
-          <p className="text-center text-body-md text-ink-6 mb-4">Can&apos;t use Bluetooth? Scan the QR code instead.</p>
-          <ScanQrCta onClick={openQr} />
-        </div>
+        <div className="pb-10 safe-area-bottom" />
       </div>
     )
   }
@@ -199,14 +206,14 @@ export default function ScanDevicesScreen(p: Props) {
           <p className="text-body-lg text-white">Checking Bluetooth…</p>
         </div>
       )}
-      <AddDeviceHeader onBack={handleClose} />
+      <AddDeviceHeader onBack={handleClose} onScanQr={openQr} />
 
       <div className="flex-1 min-h-0 flex flex-col px-6">
         <div className={`flex flex-col items-center shrink-0 ${hasDevices ? 'pt-1 pb-3' : 'flex-1 justify-center'}`}>
           {!hasDevices && !hasError && (
             <div className="text-center mb-6 px-2">
               <p className="text-headline-md font-bold text-white mb-2">Searching for nearby devices...</p>
-              <p className="text-body-md text-ink-6">Keep your phone near the Sierro device while we search.</p>
+              <p className="text-body-md text-ink-6">Keep your phone near the Sierro device and make sure it&apos;s powered on.</p>
             </div>
           )}
 
@@ -268,10 +275,6 @@ export default function ScanDevicesScreen(p: Props) {
               {hasError ? 'Search Again' : 'Search for Devices'}
             </button>
           )}
-          <p className="text-center text-body-md text-ink-6 mb-4">
-            Can&apos;t find your device? Scan the QR code instead
-          </p>
-          <ScanQrCta onClick={openQr} />
         </div>
       </div>
     </div>

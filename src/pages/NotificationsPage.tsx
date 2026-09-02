@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { AlertTriangle, Zap, X } from 'lucide-react'
 import Icon from '../components/Icon'
+import notificationsEmptyArt from '../assets/illustrations/notifications-empty.png'
 import { useDeviceStore } from '../stores/deviceStore'
 import { useAlarmDismissStore, alarmKey } from '../stores/alarmDismissStore'
 import { dedupeAndFilterAlarms } from '../utils/alarmText'
@@ -102,7 +103,8 @@ export default function NotificationsPage() {
   return (
     <div className="h-full flex flex-col bg-ink-12 overflow-hidden">
       {/* Header */}
-      <div className="px-5 pt-4 pb-3 safe-area-top flex items-center gap-3">
+      {/* Title is centred in the bar with the back button floated left (design p20). */}
+      <div className="px-5 pt-4 pb-3 safe-area-top grid grid-cols-[40px_1fr_40px] items-center gap-3">
         <button
           onClick={() => navigate(-1)}
           className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-white active:scale-95 transition-transform before:absolute before:content-[''] before:-inset-1.5"
@@ -110,25 +112,35 @@ export default function NotificationsPage() {
         >
           <Icon name="chevron-left" size={20} />
         </button>
-        <div className="flex-1">
-          <h2 className="text-lg font-bold text-ink-1">Notifications</h2>
+        <div className="text-center">
+          <h2 className="text-title-lg font-semibold text-ink-1">Notifications</h2>
           {visibleAlarms.length > 0 && (
             <p className="text-caption text-danger">{visibleAlarms.length} active now</p>
           )}
         </div>
+        <div aria-hidden className="w-10 h-10" />
       </div>
 
       {/* List */}
       <div className="flex-1 overflow-y-auto scrollbar-hide">
-        {/* Empty state — design p20: gray square then "No notifications" below */}
+        {/* Empty state — Handoff `A_1.2_Notifications -v Empty State` */}
         {visibleAlarms.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center justify-center h-full text-center px-6"
+            className="flex flex-col items-center justify-center h-full text-center px-8"
           >
-            <div className="w-40 h-40 rounded-l bg-ink-9" />
-            <p className="text-body-md text-ink-6 mt-4">No notifications</p>
+            <img
+              src={notificationsEmptyArt}
+              alt=""
+              aria-hidden
+              className="w-[172px] h-[172px] object-contain select-none pointer-events-none"
+              draggable={false}
+            />
+            <h3 className="text-headline-md font-semibold text-ink-1 mt-6 mb-2">You&apos;re all caught up</h3>
+            <p className="text-body-lg text-ink-7 leading-relaxed max-w-[300px]">
+              Battery alerts, outage notifications, and device updates will appear here.
+            </p>
           </motion.div>
         )}
 

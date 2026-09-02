@@ -1,8 +1,10 @@
 {
-  "version": "4.7.50",
-  "build": 2772,
+  "version": "4.7.51",
+  "build": 2773,
   "date": "2026-09-02",
   "changelog": [
-    "Replace lucide with design SVG icons on white-on-dark controls; Profile Token B circles; list glyph 20."
+    "Handoff empty states: honeycomb/notification/insights art, new titles and subtitles.",
+    "Notifications title centred; Insights empty state gains an Add Device CTA.",
+    "Add Device: Scan QR moved to the header (disabled when BT is off/denied); permission denial is now a full page."
   ]
 }
