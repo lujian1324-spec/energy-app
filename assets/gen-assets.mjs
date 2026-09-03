@@ -1,56 +1,75 @@
 import sharp from 'sharp'
+import { readFileSync, mkdirSync } from 'fs'
+import { dirname } from 'path'
 
-const BLACK = '#0A0A0A', WHITE = '#FFFFFF'
-const buf = s => Buffer.from(s)
+function extractPng(svgPath) {
+  const svg = readFileSync(svgPath, 'utf8')
+  const m = svg.match(/(?:xlink:)?href="data:image\/png;base64,([^"]+)"/)
+  if (!m) throw new Error(`no embedded png in ${svgPath}`)
+  return Buffer.from(m[1], 'base64')
+}
 
-// 白底居中 SIERRO 字标（用于图标与启动图）
-const wordmarkSVG = (w, h, { transparent = false } = {}) => {
-  const fontPx = Math.round(Math.min(w, h) * 0.11)
-  const ls = Math.max(2, Math.round(fontPx * 0.08))
-  const bg = transparent ? '' : `<rect width="${w}" height="${h}" fill="${WHITE}"/>`
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
-    ${bg}
-    <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central"
-      font-family="Liberation Sans, Arial, DejaVu Sans, sans-serif"
-      font-size="${fontPx}" font-weight="700" letter-spacing="${ls}"
-      fill="${BLACK}">SIERRO</text>
-  </svg>`
+const WHITE = { r: 255, g: 255, b: 255, alpha: 1 }
+const BLACK = { r: 0, g: 0, b: 0, alpha: 1 }
+const CLEAR = { r: 0, g: 0, b: 0, alpha: 0 }
+
+const wordWhite = extractPng('public/logo white font.svg')
+const wordBlack = extractPng('public/logo back font.svg')
+const sqWob = extractPng('public/logo white font black background.svg')
+extractPng('public/logo black font white background.svg')
+
+async function scaleSquare(src, size, bg) {
+  return sharp(src)
+    .resize(size, size, { fit: 'contain', background: bg })
+    .png()
+    .toBuffer()
 }
-// 方形图标：字标占 ~72% 宽；自适应前景：透明底、字标缩进安全区（~48% 宽，圆形遮罩不裁）
-const squareIcon = (size, { transparent = false, widthFrac = 0.72 } = {}) => {
-  const fontPx = Math.round(size * widthFrac / 4.6)  // "SIERRO" 约 4.6 字宽
-  const ls = Math.max(2, Math.round(fontPx * 0.09))
-  const bg = transparent ? '' : `<rect width="${size}" height="${size}" fill="${WHITE}"/>`
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-    ${bg}
-    <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central"
-      font-family="Liberation Sans, Arial, DejaVu Sans, sans-serif"
-      font-size="${fontPx}" font-weight="700" letter-spacing="${ls}"
-      fill="${BLACK}">SIERRO</text>
-  </svg>`
+
+async function splash(w, h) {
+  const meta = await sharp(wordBlack).metadata()
+  const markH = Math.max(1, Math.round(Math.min(w, h) * 0.11))
+  const markW = Math.max(1, Math.round(markH * (meta.width / meta.height)))
+  const mark = await sharp(wordBlack).resize(markW, markH).png().toBuffer()
+  return sharp({ create: { width: w, height: h, channels: 4, background: WHITE } })
+    .composite([{ input: mark, gravity: 'centre' }])
+    .png()
+    .toBuffer()
 }
-const png = (svg, file) => sharp(buf(svg)).png().toFile(file)
+
+async function adaptiveFg(size, wordBuf, frac = 0.46) {
+  const meta = await sharp(wordBuf).metadata()
+  const markW = Math.max(1, Math.round(size * frac))
+  const markH = Math.max(1, Math.round(markW * (meta.height / meta.width)))
+  const mark = await sharp(wordBuf).resize(markW, markH).png().toBuffer()
+  return sharp({ create: { width: size, height: size, channels: 4, background: CLEAR } })
+    .composite([{ input: mark, gravity: 'centre' }])
+    .png()
+    .toBuffer()
+}
+
+async function write(buf, file) {
+  mkdirSync(dirname(file), { recursive: true })
+  await sharp(buf).toFile(file)
+}
 
 const R = 'android/app/src/main/res'
 const jobs = []
 
-// ── iOS ──
-jobs.push(png(squareIcon(1024, { widthFrac: 0.72 }), 'ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png'))
+jobs.push(write(await scaleSquare(sqWob, 1024, BLACK), 'ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png'))
 for (const f of ['splash-2732x2732.png', 'splash-2732x2732-1.png', 'splash-2732x2732-2.png'])
-  jobs.push(png(wordmarkSVG(2732, 2732), `ios/App/App/Assets.xcassets/Splash.imageset/${f}`))
+  jobs.push(write(await splash(2732, 2732), `ios/App/App/Assets.xcassets/Splash.imageset/${f}`))
 
-// ── Android launcher icons (legacy square + round) ──
 const launcher = { mdpi: 48, hdpi: 72, xhdpi: 96, xxhdpi: 144, xxxhdpi: 192 }
 for (const [d, s] of Object.entries(launcher)) {
-  jobs.push(png(squareIcon(s, { widthFrac: 0.72 }), `${R}/mipmap-${d}/ic_launcher.png`))
-  jobs.push(png(squareIcon(s, { widthFrac: 0.62 }), `${R}/mipmap-${d}/ic_launcher_round.png`))
+  const buf = await scaleSquare(sqWob, s, BLACK)
+  jobs.push(write(buf, `${R}/mipmap-${d}/ic_launcher.png`))
+  jobs.push(write(buf, `${R}/mipmap-${d}/ic_launcher_round.png`))
 }
-// ── Android adaptive foreground (transparent, safe-zone) ──
+
 const fg = { mdpi: 108, hdpi: 162, xhdpi: 216, xxhdpi: 324, xxxhdpi: 432 }
 for (const [d, s] of Object.entries(fg))
-  jobs.push(png(squareIcon(s, { transparent: true, widthFrac: 0.46 }), `${R}/mipmap-${d}/ic_launcher_foreground.png`))
+  jobs.push(write(await adaptiveFg(s, wordWhite, 0.46), `${R}/mipmap-${d}/ic_launcher_foreground.png`))
 
-// ── Android splashes (exact per-folder dims) ──
 const splashes = {
   'drawable/splash.png': [480, 320],
   'drawable-port-mdpi/splash.png': [320, 480], 'drawable-port-hdpi/splash.png': [480, 800],
@@ -61,7 +80,13 @@ const splashes = {
   'drawable-land-xxxhdpi/splash.png': [1920, 1280],
 }
 for (const [f, [w, h]] of Object.entries(splashes))
-  jobs.push(png(wordmarkSVG(w, h), `${R}/${f}`))
+  jobs.push(write(await splash(w, h), `${R}/${f}`))
+
+jobs.push((async () => {
+  const buf = await adaptiveFg(1000, wordBlack, 0.46)
+  mkdirSync(`${R}/drawable-nodpi`, { recursive: true })
+  await sharp(buf).flatten({ background: WHITE }).png().toFile(`${R}/drawable-nodpi/splash_logo.png`)
+})())
 
 await Promise.all(jobs)
-console.log(`generated ${jobs.length} icon/splash files`)
+console.log(`generated ${jobs.length} icon/splash files from public/ design SVGs`)

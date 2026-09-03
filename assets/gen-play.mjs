@@ -1,14 +1,32 @@
 import sharp from 'sharp'
-const BLACK='#0A0A0A', WHITE='#FFFFFF'
-const buf=s=>Buffer.from(s)
-const text=(w,h,fontPx,ls)=>`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
-  <rect width="${w}" height="${h}" fill="${WHITE}"/>
-  <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central"
-    font-family="Liberation Sans, Arial, DejaVu Sans, sans-serif"
-    font-size="${fontPx}" font-weight="700" letter-spacing="${ls}" fill="${BLACK}">SIERRO</text>
-</svg>`
-// Play 商店图标 512x512（32-bit PNG，无 alpha 更稳妥 → flatten 白底）
-await sharp(buf(text(512,512,66,6))).flatten({background:WHITE}).png().toFile('play-assets/play-store-icon-512.png')
-// 特色图 Feature graphic 1024x500
-await sharp(buf(text(1024,500,120,10))).flatten({background:WHITE}).png().toFile('play-assets/feature-graphic-1024x500.png')
-console.log('play store assets generated')
+import { readFileSync } from 'fs'
+
+function extractPng(svgPath) {
+  const svg = readFileSync(svgPath, 'utf8')
+  const m = svg.match(/(?:xlink:)?href="data:image\/png;base64,([^"]+)"/)
+  if (!m) throw new Error(`no embedded png in ${svgPath}`)
+  return Buffer.from(m[1], 'base64')
+}
+
+const WHITE = { r: 255, g: 255, b: 255, alpha: 1 }
+const BLACK = { r: 0, g: 0, b: 0, alpha: 1 }
+const sqWob = extractPng('public/logo white font black background.svg')
+const sqBow = extractPng('public/logo black font white background.svg')
+
+await sharp(sqWob)
+  .resize(512, 512, { fit: 'contain', background: BLACK })
+  .flatten({ background: BLACK })
+  .png()
+  .toFile('play-assets/play-store-icon-512.png')
+
+const box = Math.round(Math.min(1024, 500) * 0.72)
+const mark = await sharp(sqBow)
+  .resize(box, box, { fit: 'contain', background: WHITE })
+  .png()
+  .toBuffer()
+await sharp({ create: { width: 1024, height: 500, channels: 3, background: WHITE } })
+  .composite([{ input: mark, gravity: 'centre' }])
+  .png()
+  .toFile('play-assets/feature-graphic-1024x500.png')
+
+console.log('play store assets generated from public/ design SVGs')
