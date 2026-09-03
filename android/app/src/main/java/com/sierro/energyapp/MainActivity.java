@@ -36,7 +36,7 @@ public class MainActivity extends BridgeActivity {
         SplashScreen.installSplashScreen(this);
         // After the splash screen dismisses, switch the Activity theme from
         // NoActionBarLaunch (which has android:background="@drawable/splash" —
-        // the Sierro wordmark) to NoActionBar (which uses the dark #141414
+        // the Sierro wordmark) to NoActionBar (which uses the dark #0b0b0b
         // appBackground).  If we don't do this, the splash drawable stays as
         // the window background forever; normally it's hidden behind the
         // opaque WebView, but when the soft keyboard appears KeyboardResize.Body
@@ -52,8 +52,8 @@ public class MainActivity extends BridgeActivity {
         // Belt-and-suspenders for the same bug: force the window background to the dark
         // app color programmatically, so no @drawable/splash can ever be revealed behind
         // the WebView when KeyboardResize.Body shrinks it — independent of theme timing.
-        getWindow().setBackgroundDrawable(new ColorDrawable(0xFF141414));
-        // Light icons on our dark #141414 chrome (replaces theme statusBarColor /
+        getWindow().setBackgroundDrawable(new ColorDrawable(0xFF0B0B0B));
+        // Light icons on our dark #0b0b0b chrome (replaces theme statusBarColor /
         // navigationBarColor, which are deprecated on Android 15).
         WindowInsetsControllerCompat insetsController =
                 WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());

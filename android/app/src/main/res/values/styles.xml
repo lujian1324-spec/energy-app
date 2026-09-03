@@ -16,7 +16,7 @@
         <item name="android:windowBackground">@color/appBackground</item>
         <!-- 显式把窗口底色钉成深色：splash（postSplashScreenTheme）交接到本主题后，
              即使 KeyboardResize.Body 键盘缩小 WebView，露出的也只是深色底，绝不会闪出
-             白底 splash。与 MainActivity 里 getWindow().setBackgroundDrawable(#141414) 双保险。 -->
+             白底 splash。与 MainActivity 里 getWindow().setBackgroundDrawable(#0b0b0b) 双保险。 -->
         <item name="android:background">@color/appBackground</item>
         <!-- Edge-to-edge: do NOT set android:statusBarColor / navigationBarColor
              (deprecated on Android 15). MainActivity uses EdgeToEdge.enable() +
