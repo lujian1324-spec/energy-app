@@ -13,7 +13,7 @@ export async function setupStatusBar(): Promise<void> {
     const { StatusBar, Style } = await import('@capacitor/status-bar')
     await StatusBar.setStyle({ style: Style.Dark })  // Dark 背景 → 浅色内容
     if (Capacitor.getPlatform() === 'android') {
-      await StatusBar.setBackgroundColor({ color: '#141414' })
+      await StatusBar.setBackgroundColor({ color: '#0b0b0b' })
       // Match MainActivity EdgeToEdge: WebView is full-bleed; CSS vars inset the UI.
       // overlay:false fights that model and often no-ops on API 35+.
       await StatusBar.setOverlaysWebView({ overlay: true })

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- App 深色底（= 设计系统 ink-12），用于窗口底色/状态栏/导航栏 -->
-    <color name="appBackground">#141414</color>
+    <color name="appBackground">#0b0b0b</color>
     <!-- 启动图背景（白底黑字 SIERRO 品牌启动图）— Android 12+ 平台 splash 的背景色 -->
     <color name="splashBackground">#FFFFFF</color>
     <color name="colorPrimary">#01D6BE</color>
