@@ -139,7 +139,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-ink-12 flex flex-col px-6 pb-8 safe-area-top safe-area-bottom">
       <div className="flex-1 flex flex-col justify-center">
-        <div className="flex justify-center">
+        <div className="hidden" aria-hidden="true">
           <img
             src={`${import.meta.env.BASE_URL}logo%20white%20font.svg`}
             alt="Sierro"
