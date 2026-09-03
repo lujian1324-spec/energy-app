@@ -1,11 +1,11 @@
 /** @type {import('tailwindcss').Config}
  *
- *  ┌──────────────────────────────────────────────────────────────┐
+ *  ┌─────────────────────────────────────────────────────────────┐
  *  │  Sierro Design System — LOCKED TOKENS (Figma Handoff)         │
  *  │  These values come from the official Figma Design System.     │
  *  │  DO NOT change them arbitrarily when adjusting the app.       │
  *  │  See CLAUDE.md › "Design System (locked)" for the full spec.  │
- *  └──────────────────────────────────────────────────────────────┘
+ *  └─────────────────────────────────────────────────────────────┘
  */
 export default {
   content: [
@@ -87,6 +87,7 @@ export default {
           darker: '#591511',
         },
         // ── Black / Neutral scale (black-1 … black-13) ──
+        // ink-12 / bg-base match JPEG empty-state matte (#0b0b0b) so illustrations have no halo.
         ink: {
           1: '#FFFFFF',
           2: '#FCFCFC',
@@ -99,12 +100,12 @@ export default {
           9: '#454545',
           10: '#262626',
           11: '#1F1F1F',
-          12: '#141414',
+          12: '#0b0b0b',
           13: '#000000',
         },
         // ── Semantic aliases used across the existing app ──
         accent: '#01D6BE',
-        'bg-base': '#141414',   // ink-12
+        'bg-base': '#0b0b0b',   // ink-12
         'bg-card': '#262626',   // ink-10
         'bg-card2': '#454545',   // ink-9 (was off-palette #333333)
         'txt-primary': '#FFFFFF',
