@@ -1,8 +1,8 @@
 {
-  "version": "4.7.54",
-  "build": 2776,
+  "version": "4.7.55",
+  "build": 2777,
   "date": "2026-09-03",
   "changelog": [
-    "Replace logos with design SVGs, sized per slot."
+    "Hide in-page login wordmark."
   ]
 }
