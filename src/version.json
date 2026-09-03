@@ -1,8 +1,8 @@
 {
-  "version": "4.7.51",
-  "build": 2773,
+  "version": "4.7.52",
+  "build": 2774,
   "date": "2026-09-02",
   "changelog": [
-    "Design-system empty states and illustrations; filled Large primary CTAs."
+    "Fix iOS empty-state illustrations: JPEG-in-SVG instead of broken WebP."
   ]
 }
