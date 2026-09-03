@@ -53,7 +53,7 @@ export default function EnableNotiSheet({
         exit={{ y: 280, opacity: 0 }}
         transition={{ type: 'spring', damping: 28, stiffness: 320 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full bg-ink-10 rounded-t-[28px] px-6 pt-4 pb-10 safe-area-bottom"
+        className="w-full bg-ink-12 rounded-t-[28px] px-6 pt-4 pb-10 safe-area-bottom"
       >
         <div className="flex justify-end mb-2">
           <button

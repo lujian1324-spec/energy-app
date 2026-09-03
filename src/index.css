@@ -17,7 +17,7 @@
   --clr-gold: #FFD700;
 
   /* 深色背景层次 */
-  --bg-base: #141414;
+  --bg-base: #0b0b0b;
   --bg-surface: #1A1A1A;
   --bg-card: #262626;
   --bg-card-hover: #333333;
@@ -378,7 +378,7 @@ textarea.text-body-lg {
 
 /* Hide Android WebView default media play overlay on the QR scanner <video> (APP-003) */
 video.qr-scan-video {
-  background: #141414;
+  background: #0b0b0b;
   object-fit: cover;
   -webkit-playsinline: true;
 }

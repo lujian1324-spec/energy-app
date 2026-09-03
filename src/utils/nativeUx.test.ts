@@ -31,6 +31,6 @@ describe('setupStatusBar Android', () => {
     const { setupStatusBar } = await import('./nativeUx')
     await setupStatusBar()
     expect(setOverlaysWebView).toHaveBeenCalledWith({ overlay: true })
-    expect(setBackgroundColor).toHaveBeenCalledWith({ color: '#141414' })
+    expect(setBackgroundColor).toHaveBeenCalledWith({ color: '#0b0b0b' })
   })
 })
