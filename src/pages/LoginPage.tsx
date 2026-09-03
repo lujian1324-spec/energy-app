@@ -139,6 +139,14 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-ink-12 flex flex-col px-6 pb-8 safe-area-top safe-area-bottom">
       <div className="flex-1 flex flex-col justify-center">
+        <div className="flex justify-center">
+          <img
+            src={`${import.meta.env.BASE_URL}logo%20white%20font.svg`}
+            alt="Sierro"
+            className="h-12 w-auto object-contain mb-8 select-none"
+            draggable={false}
+          />
+        </div>
         <div className="flex border-b border-ink-9 mb-6">
           {(['username', 'email'] as Tab[]).map(t => (
             <button
