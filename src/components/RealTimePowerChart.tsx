@@ -409,10 +409,10 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
               key={item.key}
               onClick={() => setPowerDataSource(item.key)}
               className={`flex flex-col items-center gap-1 px-4 py-1 rounded-l active:scale-[0.96] transition-[background-color,color,transform] duration-150
-                ${isActive ? 'bg-[#D9D9D9] text-ink-13' : 'text-ink-6 bg-transparent'}`}
+                ${isActive ? 'bg-ink-9 text-ink-1' : 'text-ink-6 bg-transparent'}`}
             >
-              <Icon size={18} className={isActive ? 'text-ink-13' : 'text-ink-6'} />
-              <span className={`text-tiny font-medium ${isActive ? 'text-ink-13' : 'text-ink-6'}`}>
+              <Icon size={18} className={isActive ? 'text-ink-1' : 'text-ink-6'} />
+              <span className={`text-tiny font-medium ${isActive ? 'text-ink-1' : 'text-ink-6'}`}>
                 {item.label}
               </span>
             </button>

@@ -220,13 +220,14 @@ export default function DeviceMonitorPage() {
 
           {/* Input / Output row — three equal-size value cards */}
           <div>
-            <div className="flex items-center gap-1 mb-2">
-              <p className="text-label text-ink-6 flex-1">Input</p>
-              <span className="w-4 flex-shrink-0" />
-              <p className="text-label text-ink-6 flex-1 text-right">Output</p>
+            <div className="grid grid-cols-[1fr_16px_1fr_1fr] gap-2 mb-2">
+              <p className="text-label text-ink-6">Input</p>
+              <span />
+              <span />
+              <p className="text-label text-ink-6">Output</p>
             </div>
             <div className="grid grid-cols-[1fr_16px_1fr_1fr] gap-2 items-stretch">
-              <div className="bg-ink-11 rounded-m px-3 py-3 text-center flex flex-col items-center justify-center">
+              <div className="bg-ink-11 rounded-m px-3 py-3 text-center flex flex-col items-center">
                 <div>
                   <span className="text-title-md font-semibold text-white tnum">{fmtW(acPower)}</span>
                   <span className="text-label text-ink-6">w</span>
@@ -234,18 +235,19 @@ export default function DeviceMonitorPage() {
                 <p className="text-tiny text-ink-7 mt-0.5">AC</p>
               </div>
               <span className="text-ink-7 text-body-md font-semibold self-center text-center">+</span>
-              <div className="bg-ink-11 rounded-m px-3 py-3 text-center flex flex-col items-center justify-center">
+              <div className="bg-ink-11 rounded-m px-3 py-3 text-center flex flex-col items-center">
                 <div>
                   <span className="text-title-md font-semibold text-white tnum">{fmtW(solarPower)}</span>
                   <span className="text-label text-ink-6">w</span>
                 </div>
                 <p className="text-tiny text-ink-7 mt-0.5">Solar</p>
               </div>
-              <div className="bg-ink-11 rounded-m px-3 py-3 text-center flex flex-col items-center justify-center">
+              <div className="bg-ink-11 rounded-m px-3 py-3 text-center flex flex-col items-center">
                 <div>
                   <span className="text-title-md font-semibold text-white tnum">{fmtW(outputPower)}</span>
                   <span className="text-label text-ink-6">w</span>
                 </div>
+                <p className="text-tiny text-ink-7 mt-0.5 invisible">AC</p>
               </div>
             </div>
           </div>
