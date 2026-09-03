@@ -1,8 +1,8 @@
 {
-  "version": "4.7.53",
-  "build": 2775,
+  "version": "4.7.54",
+  "build": 2776,
   "date": "2026-09-03",
   "changelog": [
-    "Match app background to JPEG empty-state matte."
+    "Replace logos with design SVGs, sized per slot."
   ]
 }
