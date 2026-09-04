@@ -56,8 +56,9 @@ const R = 'android/app/src/main/res'
 const jobs = []
 
 jobs.push(write(await scaleSquare(sqWob, 1024, BLACK), 'ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png'))
+// iPhone 15 @3x portrait — square + aspectFill crops the wide wordmark; keep portrait canvas.
 for (const f of ['splash-2732x2732.png', 'splash-2732x2732-1.png', 'splash-2732x2732-2.png'])
-  jobs.push(write(await splash(2732, 2732), `ios/App/App/Assets.xcassets/Splash.imageset/${f}`))
+  jobs.push(write(await splash(1179, 2556), `ios/App/App/Assets.xcassets/Splash.imageset/${f}`))
 
 const launcher = { mdpi: 48, hdpi: 72, xhdpi: 96, xxhdpi: 144, xxxhdpi: 192 }
 for (const [d, s] of Object.entries(launcher)) {

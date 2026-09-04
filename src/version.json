@@ -1,8 +1,8 @@
 {
-  "version": "4.7.56",
-  "build": 2778,
-  "date": "2026-09-03",
+  "version": "4.7.57",
+  "build": 2779,
+  "date": "2026-09-04",
   "changelog": [
-    "Align Device Monitor Input/Output; Real-Time Power selected tab ink-9 gray."
+    "Fix iPhone splash overflow: portrait splash + LaunchScreen aspectFit."
   ]
 }
