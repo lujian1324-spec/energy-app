@@ -2,8 +2,8 @@ import type { CapacitorConfig } from '@capacitor/cli'
 import { KeyboardResize } from '@capacitor/keyboard'
 
 const config: CapacitorConfig = {
-  appId: 'com.sierro.energyapp',
-  appName: 'Sierro',
+  appId: 'com.sierro.energy',
+  appName: 'Sierro Energy',
   webDir: 'dist',
   server: {
     androidScheme: 'https',

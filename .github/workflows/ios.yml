@@ -17,7 +17,7 @@ name: Build iOS App
 #   ASC_API_KEY_P8_BASE64        - the App Store Connect API key (.p8), base64
 # Without the signing secrets the job builds an UNSIGNED simulator app and says so.
 #
-# Bundle id: com.sierro.energyapp (must be registered in App Store Connect first).
+# Bundle id: com.sierro.energy (org Team G2795YVAPF; ASC 6808530922).
 
 on:
   workflow_dispatch:
@@ -136,7 +136,7 @@ jobs:
           /usr/libexec/PlistBuddy -c "Add :signingStyle string manual" "$PLIST"
           /usr/libexec/PlistBuddy -c "Add :uploadSymbols bool true" "$PLIST"
           /usr/libexec/PlistBuddy -c "Add :provisioningProfiles dict" "$PLIST"
-          /usr/libexec/PlistBuddy -c "Add :provisioningProfiles:com.sierro.energyapp string $PROFILE_NAME" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Add :provisioningProfiles:com.sierro.energy string $PROFILE_NAME" "$PLIST"
 
           xcodebuild archive \
             -project App.xcodeproj \
