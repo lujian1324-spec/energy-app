@@ -33,10 +33,10 @@ function FiringAlarmRow({ alarm, onDismiss }: { alarm: FiringAlarm & { title: st
       exit={{ opacity: 0, height: 0, marginTop: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 }}
       onClick={onDismiss}
       aria-label={`Clear alarm: ${title}`}
-      className="w-full text-left flex items-start gap-3 px-4 py-3.5 border-b border-white/[0.06] active:opacity-70 transition-opacity"
+      className="w-full text-left flex items-start gap-3 px-4 py-5 min-h-[68px] border-b border-xs border-ink-9 active:opacity-70 transition-opacity"
       style={{ backgroundColor: cfg.bg }}
     >
-      <div className="mt-0.5 flex-shrink-0" style={{ color: cfg.color }}>
+      <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0 mt-0.5" style={{ color: cfg.color }}>
         <AlertTriangle size={18} />
       </div>
       <div className="flex-1 min-w-0">
@@ -105,13 +105,13 @@ export default function NotificationsPage() {
       <div className="px-5 pt-4 pb-3 safe-area-top flex items-center gap-3">
         <button
           onClick={() => navigate(-1)}
-          className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-white active:scale-95 transition-transform before:absolute before:content-[''] before:-inset-1.5"
+          className="relative w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center text-white active:scale-95 transition-transform before:absolute before:content-[''] before:-inset-1.5"
           aria-label="Back"
         >
-          <Icon name="chevron-left" size={20} />
+          <Icon name="chevron-left" size={24} />
         </button>
         <div className="flex-1">
-          <h2 className="text-lg font-bold text-ink-1">Notifications</h2>
+          <h2 className="text-title-md font-semibold text-white">Notifications</h2>
           {visibleAlarms.length > 0 && (
             <p className="text-caption text-danger">{visibleAlarms.length} active now</p>
           )}
@@ -130,11 +130,11 @@ export default function NotificationsPage() {
             <img
               src={`${import.meta.env.BASE_URL}ds-noti-empty.svg`}
               alt=""
-              className="w-[180px] h-auto select-none"
+              className="w-[200px] h-[200px] object-contain select-none"
               draggable={false}
             />
-            <h2 className="text-headline-md font-semibold text-white mt-6 mb-2">You're all caught up</h2>
-            <p className="text-body-md text-ink-6 max-w-[280px]">
+            <h2 className="text-title-lg font-semibold text-ink-3 mt-6 mb-2">You're all caught up</h2>
+            <p className="text-label text-ink-5 max-w-[280px]">
               Battery alerts, outage notifications, and device updates will appear here.
             </p>
           </motion.div>

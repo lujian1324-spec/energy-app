@@ -1,4 +1,4 @@
-﻿import { motion } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { hapticLight } from '../utils/haptics'
 
 interface ToggleSwitchProps {
@@ -9,7 +9,7 @@ interface ToggleSwitchProps {
   disabled?: boolean
 }
 
-// PRD v1.1 §9.2: Toggle 触控热区 52×32dp (Material 3 规范)
+// Figma: track ~50x28 (outer hot-zone 54x32), thumb 24; On #01D6BE; Off #8C8C8C; Disabled 30%
 export default function ToggleSwitch({
   isOn,
   onToggle,
@@ -18,8 +18,8 @@ export default function ToggleSwitch({
   disabled = false,
 }: ToggleSwitchProps) {
   const dimensions = size === 'sm'
-    ? { width: 52, height: 30, thumb: 24 }
-    : { width: 52, height: 32, thumb: 26 }
+    ? { width: 44, height: 26, thumb: 20 }
+    : { width: 50, height: 28, thumb: 24 }
 
   return (
     <button
@@ -33,25 +33,25 @@ export default function ToggleSwitch({
         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-ink-12
         ${isOn
           ? 'bg-primary'
-          : 'bg-ink-9'
+          : 'bg-ink-7'
         }
-        ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+        ${disabled ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}
       `}
       style={{
         width: dimensions.width,
         height: dimensions.height,
-        minWidth: 52,
+        minWidth: 54,
         minHeight: 32,
       }}
     >
       <motion.div
-        className="absolute top-[3px] rounded-full bg-white shadow-[0_2px_6px_rgba(0,0,0,0.3)]"
+        className="absolute top-[2px] rounded-full bg-white shadow-[0_2px_6px_rgba(0,0,0,0.3)]"
         style={{
           width: dimensions.thumb,
           height: dimensions.thumb,
         }}
         animate={{
-          left: isOn ? `calc(100% - ${dimensions.thumb + 3}px)` : '3px'
+          left: isOn ? `calc(100% - ${dimensions.thumb + 2}px)` : '2px'
         }}
         transition={{ duration: 0.3, ease: 'easeOut' }}
       />

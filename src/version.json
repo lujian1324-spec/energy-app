@@ -1,8 +1,8 @@
 {
-  "version": "4.7.57",
-  "build": 2779,
-  "date": "2026-09-04",
+  "version": "4.7.58",
+  "build": 2780,
+  "date": "2026-09-05",
   "changelog": [
-    "Fix iPhone splash overflow: portrait splash + LaunchScreen aspectFit."
+    "Align UI to Figma handoff specs (visual only)"
   ]
 }

@@ -277,16 +277,16 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
         <div className="px-4 pt-4 pb-4 safe-area-top flex items-center justify-between">
           <button
             onClick={handleCancel}
-            className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center"
+            className="w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center"
           >
-            <Icon name="chevron-left" size={20} />
+            <Icon name="chevron-left" size={24} />
           </button>
           <span className="text-title-lg font-semibold text-white">{title}</span>
           {editingField !== 'email' && editingField !== 'password' ? (
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center disabled:opacity-40"
+              className="w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center disabled:opacity-40"
             >
               <Icon name="check" size={20} />
             </button>
@@ -420,21 +420,21 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
       <div className="px-4 pt-4 pb-2 safe-area-top flex items-center justify-between relative">
         <button
           onClick={onBack}
-          className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center"
+          className="w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center"
         >
-          <Icon name="chevron-left" size={20} />
+          <Icon name="chevron-left" size={24} />
         </button>
 
-        <span className="text-title-lg font-semibold text-white absolute left-1/2 -translate-x-1/2">
+        <span className="text-title-md font-semibold text-white absolute left-1/2 -translate-x-1/2">
           Profile
         </span>
 
         <div className="relative">
           <button
             onClick={() => setShowMenu((v) => !v)}
-            className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center"
+            className="w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center"
           >
-            <Icon name="more-hor" size={20} />
+            <Icon name="more-hor" size={24} />
           </button>
 
           {/* Dropdown menu */}

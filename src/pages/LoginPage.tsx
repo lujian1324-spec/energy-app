@@ -13,7 +13,7 @@ type Tab = 'email' | 'username'
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const FIELD_CLASS =
-  'flex items-center gap-3 bg-ink-10 rounded-m px-4 py-4 mb-3 min-h-[56px] h-[56px] box-border focus-within:ring-1 focus-within:ring-inset focus-within:ring-primary transition-shadow'
+  'flex items-center gap-3 bg-ink-10 rounded-l px-4 py-4 mb-3 min-h-[56px] h-[56px] box-border focus-within:ring-1 focus-within:ring-inset focus-within:ring-primary transition-shadow'
 
 export default function LoginPage() {
   const { loading, isAuthenticated, login } = useAuthStore()

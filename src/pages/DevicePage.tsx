@@ -372,20 +372,20 @@ export default function DevicePage() {
       >
         <div className="flex justify-between items-center mb-3">
           <h1 className="text-display font-display text-white">Device</h1>
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-3">
             <button
               onClick={handleBleScan}
               aria-label="Add device"
-              className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-white hover:bg-ink-9 transition-colors active:scale-95"
+              className="w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center text-white hover:bg-ink-9 transition-colors active:scale-95"
             >
-              <Icon name="add" size={20} />
+              <Icon name="add" size={24} />
             </button>
             <button
               onClick={() => navigate('/notifications')}
               aria-label="Notifications"
-              className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-white hover:bg-ink-9 transition-colors active:scale-95"
+              className="relative w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center text-white hover:bg-ink-9 transition-colors active:scale-95"
             >
-              <Icon name="bell" size={20} />
+              <Icon name="bell" size={24} />
               {activeAlarmCount > 0 && (
                 <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-danger border-2 border-ink-12" />
               )}

@@ -105,7 +105,7 @@ export default function ForgotPasswordPage() {
       <div className="px-4 pt-5 safe-area-top shrink-0">
         <button
           onClick={() => (step === 'reset' ? setStep('request') : navigate(-1))}
-          className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-white active:scale-95 transition-transform"
+          className="w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center text-white active:scale-95 transition-transform"
           aria-label="Back"
         >
           <Icon name="chevron-left" size={20} />

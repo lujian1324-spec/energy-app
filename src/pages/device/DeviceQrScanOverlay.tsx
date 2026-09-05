@@ -44,7 +44,7 @@ export default function DeviceQrScanOverlay({
         <h3 className="text-lg font-bold text-ink-1">Scan QR Code</h3>
         <button onClick={() => { stopQrScan(); setQrVideoReady(false); setShowQrScan(false); setQrResult(null); setQrError(null) }}
           aria-label="Close"
-          className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-white before:absolute before:content-[''] before:-inset-1.5">
+          className="relative w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center text-white before:absolute before:content-[''] before:-inset-1.5">
           <Icon name="close" size={20} />
         </button>
       </div>

@@ -56,7 +56,7 @@ export default function ProvisioningFlowScreen(p: FlowProps) {
         <button
           onClick={() => setUiScreen('naming')}
           aria-label="Back"
-          className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center before:absolute before:content-[''] before:-inset-1"
+          className="relative w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center before:absolute before:content-[''] before:-inset-1"
         >
           <Icon name="chevron-left" size={20} />
         </button>

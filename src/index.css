@@ -17,17 +17,17 @@
   --clr-gold: #FFD700;
 
   /* 深色背景层次 */
-  --bg-base: #0b0b0b;
+  --bg-base: #141414;
   --bg-surface: #1A1A1A;
   --bg-card: #262626;
-  --bg-card-hover: #333333;
+  --bg-card-hover: #454545;
   --bg-overlay: #1C1C1C;
   --bg-input: #262626;
 
   /* 文字系统 (WCAG AA 合规) */
   --txt-primary: #FFFFFF;
-  --txt-secondary: #A0A0A5;
-  --txt-muted: #636366;
+  --txt-secondary: #BFBFBF;
+  --txt-muted: #8C8C8C;
   --txt-label: #AEAEB2;
 
   /* 边框 */
@@ -378,7 +378,7 @@ textarea.text-body-lg {
 
 /* Hide Android WebView default media play overlay on the QR scanner <video> (APP-003) */
 video.qr-scan-video {
-  background: #0b0b0b;
+  background: #141414;
   object-fit: cover;
   -webkit-playsinline: true;
 }

@@ -296,9 +296,9 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const BackBtn = ({ to }: { to: Screen | 'parent' }) => (
     <button
       onClick={() => (to === 'parent' ? handleBack() : setScreen(to as Screen))}
-      className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center active:scale-95 transition-transform flex-shrink-0"
+      className="w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center active:scale-95 transition-transform flex-shrink-0"
     >
-      <Icon name="chevron-left" size={20} />
+      <Icon name="chevron-left" size={24} />
     </button>
   )
 
@@ -773,7 +773,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
       <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
         <BackBtn to="parent" />
-        <h1 className="text-title-lg font-semibold text-white absolute left-1/2 -translate-x-1/2">
+        <h1 className="text-title-md font-semibold text-white absolute left-1/2 -translate-x-1/2">
           Device Settings
         </h1>
       </div>

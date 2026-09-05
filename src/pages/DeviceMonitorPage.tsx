@@ -122,10 +122,10 @@ export default function DeviceMonitorPage() {
       <div className="px-4 pt-5 pb-3 safe-area-top flex items-center gap-3">
         <button
           onClick={backToDevices}
-          className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center active:scale-95 transition-transform flex-shrink-0 before:absolute before:content-[''] before:-inset-1"
+          className="relative w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center active:scale-95 transition-transform flex-shrink-0 before:absolute before:content-[''] before:-inset-1"
           aria-label="Back"
         >
-          <Icon name="chevron-left" size={20} />
+          <Icon name="chevron-left" size={24} />
         </button>
 
         {/* Device name + dropdown */}
@@ -140,11 +140,11 @@ export default function DeviceMonitorPage() {
               </span>
               <Icon
                 name="chevron-down"
-                size={16}
+                size={20}
                 className={`transition-transform duration-200 ${showDeviceDropdown ? 'rotate-180' : ''}`}
               />
             </div>
-            <span className="text-label text-ink-7">
+            <span className="text-tiny text-ink-5">
               {isOnline ? 'Connected' : 'Disconnected'}
             </span>
           </button>
@@ -177,17 +177,17 @@ export default function DeviceMonitorPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => navigate(`/device/${id}/settings`)}
-            className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center active:scale-95 transition-transform before:absolute before:content-[''] before:-inset-1"
+            className="relative w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center active:scale-95 transition-transform before:absolute before:content-[''] before:-inset-1"
             aria-label="Device settings"
           >
-            <Icon name="setting" size={20} />
+            <Icon name="setting" size={24} />
           </button>
           <button
             onClick={() => navigate('/notifications')}
-            className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-white active:scale-95 transition-transform before:absolute before:content-[''] before:-inset-1"
+            className="relative w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center text-white active:scale-95 transition-transform before:absolute before:content-[''] before:-inset-1"
             aria-label="Notifications"
           >
-            <Icon name="bell" size={20} />
+            <Icon name="bell" size={24} />
             {device?.isAlarmed && (
               <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-danger border-2 border-ink-12" />
             )}
@@ -218,36 +218,33 @@ export default function DeviceMonitorPage() {
             />
           </div>
 
-          {/* Input / Output row — three equal-size value cards */}
+          {/* Input / Output — Output flush right; values baseline (Figma B_1.1) */}
           <div>
-            <div className="grid grid-cols-[1fr_16px_1fr_1fr] gap-2 mb-2">
-              <p className="text-label text-ink-6">Input</p>
-              <span />
-              <span />
-              <p className="text-label text-ink-6">Output</p>
+            <div className="flex items-end justify-between gap-2 mb-2">
+              <p className="text-caption text-ink-3">Input</p>
+              <p className="text-caption text-ink-3">Output</p>
             </div>
-            <div className="grid grid-cols-[1fr_16px_1fr_1fr] gap-2 items-stretch">
-              <div className="bg-ink-11 rounded-m px-3 py-3 text-center flex flex-col items-center">
-                <div>
-                  <span className="text-title-md font-semibold text-white tnum">{fmtW(acPower)}</span>
-                  <span className="text-label text-ink-6">w</span>
+            <div className="flex items-stretch gap-2">
+              <div className="flex-1 border-xs border-ink-9 rounded-m px-3 py-3 text-center flex flex-col items-center justify-center">
+                <div className="flex items-baseline gap-0.5">
+                  <span className="text-body-lg font-semibold text-white tnum">{fmtW(acPower)}</span>
+                  <span className="text-tiny text-ink-5">W</span>
                 </div>
                 <p className="text-tiny text-ink-7 mt-0.5">AC</p>
               </div>
-              <span className="text-ink-7 text-body-md font-semibold self-center text-center">+</span>
-              <div className="bg-ink-11 rounded-m px-3 py-3 text-center flex flex-col items-center">
-                <div>
-                  <span className="text-title-md font-semibold text-white tnum">{fmtW(solarPower)}</span>
-                  <span className="text-label text-ink-6">w</span>
+              <span className="text-ink-7 text-body-md font-semibold self-center">+</span>
+              <div className="flex-1 border-xs border-ink-9 rounded-m px-3 py-3 text-center flex flex-col items-center justify-center">
+                <div className="flex items-baseline gap-0.5">
+                  <span className="text-body-lg font-semibold text-white tnum">{fmtW(solarPower)}</span>
+                  <span className="text-tiny text-ink-5">W</span>
                 </div>
                 <p className="text-tiny text-ink-7 mt-0.5">Solar</p>
               </div>
-              <div className="bg-ink-11 rounded-m px-3 py-3 text-center flex flex-col items-center">
-                <div>
-                  <span className="text-title-md font-semibold text-white tnum">{fmtW(outputPower)}</span>
-                  <span className="text-label text-ink-6">w</span>
+              <div className="w-[106px] shrink-0 border-xs border-ink-9 rounded-m px-3 py-3 text-center flex flex-col items-center justify-center">
+                <div className="flex items-baseline gap-0.5">
+                  <span className="text-body-lg font-semibold text-white tnum">{fmtW(outputPower)}</span>
+                  <span className="text-tiny text-ink-5">W</span>
                 </div>
-                <p className="text-tiny text-ink-7 mt-0.5 invisible">AC</p>
               </div>
             </div>
           </div>
