@@ -1,7 +1,7 @@
 /**
- * Low-battery banner body copy (design p6).
- * A real duration → "{name} • Estimated remaining time: {formatted}"
- * Missing / "--" / leftover "remaining" junk → "{name} • Low battery" (never "--").
+ * Low-battery banner body copy (Figma p6 / Sierro_Handoff).
+ * With duration → "{name} • Battery below 30%, estimated remaining time: {formatted}"
+ * Missing / "--" / leftover "remaining" junk → "{name} • Battery below 30%" (never "--").
  */
 export function formatLowBatteryBannerCopy(
   name: string,
@@ -11,7 +11,7 @@ export function formatLowBatteryBannerCopy(
   const formatted = raw.replace(/\s*remaining\s*$/i, '').trim()
   const looksLikeDuration = /^\d+\s*h\s*\d+\s*m$/i.test(formatted)
   if (!looksLikeDuration) {
-    return `${name} • Low battery`
+    return `${name} • Battery below 30%`
   }
-  return `${name} • Estimated remaining time: ${formatted}`
+  return `${name} • Battery below 30%, estimated remaining time: ${formatted}`
 }
