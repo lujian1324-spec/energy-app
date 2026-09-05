@@ -176,7 +176,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   })
 
   const fmtCountdown = (ms: number): string => {
-    if (ms <= 0) return '鈥?
+    if (ms <= 0) return '—'
     const totalSec = Math.floor(ms / 1000)
     const h = Math.floor(totalSec / 3600)
     const m = Math.floor((totalSec % 3600) / 60)
@@ -185,7 +185,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   }
 
   const fmtTime = (d: Date | null): string => {
-    if (!d) return '鈥?
+    if (!d) return '—'
     return d.toLocaleTimeString()
   }
 
@@ -756,7 +756,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 <div className="flex items-center justify-between">
                   <span className="text-body-md text-ink-7">Last sent</span>
                   <div className="text-right">
-                    <p className="text-caption text-ink-7">{lastSentLabel || '鈥?}</p>
+                    <p className="text-caption text-ink-7">{lastSentLabel || '—'}</p>
                     <p className="text-caption text-ink-7">{fmtTime(lastSentAt)}</p>
                   </div>
                 </div>
