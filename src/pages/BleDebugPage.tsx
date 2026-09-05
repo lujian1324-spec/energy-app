@@ -227,7 +227,7 @@ export default function BleDebugPage() {
       {/* Header */}
       <div className="px-4 pt-5 pb-3 flex items-center gap-3 safe-area-top border-b border-white/[0.06]">
         <button onClick={() => navigate(-1)}
-          className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center">
+          className="w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center">
           <Icon name="chevron-left" size={20} />
         </button>
         <div className="flex-1">

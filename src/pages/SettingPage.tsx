@@ -24,7 +24,6 @@ import { deleteAccount } from '../api/authApi'
 import { getUserProfile } from '../db/powerflowDB'
 import appVersion from '../version.json'
 import ProfileEditPage from './ProfileEditPage'
-import ToggleSwitch from '../components/ToggleSwitch'
 import type { UserProfile } from '../types/protocol'
 import { requestNotificationPermission, getNotificationPermission, enableWebPush, disableWebPush } from '../utils/pushNotification'
 import { PUSH_ENABLED } from '../config/webPush'
@@ -216,58 +215,62 @@ export default function SettingPage() {
 
         {/* Push Notifications — hidden until push backend/credentials are ready (PUSH_ENABLED) */}
         {PUSH_ENABLED && (<>
-        <h3 className="text-title-md font-semibold text-ink-1 mb-3">Push Notifications</h3>
+        <h3 className="text-body-lg font-semibold text-ink-1 mb-3">Push Notifications</h3>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
           className="space-y-3 mb-6">
           {/* Power Outage */}
-          <div className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 text-left">
+          <button
+            type="button"
+            onClick={async () => {
+              const next = !pushOutage
+              setPushOutage(next)
+              updateSettings({ pushNotifications: next })
+              if (next && getNotificationPermission() !== 'granted') {
+                await requestNotificationPermission()
+              }
+              await syncWebPush(next, pushLowBattery)
+            }}
+            className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 text-left active:scale-[0.99] transition-transform"
+            aria-label="Power outage alerts"
+          >
             <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
               <Icon name="outage" size={20} />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-body-lg font-semibold text-ink-1">Power Outage</div>
-              <div className="text-body-md text-ink-6 mt-0.5">Get alerted during outages</div>
+              <div className="text-body-md font-semibold text-ink-2">Power Outage</div>
+              <div className="text-tiny text-ink-4 mt-0.5">Get alerted during outages</div>
             </div>
-            <ToggleSwitch
-              isOn={pushOutage}
-              onToggle={async () => {
-                const next = !pushOutage
-                setPushOutage(next)
-                updateSettings({ pushNotifications: next })
-                if (next && getNotificationPermission() !== 'granted') {
-                  await requestNotificationPermission()
-                }
-                await syncWebPush(next, pushLowBattery)
-              }}
-              ariaLabel="Toggle power outage alerts"
-            />
-          </div>
+            <span className="text-body-md text-ink-6 mr-1">{pushOutage ? 'On' : 'Off'}</span>
+            <Icon name="chevron-right" size={24} className="opacity-70" />
+          </button>
 
           {/* Low Battery */}
-          <div className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 text-left">
+          <button
+            type="button"
+            onClick={async () => {
+              const next = !pushLowBattery
+              setPushLowBattery(next)
+              updateSettings({ pushLowBattery: next })
+              if (next && getNotificationPermission() !== 'granted') {
+                await requestNotificationPermission()
+              }
+              await syncWebPush(pushOutage, next)
+            }}
+            className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 text-left active:scale-[0.99] transition-transform"
+            aria-label="Low battery alerts"
+          >
             <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
               <Icon name="low-battery" size={20} />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-body-lg font-semibold text-ink-1">Low Battery</div>
-              <div className="text-body-md text-ink-6 mt-0.5">
+              <div className="text-body-md font-semibold text-ink-2">Low Battery</div>
+              <div className="text-tiny text-ink-4 mt-0.5">
                 {pushLowBattery ? `Get alerted when battery falls below ${lowBatteryThreshold}%` : 'Get notified when battery gets low'}
               </div>
             </div>
-            <ToggleSwitch
-              isOn={pushLowBattery}
-              onToggle={async () => {
-                const next = !pushLowBattery
-                setPushLowBattery(next)
-                updateSettings({ pushLowBattery: next })
-                if (next && getNotificationPermission() !== 'granted') {
-                  await requestNotificationPermission()
-                }
-                await syncWebPush(pushOutage, next)
-              }}
-              ariaLabel="Toggle low battery alerts"
-            />
-          </div>
+            <span className="text-body-md text-ink-6 mr-1">{pushLowBattery ? 'On' : 'Off'}</span>
+            <Icon name="chevron-right" size={24} className="opacity-70" />
+          </button>
 
           {/* Low Battery Threshold Slider — shown when enabled */}
           <AnimatePresence>
@@ -325,7 +328,7 @@ export default function SettingPage() {
         </>)}
 
         {/* Support */}
-        <h3 className="text-title-md font-semibold text-ink-1 mb-3">Support</h3>
+        <h3 className="text-body-lg font-semibold text-ink-1 mb-3">Support</h3>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           className="mb-6">
           <button
@@ -344,16 +347,16 @@ export default function SettingPage() {
         {/* Legal + Version */}
         <div className="text-center py-2 leading-relaxed">
           <div className="flex items-center justify-center gap-2 mb-1">
-            <a href={PRIVACY_URL} target="_blank" rel="noopener noreferrer" className="text-body-md font-semibold text-primary hover:opacity-80 transition-opacity">
+            <a href={PRIVACY_URL} target="_blank" rel="noopener noreferrer" className="text-label font-semibold text-primary hover:opacity-80 transition-opacity">
               Privacy Policy
             </a>
             <span className="text-ink-7">|</span>
-            <a href={TERMS_URL} target="_blank" rel="noopener noreferrer" className="text-body-md font-semibold text-primary hover:opacity-80 transition-opacity">
+            <a href={TERMS_URL} target="_blank" rel="noopener noreferrer" className="text-label font-semibold text-primary hover:opacity-80 transition-opacity">
               Terms of Use
             </a>
           </div>
-          <p className="text-caption text-ink-7">
-            Sierro App v{appVersion.version} &copy; 2026 Sierro Inc.
+          <p className="text-tiny text-ink-6">
+            Sierro App v{appVersion.version} @2026 Sierro Inc.
           </p>
         </div>
       </div>
@@ -368,17 +371,9 @@ export default function SettingPage() {
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               className="w-full max-w-md bg-ink-10 rounded-[28px] border border-white/[0.15] overflow-hidden"
               onClick={e => e.stopPropagation()}>
-              <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.15]">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center">
-                    <Icon name="feedback" size={20} />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-ink-1">Feedback</h3>
-                    <p className="text-caption text-ink-6">We'd love to hear from you</p>
-                  </div>
-                </div>
-                <button onClick={() => setShowSupport(false)} className="p-2 rounded-full hover:bg-white/[0.05]"><X size={20} className="text-ink-6" /></button>
+              <div className="flex items-center justify-between px-5 py-4">
+                <h3 className="text-title-lg font-semibold text-ink-2">Feedback</h3>
+                <button onClick={() => setShowSupport(false)} aria-label="Close" className="w-[30px] h-[30px] rounded-full bg-ink-7 flex items-center justify-center"><X size={16} className="text-white" /></button>
               </div>
               <div className="p-5">
                 {supportSubmitted ? (
@@ -404,9 +399,9 @@ export default function SettingPage() {
                     {supportError && (
                       <p className="text-label text-danger text-center">{supportError}</p>
                     )}
-                    <button type="submit" disabled={supportSending} className="w-full py-3.5 rounded-l bg-white/[0.10] text-white font-semibold text-body-md flex items-center justify-center gap-2 active:scale-95 transition-transform border border-white/[0.15] disabled:opacity-50">
+                    <button type="submit" disabled={supportSending || !supportMessage.trim()} className="w-full h-12 rounded-pill bg-primary text-primary-darker font-semibold text-title-md flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50">
                       {supportSending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-                      {supportSending ? 'Sending...' : 'Submit Feedback'}
+                      {supportSending ? 'Sending...' : 'Send Feedback'}
                     </button>
                   </form>
                 )}

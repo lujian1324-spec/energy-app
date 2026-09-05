@@ -106,7 +106,7 @@ export default function DataExportPage() {
       <div className="px-5 pt-4 pb-3 safe-area-top flex items-center gap-3">
         <button
           onClick={() => navigate(-1)}
-          className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-white active:scale-95"
+          className="w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center text-white active:scale-95"
           aria-label="Back"
         >
           <Icon name="chevron-left" size={20} />

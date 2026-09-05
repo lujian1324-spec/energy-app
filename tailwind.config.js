@@ -39,15 +39,15 @@ export default {
       colors: {
         // ── Primary / Brand / Success-charge (Figma "Primary") ──
         primary: {
-          light: '#E8FBF9',
-          'light-hover': '#D9F9F5',
-          'light-active': '#B0F2EB',
+          light: '#E6FAFA',
+          'light-hover': '#D3F3F3',
+          'light-active': '#C2F2F2',
           DEFAULT: '#01D6BE',
           hover: '#01C1AB',
-          active: '#01AB98',
+          active: '#01AA9C',
           dark: '#01A18F',
           'dark-hover': '#018072',
-          'dark-active': '#0A6055',
+          'dark-active': '#006055',
           darker: '#004B43',
         },
         // ── Yellow / Membership (Founder Badge) ──
@@ -87,7 +87,7 @@ export default {
           darker: '#591511',
         },
         // ── Black / Neutral scale (black-1 … black-13) ──
-        // ink-12 / bg-base match JPEG empty-state matte (#0b0b0b) so illustrations have no halo.
+        // ink-12 / bg-base = Figma black-12 page background (#141414).
         ink: {
           1: '#FFFFFF',
           2: '#FCFCFC',
@@ -100,12 +100,12 @@ export default {
           9: '#454545',
           10: '#262626',
           11: '#1F1F1F',
-          12: '#0b0b0b',
+          12: '#141414',
           13: '#000000',
         },
         // ── Semantic aliases used across the existing app ──
         accent: '#01D6BE',
-        'bg-base': '#0b0b0b',   // ink-12
+        'bg-base': '#141414',   // ink-12
         'bg-card': '#262626',   // ink-10
         'bg-card2': '#454545',   // ink-9 (was off-palette #333333)
         'txt-primary': '#FFFFFF',

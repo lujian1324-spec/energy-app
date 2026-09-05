@@ -303,17 +303,17 @@ export default function SmartSchedulePage() {
       <div className="px-4 pt-4 pb-3 safe-area-top flex items-center gap-3">
         <button
           onClick={() => navigate(-1)}
-          className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-white active:scale-95 transition-transform flex-shrink-0 before:absolute before:content-[''] before:-inset-1"
+          className="relative w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center text-white active:scale-95 transition-transform flex-shrink-0 before:absolute before:content-[''] before:-inset-1"
           aria-label="Back"
         >
-          <Icon name="chevron-left" size={20} />
+          <Icon name="chevron-left" size={24} />
         </button>
-        <h2 className="flex-1 text-center text-body-lg font-semibold text-white">Smart Schedule</h2>
+        <h2 className="flex-1 text-center text-title-md font-semibold text-white">Smart Schedule</h2>
         <button
-          className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center text-white flex-shrink-0 before:absolute before:content-[''] before:-inset-1"
+          className="relative w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center text-white flex-shrink-0 before:absolute before:content-[''] before:-inset-1"
           aria-label="About Smart Schedule"
         >
-          <Icon name="info-outined" size={20} />
+          <Icon name="info-outined" size={24} />
         </button>
       </div>
 
@@ -332,6 +332,8 @@ export default function SmartSchedulePage() {
           </button>
         </div>
 
+        {peakShavingSettings.enabled && (
+        <>
         <div className="flex justify-center mb-4 select-none">
           <svg ref={svgRef} width={240} height={240} viewBox="0 0 240 240" style={{ touchAction: 'none' }}>
             <circle cx={cx} cy={cy} r={r} fill="none" stroke="#454545" strokeWidth={strokeW} />
@@ -643,19 +645,23 @@ export default function SmartSchedulePage() {
             </div>
           </div>
         </div>
+        </>
+        )}
       </div>
 
+      {peakShavingSettings.enabled && (
       <div className="absolute bottom-0 left-0 right-0 px-4 pb-8 pt-3 bg-ink-12">
         <button
           onClick={handleSaveToDevice}
           disabled={peakValleySaving}
-          className="w-full h-14 rounded-full bg-primary text-black text-body-md font-semibold
+          className="w-full h-11 rounded-pill bg-primary text-primary-darker text-body-lg font-semibold
             disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {peakValleySaving ? <Loader2 size={18} className="animate-spin" /> : null}
           Save
         </button>
       </div>
+      )}
 
       <AnimatePresence>
         {showAddModal && (

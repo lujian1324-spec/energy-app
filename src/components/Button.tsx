@@ -34,13 +34,13 @@ const SIZE: Record<ButtonSize, string> = {
 
 // ── Usage × type → color classes (Default / Active via :active / Disabled) ──
 const FILLED: Record<ButtonUsage, string> = {
-  default: 'bg-primary text-ink-13 active:bg-primary-active disabled:bg-primary-dark disabled:text-ink-13/40',
+  default: 'bg-primary text-primary-darker active:bg-primary-active disabled:bg-primary/50 disabled:text-primary-darker/50',
   error:   'bg-danger text-ink-1 active:bg-danger-active disabled:bg-danger/40 disabled:text-ink-1/60',
   neutral: 'bg-ink-3 text-ink-13 active:bg-ink-5 disabled:bg-ink-8 disabled:text-ink-6',
 }
 
 const STROKED: Record<ButtonUsage, string> = {
-  default: 'border-s border-primary text-primary bg-transparent active:bg-primary-light/10 disabled:border-primary-dark disabled:text-primary-dark',
+  default: 'border-m border-primary text-primary bg-transparent active:bg-primary-light/10 disabled:border-primary-dark disabled:text-primary-dark',
   error:   'border-s border-danger text-danger bg-transparent active:bg-danger-light/10 disabled:border-danger/40 disabled:text-danger/40',
   neutral: 'border-s border-ink-5 text-ink-1 bg-transparent active:bg-ink-10 disabled:border-ink-8 disabled:text-ink-7',
 }
@@ -55,7 +55,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
     <button
       ref={ref}
       className={[
-        'inline-flex items-center justify-center gap-2 rounded-m font-semibold',
+        'inline-flex items-center justify-center gap-2 rounded-pill font-semibold',
         'transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-200 active:scale-95',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-ink-12',
         'disabled:cursor-not-allowed disabled:active:scale-100',

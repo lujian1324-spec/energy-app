@@ -555,7 +555,7 @@ export default function StatsPage() {
         <button
           aria-label="Share"
           disabled={sharing}
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-ink-10 text-white hover:text-primary transition-colors disabled:opacity-50"
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-ink-9 text-white hover:text-primary transition-colors disabled:opacity-50"
           onClick={async () => {
             if (sharing) return
             setSharing(true)
@@ -622,7 +622,7 @@ export default function StatsPage() {
             }
           }}
         >
-          {sharing ? <Loader2 size={20} className="animate-spin" /> : <Icon name="share" size={20} />}
+          {sharing ? <Loader2 size={24} className="animate-spin" /> : <Icon name="share" size={24} />}
         </button>
       </div>
 
@@ -633,16 +633,16 @@ export default function StatsPage() {
             <img
               src={`${import.meta.env.BASE_URL}ds-insights-empty.svg`}
               alt=""
-              className="w-[180px] h-auto mb-7 select-none"
+              className="w-[200px] h-[200px] object-contain mb-7 select-none"
               draggable={false}
             />
-            <h3 className="text-headline-md font-semibold text-white mb-2">Insights will appear here</h3>
-            <p className="text-body-md text-ink-6 text-center leading-relaxed mb-8 max-w-[280px]">
+            <h3 className="text-title-lg font-semibold text-ink-3 mb-2">Insights will appear here</h3>
+            <p className="text-label text-ink-5 text-center leading-relaxed mb-8 max-w-[280px]">
               Connect a Sierro device to start tracking battery performance and power usage.
             </p>
             <button
               onClick={() => navigate('/devices')}
-              className="px-7 py-3.5 rounded-l border-m border-primary text-primary text-body-lg font-semibold flex items-center gap-2 active:scale-95 transition-transform"
+              className="h-11 px-4 rounded-m border-m border-primary text-primary text-body-lg font-semibold flex items-center gap-2 active:scale-95 transition-transform"
             >
               <Plus size={20} className="text-primary" strokeWidth={2.5} /> Add Device
             </button>
@@ -653,23 +653,23 @@ export default function StatsPage() {
           <>
             {loading && records === null ? <DaysSkeleton /> : (
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col items-center text-center py-5">
+                className="flex flex-col items-center text-center py-5 bg-ink-10 rounded-l mb-4 min-h-[95px]">
                 <div className="flex items-baseline justify-center gap-2">
                   <Zap size={26} strokeWidth={1.5} className="text-primary self-center" />
                   <span className="text-headline-xl font-semibold text-ink-1 leading-none tnum">{displayDeviceDays}</span>
-                  <span className="text-title-md text-ink-6">Days</span>
+                  <span className="text-caption text-ink-5">Days</span>
                 </div>
-                <p className="text-body-md text-ink-6 mt-3">
+                <p className="text-caption text-ink-7 mt-3">
                   {installedYearLabel ? `Reliable backup power since ${installedYearLabel}` : 'Reliable backup power'}
                 </p>
               </motion.div>
             )}
 
-            <div className="flex bg-ink-10 rounded-pill p-1 mb-3">
+            <div className="flex bg-ink-9 rounded-pill p-1 mb-3 max-w-[322px] mx-auto w-full">
               {periods.map((p) => (
                 <button key={p} onClick={() => setPeriod(p)}
-                  className={`flex-1 text-body-md font-semibold py-2 rounded-pill active:scale-[0.96] transition-[color,background-color,transform] duration-200
-                    ${period === p ? 'bg-[#E5E5E5] text-ink-13' : 'text-ink-6 hover:text-ink-1'}`}>
+                  className={`flex-1 text-body-md py-2 rounded-pill active:scale-[0.96] transition-[color,background-color,transform] duration-200
+                    ${period === p ? 'bg-ink-5 text-ink-11 font-semibold' : 'text-ink-1 font-normal'}`}>
                   {p}
                 </button>
               ))}

@@ -35,14 +35,14 @@ function AddDeviceHeader({ onBack, onScanQr }: { onBack: () => void; onScanQr: (
       <button
         onClick={onBack}
         aria-label="Back"
-        className="relative w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center before:absolute before:content-[''] before:-inset-1"
+        className="relative w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center before:absolute before:content-[''] before:-inset-1"
       >
-        <Icon name="chevron-left" size={20} />
+        <Icon name="chevron-left" size={24} />
       </button>
-      <h1 className="text-title-lg font-semibold text-white text-center">Add Device</h1>
+      <h1 className="text-title-md font-semibold text-white text-center">Add Device</h1>
       <button
         onClick={onScanQr}
-        className="text-body-md font-semibold text-primary active:opacity-70 px-1"
+        className="text-body-lg font-normal text-primary active:opacity-70 px-1"
       >
         Scan QR
       </button>
@@ -65,7 +65,7 @@ export default function ScanDevicesScreen(p: Props) {
       <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
         <AddDeviceHeader onBack={handleClose} onScanQr={openQr} />
         <div className="flex-1 flex flex-col items-center px-6 text-center pt-8">
-          <h2 className="text-headline-md font-bold text-white mb-3">Allow Bluetooth and Local Network Access</h2>
+          <h2 className="text-title-lg font-semibold text-ink-3 mb-3">Allow Bluetooth and Local Network Access</h2>
           <p className="text-body-md text-ink-6 max-w-[320px] mb-8">
             Required to find, connect, and communicate with your Sierro device.
           </p>
@@ -104,7 +104,7 @@ export default function ScanDevicesScreen(p: Props) {
       <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
         <AddDeviceHeader onBack={handleClose} onScanQr={openQr} />
         <div className="flex-1 flex flex-col items-center px-6 text-center pt-8">
-          <h2 className="text-headline-md font-bold text-white mb-2">Turn on Bluetooth</h2>
+          <h2 className="text-title-lg font-semibold text-ink-3 mb-2">Turn on Bluetooth</h2>
           <p className="text-body-md text-ink-6 max-w-[320px] mb-8">
             Enable Bluetooth from Control Center or Settings to automatically find and connect your device.
           </p>
@@ -134,7 +134,7 @@ export default function ScanDevicesScreen(p: Props) {
           {!hasDevices && !hasError && (
             <>
               <div className="text-center mb-8 px-2 pt-6">
-                <p className="text-headline-md font-bold text-white mb-2">Searching for nearby devices...</p>
+                <p className="text-title-lg font-semibold text-ink-3 mb-2">Searching for nearby devices...</p>
                 <p className="text-body-md text-ink-6">Keep your phone near the Sierro device and make sure it's powered on.</p>
               </div>
               <img

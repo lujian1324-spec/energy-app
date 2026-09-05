@@ -16,7 +16,7 @@ export default function DeviceEmptyState({
       <img
         src={`${import.meta.env.BASE_URL}ds-device-empty.svg`}
         alt=""
-        className="w-[200px] h-auto mb-7 select-none"
+        className="w-[200px] h-[200px] object-contain mb-7 select-none"
         draggable={false}
       />
       {error ? (
@@ -33,14 +33,14 @@ export default function DeviceEmptyState({
         </>
       ) : (
         <>
-          <h2 className="text-headline-md font-semibold text-white mb-2">
+          <h2 className="text-title-lg font-semibold text-ink-3 mb-2">
             Ready to get started?
           </h2>
-          <p className="text-body-md text-ink-6 mb-8 max-w-[280px]">
+          <p className="text-label text-ink-5 mb-8 max-w-[280px]">
             Add your first Sierro device to protect essential devices and stay prepared for outages.
           </p>
-          <button onClick={onAddDevice} className="px-7 py-3.5 rounded-l border-m border-primary text-primary text-body-lg font-semibold flex items-center gap-2 active:scale-95 transition-transform">
-            <Plus size={20} className="text-primary" strokeWidth={2.5} /> Add Device
+          <button onClick={onAddDevice} className="h-11 px-4 rounded-m border-m border-primary text-primary text-body-lg font-semibold flex items-center gap-2 active:scale-95 transition-transform">
+            <Plus size={18} className="text-primary" strokeWidth={2.5} /> Add Device
           </button>
         </>
       )}
