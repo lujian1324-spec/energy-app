@@ -38,11 +38,11 @@
   /* 焦点环 (WCAG) */
   --ring-focus: #01D6BE;
 
-  /* 圆角 */
-  --r-sm: 8px;
-  --r-md: 14px;
-  --r-lg: 20px;
-  --r-xl: 28px;
+  /* 圆角 — aligned to Figma s4/m8/l12/xl100 (legacy var names kept for .card/.badge/.skeleton) */
+  --r-sm: 8px;   /* m */
+  --r-md: 8px;   /* was 14; map to m */
+  --r-lg: 12px;  /* was 20; map to l */
+  --r-xl: 12px;  /* was 28; map to l (sheets use Tailwind rounded-l) */
   --r-full: 9999px;
 
   /* 北美本地化默认值 */
