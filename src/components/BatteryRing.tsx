@@ -135,7 +135,7 @@ export default function BatteryRing({
         {/* 电量百分比 — Disconnected/0 显示 - (PRD §5.1) */}
         <div className="text-headline-xl font-extrabold text-ink-1 leading-none tracking-tight tnum">
           {connected && !noData ? (
-            <>{displayPercent}<span className="text-lg font-medium text-ink-6">%</span></>
+            <>{displayPercent}<span className="text-title-lg font-normal text-ink-5">%</span></>
           ) : (
             <span className="text-ink-7">{noData && connected ? '--' : '-'}</span>
           )}
