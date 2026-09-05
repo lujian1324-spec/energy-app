@@ -18,7 +18,6 @@ import { FRAMES } from '../protocols/modbusProtocol'
 import { loadRatedParams, saveRatedParams, type RatedParams } from '../db/powerflowDB'
 import { SIERRO_MODELS, SIERRO_MODEL_LIST, generateSerial, type SierroModel } from '../data/deviceModels'
 import sierro1000Img from '../assets/sierro-1000.webp'
-import appVersion from '../version.json'
 import { DEV_TOOLS_ENABLED } from '../config/devTools'
 import { uploadSleepSchedule } from '../api/scheduleApi'
 
@@ -47,7 +46,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const navigate = useNavigate()
   const { id: routeId } = useParams<{ id: string }>()
 
-  // ── Real device data (useDeviceStore) — used when mounted as a route ──
+  // 鈹€鈹€ Real device data (useDeviceStore) 鈥?used when mounted as a route 鈹€鈹€
   const { devices, selectedDeviceId, selectedDeviceState, selectDevice, loadDeviceState, renameDeviceLocal, removeDevice, updateDeviceInfo, isDemoMode } = useDeviceStore()
   const realDevice = devices.find(d => String(d.id) === routeId)
 
@@ -177,7 +176,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   })
 
   const fmtCountdown = (ms: number): string => {
-    if (ms <= 0) return '—'
+    if (ms <= 0) return '鈥?
     const totalSec = Math.floor(ms / 1000)
     const h = Math.floor(totalSec / 3600)
     const m = Math.floor((totalSec % 3600) / 60)
@@ -186,7 +185,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   }
 
   const fmtTime = (d: Date | null): string => {
-    if (!d) return '—'
+    if (!d) return '鈥?
     return d.toLocaleTimeString()
   }
 
@@ -538,36 +537,24 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               </span>
             </button>
             <InfoRow
-              label="Battery health"
-              value={rtField('batteryHealth') || (ratedParams?.batteryHealth != null ? `${ratedParams.batteryHealth}%` : '100%')}
-            />
-            <InfoRow
-              label="Temperature"
-              value={temperatureDisplay}
-            />
-            <InfoRow
-              label="Cycles"
-              value={rtField('numberOfBatteryUsageCycles') || realtime?.numberOfBatteryUsageCycles?.toString() || '--'}
-            />
-            <InfoRow
               label="Serial Number"
               value={realDevice?.serialNumber || ratedParams?.serialNumber || (powerStation as any).serialNumber || 'SNXXXX'}
             />
             <InfoRow
               label="Capacity"
-              value={
-                ratedParams
-                  ? `${((ratedParams.acInvOutputPower * 2) / 1000).toFixed(1)} kWh`
+              value={(() => {
+                const kwh = ratedParams
+                  ? (ratedParams.acInvOutputPower * 2) / 1000
                   : realDevice?.ratedPower
-                    ? `${realDevice.ratedPower.toFixed(1)} kWh`
-                    : '--'
-              }
+                if (kwh == null || Number.isNaN(Number(kwh))) return '--'
+                const n = Number(kwh)
+                const label = Number.isInteger(n) || Math.abs(n - Math.round(n)) < 1e-6
+                  ? `${Math.round(n)}`
+                  : n.toFixed(1)
+                return `${label} kWh`
+              })()}
             />
             <InfoRow label="Battery Type" value={ratedParams?.batteryType || 'LFP'} />
-            <InfoRow
-              label="Firmware Version"
-              value={realDevice?.softwareVersion || appVersion.version || '--'}
-            />
             <InfoRow
               label="Charging Power"
               value={ratedParams?.ratedChargePower != null ? `${ratedParams.ratedChargePower}W` : '--'}
@@ -578,6 +565,18 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             />
             <InfoRow label="Voltage" value="120V" />
             <InfoRow label="Frequency" value="60Hz" />
+            <InfoRow
+              label="Battery health"
+              value={rtField('batteryHealth') || (ratedParams?.batteryHealth != null ? `${ratedParams.batteryHealth}%` : '100%')}
+            />
+            <InfoRow
+              label="Cycles"
+              value={rtField('numberOfBatteryUsageCycles') || realtime?.numberOfBatteryUsageCycles?.toString() || '--'}
+            />
+            <InfoRow
+              label="Temperature"
+              value={temperatureDisplay}
+            />
             <InfoRow
               label="Wi-Fi Status"
               value={realDevice ? (realDevice.isOnline ? 'Connected' : 'Offline') : 'Connected'}
@@ -643,7 +642,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                     >
                       <p className={`text-title-md font-semibold ${selected ? 'text-white' : 'text-ink-7'}`}>{spec.model}</p>
                       <p className={`text-body-md mt-0.5 ${selected ? 'text-ink-5' : 'text-ink-7'}`}>
-                        {spec.ratedPower}W · {(spec.ratedCapacityWh / 1000).toFixed(1)}kWh · charge {spec.ratedChargePower}W · {spec.batteryType}
+                        {spec.ratedPower}W 路 {(spec.ratedCapacityWh / 1000).toFixed(1)}kWh 路 charge {spec.ratedChargePower}W 路 {spec.batteryType}
                       </p>
                     </button>
                   )
@@ -693,7 +692,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               <div>
                 <p className="text-body-lg text-white">Sleep Mode</p>
                 <p className="text-caption text-ink-6 mt-0.5">
-                  Low-noise charging · Sleep: {schedulerPowers.sleepW}W / Wake: {schedulerPowers.wakeW}W
+                  Low-noise charging 路 Sleep: {schedulerPowers.sleepW}W / Wake: {schedulerPowers.wakeW}W
                 </p>
               </div>
               <button
@@ -713,7 +712,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 <div className="flex items-center justify-between px-4 py-4 border-b border-white/5">
                   <div>
                     <p className="text-body-lg text-white">Sleep</p>
-                    <p className="text-caption text-ink-7">AC charging power → {schedulerPowers.sleepW}W</p>
+                    <p className="text-caption text-ink-7">AC charging power 鈫?{schedulerPowers.sleepW}W</p>
                   </div>
                   <input
                     type="time"
@@ -725,7 +724,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 <div className="flex items-center justify-between px-4 py-4">
                   <div>
                     <p className="text-body-lg text-white">Wake</p>
-                    <p className="text-caption text-ink-7">AC charging power → {schedulerPowers.wakeW}W</p>
+                    <p className="text-caption text-ink-7">AC charging power 鈫?{schedulerPowers.wakeW}W</p>
                   </div>
                   <input
                     type="time"
@@ -736,7 +735,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 </div>
               </div>
               <p className="text-caption text-ink-7 mt-2 px-1">
-                {fmt(sleepFrom)} → {schedulerPowers.sleepW}W · {fmt(sleepTo)} → {schedulerPowers.wakeW}W
+                {fmt(sleepFrom)} 鈫?{schedulerPowers.sleepW}W 路 {fmt(sleepTo)} 鈫?{schedulerPowers.wakeW}W
               </p>
             </div>
           )}
@@ -745,7 +744,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               <p className="text-body-md font-semibold text-white mb-2">Scheduler Status</p>
               <div className="rounded-l bg-ink-10 overflow-hidden px-4 py-4 space-y-3">
                 <p className="text-caption text-ink-7">
-                  {model} · Sleep: {schedulerPowers.sleepW}W / Wake: {schedulerPowers.wakeW}W
+                  {model} 路 Sleep: {schedulerPowers.sleepW}W / Wake: {schedulerPowers.wakeW}W
                 </p>
                 <div className="flex items-center justify-between">
                   <span className="text-body-md text-ink-6">Next event</span>
@@ -757,7 +756,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 <div className="flex items-center justify-between">
                   <span className="text-body-md text-ink-7">Last sent</span>
                   <div className="text-right">
-                    <p className="text-caption text-ink-7">{lastSentLabel || '—'}</p>
+                    <p className="text-caption text-ink-7">{lastSentLabel || '鈥?}</p>
                     <p className="text-caption text-ink-7">{fmtTime(lastSentAt)}</p>
                   </div>
                 </div>
