@@ -12,7 +12,7 @@ export function getTagColor(level: number): string {
 export function BatteryTag({ level, connected, charging, unknown }: { level: number; connected: boolean; charging: boolean; unknown?: boolean }) {
   if (!connected) {
     return (
-      <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-[#591511] text-danger text-body-md font-semibold">
+      <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-[#591511] text-[#FFEBEA] text-label font-semibold">
         Disconnected
       </span>
     )
@@ -58,17 +58,17 @@ export function PowerToggle({ deviceId, on, disabled, onToggle }: {
       onClick={(e) => { if (!disabled) onToggle(deviceId, e) }}
       disabled={disabled}
       aria-label="Power toggle"
-      className={`relative w-[52px] h-[31px] rounded-full transition-colors duration-200 flex-shrink-0 ${
+      className={`relative w-[50px] h-[28px] rounded-full transition-colors duration-200 flex-shrink-0 ${
         disabled
-          ? 'bg-ink-9 opacity-50 cursor-not-allowed'
+          ? 'bg-ink-7 opacity-30 cursor-not-allowed'
           : on
             ? 'bg-primary active:scale-95'
-            : 'bg-ink-9 active:scale-95'
+            : 'bg-ink-7 active:scale-95'
       } transition-transform`}
     >
       <span
-        className={`absolute top-[2px] w-[27px] h-[27px] rounded-full bg-white shadow-sm transition-[left,transform] duration-200 ${
-          on && !disabled ? 'left-[23px]' : 'left-[2px]'
+        className={`absolute top-[2px] w-6 h-6 rounded-full bg-white shadow-sm transition-[left,transform] duration-200 ${
+          on && !disabled ? 'left-[24px]' : 'left-[2px]'
         }`}
       />
     </button>
