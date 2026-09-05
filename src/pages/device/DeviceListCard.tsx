@@ -92,8 +92,8 @@ export default function DeviceListCard({
       <div className="flex items-stretch gap-4 min-h-[136px]">
         <div className="min-w-0 flex-1 flex flex-col gap-1.5">
           <DeviceListIcon device={device} model={model} />
-          <h3 className="text-title-lg font-semibold text-white leading-tight break-words">{device.name}</h3>
-          <p className="text-body-md text-ink-7">{model}</p>
+          <h3 className="text-title-md font-semibold text-white leading-tight break-words">{device.name}</h3>
+          <p className="text-tiny text-ink-3">{model}</p>
         </div>
         <div className="flex flex-col items-end justify-between flex-shrink-0">
           <BatteryTag
