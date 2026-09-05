@@ -1,8 +1,8 @@
 {
-  "version": "4.7.59",
-  "build": 2781,
+  "version": "4.7.60",
+  "build": 2782,
   "date": "2026-09-05",
   "changelog": [
-    "Fix Feedback EmailJS template ID (template_3hwbswo \u2192 lujian1324@gmail.com)"
+    "Figma P1+P2 UI alignment (no Push/Login IA)"
   ]
 }
