@@ -519,7 +519,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
             <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
               <Icon name="user" size={20} />
             </div>
-            <span className="text-body-md text-white flex-1">Username</span>
+            <span className="text-body-md text-white flex-1">Name</span>
             <span className="text-body-md text-ink-6 truncate max-w-[140px]">{profile.name}</span>
           </div>
 

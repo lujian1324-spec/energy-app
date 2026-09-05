@@ -108,6 +108,9 @@ export default function SettingPage() {
     setSupportSending(true)
     setSupportError('')
 
+    // Prefer logged-in profile/account email (Figma Feedback has no email field).
+    const fromEmail = (userProfile?.email || authUser?.account || supportEmail || '').trim()
+
     // Preferred path: send via EmailJS (recipient is fixed in the template).
     if (isEmailJsConfigured()) {
       try {
@@ -115,8 +118,8 @@ export default function SettingPage() {
           EMAILJS_SERVICE_ID,
           EMAILJS_TEMPLATE_ID,
           {
-            name: supportEmail || 'Sierro App User',
-            from_email: supportEmail,
+            name: fromEmail || 'Sierro App User',
+            from_email: fromEmail,
             message: supportMessage,
             subject: 'Sierro App Feedback',
             to_email: FEEDBACK_TO_EMAIL,
@@ -140,7 +143,7 @@ export default function SettingPage() {
 
     // Fallback: open the user's mail client until EmailJS is configured.
     const subject = encodeURIComponent('Sierro App Feedback')
-    const body = encodeURIComponent(`From: ${supportEmail}\n\n${supportMessage}`)
+    const body = encodeURIComponent(fromEmail ? `From: ${fromEmail}\n\n${supportMessage}` : supportMessage)
     window.open(`mailto:${FEEDBACK_TO_EMAIL}?subject=${subject}&body=${body}`, '_blank')
     setSupportSubmitted(true)
     setTimeout(() => {
@@ -371,7 +374,7 @@ export default function SettingPage() {
             onClick={() => setShowSupport(false)}>
             <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="w-full max-w-md bg-ink-10 rounded-[28px] border border-white/[0.15] overflow-hidden"
+              className="w-full max-w-md bg-ink-10 rounded-l border border-white/[0.15] overflow-hidden"
               onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between px-5 py-4">
                 <h3 className="text-title-lg font-semibold text-ink-2">Feedback</h3>
@@ -388,11 +391,6 @@ export default function SettingPage() {
                   </motion.div>
                 ) : (
                   <form onSubmit={handleSupportSubmit} className="space-y-4">
-                    <div>
-                      <label className="text-label font-semibold text-ink-6 mb-2 flex items-center gap-2"><Icon name="email" size={14} />Your Email</label>
-                      <input type="email" required value={supportEmail} onChange={e => setSupportEmail(e.target.value)} placeholder="you@example.com"
-                        className="w-full px-4 py-3 rounded-l bg-ink-12 border border-primary/[0.15] text-ink-1 text-body-md placeholder:text-ink-7 focus:outline-none focus:border-primary/[0.4] transition-colors" />
-                    </div>
                     <div>
                       <label className="text-label font-semibold text-ink-6 mb-2 flex items-center gap-2"><Icon name="feedback" size={14} />Your Feedback</label>
                       <textarea required value={supportMessage} onChange={e => setSupportMessage(e.target.value)} placeholder="Describe your issue or suggestion..." rows={4}
