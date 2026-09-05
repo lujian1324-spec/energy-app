@@ -17,7 +17,7 @@ import {
 } from 'lucide-react'
 import emailjs from '@emailjs/browser'
 import Icon from '../components/Icon'
-import { EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, EMAILJS_PUBLIC_KEY, isEmailJsConfigured } from '../config/emailjs'
+import { EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, EMAILJS_PUBLIC_KEY, FEEDBACK_TO_EMAIL, isEmailJsConfigured } from '../config/emailjs'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useAuthStore } from '../stores/authStore'
 import { deleteAccount } from '../api/authApi'
@@ -118,6 +118,7 @@ export default function SettingPage() {
             from_email: supportEmail,
             message: supportMessage,
             subject: 'Sierro App Feedback',
+            to_email: FEEDBACK_TO_EMAIL,
           },
           { publicKey: EMAILJS_PUBLIC_KEY }
         )
@@ -139,7 +140,7 @@ export default function SettingPage() {
     // Fallback: open the user's mail client until EmailJS is configured.
     const subject = encodeURIComponent('Sierro App Feedback')
     const body = encodeURIComponent(`From: ${supportEmail}\n\n${supportMessage}`)
-    window.open(`mailto:lujian1324@gmail.com?subject=${subject}&body=${body}`, '_blank')
+    window.open(`mailto:${FEEDBACK_TO_EMAIL}?subject=${subject}&body=${body}`, '_blank')
     setSupportSubmitted(true)
     setTimeout(() => {
       setShowSupport(false)

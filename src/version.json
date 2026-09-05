@@ -1,8 +1,8 @@
 {
-  "version": "4.7.58",
-  "build": 2780,
+  "version": "4.7.59",
+  "build": 2781,
   "date": "2026-09-05",
   "changelog": [
-    "Align UI to Figma handoff specs (visual only)"
+    "Feedback recipient email: jason@Sierro.us"
   ]
 }
