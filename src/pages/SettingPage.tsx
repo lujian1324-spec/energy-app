@@ -115,6 +115,7 @@ export default function SettingPage() {
           EMAILJS_SERVICE_ID,
           EMAILJS_TEMPLATE_ID,
           {
+            name: supportEmail || 'Sierro App User',
             from_email: supportEmail,
             message: supportMessage,
             subject: 'Sierro App Feedback',
