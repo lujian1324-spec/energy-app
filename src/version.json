@@ -1,9 +1,10 @@
 {
-  "version": "4.7.74",
-  "build": 2796,
+  "version": "4.7.75",
+  "build": 2797,
   "date": "2026-09-06",
   "changelog": [
-    "Profile: Personal Info and Security become one 68px card per field, 12 apart, with 40px ink-9 icon circles and body_large/ink-2 labels, as Profile -v Default draws them.",
-    "Sign out / Delete account confirmations use the same 280px card and 44px pills as the Delete Device dialog, with the design's title case and copy."
+    "Profile: Change Password and its editor are gone — 4.7.69 removed password sign-in, so there was no password left to change and the handoff has no Security section.",
+    "Name is editable again (D_2.5): the row gets a chevron and opens a Name screen with a Save that stays dim until the value changes; it writes the nickname and falls back to the registered account when none is set.",
+    "Linked Email shows the full address. /user/select/iotUserInfo returns it masked, so the value from sign-in is preferred when the server's is masked."
   ]
 }
