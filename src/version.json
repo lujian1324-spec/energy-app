@@ -1,9 +1,10 @@
 {
-  "version": "4.7.76",
-  "build": 2798,
+  "version": "4.7.77",
+  "build": 2799,
   "date": "2026-09-06",
   "changelog": [
-    "Profile shows the handoff's 'Have a founder code? Redeem founder badge' footer link again; it was hidden by APP-005 and only reachable from the gold badge.",
-    "The app-only 'User ID' row is gone — the design has no such field."
+    "Signing in with an address that has never been used now works: /login/email only signs in existing accounts, so a new address failed with an account error after the code was accepted.",
+    "The email step asks the backend whether the address is registered and sends the code with the matching intent; an unknown address is registered in the background once the code checks out, then signed straight in.",
+    "The self-registered account is the email's local part (suffixed if taken) with the password set to that account plus 1234."
   ]
 }
