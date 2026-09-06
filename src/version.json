@@ -1,12 +1,12 @@
 {
-  "version": "4.7.62",
-  "build": 2784,
+  "version": "4.7.63",
+  "build": 2785,
   "date": "2026-09-06",
   "changelog": [
-    "Device Monitor aligned to the B_1.1 handoff export.",
-    "Battery ring 180/12 -> 170/10 with the design's ink-8 track; the ring label loses its lightning bolt and moves to body_medium on ink-5.",
-    "Input/Output row rebuilt: 48px boxes, the two inputs grouped around the +, a 97px Output column, and the Output label aligned to that column.",
-    "Real-Time Power card drops the 'Last sync' / 'Updated every 30s' footer, which the design does not have (PRD v1.1 §8.2 annotation retired here as it already was on Insights in 4.7.47).",
-    "Card gap 12 -> 20 and a 16px gap under the header, per the export."
+    "Device Settings aligned to the B_1.2 handoff export.",
+    "Rows 51 -> 68 tall, grouped the way the design groups them: [Device Name, Display Icon] / [Device Info] / [Sleep Mode, Battery Priority, Smart Schedule] / [Delete Device 52], 12px inside a group and 24px between groups.",
+    "Display Icon shows the glyph itself instead of a tinted chip, and falls back to the device-type icon inferred from the name (same rule as the device card) until one is picked.",
+    "Row label moves to ink-2 and the chevron to the design's own chevron-right SVG.",
+    "All five DeviceDetailPage headers use the measured Page Header box (inset + 20 top, 20 bottom); the main title goes 18 -> 20."
   ]
 }

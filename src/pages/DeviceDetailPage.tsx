@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
+import { guessDeviceIconName } from './device/DeviceListCard'
 import { useSleepModeScheduler, loadSchedule, saveSchedule } from '../hooks/useSleepModeScheduler'
 import {
   ChevronRight,
@@ -289,8 +290,10 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     handleBack()
   }
 
+  const savedIcon = routeId ? localStorage.getItem(`sierro-display-icon-${routeId}`) : null
   const currentPack =
-    DISPLAY_ICONS.find((i) => i.id === selectedIcon)?.pack ?? 'thunder'
+    DISPLAY_ICONS.find((i) => i.id === selectedIcon)?.pack
+    ?? (savedIcon ? 'thunder' : guessDeviceIconName(deviceName))
 
   const BackBtn = ({ to }: { to: Screen | 'parent' }) => (
     <button
@@ -321,15 +324,15 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   }) => (
     <div
       onClick={onPress}
-      className="rounded-l bg-ink-10 mb-2 px-4 py-4 flex items-center justify-between cursor-pointer active:opacity-70 transition-opacity"
+      className="rounded-l bg-ink-10 h-[68px] px-4 flex items-center justify-between cursor-pointer active:opacity-70 transition-opacity"
     >
-      <span className="text-body-lg text-white">{label}</span>
+      <span className="text-body-lg text-ink-2">{label}</span>
       <div className="flex items-center gap-2">
         {preview}
         {value !== undefined && (
           <span className="text-body-md text-ink-6">{value}</span>
         )}
-        <ChevronRight size={18} className="text-ink-6" />
+        <Icon name="chevron-right" size={24} />
       </div>
     </div>
   )
@@ -337,7 +340,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   if (screen === 'editName') {
     return (
       <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
-        <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
+        <div className="px-4 pb-5 safe-area-top-header flex items-center gap-3 relative">
           <BackBtn to="main" />
           <h1 className="text-title-lg font-semibold text-white absolute left-1/2 -translate-x-1/2">
             Device Name
@@ -430,7 +433,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           className="hidden"
           onChange={handleCustomImageFile}
         />
-        <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
+        <div className="px-4 pb-5 safe-area-top-header flex items-center gap-3 relative">
           <BackBtn to="main" />
           <h1 className="text-title-lg font-semibold text-white absolute left-1/2 -translate-x-1/2">
             Select Display Icon
@@ -518,7 +521,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   if (screen === 'deviceInfo') {
     return (
       <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
-        <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
+        <div className="px-4 pb-5 safe-area-top-header flex items-center gap-3 relative">
           <BackBtn to="main" />
           <h1 className="text-title-lg font-semibold text-white absolute left-1/2 -translate-x-1/2">
             Device Info
@@ -591,7 +594,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               <div className="flex items-center gap-2">
                 <span className="text-body-lg font-semibold text-primary">Modbus Debug</span>
               </div>
-              <ChevronRight size={18} className="text-ink-6" />
+              <Icon name="chevron-right" size={24} />
             </button>
             <button
               onClick={() => navigate(`/device/${routeId ?? selectedDeviceId}/debug-params`)}
@@ -600,7 +603,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               <div className="flex items-center gap-2">
                 <span className="text-body-lg font-semibold text-ink-7">Debug Params</span>
               </div>
-              <ChevronRight size={18} className="text-ink-6" />
+              <Icon name="chevron-right" size={24} />
             </button>
           </div>
           )}
@@ -674,7 +677,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     }
     return (
       <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
-        <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
+        <div className="px-4 pb-5 safe-area-top-header flex items-center gap-3 relative">
           <BackBtn to="main" />
           <h1 className="text-title-lg font-semibold text-white absolute left-1/2 -translate-x-1/2">
             Sleep Mode
@@ -770,73 +773,78 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
 
   return (
     <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
-      <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
+      <div className="px-4 pb-5 safe-area-top-header flex items-center gap-3 relative">
         <BackBtn to="parent" />
-        <h1 className="text-title-md font-semibold text-white absolute left-1/2 -translate-x-1/2">
+        <h1 className="text-title-lg font-semibold text-white absolute left-1/2 -translate-x-1/2">
           Device Settings
         </h1>
       </div>
-      <div className="flex-1 overflow-y-auto px-4 pt-2 pb-8">
-        <SettingsRow
-          label="Device Name"
-          value={deviceName}
-          onPress={() => {
-            const targetId = routeId ?? selectedDeviceId ?? ''
-            setEditTargetId(targetId)
-            setEditName(deviceName)
-            setShowDeviceDropdown(false)
-            setScreen('editName')
-          }}
-        />
-        <SettingsRow
-          label="Display Icon"
-          preview={
-            <div className="w-7 h-7 rounded-m bg-primary/10 flex items-center justify-center">
-              {selectedIcon === 'photo' ? (
-                <img src={sierro1000Img} alt="Device" className="w-5 h-5 object-contain" />
+      {/* 4x/6x export: rows 68 tall, 12px apart inside a group, 24px between groups,
+          groups = [Name, Icon] / [Info] / [Sleep, Battery, Smart] / [Delete 52]. */}
+      <div className="flex-1 overflow-y-auto px-4 pb-8 space-y-6">
+        <div className="space-y-3">
+          <SettingsRow
+            label="Device Name"
+            value={deviceName}
+            onPress={() => {
+              const targetId = routeId ?? selectedDeviceId ?? ''
+              setEditTargetId(targetId)
+              setEditName(deviceName)
+              setShowDeviceDropdown(false)
+              setScreen('editName')
+            }}
+          />
+          <SettingsRow
+            label="Display Icon"
+            preview={
+              selectedIcon === 'photo' ? (
+                <img src={sierro1000Img} alt="Device" className="w-6 h-6 object-contain" />
               ) : selectedIcon === 'custom' && customImage ? (
-                <img src={customImage} alt="Custom" className="w-5 h-5 object-cover rounded-s" />
+                <img src={customImage} alt="Custom" className="w-6 h-6 object-cover rounded-s" />
               ) : (
-                <Icon name={currentPack} size={16} />
-              )}
-            </div>
-          }
-          onPress={() => {
-            setPendingIcon(selectedIcon)
-            setPendingCustomImage(customImage)
-            setScreen('displayIcon')
-          }}
-        />
+                <Icon name={currentPack} size={24} />
+              )
+            }
+            onPress={() => {
+              setPendingIcon(selectedIcon)
+              setPendingCustomImage(customImage)
+              setScreen('displayIcon')
+            }}
+          />
+        </div>
+
         <SettingsRow
           label="Device Info"
           onPress={() => setScreen('deviceInfo')}
         />
-        <SettingsRow
-          label="Sleep Mode"
-          value={sleepMode}
-          onPress={() => setScreen('sleepMode')}
-        />
-        <SettingsRow
-          label="Battery Priority"
-          value={WORK_MODES.find(m => m.value === workMode)?.label ?? 'Backup Mode'}
-          onPress={() => {
-            setWorkModeDraft(workMode === 2 ? 2 : 1)
-            setShowWorkModeMenu(true)
-          }}
-        />
-        <SettingsRow
-          label="Smart Schedule"
-          value={peakShavingSettings?.enabled ? 'On' : 'Off'}
-          onPress={() => navigate('/smart-schedule')}
-        />
-        <div className="mt-4">
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="w-full rounded-l bg-ink-10 px-4 py-4 text-body-lg font-semibold text-danger active:opacity-70 transition-opacity"
-          >
-            Delete Device
-          </button>
+
+        <div className="space-y-3">
+          <SettingsRow
+            label="Sleep Mode"
+            value={sleepMode}
+            onPress={() => setScreen('sleepMode')}
+          />
+          <SettingsRow
+            label="Battery Priority"
+            value={WORK_MODES.find(m => m.value === workMode)?.label ?? 'Backup Mode'}
+            onPress={() => {
+              setWorkModeDraft(workMode === 2 ? 2 : 1)
+              setShowWorkModeMenu(true)
+            }}
+          />
+          <SettingsRow
+            label="Smart Schedule"
+            value={peakShavingSettings?.enabled ? 'On' : 'Off'}
+            onPress={() => navigate('/smart-schedule')}
+          />
         </div>
+
+        <button
+          onClick={() => setShowDeleteConfirm(true)}
+          className="w-full rounded-l bg-ink-10 h-[52px] text-body-lg font-semibold text-danger active:opacity-70 transition-opacity"
+        >
+          Delete Device
+        </button>
       </div>
       {showWorkModeMenu && (
         <div
