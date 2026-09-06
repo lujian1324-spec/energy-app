@@ -1,9 +1,8 @@
 {
-  "version": "4.7.72",
-  "build": 2794,
+  "version": "4.7.73",
+  "build": 2795,
   "date": "2026-09-06",
   "changelog": [
-    "Display Icon picker: the selected tile uses the export's primary-darker fill with a white glyph instead of bright primary with a black one, and Save stays dim until the choice changes.",
-    "The picker keeps its full-page form and the Device / Custom options, which the handoff sheet does not have — a deliberate deviation so custom image upload survives."
+    "Device Info rows match B_1.2.3: each field is its own 68px card 12 apart instead of one divided list, with the label in body_large/ink-2 and the value in body_medium/ink-6 (they were the other way round)."
   ]
 }

@@ -311,10 +311,14 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     </button>
   )
 
+  /**
+   * B_1.2.3 draws each field as its own 68px card 12 apart, not as a divided list,
+   * with the label in body_large/ink-2 and the value in body_medium/ink-6.
+   */
   const InfoRow = ({ label, value }: { label: string; value: string }) => (
-    <div className="flex items-center justify-between px-4 py-4 border-b border-white/5 last:border-0">
-      <span className="text-body-md text-ink-6">{label}</span>
-      <span className="text-body-md text-white">{value}</span>
+    <div className="rounded-l bg-ink-10 h-[68px] px-4 flex items-center justify-between">
+      <span className="text-body-lg text-ink-2">{label}</span>
+      <span className="text-body-md text-ink-6">{value}</span>
     </div>
   )
 
@@ -536,16 +540,16 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             Device Info
           </h1>
         </div>
-        <div className="flex-1 overflow-y-auto px-4 pt-2">
-          <div className="rounded-l bg-ink-10 overflow-hidden">
+        <div className="flex-1 overflow-y-auto px-4 pb-8">
+          <div className="space-y-3">
             <button
               onClick={() => setShowModelSheet(true)}
-              className="w-full flex items-center justify-between px-4 py-4 border-b border-white/5 active:bg-white/5 transition-colors"
+              className="w-full rounded-l bg-ink-10 h-[68px] px-4 flex items-center justify-between active:opacity-70 transition-opacity"
             >
-              <span className="text-body-md text-ink-6">Model</span>
+              <span className="text-body-lg text-ink-2">Model</span>
               <span className="flex items-center gap-1.5">
-                <span className="text-body-md text-white">{ratedParams?.model || realDevice?.model || powerStation.model || 'Sierro 1000'}</span>
-                <ChevronRight size={16} className="text-ink-6" />
+                <span className="text-body-md text-ink-6">{ratedParams?.model || realDevice?.model || powerStation.model || 'Sierro 1000'}</span>
+                <Icon name="chevron-right" size={24} />
               </span>
             </button>
             <InfoRow
