@@ -1,8 +1,8 @@
 {
-  "version": "4.7.79",
-  "build": 2801,
+  "version": "4.7.80",
+  "build": 2802,
   "date": "2026-09-06",
   "changelog": [
-    "Dialog buttons (delete device, sign out, delete account) and the Feedback send button are 8px-radius buttons again instead of full capsules, matching the design system."
+    "The unread dot on the notification bell lost its dark ring and is the design's 10px dot at the top-right edge of the button, instead of a 6px core inside a 2px ink-10 border."
   ]
 }
