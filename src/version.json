@@ -1,8 +1,8 @@
 {
-  "version": "4.7.80",
-  "build": 2802,
+  "version": "4.7.81",
+  "build": 2803,
   "date": "2026-09-06",
   "changelog": [
-    "The unread dot on the notification bell lost its dark ring and is the design's 10px dot at the top-right edge of the button, instead of a 6px core inside a 2px ink-10 border."
+    "The plus in the empty-state Add Device button is teal like the rest of the button, instead of the shipped SVG's hard-coded white."
   ]
 }

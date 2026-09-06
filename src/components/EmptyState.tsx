@@ -14,7 +14,8 @@ import Icon from './Icon'
  *   title -> sub   8
  *   subtitle       Inter Regular 12 / lh 1.2 / #D9D9D5 (ink-5), centered, full width
  *   sub -> button  24
- *   button         h 44, px 16, gap 8, border-m primary, radius m, 18px glyph, 16 semibold
+ *   button         h 44, px 16, gap 8, border-m primary, radius m, 18px glyph in primary,
+ *                  16 semibold
  *   side padding   24
  *
  * `topOffset` is the gap from the page header's bottom edge to the top of the art:
@@ -64,7 +65,9 @@ export default function EmptyState({
           onClick={action.onClick}
           className="mt-6 h-[44px] px-4 rounded-m border-m border-primary text-primary text-body-lg font-semibold flex items-center gap-2 active:scale-95 transition-transform"
         >
-          {action.icon && <Icon name={action.icon} size={18} />}
+          {/* The shipped SVGs are hard-coded white; the frames draw this glyph in the
+              button's own primary, so tint it from `text-primary` above. */}
+          {action.icon && <Icon name={action.icon} size={18} color="currentColor" />}
           {action.label}
         </button>
       )}
