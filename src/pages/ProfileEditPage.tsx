@@ -513,34 +513,38 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
 
         {/* Personal Info section */}
         <p className="text-body-md font-semibold text-white mt-6 mb-2">Personal Info</p>
-        <div className="bg-ink-10 rounded-l overflow-hidden">
+        {/* Profile -v Default: each field is its own 68px card 12 apart, with a 40px
+            ink-9 icon circle and the label in body_large/ink-2. */}
+        <div className="space-y-3">
           {/* Username row — read-only display, set at registration (unified with Account/Name) */}
-          <div className="w-full flex items-center gap-3 px-4 py-4 border-b border-white/5 text-left">
-            <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
-              <Icon name="user" size={20} />
+          <div className="w-full rounded-l bg-ink-10 h-[68px] px-4 flex items-center gap-3 text-left">
+            <div className="w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
+              <Icon name="user" size={24} />
             </div>
-            <span className="text-body-md text-white flex-1">Name</span>
+            <span className="text-body-lg text-ink-2 flex-1">Name</span>
             <span className="text-body-md text-ink-6 truncate max-w-[140px]">{profile.name}</span>
           </div>
 
           {/* Linked Email row */}
           <button
             onClick={() => handleEdit('email', profile.email)}
-            className="w-full flex items-center gap-3 px-4 py-4 border-b border-white/5 text-left"
+            className="w-full rounded-l bg-ink-10 h-[68px] px-4 flex items-center gap-3 text-left active:opacity-70 transition-opacity"
           >
-            <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
-              <Icon name="email" size={20} />
+            <div className="w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
+              <Icon name="email" size={24} />
             </div>
-            <span className="text-body-md text-white flex-1">Linked Email</span>
+            <span className="text-body-lg text-ink-2 flex-1">Linked Email</span>
             <span className="text-body-md text-ink-6 truncate max-w-[140px]">{profile.email}</span>
-            <Icon name="chevron-right" size={16} />
+            <Icon name="chevron-right" size={24} />
           </button>
 
           {/* User ID row (read-only) */}
           {userId !== null && (
-            <div className="w-full flex items-center gap-3 px-4 py-4 border-t border-white/5">
-              <Hash size={18} className="text-ink-6 flex-shrink-0" />
-              <span className="text-body-md text-white flex-1">User ID</span>
+            <div className="w-full rounded-l bg-ink-10 h-[68px] px-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
+                <Hash size={20} className="text-white" />
+              </div>
+              <span className="text-body-lg text-ink-2 flex-1">User ID</span>
               <span className="text-body-md text-ink-6">#{userId}</span>
             </div>
           )}
@@ -548,18 +552,16 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
 
         {/* Security section */}
         <p className="text-body-md font-semibold text-white mt-5 mb-2">Security</p>
-        <div className="bg-ink-10 rounded-l overflow-hidden">
-          <button
-            onClick={() => handleEdit('password', '')}
-            className="w-full flex items-center gap-3 px-4 py-4 text-left"
-          >
-            <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
-              <Lock size={20} className="text-white" />
-            </div>
-            <span className="text-body-md text-white flex-1">Change Password</span>
-            <Icon name="chevron-right" size={16} />
-          </button>
-        </div>
+        <button
+          onClick={() => handleEdit('password', '')}
+          className="w-full rounded-l bg-ink-10 h-[68px] px-4 flex items-center gap-3 text-left active:opacity-70 transition-opacity"
+        >
+          <div className="w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
+            <Lock size={20} className="text-white" />
+          </div>
+          <span className="text-body-lg text-ink-2 flex-1">Change Password</span>
+          <Icon name="chevron-right" size={24} />
+        </button>
 
         {/* Footer: founder redeem CTA hidden (APP-005). Modal kept; reachable from gold tag. */}
       </div>
@@ -642,30 +644,30 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
               exit={{ opacity: 0, scale: 0.92 }}
               transition={{ type: 'spring', damping: 24, stiffness: 320 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-[340px] bg-ink-10 rounded-l px-6 pt-6 pb-5"
+              className="w-[280px] bg-ink-10 rounded-l px-4 pb-4 pt-[22px]"
             >
-              <h3 className="text-headline-md font-bold text-white text-center mb-2">
-                {confirmAction === 'signout' ? 'Sign out?' : 'Delete Account?'}
+              <h3 className="text-title-lg font-semibold text-white text-center">
+                {confirmAction === 'signout' ? 'Sign out?' : 'Delete account?'}
               </h3>
-              <p className="text-body-md text-ink-6 text-center mb-6 leading-snug">
+              <p className="mt-1.5 text-label text-ink-5 text-center">
                 {confirmAction === 'signout'
                   ? "You'll need to sign in again to access your account."
-                  : 'This will permanently delete your account and all data. This action cannot be undone.'}
+                  : "This will permanently delete your account and saved data. This action can't be undone."}
               </p>
-              <div className="flex gap-3">
+              <div className="mt-[18px] flex gap-3">
                 <button
                   disabled={deleteBusy}
                   onClick={() => setConfirmAction(null)}
-                  className="flex-1 h-12 rounded-m border-s border-white text-white font-semibold text-body-lg active:scale-95 transition-transform disabled:opacity-50"
+                  className="flex-1 h-11 rounded-pill border-s border-ink-4 text-ink-4 font-semibold text-body-lg active:scale-95 transition-transform disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   disabled={deleteBusy}
                   onClick={handleConfirm}
-                  className={`flex-1 h-12 rounded-m font-semibold text-body-lg active:scale-95 transition-transform disabled:opacity-60 ${
+                  className={`flex-1 h-11 rounded-pill font-semibold text-body-lg active:scale-95 transition-transform disabled:opacity-60 ${
                     confirmAction === 'signout'
-                      ? 'bg-primary text-black'
+                      ? 'bg-primary text-primary-darker'
                       : 'bg-danger text-white'
                   }`}
                 >

@@ -1,8 +1,9 @@
 {
-  "version": "4.7.73",
-  "build": 2795,
+  "version": "4.7.74",
+  "build": 2796,
   "date": "2026-09-06",
   "changelog": [
-    "Device Info rows match B_1.2.3: each field is its own 68px card 12 apart instead of one divided list, with the label in body_large/ink-2 and the value in body_medium/ink-6 (they were the other way round)."
+    "Profile: Personal Info and Security become one 68px card per field, 12 apart, with 40px ink-9 icon circles and body_large/ink-2 labels, as Profile -v Default draws them.",
+    "Sign out / Delete account confirmations use the same 280px card and 44px pills as the Delete Device dialog, with the design's title case and copy."
   ]
 }
