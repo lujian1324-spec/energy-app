@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Loader2, AlertTriangle, Battery, LayoutGrid, Sun, TrendingUp } from 'lucide-react'
 import { useHistoryFetcher } from '../hooks/useHistoryFetcher'
-import { LastSync, SampleRate } from './DataTrust'
 
 type PowerTab = 'battery' | 'ac' | 'solar' | 'output'
 
@@ -25,6 +24,7 @@ export interface RealTimePowerChartProps {
    */
   batteryAsSoc?: boolean
   batterySoc?: number | null
+  /** Kept for API compatibility; the handoff card has no "Last sync" footer. */
   lastSyncAt?: number
   className?: string
 }
@@ -36,7 +36,7 @@ export interface RealTimePowerChartProps {
  * DeviceMonitorPage; the Battery tab can plot SOC (%) instead of power via the
  * batteryAsSoc prop.
  */
-export default function RealTimePowerChart({ deviceId, isOnline, values, batteryAsSoc = false, batterySoc, lastSyncAt, className }: RealTimePowerChartProps) {
+export default function RealTimePowerChart({ deviceId, isOnline, values, batteryAsSoc = false, batterySoc, className }: RealTimePowerChartProps) {
   const [powerDataSource, setPowerDataSource] = useState<PowerTab>('battery')
 
   const powerChartData = useMemo(() => ({
@@ -386,12 +386,6 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
           })}
         </div>
         </div>
-      </div>
-
-      {/* PRD v1.1 §8.2: 采样率标注 */}
-      <div className="flex items-center justify-between mb-2">
-        <LastSync lastSyncAt={lastSyncAt} />
-        <SampleRate intervalSec={30} />
       </div>
 
       {/* Bottom 4 tabs */}

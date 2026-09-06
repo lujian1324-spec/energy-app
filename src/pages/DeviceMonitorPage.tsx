@@ -193,7 +193,7 @@ export default function DeviceMonitorPage() {
       </PageHeaderShell>
 
       {/* Scrollable body */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pb-6 space-y-3">
+      <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pt-4 pb-6 space-y-5">
         {/* ─── SoC Card ─────────────────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -202,11 +202,11 @@ export default function DeviceMonitorPage() {
           className="bg-ink-10 rounded-l p-5"
         >
           {/* Ring */}
-          <div className="flex justify-center mb-5">
+          <div className="flex justify-center mt-1 mb-6">
             <BatteryRing
               percentage={remainingBatteryCapacity}
-              size={180}
-              strokeWidth={12}
+              size={170}
+              strokeWidth={10}
               isCharging={isCharging}
               connected={isOnline}
               timeRemaining={timeStr}
@@ -215,29 +215,32 @@ export default function DeviceMonitorPage() {
             />
           </div>
 
-          {/* Input / Output — Output flush right; values baseline (Figma B_1.1) */}
+          {/* Input / Output — 4x export: boxes 48 tall, two inputs grouped around the "+",
+              a wider Output column, and the "Output" label aligned to that column. */}
           <div>
-            <div className="flex items-end justify-between gap-2 mb-2">
-              <p className="text-caption text-ink-3">Input</p>
-              <p className="text-caption text-ink-3">Output</p>
+            <div className="flex items-end gap-5 mb-1">
+              <p className="flex-1 text-caption text-ink-3">Input</p>
+              <p className="w-[97px] shrink-0 text-caption text-ink-3">Output</p>
             </div>
-            <div className="flex items-stretch gap-2">
-              <div className="flex-1 border-xs border-ink-9 rounded-m px-3 py-3 text-center flex flex-col items-center justify-center">
-                <div className="flex items-baseline gap-0.5">
-                  <span className="text-body-lg font-semibold text-white tnum">{fmtW(acPower)}</span>
-                  <span className="text-tiny text-ink-5">W</span>
+            <div className="flex items-stretch gap-5">
+              <div className="flex-1 flex items-stretch gap-2.5">
+                <div className="flex-1 h-12 border-xs border-ink-9 rounded-m text-center flex flex-col items-center justify-center">
+                  <div className="flex items-baseline gap-0.5">
+                    <span className="text-body-lg font-semibold text-white tnum">{fmtW(acPower)}</span>
+                    <span className="text-tiny text-ink-5">W</span>
+                  </div>
+                  <p className="text-tiny text-ink-7">AC</p>
                 </div>
-                <p className="text-tiny text-ink-7 mt-0.5">AC</p>
-              </div>
-              <span className="text-ink-7 text-body-md font-semibold self-center">+</span>
-              <div className="flex-1 border-xs border-ink-9 rounded-m px-3 py-3 text-center flex flex-col items-center justify-center">
-                <div className="flex items-baseline gap-0.5">
-                  <span className="text-body-lg font-semibold text-white tnum">{fmtW(solarPower)}</span>
-                  <span className="text-tiny text-ink-5">W</span>
+                <span className="text-ink-7 text-body-md font-semibold self-center">+</span>
+                <div className="flex-1 h-12 border-xs border-ink-9 rounded-m text-center flex flex-col items-center justify-center">
+                  <div className="flex items-baseline gap-0.5">
+                    <span className="text-body-lg font-semibold text-white tnum">{fmtW(solarPower)}</span>
+                    <span className="text-tiny text-ink-5">W</span>
+                  </div>
+                  <p className="text-tiny text-ink-7">Solar</p>
                 </div>
-                <p className="text-tiny text-ink-7 mt-0.5">Solar</p>
               </div>
-              <div className="w-[106px] shrink-0 border-xs border-ink-9 rounded-m px-3 py-3 text-center flex flex-col items-center justify-center">
+              <div className="w-[97px] shrink-0 h-12 border-xs border-ink-9 rounded-m text-center flex flex-col items-center justify-center">
                 <div className="flex items-baseline gap-0.5">
                   <span className="text-body-lg font-semibold text-white tnum">{fmtW(outputPower)}</span>
                   <span className="text-tiny text-ink-5">W</span>
