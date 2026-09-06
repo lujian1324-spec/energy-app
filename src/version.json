@@ -1,9 +1,11 @@
 {
-  "version": "4.7.66",
-  "build": 2788,
+  "version": "4.7.67",
+  "build": 2789,
   "date": "2026-09-06",
   "changelog": [
-    "Setting: the Power Outage and Low Battery push cards match the D_1.1 export — 40px ink-9 icon circles with 24px glyphs in the shared 68px card box, and a 16px gap under the section header.",
-    "(Solar Status is out of scope this pass and stays a hidden channel.)"
+    "Sign-in rebuilt as the handoff's passwordless email flow (A_2.1 / A_2.1.1 / A_2.1.2): 'Sign up or log in' landing with a 370x68 Continue with Email card, an email step with an underlined field, and a six-cell verification-code step with a Resend countdown.",
+    "The OTP plumbing is unchanged — it still calls /user/send/email/captcha then /login/email.",
+    "Username + password moves behind a 'Sign in with password' link so existing accounts, Sign up and Forgot password stay reachable; Continue as Guest is kept for the same reason. Neither is in the handoff.",
+    "Google / Apple sign-in is out of scope for this pass, so the OR block and those two rows are not built."
   ]
 }
