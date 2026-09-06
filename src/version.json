@@ -1,12 +1,10 @@
 {
-  "version": "4.7.68",
-  "build": 2790,
+  "version": "4.7.69",
+  "build": 2791,
   "date": "2026-09-06",
   "changelog": [
-    "Notifications rebuilt to the A_1.2 handoff: rows lose the red card and become full-width entries on the page background with a full-bleed ink-9 hairline, a 40px ink-9 icon circle routed to the battery / solar / outage glyph, a body_medium/semibold title, a tiny/ink-4 '{device} - {detail}' line, and the timestamp aligned to its first line.",
-    "Timestamps are relative the way the design shows them: 'Just now', '4 mins ago', 'Today 3:42 PM', then 'May 3'.",
-    "Unread rows carry the design's danger dot, backed by a new seen list in the alarm store; entering the page snapshots what is new, then marks everything read.",
-    "Clearing moved from an inline Clear pill to the design's swipe-left red trash panel (72px).",
-    "Demo low-battery alarm now carries a lowBattery key so it resolves to a short title with the message as the detail, matching the design's two-line row."
+    "Sign-in is now purely passwordless: /login/email registers an unknown address, so the single email flow covers both sign up and log in.",
+    "Removed the username + password step, the /register and /forgot-password routes and their two pages — with no password there is nothing to forget and no separate sign-up.",
+    "The seven ds-*.svg illustrations were re-exported with real transparency (their embedded JPEG was un-matted to a straight-alpha PNG), so the #ds-unmatte filter that compensated for the dark rectangle is gone."
   ]
 }

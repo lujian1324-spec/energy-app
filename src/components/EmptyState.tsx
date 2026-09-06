@@ -54,7 +54,7 @@ export default function EmptyState({
         src={art}
         alt=""
         aria-hidden
-        className="ds-illustration w-[200px] h-[200px] object-contain select-none pointer-events-none"
+        className="w-[200px] h-[200px] object-contain select-none pointer-events-none"
         draggable={false}
       />
       <h2 className="mt-8 text-title-lg font-semibold text-ink-3">{title}</h2>

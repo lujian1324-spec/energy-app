@@ -72,7 +72,7 @@ export default function ScanDevicesScreen(p: Props) {
           <img
             src={`${import.meta.env.BASE_URL}ds-bt-permission.svg`}
             alt=""
-            className="ds-illustration w-full max-w-[280px] h-auto select-none"
+            className="w-full max-w-[280px] h-auto select-none"
             draggable={false}
           />
         </div>
@@ -111,7 +111,7 @@ export default function ScanDevicesScreen(p: Props) {
           <img
             src={`${import.meta.env.BASE_URL}ds-bt-off.svg`}
             alt=""
-            className="ds-illustration w-full max-w-[240px] h-auto select-none"
+            className="w-full max-w-[240px] h-auto select-none"
             draggable={false}
           />
         </div>
@@ -140,7 +140,7 @@ export default function ScanDevicesScreen(p: Props) {
               <img
                 src={`${import.meta.env.BASE_URL}ds-searching-bt.svg`}
                 alt=""
-                className="ds-illustration w-full max-w-[330px] h-auto select-none"
+                className="w-full max-w-[330px] h-auto select-none"
                 draggable={false}
               />
             </>

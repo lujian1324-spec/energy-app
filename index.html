@@ -21,21 +21,7 @@
   </head>
   <body>
     <div id="root"></div>
-    <!-- Handoff illustrations: the ds-*.svg files (except ds-device-empty.svg) wrap an
-         opaque JPEG that was authored on the 4.7.53 #0b0b0b canvas. b55edb5 restored the
-         Figma #141414, so they draw a dark rectangle. This filter adds the 9/255 gap back
-         to every channel, which turns the matte into exactly #141414 and lifts the artwork
-         by the same amount, keeping the faint radar rings intact.
-         Proper fix: re-export them with transparency, as ds-device-empty.svg already is. -->
-    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
-      <filter id="ds-unmatte" color-interpolation-filters="sRGB">
-        <feComponentTransfer>
-          <feFuncR type="linear" slope="1" intercept="0.0353" />
-          <feFuncG type="linear" slope="1" intercept="0.0353" />
-          <feFuncB type="linear" slope="1" intercept="0.0353" />
-        </feComponentTransfer>
-      </filter>
-    </svg>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

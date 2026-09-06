@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Loader2, X } from 'lucide-react'
 import Icon from '../components/Icon'
 import { useAuthStore } from '../stores/authStore'
@@ -21,14 +21,14 @@ import { sanitizeUiCopy } from '../utils/uiCopy'
  *
  * Google / Apple are deliberately out of scope for this pass, so the "OR" block and
  * those two rows are not built.
+ *
+ * There is no password path: /login/email registers an unknown address, so this single
+ * flow covers both "sign up" and "log in", exactly as the screen title says.
  */
-type Step = 'landing' | 'email' | 'code' | 'password'
+type Step = 'landing' | 'email' | 'code'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const OTP_LEN = 6
-
-const FIELD_CLASS =
-  'flex items-center gap-3 bg-ink-10 rounded-l px-4 py-4 mb-3 min-h-[56px] h-[56px] box-border focus-within:ring-1 focus-within:ring-inset focus-within:ring-primary transition-shadow'
 
 /** Bottom action bar: ink-9 hairline over a 370x44 primary button (disabled = 50%). */
 function BottomAction({
@@ -61,13 +61,11 @@ function BottomAction({
 }
 
 export default function LoginPage() {
-  const { loading, isAuthenticated, login } = useAuthStore()
+  const { loading, isAuthenticated } = useAuthStore()
   const navigate = useNavigate()
 
   const [step, setStep] = useState<Step>('landing')
   const [email, setEmail] = useState('')
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
 
   const [otpCode, setOtpCode] = useState('')
   const [captchaId, setCaptchaId] = useState<string | null>(null)
@@ -149,22 +147,6 @@ export default function LoginPage() {
     }
   }
 
-  const handlePasswordSignIn = async () => {
-    const account = username.trim()
-    if (!account || !password) return
-    setError(null)
-    setBusy(true)
-    try {
-      const ok = await login(account, password)
-      if (ok) navigate('/', { replace: true })
-      else setError(useAuthStore.getState().error || 'Invalid credentials.')
-    } catch {
-      setError('Login failed. Please try again.')
-    } finally {
-      setBusy(false)
-    }
-  }
-
   const continueAsGuest = () => {
     useAuthStore.getState().setGuestMode()
     navigate('/', { replace: true })
@@ -206,14 +188,10 @@ export default function LoginPage() {
             <a href={PRIVACY_URL} target="_blank" rel="noopener noreferrer" className="text-primary">Privacy Policy</a>
           </p>
 
-          {/* Not in the handoff. Kept so guest mode and existing username/password
-              accounts stay reachable — see the 4.7.67 notes. */}
-          <div className="mt-8 flex flex-col items-center gap-3">
+          {/* Not in the handoff, kept because guest mode is a shipped feature. */}
+          <div className="mt-8 flex flex-col items-center">
             <button onClick={continueAsGuest} disabled={loading} className="text-body-md text-ink-7">
               Continue as Guest
-            </button>
-            <button onClick={() => { setError(null); setStep('password') }} className="text-body-md text-ink-7">
-              Sign in with password
             </button>
           </div>
         </div>
@@ -261,115 +239,62 @@ export default function LoginPage() {
   }
 
   // ─── A_2.1.2 Enter verification code ─────────────────────────────────────
-  if (step === 'code') {
-    return (
-      <div className="h-full flex flex-col bg-ink-12">
-        <div className="px-4 pb-5 safe-area-top-header">
-          <BackButton to="email" />
-        </div>
-        <div className="flex-1 px-4">
-          <h1 className="mt-[18px] text-headline-md font-semibold text-white text-center">Enter verification code</h1>
-          <p className="mt-2 text-body-md text-ink-5 text-center">
-            We sent a 6-digit verification code to<br />
-            <span className="font-semibold text-ink-2">{email.trim()}</span>
-          </p>
-
-          {/* One bordered row split into six 62px cells (4x export), with a transparent
-              input on top so the numeric keyboard and one-time-code autofill still work. */}
-          <div className="relative mt-[22px] h-[62px]">
-            <div className="absolute inset-0 flex rounded-m border-s border-ink-7 overflow-hidden">
-              {Array.from({ length: OTP_LEN }, (_, i) => (
-                <div
-                  key={i}
-                  className={`flex-1 flex items-center justify-center text-headline-md font-semibold text-ink-2
-                    ${i > 0 ? 'border-l border-ink-7' : ''}`}
-                >
-                  {otpCode[i] ?? ''}
-                </div>
-              ))}
-            </div>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={otpCode}
-              onChange={e => { setOtpCode(e.target.value.replace(/\D/g, '').slice(0, OTP_LEN)); setError(null) }}
-              autoComplete="one-time-code"
-              maxLength={OTP_LEN}
-              autoFocus
-              aria-label="Verification code"
-              className="absolute inset-0 w-full h-full bg-transparent text-transparent caret-transparent
-                outline-none select-none"
-            />
-          </div>
-
-          <div className="mt-[10px] text-center">
-            <button
-              onClick={() => { void sendCode() }}
-              disabled={cooldown > 0 || sending}
-              className="text-body-md text-primary disabled:text-primary/50"
-            >
-              {cooldown > 0 ? `Resend Code (${cooldown})` : 'Resend Code'}
-            </button>
-          </div>
-          {error && <p className="mt-3 text-caption text-danger text-center">{error}</p>}
-        </div>
-        <BottomAction
-          label="Continue"
-          onPress={handleVerify}
-          disabled={otpCode.length < OTP_LEN || !captchaId}
-          busy={busy}
-        />
-      </div>
-    )
-  }
-
-  // ─── Username + password (not in the handoff; kept for existing accounts) ──
   return (
     <div className="h-full flex flex-col bg-ink-12">
       <div className="px-4 pb-5 safe-area-top-header">
-        <BackButton to="landing" />
+        <BackButton to="email" />
       </div>
       <div className="flex-1 px-4">
-        <h1 className="mt-[18px] mb-6 text-headline-md font-semibold text-white text-center">Sign in with password</h1>
-        <div className={FIELD_CLASS}>
+        <h1 className="mt-[18px] text-headline-md font-semibold text-white text-center">Enter verification code</h1>
+        <p className="mt-2 text-body-md text-ink-5 text-center">
+          We sent a 6-digit verification code to<br />
+          <span className="font-semibold text-ink-2">{email.trim()}</span>
+        </p>
+
+        {/* One bordered row split into six 62px cells (4x export), with a transparent
+            input on top so the numeric keyboard and one-time-code autofill still work. */}
+        <div className="relative mt-[22px] h-[62px]">
+          <div className="absolute inset-0 flex rounded-m border-s border-ink-7 overflow-hidden">
+            {Array.from({ length: OTP_LEN }, (_, i) => (
+              <div
+                key={i}
+                className={`flex-1 flex items-center justify-center text-headline-md font-semibold text-ink-2
+                  ${i > 0 ? 'border-l border-ink-7' : ''}`}
+              >
+                {otpCode[i] ?? ''}
+              </div>
+            ))}
+          </div>
           <input
             type="text"
-            value={username}
-            onChange={e => { setUsername(e.target.value); setError(null) }}
-            placeholder="Username"
-            autoComplete="username"
-            autoCapitalize="none"
-            autoCorrect="off"
-            className="flex-1 h-full bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
-          />
-          {username && (
-            <button onClick={() => setUsername('')} aria-label="Clear username">
-              <X size={16} className="text-ink-7" />
-            </button>
-          )}
-        </div>
-        <div className={FIELD_CLASS}>
-          <input
-            type="password"
-            value={password}
-            onChange={e => { setPassword(e.target.value); setError(null) }}
-            placeholder="Password"
-            autoComplete="current-password"
-            onKeyDown={e => { if (e.key === 'Enter') void handlePasswordSignIn() }}
-            className="flex-1 h-full bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
+            inputMode="numeric"
+            value={otpCode}
+            onChange={e => { setOtpCode(e.target.value.replace(/\D/g, '').slice(0, OTP_LEN)); setError(null) }}
+            autoComplete="one-time-code"
+            maxLength={OTP_LEN}
+            autoFocus
+            aria-label="Verification code"
+            className="absolute inset-0 w-full h-full bg-transparent text-transparent caret-transparent
+              outline-none select-none"
           />
         </div>
-        <div className="flex justify-between">
-          <Link to="/register" className="text-body-md text-primary">Sign up</Link>
-          <Link to="/forgot-password" className="text-body-md text-primary">Forgot password?</Link>
+
+        <div className="mt-[10px] text-center">
+          <button
+            onClick={() => { void sendCode() }}
+            disabled={cooldown > 0 || sending}
+            className="text-body-md text-primary disabled:text-primary/50"
+          >
+            {cooldown > 0 ? `Resend Code (${cooldown})` : 'Resend Code'}
+          </button>
         </div>
-        {error && <p className="mt-3 text-caption text-danger">{error}</p>}
+        {error && <p className="mt-3 text-caption text-danger text-center">{error}</p>}
       </div>
       <BottomAction
-        label="Sign In"
-        onPress={handlePasswordSignIn}
-        disabled={!username.trim() || !password}
-        busy={busy || loading}
+        label="Continue"
+        onPress={handleVerify}
+        disabled={otpCode.length < OTP_LEN || !captchaId}
+        busy={busy}
       />
     </div>
   )

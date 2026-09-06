@@ -7,13 +7,11 @@ import DevicePage from './pages/DevicePage'
 import StatsPage from './pages/StatsPage'
 import SettingPage from './pages/SettingPage'
 import LoginPage from './pages/LoginPage'
-import RegisterPage from './pages/RegisterPage'
 import SmartSchedulePage from './pages/SmartSchedulePage'
 import NotificationsPage from './pages/NotificationsPage'
 import OnboardingPage from './pages/OnboardingPage'
 import DeviceMonitorPage from './pages/DeviceMonitorPage'
 import DeviceDetailPage from './pages/DeviceDetailPage'
-import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import BleDebugPage from './pages/BleDebugPage'
 import PassthroughPage from './pages/PassthroughPage'
 import DebugParamsPage from './pages/DebugParamsPage'
@@ -110,8 +108,10 @@ function AppInner() {
     return <SessionLoadingScreen />
   }
 
-  // 登录/注册页单独渲染，不包含底部导航
-  if (location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/forgot-password') {
+  // 登录页单独渲染，不包含底部导航。
+  // /register 与 /forgot-password 在 4.7.69 随无密码流一起移除：/login/email 对陌生邮箱
+  // 会自动注册，单一流程同时覆盖注册与登录，也就不再有密码可忘。
+  if (location.pathname === '/login') {
     return (
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
@@ -126,11 +126,6 @@ function AppInner() {
               path="/login"
               element={isAuthenticated ? <Navigate to="/devices" replace /> : <LoginPage />}
             />
-            <Route
-              path="/register"
-              element={isAuthenticated ? <Navigate to="/devices" replace /> : <RegisterPage />}
-            />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           </Routes>
         </motion.div>
       </AnimatePresence>

@@ -59,7 +59,7 @@ export default function OnboardingPage() {
         <img
           src={`${import.meta.env.BASE_URL}ds-onboarding.svg`}
           alt=""
-          className="ds-illustration mt-[90px] w-[300px] h-auto select-none"
+          className="mt-[90px] w-[300px] h-auto select-none"
           draggable={false}
         />
       </div>
