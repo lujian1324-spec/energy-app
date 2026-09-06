@@ -193,7 +193,7 @@ export default function DeviceMonitorPage() {
       </PageHeaderShell>
 
       {/* Scrollable body */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pt-4 pb-6 space-y-5">
+      <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pt-4 pb-6 space-y-4">
         {/* ─── SoC Card ─────────────────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}

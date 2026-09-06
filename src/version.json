@@ -1,14 +1,10 @@
 {
-  "version": "4.7.82",
-  "build": 2804,
+  "version": "4.7.83",
+  "build": 2805,
   "date": "2026-09-06",
   "changelog": [
-    "Text fields across sign-in, Device Name, Name, Linked Email, Redeem and Feedback now use the handoff's filled card with the rule and the disc-shaped clear control.",
-    "Display Icon and Battery Priority are bottom sheets over the settings list, with the close button above the title; Display Icon drops the labels and the Device / Custom tiles the design does not have.",
-    "Feedback is a bottom sheet again and has its contact-email field back; Redeem matches the same sheet chrome.",
-    "Device Name lost the device picker the design does not draw, Device Info's Model row lost its chevron, and battery health no longer prints a space before the percent sign.",
-    "Add Device centres its header title and puts the headline and radar art on the design's pixels; the onboarding radar moves up 25.",
-    "Settings starts its profile block and section heading on the design's pixels and shows the display name instead of the registration account; Insights hides Share when there is no device.",
-    "Battery Priority reads \"Backup Mode\" on the settings row, the notification title is \"Low Battery\", and a dim header Save is primary at 30% rather than grey."
+    "The Real-Time Power card is the design's 291pt tall with a 136pt plot, instead of 216 with a 78pt plot.",
+    "Its tabs use the handoff's plug, solar and output glyphs instead of stand-in icons.",
+    "Removed the \"History unavailable\" badge from the chart."
   ]
 }
