@@ -451,7 +451,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             <button
               onClick={() => { setPendingIcon('photo'); setPendingCustomImage(null) }}
               className={`flex flex-col items-center gap-2 py-4 rounded-l transition-colors ${
-                pendingIcon === 'photo' ? 'bg-primary' : 'bg-ink-10'
+                pendingIcon === 'photo' ? 'bg-primary-darker' : 'bg-ink-10'
               }`}
             >
               <img
@@ -461,7 +461,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               />
               <span
                 className={`text-label ${
-                  pendingIcon === 'photo' ? 'text-black font-semibold' : 'text-white'
+                  pendingIcon === 'photo' ? 'text-white font-semibold' : 'text-white'
                 }`}
               >
                 Device
@@ -470,7 +470,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             <button
               onClick={handlePickCustomImage}
               className={`flex flex-col items-center gap-2 py-4 rounded-l transition-colors ${
-                pendingIcon === 'custom' ? 'bg-primary' : 'bg-ink-10'
+                pendingIcon === 'custom' ? 'bg-primary-darker' : 'bg-ink-10'
               }`}
             >
               {pendingCustomImage ? (
@@ -478,12 +478,12 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               ) : (
                 <Camera
                   size={28}
-                  className={pendingIcon === 'custom' ? 'text-black' : 'text-white'}
+                  className="text-white"
                 />
               )}
               <span
                 className={`text-label ${
-                  pendingIcon === 'custom' ? 'text-black font-semibold' : 'text-white'
+                  pendingIcon === 'custom' ? 'text-white font-semibold' : 'text-white'
                 }`}
               >
                 Custom
@@ -494,17 +494,17 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 key={id}
                 onClick={() => { setPendingIcon(id); setPendingCustomImage(null) }}
                 className={`flex flex-col items-center gap-2 py-4 rounded-l transition-colors ${
-                  pendingIcon === id ? 'bg-primary' : 'bg-ink-10'
+                  pendingIcon === id ? 'bg-primary-darker' : 'bg-ink-10'
                 }`}
               >
                 <Icon
                   name={pack}
                   size={28}
-                  className={pendingIcon === id ? 'brightness-0' : ''}
+
                 />
                 <span
                   className={`text-label ${
-                    pendingIcon === id ? 'text-black font-semibold' : 'text-white'
+                    pendingIcon === id ? 'text-white font-semibold' : 'text-white'
                   }`}
                 >
                   {label}
@@ -516,7 +516,9 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
         <div className="px-4 pb-8 pt-4">
           <button
             onClick={handleSaveIcon}
-            className="w-full h-12 rounded-l bg-primary text-black font-semibold text-body-lg active:scale-95 transition-transform"
+            disabled={pendingIcon === selectedIcon && pendingCustomImage === customImage}
+            className="w-full h-12 rounded-l bg-primary text-primary-darker font-semibold text-body-lg
+              disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-transform"
           >
             Save
           </button>
