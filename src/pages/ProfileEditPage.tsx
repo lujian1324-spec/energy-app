@@ -1,10 +1,10 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useRef, useEffect } from 'react'
 import {
-  Mail,
-  Camera,
 } from 'lucide-react'
 import Icon from '../components/Icon'
+import TextField from '../components/TextField'
+import BottomSheet from '../components/BottomSheet'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useAuthStore } from '../stores/authStore'
 import { saveUserProfile, getUserProfile } from '../db/powerflowDB'
@@ -278,7 +278,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
               onClick={handleSave}
               disabled={isSaving || tempValue.trim() === profile.name}
               className={`text-body-lg font-semibold transition-colors ${
-                !isSaving && tempValue.trim() !== profile.name ? 'text-primary' : 'text-ink-9 cursor-not-allowed'
+                !isSaving && tempValue.trim() !== profile.name ? 'text-primary' : 'text-primary/30 cursor-not-allowed'
               }`}
             >
               Save
@@ -288,68 +288,43 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
           )}
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 pt-6 space-y-4">
+        <div className="flex-1 overflow-y-auto px-4 pt-2 space-y-4">
 
           {/* ── NAME (D_2.5) ── */}
           {editingField === 'name' && (
-            <div className="flex items-center gap-3 rounded-l bg-ink-10 px-4 h-[56px]">
-              <input
-                type="text"
-                value={tempValue}
-                onChange={(e) => setTempValue(e.target.value)}
-                placeholder="Your name"
-                autoFocus
-                maxLength={40}
-                className="flex-1 min-w-0 bg-transparent text-body-lg text-white placeholder:text-ink-7 focus:outline-none"
-              />
-              {tempValue && (
-                <button onClick={() => setTempValue('')} aria-label="Clear name" className="shrink-0">
-                  <Icon name="close" size={16} />
-                </button>
-              )}
-            </div>
+            <TextField
+              ariaLabel="Name"
+              value={tempValue}
+              onChange={setTempValue}
+              onClear={() => setTempValue('')}
+              placeholder="Your name"
+              maxLength={40}
+              autoFocus
+            />
           )}
 
-          {/* ── EMAIL ── */}
+          {/* ── LINKED EMAIL (D_2.6) ── */}
           {editingField === 'email' && (
             <>
-              <div className="bg-ink-10 rounded-l overflow-hidden">
-                <div className="flex items-center gap-3 px-4 py-3">
-                  <Mail size={16} className="text-ink-6 flex-shrink-0" />
-                  <input
-                    type="email"
-                    value={tempValue}
-                    onChange={(e) => { setTempValue(e.target.value); setEmailOtpSent(false) }}
-                    placeholder="New email address"
-                    autoFocus
-                    disabled={emailOtpSent}
-                    className="flex-1 bg-transparent text-body-lg text-white placeholder:text-ink-7 focus:outline-none disabled:opacity-60"
-                  />
-                </div>
-              </div>
+              <TextField
+                type="email"
+                inputMode="email"
+                ariaLabel="New email address"
+                value={tempValue}
+                onChange={(next) => { setTempValue(next); setEmailOtpSent(false) }}
+                onClear={emailOtpSent ? undefined : () => setTempValue('')}
+                placeholder="New email address"
+                autoFocus
+              />
               {emailOtpSent && (
-                <div className="bg-ink-10 rounded-l overflow-hidden">
-                  <div className="flex items-center gap-3 px-4 py-3">
-                    <Mail size={16} className="text-ink-6 flex-shrink-0" />
-                    <input
-                      type="text"
-                      value={emailOtpCode}
-                      onChange={(e) => setEmailOtpCode(e.target.value)}
-                      placeholder="Verification code"
-                      autoFocus
-                      maxLength={8}
-                      className="flex-1 bg-transparent text-body-lg text-white placeholder:text-ink-7 focus:outline-none"
-                    />
-                  </div>
-                </div>
+                <TextField
+                  ariaLabel="Verification code"
+                  value={emailOtpCode}
+                  onChange={setEmailOtpCode}
+                  placeholder="Verification code"
+                  maxLength={8}
+                />
               )}
-              <button
-                onClick={handleSave}
-                disabled={isSaving || (!emailOtpSent && !tempValue)}
-                className="w-full h-12 rounded-full bg-primary text-black font-semibold text-body-md disabled:opacity-40"
-              >
-                {isSaving ? 'Please wait…' : emailOtpSent ? 'Confirm Update' : emailCooldown > 0 ? `Resend (${emailCooldown}s)` : 'Send Verification Code'}
-              </button>
             </>
           )}
 
@@ -358,6 +333,22 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
             <p className="text-danger text-body-md text-center">{fieldError}</p>
           ) : null}
         </div>
+        {/* D_2.6 pins the action to the bottom edge rather than stacking it under
+            the field, the same way the sign-in flow does. */}
+        {editingField === 'email' && (
+          <div
+            className="border-t border-ink-9 px-4 pt-3"
+            style={{ paddingBottom: 'calc(max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)) + 16px)' }}
+          >
+            <button
+              onClick={handleSave}
+              disabled={isSaving || (!emailOtpSent && !tempValue)}
+              className="w-full h-11 rounded-m bg-primary text-primary-darker font-semibold text-body-lg disabled:opacity-50 active:scale-[0.98] transition-transform"
+            >
+              {isSaving ? 'Please wait…' : emailOtpSent ? 'Confirm Update' : emailCooldown > 0 ? `Resend (${emailCooldown}s)` : 'Verify New Email'}
+            </button>
+          </div>
+        )}
       </motion.div>
     )
   }
@@ -402,14 +393,14 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
               <div className="absolute right-0 top-12 z-20 w-44 bg-ink-10 rounded-l shadow-xl overflow-hidden border border-white/10">
                 <button
                   onClick={handleSignOut}
-                  className="w-full text-left px-4 py-3 text-body-md text-white hover:bg-white/5 transition-colors"
+                  className="w-full text-left px-4 py-4 text-body-md text-white hover:bg-white/5 transition-colors"
                 >
                   Sign out
                 </button>
                 <div className="border-t border-white/10" />
                 <button
                   onClick={handleDeleteAccount}
-                  className="w-full text-left px-4 py-3 text-body-md text-danger hover:bg-white/5 transition-colors"
+                  className="w-full text-left px-4 py-4 text-body-md text-danger hover:bg-white/5 transition-colors"
                 >
                   Delete Account
                 </button>
@@ -423,24 +414,29 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
       <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pb-8">
 
         {/* Avatar section */}
-        <div className="flex flex-col items-center pt-8 pb-4">
+        {/* `Profile -v Default` puts the 96px avatar at y166. */}
+        <div className="flex flex-col items-center pt-12 pb-4">
           <div className="relative cursor-pointer" onClick={handleAvatarClick}>
-            <div className={`w-24 h-24 rounded-full border-2 overflow-hidden bg-ink-10 flex items-center justify-center ${
+            {/* 96px overall: a 4px ring, 4px of page ground, then the 80px disc. */}
+            <div className={`w-24 h-24 rounded-full border-4 p-1 ${
               settings.founderBadge ? 'border-membership' : 'border-primary'
             }`}>
-              {profile.avatar ? (
-                <img
-                  src={profile.avatar}
-                  alt="Avatar"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <Icon name="user" size={40} />
-              )}
+              <div className="w-full h-full rounded-full overflow-hidden bg-ink-10 flex items-center justify-center">
+                {profile.avatar ? (
+                  <img
+                    src={profile.avatar}
+                    alt="Avatar"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  /* `Profile -v Default 無頭貼` uses the Sierro bolt, in primary. */
+                  <Icon name="thunder" size={40} color="#01D6BE" />
+                )}
+              </div>
             </div>
-            {/* Pencil edit overlay bottom-right */}
-            <div className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-primary flex items-center justify-center border-2 border-ink-12">
-              <Camera size={13} className="text-black" />
+            {/* Pencil badge: 32px ink-8 disc, 2px white border, white glyph. */}
+            <div className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-ink-8 flex items-center justify-center border-2 border-white">
+              <Icon name="edit" size={15} />
             </div>
           </div>
 
@@ -466,7 +462,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
         </div>
 
         {/* Personal Info section */}
-        <p className="text-body-md font-semibold text-white mt-6 mb-2">Personal Info</p>
+        <p className="text-body-md font-semibold text-white mt-8 mb-3.5">Personal Info</p>
         {/* Profile -v Default: each field is its own 68px card 12 apart, with a 40px
             ink-9 icon circle and the label in body_large/ink-2. */}
         <div className="space-y-3">
@@ -514,62 +510,34 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
       {/* ==================== Redeem Founder Badge 弹窗 (bottom sheet) ==================== */}
       <AnimatePresence>
         {showRedeem && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end bg-black/60"
-            onClick={() => setShowRedeem(false)}
+          <BottomSheet
+            title="Redeem Founder Badge"
+            titleAlign="left"
+            labelledBy="redeem-title"
+            onClose={() => setShowRedeem(false)}
           >
-            <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full bg-ink-10 rounded-t-[24px] px-6 pt-3 pb-8 safe-area-bottom"
-            >
-              {/* Grabber */}
-              <div className="w-9 h-1 rounded-full bg-ink-8 mx-auto mb-5" />
-
-              {/* Header */}
-              <div className="flex items-start justify-between mb-5">
-                <h3 className="text-headline-md font-bold text-white">Redeem Founder Badge</h3>
-                <button
-                  onClick={() => setShowRedeem(false)}
-                  className="w-8 h-8 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0"
-                >
-                  <Icon name="close" size={16} />
-                </button>
-              </div>
-
-              {/* Activation Code input */}
-              <div className={`rounded-m border px-4 pt-2.5 pb-3 mb-4 ${founderError ? 'border-danger' : 'border-ink-9'}`}>
-                <label className="text-label text-ink-6">Activation Code</label>
-                <input
-                  type="text"
-                  value={founderCode}
-                  onChange={(e) => { setFounderCode(e.target.value); setFounderError('') }}
-                  placeholder="Enter your code"
-                  autoFocus
-                  className="w-full bg-transparent text-title-md text-white placeholder:text-ink-7 focus:outline-none mt-0.5"
-                />
-              </div>
-
-              {founderError && (
-                <p className="text-body-md text-danger mb-3 -mt-1">{founderError}</p>
-              )}
-
-              {/* Activate button */}
+            <div className="mt-6 px-6">
+              <TextField
+                outlined
+                label="Activation Code"
+                ariaLabel="Activation code"
+                value={founderCode}
+                onChange={(next) => { setFounderCode(next); setFounderError('') }}
+                placeholder="e.g. FOUNDER2024"
+                error={founderError || null}
+                autoFocus
+              />
+            </div>
+            <div className="mt-6 px-6">
               <button
                 onClick={handleActivateBadge}
                 disabled={!founderCode.trim()}
-                className="w-full h-14 rounded-m bg-primary text-black font-semibold text-body-lg active:scale-[0.98] transition-transform disabled:opacity-40 disabled:active:scale-100"
+                className="w-full h-12 rounded-m bg-primary text-primary-darker font-semibold text-body-lg active:scale-[0.98] transition-transform disabled:opacity-50 disabled:active:scale-100"
               >
                 Activate Badge
               </button>
-            </motion.div>
-          </motion.div>
+            </div>
+          </BottomSheet>
         )}
       </AnimatePresence>
 

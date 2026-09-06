@@ -553,6 +553,8 @@ export default function StatsPage() {
     <div className="h-full flex flex-col bg-ink-12 overflow-hidden">
       <PageHeaderShell filled={hasDevice} className="flex justify-between items-center">
         <h1 className="text-display font-display text-white">Insights</h1>
+        {/* C_1.1 -v Empty State has no Share button. */}
+        {hasDevice && (
         <button
           aria-label="Share"
           disabled={sharing}
@@ -625,6 +627,7 @@ export default function StatsPage() {
         >
           {sharing ? <Loader2 size={24} className="animate-spin" /> : <Icon name="share" size={24} />}
         </button>
+        )}
       </PageHeaderShell>
 
       <div ref={shareRef} className="flex-1 overflow-y-auto scrollbar-hide px-4 pb-4">

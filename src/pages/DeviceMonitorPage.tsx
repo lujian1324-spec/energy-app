@@ -186,14 +186,14 @@ export default function DeviceMonitorPage() {
             onClick={() => navigate('/notifications')}
           >
             {device?.isAlarmed && (
-              <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-danger border-2 border-ink-10" />
+              <span className="absolute top-px right-px w-2.5 h-2.5 rounded-full bg-danger" />
             )}
           </HeaderIconButton>
         </div>
       </PageHeaderShell>
 
       {/* Scrollable body */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pt-4 pb-6 space-y-5">
+      <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pt-4 pb-6 space-y-4">
         {/* ─── SoC Card ─────────────────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}

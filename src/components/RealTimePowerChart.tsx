@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { Loader2, AlertTriangle, Battery, LayoutGrid, Sun, TrendingUp } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
+import Glyph from './Icon'
 import { useHistoryFetcher } from '../hooks/useHistoryFetcher'
 
 type PowerTab = 'battery' | 'ac' | 'solar' | 'output'
@@ -63,7 +64,6 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
   const {
     points: rawHistoryPoints,
     loading: historyLoading,
-    error: historyError,
   } = useHistoryFetcher(deviceId, todayFrom, todayTo)
 
   // ─── Chart zoom / pan state (unix ms within today) ───
@@ -212,7 +212,7 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
   // Rendered as an HTML overlay (like the X-axis labels) because the SVG uses
   // preserveAspectRatio="none", which would distort any <text> inside it. The
   // SVG is 78px tall over a 0..70 viewBox, so a viewBox y maps to y*(78/70) px.
-  const SVG_PX_H = 78
+  const SVG_PX_H = 136
   const Y_TICKS = useMemo(() => {
     const unit = currentChartData.unit
     return [
@@ -262,11 +262,12 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
       </div>
 
       {/* Chart area: left Y-axis scale gutter + plot region */}
-      <div className="relative mb-1 flex items-start" style={{ height: 96 }}>
+      <div className="relative mb-1 flex items-start" style={{ height: 154 }}>
         {/* Y-axis scale labels (max at top, 0 at bottom) — HTML overlay, aligned to
-            the SVG's 78px height (the SVG's preserveAspectRatio="none" would distort
-            <text>, so labels live outside it like the X-axis labels). */}
-        <div className="relative flex-shrink-0" style={{ width: 30, height: 78 }}>
+            the SVG's 136px height (the SVG's preserveAspectRatio="none" would distort
+            <text>, so labels live outside it like the X-axis labels). B_1.1 draws the
+            plot 136 tall inside a 291 card. */}
+        <div className="relative flex-shrink-0" style={{ width: 30, height: 136 }}>
           {Y_TICKS.map((tick, i) => (
             <span
               key={i}
@@ -300,20 +301,10 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
           </div>
         )}
 
-        {/* History fetch failed and there's nothing (cached or partial) to show —
-            without this the chart falls back to the flat placeholder dash below,
-            which is visually identical to "no data yet today" and hides a real error. */}
-        {!historyLoading && historyError && rawHistoryPoints.length === 0 && (
-          <div className="absolute top-1 left-1 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-ink-11 border border-danger/[0.3]">
-            <AlertTriangle size={9} className="text-danger" />
-            <span className="text-[9px] text-danger font-medium">History unavailable</span>
-          </div>
-        )}
-
         {/* SVG chart — touch handlers for pinch/pan */}
         <svg
           width="100%"
-          height="78"
+          height="136"
           viewBox="0 0 300 70"
           preserveAspectRatio="none"
           style={{ display: 'block', touchAction: 'none' }}
@@ -391,21 +382,21 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
       {/* Bottom 4 tabs */}
       <div className="flex justify-around pt-3 border-t border-white/[0.06]">
         {[
-          { key: 'battery' as const, label: 'Battery', icon: Battery },
-          { key: 'ac' as const, label: 'AC', icon: LayoutGrid },
-          { key: 'solar' as const, label: 'Solar', icon: Sun },
-          { key: 'output' as const, label: 'Output', icon: TrendingUp },
+          // B_1.1 draws these with the handoff glyphs, not stand-ins.
+          { key: 'battery' as const, label: 'Battery', glyph: 'battery' },
+          { key: 'ac' as const, label: 'AC', glyph: 'plug' },
+          { key: 'solar' as const, label: 'Solar', glyph: 'solar' },
+          { key: 'output' as const, label: 'Output', glyph: 'output' },
         ].map((item) => {
-          const Icon = item.icon
           const isActive = powerDataSource === item.key
           return (
             <button
               key={item.key}
               onClick={() => setPowerDataSource(item.key)}
-              className={`flex flex-col items-center gap-1 px-4 py-1 rounded-l active:scale-[0.96] transition-[background-color,color,transform] duration-150
+              className={`flex flex-col items-center gap-1.5 px-4 py-2.5 rounded-l active:scale-[0.96] transition-[background-color,color,transform] duration-150
                 ${isActive ? 'bg-ink-9 text-ink-1' : 'text-ink-1/30 bg-transparent'}`}
             >
-              <Icon size={18} className={isActive ? 'text-ink-1' : 'text-ink-1/30'} />
+              <Glyph name={item.glyph} size={20} color={isActive ? '#FCFCFC' : '#4D4D4D'} />
               <span className={`text-tiny font-medium ${isActive ? 'text-ink-1' : 'text-ink-1/30'}`}>
                 {item.label}
               </span>

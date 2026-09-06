@@ -1,106 +1,103 @@
 /**
- * Name + icon steps for BLE provisioning.
+ * Name + icon steps for BLE provisioning — `A_1.3.3_Device Name -v Default` and
+ * `A_1.3.4_Display Icon -v Default`. Both frames share a head, measured off the
+ * 4x exports at 402x874:
+ *
+ *   header     back button only, no title
+ *   headline   headline_medium semibold, centred, cap on y155
+ *   subtitle   body_medium ink-5, centred, one line
+ *   action     full-width 44 button under a hairline, at the bottom edge
+ *
+ * A_1.3.3 then places the shared field at y229; A_1.3.4 places eight unlabelled
+ * 60x61 tiles in a 4-column grid from y252, 16 apart across and 15 down.
  */
-import { X, Car, Fan, BedDouble } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
 import Icon from '../../components/Icon'
-import { SIERRO_MODEL_LIST, type SierroModel } from '../../data/deviceModels'
+import TextField from '../../components/TextField'
 
-// Device icon choices (Figma "Choose an Icon")
-const DEVICE_ICONS: { id: string; pack?: string; Lucide?: LucideIcon }[] = [
-  { id: 'power', pack: 'thunder' },
-  { id: 'fridge', pack: 'fridge' },
-  { id: 'server', pack: 'NAS' },
-  { id: 'lamp', pack: 'lamp' },
-  { id: 'car', Lucide: Car },
-  { id: 'plug', pack: 'plug' },
-  { id: 'fan', Lucide: Fan },
-  { id: 'bed', Lucide: BedDouble },
+/** The eight glyphs `A_1.3.4` offers, in the frame's order. */
+export const DEVICE_ICONS: { id: string; pack: string; label: string }[] = [
+  { id: 'power', pack: 'thunder', label: 'Power Station' },
+  { id: 'fridge', pack: 'fridge', label: 'Refrigerator' },
+  { id: 'server', pack: 'NAS', label: 'Server' },
+  { id: 'lamp', pack: 'lamp', label: 'Lamp' },
+  { id: 'fish', pack: 'fish tank', label: 'Aquarium' },
+  { id: 'plug', pack: 'power strip', label: 'Power strip' },
+  { id: 'router', pack: 'router', label: 'Router' },
+  { id: 'cpap', pack: 'CPAP', label: 'CPAP' },
 ]
 
+function StepHeader({ onBack }: { onBack: () => void }) {
+  return (
+    <div className="px-4 pb-5 safe-area-top-header flex items-center">
+      <button
+        onClick={onBack}
+        aria-label="Back"
+        className="w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center active:scale-95 transition-transform"
+      >
+        <Icon name="chevron-left" size={24} />
+      </button>
+    </div>
+  )
+}
+
+function StepAction({
+  label, onPress, disabled,
+}: { label: string; onPress: () => void; disabled?: boolean }) {
+  return (
+    <div
+      className="border-t border-ink-9 px-4 pt-3"
+      style={{ paddingBottom: 'calc(max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)) + 16px)' }}
+    >
+      <button
+        onClick={onPress}
+        disabled={disabled}
+        className="w-full h-11 rounded-m bg-primary text-primary-darker text-body-lg font-semibold
+          disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] transition-[transform,opacity]"
+      >
+        {label}
+      </button>
+    </div>
+  )
+}
 
 export function NameDeviceScreen({
-  deviceNameInput, setDeviceNameInput, nameError, setNameError,
-  selectedModel, setSelectedModel, onBack, onNext,
+  deviceNameInput, setDeviceNameInput, nameError, setNameError, onBack, onNext,
 }: {
   deviceNameInput: string
   setDeviceNameInput: (v: string) => void
   nameError: string
   setNameError: (v: string) => void
-  selectedModel: SierroModel
-  setSelectedModel: (m: SierroModel) => void
   onBack: () => void
   onNext: () => void
 }) {
   return (
     <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
-      <div className="px-4 pt-5 pb-4 flex items-center gap-3 safe-area-top">
-        <button
-          onClick={onBack}
-          aria-label="Back"
-          className="relative w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center before:absolute before:content-[''] before:-inset-1"
-        >
-          <Icon name="chevron-left" size={20} />
-        </button>
-      </div>
+      <StepHeader onBack={onBack} />
 
-      <div className="flex-1 px-6 pt-6">
-        <h1 className="text-headline-lg font-bold text-white mb-2">Name Your Device</h1>
-        <p className="text-body-md text-ink-6 mb-8">
-          Give your device a name so you can easily identify it.
+      <div className="flex-1 min-h-0 px-4">
+        <h1 className="mt-[15px] text-headline-md font-semibold text-white text-center">
+          Name Your Device
+        </h1>
+        <p className="mt-2 text-body-md text-ink-5 text-center">
+          Choose a name to help identify this device in the app.
         </p>
 
-        <div className={`bg-ink-10 rounded-l px-4 py-4 flex items-center gap-3 mb-2
-          ${nameError ? 'border border-danger' : ''}`}
-        >
-          <input
-            type="text"
+        <div className="mt-[26px]">
+          <TextField
+            ariaLabel="Device name"
             value={deviceNameInput}
-            onChange={(e) => { setDeviceNameInput(e.target.value); setNameError('') }}
-            placeholder="Device name"
+            onChange={(next) => { setDeviceNameInput(next); setNameError('') }}
+            onClear={() => setDeviceNameInput('')}
+            onEnter={() => { if (deviceNameInput.trim()) onNext() }}
+            placeholder="Enter device name"
+            error={nameError || null}
+            maxLength={40}
             autoFocus
-            className="flex-1 bg-transparent text-body-lg text-white placeholder:text-ink-7 outline-none caret-primary"
           />
-          {deviceNameInput.length > 0 && (
-            <button onClick={() => setDeviceNameInput('')}>
-              <X size={16} className="text-ink-7" />
-            </button>
-          )}
-        </div>
-
-        {nameError && (
-          <p className="text-danger text-body-md mt-1">{nameError}</p>
-        )}
-
-        <p className="text-caption font-bold text-ink-6 tracking-widest uppercase mt-8 mb-3">Device Model</p>
-        <div className="grid grid-cols-2 gap-3">
-          {SIERRO_MODEL_LIST.map(spec => {
-            const active = selectedModel === spec.model
-            return (
-              <button
-                key={spec.model}
-                onClick={() => setSelectedModel(spec.model)}
-                className={`text-left rounded-l px-4 py-3 border active:scale-[0.98] transition-[border-color,background-color,transform]
-                  ${active ? 'border-primary bg-primary/[0.10]' : 'border-white/[0.10] bg-ink-10'}`}
-              >
-                <div className={`text-body-lg font-semibold ${active ? 'text-primary' : 'text-white'}`}>{spec.model}</div>
-                <div className="text-caption text-ink-6 mt-0.5">{spec.ratedPower}W · {(spec.ratedCapacityWh/1000).toFixed(1)}kWh</div>
-              </button>
-            )
-          })}
         </div>
       </div>
 
-      <div className="px-6 pb-10 safe-area-bottom">
-        <button
-          onClick={onNext}
-          disabled={!deviceNameInput.trim()}
-          className="w-full h-14 rounded-l bg-primary text-black text-body-lg font-semibold
-            disabled:bg-primary-dark disabled:text-black/[0.4] transition-colors"
-        >
-          Next
-        </button>
-      </div>
+      <StepAction label="Next" onPress={onNext} disabled={!deviceNameInput.trim()} />
     </div>
   )
 }
@@ -115,52 +112,36 @@ export function ChooseIconScreen({
 }) {
   return (
     <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
-      <div className="px-4 pt-5 pb-4 flex items-center gap-3 safe-area-top">
-        <button
-          onClick={onBack}
-          aria-label="Back"
-          className="relative w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center before:absolute before:content-[''] before:-inset-1"
-        >
-          <Icon name="chevron-left" size={20} />
-        </button>
-      </div>
+      <StepHeader onBack={onBack} />
 
-      <div className="flex-1 px-6 pt-6">
-        <h1 className="text-headline-lg font-bold text-white mb-2 text-center">Choose an Icon</h1>
-        <p className="text-body-md text-ink-6 mb-8 text-center">
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <h1 className="mt-[15px] px-4 text-headline-md font-semibold text-white text-center">
+          Choose an Icon
+        </h1>
+        <p className="mt-2 px-4 text-body-md text-ink-5 text-center">
           Select an icon that best represents this device.
         </p>
 
-        <div className="grid grid-cols-4 gap-3">
-          {DEVICE_ICONS.map(({ id, pack, Lucide }) => {
+        <div className="mt-[49px] grid grid-cols-4 gap-x-4 gap-y-[15px] px-[57px]">
+          {DEVICE_ICONS.map(({ id, pack, label }) => {
             const active = selectedIcon === id
             return (
               <button
                 key={id}
+                aria-label={label}
+                aria-pressed={active}
                 onClick={() => setSelectedIcon(id)}
-                className={`aspect-square rounded-l flex items-center justify-center transition-[transform,background-color,border-color] active:scale-95
-                  ${active ? 'bg-primary text-ink-13' : 'bg-ink-10 text-ink-4'}`}
+                className={`h-[61px] rounded-l flex items-center justify-center transition-colors active:scale-95
+                  ${active ? 'bg-primary-darker' : 'bg-ink-9'}`}
               >
-                {pack ? (
-                  <Icon name={pack} size={26} className={active ? 'brightness-0' : ''} />
-                ) : Lucide ? (
-                  <Lucide size={26} />
-                ) : null}
+                <Icon name={pack} size={28} />
               </button>
             )
           })}
         </div>
       </div>
 
-      <div className="px-6 pb-10 safe-area-bottom">
-        <button
-          onClick={onNext}
-          className="w-full h-14 rounded-l bg-primary text-black text-body-lg font-semibold
-            disabled:bg-primary-dark disabled:text-black/[0.4] transition-colors"
-        >
-          Finish
-        </button>
-      </div>
+      <StepAction label="Finish" onPress={onNext} />
     </div>
   )
 }

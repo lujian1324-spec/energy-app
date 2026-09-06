@@ -16,17 +16,22 @@ import QrScanScreen from './provisioning/QrScanScreen'
 import { NameDeviceScreen, ChooseIconScreen } from './provisioning/NameIconScreens'
 import ProvisioningFlowScreen from './provisioning/ProvisioningFlowScreen'
 import ScanDevicesScreen from './provisioning/ScanDevicesScreen'
+import DeviceScannedScreen from './provisioning/DeviceScannedScreen'
 import { useProvisionBind, type ConfigStage } from './provisioning/useProvisionBind'
 import { useProvisionScan, displayTitleFromDtuid, type FoundDevice } from './provisioning/useProvisionScan'
 
-type UiScreen = 'scan' | 'qr' | 'naming' | 'icon' | 'provisioning'
+type UiScreen = 'scan' | 'qr' | 'scanned' | 'naming' | 'icon' | 'provisioning'
 
 export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   const store = useProvisionStore()
 
   const [uiScreen, setUiScreen] = useState<UiScreen>('scan')
   const [deviceNameInput, setDeviceNameInput] = useState('')
+  // A_1.3.3 has no model picker — `A_1.3.2_Device Scanned` shows the model it
+  // read off the device, so derive it from the scanned name or serial.
   const [selectedModel, setSelectedModel] = useState<SierroModel>('Sierro 1000')
+  const modelFromScan = (text: string): SierroModel =>
+    /2000/.test(text) ? 'Sierro 2000' : 'Sierro 1000'
   const [nameError, setNameError] = useState('')
   const [bleKeyInput, setBleKeyInput] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -275,6 +280,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
           return
         }
         store.setDeviceInfo(device.name || displayTitleFromDtuid(duid), duid)
+        setSelectedModel(modelFromScan(`${device.name ?? ''} ${device.serial ?? ''}`))
         goToNaming()
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Connection failed'
@@ -322,10 +328,23 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
       onBack={() => setUiScreen('scan')}
       onScanned={(name, serial) => {
         store.setDeviceInfo(name, serial)
+        setSelectedModel(modelFromScan(`${name} ${serial}`))
         setFoundDevices([{ name, serial }])
-        setUiScreen('naming')
+        setUiScreen('scanned')
       }}
     />
+  }
+
+  if (uiScreen === 'scanned') {
+    return (
+      <DeviceScannedScreen
+        model={selectedModel}
+        serial={store.dtuid ?? foundDevices[0]?.serial ?? '--'}
+        onBack={() => setUiScreen('scan')}
+        onRescan={() => setUiScreen('qr')}
+        onConnect={goToNaming}
+      />
+    )
   }
 
   if (uiScreen === 'naming') {
@@ -335,8 +354,6 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
         setDeviceNameInput={setDeviceNameInput}
         nameError={nameError}
         setNameError={setNameError}
-        selectedModel={selectedModel}
-        setSelectedModel={setSelectedModel}
         onBack={() => setUiScreen('scan')}
         onNext={handleNameNext}
       />
