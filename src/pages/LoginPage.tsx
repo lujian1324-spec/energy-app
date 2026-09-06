@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Loader2, X } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import Icon from '../components/Icon'
 import { useAuthStore } from '../stores/authStore'
 import { useDeviceStore } from '../stores/deviceStore'
@@ -16,6 +16,7 @@ import {
 import { isApiSuccess } from '../utils/apiClient'
 import { TERMS_URL, PRIVACY_URL } from '../config/legalLinks'
 import { sanitizeUiCopy } from '../utils/uiCopy'
+import TextField from '../components/TextField'
 
 /**
  * Passwordless email sign-in — handoff `A_2.1_Sign up & Log in`,
@@ -305,26 +306,20 @@ export default function LoginPage() {
             We&apos;ll send a verification code to your email.
           </p>
 
-          <div className="mt-[38px] flex items-center gap-3 border-b border-ink-9 px-3 pb-1">
-            <input
+          <div className="mt-[19px]">
+            <TextField
               type="email"
+              inputMode="email"
+              ariaLabel="Email"
               value={email}
-              onChange={e => { setEmail(e.target.value); setError(null) }}
-              onKeyDown={e => { if (e.key === 'Enter' && emailValid) void handleEmailContinue() }}
+              onChange={(next) => { setEmail(next); setError(null) }}
+              onEnter={() => { if (emailValid) void handleEmailContinue() }}
+              onClear={() => setEmail('')}
               placeholder="name@example.com"
-              autoComplete="email"
-              autoCapitalize="none"
-              autoCorrect="off"
+              error={error}
               autoFocus
-              className="flex-1 min-w-0 bg-transparent text-body-lg text-ink-1 placeholder:text-ink-7 outline-none caret-primary"
             />
-            {email && (
-              <button onClick={() => setEmail('')} aria-label="Clear email" className="shrink-0">
-                <X size={18} className="text-ink-7" />
-              </button>
-            )}
           </div>
-          {error && <p className="mt-2 px-3 text-caption text-danger">{error}</p>}
         </div>
         <BottomAction label="Continue" onPress={handleEmailContinue} disabled={!emailValid} busy={sending} />
       </div>

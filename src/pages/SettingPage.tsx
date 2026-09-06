@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   X,
-  Send,
   Loader2,
   CheckCircle,
   Crown,
@@ -17,6 +16,8 @@ import {
 } from 'lucide-react'
 import emailjs from '@emailjs/browser'
 import Icon from '../components/Icon'
+import BottomSheet from '../components/BottomSheet'
+import TextField from '../components/TextField'
 import { EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, EMAILJS_PUBLIC_KEY, FEEDBACK_TO_EMAIL, isEmailJsConfigured } from '../config/emailjs'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useAuthStore } from '../stores/authStore'
@@ -87,14 +88,17 @@ export default function SettingPage() {
   }, [])
 
   const reloadUserProfile = useCallback(() => {
+    // D_1.1 and `Profile -v Default` show the same display name, so prefer the
+    // nickname here too and only fall back to the registration account. LoginData
+    // has an index signature, so the nickname arrives as `unknown`.
+    const nickname = typeof authUser?.nickname === 'string' ? authUser.nickname : ''
     getUserProfile().then(p => {
-      if (p) {
-        // Always sync display name to the registration account (unified
-        // Account/Username/Name — matches ProfileEditPage's read-only row).
-        setUserProfile({ ...p, name: authUser?.account ?? p.name })
-      }
+      setUserProfile(prev => ({
+        ...(p ?? prev),
+        name: nickname || p?.name || authUser?.account || 'Sierro User',
+      }))
     }).catch(err => console.error('[SettingPage] getUserProfile failed:', err))
-  }, [authUser?.account])
+  }, [authUser?.nickname, authUser?.account])
 
   useEffect(() => {
     reloadUserProfile()
@@ -174,10 +178,10 @@ export default function SettingPage() {
   return (
     <div className="h-full flex flex-col bg-ink-12 overflow-hidden">
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pt-4 pb-4 safe-area-top">
+      <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pt-6 pb-4 safe-area-top">
         {/* User Profile — avatar + name + manage-account row, Founding Member gold tag */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-3 mb-6">
+          className="flex items-center gap-3 mb-5">
           {/* Avatar: green ring (default) / gold ring (founder); default icon lightning / diamond */}
           <button
             onClick={() => isGuest ? navigate('/login') : setShowProfileEdit(true)}
@@ -220,7 +224,7 @@ export default function SettingPage() {
 
         {/* Push Notifications — hidden until push backend/credentials are ready (PUSH_ENABLED) */}
         {PUSH_ENABLED && (<>
-        <h3 className="text-body-lg font-semibold text-ink-1 mb-4">Push Notifications</h3>
+        <h3 className="text-body-lg font-semibold text-ink-1 mb-3.5">Push Notifications</h3>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
           className="space-y-3 mb-6">
           {/* Power Outage */}
@@ -370,45 +374,54 @@ export default function SettingPage() {
       {/* ==================== Support Modal ==================== */}
       <AnimatePresence>
         {showSupport && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/60 p-4"
-            onClick={() => setShowSupport(false)}>
-            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="w-full max-w-md bg-ink-10 rounded-l border border-white/[0.15] overflow-hidden"
-              onClick={e => e.stopPropagation()}>
-              <div className="flex items-center justify-between px-5 py-4">
-                <h3 className="text-title-lg font-semibold text-ink-2">Feedback</h3>
-                <button onClick={() => setShowSupport(false)} aria-label="Close" className="w-[30px] h-[30px] rounded-full bg-ink-7 flex items-center justify-center"><X size={16} className="text-white" /></button>
+          <BottomSheet
+            title="Feedback"
+            titleAlign="left"
+            labelledBy="feedback-title"
+            onClose={() => setShowSupport(false)}
+          >
+            {supportSubmitted ? (
+              <div className="px-6 pt-6 pb-8 text-center">
+                <div className="w-16 h-16 rounded-full bg-success/[0.1] flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle size={32} className="text-success" />
+                </div>
+                <h4 className="text-body-lg font-bold text-ink-1 mb-2">Feedback Submitted!</h4>
+                <p className="text-label text-ink-6">We will get back to you within 24 hours.</p>
               </div>
-              <div className="p-5">
-                {supportSubmitted ? (
-                  <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-8">
-                    <div className="w-16 h-16 rounded-full bg-success/[0.1] flex items-center justify-center mx-auto mb-4">
-                      <CheckCircle size={32} className="text-success" />
-                    </div>
-                    <h4 className="text-body-lg font-bold text-ink-1 mb-2">Feedback Submitted!</h4>
-                    <p className="text-label text-ink-6">We will get back to you within 24 hours.</p>
-                  </motion.div>
-                ) : (
-                  <form onSubmit={handleSupportSubmit} className="space-y-4">
-                    <div>
-                      <label className="text-label font-semibold text-ink-6 mb-2 flex items-center gap-2"><Icon name="feedback" size={14} />Your Feedback</label>
-                      <textarea required value={supportMessage} onChange={e => setSupportMessage(e.target.value)} placeholder="Describe your issue or suggestion..." rows={4}
-                        className="w-full px-4 py-3 rounded-l bg-ink-12 border border-primary/[0.15] text-ink-1 text-body-md placeholder:text-ink-7 resize-none focus:outline-none focus:border-primary/[0.4] transition-colors" />
-                    </div>
-                    {supportError && (
-                      <p className="text-label text-danger text-center">{supportError}</p>
-                    )}
-                    <button type="submit" disabled={supportSending || !supportMessage.trim()} className="w-full h-12 rounded-m bg-primary text-primary-darker font-semibold text-title-md flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50">
-                      {supportSending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-                      {supportSending ? 'Sending...' : 'Send Feedback'}
-                    </button>
-                  </form>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
+            ) : (
+              <form onSubmit={handleSupportSubmit} className="px-6 pt-7 pb-2 space-y-3">
+                <TextField
+                  outlined
+                  label="Your Contact Email"
+                  type="email"
+                  inputMode="email"
+                  ariaLabel="Your contact email"
+                  value={supportEmail}
+                  onChange={setSupportEmail}
+                  placeholder="name@example.com"
+                />
+                <TextField
+                  outlined
+                  label="Your Feedback"
+                  ariaLabel="Your feedback"
+                  value={supportMessage}
+                  onChange={setSupportMessage}
+                  placeholder="Describe your issue or suggestion..."
+                  rows={4}
+                />
+                {supportError && <p className="text-label text-danger text-center">{supportError}</p>}
+                <div className="pt-3">
+                  <button
+                    type="submit"
+                    disabled={supportSending || !supportMessage.trim()}
+                    className="w-full h-12 rounded-m bg-primary text-primary-darker font-semibold text-body-lg active:scale-[0.98] transition-transform disabled:opacity-50"
+                  >
+                    {supportSending ? 'Sending...' : 'Send Feedback'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </BottomSheet>
         )}
       </AnimatePresence>
 

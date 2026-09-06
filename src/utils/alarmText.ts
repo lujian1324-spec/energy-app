@@ -53,7 +53,8 @@ export const ALARM_TEXT: Record<string, string> = {
   batteryOverVoltage: 'Battery overvoltage',
   batteryUnderVoltage: 'Battery undervoltage',
   batteryLow: 'Battery low',
-  lowBattery: 'Low battery',
+  // A_1.2 title-cases this one; the rest of the map is sentence case.
+  lowBattery: 'Low Battery',
   batteryOverCurrent: 'Battery overcurrent',
   // ── Temperature ──
   cellHighTemp: 'Cell over-temperature',

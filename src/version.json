@@ -1,8 +1,14 @@
 {
-  "version": "4.7.81",
-  "build": 2803,
+  "version": "4.7.82",
+  "build": 2804,
   "date": "2026-09-06",
   "changelog": [
-    "The plus in the empty-state Add Device button is teal like the rest of the button, instead of the shipped SVG's hard-coded white."
+    "Text fields across sign-in, Device Name, Name, Linked Email, Redeem and Feedback now use the handoff's filled card with the rule and the disc-shaped clear control.",
+    "Display Icon and Battery Priority are bottom sheets over the settings list, with the close button above the title; Display Icon drops the labels and the Device / Custom tiles the design does not have.",
+    "Feedback is a bottom sheet again and has its contact-email field back; Redeem matches the same sheet chrome.",
+    "Device Name lost the device picker the design does not draw, Device Info's Model row lost its chevron, and battery health no longer prints a space before the percent sign.",
+    "Add Device centres its header title and puts the headline and radar art on the design's pixels; the onboarding radar moves up 25.",
+    "Settings starts its profile block and section heading on the design's pixels and shows the display name instead of the registration account; Insights hides Share when there is no device.",
+    "Battery Priority reads \"Backup Mode\" on the settings row, the notification title is \"Low Battery\", and a dim header Save is primary at 30% rather than grey."
   ]
 }
