@@ -47,7 +47,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const navigate = useNavigate()
   const { id: routeId } = useParams<{ id: string }>()
 
-  // 鈹€鈹€ Real device data (useDeviceStore) 鈥?used when mounted as a route 鈹€鈹€
+  // ── Real device data (useDeviceStore) — used when mounted as a route ──
   const { devices, selectedDeviceId, selectedDeviceState, selectDevice, loadDeviceState, renameDeviceLocal, removeDevice, updateDeviceInfo, isDemoMode } = useDeviceStore()
   const realDevice = devices.find(d => String(d.id) === routeId)
 
@@ -645,7 +645,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                     >
                       <p className={`text-title-md font-semibold ${selected ? 'text-white' : 'text-ink-7'}`}>{spec.model}</p>
                       <p className={`text-body-md mt-0.5 ${selected ? 'text-ink-5' : 'text-ink-7'}`}>
-                        {spec.ratedPower}W 路 {(spec.ratedCapacityWh / 1000).toFixed(1)}kWh 路 charge {spec.ratedChargePower}W 路 {spec.batteryType}
+                        {spec.ratedPower}W · {(spec.ratedCapacityWh / 1000).toFixed(1)}kWh · charge {spec.ratedChargePower}W · {spec.batteryType}
                       </p>
                     </button>
                   )
@@ -695,7 +695,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               <div>
                 <p className="text-body-lg text-white">Sleep Mode</p>
                 <p className="text-caption text-ink-6 mt-0.5">
-                  Low-noise charging 路 Sleep: {schedulerPowers.sleepW}W / Wake: {schedulerPowers.wakeW}W
+                  Low-noise charging · Sleep: {schedulerPowers.sleepW}W / Wake: {schedulerPowers.wakeW}W
                 </p>
               </div>
               <button
@@ -715,7 +715,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 <div className="flex items-center justify-between px-4 py-4 border-b border-white/5">
                   <div>
                     <p className="text-body-lg text-white">Sleep</p>
-                    <p className="text-caption text-ink-7">AC charging power 鈫?{schedulerPowers.sleepW}W</p>
+                    <p className="text-caption text-ink-7">AC charging power → {schedulerPowers.sleepW}W</p>
                   </div>
                   <input
                     type="time"
@@ -727,7 +727,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 <div className="flex items-center justify-between px-4 py-4">
                   <div>
                     <p className="text-body-lg text-white">Wake</p>
-                    <p className="text-caption text-ink-7">AC charging power 鈫?{schedulerPowers.wakeW}W</p>
+                    <p className="text-caption text-ink-7">AC charging power → {schedulerPowers.wakeW}W</p>
                   </div>
                   <input
                     type="time"
@@ -738,7 +738,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 </div>
               </div>
               <p className="text-caption text-ink-7 mt-2 px-1">
-                {fmt(sleepFrom)} 鈫?{schedulerPowers.sleepW}W 路 {fmt(sleepTo)} 鈫?{schedulerPowers.wakeW}W
+                {fmt(sleepFrom)} → {schedulerPowers.sleepW}W · {fmt(sleepTo)} → {schedulerPowers.wakeW}W
               </p>
             </div>
           )}
@@ -747,7 +747,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               <p className="text-body-md font-semibold text-white mb-2">Scheduler Status</p>
               <div className="rounded-l bg-ink-10 overflow-hidden px-4 py-4 space-y-3">
                 <p className="text-caption text-ink-7">
-                  {model} 路 Sleep: {schedulerPowers.sleepW}W / Wake: {schedulerPowers.wakeW}W
+                  {model} · Sleep: {schedulerPowers.sleepW}W / Wake: {schedulerPowers.wakeW}W
                 </p>
                 <div className="flex items-center justify-between">
                   <span className="text-body-md text-ink-6">Next event</span>

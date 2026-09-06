@@ -1,10 +1,8 @@
 {
-  "version": "4.7.69",
-  "build": 2791,
+  "version": "4.7.70",
+  "build": 2792,
   "date": "2026-09-06",
   "changelog": [
-    "Sign-in is now purely passwordless: /login/email registers an unknown address, so the single email flow covers both sign up and log in.",
-    "Removed the username + password step, the /register and /forgot-password routes and their two pages — with no password there is nothing to forget and no separate sign-up.",
-    "The seven ds-*.svg illustrations were re-exported with real transparency (their embedded JPEG was un-matted to a straight-alpha PNG), so the #ds-unmatte filter that compensated for the dark rectangle is gone."
+    "Fixed mojibake in Device Settings: the middle dots and arrows in the Sleep Mode / Device Info / scheduler strings were UTF-8 bytes that had been read back as GBK, so they shipped as 路 and 鈫? instead of · and →."
   ]
 }
