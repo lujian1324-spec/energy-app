@@ -308,15 +308,19 @@ export default function SmartSchedulePage() {
       />
 
       <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pb-24">
-        <div className="bg-ink-10 rounded-l p-4 mb-4 flex items-center justify-between">
-          <span className="text-body-md font-semibold text-white">Smart Schedule</span>
+        {/* 6x export: same 68px row box as Device Settings — label body_large/ink-2,
+            50x28 toggle on ink-7. The row is labelled "Schedule"; the page title
+            carries the full name. */}
+        <div className="bg-ink-10 rounded-l h-[68px] px-4 mb-4 flex items-center justify-between">
+          <span className="text-body-lg text-ink-2">Schedule</span>
           <button
+            aria-label="Smart Schedule"
             onClick={() => handleTogglePeakShaving(!peakShavingSettings.enabled)}
-            className={`w-14 h-8 rounded-full relative transition-colors ${peakShavingSettings.enabled ? 'bg-primary' : 'bg-ink-7'}`}
+            className={`w-[50px] h-[28px] rounded-full relative transition-colors ${peakShavingSettings.enabled ? 'bg-primary' : 'bg-ink-7'}`}
           >
             <motion.div
-              className="w-6 h-6 rounded-full bg-white absolute top-1"
-              animate={{ left: peakShavingSettings.enabled ? '28px' : '4px' }}
+              className="w-6 h-6 rounded-full bg-white absolute top-[2px]"
+              animate={{ left: peakShavingSettings.enabled ? '24px' : '2px' }}
               transition={{ type: 'spring', stiffness: 500, damping: 30 }}
             />
           </button>

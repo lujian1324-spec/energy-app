@@ -1,12 +1,9 @@
 {
-  "version": "4.7.63",
-  "build": 2785,
+  "version": "4.7.64",
+  "build": 2786,
   "date": "2026-09-06",
   "changelog": [
-    "Device Settings aligned to the B_1.2 handoff export.",
-    "Rows 51 -> 68 tall, grouped the way the design groups them: [Device Name, Display Icon] / [Device Info] / [Sleep Mode, Battery Priority, Smart Schedule] / [Delete Device 52], 12px inside a group and 24px between groups.",
-    "Display Icon shows the glyph itself instead of a tinted chip, and falls back to the device-type icon inferred from the name (same rule as the device card) until one is picked.",
-    "Row label moves to ink-2 and the chevron to the design's own chevron-right SVG.",
-    "All five DeviceDetailPage headers use the measured Page Header box (inset + 20 top, 20 bottom); the main title goes 18 -> 20."
+    "Smart Schedule toggle row matches the B_1.2.6 export: 68px row box, label 'Schedule' in body_large/ink-2, 50x28 toggle on ink-7.",
+    "(The off-state collapse landed in 4.7.60; this only corrects the row itself.)"
   ]
 }
