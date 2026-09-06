@@ -87,25 +87,32 @@ async function wait(page: Page, ms = 2000) {
 // ─── Auth Pages (no login needed) ───────────────────────────────────────────
 
 test.describe('Auth Pages', () => {
-  test('login page loads with username + password fields', async ({ page }) => {
+  test('login page offers the e-mail sign-in and no password field', async ({ page }) => {
     await skipPermissionsGate(page)
     await page.goto(`${BASE}/#/login`)
-    await expect(page.locator('input[placeholder="Username"]')).toBeVisible({ timeout: 20000 })
-    await expect(page.locator('input[type="password"]')).toBeVisible({ timeout: 5000 })
+    await expect(
+      page.getByRole('button', { name: 'Continue with Email' })
+    ).toBeVisible({ timeout: 20000 })
+    // The password path was removed with the move to e-mail OTP.
+    expect(await page.locator('input[type="password"]').count()).toBe(0)
   })
 
-  test('register page loads', async ({ page }) => {
+  test('removed /register redirects to login', async ({ page }) => {
     await skipPermissionsGate(page)
     await page.goto(`${BASE}/#/register`)
-    await expect(page.locator('input[type="password"]').first()).toBeVisible({ timeout: 20000 })
+    await page.waitForURL(/\/login/, { timeout: 20000 })
+    await expect(
+      page.getByRole('button', { name: 'Continue with Email' })
+    ).toBeVisible({ timeout: 10000 })
   })
 
-  test('forgot-password page loads with email field', async ({ page }) => {
+  test('removed /forgot-password redirects to login', async ({ page }) => {
     await skipPermissionsGate(page)
     await page.goto(`${BASE}/#/forgot-password`)
+    await page.waitForURL(/\/login/, { timeout: 20000 })
     await expect(
-      page.locator('input[type="email"], input[placeholder*="email" i]').first()
-    ).toBeVisible({ timeout: 20000 })
+      page.getByRole('button', { name: 'Continue with Email' })
+    ).toBeVisible({ timeout: 10000 })
   })
 
   test('unauthenticated /devices redirects to login', async ({ page }) => {
@@ -115,56 +122,47 @@ test.describe('Auth Pages', () => {
     const url = page.url()
     expect(url).toMatch(/\/(login|devices)/)
   })
-
-  test('wrong password stays on login or shows error', async ({ page }) => {
-    await skipPermissionsGate(page)
-    await page.goto(`${BASE}/#/login`)
-    await page.waitForSelector('input[placeholder="Username"]', { timeout: 20000 })
-    await page.locator('input[placeholder="Username"]').fill('nobody_xyz_test')
-    await page.locator('input[type="password"]').fill('wrongpassword123')
-    await page.locator('button').filter({ hasText: /Sign In/i }).first().click()
-    await wait(page, 4000)
-    const url = page.url()
-    // CSS and text= engines can't be combined in one comma selector — query separately
-    const hasDangerClass = await page.locator('[class*="danger"]').count() > 0
-    const hasErrorText = await page.getByText(/error|invalid|failed|incorrect/i).count() > 0
-    expect(url.includes('login') || hasDangerClass || hasErrorText).toBeTruthy()
-  })
 })
 
-// ─── Forgot Password Flow ────────────────────────────────────────────────────
+// ─── E-mail OTP Flow ─────────────────────────────────────────────────────────
 
-test.describe('Forgot Password Flow', () => {
-  test('send button disabled with invalid email', async ({ page }) => {
+/** Landing → the e-mail step, which is where every test below starts. */
+async function openEmailStep(page: Page) {
+  await page.goto(`${BASE}/#/login`)
+  await page.getByRole('button', { name: 'Continue with Email' }).click({ timeout: 20000 })
+  await page.waitForSelector('input[type="email"]', { timeout: 20000 })
+}
+
+test.describe('Email OTP Flow', () => {
+  test('continue is disabled with an invalid address', async ({ page }) => {
     await skipPermissionsGate(page)
-    await page.goto(`${BASE}/#/forgot-password`)
-    await page.waitForSelector('input[type="email"], input[placeholder*="email" i]', { timeout: 20000 })
-    await page.locator('input[type="email"], input[placeholder*="email" i]').first().fill('notanemail')
-    const sendBtn = page.locator('button').filter({ hasText: /send/i }).first()
-    await expect(sendBtn).toBeDisabled({ timeout: 5000 })
+    await openEmailStep(page)
+    await page.locator('input[type="email"]').fill('notanemail')
+    await expect(
+      page.getByRole('button', { name: 'Continue', exact: true })
+    ).toBeDisabled({ timeout: 5000 })
   })
 
-  test('send button enabled with valid email', async ({ page }) => {
+  test('continue is enabled with a valid address', async ({ page }) => {
     await skipPermissionsGate(page)
-    await page.goto(`${BASE}/#/forgot-password`)
-    await page.waitForSelector('input[type="email"], input[placeholder*="email" i]', { timeout: 20000 })
-    await page.locator('input[type="email"], input[placeholder*="email" i]').first().fill('test@example.com')
-    const sendBtn = page.locator('button').filter({ hasText: /send/i }).first()
-    await expect(sendBtn).toBeEnabled({ timeout: 5000 })
+    await openEmailStep(page)
+    await page.locator('input[type="email"]').fill('test@example.com')
+    await expect(
+      page.getByRole('button', { name: 'Continue', exact: true })
+    ).toBeEnabled({ timeout: 5000 })
   })
 
-  test('send button is within iPhone 16 viewport (393×852)', async ({ browser }) => {
+  test('continue is within the iPhone 16 viewport (393×852)', async ({ browser }) => {
     const ctx = await browser.newContext({ viewport: { width: 393, height: 852 } })
     const page = await ctx.newPage()
     await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' })
     await page.evaluate(() => { localStorage.setItem('sierro_permissions_asked', '1') })
     await page.reload({ waitUntil: 'domcontentloaded' })
     await page.waitForTimeout(500)
-    await page.goto(`${BASE}/#/forgot-password`)
-    await page.waitForSelector('button', { timeout: 20000 })
-    const sendBtn = page.locator('button').filter({ hasText: /send/i }).first()
-    await expect(sendBtn).toBeVisible({ timeout: 10000 })
-    const box = await sendBtn.boundingBox()
+    await openEmailStep(page)
+    const cta = page.getByRole('button', { name: 'Continue', exact: true })
+    await expect(cta).toBeVisible({ timeout: 10000 })
+    const box = await cta.boundingBox()
     expect(box).not.toBeNull()
     if (box) expect(box.y + box.height).toBeLessThanOrEqual(852 + 5)
     await ctx.close()
