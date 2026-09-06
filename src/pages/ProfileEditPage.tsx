@@ -3,7 +3,6 @@ import { useState, useRef, useEffect } from 'react'
 import {
   Mail,
   Camera,
-  Hash,
 } from 'lucide-react'
 import Icon from '../components/Icon'
 import { usePowerStationStore } from '../stores/powerStationStore'
@@ -37,7 +36,6 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
   })
 
   // 用户 ID（从服务端获取）
-  const [userId, setUserId] = useState<number | null>(null)
 
   // 加载状态
   const [isLoading, setIsLoading] = useState(true)
@@ -83,7 +81,6 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
         if (apiResult.code === 0 || apiResult.code === '0') {
           const u = apiResult.data
           if (u) {
-            setUserId(u.userId ?? null)
             setProfile(prev => ({
               ...prev,
               // `Profile -v Default` shows an editable display name, so prefer the
@@ -499,20 +496,19 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
             <Icon name="chevron-right" size={24} />
           </button>
 
-          {/* User ID row (read-only) */}
-          {userId !== null && (
-            <div className="w-full rounded-l bg-ink-10 h-[68px] px-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
-                <Hash size={20} className="text-white" />
-              </div>
-              <span className="text-body-lg text-ink-2 flex-1">User ID</span>
-              <span className="text-body-md text-ink-6">#{userId}</span>
-            </div>
-          )}
         </div>
 
 
-        {/* Footer: founder redeem CTA hidden (APP-005). Modal kept; reachable from gold tag. */}
+        {/* Footer: founder redeem CTA, as `Profile -v Default` has it. The gold badge
+            still opens the same modal for members who already redeemed. */}
+        {!settings.founderBadge && (
+          <p className="mt-6 text-caption text-ink-7 text-center">
+            Have a founder code?{' '}
+            <button onClick={() => setShowRedeem(true)} className="text-primary font-semibold">
+              Redeem founder badge
+            </button>
+          </p>
+        )}
       </div>
 
       {/* ==================== Redeem Founder Badge 弹窗 (bottom sheet) ==================== */}

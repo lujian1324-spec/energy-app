@@ -1,10 +1,9 @@
 {
-  "version": "4.7.75",
-  "build": 2797,
+  "version": "4.7.76",
+  "build": 2798,
   "date": "2026-09-06",
   "changelog": [
-    "Profile: Change Password and its editor are gone — 4.7.69 removed password sign-in, so there was no password left to change and the handoff has no Security section.",
-    "Name is editable again (D_2.5): the row gets a chevron and opens a Name screen with a Save that stays dim until the value changes; it writes the nickname and falls back to the registered account when none is set.",
-    "Linked Email shows the full address. /user/select/iotUserInfo returns it masked, so the value from sign-in is preferred when the server's is masked."
+    "Profile shows the handoff's 'Have a founder code? Redeem founder badge' footer link again; it was hidden by APP-005 and only reachable from the gold badge.",
+    "The app-only 'User ID' row is gone — the design has no such field."
   ]
 }
