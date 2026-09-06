@@ -21,6 +21,13 @@ export function alarmKey(deviceId: string | number | null | undefined, title: st
 interface AlarmDismissState {
   /** 已清除的告警 key 列表 */
   dismissed: string[]
+  /**
+   * 已读的告警 key 列表 —— 设计稿 `A_1.2_Notifications` 在未读行右侧画一个红点。
+   * 进入通知页时把当前列表全部标记为已读；红点只在「这次进来之前没见过」的行上显示。
+   */
+  seen: string[]
+  /** 批量标记为已读 */
+  markSeen: (keys: string[]) => void
   /** 清除单条 */
   dismiss: (key: string) => void
   /**
@@ -34,6 +41,12 @@ export const useAlarmDismissStore = create<AlarmDismissState>()(
   persist(
     (set) => ({
       dismissed: [],
+      seen: [],
+      markSeen: (keys) =>
+        set((s) => {
+          const add = keys.filter((k) => !s.seen.includes(k))
+          return add.length === 0 ? s : { seen: [...s.seen, ...add] }
+        }),
       dismiss: (key) =>
         set((s) => (s.dismissed.includes(key) ? s : { dismissed: [...s.dismissed, key] })),
       syncActive: (deviceId, activeKeys) =>
@@ -41,8 +54,10 @@ export const useAlarmDismissStore = create<AlarmDismissState>()(
           const prefix = `${deviceId ?? '?'}::`
           const active = new Set(activeKeys)
           const next = s.dismissed.filter((k) => !k.startsWith(prefix) || active.has(k))
+          const nextSeen = s.seen.filter((k) => !k.startsWith(prefix) || active.has(k))
           // Avoid a needless state update (and re-render loop) when nothing changed.
-          return next.length === s.dismissed.length ? s : { dismissed: next }
+          if (next.length === s.dismissed.length && nextSeen.length === s.seen.length) return s
+          return { dismissed: next, seen: nextSeen }
         }),
     }),
     { name: 'sierro-alarm-dismissed' },

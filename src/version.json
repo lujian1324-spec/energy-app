@@ -1,11 +1,12 @@
 {
-  "version": "4.7.67",
-  "build": 2789,
+  "version": "4.7.68",
+  "build": 2790,
   "date": "2026-09-06",
   "changelog": [
-    "Sign-in rebuilt as the handoff's passwordless email flow (A_2.1 / A_2.1.1 / A_2.1.2): 'Sign up or log in' landing with a 370x68 Continue with Email card, an email step with an underlined field, and a six-cell verification-code step with a Resend countdown.",
-    "The OTP plumbing is unchanged — it still calls /user/send/email/captcha then /login/email.",
-    "Username + password moves behind a 'Sign in with password' link so existing accounts, Sign up and Forgot password stay reachable; Continue as Guest is kept for the same reason. Neither is in the handoff.",
-    "Google / Apple sign-in is out of scope for this pass, so the OR block and those two rows are not built."
+    "Notifications rebuilt to the A_1.2 handoff: rows lose the red card and become full-width entries on the page background with a full-bleed ink-9 hairline, a 40px ink-9 icon circle routed to the battery / solar / outage glyph, a body_medium/semibold title, a tiny/ink-4 '{device} - {detail}' line, and the timestamp aligned to its first line.",
+    "Timestamps are relative the way the design shows them: 'Just now', '4 mins ago', 'Today 3:42 PM', then 'May 3'.",
+    "Unread rows carry the design's danger dot, backed by a new seen list in the alarm store; entering the page snapshots what is new, then marks everything read.",
+    "Clearing moved from an inline Clear pill to the design's swipe-left red trash panel (72px).",
+    "Demo low-battery alarm now carries a lowBattery key so it resolves to a short title with the message as the detail, matching the design's two-line row."
   ]
 }
