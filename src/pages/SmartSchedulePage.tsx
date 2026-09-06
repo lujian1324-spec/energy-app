@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
+import { SecondaryHeader, HeaderIconButton } from '../components/PageHeader'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -300,22 +301,11 @@ export default function SmartSchedulePage() {
 
   return (
     <div className="h-full flex flex-col bg-ink-12 overflow-hidden">
-      <div className="px-4 pt-4 pb-3 safe-area-top flex items-center gap-3">
-        <button
-          onClick={() => navigate(-1)}
-          className="relative w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center text-white active:scale-95 transition-transform flex-shrink-0 before:absolute before:content-[''] before:-inset-1"
-          aria-label="Back"
-        >
-          <Icon name="chevron-left" size={24} />
-        </button>
-        <h2 className="flex-1 text-center text-title-md font-semibold text-white">Smart Schedule</h2>
-        <button
-          className="relative w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center text-white flex-shrink-0 before:absolute before:content-[''] before:-inset-1"
-          aria-label="About Smart Schedule"
-        >
-          <Icon name="info-outined" size={24} />
-        </button>
-      </div>
+      <SecondaryHeader
+        title="Smart Schedule"
+        onBack={() => navigate(-1)}
+        right={<HeaderIconButton icon="info-outined" label="About Smart Schedule" />}
+      />
 
       <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pb-24">
         <div className="bg-ink-10 rounded-l p-4 mb-4 flex items-center justify-between">

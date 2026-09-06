@@ -11,6 +11,13 @@ describe('formatLowBatteryBannerCopy', () => {
       .toBe('Home • Battery below 30%, estimated remaining time: 1h0m')
   })
 
+  it('threshold is configurable and shown in both branches', () => {
+    expect(formatLowBatteryBannerCopy('Fish Tank', '1h 24m', 20))
+      .toBe('Fish Tank • Battery below 20%, estimated remaining time: 1h 24m')
+    expect(formatLowBatteryBannerCopy('Fish Tank', null, 20))
+      .toBe('Fish Tank • Battery below 20%')
+  })
+
   it('empty / -- / remaining junk never shows a dash', () => {
     expect(formatLowBatteryBannerCopy('Kitchen', null)).toBe('Kitchen • Battery below 30%')
     expect(formatLowBatteryBannerCopy('Kitchen', undefined)).toBe('Kitchen • Battery below 30%')

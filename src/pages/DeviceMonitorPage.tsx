@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { PageHeaderShell, HeaderIconButton } from '../components/PageHeader'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Check } from 'lucide-react'
@@ -119,14 +120,13 @@ export default function DeviceMonitorPage() {
     <div
       className="h-full flex flex-col bg-ink-12 overflow-hidden">
       {/* Header */}
-      <div className="px-4 pt-5 pb-3 safe-area-top flex items-center gap-3">
-        <button
+      <PageHeaderShell filled className="flex items-center gap-3">
+        <HeaderIconButton
+          icon="chevron-left"
+          label="Back"
           onClick={backToDevices}
-          className="relative w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center active:scale-95 transition-transform flex-shrink-0 before:absolute before:content-[''] before:-inset-1"
-          aria-label="Back"
-        >
-          <Icon name="chevron-left" size={24} />
-        </button>
+          className="flex-shrink-0 before:absolute before:content-[''] before:-inset-1"
+        />
 
         {/* Device name + dropdown */}
         <div className="flex-1 flex flex-col items-center relative">
@@ -174,26 +174,23 @@ export default function DeviceMonitorPage() {
         </div>
 
         {/* Settings + Bell */}
-        <div className="flex items-center gap-2">
-          <button
+        <div className="flex items-center gap-3">
+          <HeaderIconButton
+            icon="setting"
+            label="Device settings"
             onClick={() => navigate(`/device/${id}/settings`)}
-            className="relative w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center active:scale-95 transition-transform before:absolute before:content-[''] before:-inset-1"
-            aria-label="Device settings"
-          >
-            <Icon name="setting" size={24} />
-          </button>
-          <button
+          />
+          <HeaderIconButton
+            icon="bell"
+            label="Notifications"
             onClick={() => navigate('/notifications')}
-            className="relative w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center text-white active:scale-95 transition-transform before:absolute before:content-[''] before:-inset-1"
-            aria-label="Notifications"
           >
-            <Icon name="bell" size={24} />
             {device?.isAlarmed && (
-              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-danger border-2 border-ink-12" />
+              <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-danger border-2 border-ink-10" />
             )}
-          </button>
+          </HeaderIconButton>
         </div>
-      </div>
+      </PageHeaderShell>
 
       {/* Scrollable body */}
       <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pb-6 space-y-3">

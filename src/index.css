@@ -152,6 +152,12 @@ p {
   padding-top: calc(max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px)) + 1rem);
 }
 
+/* Handoff `Page Header` is 80px tall: spacing-xl (20) padding above a 40px toolbar row.
+   Same inset source as .safe-area-top, but +20 instead of +16. */
+.safe-area-top-header {
+  padding-top: calc(max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px)) + 20px);
+}
+
 .safe-area-bottom {
   padding-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
 }

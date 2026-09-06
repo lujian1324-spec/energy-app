@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Loader2, Plus, Zap, ChevronLeft, ChevronRight, Leaf, RefreshCw } from 'lucide-react'
 import Icon from '../components/Icon'
+import EmptyState from '../components/EmptyState'
+import { PageHeaderShell } from '../components/PageHeader'
 import html2canvas from 'html2canvas'
 import { toast } from '../components/Toast'
 import { CalcAudit } from '../components/DataTrust'
@@ -548,14 +550,12 @@ export default function StatsPage() {
 
   return (
     <div className="h-full flex flex-col bg-ink-12 overflow-hidden">
-      <div className="px-5 pt-4 pb-3 safe-area-top flex justify-between items-start">
-        <div>
-          <h1 className="text-display font-display text-white leading-none">Insights</h1>
-        </div>
+      <PageHeaderShell filled={hasDevice} className="flex justify-between items-center">
+        <h1 className="text-display font-display text-white">Insights</h1>
         <button
           aria-label="Share"
           disabled={sharing}
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-ink-9 text-white hover:text-primary transition-colors disabled:opacity-50"
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-ink-9 text-white hover:bg-ink-8 transition-colors disabled:opacity-50"
           onClick={async () => {
             if (sharing) return
             setSharing(true)
@@ -624,29 +624,16 @@ export default function StatsPage() {
         >
           {sharing ? <Loader2 size={24} className="animate-spin" /> : <Icon name="share" size={24} />}
         </button>
-      </div>
+      </PageHeaderShell>
 
       <div ref={shareRef} className="flex-1 overflow-y-auto scrollbar-hide px-4 pb-4">
         {!hasDevice && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center justify-center py-20 px-8">
-            <img
-              src={`${import.meta.env.BASE_URL}ds-insights-empty.svg`}
-              alt=""
-              className="w-[200px] h-[200px] object-contain mb-7 select-none"
-              draggable={false}
-            />
-            <h3 className="text-title-lg font-semibold text-ink-3 mb-2">Insights will appear here</h3>
-            <p className="text-label text-ink-5 text-center leading-relaxed mb-8 max-w-[280px]">
-              Connect a Sierro device to start tracking battery performance and power usage.
-            </p>
-            <button
-              onClick={() => navigate('/devices')}
-              className="h-11 px-4 rounded-m border-m border-primary text-primary text-body-lg font-semibold flex items-center gap-2 active:scale-95 transition-transform"
-            >
-              <Plus size={20} className="text-primary" strokeWidth={2.5} /> Add Device
-            </button>
-          </motion.div>
+          <EmptyState
+            art={`${import.meta.env.BASE_URL}ds-insights-empty.svg`}
+            title="Insights will appear here"
+            subtitle="Connect a Sierro device to start tracking battery performance and power usage."
+            action={{ label: 'Add Device', icon: 'add', onClick: () => navigate('/devices') }}
+          />
         )}
 
         {hasDevice && (

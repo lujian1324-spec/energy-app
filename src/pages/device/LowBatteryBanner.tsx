@@ -1,16 +1,23 @@
 import { motion } from 'framer-motion'
-import { X } from 'lucide-react'
+import Icon from '../../components/Icon'
 import { formatLowBatteryBannerCopy } from '../../utils/formatLowBatteryBannerCopy'
 
-/** Red low-battery bar (design p6). Dismiss X and threshold trigger stay in DevicePage. */
+/**
+ * Red low-battery bar — handoff `A_1.1.1_Homepage -v 有 alert`.
+ * Measured off the 4x export: card 370x71 @ x16, radius 12, padding 14,
+ * outage icon 20, 12px gap, title body_medium/semibold, body label, close 12.
+ * Dismiss X and threshold trigger stay in DevicePage.
+ */
 export default function LowBatteryBanner({
   name,
   durationStr,
+  threshold = 30,
   onOpen,
   onDismiss,
 }: {
   name: string
   durationStr: string | null
+  threshold?: number
   onOpen: () => void
   onDismiss: () => void
 }) {
@@ -20,20 +27,21 @@ export default function LowBatteryBanner({
       animate={{ opacity: 1, height: 'auto' }}
       exit={{ opacity: 0, height: 0 }}
       onClick={onOpen}
-      className="mb-3 rounded-l bg-danger-darker px-3 py-3 flex items-start gap-3 cursor-pointer min-h-[54px]"
+      className="mt-4 rounded-l bg-danger-darker p-[14px] flex items-start gap-3 cursor-pointer"
     >
+      <Icon name="outage" size={20} className="flex-shrink-0" />
       <div className="flex-1 min-w-0">
-        <p className="text-body-md font-semibold text-white leading-tight truncate">Low Battery</p>
-        <p className="text-caption text-white mt-0.5 leading-snug">
-          {formatLowBatteryBannerCopy(name, durationStr)}
+        <p className="text-body-md font-semibold text-white">Low Battery</p>
+        <p className="text-label text-white mt-0.5">
+          {formatLowBatteryBannerCopy(name, durationStr, threshold)}
         </p>
       </div>
       <button
         onClick={(e) => { e.stopPropagation(); onDismiss() }}
         aria-label="Dismiss notification"
-        className="text-white flex-shrink-0 active:scale-90 transition-transform"
+        className="flex-shrink-0 active:scale-90 transition-transform"
       >
-        <X size={16} />
+        <Icon name="close" size={12} />
       </button>
     </motion.div>
   )

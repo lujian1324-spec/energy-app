@@ -1,8 +1,15 @@
 {
-  "version": "4.7.60",
-  "build": 2782,
-  "date": "2026-09-05",
+  "version": "4.7.61",
+  "build": 2783,
+  "date": "2026-09-06",
   "changelog": [
-    "Figma P1+P2 UI alignment (no Push/Login IA)"
+    "Figma handoff alignment, measured off the 4x/6x exports at 402x874 (rebased onto 4.7.60).",
+    "Device cards use the real device-type glyph (NAS/fridge/router...) instead of a generic bolt; card 176 -> 150 tall, name title_medium, 2-line clamp, 16px gap.",
+    "Battery tag 91 -> 80 wide with a 24x16 glyph; power toggle and Disconnected pill kept at the 4.7.60 sizes.",
+    "Low Battery banner regains the outage glyph and the 14px/71px design box; threshold is now a prop instead of a hard-coded 30%.",
+    "Shared EmptyState (art 200, title_large/ink-3, label/ink-5, 44px button) keeps Home/Insights/Notifications in step, on top of 4.7.60's ds-*.svg illustrations.",
+    "Shared PageHeader: 80 tall, px16/py20, 40px ink-9 toolbars 12 apart with 24px glyphs, secondary title 20 semibold centred; ink-10 header block on the data-bearing screens.",
+    "Bottom navigation glyphs tinted #B0F2EB selected / #018072 idle via a new Icon color prop (CSS mask); 56px slots.",
+    "Icons de-duplicated: public/icon_*.svg is the single source."
   ]
 }
