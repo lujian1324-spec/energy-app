@@ -1,8 +1,8 @@
 {
-  "version": "4.7.60",
-  "build": 2782,
-  "date": "2026-09-05",
+  "version": "4.7.61",
+  "build": 2783,
+  "date": "2026-09-06",
   "changelog": [
-    "Figma P1+P2 UI alignment (no Push/Login IA)"
+    "Rename Capacitor appName Sierro Energy ? Sierro"
   ]
 }
