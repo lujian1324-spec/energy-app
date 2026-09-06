@@ -1,10 +1,12 @@
 {
-  "version": "4.7.83",
-  "build": 2805,
+  "version": "4.7.84",
+  "build": 2806,
   "date": "2026-09-06",
   "changelog": [
-    "The Real-Time Power card is the design's 291pt tall with a 136pt plot, instead of 216 with a 78pt plot.",
-    "Its tabs use the handoff's plug, solar and output glyphs instead of stand-in icons.",
-    "Removed the \"History unavailable\" badge from the chart."
+    "Scanning a QR code now opens the design's Device Ready to Connect confirmation, with the model and serial and a Rescan / Connect Device pair, instead of a card over the camera.",
+    "The QR screen itself matches A_1.3.1: centred title, a 306pt viewfinder, the caption under it, and failures in the standard bottom toast.",
+    "Name Your Device and Choose an Icon take the frames' centred 24pt headline, the shared text field, the eight handoff tiles and a 44pt action button; the model picker the design does not have is gone, and the model is read off the scan instead.",
+    "Found-device rows are 68pt with a plain section label and the frame's outlined Connect button, and a connect failure shows in the bottom toast.",
+    "Icon slot 6 is the power-strip glyph the frames draw, in both the setup grid and Display Icon."
   ]
 }

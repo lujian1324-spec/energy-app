@@ -10,6 +10,7 @@ import { formatScanDisplayName } from '../../utils/scanDisplayName'
 import { resetBleInit } from '../../utils/permissions'
 import { supportsDeviceListScan } from '../../protocols/bleProvision'
 import { useProvisionStore } from '../../stores/provisionStore'
+import ErrorToast from '../../components/ErrorToast'
 
 type FoundDevice = {
   name: string
@@ -163,30 +164,31 @@ export default function ScanDevicesScreen(p: Props) {
 
         {hasDevices && (
           <div className="flex-1 min-h-0 flex flex-col mb-3">
-            <p className="text-caption font-bold text-ink-6 tracking-widest uppercase mb-3 px-1 shrink-0">
+            {/* A_1.3.2 sets this in body_large semibold on white, not a tracked cap label. */}
+            <p className="text-body-lg font-semibold text-white mb-3 shrink-0">
               Found Devices ({foundDevices.length})
             </p>
             <div
               className="flex-1 min-h-0 overflow-y-auto overscroll-contain"
               style={{ WebkitOverflowScrolling: 'touch' }}
             >
-              <div className="flex flex-col gap-2 pb-2">
+              <div className="flex flex-col gap-3 pb-2">
                 {foundDevices.map((device, i) => (
                   <div
                     key={device.deviceId || device.serial || i}
-                    className="bg-ink-10 rounded-l px-4 py-4 flex items-center justify-between"
+                    className="bg-ink-10 rounded-l h-[68px] px-4 flex items-center justify-between"
                   >
                     <div className="min-w-0 pr-3">
-                      <p className="text-body-lg font-semibold text-white tracking-wide truncate">
+                      <p className="text-body-lg font-semibold text-white truncate">
                         {formatScanDisplayName({ name: device.name, serial: device.serial, deviceId: device.deviceId })}
                       </p>
-                      <p className="text-caption text-ink-6 mt-0.5 truncate">
+                      <p className="text-tiny text-ink-6 mt-0.5 truncate">
                         {isDtuid(device.serial) ? device.serial : 'Sierro'}
                       </p>
                     </div>
                     <button
                       onClick={() => handleSelectDevice(device)}
-                      className="px-4 h-9 shrink-0 rounded-full border border-primary text-primary text-body-md font-semibold active:scale-[0.96] transition-transform"
+                      className="w-16 h-8 shrink-0 rounded-m border-s border-primary text-primary text-body-md font-semibold active:scale-[0.96] transition-transform"
                     >
                       Connect
                     </button>
@@ -194,6 +196,13 @@ export default function ScanDevicesScreen(p: Props) {
                 ))}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* A_1.3.2 -v Connect Fail: the failure rides in a toast above the fold. */}
+        {hasDevices && store.errorMessage && (
+          <div className="pb-2 shrink-0">
+            <ErrorToast message={store.errorMessage} onDismiss={() => store.setErrorMessage(null)} />
           </div>
         )}
 

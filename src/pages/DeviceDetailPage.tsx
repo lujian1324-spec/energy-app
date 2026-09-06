@@ -36,7 +36,7 @@ const DISPLAY_ICONS = [
   { id: 'server', pack: 'NAS', label: 'Server' },
   { id: 'lamp', pack: 'lamp', label: 'Lamp' },
   { id: 'fish', pack: 'fish tank', label: 'Aquarium' },
-  { id: 'plugzap', pack: 'plug', label: 'EV Charger' },
+  { id: 'plugzap', pack: 'power strip', label: 'Power strip' },
   { id: 'wifi', pack: 'router', label: 'Router' },
   { id: 'cpap', pack: 'CPAP', label: 'CPAP' },
 ]
@@ -755,7 +755,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                   aria-label={label}
                   aria-pressed={pending === id}
                   onClick={() => setPendingIcon(id)}
-                  className={`h-[52px] rounded-m flex items-center justify-center transition-colors ${
+                  className={`h-[52px] rounded-l flex items-center justify-center transition-colors ${
                     pending === id ? 'bg-primary-darker' : 'bg-ink-9'
                   }`}
                 >

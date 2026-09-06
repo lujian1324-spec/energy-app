@@ -4,6 +4,7 @@
  */
 import { useState, useEffect, useRef } from 'react'
 import { ChevronLeft } from 'lucide-react'
+import ErrorToast from '../../components/ErrorToast'
 import jsQR from 'jsqr'
 import { Capacitor } from '@capacitor/core'
 import { requestCamera } from '../../utils/permissions'
@@ -18,7 +19,6 @@ function QrScanScreen({ onBack, onScanned }: {
   const streamRef = useRef<MediaStream | null>(null)
   const rafRef = useRef<number | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [scanned, setScanned] = useState<{ name: string; serial: string } | null>(null)
   const [cameraReady, setCameraReady] = useState(false)
 
   const stopCamera = () => {
@@ -34,11 +34,9 @@ function QrScanScreen({ onBack, onScanned }: {
     onBack()
   }
 
-  // scanned == null 时（初次进入或点了 Rescan）重新获取摄像头流。
   // Native: requestCamera BEFORE getUserMedia / mounting <video> so Android
   // never shows the default media play overlay on the permission dialog.
   useEffect(() => {
-    if (scanned) return
     let stopped = false
     const start = async () => {
       setError(null)
@@ -66,7 +64,7 @@ function QrScanScreen({ onBack, onScanned }: {
       stopped = true
       stopCamera()
     }
-  }, [scanned])
+  }, [])
 
   // Attach stream only after <video> is mounted (cameraReady).
   useEffect(() => {
@@ -98,7 +96,8 @@ function QrScanScreen({ onBack, onScanned }: {
         const serial = parts.length >= 3 ? parts[2] : code.data
         const name = formatScanDisplayName({ name: rawName, serial })
         streamRef.current?.getTracks().forEach(t => t.stop())
-        setScanned({ name, serial })
+        // A_1.3.1 has no result card — a good read moves to A_1.3.2 Device Scanned.
+        onScanned(name, serial)
         return
       }
       rafRef.current = requestAnimationFrame(scan)
@@ -109,11 +108,13 @@ function QrScanScreen({ onBack, onScanned }: {
 
   return (
     <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
-      <div className="px-4 pt-5 pb-4 flex items-center gap-3 safe-area-top absolute top-0 left-0 right-0 z-10">
+      <div className="px-4 pb-5 safe-area-top-header flex items-center absolute top-0 left-0 right-0 z-10">
         <button onClick={handleQrBack} aria-label="Back" className="relative w-10 h-10 rounded-full bg-black/[0.5] flex items-center justify-center before:absolute before:content-[''] before:-inset-1">
-          <ChevronLeft size={20} className="text-white" />
+          <ChevronLeft size={24} className="text-white" />
         </button>
-        <h1 className="text-title-lg font-semibold text-white">Scan QR Code</h1>
+        <h1 className="absolute left-1/2 -translate-x-1/2 text-title-lg font-semibold text-white">
+          Scan QR Code
+        </h1>
       </div>
 
       {/* Camera feed — mount <video> only after permission + stream, matching DevicePage */}
@@ -129,9 +130,9 @@ function QrScanScreen({ onBack, onScanned }: {
       )}
       <canvas ref={canvasRef} className="hidden" />
 
-      {/* Dark overlay with viewfinder cutout */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="relative w-64 h-64">
+      {/* Viewfinder — A_1.3.1 draws a 306 square with teal corner arcs at y284. */}
+      <div className="absolute inset-0">
+        <div className="absolute left-1/2 -translate-x-1/2 w-[306px] h-[306px]" style={{ top: 284 }}>
           {/* corners */}
           {[['top-0 left-0', 'M0 20V4C0 1.79 1.79 0 4 0H20'],
             ['top-0 right-0', 'M24 20V4C24 1.79 22.21 0 20 0H4'],
@@ -145,34 +146,23 @@ function QrScanScreen({ onBack, onScanned }: {
         </div>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 px-6 pb-10 safe-area-bottom">
-        {error ? (
-          <div className="bg-danger/90 rounded-l p-4 text-center">
-            <p className="text-white text-body-md">{error}</p>
-            <button onClick={handleQrBack} className="mt-3 text-white font-semibold underline text-body-md">Go Back</button>
-          </div>
-        ) : scanned ? (
-          <div className="bg-black/[0.85] rounded-l p-5">
-            <p className="text-caption text-primary font-semibold uppercase tracking-widest mb-1">Device Scanned</p>
-            <p className="text-title-md font-bold text-white">{scanned.name}</p>
-            <p className="text-caption text-ink-6 mb-5">{scanned.serial}</p>
-            <div className="flex gap-3">
-              <button onClick={() => { setScanned(null); setCameraReady(false) }}
-                className="flex-1 h-12 rounded-full border border-white/[0.3] text-white font-semibold text-body-md">
-                Rescan
-              </button>
-              <button onClick={() => onScanned(scanned.name, scanned.serial)}
-                className="flex-1 h-12 rounded-full bg-primary text-black font-semibold text-body-md">
-                Connect Device
-              </button>
-            </div>
-          </div>
-        ) : (
-          <p className="text-center text-white/[0.7] text-body-md">
-            Point your camera at the QR code on your Sierro device
-          </p>
-        )}
+      {/* Caption under the viewfinder, then the failure toast at the bottom edge. */}
+      <div className="absolute left-0 right-0 px-4 text-center" style={{ top: 605 }}>
+        <p className="text-title-lg font-semibold text-white">Scan the QR Code on Your Device</p>
+        <p className="mt-2 text-body-md text-white/[0.8]">
+          The QR code is located on the side of your Sierro device near the power outlet.
+        </p>
       </div>
+
+      {error && (
+        <div
+          className="absolute left-0 right-0 px-4"
+          style={{ bottom: 'calc(max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)) + 2px)' }}
+        >
+          <ErrorToast message={error} onDismiss={() => setError(null)} />
+        </div>
+      )}
+
     </div>
   )
 }
