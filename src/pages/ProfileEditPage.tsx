@@ -3,7 +3,6 @@ import { useState, useRef, useEffect } from 'react'
 import {
   Mail,
   Camera,
-  Hash,
 } from 'lucide-react'
 import Icon from '../components/Icon'
 import { usePowerStationStore } from '../stores/powerStationStore'
@@ -14,12 +13,10 @@ import {
   fetchUserInfo,
   updateUserInfo,
   updateUserEmail,
-  updatePassword,
   sendEmailCaptcha,
   deleteAccount,
 } from '../api/authApi'
 import { isApiSuccess } from '../utils/apiClient'
-import { Lock, Eye, EyeOff } from 'lucide-react'
 import type { UserProfile } from '../types/protocol'
 
 interface ProfileEditPageProps {
@@ -39,7 +36,6 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
   })
 
   // 用户 ID（从服务端获取）
-  const [userId, setUserId] = useState<number | null>(null)
 
   // 加载状态
   const [isLoading, setIsLoading] = useState(true)
@@ -56,13 +52,6 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
   const [emailOtpCode, setEmailOtpCode] = useState('')
   const [emailCooldown, setEmailCooldown] = useState(0)
 
-  // Password change
-  const [oldPassword, setOldPassword] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [showOldPwd, setShowOldPwd] = useState(false)
-  const [showNewPwd, setShowNewPwd] = useState(false)
-  const [showConfirmPwd, setShowConfirmPwd] = useState(false)
 
   // "..." dropdown menu
   const [showMenu, setShowMenu] = useState(false)
@@ -92,13 +81,15 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
         if (apiResult.code === 0 || apiResult.code === '0') {
           const u = apiResult.data
           if (u) {
-            setUserId(u.userId ?? null)
             setProfile(prev => ({
               ...prev,
-              // Username IS the display name now — no separate editable nickname
-              // (unifies Account/Username/Name into one concept, set at registration).
-              name: u.account ?? prev.name,
-              email: u.email ?? prev.email,
+              // `Profile -v Default` shows an editable display name, so prefer the
+              // nickname and fall back to the account it was registered with.
+              name: u.nickname || u.account || prev.name,
+              // /user/select/iotUserInfo returns the address masked (j****@sierro.us).
+              // The design shows it in full, and the login response already gave us the
+              // real one, so only take the server's value when it is not masked.
+              email: u.email && !u.email.includes('*') ? u.email : prev.email,
             }))
           }
         }
@@ -131,9 +122,6 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
     setEmailOtpCode('')
     setEmailCaptchaId('')
     setEmailCooldown(0)
-    setOldPassword('')
-    setNewPassword('')
-    setConfirmPassword('')
   }
 
   const handleSave = async () => {
@@ -141,7 +129,17 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
     setIsSaving(true)
     setFieldError('')
     try {
-      if (editingField === 'email') {
+      if (editingField === 'name') {
+        const next = tempValue.trim()
+        if (!next) { setFieldError('Enter a name'); return }
+        const r = await updateUserInfo({ nickname: next })
+        if (r.code !== 0 && r.code !== '0') throw new Error(r.message ?? 'Failed')
+        const newProfile = { ...profile, name: next }
+        setProfile(newProfile)
+        await persistProfile(newProfile)
+        toast.success('Name updated')
+
+      } else if (editingField === 'email') {
         if (!emailOtpSent) {
           // Step 1: send OTP
           const r = await sendEmailCaptcha(tempValue, '4')
@@ -164,13 +162,6 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
           toast.success('Email updated')
         }
 
-      } else if (editingField === 'password') {
-        if (!oldPassword) { setFieldError('Enter your current password'); return }
-        if (newPassword.length < 6) { setFieldError('New password must be at least 6 characters'); return }
-        if (newPassword !== confirmPassword) { setFieldError('Passwords do not match'); return }
-        const r = await updatePassword(oldPassword, newPassword, userId ?? undefined)
-        if (r.code !== 0 && r.code !== '0') throw new Error(r.message ?? 'Failed')
-        toast.success('Password updated')
       }
 
       setEditingField(null)
@@ -262,7 +253,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
 
   // If editing a field, show sub-screen
   if (editingField) {
-    const titleMap: Record<string, string> = { email: 'Linked Email', password: 'Change Password' }
+    const titleMap: Record<string, string> = { name: 'Name', email: 'Linked Email' }
     const title = titleMap[editingField] ?? editingField
 
     return (
@@ -282,13 +273,15 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
             <Icon name="chevron-left" size={24} />
           </button>
           <span className="text-title-lg font-semibold text-white">{title}</span>
-          {editingField !== 'email' && editingField !== 'password' ? (
+          {editingField !== 'email' ? (
             <button
               onClick={handleSave}
-              disabled={isSaving}
-              className="w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center disabled:opacity-40"
+              disabled={isSaving || tempValue.trim() === profile.name}
+              className={`text-body-lg font-semibold transition-colors ${
+                !isSaving && tempValue.trim() !== profile.name ? 'text-primary' : 'text-ink-9 cursor-not-allowed'
+              }`}
             >
-              <Icon name="check" size={20} />
+              Save
             </button>
           ) : (
             <div className="w-10" />
@@ -296,6 +289,26 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 pt-6 space-y-4">
+
+          {/* ── NAME (D_2.5) ── */}
+          {editingField === 'name' && (
+            <div className="flex items-center gap-3 rounded-l bg-ink-10 px-4 h-[56px]">
+              <input
+                type="text"
+                value={tempValue}
+                onChange={(e) => setTempValue(e.target.value)}
+                placeholder="Your name"
+                autoFocus
+                maxLength={40}
+                className="flex-1 min-w-0 bg-transparent text-body-lg text-white placeholder:text-ink-7 focus:outline-none"
+              />
+              {tempValue && (
+                <button onClick={() => setTempValue('')} aria-label="Clear name" className="shrink-0">
+                  <Icon name="close" size={16} />
+                </button>
+              )}
+            </div>
+          )}
 
           {/* ── EMAIL ── */}
           {editingField === 'email' && (
@@ -336,65 +349,6 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
                 className="w-full h-12 rounded-full bg-primary text-black font-semibold text-body-md disabled:opacity-40"
               >
                 {isSaving ? 'Please wait…' : emailOtpSent ? 'Confirm Update' : emailCooldown > 0 ? `Resend (${emailCooldown}s)` : 'Send Verification Code'}
-              </button>
-            </>
-          )}
-
-          {/* ── PASSWORD ── */}
-          {editingField === 'password' && (
-            <>
-              {/* Old password */}
-              <div className="bg-ink-10 rounded-l overflow-hidden">
-                <div className="flex items-center gap-3 px-4 py-3">
-                  <Lock size={16} className="text-ink-6 flex-shrink-0" />
-                  <input
-                    type={showOldPwd ? 'text' : 'password'}
-                    value={oldPassword}
-                    onChange={(e) => setOldPassword(e.target.value)}
-                    placeholder="Current password"
-                    autoFocus
-                    className="flex-1 bg-transparent text-body-lg text-white placeholder:text-ink-7 focus:outline-none"
-                  />
-                  <button onClick={() => setShowOldPwd(v => !v)}>
-                    {showOldPwd ? <EyeOff size={16} className="text-ink-7" /> : <Eye size={16} className="text-ink-7" />}
-                  </button>
-                </div>
-              </div>
-              {/* New password */}
-              <div className="bg-ink-10 rounded-l overflow-hidden">
-                <div className="flex items-center gap-3 px-4 py-3 border-b border-white/5">
-                  <Lock size={16} className="text-ink-6 flex-shrink-0" />
-                  <input
-                    type={showNewPwd ? 'text' : 'password'}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="New password (6–32 chars)"
-                    className="flex-1 bg-transparent text-body-lg text-white placeholder:text-ink-7 focus:outline-none"
-                  />
-                  <button onClick={() => setShowNewPwd(v => !v)}>
-                    {showNewPwd ? <EyeOff size={16} className="text-ink-7" /> : <Eye size={16} className="text-ink-7" />}
-                  </button>
-                </div>
-                <div className="flex items-center gap-3 px-4 py-3">
-                  <Lock size={16} className="text-ink-6 flex-shrink-0" />
-                  <input
-                    type={showConfirmPwd ? 'text' : 'password'}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm new password"
-                    className="flex-1 bg-transparent text-body-lg text-white placeholder:text-ink-7 focus:outline-none"
-                  />
-                  <button onClick={() => setShowConfirmPwd(v => !v)}>
-                    {showConfirmPwd ? <EyeOff size={16} className="text-ink-7" /> : <Eye size={16} className="text-ink-7" />}
-                  </button>
-                </div>
-              </div>
-              <button
-                onClick={handleSave}
-                disabled={isSaving || !oldPassword || !newPassword || !confirmPassword}
-                className="w-full h-12 rounded-full bg-primary text-black font-semibold text-body-md disabled:opacity-40"
-              >
-                {isSaving ? 'Updating…' : 'Update Password'}
               </button>
             </>
           )}
@@ -516,14 +470,18 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
         {/* Profile -v Default: each field is its own 68px card 12 apart, with a 40px
             ink-9 icon circle and the label in body_large/ink-2. */}
         <div className="space-y-3">
-          {/* Username row — read-only display, set at registration (unified with Account/Name) */}
-          <div className="w-full rounded-l bg-ink-10 h-[68px] px-4 flex items-center gap-3 text-left">
+          {/* Name row — editable display name (D_2.5) */}
+          <button
+            onClick={() => handleEdit('name', profile.name)}
+            className="w-full rounded-l bg-ink-10 h-[68px] px-4 flex items-center gap-3 text-left active:opacity-70 transition-opacity"
+          >
             <div className="w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
               <Icon name="user" size={24} />
             </div>
             <span className="text-body-lg text-ink-2 flex-1">Name</span>
             <span className="text-body-md text-ink-6 truncate max-w-[140px]">{profile.name}</span>
-          </div>
+            <Icon name="chevron-right" size={24} />
+          </button>
 
           {/* Linked Email row */}
           <button
@@ -538,32 +496,19 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
             <Icon name="chevron-right" size={24} />
           </button>
 
-          {/* User ID row (read-only) */}
-          {userId !== null && (
-            <div className="w-full rounded-l bg-ink-10 h-[68px] px-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
-                <Hash size={20} className="text-white" />
-              </div>
-              <span className="text-body-lg text-ink-2 flex-1">User ID</span>
-              <span className="text-body-md text-ink-6">#{userId}</span>
-            </div>
-          )}
         </div>
 
-        {/* Security section */}
-        <p className="text-body-md font-semibold text-white mt-5 mb-2">Security</p>
-        <button
-          onClick={() => handleEdit('password', '')}
-          className="w-full rounded-l bg-ink-10 h-[68px] px-4 flex items-center gap-3 text-left active:opacity-70 transition-opacity"
-        >
-          <div className="w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
-            <Lock size={20} className="text-white" />
-          </div>
-          <span className="text-body-lg text-ink-2 flex-1">Change Password</span>
-          <Icon name="chevron-right" size={24} />
-        </button>
 
-        {/* Footer: founder redeem CTA hidden (APP-005). Modal kept; reachable from gold tag. */}
+        {/* Footer: founder redeem CTA, as `Profile -v Default` has it. The gold badge
+            still opens the same modal for members who already redeemed. */}
+        {!settings.founderBadge && (
+          <p className="mt-6 text-caption text-ink-7 text-center">
+            Have a founder code?{' '}
+            <button onClick={() => setShowRedeem(true)} className="text-primary font-semibold">
+              Redeem founder badge
+            </button>
+          </p>
+        )}
       </div>
 
       {/* ==================== Redeem Founder Badge 弹窗 (bottom sheet) ==================== */}
@@ -658,14 +603,14 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
                 <button
                   disabled={deleteBusy}
                   onClick={() => setConfirmAction(null)}
-                  className="flex-1 h-11 rounded-pill border-s border-ink-4 text-ink-4 font-semibold text-body-lg active:scale-95 transition-transform disabled:opacity-50"
+                  className="flex-1 h-11 rounded-m border-s border-ink-4 text-ink-4 font-semibold text-body-lg active:scale-95 transition-transform disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   disabled={deleteBusy}
                   onClick={handleConfirm}
-                  className={`flex-1 h-11 rounded-pill font-semibold text-body-lg active:scale-95 transition-transform disabled:opacity-60 ${
+                  className={`flex-1 h-11 rounded-m font-semibold text-body-lg active:scale-95 transition-transform disabled:opacity-60 ${
                     confirmAction === 'signout'
                       ? 'bg-primary text-primary-darker'
                       : 'bg-danger text-white'

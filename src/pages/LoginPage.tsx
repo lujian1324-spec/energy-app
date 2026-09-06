@@ -4,7 +4,16 @@ import { Loader2, X } from 'lucide-react'
 import Icon from '../components/Icon'
 import { useAuthStore } from '../stores/authStore'
 import { useDeviceStore } from '../stores/deviceStore'
-import { sendEmailCaptcha, loginByEmail, CaptchaIntent } from '../api/authApi'
+import {
+  sendEmailCaptcha,
+  loginByEmail,
+  loginByAccount,
+  registerByEmail,
+  checkEmailExists,
+  checkAccountExists,
+  CaptchaIntent,
+} from '../api/authApi'
+import { isApiSuccess } from '../utils/apiClient'
 import { TERMS_URL, PRIVACY_URL } from '../config/legalLinks'
 import { sanitizeUiCopy } from '../utils/uiCopy'
 
@@ -22,12 +31,52 @@ import { sanitizeUiCopy } from '../utils/uiCopy'
  * Google / Apple are deliberately out of scope for this pass, so the "OR" block and
  * those two rows are not built.
  *
- * There is no password path: /login/email registers an unknown address, so this single
- * flow covers both "sign up" and "log in", exactly as the screen title says.
+ * There is no password path. /login/email only signs in an address that already exists,
+ * so an unknown one is registered behind the scenes once its code checks out — that is
+ * what makes the single flow cover both "sign up" and "log in", as the title says.
  */
 type Step = 'landing' | 'email' | 'code'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+/** Account for a self-registered address: the local part of the email. */
+function accountFromEmail(email: string): string {
+  return email.trim().split('@')[0].replace(/[^A-Za-z0-9._-]/g, '') || 'user'
+}
+
+/** Default password for a self-registered account: the account plus 1234. */
+function defaultPasswordFor(account: string): string {
+  return `${account}1234`
+}
+
+/**
+ * `checkEmailExists` / `checkAccountExists` answer "is this free?": code 0 means the
+ * value is available, code 5 means it is already taken. Anything else is a transport or
+ * server problem, so treat it as "unknown" and let the caller fall back.
+ */
+async function isEmailRegistered(email: string): Promise<boolean | null> {
+  try {
+    const r = await checkEmailExists(email)
+    return !isApiSuccess(r.code)
+  } catch {
+    return null
+  }
+}
+
+/** First account name derived from the email that nobody has taken yet. */
+async function pickFreeAccount(email: string): Promise<string> {
+  const base = accountFromEmail(email)
+  for (let i = 0; i < 5; i++) {
+    const candidate = i === 0 ? base : `${base}${i}`
+    try {
+      const r = await checkAccountExists(candidate)
+      if (isApiSuccess(r.code)) return candidate
+    } catch {
+      return candidate
+    }
+  }
+  return `${base}${Date.now().toString().slice(-4)}`
+}
 const OTP_LEN = 6
 
 /** Bottom action bar: ink-9 hairline over a 370x44 primary button (disabled = 50%). */
@@ -69,6 +118,9 @@ export default function LoginPage() {
 
   const [otpCode, setOtpCode] = useState('')
   const [captchaId, setCaptchaId] = useState<string | null>(null)
+  // Whether this address needs registering — decided before the code is sent so the
+  // captcha carries the right intent.
+  const [isNewAccount, setIsNewAccount] = useState(false)
   const [cooldown, setCooldown] = useState(0)
   const [sending, setSending] = useState(false)
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -102,7 +154,15 @@ export default function LoginPage() {
     setError(null)
     setSending(true)
     try {
-      const result = await sendEmailCaptcha(email.trim(), CaptchaIntent.LOGIN)
+      const registered = await isEmailRegistered(email.trim())
+      // Unknown (the check itself failed) behaves like an existing account; verify falls
+      // back to registering if the sign-in then says there is no such account.
+      const newAccount = registered === false
+      setIsNewAccount(newAccount)
+      const result = await sendEmailCaptcha(
+        email.trim(),
+        newAccount ? CaptchaIntent.REGISTER : CaptchaIntent.LOGIN,
+      )
       if (result.code === 0 || result.code === '0') {
         setCaptchaId(result.data?.iotCaptchaId ?? null)
         startCooldown()
@@ -129,17 +189,50 @@ export default function LoginPage() {
     navigate('/', { replace: true })
   }
 
+  /**
+   * Register the address, then sign in with the account we just created. The account is
+   * the email's local part (suffixed if taken) and the password is that plus 1234.
+   */
+  const registerThenSignIn = async (): Promise<boolean> => {
+    const addr = email.trim()
+    const account = await pickFreeAccount(addr)
+    const password = defaultPasswordFor(account)
+    const reg = await registerByEmail(account, password, addr, otpCode, captchaId ?? undefined)
+    if (!isApiSuccess(reg.code)) {
+      setError(sanitizeUiCopy(reg.message || reg.msg, 'Could not create your account.'))
+      return false
+    }
+    const login = await loginByAccount(account, password)
+    if (!isApiSuccess(login.code)) {
+      setError(sanitizeUiCopy(login.message || login.msg, 'Account created — please sign in again.'))
+      return false
+    }
+    finishSignIn(login.data)
+    return true
+  }
+
   const handleVerify = async () => {
     if (!captchaId || otpCode.length < OTP_LEN) return
     setError(null)
     setBusy(true)
     try {
-      const result = await loginByEmail(email.trim(), captchaId, otpCode)
-      if (result.code === 0 || result.code === '0') {
-        finishSignIn(result.data)
-      } else {
-        setError(sanitizeUiCopy(result.message || result.msg, 'Invalid verification code.'))
+      if (isNewAccount) {
+        await registerThenSignIn()
+        return
       }
+      const result = await loginByEmail(email.trim(), captchaId, otpCode)
+      if (isApiSuccess(result.code)) {
+        finishSignIn(result.data)
+        return
+      }
+      // The pre-check can be wrong (it failed, or the address was removed between steps).
+      // If sign-in says there is no such account, register with the code we already have.
+      const msg = `${result.message ?? ''} ${result.msg ?? ''}`.toLowerCase()
+      if (/not exist|no such|unregistered|not found|account error|\u8d26\u53f7/.test(msg)) {
+        await registerThenSignIn()
+        return
+      }
+      setError(sanitizeUiCopy(result.message || result.msg, 'Invalid verification code.'))
     } catch {
       setError('Invalid verification code.')
     } finally {

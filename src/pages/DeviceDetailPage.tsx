@@ -120,11 +120,13 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     { label: 'Savings', desc: 'Reserve 60% for backup', value: 2 },
   ]
   const [workMode, setWorkMode_] = useState<0 | 1 | 2>(1)
+  // Empty until the user picks one — the row then falls back to the icon guessed from the
+  // device name, so Device Settings shows the same glyph the home card does.
   const [selectedIcon, setSelectedIcon] = useState(() =>
-    (routeId ? localStorage.getItem(`sierro-display-icon-${routeId}`) : null) ?? 'zap'
+    (routeId ? localStorage.getItem(`sierro-display-icon-${routeId}`) : null) ?? ''
   )
   const [pendingIcon, setPendingIcon] = useState(() =>
-    (routeId ? localStorage.getItem(`sierro-display-icon-${routeId}`) : null) ?? 'zap'
+    (routeId ? localStorage.getItem(`sierro-display-icon-${routeId}`) : null) ?? ''
   )
   const customKey = routeId ? `sierro-display-icon-custom-${routeId}` : ''
   const [customImage, setCustomImage] = useState<string | null>(() =>
@@ -244,10 +246,12 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   }
 
   const handleSaveIcon = () => {
-    setSelectedIcon(pendingIcon)
+    // Saving without touching a tile keeps the guessed icon, so store that explicitly.
+    const chosen = pendingIcon || guessedIconId
+    setSelectedIcon(chosen)
     setCustomImage(pendingCustomImage)
     if (routeId) {
-      localStorage.setItem(`sierro-display-icon-${routeId}`, pendingIcon)
+      localStorage.setItem(`sierro-display-icon-${routeId}`, chosen)
       const ck = `sierro-display-icon-custom-${routeId}`
       if (pendingCustomImage) {
         localStorage.setItem(ck, pendingCustomImage)
@@ -297,10 +301,11 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     handleBack()
   }
 
-  const savedIcon = routeId ? localStorage.getItem(`sierro-display-icon-${routeId}`) : null
-  const currentPack =
-    DISPLAY_ICONS.find((i) => i.id === selectedIcon)?.pack
-    ?? (savedIcon ? 'thunder' : guessDeviceIconName(deviceName))
+  // The tile that counts as selected: the saved choice, or the one matching the name guess.
+  const guessedIconId =
+    DISPLAY_ICONS.find((i) => i.pack === guessDeviceIconName(deviceName))?.id ?? 'zap'
+  const effectiveIcon = selectedIcon || guessedIconId
+  const currentPack = DISPLAY_ICONS.find((i) => i.id === effectiveIcon)?.pack ?? 'thunder'
 
   const BackBtn = ({ to }: { to: Screen | 'parent' }) => (
     <button
@@ -498,7 +503,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 key={id}
                 onClick={() => { setPendingIcon(id); setPendingCustomImage(null) }}
                 className={`flex flex-col items-center gap-2 py-4 rounded-l transition-colors ${
-                  pendingIcon === id ? 'bg-primary-darker' : 'bg-ink-10'
+                  (pendingIcon || guessedIconId) === id ? 'bg-primary-darker' : 'bg-ink-10'
                 }`}
               >
                 <Icon
@@ -508,7 +513,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 />
                 <span
                   className={`text-label ${
-                    pendingIcon === id ? 'text-white font-semibold' : 'text-white'
+                    (pendingIcon || guessedIconId) === id ? 'text-white font-semibold' : 'text-white'
                   }`}
                 >
                   {label}
@@ -520,7 +525,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
         <div className="px-4 pb-8 pt-4">
           <button
             onClick={handleSaveIcon}
-            disabled={pendingIcon === selectedIcon && pendingCustomImage === customImage}
+            disabled={(pendingIcon || guessedIconId) === effectiveIcon && pendingCustomImage === customImage}
             className="w-full h-12 rounded-l bg-primary text-primary-darker font-semibold text-body-lg
               disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-transform"
           >
@@ -815,16 +820,16 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           <SettingsRow
             label="Display Icon"
             preview={
-              selectedIcon === 'photo' ? (
+              effectiveIcon === 'photo' ? (
                 <img src={sierro1000Img} alt="Device" className="w-6 h-6 object-contain" />
-              ) : selectedIcon === 'custom' && customImage ? (
+              ) : effectiveIcon === 'custom' && customImage ? (
                 <img src={customImage} alt="Custom" className="w-6 h-6 object-cover rounded-s" />
               ) : (
                 <Icon name={currentPack} size={24} />
               )
             }
             onPress={() => {
-              setPendingIcon(selectedIcon)
+              setPendingIcon(effectiveIcon)
               setPendingCustomImage(customImage)
               setScreen('displayIcon')
             }}
@@ -950,14 +955,14 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 disabled={deleting}
-                className="flex-1 h-11 rounded-pill border-s border-ink-4 text-body-lg font-semibold text-ink-4 active:scale-95 transition-transform"
+                className="flex-1 h-11 rounded-m border-s border-ink-4 text-body-lg font-semibold text-ink-4 active:scale-95 transition-transform"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteDevice}
                 disabled={deleting}
-                className="flex-1 h-11 rounded-pill bg-danger text-body-lg font-semibold text-white active:scale-95 transition-transform flex items-center justify-center gap-2"
+                className="flex-1 h-11 rounded-m bg-danger text-body-lg font-semibold text-white active:scale-95 transition-transform flex items-center justify-center gap-2"
               >
                 {deleting ? <Loader2 size={16} className="animate-spin" /> : 'Delete'}
               </button>

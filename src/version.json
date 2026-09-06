@@ -1,9 +1,8 @@
 {
-  "version": "4.7.74",
-  "build": 2796,
+  "version": "4.7.79",
+  "build": 2801,
   "date": "2026-09-06",
   "changelog": [
-    "Profile: Personal Info and Security become one 68px card per field, 12 apart, with 40px ink-9 icon circles and body_large/ink-2 labels, as Profile -v Default draws them.",
-    "Sign out / Delete account confirmations use the same 280px card and 44px pills as the Delete Device dialog, with the design's title case and copy."
+    "Dialog buttons (delete device, sign out, delete account) and the Feedback send button are 8px-radius buttons again instead of full capsules, matching the design system."
   ]
 }
