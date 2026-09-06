@@ -1,8 +1,11 @@
 {
-  "version": "4.7.70",
-  "build": 2792,
+  "version": "4.7.71",
+  "build": 2793,
   "date": "2026-09-06",
   "changelog": [
-    "Fixed mojibake in Device Settings: the middle dots and arrows in the Sleep Mode / Device Info / scheduler strings were UTF-8 bytes that had been read back as GBK, so they shipped as 路 and 鈫? instead of · and →."
+    "Delete Device dialog matches B_1.2.7: a 280x158 centred card titled 'Delete {name}?', the design's copy, and two 118x44 pills (outlined Cancel, filled danger Delete).",
+    "Battery Priority options read 'Backup' / 'Savings' as the export does.",
+    "Save stays dim until something changes on Sleep Mode and Battery Priority, the way Device Name already did.",
+    "Insights: the days block is no longer a card — it continues the header's ink-10 band edge to edge, as C_1.1 draws it; and the forward arrow is hidden on the newest period instead of shown disabled."
   ]
 }

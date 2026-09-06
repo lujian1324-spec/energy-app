@@ -319,9 +319,10 @@ function buildFrameFromRecords(
 
 function DaysSkeleton() {
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center py-4 mb-2">
-      <div className="h-12 w-44 bg-ink-10 rounded-m animate-pulse mb-3" />
-      <div className="h-3 w-52 bg-ink-10 rounded-s animate-pulse" />
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+      className="-mx-4 h-[110px] flex flex-col items-center justify-center bg-ink-10">
+      <div className="h-12 w-44 bg-ink-9 rounded-m animate-pulse mb-3" />
+      <div className="h-3 w-52 bg-ink-9 rounded-s animate-pulse" />
     </motion.div>
   )
 }
@@ -639,8 +640,10 @@ export default function StatsPage() {
         {hasDevice && (
           <>
             {loading && records === null ? <DaysSkeleton /> : (
+              /* C_1.1: the days block is not a card — it continues the header's ink-10
+                 band edge to edge, so the fill runs 0..244 in the export. */
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col items-center text-center py-5 bg-ink-10 rounded-l mb-4 min-h-[95px]">
+                className="-mx-4 h-[110px] flex flex-col items-center justify-center text-center bg-ink-10">
                 <div className="flex items-baseline justify-center gap-2">
                   <Zap size={26} strokeWidth={1.5} className="text-primary self-center" />
                   <span className="text-headline-xl font-semibold text-ink-1 leading-none tnum">{displayDeviceDays}</span>
@@ -652,7 +655,7 @@ export default function StatsPage() {
               </motion.div>
             )}
 
-            <div className="flex bg-ink-9 rounded-pill p-1 mb-3 max-w-[322px] mx-auto w-full">
+            <div className="flex bg-ink-9 rounded-pill p-1 mt-[13px] mb-3 max-w-[322px] mx-auto w-full">
               {periods.map((p) => (
                 <button key={p} onClick={() => setPeriod(p)}
                   className={`flex-1 text-body-md py-2 rounded-pill active:scale-[0.96] transition-[color,background-color,transform] duration-200
@@ -696,7 +699,9 @@ export default function StatsPage() {
                     return d
                   })}
                   disabled={!canGoForward || period === 'Range'}
-                  className="w-8 h-8 flex items-center justify-center rounded-full bg-ink-10 text-ink-4 hover:text-ink-1 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  /* C_1.1 hides the forward arrow entirely on the newest period rather
+                     than showing a disabled one, so mirror the left arrow's behaviour. */
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-ink-10 text-ink-4 hover:text-ink-1 transition-colors disabled:opacity-0 disabled:pointer-events-none"
                 >
                   <ChevronRight size={18} />
                 </button>

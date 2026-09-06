@@ -106,11 +106,18 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const [sleepMode, setSleepMode] = useState<'Off' | 'On'>('Off')
   const [sleepFrom, setSleepFrom] = useState('22:00')
   const [sleepTo, setSleepTo] = useState('09:00')
+  // Snapshot taken when the Sleep Mode screen opens; the design keeps Save dim until
+  // one of these actually changes.
+  const sleepBaseline = useRef({ sleepMode, sleepFrom, sleepTo })
+  useEffect(() => {
+    if (screen === 'sleepMode') sleepBaseline.current = { sleepMode, sleepFrom, sleepTo }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screen])
   const [showWorkModeMenu, setShowWorkModeMenu] = useState(false)
   const [workModeDraft, setWorkModeDraft] = useState<0 | 1 | 2>(1)
   const WORK_MODES: { label: string; desc: string; value: 0 | 1 | 2 }[] = [
-    { label: 'Backup Mode', desc: 'Reserve 100% for backup', value: 1 },
-    { label: 'Saving Mode', desc: 'Reserve 60% for backup', value: 2 },
+    { label: 'Backup', desc: 'Reserve 100% for backup', value: 1 },
+    { label: 'Savings', desc: 'Reserve 60% for backup', value: 2 },
   ]
   const [workMode, setWorkMode_] = useState<0 | 1 | 2>(1)
   const [selectedIcon, setSelectedIcon] = useState(() =>
@@ -660,6 +667,8 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
 
   if (screen === 'sleepMode') {
     const enabled = sleepMode === 'On'
+    const b = sleepBaseline.current
+    const sleepChanged = b.sleepMode !== sleepMode || b.sleepFrom !== sleepFrom || b.sleepTo !== sleepTo
     const handleSaveSleepMode = async () => {
       const deviceId = routeId ?? selectedDeviceId
       if (deviceId) {
@@ -684,7 +693,10 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           </h1>
           <button
             onClick={handleSaveSleepMode}
-            className="ml-auto text-body-lg font-semibold text-primary"
+            disabled={!sleepChanged}
+            className={`ml-auto text-body-lg font-semibold transition-colors ${
+              sleepChanged ? 'text-primary' : 'text-ink-9 cursor-not-allowed'
+            }`}
           >
             Save
           </button>
@@ -826,7 +838,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           />
           <SettingsRow
             label="Battery Priority"
-            value={WORK_MODES.find(m => m.value === workMode)?.label ?? 'Backup Mode'}
+            value={WORK_MODES.find(m => m.value === workMode)?.label ?? 'Backup'}
             onPress={() => {
               setWorkModeDraft(workMode === 2 ? 2 : 1)
               setShowWorkModeMenu(true)
@@ -906,7 +918,9 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                     } catch { /* noop */ }
                   }
                 }}
-                className="w-full h-12 rounded-l bg-primary text-black font-semibold text-body-lg active:scale-95 transition-transform"
+                disabled={workModeDraft === workMode}
+                className="w-full h-12 rounded-l bg-primary text-primary-darker font-semibold text-body-lg
+                  disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-transform"
               >
                 Save
               </button>
@@ -915,31 +929,31 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
         </div>
       )}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60 px-4 pb-8">
-          <div className="w-full max-w-sm bg-ink-11 rounded-l overflow-hidden">
-            <div className="px-6 pt-6 pb-4 text-center">
-              <p className="text-title-md font-semibold text-white mb-2">Delete Device</p>
-              <p className="text-body-md text-ink-6">
-                Are you sure you want to delete <span className="text-white font-semibold">{deviceName}</span>? This action cannot be undone.
-              </p>
-              {deleteError && (
-                <p className="text-label text-danger mt-3">{deleteError}</p>
-              )}
-            </div>
-            <div className="border-t border-white/10 flex">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 px-4">
+          {/* 4x export B_1.2.7: 280x158 ink-10 card, radius l, 16px padding, title
+              title_large at 22 from the top, label body, two 118x44 pills 12 apart. */}
+          <div className="w-[280px] bg-ink-10 rounded-l px-4 pb-4 pt-[22px] text-center">
+            <p className="text-title-lg font-semibold text-white">Delete {deviceName}?</p>
+            <p className="mt-1.5 text-label text-ink-5">
+              This device will be removed from your account. You can add it again at any time.
+            </p>
+            {deleteError && (
+              <p className="mt-2 text-label text-danger">{deleteError}</p>
+            )}
+            <div className="mt-[18px] flex gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 disabled={deleting}
-                className="flex-1 py-4 text-body-lg text-white border-r border-white/10 active:bg-white/5"
+                className="flex-1 h-11 rounded-pill border-s border-ink-4 text-body-lg font-semibold text-ink-4 active:scale-95 transition-transform"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteDevice}
                 disabled={deleting}
-                className="flex-1 py-4 text-body-lg font-semibold text-danger active:bg-white/5 flex items-center justify-center gap-2"
+                className="flex-1 h-11 rounded-pill bg-danger text-body-lg font-semibold text-white active:scale-95 transition-transform flex items-center justify-center gap-2"
               >
-                {deleting ? <Loader2 size={16} className="animate-spin text-danger" /> : 'Delete'}
+                {deleting ? <Loader2 size={16} className="animate-spin" /> : 'Delete'}
               </button>
             </div>
           </div>
