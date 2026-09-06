@@ -32,13 +32,16 @@ export default function OnboardingPage() {
   // ─── Add first device ──────────────────────────────────────────
   return (
     <div className="h-full flex flex-col bg-ink-12">
-      <div className="px-4 pt-5 flex items-center justify-between safe-area-top">
+      {/* 4x export A_2.2.2: header box 80, title title_large/ink-3 at y154, subtitle
+          body_medium/ink-5, illustration 258 wide at y312, ink-9 hairline at y769 and a
+          370x44 filled button (radius m, primary-darker label) at y781. */}
+      <div className="px-4 pb-5 safe-area-top-header flex items-center justify-between">
         <button
           onClick={finish}
           aria-label="Back"
           className="relative w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center before:absolute before:content-[''] before:-inset-1"
         >
-          <Icon name="chevron-left" size={20} />
+          <Icon name="chevron-left" size={24} />
         </button>
         <button
           onClick={finish}
@@ -48,23 +51,26 @@ export default function OnboardingPage() {
         </button>
       </div>
 
-      <div className="flex-1 flex flex-col items-center px-8 text-center pt-6">
-        <h1 className="text-headline-lg font-bold text-white mb-3">Add Your First Device</h1>
-        <p className="text-body-lg text-ink-6 max-w-[300px] mb-8">
+      <div className="flex-1 flex flex-col items-center px-6 text-center">
+        <h1 className="mt-[18px] text-title-lg font-semibold text-ink-3">Add Your First Device</h1>
+        <p className="mt-3 text-body-md text-ink-5">
           We'll help you find and connect your Sierro device in a few simple steps.
         </p>
         <img
           src={`${import.meta.env.BASE_URL}ds-onboarding.svg`}
           alt=""
-          className="w-full max-w-[320px] h-auto select-none"
+          className="ds-illustration mt-[90px] w-[300px] h-auto select-none"
           draggable={false}
         />
       </div>
 
-      <div className="px-6 pb-10 safe-area-bottom">
+      <div
+        className="border-t border-ink-9 px-4 pt-3"
+        style={{ paddingBottom: 'calc(max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)) + 16px)' }}
+      >
         <button
           onClick={() => setShowProvisioning(true)}
-          className="w-full h-14 rounded-l bg-primary text-black text-body-lg font-semibold active:scale-[0.98] transition-transform"
+          className="w-full h-11 rounded-m bg-primary text-primary-darker text-body-lg font-semibold active:scale-[0.98] transition-transform"
         >
           Connect Device
         </button>

@@ -132,6 +132,18 @@ p {
   outline-offset: -1px;
 }
 
+/* Handoff illustrations
+   ds-device-empty.svg is a PNG with alpha; the other ds-*.svg files wrap a JPEG, which
+   has no alpha and therefore carries a flat ~#0b0b0b matte from when the app canvas was
+   that colour (4.7.53). b55edb5 put the canvas back to the Figma #141414, so those
+   illustrations now draw a visible dark rectangle. The #ds-unmatte filter in index.html
+   adds the 9/255 difference back to every channel, so the matte becomes exactly #141414
+   and the artwork — including the very faint radar rings — keeps its contrast.
+   Proper fix: re-export them with transparency, the way ds-device-empty.svg already is. */
+.ds-illustration {
+  filter: url(#ds-unmatte);
+}
+
 /* Design System: Anton for display / page titles (Figma) */
 .font-display,
 .text-display {

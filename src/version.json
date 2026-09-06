@@ -1,9 +1,10 @@
 {
-  "version": "4.7.64",
-  "build": 2786,
+  "version": "4.7.65",
+  "build": 2787,
   "date": "2026-09-06",
   "changelog": [
-    "Smart Schedule toggle row matches the B_1.2.6 export: 68px row box, label 'Schedule' in body_large/ink-2, 50x28 toggle on ink-7.",
-    "(The off-state collapse landed in 4.7.60; this only corrects the row itself.)"
+    "Onboarding aligned to the A_2.2.2 export: title title_large/ink-3, subtitle body_medium/ink-5, 300px illustration, ink-9 hairline and a 370x44 filled button (radius m, primary-darker label).",
+    "Add Device: subtitle to ink-5 and the searching illustration sized so its artwork matches the export.",
+    "Handoff illustrations no longer draw a dark rectangle. Every ds-*.svg except ds-device-empty.svg wraps an opaque JPEG matted on the 4.7.53 #0b0b0b canvas; since b55edb5 restored the Figma #141414 they showed a visible box. A small SVG filter adds the 9/255 difference back, so the matte becomes exactly #141414 and the faint radar rings survive."
   ]
 }

@@ -67,7 +67,7 @@ export default function EnableNotiSheet({
         <img
           src={`${import.meta.env.BASE_URL}ds-enable-noti.svg`}
           alt=""
-          className="w-full max-w-[280px] h-auto mx-auto mb-6 select-none"
+          className="ds-illustration w-full max-w-[280px] h-auto mx-auto mb-6 select-none"
           draggable={false}
         />
         <h3 className="text-headline-md font-semibold text-white text-center mb-5">
