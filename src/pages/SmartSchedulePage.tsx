@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react'
+import { SecondaryHeader, HeaderIconButton } from '../components/PageHeader'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -300,33 +301,26 @@ export default function SmartSchedulePage() {
 
   return (
     <div className="h-full flex flex-col bg-ink-12 overflow-hidden">
-      <div className="px-4 pt-4 pb-3 safe-area-top flex items-center gap-3">
-        <button
-          onClick={() => navigate(-1)}
-          className="relative w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center text-white active:scale-95 transition-transform flex-shrink-0 before:absolute before:content-[''] before:-inset-1"
-          aria-label="Back"
-        >
-          <Icon name="chevron-left" size={24} />
-        </button>
-        <h2 className="flex-1 text-center text-title-md font-semibold text-white">Smart Schedule</h2>
-        <button
-          className="relative w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center text-white flex-shrink-0 before:absolute before:content-[''] before:-inset-1"
-          aria-label="About Smart Schedule"
-        >
-          <Icon name="info-outined" size={24} />
-        </button>
-      </div>
+      <SecondaryHeader
+        title="Smart Schedule"
+        onBack={() => navigate(-1)}
+        right={<HeaderIconButton icon="info-outined" label="About Smart Schedule" />}
+      />
 
       <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pb-24">
-        <div className="bg-ink-10 rounded-l p-4 mb-4 flex items-center justify-between">
-          <span className="text-body-md font-semibold text-white">Smart Schedule</span>
+        {/* 6x export: same 68px row box as Device Settings — label body_large/ink-2,
+            50x28 toggle on ink-7. The row is labelled "Schedule"; the page title
+            carries the full name. */}
+        <div className="bg-ink-10 rounded-l h-[68px] px-4 mb-4 flex items-center justify-between">
+          <span className="text-body-lg text-ink-2">Schedule</span>
           <button
+            aria-label="Smart Schedule"
             onClick={() => handleTogglePeakShaving(!peakShavingSettings.enabled)}
-            className={`w-14 h-8 rounded-full relative transition-colors ${peakShavingSettings.enabled ? 'bg-primary' : 'bg-ink-7'}`}
+            className={`w-[50px] h-[28px] rounded-full relative transition-colors ${peakShavingSettings.enabled ? 'bg-primary' : 'bg-ink-7'}`}
           >
             <motion.div
-              className="w-6 h-6 rounded-full bg-white absolute top-1"
-              animate={{ left: peakShavingSettings.enabled ? '28px' : '4px' }}
+              className="w-6 h-6 rounded-full bg-white absolute top-[2px]"
+              animate={{ left: peakShavingSettings.enabled ? '24px' : '2px' }}
               transition={{ type: 'spring', stiffness: 500, damping: 30 }}
             />
           </button>

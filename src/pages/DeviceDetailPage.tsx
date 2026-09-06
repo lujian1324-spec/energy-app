@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
+import { guessDeviceIconName } from './device/DeviceListCard'
 import { useSleepModeScheduler, loadSchedule, saveSchedule } from '../hooks/useSleepModeScheduler'
 import {
   ChevronRight,
@@ -46,7 +47,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const navigate = useNavigate()
   const { id: routeId } = useParams<{ id: string }>()
 
-  // 鈹€鈹€ Real device data (useDeviceStore) 鈥?used when mounted as a route 鈹€鈹€
+  // ── Real device data (useDeviceStore) — used when mounted as a route ──
   const { devices, selectedDeviceId, selectedDeviceState, selectDevice, loadDeviceState, renameDeviceLocal, removeDevice, updateDeviceInfo, isDemoMode } = useDeviceStore()
   const realDevice = devices.find(d => String(d.id) === routeId)
 
@@ -105,11 +106,18 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const [sleepMode, setSleepMode] = useState<'Off' | 'On'>('Off')
   const [sleepFrom, setSleepFrom] = useState('22:00')
   const [sleepTo, setSleepTo] = useState('09:00')
+  // Snapshot taken when the Sleep Mode screen opens; the design keeps Save dim until
+  // one of these actually changes.
+  const sleepBaseline = useRef({ sleepMode, sleepFrom, sleepTo })
+  useEffect(() => {
+    if (screen === 'sleepMode') sleepBaseline.current = { sleepMode, sleepFrom, sleepTo }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screen])
   const [showWorkModeMenu, setShowWorkModeMenu] = useState(false)
   const [workModeDraft, setWorkModeDraft] = useState<0 | 1 | 2>(1)
   const WORK_MODES: { label: string; desc: string; value: 0 | 1 | 2 }[] = [
-    { label: 'Backup Mode', desc: 'Reserve 100% for backup', value: 1 },
-    { label: 'Saving Mode', desc: 'Reserve 60% for backup', value: 2 },
+    { label: 'Backup', desc: 'Reserve 100% for backup', value: 1 },
+    { label: 'Savings', desc: 'Reserve 60% for backup', value: 2 },
   ]
   const [workMode, setWorkMode_] = useState<0 | 1 | 2>(1)
   const [selectedIcon, setSelectedIcon] = useState(() =>
@@ -289,8 +297,10 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     handleBack()
   }
 
+  const savedIcon = routeId ? localStorage.getItem(`sierro-display-icon-${routeId}`) : null
   const currentPack =
-    DISPLAY_ICONS.find((i) => i.id === selectedIcon)?.pack ?? 'thunder'
+    DISPLAY_ICONS.find((i) => i.id === selectedIcon)?.pack
+    ?? (savedIcon ? 'thunder' : guessDeviceIconName(deviceName))
 
   const BackBtn = ({ to }: { to: Screen | 'parent' }) => (
     <button
@@ -301,10 +311,14 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     </button>
   )
 
+  /**
+   * B_1.2.3 draws each field as its own 68px card 12 apart, not as a divided list,
+   * with the label in body_large/ink-2 and the value in body_medium/ink-6.
+   */
   const InfoRow = ({ label, value }: { label: string; value: string }) => (
-    <div className="flex items-center justify-between px-4 py-4 border-b border-white/5 last:border-0">
-      <span className="text-body-md text-ink-6">{label}</span>
-      <span className="text-body-md text-white">{value}</span>
+    <div className="rounded-l bg-ink-10 h-[68px] px-4 flex items-center justify-between">
+      <span className="text-body-lg text-ink-2">{label}</span>
+      <span className="text-body-md text-ink-6">{value}</span>
     </div>
   )
 
@@ -321,15 +335,15 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   }) => (
     <div
       onClick={onPress}
-      className="rounded-l bg-ink-10 mb-2 px-4 py-4 flex items-center justify-between cursor-pointer active:opacity-70 transition-opacity"
+      className="rounded-l bg-ink-10 h-[68px] px-4 flex items-center justify-between cursor-pointer active:opacity-70 transition-opacity"
     >
-      <span className="text-body-lg text-white">{label}</span>
+      <span className="text-body-lg text-ink-2">{label}</span>
       <div className="flex items-center gap-2">
         {preview}
         {value !== undefined && (
           <span className="text-body-md text-ink-6">{value}</span>
         )}
-        <ChevronRight size={18} className="text-ink-6" />
+        <Icon name="chevron-right" size={24} />
       </div>
     </div>
   )
@@ -337,7 +351,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   if (screen === 'editName') {
     return (
       <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
-        <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
+        <div className="px-4 pb-5 safe-area-top-header flex items-center gap-3 relative">
           <BackBtn to="main" />
           <h1 className="text-title-lg font-semibold text-white absolute left-1/2 -translate-x-1/2">
             Device Name
@@ -430,7 +444,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           className="hidden"
           onChange={handleCustomImageFile}
         />
-        <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
+        <div className="px-4 pb-5 safe-area-top-header flex items-center gap-3 relative">
           <BackBtn to="main" />
           <h1 className="text-title-lg font-semibold text-white absolute left-1/2 -translate-x-1/2">
             Select Display Icon
@@ -441,7 +455,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             <button
               onClick={() => { setPendingIcon('photo'); setPendingCustomImage(null) }}
               className={`flex flex-col items-center gap-2 py-4 rounded-l transition-colors ${
-                pendingIcon === 'photo' ? 'bg-primary' : 'bg-ink-10'
+                pendingIcon === 'photo' ? 'bg-primary-darker' : 'bg-ink-10'
               }`}
             >
               <img
@@ -451,7 +465,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               />
               <span
                 className={`text-label ${
-                  pendingIcon === 'photo' ? 'text-black font-semibold' : 'text-white'
+                  pendingIcon === 'photo' ? 'text-white font-semibold' : 'text-white'
                 }`}
               >
                 Device
@@ -460,7 +474,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             <button
               onClick={handlePickCustomImage}
               className={`flex flex-col items-center gap-2 py-4 rounded-l transition-colors ${
-                pendingIcon === 'custom' ? 'bg-primary' : 'bg-ink-10'
+                pendingIcon === 'custom' ? 'bg-primary-darker' : 'bg-ink-10'
               }`}
             >
               {pendingCustomImage ? (
@@ -468,12 +482,12 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               ) : (
                 <Camera
                   size={28}
-                  className={pendingIcon === 'custom' ? 'text-black' : 'text-white'}
+                  className="text-white"
                 />
               )}
               <span
                 className={`text-label ${
-                  pendingIcon === 'custom' ? 'text-black font-semibold' : 'text-white'
+                  pendingIcon === 'custom' ? 'text-white font-semibold' : 'text-white'
                 }`}
               >
                 Custom
@@ -484,17 +498,17 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 key={id}
                 onClick={() => { setPendingIcon(id); setPendingCustomImage(null) }}
                 className={`flex flex-col items-center gap-2 py-4 rounded-l transition-colors ${
-                  pendingIcon === id ? 'bg-primary' : 'bg-ink-10'
+                  pendingIcon === id ? 'bg-primary-darker' : 'bg-ink-10'
                 }`}
               >
                 <Icon
                   name={pack}
                   size={28}
-                  className={pendingIcon === id ? 'brightness-0' : ''}
+
                 />
                 <span
                   className={`text-label ${
-                    pendingIcon === id ? 'text-black font-semibold' : 'text-white'
+                    pendingIcon === id ? 'text-white font-semibold' : 'text-white'
                   }`}
                 >
                   {label}
@@ -506,7 +520,9 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
         <div className="px-4 pb-8 pt-4">
           <button
             onClick={handleSaveIcon}
-            className="w-full h-12 rounded-l bg-primary text-black font-semibold text-body-lg active:scale-95 transition-transform"
+            disabled={pendingIcon === selectedIcon && pendingCustomImage === customImage}
+            className="w-full h-12 rounded-l bg-primary text-primary-darker font-semibold text-body-lg
+              disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-transform"
           >
             Save
           </button>
@@ -518,22 +534,22 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   if (screen === 'deviceInfo') {
     return (
       <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
-        <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
+        <div className="px-4 pb-5 safe-area-top-header flex items-center gap-3 relative">
           <BackBtn to="main" />
           <h1 className="text-title-lg font-semibold text-white absolute left-1/2 -translate-x-1/2">
             Device Info
           </h1>
         </div>
-        <div className="flex-1 overflow-y-auto px-4 pt-2">
-          <div className="rounded-l bg-ink-10 overflow-hidden">
+        <div className="flex-1 overflow-y-auto px-4 pb-8">
+          <div className="space-y-3">
             <button
               onClick={() => setShowModelSheet(true)}
-              className="w-full flex items-center justify-between px-4 py-4 border-b border-white/5 active:bg-white/5 transition-colors"
+              className="w-full rounded-l bg-ink-10 h-[68px] px-4 flex items-center justify-between active:opacity-70 transition-opacity"
             >
-              <span className="text-body-md text-ink-6">Model</span>
+              <span className="text-body-lg text-ink-2">Model</span>
               <span className="flex items-center gap-1.5">
-                <span className="text-body-md text-white">{ratedParams?.model || realDevice?.model || powerStation.model || 'Sierro 1000'}</span>
-                <ChevronRight size={16} className="text-ink-6" />
+                <span className="text-body-md text-ink-6">{ratedParams?.model || realDevice?.model || powerStation.model || 'Sierro 1000'}</span>
+                <Icon name="chevron-right" size={24} />
               </span>
             </button>
             <InfoRow
@@ -591,7 +607,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               <div className="flex items-center gap-2">
                 <span className="text-body-lg font-semibold text-primary">Modbus Debug</span>
               </div>
-              <ChevronRight size={18} className="text-ink-6" />
+              <Icon name="chevron-right" size={24} />
             </button>
             <button
               onClick={() => navigate(`/device/${routeId ?? selectedDeviceId}/debug-params`)}
@@ -600,7 +616,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               <div className="flex items-center gap-2">
                 <span className="text-body-lg font-semibold text-ink-7">Debug Params</span>
               </div>
-              <ChevronRight size={18} className="text-ink-6" />
+              <Icon name="chevron-right" size={24} />
             </button>
           </div>
           )}
@@ -642,7 +658,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                     >
                       <p className={`text-title-md font-semibold ${selected ? 'text-white' : 'text-ink-7'}`}>{spec.model}</p>
                       <p className={`text-body-md mt-0.5 ${selected ? 'text-ink-5' : 'text-ink-7'}`}>
-                        {spec.ratedPower}W 路 {(spec.ratedCapacityWh / 1000).toFixed(1)}kWh 路 charge {spec.ratedChargePower}W 路 {spec.batteryType}
+                        {spec.ratedPower}W · {(spec.ratedCapacityWh / 1000).toFixed(1)}kWh · charge {spec.ratedChargePower}W · {spec.batteryType}
                       </p>
                     </button>
                   )
@@ -657,6 +673,8 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
 
   if (screen === 'sleepMode') {
     const enabled = sleepMode === 'On'
+    const b = sleepBaseline.current
+    const sleepChanged = b.sleepMode !== sleepMode || b.sleepFrom !== sleepFrom || b.sleepTo !== sleepTo
     const handleSaveSleepMode = async () => {
       const deviceId = routeId ?? selectedDeviceId
       if (deviceId) {
@@ -674,14 +692,17 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     }
     return (
       <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
-        <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
+        <div className="px-4 pb-5 safe-area-top-header flex items-center gap-3 relative">
           <BackBtn to="main" />
           <h1 className="text-title-lg font-semibold text-white absolute left-1/2 -translate-x-1/2">
             Sleep Mode
           </h1>
           <button
             onClick={handleSaveSleepMode}
-            className="ml-auto text-body-lg font-semibold text-primary"
+            disabled={!sleepChanged}
+            className={`ml-auto text-body-lg font-semibold transition-colors ${
+              sleepChanged ? 'text-primary' : 'text-ink-9 cursor-not-allowed'
+            }`}
           >
             Save
           </button>
@@ -692,7 +713,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               <div>
                 <p className="text-body-lg text-white">Sleep Mode</p>
                 <p className="text-caption text-ink-6 mt-0.5">
-                  Low-noise charging 路 Sleep: {schedulerPowers.sleepW}W / Wake: {schedulerPowers.wakeW}W
+                  Low-noise charging · Sleep: {schedulerPowers.sleepW}W / Wake: {schedulerPowers.wakeW}W
                 </p>
               </div>
               <button
@@ -712,7 +733,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 <div className="flex items-center justify-between px-4 py-4 border-b border-white/5">
                   <div>
                     <p className="text-body-lg text-white">Sleep</p>
-                    <p className="text-caption text-ink-7">AC charging power 鈫?{schedulerPowers.sleepW}W</p>
+                    <p className="text-caption text-ink-7">AC charging power → {schedulerPowers.sleepW}W</p>
                   </div>
                   <input
                     type="time"
@@ -724,7 +745,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 <div className="flex items-center justify-between px-4 py-4">
                   <div>
                     <p className="text-body-lg text-white">Wake</p>
-                    <p className="text-caption text-ink-7">AC charging power 鈫?{schedulerPowers.wakeW}W</p>
+                    <p className="text-caption text-ink-7">AC charging power → {schedulerPowers.wakeW}W</p>
                   </div>
                   <input
                     type="time"
@@ -735,7 +756,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 </div>
               </div>
               <p className="text-caption text-ink-7 mt-2 px-1">
-                {fmt(sleepFrom)} 鈫?{schedulerPowers.sleepW}W 路 {fmt(sleepTo)} 鈫?{schedulerPowers.wakeW}W
+                {fmt(sleepFrom)} → {schedulerPowers.sleepW}W · {fmt(sleepTo)} → {schedulerPowers.wakeW}W
               </p>
             </div>
           )}
@@ -744,7 +765,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               <p className="text-body-md font-semibold text-white mb-2">Scheduler Status</p>
               <div className="rounded-l bg-ink-10 overflow-hidden px-4 py-4 space-y-3">
                 <p className="text-caption text-ink-7">
-                  {model} 路 Sleep: {schedulerPowers.sleepW}W / Wake: {schedulerPowers.wakeW}W
+                  {model} · Sleep: {schedulerPowers.sleepW}W / Wake: {schedulerPowers.wakeW}W
                 </p>
                 <div className="flex items-center justify-between">
                   <span className="text-body-md text-ink-6">Next event</span>
@@ -770,73 +791,78 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
 
   return (
     <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
-      <div className="px-4 pt-5 pb-4 flex items-center gap-3 relative safe-area-top">
+      <div className="px-4 pb-5 safe-area-top-header flex items-center gap-3 relative">
         <BackBtn to="parent" />
-        <h1 className="text-title-md font-semibold text-white absolute left-1/2 -translate-x-1/2">
+        <h1 className="text-title-lg font-semibold text-white absolute left-1/2 -translate-x-1/2">
           Device Settings
         </h1>
       </div>
-      <div className="flex-1 overflow-y-auto px-4 pt-2 pb-8">
-        <SettingsRow
-          label="Device Name"
-          value={deviceName}
-          onPress={() => {
-            const targetId = routeId ?? selectedDeviceId ?? ''
-            setEditTargetId(targetId)
-            setEditName(deviceName)
-            setShowDeviceDropdown(false)
-            setScreen('editName')
-          }}
-        />
-        <SettingsRow
-          label="Display Icon"
-          preview={
-            <div className="w-7 h-7 rounded-m bg-primary/10 flex items-center justify-center">
-              {selectedIcon === 'photo' ? (
-                <img src={sierro1000Img} alt="Device" className="w-5 h-5 object-contain" />
+      {/* 4x/6x export: rows 68 tall, 12px apart inside a group, 24px between groups,
+          groups = [Name, Icon] / [Info] / [Sleep, Battery, Smart] / [Delete 52]. */}
+      <div className="flex-1 overflow-y-auto px-4 pb-8 space-y-6">
+        <div className="space-y-3">
+          <SettingsRow
+            label="Device Name"
+            value={deviceName}
+            onPress={() => {
+              const targetId = routeId ?? selectedDeviceId ?? ''
+              setEditTargetId(targetId)
+              setEditName(deviceName)
+              setShowDeviceDropdown(false)
+              setScreen('editName')
+            }}
+          />
+          <SettingsRow
+            label="Display Icon"
+            preview={
+              selectedIcon === 'photo' ? (
+                <img src={sierro1000Img} alt="Device" className="w-6 h-6 object-contain" />
               ) : selectedIcon === 'custom' && customImage ? (
-                <img src={customImage} alt="Custom" className="w-5 h-5 object-cover rounded-s" />
+                <img src={customImage} alt="Custom" className="w-6 h-6 object-cover rounded-s" />
               ) : (
-                <Icon name={currentPack} size={16} />
-              )}
-            </div>
-          }
-          onPress={() => {
-            setPendingIcon(selectedIcon)
-            setPendingCustomImage(customImage)
-            setScreen('displayIcon')
-          }}
-        />
+                <Icon name={currentPack} size={24} />
+              )
+            }
+            onPress={() => {
+              setPendingIcon(selectedIcon)
+              setPendingCustomImage(customImage)
+              setScreen('displayIcon')
+            }}
+          />
+        </div>
+
         <SettingsRow
           label="Device Info"
           onPress={() => setScreen('deviceInfo')}
         />
-        <SettingsRow
-          label="Sleep Mode"
-          value={sleepMode}
-          onPress={() => setScreen('sleepMode')}
-        />
-        <SettingsRow
-          label="Battery Priority"
-          value={WORK_MODES.find(m => m.value === workMode)?.label ?? 'Backup Mode'}
-          onPress={() => {
-            setWorkModeDraft(workMode === 2 ? 2 : 1)
-            setShowWorkModeMenu(true)
-          }}
-        />
-        <SettingsRow
-          label="Smart Schedule"
-          value={peakShavingSettings?.enabled ? 'On' : 'Off'}
-          onPress={() => navigate('/smart-schedule')}
-        />
-        <div className="mt-4">
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="w-full rounded-l bg-ink-10 px-4 py-4 text-body-lg font-semibold text-danger active:opacity-70 transition-opacity"
-          >
-            Delete Device
-          </button>
+
+        <div className="space-y-3">
+          <SettingsRow
+            label="Sleep Mode"
+            value={sleepMode}
+            onPress={() => setScreen('sleepMode')}
+          />
+          <SettingsRow
+            label="Battery Priority"
+            value={WORK_MODES.find(m => m.value === workMode)?.label ?? 'Backup'}
+            onPress={() => {
+              setWorkModeDraft(workMode === 2 ? 2 : 1)
+              setShowWorkModeMenu(true)
+            }}
+          />
+          <SettingsRow
+            label="Smart Schedule"
+            value={peakShavingSettings?.enabled ? 'On' : 'Off'}
+            onPress={() => navigate('/smart-schedule')}
+          />
         </div>
+
+        <button
+          onClick={() => setShowDeleteConfirm(true)}
+          className="w-full rounded-l bg-ink-10 h-[52px] text-body-lg font-semibold text-danger active:opacity-70 transition-opacity"
+        >
+          Delete Device
+        </button>
       </div>
       {showWorkModeMenu && (
         <div
@@ -898,7 +924,9 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                     } catch { /* noop */ }
                   }
                 }}
-                className="w-full h-12 rounded-l bg-primary text-black font-semibold text-body-lg active:scale-95 transition-transform"
+                disabled={workModeDraft === workMode}
+                className="w-full h-12 rounded-l bg-primary text-primary-darker font-semibold text-body-lg
+                  disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 transition-transform"
               >
                 Save
               </button>
@@ -907,31 +935,31 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
         </div>
       )}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60 px-4 pb-8">
-          <div className="w-full max-w-sm bg-ink-11 rounded-l overflow-hidden">
-            <div className="px-6 pt-6 pb-4 text-center">
-              <p className="text-title-md font-semibold text-white mb-2">Delete Device</p>
-              <p className="text-body-md text-ink-6">
-                Are you sure you want to delete <span className="text-white font-semibold">{deviceName}</span>? This action cannot be undone.
-              </p>
-              {deleteError && (
-                <p className="text-label text-danger mt-3">{deleteError}</p>
-              )}
-            </div>
-            <div className="border-t border-white/10 flex">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 px-4">
+          {/* 4x export B_1.2.7: 280x158 ink-10 card, radius l, 16px padding, title
+              title_large at 22 from the top, label body, two 118x44 pills 12 apart. */}
+          <div className="w-[280px] bg-ink-10 rounded-l px-4 pb-4 pt-[22px] text-center">
+            <p className="text-title-lg font-semibold text-white">Delete {deviceName}?</p>
+            <p className="mt-1.5 text-label text-ink-5">
+              This device will be removed from your account. You can add it again at any time.
+            </p>
+            {deleteError && (
+              <p className="mt-2 text-label text-danger">{deleteError}</p>
+            )}
+            <div className="mt-[18px] flex gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 disabled={deleting}
-                className="flex-1 py-4 text-body-lg text-white border-r border-white/10 active:bg-white/5"
+                className="flex-1 h-11 rounded-pill border-s border-ink-4 text-body-lg font-semibold text-ink-4 active:scale-95 transition-transform"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteDevice}
                 disabled={deleting}
-                className="flex-1 py-4 text-body-lg font-semibold text-danger active:bg-white/5 flex items-center justify-center gap-2"
+                className="flex-1 h-11 rounded-pill bg-danger text-body-lg font-semibold text-white active:scale-95 transition-transform flex items-center justify-center gap-2"
               >
-                {deleting ? <Loader2 size={16} className="animate-spin text-danger" /> : 'Delete'}
+                {deleting ? <Loader2 size={16} className="animate-spin" /> : 'Delete'}
               </button>
             </div>
           </div>

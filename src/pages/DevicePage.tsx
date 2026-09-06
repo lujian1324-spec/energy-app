@@ -368,30 +368,33 @@ export default function DevicePage() {
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: [0.25, 0.46, 0.45, 0.94] }}
-        className="px-5 pt-4 pb-3 safe-area-top"
+        className={`px-4 pb-5 safe-area-top-header ${devices.length > 0 ? 'bg-ink-10' : ''}`}
       >
-        <div className="flex justify-between items-center mb-3">
+        <div className="flex justify-between items-center">
           <h1 className="text-display font-display text-white">Device</h1>
           <div className="flex items-center gap-3">
             <button
               onClick={handleBleScan}
               aria-label="Add device"
-              className="w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center text-white hover:bg-ink-9 transition-colors active:scale-95"
+              className="w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center text-white hover:bg-ink-8 transition-colors active:scale-95"
             >
               <Icon name="add" size={24} />
             </button>
             <button
               onClick={() => navigate('/notifications')}
               aria-label="Notifications"
-              className="relative w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center text-white hover:bg-ink-9 transition-colors active:scale-95"
+              className="relative w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center text-white hover:bg-ink-8 transition-colors active:scale-95"
             >
               <Icon name="bell" size={24} />
               {activeAlarmCount > 0 && (
-                <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-danger border-2 border-ink-12" />
+                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-danger border-2 border-ink-10" />
               )}
             </button>
           </div>
         </div>
+      </motion.div>
+
+      <div className="px-4">
         <AnimatePresence>
           {error && (
             <motion.div
@@ -408,7 +411,7 @@ export default function DevicePage() {
             </motion.div>
           )}
         </AnimatePresence>
-      </motion.div>
+      </div>
 
       <PullToRefresh onRefresh={async () => { await loadDevices(1, 50) }}>
       <div className="px-4 pb-4">
@@ -417,6 +420,7 @@ export default function DevicePage() {
             <LowBatteryBanner
               name={lowBatteryDevice.name}
               durationStr={lowBatteryTimeStr}
+              threshold={lowBatteryThreshold}
               onOpen={() => navigate('/notifications')}
               onDismiss={() => setBannerDismissed(true)}
             />
@@ -424,13 +428,13 @@ export default function DevicePage() {
         </AnimatePresence>
 
         {deviceLoading && devices.length === 0 && !devicesListReady ? (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-4 pt-4">
             {[0, 1, 2].map(i => (
-              <div key={i} className="rounded-l p-5 bg-ink-10 animate-pulse h-[176px]" />
+              <div key={i} className="rounded-l p-5 bg-ink-10 animate-pulse h-[150px]" />
             ))}
           </div>
         ) : devices.length > 0 ? (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-4 pt-4">
             {devices.map((device, index) => {
               const remainingBatteryCapacityRaw = getDeviceNum(device.id, 'remainingBatteryCapacity')
               const remainingBatteryCapacity = remainingBatteryCapacityRaw ?? 0

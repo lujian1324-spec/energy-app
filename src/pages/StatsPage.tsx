@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Loader2, Plus, Zap, ChevronLeft, ChevronRight, Leaf, RefreshCw } from 'lucide-react'
 import Icon from '../components/Icon'
+import EmptyState from '../components/EmptyState'
+import { PageHeaderShell } from '../components/PageHeader'
 import html2canvas from 'html2canvas'
 import { toast } from '../components/Toast'
 import { CalcAudit } from '../components/DataTrust'
@@ -317,9 +319,10 @@ function buildFrameFromRecords(
 
 function DaysSkeleton() {
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center py-4 mb-2">
-      <div className="h-12 w-44 bg-ink-10 rounded-m animate-pulse mb-3" />
-      <div className="h-3 w-52 bg-ink-10 rounded-s animate-pulse" />
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+      className="-mx-4 h-[110px] flex flex-col items-center justify-center bg-ink-10">
+      <div className="h-12 w-44 bg-ink-9 rounded-m animate-pulse mb-3" />
+      <div className="h-3 w-52 bg-ink-9 rounded-s animate-pulse" />
     </motion.div>
   )
 }
@@ -548,14 +551,12 @@ export default function StatsPage() {
 
   return (
     <div className="h-full flex flex-col bg-ink-12 overflow-hidden">
-      <div className="px-5 pt-4 pb-3 safe-area-top flex justify-between items-start">
-        <div>
-          <h1 className="text-display font-display text-white leading-none">Insights</h1>
-        </div>
+      <PageHeaderShell filled={hasDevice} className="flex justify-between items-center">
+        <h1 className="text-display font-display text-white">Insights</h1>
         <button
           aria-label="Share"
           disabled={sharing}
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-ink-9 text-white hover:text-primary transition-colors disabled:opacity-50"
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-ink-9 text-white hover:bg-ink-8 transition-colors disabled:opacity-50"
           onClick={async () => {
             if (sharing) return
             setSharing(true)
@@ -624,36 +625,25 @@ export default function StatsPage() {
         >
           {sharing ? <Loader2 size={24} className="animate-spin" /> : <Icon name="share" size={24} />}
         </button>
-      </div>
+      </PageHeaderShell>
 
       <div ref={shareRef} className="flex-1 overflow-y-auto scrollbar-hide px-4 pb-4">
         {!hasDevice && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center justify-center py-20 px-8">
-            <img
-              src={`${import.meta.env.BASE_URL}ds-insights-empty.svg`}
-              alt=""
-              className="w-[200px] h-[200px] object-contain mb-7 select-none"
-              draggable={false}
-            />
-            <h3 className="text-title-lg font-semibold text-ink-3 mb-2">Insights will appear here</h3>
-            <p className="text-label text-ink-5 text-center leading-relaxed mb-8 max-w-[280px]">
-              Connect a Sierro device to start tracking battery performance and power usage.
-            </p>
-            <button
-              onClick={() => navigate('/devices')}
-              className="h-11 px-4 rounded-m border-m border-primary text-primary text-body-lg font-semibold flex items-center gap-2 active:scale-95 transition-transform"
-            >
-              <Plus size={20} className="text-primary" strokeWidth={2.5} /> Add Device
-            </button>
-          </motion.div>
+          <EmptyState
+            art={`${import.meta.env.BASE_URL}ds-insights-empty.svg`}
+            title="Insights will appear here"
+            subtitle="Connect a Sierro device to start tracking battery performance and power usage."
+            action={{ label: 'Add Device', icon: 'add', onClick: () => navigate('/devices') }}
+          />
         )}
 
         {hasDevice && (
           <>
             {loading && records === null ? <DaysSkeleton /> : (
+              /* C_1.1: the days block is not a card — it continues the header's ink-10
+                 band edge to edge, so the fill runs 0..244 in the export. */
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col items-center text-center py-5 bg-ink-10 rounded-l mb-4 min-h-[95px]">
+                className="-mx-4 h-[110px] flex flex-col items-center justify-center text-center bg-ink-10">
                 <div className="flex items-baseline justify-center gap-2">
                   <Zap size={26} strokeWidth={1.5} className="text-primary self-center" />
                   <span className="text-headline-xl font-semibold text-ink-1 leading-none tnum">{displayDeviceDays}</span>
@@ -665,7 +655,7 @@ export default function StatsPage() {
               </motion.div>
             )}
 
-            <div className="flex bg-ink-9 rounded-pill p-1 mb-3 max-w-[322px] mx-auto w-full">
+            <div className="flex bg-ink-9 rounded-pill p-1 mt-[13px] mb-3 max-w-[322px] mx-auto w-full">
               {periods.map((p) => (
                 <button key={p} onClick={() => setPeriod(p)}
                   className={`flex-1 text-body-md py-2 rounded-pill active:scale-[0.96] transition-[color,background-color,transform] duration-200
@@ -709,7 +699,9 @@ export default function StatsPage() {
                     return d
                   })}
                   disabled={!canGoForward || period === 'Range'}
-                  className="w-8 h-8 flex items-center justify-center rounded-full bg-ink-10 text-ink-4 hover:text-ink-1 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  /* C_1.1 hides the forward arrow entirely on the newest period rather
+                     than showing a disabled one, so mirror the left arrow's behaviour. */
+                  className="w-8 h-8 flex items-center justify-center rounded-full bg-ink-10 text-ink-4 hover:text-ink-1 transition-colors disabled:opacity-0 disabled:pointer-events-none"
                 >
                   <ChevronRight size={18} />
                 </button>

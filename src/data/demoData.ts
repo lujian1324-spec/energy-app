@@ -265,8 +265,9 @@ export function getDemoDeviceState(deviceId: string | number): DeviceStateRespon
         firingAlarms: [
           {
             alarmId: 'DEMO-ALARM-001',
-            alarmCode: 'LOW_BATTERY_WIFI_ROUTER',
-            alarmMessage: 'WiFi Router Battery Below 10%, estimated remaining time 20mins',
+            alarmCode: 'lowBattery',
+            key: 'lowBattery',
+            alarmMessage: 'Battery below 10%, estimated remaining time 20mins',
             severity: 'major',
             timestamp: new Date(Date.now() - 4 * 60 * 1000).toISOString(),
           },

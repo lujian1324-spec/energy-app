@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { PageHeaderShell, HeaderIconButton } from '../components/PageHeader'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Check } from 'lucide-react'
@@ -119,14 +120,13 @@ export default function DeviceMonitorPage() {
     <div
       className="h-full flex flex-col bg-ink-12 overflow-hidden">
       {/* Header */}
-      <div className="px-4 pt-5 pb-3 safe-area-top flex items-center gap-3">
-        <button
+      <PageHeaderShell filled className="flex items-center gap-3">
+        <HeaderIconButton
+          icon="chevron-left"
+          label="Back"
           onClick={backToDevices}
-          className="relative w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center active:scale-95 transition-transform flex-shrink-0 before:absolute before:content-[''] before:-inset-1"
-          aria-label="Back"
-        >
-          <Icon name="chevron-left" size={24} />
-        </button>
+          className="flex-shrink-0 before:absolute before:content-[''] before:-inset-1"
+        />
 
         {/* Device name + dropdown */}
         <div className="flex-1 flex flex-col items-center relative">
@@ -174,29 +174,26 @@ export default function DeviceMonitorPage() {
         </div>
 
         {/* Settings + Bell */}
-        <div className="flex items-center gap-2">
-          <button
+        <div className="flex items-center gap-3">
+          <HeaderIconButton
+            icon="setting"
+            label="Device settings"
             onClick={() => navigate(`/device/${id}/settings`)}
-            className="relative w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center active:scale-95 transition-transform before:absolute before:content-[''] before:-inset-1"
-            aria-label="Device settings"
-          >
-            <Icon name="setting" size={24} />
-          </button>
-          <button
+          />
+          <HeaderIconButton
+            icon="bell"
+            label="Notifications"
             onClick={() => navigate('/notifications')}
-            className="relative w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center text-white active:scale-95 transition-transform before:absolute before:content-[''] before:-inset-1"
-            aria-label="Notifications"
           >
-            <Icon name="bell" size={24} />
             {device?.isAlarmed && (
-              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-danger border-2 border-ink-12" />
+              <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-danger border-2 border-ink-10" />
             )}
-          </button>
+          </HeaderIconButton>
         </div>
-      </div>
+      </PageHeaderShell>
 
       {/* Scrollable body */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pb-6 space-y-3">
+      <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pt-4 pb-6 space-y-5">
         {/* ─── SoC Card ─────────────────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -205,11 +202,11 @@ export default function DeviceMonitorPage() {
           className="bg-ink-10 rounded-l p-5"
         >
           {/* Ring */}
-          <div className="flex justify-center mb-5">
+          <div className="flex justify-center mt-1 mb-6">
             <BatteryRing
               percentage={remainingBatteryCapacity}
-              size={180}
-              strokeWidth={12}
+              size={170}
+              strokeWidth={10}
               isCharging={isCharging}
               connected={isOnline}
               timeRemaining={timeStr}
@@ -218,29 +215,32 @@ export default function DeviceMonitorPage() {
             />
           </div>
 
-          {/* Input / Output — Output flush right; values baseline (Figma B_1.1) */}
+          {/* Input / Output — 4x export: boxes 48 tall, two inputs grouped around the "+",
+              a wider Output column, and the "Output" label aligned to that column. */}
           <div>
-            <div className="flex items-end justify-between gap-2 mb-2">
-              <p className="text-caption text-ink-3">Input</p>
-              <p className="text-caption text-ink-3">Output</p>
+            <div className="flex items-end gap-5 mb-1">
+              <p className="flex-1 text-caption text-ink-3">Input</p>
+              <p className="w-[97px] shrink-0 text-caption text-ink-3">Output</p>
             </div>
-            <div className="flex items-stretch gap-2">
-              <div className="flex-1 border-xs border-ink-9 rounded-m px-3 py-3 text-center flex flex-col items-center justify-center">
-                <div className="flex items-baseline gap-0.5">
-                  <span className="text-body-lg font-semibold text-white tnum">{fmtW(acPower)}</span>
-                  <span className="text-tiny text-ink-5">W</span>
+            <div className="flex items-stretch gap-5">
+              <div className="flex-1 flex items-stretch gap-2.5">
+                <div className="flex-1 h-12 border-xs border-ink-9 rounded-m text-center flex flex-col items-center justify-center">
+                  <div className="flex items-baseline gap-0.5">
+                    <span className="text-body-lg font-semibold text-white tnum">{fmtW(acPower)}</span>
+                    <span className="text-tiny text-ink-5">W</span>
+                  </div>
+                  <p className="text-tiny text-ink-7">AC</p>
                 </div>
-                <p className="text-tiny text-ink-7 mt-0.5">AC</p>
-              </div>
-              <span className="text-ink-7 text-body-md font-semibold self-center">+</span>
-              <div className="flex-1 border-xs border-ink-9 rounded-m px-3 py-3 text-center flex flex-col items-center justify-center">
-                <div className="flex items-baseline gap-0.5">
-                  <span className="text-body-lg font-semibold text-white tnum">{fmtW(solarPower)}</span>
-                  <span className="text-tiny text-ink-5">W</span>
+                <span className="text-ink-7 text-body-md font-semibold self-center">+</span>
+                <div className="flex-1 h-12 border-xs border-ink-9 rounded-m text-center flex flex-col items-center justify-center">
+                  <div className="flex items-baseline gap-0.5">
+                    <span className="text-body-lg font-semibold text-white tnum">{fmtW(solarPower)}</span>
+                    <span className="text-tiny text-ink-5">W</span>
+                  </div>
+                  <p className="text-tiny text-ink-7">Solar</p>
                 </div>
-                <p className="text-tiny text-ink-7 mt-0.5">Solar</p>
               </div>
-              <div className="w-[106px] shrink-0 border-xs border-ink-9 rounded-m px-3 py-3 text-center flex flex-col items-center justify-center">
+              <div className="w-[97px] shrink-0 h-12 border-xs border-ink-9 rounded-m text-center flex flex-col items-center justify-center">
                 <div className="flex items-baseline gap-0.5">
                   <span className="text-body-lg font-semibold text-white tnum">{fmtW(outputPower)}</span>
                   <span className="text-tiny text-ink-5">W</span>

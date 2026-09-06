@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion'
-import { Zap } from 'lucide-react'
 import { useCountUp } from '../hooks/useCountUp'
 
 interface BatteryRingProps {
@@ -110,7 +109,7 @@ export default function BatteryRing({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#454545"
+          stroke="#595959"
           strokeWidth={strokeWidth}
         />
 
@@ -133,7 +132,7 @@ export default function BatteryRing({
       {/* 中心内容 */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         {/* 电量百分比 — Disconnected/0 显示 - (PRD §5.1) */}
-        <div className="text-headline-xl font-extrabold text-ink-1 leading-none tracking-tight tnum">
+        <div className="text-headline-xl font-semibold text-ink-1 leading-none tracking-tight tnum">
           {connected && !noData ? (
             <>{displayPercent}<span className="text-title-lg font-normal text-ink-5">%</span></>
           ) : (
@@ -150,19 +149,12 @@ export default function BatteryRing({
           <div className="text-tiny font-semibold tracking-wide text-ink-7 mt-1">
             No data
           </div>
-        ) : safePercent >= 99 ? (
-          <div className="flex items-center gap-1 mt-1">
-            <Zap size={12} style={{ color: '#01D6BE' }} aria-hidden="true" />
-          </div>
-        ) : isCharging ? (
-          <div className="flex items-center gap-1 mt-1">
-            <Zap size={12} style={{ color: '#FFFFFF' }} aria-hidden="true" />
-            <span className="text-tiny text-ink-6 tracking-wide" aria-hidden="true">
-              {rawTimeLabel ? timeToFull : `${timeToFull} to full`}
-            </span>
+        ) : safePercent >= 99 ? null : isCharging ? (
+          <div className="text-body-md text-ink-5 mt-4" aria-hidden="true">
+            {rawTimeLabel ? timeToFull : `${timeToFull} to full`}
           </div>
         ) : (
-          <div className="text-tiny text-ink-6 mt-1 tracking-wide" aria-hidden="true">
+          <div className="text-body-md text-ink-5 mt-4" aria-hidden="true">
             {rawTimeLabel ? timeRemaining : `${timeRemaining} remaining`}
           </div>
         )}

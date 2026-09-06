@@ -12,15 +12,15 @@ export function getTagColor(level: number): string {
 export function BatteryTag({ level, connected, charging, unknown }: { level: number; connected: boolean; charging: boolean; unknown?: boolean }) {
   if (!connected) {
     return (
-      <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-[#591511] text-[#FFEBEA] text-label font-semibold">
+      <span className="inline-flex items-center px-2 py-1 rounded-full bg-danger-darker text-danger-light text-label font-semibold">
         Disconnected
       </span>
     )
   }
   if (unknown) {
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-ink-9">
-        <span className="w-[22px] h-[12px] rounded-s border-s animate-pulse" style={{ borderColor: '#8C8C8C' }} />
+      <span className="inline-flex items-center gap-1 px-2 py-1.5 rounded-full bg-ink-9">
+        <span className="w-[24px] h-[16px] rounded-s border-s animate-pulse" style={{ borderColor: '#8C8C8C' }} />
         <span className="text-body-md font-semibold text-ink-7">--%</span>
       </span>
     )
@@ -29,15 +29,15 @@ export function BatteryTag({ level, connected, charging, unknown }: { level: num
   const color = getTagColor(pct)
   const fill = Math.max(4, Math.min(100, pct))
   return (
-    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-ink-9">
+    <span className="inline-flex items-center gap-1 px-2 py-1.5 rounded-full bg-ink-9">
       <span className="relative inline-flex items-center">
-        <span className="relative w-[22px] h-[12px] rounded-s border-s flex items-center" style={{ borderColor: '#8C8C8C' }}>
+        <span className="relative w-[24px] h-[16px] rounded-s border-s flex items-center" style={{ borderColor: '#8C8C8C' }}>
           <span
             className="absolute left-[1.5px] top-[1.5px] bottom-[1.5px] rounded-[1.5px]"
             style={{ width: `calc(${fill}% - 3px)`, backgroundColor: color }}
           />
           {charging && (
-            <Icon name="thunder" size={9} className="relative mx-auto" />
+            <Icon name="thunder" size={12} className="relative mx-auto" />
           )}
         </span>
         <span className="w-[2px] h-[5px] rounded-r-[1px] ml-[1px]" style={{ backgroundColor: '#8C8C8C' }} />
@@ -67,7 +67,7 @@ export function PowerToggle({ deviceId, on, disabled, onToggle }: {
       } transition-transform`}
     >
       <span
-        className={`absolute top-[2px] w-6 h-6 rounded-full bg-white shadow-sm transition-[left,transform] duration-200 ${
+        className={`absolute top-[2px] w-[24px] h-[24px] rounded-full bg-white shadow-sm transition-[left,transform] duration-200 ${
           on && !disabled ? 'left-[24px]' : 'left-[2px]'
         }`}
       />

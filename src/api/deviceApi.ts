@@ -266,6 +266,10 @@ export interface DeviceStateResponse {
     alarmMessage: string
     severity: string
     timestamp: string
+    /** Real field name on the wire; `alarmCode` is the legacy alias. Matches FiringAlarm. */
+    key?: string
+    /** Alarm display name when the backend has one. */
+    name?: string
   }>
 }
 

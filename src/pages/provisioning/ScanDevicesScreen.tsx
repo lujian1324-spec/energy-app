@@ -135,12 +135,12 @@ export default function ScanDevicesScreen(p: Props) {
             <>
               <div className="text-center mb-8 px-2 pt-6">
                 <p className="text-title-lg font-semibold text-ink-3 mb-2">Searching for nearby devices...</p>
-                <p className="text-body-md text-ink-6">Keep your phone near the Sierro device and make sure it's powered on.</p>
+                <p className="text-body-md text-ink-5">Keep your phone near the Sierro device and make sure it's powered on.</p>
               </div>
               <img
                 src={`${import.meta.env.BASE_URL}ds-searching-bt.svg`}
                 alt=""
-                className="w-full max-w-[280px] h-auto select-none"
+                className="w-full max-w-[330px] h-auto select-none"
                 draggable={false}
               />
             </>
