@@ -955,14 +955,14 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 disabled={deleting}
-                className="flex-1 h-11 rounded-pill border-s border-ink-4 text-body-lg font-semibold text-ink-4 active:scale-95 transition-transform"
+                className="flex-1 h-11 rounded-m border-s border-ink-4 text-body-lg font-semibold text-ink-4 active:scale-95 transition-transform"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteDevice}
                 disabled={deleting}
-                className="flex-1 h-11 rounded-pill bg-danger text-body-lg font-semibold text-white active:scale-95 transition-transform flex items-center justify-center gap-2"
+                className="flex-1 h-11 rounded-m bg-danger text-body-lg font-semibold text-white active:scale-95 transition-transform flex items-center justify-center gap-2"
               >
                 {deleting ? <Loader2 size={16} className="animate-spin" /> : 'Delete'}
               </button>

@@ -603,14 +603,14 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
                 <button
                   disabled={deleteBusy}
                   onClick={() => setConfirmAction(null)}
-                  className="flex-1 h-11 rounded-pill border-s border-ink-4 text-ink-4 font-semibold text-body-lg active:scale-95 transition-transform disabled:opacity-50"
+                  className="flex-1 h-11 rounded-m border-s border-ink-4 text-ink-4 font-semibold text-body-lg active:scale-95 transition-transform disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   disabled={deleteBusy}
                   onClick={handleConfirm}
-                  className={`flex-1 h-11 rounded-pill font-semibold text-body-lg active:scale-95 transition-transform disabled:opacity-60 ${
+                  className={`flex-1 h-11 rounded-m font-semibold text-body-lg active:scale-95 transition-transform disabled:opacity-60 ${
                     confirmAction === 'signout'
                       ? 'bg-primary text-primary-darker'
                       : 'bg-danger text-white'

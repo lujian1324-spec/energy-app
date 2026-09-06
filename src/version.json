@@ -1,8 +1,8 @@
 {
-  "version": "4.7.78",
-  "build": 2800,
+  "version": "4.7.79",
+  "build": 2801,
   "date": "2026-09-06",
   "changelog": [
-    "Device Settings and the Display Icon picker now show the icon guessed from the device name until you pick one, instead of always falling back to the power-station bolt."
+    "Dialog buttons (delete device, sign out, delete account) and the Feedback send button are 8px-radius buttons again instead of full capsules, matching the design system."
   ]
 }

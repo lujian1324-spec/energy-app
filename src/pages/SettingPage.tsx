@@ -400,7 +400,7 @@ export default function SettingPage() {
                     {supportError && (
                       <p className="text-label text-danger text-center">{supportError}</p>
                     )}
-                    <button type="submit" disabled={supportSending || !supportMessage.trim()} className="w-full h-12 rounded-pill bg-primary text-primary-darker font-semibold text-title-md flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50">
+                    <button type="submit" disabled={supportSending || !supportMessage.trim()} className="w-full h-12 rounded-m bg-primary text-primary-darker font-semibold text-title-md flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50">
                       {supportSending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                       {supportSending ? 'Sending...' : 'Send Feedback'}
                     </button>
