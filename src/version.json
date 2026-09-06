@@ -1,10 +1,8 @@
 {
-  "version": "4.7.77",
-  "build": 2799,
+  "version": "4.7.78",
+  "build": 2800,
   "date": "2026-09-06",
   "changelog": [
-    "Signing in with an address that has never been used now works: /login/email only signs in existing accounts, so a new address failed with an account error after the code was accepted.",
-    "The email step asks the backend whether the address is registered and sends the code with the matching intent; an unknown address is registered in the background once the code checks out, then signed straight in.",
-    "The self-registered account is the email's local part (suffixed if taken) with the password set to that account plus 1234."
+    "Device Settings and the Display Icon picker now show the icon guessed from the device name until you pick one, instead of always falling back to the power-station bolt."
   ]
 }
