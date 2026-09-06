@@ -1,10 +1,9 @@
 {
-  "version": "4.7.65",
-  "build": 2787,
+  "version": "4.7.66",
+  "build": 2788,
   "date": "2026-09-06",
   "changelog": [
-    "Onboarding aligned to the A_2.2.2 export: title title_large/ink-3, subtitle body_medium/ink-5, 300px illustration, ink-9 hairline and a 370x44 filled button (radius m, primary-darker label).",
-    "Add Device: subtitle to ink-5 and the searching illustration sized so its artwork matches the export.",
-    "Handoff illustrations no longer draw a dark rectangle. Every ds-*.svg except ds-device-empty.svg wraps an opaque JPEG matted on the 4.7.53 #0b0b0b canvas; since b55edb5 restored the Figma #141414 they showed a visible box. A small SVG filter adds the 9/255 difference back, so the matte becomes exactly #141414 and the faint radar rings survive."
+    "Setting: the Power Outage and Low Battery push cards match the D_1.1 export — 40px ink-9 icon circles with 24px glyphs in the shared 68px card box, and a 16px gap under the section header.",
+    "(Solar Status is out of scope this pass and stays a hidden channel.)"
   ]
 }

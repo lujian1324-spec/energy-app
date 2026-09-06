@@ -220,7 +220,7 @@ export default function SettingPage() {
 
         {/* Push Notifications — hidden until push backend/credentials are ready (PUSH_ENABLED) */}
         {PUSH_ENABLED && (<>
-        <h3 className="text-body-lg font-semibold text-ink-1 mb-3">Push Notifications</h3>
+        <h3 className="text-body-lg font-semibold text-ink-1 mb-4">Push Notifications</h3>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
           className="space-y-3 mb-6">
           {/* Power Outage */}
@@ -238,8 +238,9 @@ export default function SettingPage() {
             className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 text-left active:scale-[0.99] transition-transform"
             aria-label="Power outage alerts"
           >
-            <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
-              <Icon name="outage" size={20} />
+            {/* 6x export D_1.1: 40px circle on ink-9 with a 24px glyph; the card box is 68. */}
+            <div className="w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
+              <Icon name="outage" size={24} />
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-body-md font-semibold text-ink-2">Power Outage</div>
@@ -264,8 +265,8 @@ export default function SettingPage() {
             className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 text-left active:scale-[0.99] transition-transform"
             aria-label="Low battery alerts"
           >
-            <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
-              <Icon name="low-battery" size={20} />
+            <div className="w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
+              <Icon name="low-battery" size={24} />
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-body-md font-semibold text-ink-2">Low Battery</div>
