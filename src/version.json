@@ -1,8 +1,8 @@
 {
-  "version": "4.7.91",
-  "build": 2813,
+  "version": "4.7.92",
+  "build": 2814,
   "date": "2026-09-06",
   "changelog": [
-    "A newly registered account now lands on the Add Your First Device step. Signing in to an account that already exists still goes straight to the device list."
+    "The device name on Device Monitor is centred on the screen, not in the gap the header buttons leave behind."
   ]
 }
