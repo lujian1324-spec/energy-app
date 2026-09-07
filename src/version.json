@@ -1,9 +1,8 @@
 {
-  "version": "4.7.89",
-  "build": 2811,
+  "version": "4.7.90",
+  "build": 2812,
   "date": "2026-09-06",
   "changelog": [
-    "Scan Wi-Fi Networks now opens the network list. It used to run the scan while leaving the screen on the verify step, where the list is not rendered, so the tap looked like nothing happened.",
-    "Steps that need the device id say so instead of returning silently."
+    "Fixed \"Couldn't read this device's ID\" appearing right after a device connects, with the id visible on the same screen. The checks read a stale copy of the state, taken before the id was stored."
   ]
 }

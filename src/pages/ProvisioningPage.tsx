@@ -20,6 +20,13 @@ import DeviceScannedScreen from './provisioning/DeviceScannedScreen'
 import { useProvisionBind, type ConfigStage } from './provisioning/useProvisionBind'
 import { useProvisionScan, displayTitleFromDtuid, type FoundDevice } from './provisioning/useProvisionScan'
 
+/**
+ * The device id, read live rather than off the render snapshot. `handleSelectDevice`
+ * calls setDeviceInfo and then starts provisioning in the same tick, so anything
+ * closing over `store` still sees the previous, empty dtuid.
+ */
+const currentDtuid = (): string | null => useProvisionStore.getState().dtuid ?? null
+
 /** Shown wherever a step needs the device id and it is missing. */
 const NO_DEVICE_ID = "Couldn't read this device's ID. Reconnect the device and try again."
 
@@ -151,7 +158,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   }, [recheckBle, handleScan])
 
   const handleVerify = useCallback(async () => {
-    if (!store.dtuid) { store.setErrorMessage(NO_DEVICE_ID); toast.error(NO_DEVICE_ID); return }
+    if (!currentDtuid()) { store.setErrorMessage(NO_DEVICE_ID); toast.error(NO_DEVICE_ID); return }
     store.setIsOperating(true)
     store.setErrorMessage(null)
     try {
@@ -176,7 +183,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   }, [store])
 
   const handleConfirmBleKey = useCallback(async () => {
-    if (!store.dtuid || !bleKeyInput.trim()) return
+    if (!currentDtuid() || !bleKeyInput.trim()) return
     store.setIsOperating(true)
     store.setErrorMessage(null)
     try {
@@ -197,7 +204,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   }, [store, bleKeyInput, handleVerify])
 
   const handleScanWifi = useCallback(async () => {
-    if (!store.dtuid) { store.setErrorMessage(NO_DEVICE_ID); toast.error(NO_DEVICE_ID); return }
+    if (!currentDtuid()) { store.setErrorMessage(NO_DEVICE_ID); toast.error(NO_DEVICE_ID); return }
     store.setApLoading(true)
     store.setErrorMessage(null)
     try {
@@ -249,7 +256,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
    * action; the effect below scans on entry.
    */
   const handleGoToWifi = useCallback(() => {
-    if (!store.dtuid) { store.setErrorMessage(NO_DEVICE_ID); toast.error(NO_DEVICE_ID); return }
+    if (!currentDtuid()) { store.setErrorMessage(NO_DEVICE_ID); toast.error(NO_DEVICE_ID); return }
     store.setStep('wifi')
   }, [store])
 

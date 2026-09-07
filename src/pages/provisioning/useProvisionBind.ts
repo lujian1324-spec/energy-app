@@ -3,6 +3,7 @@
  */
 import { useCallback, type Dispatch, type MutableRefObject, type SetStateAction } from 'react'
 import { toast } from '../../components/Toast'
+import { useProvisionStore } from '../../stores/provisionStore'
 import type { ProvisionStoreState, ProvisionStep } from '../../stores/provisionStore'
 import { getProvisionManager } from '../../protocols/bleProvision'
 import { SIERRO_MODELS, generateSerial, type SierroModel } from '../../data/deviceModels'
@@ -154,7 +155,8 @@ export function useProvisionBind(opts: {
   }, [store, deviceNameInput, selectedModel, failKind, configGuardRef, setBindRetrying, setConfigStage, setFailKind, setBindReason, setBindErrorId])
 
   const handleConfig = useCallback(async () => {
-    if (!store.dtuid || !store.selectedSsid) return
+    // Live read: `store` here is a render snapshot too (see currentDtuid).
+    if (!useProvisionStore.getState().dtuid || !store.selectedSsid) return
     if (configGuardRef.current) return
     configGuardRef.current = true
     store.setIsOperating(true)
@@ -228,7 +230,7 @@ export function useProvisionBind(opts: {
   }, [store, handleBindToCloud, handleConfig, configGuardRef, lastBleRef, wifiConfiguredRef])
 
   const handleCheckStatus = useCallback(async () => {
-    if (!store.dtuid) return
+    if (!useProvisionStore.getState().dtuid) return
     store.setIsOperating(true)
     try {
       const manager = getProvisionManager()
