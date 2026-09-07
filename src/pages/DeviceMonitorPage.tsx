@@ -120,7 +120,7 @@ export default function DeviceMonitorPage() {
     <div
       className="h-full flex flex-col bg-ink-12 overflow-hidden">
       {/* Header */}
-      <PageHeaderShell filled className="flex items-center gap-3">
+      <PageHeaderShell filled className="relative flex items-center gap-3">
         <HeaderIconButton
           icon="chevron-left"
           label="Back"
@@ -128,8 +128,10 @@ export default function DeviceMonitorPage() {
           className="flex-shrink-0 before:absolute before:content-[''] before:-inset-1"
         />
 
-        {/* Device name + dropdown */}
-        <div className="flex-1 flex flex-col items-center relative">
+        {/* Device name + dropdown. Absolutely centred: the back button on one side
+            and the settings + bell pair on the other leave an off-centre gap, and
+            B_1.1 centres the name on the frame. */}
+        <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center">
           <button
             onClick={() => setShowDeviceDropdown(v => !v)}
             className="flex flex-col items-center active:opacity-70 transition-opacity"
@@ -174,7 +176,7 @@ export default function DeviceMonitorPage() {
         </div>
 
         {/* Settings + Bell */}
-        <div className="flex items-center gap-3">
+        <div className="ml-auto flex items-center gap-3">
           <HeaderIconButton
             icon="setting"
             label="Device settings"

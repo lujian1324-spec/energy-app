@@ -1,9 +1,8 @@
 {
-  "version": "4.7.87",
-  "build": 2809,
+  "version": "4.7.92",
+  "build": 2814,
   "date": "2026-09-06",
   "changelog": [
-    "Toasts appear at the bottom of the screen, 16 above the tab bar where there is one, instead of over the page header.",
-    "Adding a device now runs Bluetooth, then Wi-Fi, then the name and the icon; the account bind happens once all four are done."
+    "The device name on Device Monitor is centred on the screen, not in the gap the header buttons leave behind."
   ]
 }

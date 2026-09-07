@@ -147,15 +147,26 @@ p {
 /* 安全区域适配
    iOS: env(safe-area-inset-*) from viewport-fit=cover.
    Android: MainActivity injects --safe-area-inset-* (env() is 0 in the WebView).
+   --safe-area-inset-top-min is a floor set only on native Android (see nativeUx),
+   so a native injection that never lands cannot leave the header under the status
+   bar. It stays 0 on iOS and on the web, where env() is authoritative.
    Fallback 0 — never the iPhone 34/47px constants, which letterbox 20:9 Android. */
 .safe-area-top {
-  padding-top: calc(max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px)) + 1rem);
+  padding-top: calc(max(
+    env(safe-area-inset-top, 0px),
+    var(--safe-area-inset-top, 0px),
+    var(--safe-area-inset-top-min, 0px)
+  ) + 1rem);
 }
 
 /* Handoff `Page Header` is 80px tall: spacing-xl (20) padding above a 40px toolbar row.
    Same inset source as .safe-area-top, but +20 instead of +16. */
 .safe-area-top-header {
-  padding-top: calc(max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px)) + 20px);
+  padding-top: calc(max(
+    env(safe-area-inset-top, 0px),
+    var(--safe-area-inset-top, 0px),
+    var(--safe-area-inset-top-min, 0px)
+  ) + 20px);
 }
 
 .safe-area-bottom {
