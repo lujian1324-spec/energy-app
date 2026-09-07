@@ -22,10 +22,9 @@ import { sendFeedbackEmail } from '../utils/sendFeedbackEmail'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useAuthStore } from '../stores/authStore'
 import { deleteAccount } from '../api/authApi'
-import { getUserProfile } from '../db/powerflowDB'
+import { useUserProfile } from '../hooks/useUserProfile'
 import appVersion from '../version.json'
 import ProfileEditPage from './ProfileEditPage'
-import type { UserProfile } from '../types/protocol'
 import { requestNotificationPermission, getNotificationPermission, enableWebPush, disableWebPush } from '../utils/pushNotification'
 import { PUSH_ENABLED } from '../config/webPush'
 import { TERMS_URL, PRIVACY_URL } from '../config/legalLinks'
@@ -53,12 +52,8 @@ export default function SettingPage() {
 
   // Profile - 从 authStore 获取登录账号信息
   const [showProfileEdit, setShowProfileEdit] = useState(false)
-  const [userProfile, setUserProfile] = useState<UserProfile>({
-    name: authUser?.account ?? '',
-    email: authUser?.account ?? '',
-    avatar: null,
-    memberSince: new Date().toISOString().slice(0, 10),
-  })
+  // The same loader Profile uses, so the name shown here is the name shown there.
+  const { profile: userProfile, reload: reloadUserProfile } = useUserProfile()
 
   // Push notification settings
   const [pushOutage, setPushOutage] = useState(settings.pushNotifications)
@@ -86,29 +81,6 @@ export default function SettingPage() {
       await disableWebPush()
     }
   }, [])
-
-  const reloadUserProfile = useCallback(() => {
-    // D_1.1 and `Profile -v Default` show the same display name, so prefer the
-    // nickname here too and only fall back to the registration account. LoginData
-    // has an index signature, so the nickname arrives as `unknown`.
-    const nickname = typeof authUser?.nickname === 'string' ? authUser.nickname : ''
-    const account = authUser?.account ?? ''
-    getUserProfile(account).then(p => {
-      setUserProfile(prev => ({
-        ...(p ?? prev),
-        name: nickname || p?.name || account || 'Sierro User',
-        // Spell out the identity fields rather than letting `prev` carry them: on
-        // a sign-out/sign-in this component can outlive the account it was mounted
-        // for, and the previous user's address and avatar must not survive it.
-        email: p?.email || authUser?.email || account || '',
-        avatar: p?.avatar ?? null,
-      }))
-    }).catch(err => console.error('[SettingPage] getUserProfile failed:', err))
-  }, [authUser?.nickname, authUser?.account])
-
-  useEffect(() => {
-    reloadUserProfile()
-  }, [reloadUserProfile])
 
   const [supportSending, setSupportSending] = useState(false)
   const [supportError, setSupportError] = useState('')

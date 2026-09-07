@@ -1,8 +1,17 @@
 {
-  "version": "4.8.6",
-  "build": 2823,
-  "date": "2026-09-06",
+  "version": "4.9.3",
+  "build": 2829,
+  "date": "2026-09-07",
   "changelog": [
-    "The keyboard no longer covers the Redeem Founder Badge sheet or the Feedback dialog — both lift clear of it while you type."
+    "Sleep Mode's time picker stays open — it used to close itself a moment after you opened it.",
+    "The (i) on Smart Schedule now opens the explainer: how it works, how savings are estimated, and what each parameter does.",
+    "Settings and Profile now show the same name — Settings could be left on a stale one after a rename.",
+    "Signing in as a different account no longer shows the previous account's name and linked email.",
+    "The Wi-Fi password eye now shows an open eye when the password is visible, not the reverse.",
+    "Add Device on Insights opens the scan straight away instead of stopping at the device list.",
+    "A device already registered elsewhere now says so: \"Device already added to another account.\"",
+    "The three rings behind the device pulse outward while a scan is running.",
+    "A wrong verification code turns the whole code row red, with the message under it.",
+    "Add Device's No Devices Found screen has its artwork and its Search Again button back, and the found-device list keeps the header above it."
   ]
 }

@@ -18,12 +18,16 @@ import { useKeyboardInset } from '../utils/useKeyboardInset'
  */
 export default function BottomSheet({
   title,
+  ariaLabel,
   onClose,
   children,
   labelledBy = 'sheet-title',
   titleAlign = 'center',
 }: {
-  title: string
+  /** Omit for a sheet the handoff draws without one (B_1.2.6 -v Open info); pass
+      `ariaLabel` instead so the dialog still has a name. */
+  title?: string
+  ariaLabel?: string
   onClose: () => void
   children: ReactNode
   labelledBy?: string
@@ -47,7 +51,8 @@ export default function BottomSheet({
       <motion.div
         role="dialog"
         aria-modal="true"
-        aria-labelledby={labelledBy}
+        aria-labelledby={title ? labelledBy : undefined}
+        aria-label={title ? undefined : ariaLabel}
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
@@ -63,14 +68,16 @@ export default function BottomSheet({
         >
           <Icon name="close" size={16} />
         </button>
-        <h2
-          id={labelledBy}
-          className={`mt-[51px] text-title-lg font-semibold text-white ${
-            titleAlign === 'left' ? 'px-6' : 'text-center'
-          }`}
-        >
-          {title}
-        </h2>
+        {title && (
+          <h2
+            id={labelledBy}
+            className={`mt-[51px] text-title-lg font-semibold text-white ${
+              titleAlign === 'left' ? 'px-6' : 'text-center'
+            }`}
+          >
+            {title}
+          </h2>
+        )}
         {children}
       </motion.div>
     </div>
