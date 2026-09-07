@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   X,
+  Send,
   Loader2,
   CheckCircle,
   Crown,
@@ -14,11 +15,9 @@ import {
   LogOut,
   RotateCcw,
 } from 'lucide-react'
-import emailjs from '@emailjs/browser'
 import Icon from '../components/Icon'
-import BottomSheet from '../components/BottomSheet'
-import TextField from '../components/TextField'
-import { EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, EMAILJS_PUBLIC_KEY, FEEDBACK_TO_EMAIL, isEmailJsConfigured } from '../config/emailjs'
+import { FEEDBACK_TO_EMAIL, isEmailJsConfigured } from '../config/emailjs'
+import { sendFeedbackEmail } from '../utils/sendFeedbackEmail'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useAuthStore } from '../stores/authStore'
 import { deleteAccount } from '../api/authApi'
@@ -112,24 +111,17 @@ export default function SettingPage() {
     setSupportSending(true)
     setSupportError('')
 
-    // Prefer logged-in profile/account email (Figma Feedback has no email field).
-    const fromEmail = (userProfile?.email || authUser?.account || supportEmail || '').trim()
+    // The form asks for an address, so what was typed wins; the profile address is
+    // the fallback. The registration account is a username, not an address — sending
+    // it as from_email is what made EmailJS reject the message.
+    const typed = supportEmail.trim()
+    const profileEmail = (userProfile?.email ?? '').trim()
+    const fromEmail = typed || (profileEmail.includes('@') ? profileEmail : '')
 
     // Preferred path: send via EmailJS (recipient is fixed in the template).
     if (isEmailJsConfigured()) {
       try {
-        await emailjs.send(
-          EMAILJS_SERVICE_ID,
-          EMAILJS_TEMPLATE_ID,
-          {
-            name: fromEmail || 'Sierro App User',
-            from_email: fromEmail,
-            message: supportMessage,
-            subject: 'Sierro App Feedback',
-            to_email: FEEDBACK_TO_EMAIL,
-          },
-          { publicKey: EMAILJS_PUBLIC_KEY }
-        )
+        await sendFeedbackEmail({ fromEmail, message: supportMessage })
         setSupportSubmitted(true)
         setTimeout(() => {
           setShowSupport(false)
@@ -374,54 +366,58 @@ export default function SettingPage() {
       {/* ==================== Support Modal ==================== */}
       <AnimatePresence>
         {showSupport && (
-          <BottomSheet
-            title="Feedback"
-            titleAlign="left"
-            labelledBy="feedback-title"
-            onClose={() => setShowSupport(false)}
-          >
-            {supportSubmitted ? (
-              <div className="px-6 pt-6 pb-8 text-center">
-                <div className="w-16 h-16 rounded-full bg-success/[0.1] flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle size={32} className="text-success" />
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/60 p-4"
+            onClick={() => setShowSupport(false)}>
+            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="w-full max-w-md bg-ink-10 rounded-[28px] border border-white/[0.15] overflow-hidden"
+              onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.15]">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-ink-10 flex items-center justify-center">
+                    <Icon name="feedback" size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-ink-1">Feedback</h3>
+                    <p className="text-caption text-ink-6">We'd love to hear from you</p>
+                  </div>
                 </div>
-                <h4 className="text-body-lg font-bold text-ink-1 mb-2">Feedback Submitted!</h4>
-                <p className="text-label text-ink-6">We will get back to you within 24 hours.</p>
+                <button onClick={() => setShowSupport(false)} className="p-2 rounded-full hover:bg-white/[0.05]"><X size={20} className="text-ink-6" /></button>
               </div>
-            ) : (
-              <form onSubmit={handleSupportSubmit} className="px-6 pt-7 pb-2 space-y-3">
-                <TextField
-                  outlined
-                  label="Your Contact Email"
-                  type="email"
-                  inputMode="email"
-                  ariaLabel="Your contact email"
-                  value={supportEmail}
-                  onChange={setSupportEmail}
-                  placeholder="name@example.com"
-                />
-                <TextField
-                  outlined
-                  label="Your Feedback"
-                  ariaLabel="Your feedback"
-                  value={supportMessage}
-                  onChange={setSupportMessage}
-                  placeholder="Describe your issue or suggestion..."
-                  rows={4}
-                />
-                {supportError && <p className="text-label text-danger text-center">{supportError}</p>}
-                <div className="pt-3">
-                  <button
-                    type="submit"
-                    disabled={supportSending || !supportMessage.trim()}
-                    className="w-full h-12 rounded-m bg-primary text-primary-darker font-semibold text-body-lg active:scale-[0.98] transition-transform disabled:opacity-50"
-                  >
-                    {supportSending ? 'Sending...' : 'Send Feedback'}
-                  </button>
-                </div>
-              </form>
-            )}
-          </BottomSheet>
+              <div className="p-5">
+                {supportSubmitted ? (
+                  <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-8">
+                    <div className="w-16 h-16 rounded-full bg-success/[0.1] flex items-center justify-center mx-auto mb-4">
+                      <CheckCircle size={32} className="text-success" />
+                    </div>
+                    <h4 className="text-body-lg font-bold text-ink-1 mb-2">Feedback Submitted!</h4>
+                    <p className="text-label text-ink-6">We will get back to you within 24 hours.</p>
+                  </motion.div>
+                ) : (
+                  <form onSubmit={handleSupportSubmit} className="space-y-4">
+                    <div>
+                      <label className="text-label font-semibold text-ink-6 mb-2 flex items-center gap-2"><Icon name="email" size={14} />Your Email</label>
+                      <input type="email" required value={supportEmail} onChange={e => setSupportEmail(e.target.value)} placeholder="you@example.com"
+                        className="w-full px-4 py-3 rounded-l bg-ink-12 border border-primary/[0.15] text-ink-1 text-body-md placeholder:text-ink-7 focus:outline-none focus:border-primary/[0.4] transition-colors" />
+                    </div>
+                    <div>
+                      <label className="text-label font-semibold text-ink-6 mb-2 flex items-center gap-2"><Icon name="feedback" size={14} />Your Feedback</label>
+                      <textarea required value={supportMessage} onChange={e => setSupportMessage(e.target.value)} placeholder="Describe your issue or suggestion..." rows={4}
+                        className="w-full px-4 py-3 rounded-l bg-ink-12 border border-primary/[0.15] text-ink-1 text-body-md placeholder:text-ink-7 resize-none focus:outline-none focus:border-primary/[0.4] transition-colors" />
+                    </div>
+                    {supportError && (
+                      <p className="text-label text-danger text-center">{supportError}</p>
+                    )}
+                    <button type="submit" disabled={supportSending} className="w-full py-3.5 rounded-l bg-white/[0.10] text-white font-semibold text-body-md flex items-center justify-center gap-2 active:scale-95 transition-transform border border-white/[0.15] disabled:opacity-50">
+                      {supportSending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                      {supportSending ? 'Sending...' : 'Submit Feedback'}
+                    </button>
+                  </form>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 

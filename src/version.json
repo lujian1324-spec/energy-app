@@ -1,8 +1,9 @@
 {
-  "version": "4.7.92",
-  "build": 2814,
+  "version": "4.7.94",
+  "build": 2816,
   "date": "2026-09-06",
   "changelog": [
-    "The device name on Device Monitor is centred on the screen, not in the gap the header buttons leave behind."
+    "Feedback sends again on iOS and Android. The request went out through Capacitor's native HTTP bridge, so it reached EmailJS without a browser origin and was refused; it now uses the browser's own fetch.",
+    "The address typed into the form is the one sent. It was being overridden by the registration account name, which is not an address."
   ]
 }
