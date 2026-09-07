@@ -8,6 +8,7 @@ import { X, Loader2, AlertCircle, Keyboard } from 'lucide-react'
 import { useDeviceStore } from '../stores/deviceStore'
 import { useToast } from '../components/Toast'
 import { DEVICE_NAME_MAX } from '../data/deviceModels'
+import { useKeyboardInset } from '../utils/useKeyboardInset'
 
 interface Props {
   onClose: () => void
@@ -20,6 +21,8 @@ interface Props {
 export default function ManualAddDeviceModal({ onClose, initialSerialNumber = '', initialName = '' }: Props) {
   const { addNewDevice, addNewDeviceWithStation, loadDevices, stations } = useDeviceStore()
   const { show: showToast } = useToast()
+  // The sheet sits on the bottom edge, so on iOS the keyboard opens over its fields.
+  const keyboardInset = useKeyboardInset()
 
   const [deviceName, setDeviceName] = useState(initialName)
   const [serialNumber, setSerialNumber] = useState(initialSerialNumber)
@@ -98,6 +101,7 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 bg-black/[0.7] z-50 flex items-end"
+      style={{ paddingBottom: keyboardInset }}
       onClick={onClose}
     >
       <motion.div
