@@ -7,7 +7,7 @@ import TextField from '../components/TextField'
 import BottomSheet from '../components/BottomSheet'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useAuthStore } from '../stores/authStore'
-import { saveUserProfile, getUserProfile } from '../db/powerflowDB'
+import { saveUserProfile, getUserProfile, clearUserProfile } from '../db/powerflowDB'
 import { toast } from '../components/Toast'
 import {
   fetchUserInfo,
@@ -28,9 +28,12 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
   const { user: authUser, logout } = useAuthStore()
 
   // 用户个人信息状态 - 从 authStore 获取登录账号
+  const account = authUser?.account ?? ''
+  // LoginData has an index signature, so the nickname arrives as `unknown`.
+  const authNickname = typeof authUser?.nickname === 'string' ? authUser.nickname : ''
   const [profile, setProfile] = useState<UserProfile>({
-    name: authUser?.account ?? '',
-    email: authUser?.account ?? '',
+    name: authNickname || account,
+    email: authUser?.email ?? account,
     avatar: null,
     memberSince: new Date().toISOString().slice(0, 10),
   })
@@ -72,24 +75,36 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        const savedProfile = await getUserProfile()
+        const savedProfile = await getUserProfile(account)
         if (savedProfile) {
-          setProfile(savedProfile)
+          // Merge rather than replace: the cache may legitimately hold only an
+          // avatar, and the account that is signed in now outranks anything the
+          // cache has to say about who the user is.
+          setProfile(prev => ({
+            ...prev,
+            ...savedProfile,
+            name: savedProfile.name || prev.name,
+            email: savedProfile.email || prev.email,
+          }))
         }
         // Fetch live user info from server
         const apiResult = await fetchUserInfo()
         if (apiResult.code === 0 || apiResult.code === '0') {
           const u = apiResult.data
           if (u) {
+            const serverEmail = typeof u.email === 'string' ? u.email : ''
+            const unmasked = serverEmail && !serverEmail.includes('*') ? serverEmail : ''
             setProfile(prev => ({
               ...prev,
               // `Profile -v Default` shows an editable display name, so prefer the
               // nickname and fall back to the account it was registered with.
               name: u.nickname || u.account || prev.name,
-              // /user/select/iotUserInfo returns the address masked (j****@sierro.us).
-              // The design shows it in full, and the login response already gave us the
-              // real one, so only take the server's value when it is not masked.
-              email: u.email && !u.email.includes('*') ? u.email : prev.email,
+              // /user/select/iotUserInfo returns the address masked (j****@sierro.us),
+              // and the design shows it in full, so a full address we already hold for
+              // this account wins. But the registration account is a username and need
+              // not be an address at all, so when that is all we have, the masked
+              // server value is the more truthful thing to show.
+              email: unmasked || (prev.email.includes('@') ? prev.email : serverEmail) || prev.email,
             }))
           }
         }
@@ -100,12 +115,12 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
       }
     }
     loadProfile()
-  }, [])
+  }, [account])
 
   // 保存用户资料到 IndexedDB
   const persistProfile = async (newProfile: UserProfile) => {
     try {
-      await saveUserProfile({
+      await saveUserProfile(account, {
         ...newProfile,
         updatedAt: Date.now(),
       })
@@ -228,6 +243,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
       setDeleteBusy(false)
       setConfirmAction(null)
       // 账号已在服务端删除 → 清本地会话/数据并退出
+      await clearUserProfile(account)
       if (typeof logout === 'function') logout()
       onBack()
       return
