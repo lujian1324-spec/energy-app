@@ -35,9 +35,9 @@ function ToastCard({ toast, onDismiss }: { toast: ToastItem; onDismiss: (id: str
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, y: -16, scale: 0.96 }}
+      initial={{ opacity: 0, y: 16, scale: 0.96 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -8, scale: 0.95 }}
+      exit={{ opacity: 0, y: 8, scale: 0.95 }}
       transition={{ type: 'spring', damping: 26, stiffness: 360 }}
       className="flex items-start gap-3 px-4 py-3 rounded-l mx-4"
       style={{
@@ -68,8 +68,14 @@ function ToastCard({ toast, onDismiss }: { toast: ToastItem; onDismiss: (id: str
 // ───── Toast 容器 ─────
 export function ToastContainer({ toasts, onDismiss }: { toasts: ToastItem[]; onDismiss: (id: string) => void }) {
   return (
-    <div className="fixed top-safe-4 left-0 right-0 z-[200] pointer-events-none"
-      style={{ top: 'env(safe-area-inset-top, 16px)', paddingTop: '16px' }}
+    // `A_1.1.1 -v Toast`, `D_1.1 -v Feedback Sent Toast` and `Profile -v 成功 Toast`
+    // all sit the toast on the bottom edge, 16 above the tab bar where there is one.
+    // At the top it landed on the page header instead.
+    <div
+      className="fixed left-0 right-0 z-[200] pointer-events-none"
+      style={{
+        bottom: 'var(--toast-bottom, calc(max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)) + 3px))',
+      }}
     >
       <div className="pointer-events-auto flex flex-col gap-2">
         <AnimatePresence mode="sync">

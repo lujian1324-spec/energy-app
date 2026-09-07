@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { NavLink } from 'react-router-dom'
 import Icon from './Icon'
 import { hapticLight } from '../utils/haptics'
@@ -9,8 +10,37 @@ const navItems = [
 ]
 
 export default function BottomNavigation() {
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const pillRef = useRef<HTMLElement>(null)
+
+  // `A_1.1.1 -v Toast` rests the toast 16 above this bar. Publish where its bottom
+  // edge goes while the bar is on screen; the toast falls back to the screen edge
+  // when the variable is gone.
+  useEffect(() => {
+    const wrap = wrapRef.current
+    const pill = pillRef.current
+    if (!wrap || !pill) return
+    const publish = () => {
+      const top = pill.getBoundingClientRect().top
+      document.documentElement.style.setProperty('--toast-bottom', `${Math.round(window.innerHeight - top + 16)}px`)
+    }
+    publish()
+    // The wrapper's padding carries the safe-area inset, so watch it rather than the
+    // pill: a change to the inset moves the bar without resizing the pill itself. It
+    // has to be the border box — a padding change leaves the content box alone.
+    const ro = new ResizeObserver(publish)
+    ro.observe(wrap, { box: 'border-box' })
+    window.addEventListener('resize', publish)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', publish)
+      document.documentElement.style.removeProperty('--toast-bottom')
+    }
+  }, [])
+
   return (
     <div
+      ref={wrapRef}
       className="relative z-10 flex justify-center items-end pt-2 bg-transparent pointer-events-none"
       // Sit just above the system gesture/nav bar. env() is a sibling in max() so a
       // SET --safe-area-inset-bottom of 0px cannot hide the iOS inset. +4px breathing room.
@@ -20,6 +50,7 @@ export default function BottomNavigation() {
           hairline, 4px padding, 8px gap, 56px slots, 48px selected circle in
           primary dark:hover (#018072), 24px glyphs. */}
       <nav
+        ref={pillRef}
         className="flex items-center gap-2 p-1 rounded-full bg-primary-darker border-xs border-primary pointer-events-auto"
         role="navigation"
         aria-label="Main navigation"

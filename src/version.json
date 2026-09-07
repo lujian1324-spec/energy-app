@@ -1,10 +1,9 @@
 {
-  "version": "4.7.86",
-  "build": 2808,
+  "version": "4.7.87",
+  "build": 2809,
   "date": "2026-09-06",
   "changelog": [
-    "Text fields draw the design's single rule under the value again — `border-xs` alongside `border-b` was setting a width on all four sides, so the field read as a box.",
-    "The value sits against that rule rather than centred in the row, matching the frames.",
-    "Same fix on the notification row separator."
+    "Toasts appear at the bottom of the screen, 16 above the tab bar where there is one, instead of over the page header.",
+    "Adding a device now runs Bluetooth, then Wi-Fi, then the name and the icon; the account bind happens once all four are done."
   ]
 }
