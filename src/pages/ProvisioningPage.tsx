@@ -73,6 +73,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     lastBleRef,
     bleGoneRef,
     provisionStepRef,
+    onWifiConfigured: () => goToNaming(),
     setBindRetrying,
     setRestarting,
     setShowRestartHelp,
@@ -263,6 +264,13 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     setUiScreen('naming')
   }, [store.deviceName])
 
+  /** Bluetooth is done — run verify → Wi-Fi before asking for a name and icon. */
+  const startProvisioning = useCallback(() => {
+    store.setStep('verify')
+    setUiScreen('provisioning')
+    void handleVerify()
+  }, [store, handleVerify])
+
   const handleSelectDevice = useCallback(async (device: FoundDevice) => {
     if (device.deviceId && supportsDeviceListScan()) {
       store.setIsOperating(true)
@@ -281,7 +289,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
         }
         store.setDeviceInfo(device.name || displayTitleFromDtuid(duid), duid)
         setSelectedModel(modelFromScan(`${device.name ?? ''} ${device.serial ?? ''}`))
-        goToNaming()
+        startProvisioning()
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Connection failed'
         store.setErrorMessage(msg); toast.error(msg)
@@ -289,9 +297,9 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
         store.setIsOperating(false)
       }
     } else {
-      goToNaming()
+      startProvisioning()
     }
-  }, [store, goToNaming])
+  }, [store, startProvisioning])
 
   const handleNameNext = useCallback(() => {
     const trimmed = deviceNameInput.trim()
@@ -303,11 +311,11 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     setUiScreen('icon')
   }, [deviceNameInput])
 
+  /** The last step: Wi-Fi is already configured, so this only binds to the cloud. */
   const handleIconNext = useCallback(() => {
-    store.setStep('verify')
     setUiScreen('provisioning')
-    handleVerify()
-  }, [store, handleVerify])
+    void handleBindToCloud()
+  }, [handleBindToCloud])
 
   if (uiScreen === 'scan') {
     return (
@@ -342,7 +350,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
         serial={store.dtuid ?? foundDevices[0]?.serial ?? '--'}
         onBack={() => setUiScreen('scan')}
         onRescan={() => setUiScreen('qr')}
-        onConnect={goToNaming}
+        onConnect={startProvisioning}
       />
     )
   }

@@ -1,8 +1,9 @@
 {
-  "version": "4.7.85",
-  "build": 2807,
+  "version": "4.7.87",
+  "build": 2809,
   "date": "2026-09-06",
   "changelog": [
-    "The unread badge on the notification bell uses the frame's own red (#F23E16) rather than the shared error red, as a new danger-dot token."
+    "Toasts appear at the bottom of the screen, 16 above the tab bar where there is one, instead of over the page header.",
+    "Adding a device now runs Bluetooth, then Wi-Fi, then the name and the icon; the account bind happens once all four are done."
   ]
 }

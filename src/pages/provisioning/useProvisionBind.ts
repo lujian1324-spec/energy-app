@@ -43,6 +43,8 @@ export function useProvisionBind(opts: {
   lastBleRef: MutableRefObject<{ deviceId?: string; bleName?: string }>
   bleGoneRef: MutableRefObject<boolean>
   provisionStepRef: MutableRefObject<ProvisionStep>
+  /** Called once Wi-Fi is configured — naming and the icon come next, then the bind. */
+  onWifiConfigured: () => void
   setBindRetrying: Dispatch<SetStateAction<boolean>>
   setRestarting: Dispatch<SetStateAction<boolean>>
   setShowRestartHelp: Dispatch<SetStateAction<boolean>>
@@ -54,6 +56,7 @@ export function useProvisionBind(opts: {
   const {
     store, deviceNameInput, selectedModel, failKind, bindRetrying, restarting,
     configGuardRef, wifiConfiguredRef, lastBleRef, bleGoneRef, provisionStepRef,
+    onWifiConfigured,
     setBindRetrying, setRestarting, setShowRestartHelp, setConfigStage,
     setFailKind, setBindReason, setBindErrorId,
   } = opts
@@ -176,9 +179,9 @@ export function useProvisionBind(opts: {
       }
       wifiConfiguredRef.current = true
       store.addLog('Wi-Fi config RC=0')
-      setConfigStage('Connecting device')
       configGuardRef.current = false
-      await handleBindToCloud()
+      // Naming and the icon come after Wi-Fi now; the bind runs once they are set.
+      onWifiConfigured()
     } catch (err) {
       if (provisionStepRef.current === 'result') return
       const m = err instanceof Error ? err.message : 'Config failed'
@@ -199,7 +202,7 @@ export function useProvisionBind(opts: {
       store.setIsOperating(false)
       configGuardRef.current = false
     }
-  }, [store, handleBindToCloud, configGuardRef, wifiConfiguredRef, provisionStepRef, setConfigStage, setFailKind])
+  }, [store, onWifiConfigured, configGuardRef, wifiConfiguredRef, provisionStepRef, setConfigStage, setFailKind])
 
   const handleRetryCurrentStage = useCallback(async () => {
     if (configGuardRef.current) return
