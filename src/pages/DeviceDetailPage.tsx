@@ -17,7 +17,7 @@ import { formatTemp } from '../utils/localization'
 import { sanitizeUiCopy } from '../utils/uiCopy'
 import { FRAMES } from '../protocols/modbusProtocol'
 import { loadRatedParams, saveRatedParams, type RatedParams } from '../db/powerflowDB'
-import { SIERRO_MODELS, SIERRO_MODEL_LIST, generateSerial, type SierroModel } from '../data/deviceModels'
+import { SIERRO_MODELS, SIERRO_MODEL_LIST, DEVICE_NAME_MAX, generateSerial, type SierroModel } from '../data/deviceModels'
 import sierro1000Img from '../assets/sierro-1000.webp'
 import { DEV_TOOLS_ENABLED } from '../config/devTools'
 import { uploadSleepSchedule } from '../api/scheduleApi'
@@ -195,6 +195,10 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
 
   const deviceIdForScheduler = routeId ?? selectedDeviceId ?? ''
   const model = ratedParams?.model ?? realDevice?.model ?? powerStation.model ?? 'Sierro 1000'
+  /* B_1.2.3 never shows a blank row: until a model has been picked and its rated
+     params saved, Device Info reads off the spec for `model`, which is the
+     Sierro 1000 by default. */
+  const modelSpec = SIERRO_MODELS[model as SierroModel] ?? SIERRO_MODELS['Sierro 1000']
   const schedulerPowers = model.includes('2000')
     ? { sleepW: 300, wakeW: 800 }
     : { sleepW: 150, wakeW: 400 }
@@ -372,6 +376,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             onClear={() => setEditName('')}
             placeholder="Device name"
             error={nameError || null}
+            maxLength={DEVICE_NAME_MAX}
             autoFocus
           />
         </div>
@@ -407,7 +412,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               value={(() => {
                 const kwh = ratedParams
                   ? (ratedParams.acInvOutputPower * 2) / 1000
-                  : realDevice?.ratedPower
+                  : realDevice?.ratedPower ?? modelSpec.ratedCapacityWh / 1000
                 if (kwh == null || Number.isNaN(Number(kwh))) return '--'
                 const n = Number(kwh)
                 const label = Number.isInteger(n) || Math.abs(n - Math.round(n)) < 1e-6
@@ -416,20 +421,20 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
                 return `${label} kWh`
               })()}
             />
-            <InfoRow label="Battery Type" value={ratedParams?.batteryType || 'LFP'} />
+            <InfoRow label="Battery Type" value={ratedParams?.batteryType || modelSpec.batteryType} />
             <InfoRow
               label="Charging Power"
-              value={ratedParams?.ratedChargePower != null ? `${ratedParams.ratedChargePower}W` : '--'}
+              value={`${ratedParams?.ratedChargePower ?? modelSpec.ratedChargePower}W`}
             />
             <InfoRow
               label="Output Power"
-              value={(ratedParams?.ratedPower ?? realDevice?.ratedPower) ? `${ratedParams?.ratedPower ?? realDevice?.ratedPower}W` : '--'}
+              value={`${ratedParams?.ratedPower ?? realDevice?.ratedPower ?? modelSpec.ratedPower}W`}
             />
             <InfoRow label="Voltage" value="120V" />
             <InfoRow label="Frequency" value="60Hz" />
             <InfoRow
               label="Battery health"
-              value={rtField('batteryHealth')?.replace(/\s+%/, '%') || (ratedParams?.batteryHealth != null ? `${ratedParams.batteryHealth}%` : '100%')}
+              value={rtField('batteryHealth')?.replace(/\s+%/, '%') || `${ratedParams?.batteryHealth ?? modelSpec.batteryHealth}%`}
             />
             <InfoRow
               label="Cycles"
