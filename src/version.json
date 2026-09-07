@@ -1,8 +1,9 @@
 {
-  "version": "4.8.3",
-  "build": 2820,
+  "version": "4.8.4",
+  "build": 2821,
   "date": "2026-09-06",
   "changelog": [
-    "The device switcher on Device Monitor opens over the battery ring instead of behind it."
+    "Sleep Mode is the toggle and a Time section with From and To, each showing the hour in a chip. The wattage sub-lines, the summary line and the Scheduler Status block are gone.",
+    "Those times read in 12-hour form regardless of the device's clock setting."
   ]
 }
