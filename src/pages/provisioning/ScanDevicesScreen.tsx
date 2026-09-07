@@ -124,6 +124,14 @@ export default function ScanDevicesScreen(p: Props) {
     )
   }
 
+  /* A_1.3.1 / A_1.3.2 keep one header block across every scan state: headline at
+     y210, subtitle at y240 and the radar at y300. The list, the Search Again CTA
+     and the connect-fail toast all hang off the bottom of that same art. */
+  const headline = hasError ? 'No Devices Found' : 'Searching for nearby devices...'
+  const subtitle = hasError
+    ? "We couldn't find any nearby devices. Make sure your Sierro device is powered on and nearby."
+    : "Keep your phone near the Sierro device and make sure it's powered on."
+
   return (
     <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
       {isCheckingBle && (
@@ -134,38 +142,35 @@ export default function ScanDevicesScreen(p: Props) {
       )}
       <AddDeviceHeader onBack={handleClose} onScanQr={openQr} />
 
-      <div className="flex-1 min-h-0 flex flex-col px-6">
-        <div className={`flex flex-col items-center shrink-0 ${hasDevices ? 'pt-1 pb-3' : 'flex-1'}`}>
-          {!hasDevices && !hasError && (
-            <>
-              {/* A_1.3.1 starts the headline at y210; the art follows 34 below it. */}
-              <div className="text-center mb-8 px-2 pt-[81px]">
-                <p className="text-title-lg font-semibold text-ink-3 mb-2">Searching for nearby devices...</p>
-                <p className="text-body-md text-ink-5">Keep your phone near the Sierro device and make sure it's powered on.</p>
-              </div>
-              {/* The SVG carries ~60px of empty box above its rings; A_1.3.1 starts
-                  the art 35 under the subtitle. */}
-              <img
-                src={`${import.meta.env.BASE_URL}ds-searching-bt.svg`}
-                alt=""
-                className="w-full max-w-[330px] h-auto select-none -mt-[60px]"
-                draggable={false}
-              />
-            </>
-          )}
-
-          {hasError && (
-            <div className="text-center mb-2 pt-10">
-              <p className="text-body-lg font-semibold text-white mb-1">No Devices Found</p>
-              <p className="text-body-md text-ink-6">Make sure your device is powered on and nearby.</p>
-            </div>
-          )}
+      <div className="flex-1 min-h-0 flex flex-col px-4 safe-area-bottom">
+        <div className="shrink-0 flex flex-col items-center text-center">
+          <h2 className="mt-[76px] text-title-lg font-semibold text-ink-3">{headline}</h2>
+          <p className="mt-2 text-label text-ink-5 max-w-[344px]">{subtitle}</p>
+          {/* Cropped straight out of the handoff frame at 3x, so the rings and the
+              product shot land on the same pixels the design does. */}
+          <img
+            src={`${import.meta.env.BASE_URL}ds-scan-radar.png`}
+            alt=""
+            width={317}
+            height={240}
+            className="mt-[33px] w-[317px] max-w-full h-auto select-none"
+            draggable={false}
+          />
         </div>
 
+        {(hasError || showWebPickerCta) && (
+          <button
+            onClick={handleScan}
+            disabled={isSearching}
+            className="mt-[17px] shrink-0 w-full h-12 rounded-l bg-primary text-primary-darker text-body-lg font-semibold active:scale-[0.98] transition-transform disabled:opacity-40"
+          >
+            {hasError ? 'Search Again' : 'Search for Devices'}
+          </button>
+        )}
+
         {hasDevices && (
-          <div className="flex-1 min-h-0 flex flex-col mb-3">
-            {/* A_1.3.2 sets this in body_large semibold on white, not a tracked cap label. */}
-            <p className="text-body-lg font-semibold text-white mb-3 shrink-0">
+          <div className="mt-[17px] flex-1 min-h-0 flex flex-col">
+            <p className="text-body-md font-semibold text-ink-2 mb-2 shrink-0">
               Found Devices ({foundDevices.length})
             </p>
             <div
@@ -176,19 +181,19 @@ export default function ScanDevicesScreen(p: Props) {
                 {foundDevices.map((device, i) => (
                   <div
                     key={device.deviceId || device.serial || i}
-                    className="bg-ink-10 rounded-l h-[68px] px-4 flex items-center justify-between"
+                    className="bg-ink-10 rounded-l h-[68px] px-3 flex items-center justify-between"
                   >
                     <div className="min-w-0 pr-3">
-                      <p className="text-body-lg font-semibold text-white truncate">
+                      <p className="text-body-md font-semibold text-ink-2 truncate">
                         {formatScanDisplayName({ name: device.name, serial: device.serial, deviceId: device.deviceId })}
                       </p>
-                      <p className="text-tiny text-ink-6 mt-0.5 truncate">
+                      <p className="text-tiny text-ink-4 mt-0.5 truncate">
                         {isDtuid(device.serial) ? device.serial : 'Sierro'}
                       </p>
                     </div>
                     <button
                       onClick={() => handleSelectDevice(device)}
-                      className="w-16 h-8 shrink-0 rounded-m border-s border-primary text-primary text-body-md font-semibold active:scale-[0.96] transition-transform"
+                      className="w-16 h-[30px] shrink-0 rounded-m border-s border-primary text-primary text-body-md font-semibold active:scale-[0.96] transition-transform"
                     >
                       Connect
                     </button>
@@ -201,22 +206,10 @@ export default function ScanDevicesScreen(p: Props) {
 
         {/* A_1.3.2 -v Connect Fail: the failure rides in a toast above the fold. */}
         {hasDevices && store.errorMessage && (
-          <div className="pb-2 shrink-0">
+          <div className="shrink-0 pt-2 pb-[3px]">
             <ErrorToast message={store.errorMessage} onDismiss={() => store.setErrorMessage(null)} />
           </div>
         )}
-
-        <div className="pb-10 safe-area-bottom">
-          {(hasError || showWebPickerCta) && (
-            <button
-              onClick={handleScan}
-              disabled={isSearching}
-              className="w-full h-12 rounded-[20px] text-primary text-body-md font-semibold mb-3 active:scale-[0.98] transition-transform disabled:opacity-40"
-            >
-              {hasError ? 'Search Again' : 'Search for Devices'}
-            </button>
-          )}
-        </div>
       </div>
     </div>
   )

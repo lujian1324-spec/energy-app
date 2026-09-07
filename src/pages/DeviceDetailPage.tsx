@@ -177,27 +177,15 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deviceIdForScheduler])
 
-  const { nextEventLabel, nextEventMs, lastSentAt, lastSentLabel } = useSleepModeScheduler({
+  // Keeps sending the schedule; the new Sleep Mode frame shows only the toggle and
+  // the two times, so none of what it reports back is rendered any more.
+  useSleepModeScheduler({
     enabled: sleepMode === 'On',
     sleepFrom,
     sleepTo,
     deviceId: deviceIdForScheduler,
     model,
   })
-
-  const fmtCountdown = (ms: number): string => {
-    if (ms <= 0) return '—'
-    const totalSec = Math.floor(ms / 1000)
-    const h = Math.floor(totalSec / 3600)
-    const m = Math.floor((totalSec % 3600) / 60)
-    if (h > 0) return `${h}h ${m}m`
-    return `${m}m`
-  }
-
-  const fmtTime = (d: Date | null): string => {
-    if (!d) return '—'
-    return d.toLocaleTimeString()
-  }
 
   const editTargetOriginalName =
     devices.find((d) => String(d.id) === editTargetId)?.name ?? deviceName
@@ -509,12 +497,27 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
       }
       setScreen('main')
     }
-    const fmt = (t: string) => {
+    /** `22:00` → `10:00 PM`, so the chip reads the same on a 24-hour device. */
+    const fmt12 = (t: string) => {
       const [h, m] = t.split(':').map(Number)
+      if (Number.isNaN(h) || Number.isNaN(m)) return t
       const ampm = h < 12 ? 'AM' : 'PM'
       const h12 = h % 12 === 0 ? 12 : h % 12
       return `${h12}:${String(m).padStart(2, '0')} ${ampm}`
     }
+    /** Chip showing the 12-hour label with the native picker invisible on top. */
+    const TimeChip = ({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) => (
+      <span className="relative inline-flex items-center rounded-m bg-ink-9 px-3 py-1.5">
+        <span className="text-body-md text-white tnum">{fmt12(value)}</span>
+        <input
+          type="time"
+          aria-label={label}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer [color-scheme:dark]"
+        />
+      </span>
+    )
     return (
       <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
         <div className="px-4 pb-5 safe-area-top-header flex items-center gap-3 relative">
@@ -554,58 +557,15 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           </div>
           {enabled && (
             <div>
-              <p className="text-body-md font-semibold text-white mb-2">Time</p>
-              <div className="rounded-l bg-ink-10 overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-4 border-b border-white/5">
-                  <div>
-                    <p className="text-body-lg text-white">Sleep</p>
-                    <p className="text-caption text-ink-7">AC charging power → {schedulerPowers.sleepW}W</p>
-                  </div>
-                  <input
-                    type="time"
-                    value={sleepFrom}
-                    onChange={e => setSleepFrom(e.target.value)}
-                    className="bg-ink-9 text-white text-body-md rounded-m px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary [color-scheme:dark]"
-                  />
+              <p className="text-body-md font-semibold text-white mb-3">Time</p>
+              <div className="space-y-3">
+                <div className="rounded-l bg-ink-10 h-[68px] px-4 flex items-center justify-between">
+                  <span className="text-body-lg text-white">From</span>
+                  <TimeChip label="Sleep from" value={sleepFrom} onChange={setSleepFrom} />
                 </div>
-                <div className="flex items-center justify-between px-4 py-4">
-                  <div>
-                    <p className="text-body-lg text-white">Wake</p>
-                    <p className="text-caption text-ink-7">AC charging power → {schedulerPowers.wakeW}W</p>
-                  </div>
-                  <input
-                    type="time"
-                    value={sleepTo}
-                    onChange={e => setSleepTo(e.target.value)}
-                    className="bg-ink-9 text-white text-body-md rounded-m px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary [color-scheme:dark]"
-                  />
-                </div>
-              </div>
-              <p className="text-caption text-ink-7 mt-2 px-1">
-                {fmt(sleepFrom)} → {schedulerPowers.sleepW}W · {fmt(sleepTo)} → {schedulerPowers.wakeW}W
-              </p>
-            </div>
-          )}
-          {enabled && (
-            <div>
-              <p className="text-body-md font-semibold text-white mb-2">Scheduler Status</p>
-              <div className="rounded-l bg-ink-10 overflow-hidden px-4 py-4 space-y-3">
-                <p className="text-caption text-ink-7">
-                  {model} · Sleep: {schedulerPowers.sleepW}W / Wake: {schedulerPowers.wakeW}W
-                </p>
-                <div className="flex items-center justify-between">
-                  <span className="text-body-md text-ink-6">Next event</span>
-                  <div className="text-right">
-                    <p className="text-body-md text-primary font-semibold">{nextEventLabel}</p>
-                    <p className="text-caption text-primary">{fmtCountdown(nextEventMs)}</p>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-body-md text-ink-7">Last sent</span>
-                  <div className="text-right">
-                    <p className="text-caption text-ink-7">{lastSentLabel || '—'}</p>
-                    <p className="text-caption text-ink-7">{fmtTime(lastSentAt)}</p>
-                  </div>
+                <div className="rounded-l bg-ink-10 h-[68px] px-4 flex items-center justify-between">
+                  <span className="text-body-lg text-white">To</span>
+                  <TimeChip label="Sleep to" value={sleepTo} onChange={setSleepTo} />
                 </div>
               </div>
             </div>
