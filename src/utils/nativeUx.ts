@@ -6,6 +6,27 @@ import { Capacitor } from '@capacitor/core'
 
 const isNative = () => Capacitor.isNativePlatform()
 
+/**
+ * Android draws the WebView edge-to-edge and reports `env(safe-area-inset-top)` as 0,
+ * so MainActivity injects `--safe-area-inset-top` from the real window insets. If that
+ * injection ever fails to land — it runs against about:blank first and the full-bleed
+ * WebView never resizes when insets change, so there is nothing to retry on — the header
+ * ends up under the status bar. Publish a floor the CSS folds into the same `max()` so
+ * the worst case is a slightly generous gap rather than an overlap.
+ *
+ * Native Android only: iOS gets a real `env()`, and on the web the browser already
+ * reserves the status bar.
+ */
+const ANDROID_MIN_TOP_INSET_PX = 24
+
+export function applyAndroidTopInsetFloor(): void {
+  if (!isNative() || Capacitor.getPlatform() !== 'android') return
+  document.documentElement.style.setProperty(
+    '--safe-area-inset-top-min',
+    `${ANDROID_MIN_TOP_INSET_PX}px`,
+  )
+}
+
 /** 状态栏：深色主题 → 浅色图标，底色与 App 背景一致（Android） */
 export async function setupStatusBar(): Promise<void> {
   if (!isNative()) return
@@ -58,5 +79,6 @@ export async function setupKeyboard(): Promise<void> {
 }
 
 export async function setupNativeUx(): Promise<void> {
+  applyAndroidTopInsetFloor()
   await Promise.all([setupStatusBar(), setupBackButton(), setupKeyboard()])
 }

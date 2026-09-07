@@ -1,9 +1,8 @@
 {
-  "version": "4.7.87",
-  "build": 2809,
+  "version": "4.7.88",
+  "build": 2810,
   "date": "2026-09-06",
   "changelog": [
-    "Toasts appear at the bottom of the screen, 16 above the tab bar where there is one, instead of over the page header.",
-    "Adding a device now runs Bluetooth, then Wi-Fi, then the name and the icon; the account bind happens once all four are done."
+    "Android: the page header no longer sits under the status bar. The safe-area inset now includes the display cutout, is re-asked for once the app's own document is up, and the web side keeps a 24px floor so a missed inject can only over-pad, never overlap."
   ]
 }

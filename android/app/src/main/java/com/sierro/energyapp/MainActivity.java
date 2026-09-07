@@ -68,7 +68,12 @@ public class MainActivity extends BridgeActivity {
         // itself (status / home indicator) without changing the aspect ratio.
         View webView = getBridge().getWebView();
         ViewCompat.setOnApplyWindowInsetsListener(webView, (v, windowInsets) -> {
-            Insets bars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars());
+            // systemBars() alone misses the punch-hole / notch, and the theme sets
+            // windowLayoutInDisplayCutoutMode=shortEdges so the app draws into it. On
+            // phones whose status bar is shorter than the cutout that left the header
+            // sitting under the clock.
+            Insets bars = windowInsets.getInsets(
+                    WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
             lastTopPx = bars.top;
             lastBottomPx = bars.bottom;
             injectSafeAreaVars(v, lastTopPx, lastBottomPx);
@@ -83,7 +88,14 @@ public class MainActivity extends BridgeActivity {
         getBridge().addWebViewListener(new WebViewListener() {
             @Override
             public void onPageLoaded(WebView view) {
-                view.post(() -> injectSafeAreaVars(view, lastTopPx, lastBottomPx));
+                view.post(() -> {
+                    injectSafeAreaVars(view, lastTopPx, lastBottomPx);
+                    // The first apply often runs before the window is attached, so
+                    // lastTopPx can still be 0 here. The WebView is full-bleed and never
+                    // resizes when insets change, so onLayoutChange will not retry —
+                    // ask for them again now that a real document is up.
+                    ViewCompat.requestApplyInsets(view);
+                });
             }
         });
         // Android's Autofill Framework (API 26+) shows a branded suggestion strip / overlay
