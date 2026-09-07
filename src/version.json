@@ -1,8 +1,10 @@
 {
-  "version": "4.9.2",
-  "build": 2828,
+  "version": "4.9.3",
+  "build": 2829,
   "date": "2026-09-07",
   "changelog": [
+    "Sleep Mode's time picker stays open — it used to close itself a moment after you opened it.",
+    "The (i) on Smart Schedule now opens the explainer: how it works, how savings are estimated, and what each parameter does.",
     "Settings and Profile now show the same name — Settings could be left on a stale one after a rename.",
     "Signing in as a different account no longer shows the previous account's name and linked email.",
     "The Wi-Fi password eye now shows an open eye when the password is visible, not the reverse.",

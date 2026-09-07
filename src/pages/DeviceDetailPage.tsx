@@ -41,6 +41,39 @@ const DISPLAY_ICONS = [
   { id: 'cpap', pack: 'CPAP', label: 'CPAP' },
 ]
 
+/** `22:00` → `10:00 PM`, so the chip reads the same on a 24-hour device. */
+function fmt12(t: string): string {
+  const [h, m] = t.split(':').map(Number)
+  if (Number.isNaN(h) || Number.isNaN(m)) return t
+  const ampm = h < 12 ? 'AM' : 'PM'
+  const h12 = h % 12 === 0 ? 12 : h % 12
+  return `${h12}:${String(m).padStart(2, '0')} ${ampm}`
+}
+
+/**
+ * Chip showing the 12-hour label with the native picker invisible on top.
+ *
+ * Declared here, not inside the page: a component defined during render is a new
+ * type on every render, so React throws the old <input> away and mounts a fresh
+ * one. This page polls live device state, and each poll was remounting the input
+ * out from under the open picker — which is what made the picker close by itself
+ * a moment after it opened.
+ */
+function TimeChip({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <span className="relative inline-flex items-center rounded-m bg-ink-9 px-3 py-1.5">
+      <span className="text-body-md text-white tnum">{fmt12(value)}</span>
+      <input
+        type="time"
+        aria-label={label}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer [color-scheme:dark]"
+      />
+    </span>
+  )
+}
+
 export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const { powerStation, updateDeviceNameById, peakShavingSettings } =
     usePowerStationStore()
@@ -497,27 +530,6 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
       }
       setScreen('main')
     }
-    /** `22:00` → `10:00 PM`, so the chip reads the same on a 24-hour device. */
-    const fmt12 = (t: string) => {
-      const [h, m] = t.split(':').map(Number)
-      if (Number.isNaN(h) || Number.isNaN(m)) return t
-      const ampm = h < 12 ? 'AM' : 'PM'
-      const h12 = h % 12 === 0 ? 12 : h % 12
-      return `${h12}:${String(m).padStart(2, '0')} ${ampm}`
-    }
-    /** Chip showing the 12-hour label with the native picker invisible on top. */
-    const TimeChip = ({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) => (
-      <span className="relative inline-flex items-center rounded-m bg-ink-9 px-3 py-1.5">
-        <span className="text-body-md text-white tnum">{fmt12(value)}</span>
-        <input
-          type="time"
-          aria-label={label}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer [color-scheme:dark]"
-        />
-      </span>
-    )
     return (
       <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
         <div className="px-4 pb-5 safe-area-top-header flex items-center gap-3 relative">

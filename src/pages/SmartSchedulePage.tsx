@@ -19,6 +19,7 @@ import {
   CloudOff,
 } from 'lucide-react'
 import Icon from '../components/Icon'
+import BottomSheet from '../components/BottomSheet'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useDeviceStore } from '../stores/deviceStore'
 import { mapBundleToSettings, mapSettingsToGeneralConfig } from '../api/deviceApi'
@@ -76,6 +77,64 @@ function arcPath(cx: number, cy: number, r: number, startDeg: number, endDeg: nu
   const y2 = cy + r * Math.sin(endRad)
   const large = endDeg - startDeg > 180 ? 1 : 0
   return `M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}`
+}
+
+/* ── B_1.2.6 -v Open info ────────────────────────────────────────────────────
+   The (i) opens a title-less sheet: a teal bolt beside an 18px heading, body in
+   body_medium/ink-5, and full-bleed ink-9 hairlines between the sections. */
+
+function InfoHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-1">
+      <Icon name="thunder" size={33} color="#01D6BE" />
+      <h3 className="text-title-md font-semibold text-ink-2">{children}</h3>
+    </div>
+  )
+}
+
+const INFO_PARAMETERS: { term: string; detail: string }[] = [
+  { term: 'Max Charge', detail: 'Maximum power rate (W) for charging the battery during off-peak hours.' },
+  { term: 'Max Discharge', detail: 'Maximum power rate (W) for discharging the battery during peak hours.' },
+  { term: 'Min SOC', detail: 'Minimum battery level, prevents full discharge to protect battery longevity.' },
+  { term: 'Max SOC', detail: 'Maximum battery level to charge to, extends battery lifespan over time.' },
+]
+
+function SmartScheduleInfoSheet({ onClose }: { onClose: () => void }) {
+  return (
+    <BottomSheet ariaLabel="About Smart Schedule" onClose={onClose}>
+      <div className="mt-[51px] px-4">
+        <InfoHeading>How Smart Schedule Works?</InfoHeading>
+        <p className="mt-[9px] text-body-md text-ink-5">
+          During off-peak hours, the system charges the battery using grid power at lower
+          rates. During peak hours, the battery discharges to power your devices, reducing
+          your electricity costs. Smart Schedule automatically optimizes charge/discharge
+          timing based on your local TOU rates.
+        </p>
+
+        <div className="-mx-4 my-6 h-px bg-ink-9" />
+
+        <InfoHeading>How is estimated savings calculated?</InfoHeading>
+        <p className="mt-[9px] text-body-md text-ink-5">
+          Formula: (Peak &ndash; Off-Peak) &times; Capacity &times; Cycles &times;
+          Efficiency(95%) &times; DoD(90%) &times; Execution(85%)
+        </p>
+
+        <div className="-mx-4 my-6 h-px bg-ink-9" />
+
+        <InfoHeading>Parameters</InfoHeading>
+        <ul className="mt-[9px] space-y-2 list-disc pl-[22px] marker:text-ink-3">
+          {INFO_PARAMETERS.map(({ term, detail }) => (
+            <li key={term} className="text-body-md font-semibold text-ink-3">
+              {term}
+              <ul className="list-disc pl-[23px] marker:text-ink-5">
+                <li className="text-body-md font-normal text-ink-5">{detail}</li>
+              </ul>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </BottomSheet>
+  )
 }
 
 export default function SmartSchedulePage() {
@@ -154,6 +213,7 @@ export default function SmartSchedulePage() {
     }
   }, [selectedDeviceId, apiConfigLoaded, peakShavingSettings, savePeakValleyGeneral])
 
+  const [showInfo, setShowInfo] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingSchedule, setEditingSchedule] = useState<PeakShavingSchedule | null>(null)
   const [editForm, setEditForm] = useState<Partial<PeakShavingSchedule>>({})
@@ -304,7 +364,7 @@ export default function SmartSchedulePage() {
       <SecondaryHeader
         title="Smart Schedule"
         onBack={() => navigate(-1)}
-        right={<HeaderIconButton icon="info-outined" label="About Smart Schedule" />}
+        right={<HeaderIconButton icon="info-outined" label="About Smart Schedule" onClick={() => setShowInfo(true)} />}
       />
 
       <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pb-24">
@@ -873,6 +933,10 @@ export default function SmartSchedulePage() {
             </motion.div>
           </motion.div>
         )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showInfo && <SmartScheduleInfoSheet onClose={() => setShowInfo(false)} />}
       </AnimatePresence>
     </div>
   )
