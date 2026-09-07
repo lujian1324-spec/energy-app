@@ -193,7 +193,7 @@ export default function ScanDevicesScreen(p: Props) {
                     </div>
                     <button
                       onClick={() => handleSelectDevice(device)}
-                      className="w-16 h-[30px] shrink-0 rounded-m border-s border-primary text-primary text-body-md font-semibold active:scale-[0.96] transition-transform"
+                      className="w-16 h-[30px] shrink-0 rounded-m border-s border-primary text-primary text-label font-normal active:scale-[0.96] transition-transform"
                     >
                       Connect
                     </button>
