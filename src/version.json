@@ -1,9 +1,8 @@
 {
-  "version": "4.8.5",
-  "build": 2822,
+  "version": "4.8.6",
+  "build": 2823,
   "date": "2026-09-06",
   "changelog": [
-    "The bolt beside the days count on Insights is the handoff's solid one, at the size the frame draws it.",
-    "Removed the \"Couldn't load history data.\" row from Insights."
+    "The keyboard no longer covers the Redeem Founder Badge sheet or the Feedback dialog — both lift clear of it while you type."
   ]
 }

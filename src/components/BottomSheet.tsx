@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { motion } from 'framer-motion'
 import Icon from './Icon'
+import { useKeyboardInset } from '../utils/useKeyboardInset'
 
 /**
  * Bottom sheet chrome from the handoff — `B_1.2.2`, `B_1.2.5`, `D_1.3.1` and
@@ -29,8 +30,15 @@ export default function BottomSheet({
   /** D_1.3.1 and D_2.8.1 set their title left; B_1.2.2 and B_1.2.5 centre it. */
   titleAlign?: 'center' | 'left'
 }) {
+  // D_2.8.1's field sits at the bottom of the screen, so the keyboard opens right
+  // over it. Padding the fixed wrapper lifts the sheet clear of it.
+  const keyboardInset = useKeyboardInset()
+
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end">
+    <div
+      className="fixed inset-0 z-50 flex flex-col justify-end"
+      style={{ paddingBottom: keyboardInset }}
+    >
       <button
         aria-label="Close"
         onClick={onClose}
@@ -44,7 +52,7 @@ export default function BottomSheet({
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', stiffness: 380, damping: 34 }}
-        className="relative rounded-t-l bg-ink-10 pt-2"
+        className="relative rounded-t-l bg-ink-10 pt-2 max-h-full overflow-y-auto"
         style={{ paddingBottom: 'calc(max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)) + 3px)' }}
       >
         <div className="mx-auto w-9 h-1 rounded-pill bg-ink-8" />

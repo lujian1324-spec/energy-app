@@ -16,6 +16,7 @@ import {
   RotateCcw,
 } from 'lucide-react'
 import Icon from '../components/Icon'
+import { useKeyboardInset } from '../utils/useKeyboardInset'
 import { FEEDBACK_TO_EMAIL, isEmailJsConfigured } from '../config/emailjs'
 import { sendFeedbackEmail } from '../utils/sendFeedbackEmail'
 import { usePowerStationStore } from '../stores/powerStationStore'
@@ -105,6 +106,8 @@ export default function SettingPage() {
 
   const [supportSending, setSupportSending] = useState(false)
   const [supportError, setSupportError] = useState('')
+  // The dialog sits on the bottom edge on a phone, so the keyboard opens over it.
+  const keyboardInset = useKeyboardInset()
 
   const handleSupportSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -368,6 +371,7 @@ export default function SettingPage() {
         {showSupport && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/60 p-4"
+            style={{ paddingBottom: keyboardInset ? keyboardInset + 16 : undefined }}
             onClick={() => setShowSupport(false)}>
             <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
