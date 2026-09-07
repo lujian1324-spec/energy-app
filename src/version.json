@@ -1,8 +1,8 @@
 {
-  "version": "4.8.2",
-  "build": 2819,
+  "version": "4.8.3",
+  "build": 2820,
   "date": "2026-09-06",
   "changelog": [
-    "Device Monitor puts the battery ring on the left with Input and Output stacked down its right, instead of the ring above a full-width row."
+    "The device switcher on Device Monitor opens over the battery ring instead of behind it."
   ]
 }

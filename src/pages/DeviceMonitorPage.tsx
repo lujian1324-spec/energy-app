@@ -120,7 +120,7 @@ export default function DeviceMonitorPage() {
     <div
       className="h-full flex flex-col bg-ink-12 overflow-hidden">
       {/* Header */}
-      <PageHeaderShell filled className="relative flex items-center gap-3">
+      <PageHeaderShell filled className="relative z-20 flex items-center gap-3">
         <HeaderIconButton
           icon="chevron-left"
           label="Back"
