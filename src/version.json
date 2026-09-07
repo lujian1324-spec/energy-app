@@ -1,8 +1,8 @@
 {
-  "version": "4.7.90",
-  "build": 2812,
+  "version": "4.7.91",
+  "build": 2813,
   "date": "2026-09-06",
   "changelog": [
-    "Fixed \"Couldn't read this device's ID\" appearing right after a device connects, with the id visible on the same screen. The checks read a stale copy of the state, taken before the id was stored."
+    "A newly registered account now lands on the Add Your First Device step. Signing in to an account that already exists still goes straight to the device list."
   ]
 }

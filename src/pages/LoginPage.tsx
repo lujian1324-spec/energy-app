@@ -184,10 +184,15 @@ export default function LoginPage() {
     if (ok) { setOtpCode(''); setStep('code') }
   }
 
-  const finishSignIn = (user: unknown) => {
+  /**
+   * `firstRun` is the account we just created, which `A_2.2.2_Onboarding_Device`
+   * greets with the add-your-first-device step. Signing in to an account that
+   * already exists goes straight to the device list, as before.
+   */
+  const finishSignIn = (user: unknown, { firstRun = false } = {}) => {
     useDeviceStore.getState().exitDemoMode()
     useAuthStore.setState({ isAuthenticated: true, isGuest: false, user: (user as never) ?? null })
-    navigate('/', { replace: true })
+    navigate(firstRun ? '/onboarding' : '/', { replace: true })
   }
 
   /**
@@ -208,7 +213,7 @@ export default function LoginPage() {
       setError(sanitizeUiCopy(login.message || login.msg, 'Account created — please sign in again.'))
       return false
     }
-    finishSignIn(login.data)
+    finishSignIn(login.data, { firstRun: true })
     return true
   }
 
