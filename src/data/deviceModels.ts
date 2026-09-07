@@ -4,6 +4,9 @@
  */
 export type SierroModel = 'Sierro 1000' | 'Sierro 2000'
 
+/** Longest device name the app accepts, wherever one can be typed. */
+export const DEVICE_NAME_MAX = 20
+
 export interface ModelSpec {
   model: SierroModel
   ratedPower: number        // 额定功率 W

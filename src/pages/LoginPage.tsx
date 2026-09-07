@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import Icon from '../components/Icon'
@@ -131,8 +131,14 @@ export default function LoginPage() {
 
   const emailValid = EMAIL_RE.test(email.trim())
 
-  useEffect(() => {
-    if (isAuthenticated) navigate('/', { replace: true })
+  /* Bounces an already-signed-in visitor off /login. It must not fire for the
+     sign-in this screen just performed: finishSignIn flips isAuthenticated and
+     then navigates, so without the guard this effect runs afterwards and
+     replaces /onboarding with / — which is why a newly registered account never
+     saw the onboarding step. */
+  const signedInHere = useRef(false)
+  useLayoutEffect(() => {
+    if (isAuthenticated && !signedInHere.current) navigate('/', { replace: true })
   }, [isAuthenticated, navigate])
 
   useEffect(() => {
@@ -190,6 +196,7 @@ export default function LoginPage() {
    * already exists goes straight to the device list, as before.
    */
   const finishSignIn = (user: unknown, { firstRun = false } = {}) => {
+    signedInHere.current = true
     useDeviceStore.getState().exitDemoMode()
     useAuthStore.setState({ isAuthenticated: true, isGuest: false, user: (user as never) ?? null })
     navigate(firstRun ? '/onboarding' : '/', { replace: true })

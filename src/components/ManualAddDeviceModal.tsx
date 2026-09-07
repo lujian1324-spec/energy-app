@@ -7,6 +7,7 @@ import { motion } from 'framer-motion'
 import { X, Loader2, AlertCircle, Keyboard } from 'lucide-react'
 import { useDeviceStore } from '../stores/deviceStore'
 import { useToast } from '../components/Toast'
+import { DEVICE_NAME_MAX } from '../data/deviceModels'
 
 interface Props {
   onClose: () => void
@@ -133,6 +134,7 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
               value={deviceName}
               onChange={e => { setDeviceName(e.target.value); setError(null) }}
               placeholder="e.g. Sierro 1000"
+              maxLength={DEVICE_NAME_MAX}
               className="w-full px-4 py-3 rounded-l bg-ink-12 border border-primary/[0.15]
                 text-ink-1 text-body-md placeholder:text-ink-7
                 focus:outline-none focus:border-primary/[0.5] transition-colors"

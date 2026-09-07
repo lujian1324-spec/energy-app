@@ -132,6 +132,24 @@ export const registerServiceWorker = async (): Promise<ServiceWorkerRegistration
 
 // 请求通知权限
 export const requestNotificationPermission = async (): Promise<NotificationPermission> => {
+  // Native first: the Android WebView does not implement the Web Notification API,
+  // so `Notification` is undefined there and this used to fall straight through to
+  // 'denied' — the OS notification prompt was never shown from the Settings
+  // toggles. LocalNotifications is the same plugin refreshNotificationPermission
+  // already reads at startup, so one request here keeps the cache honest.
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const { LocalNotifications } = await import('@capacitor/local-notifications')
+      let { display } = await LocalNotifications.checkPermissions()
+      if (display !== 'granted') ({ display } = await LocalNotifications.requestPermissions())
+      nativeNotifState = display === 'granted' ? 'granted' : display === 'denied' ? 'denied' : 'default'
+    } catch (e) {
+      console.warn('[Native] notification permission request failed:', e)
+      nativeNotifState = 'default'
+    }
+    return nativeNotifState
+  }
+
   if (!isNotificationSupported()) {
     console.warn('Push notifications not supported')
     return 'denied'

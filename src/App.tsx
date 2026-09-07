@@ -122,10 +122,11 @@ function AppInner() {
           className="h-full w-full"
         >
           <Routes location={location}>
-            <Route
-              path="/login"
-              element={isAuthenticated ? <Navigate to="/devices" replace /> : <LoginPage />}
-            />
+            {/* LoginPage owns the "already signed in, get off /login" redirect. It
+                used to be duplicated here, and the copy fired from a render that
+                still had location=/login after sign-in had flipped the flag —
+                replacing the /onboarding a fresh sign-up had just navigated to. */}
+            <Route path="/login" element={<LoginPage />} />
           </Routes>
         </motion.div>
       </AnimatePresence>

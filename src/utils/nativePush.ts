@@ -27,11 +27,12 @@ export async function initNativePush(): Promise<void> {
   try {
     const { PushNotifications } = await import('@capacitor/push-notifications')
 
-    // 权限
-    let perm = await PushNotifications.checkPermissions()
-    if (perm.receive !== 'granted') {
-      perm = await PushNotifications.requestPermissions()
-    }
+    // Permission is asked for once, up front, through LocalNotifications
+    // (requestNotificationPermission). Do not ask again here: that put a second
+    // Activity permission request on the same tap as register(), and enabling
+    // Power Outage / Low Battery was taking Android down. Only read the state —
+    // and without a grant there is nothing to register.
+    const perm = await PushNotifications.checkPermissions()
     if (perm.receive !== 'granted') {
       initialized = false
       return

@@ -13,6 +13,7 @@
  */
 import Icon from '../../components/Icon'
 import TextField from '../../components/TextField'
+import { DEVICE_NAME_MAX } from '../../data/deviceModels'
 
 /** The eight glyphs `A_1.3.4` offers, in the frame's order. */
 export const DEVICE_ICONS: { id: string; pack: string; label: string }[] = [
@@ -91,7 +92,7 @@ export function NameDeviceScreen({
             onEnter={() => { if (deviceNameInput.trim()) onNext() }}
             placeholder="Enter device name"
             error={nameError || null}
-            maxLength={40}
+            maxLength={DEVICE_NAME_MAX}
             autoFocus
           />
         </div>
