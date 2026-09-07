@@ -85,6 +85,11 @@ export default {
           active: '#CC2F28',
           dark: '#BF2C24',
           darker: '#591511',
+          // The unread badge on the notification bell. A_1.1.1 and B_1.1 draw it
+          // in this warmer red while every other red in the same exports samples
+          // as danger DEFAULT, so it is a deliberate one-off, not a colour-profile
+          // shift — confirmed with the designer.
+          dot: '#F23E16',
         },
         // ── Black / Neutral scale (black-1 … black-13) ──
         // ink-12 / bg-base = Figma black-12 page background (#141414).

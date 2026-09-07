@@ -43,6 +43,7 @@ Weights: `regular` (400) and `emphasized` (600 / `font-semibold`).
 - **Green / Success** `#34C759` — `*-success`
 - **Orange / Warning / Discharge** `#FF9500` — `*-warning`
 - **Red / Error** `#FF3B30` — `*-danger`
+  - `danger-dot` `#F23E16` is the unread badge on the notification bell only (`A_1.1.1`, `B_1.1` draw it warmer than the error red).
 - **Neutral (black-1…13)** `#FFFFFF, #FCFCFC, #F5F5F5, #F0F0F0, #D9D9D9, #BFBFBF, #8C8C8C, #595959, #454545, #262626, #1F1F1F, #141414, #000000` — `*-ink-{1..13}`
   - App background = `ink-12` `#141414`; card background = `ink-10` `#262626`.
 

@@ -387,7 +387,7 @@ export default function DevicePage() {
             >
               <Icon name="bell" size={24} />
               {activeAlarmCount > 0 && (
-                <span className="absolute top-px right-px w-2.5 h-2.5 rounded-full bg-danger" />
+                <span className="absolute top-px right-px w-2.5 h-2.5 rounded-full bg-danger-dot" />
               )}
             </button>
           </div>

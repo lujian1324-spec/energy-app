@@ -186,7 +186,7 @@ export default function DeviceMonitorPage() {
             onClick={() => navigate('/notifications')}
           >
             {device?.isAlarmed && (
-              <span className="absolute top-px right-px w-2.5 h-2.5 rounded-full bg-danger" />
+              <span className="absolute top-px right-px w-2.5 h-2.5 rounded-full bg-danger-dot" />
             )}
           </HeaderIconButton>
         </div>
