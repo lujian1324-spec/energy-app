@@ -17,7 +17,7 @@ export const UI_COPY_MAP: Record<string, string> = {
   '通信故障': 'Communication fault',
   '通讯故障': 'Communication fault',
   '设备离线': 'The device is offline.',
-  '已绑定': 'This device is already added to an account.',
+  '已绑定': 'Device already added to another account.',
 }
 
 export function containsCjk(text: string | undefined | null): boolean {

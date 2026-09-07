@@ -24,7 +24,7 @@ export function isJunkError(msg?: string | null): boolean {
 export type BindFailReasonKind = 'already_bound' | 'device_offline' | 'timeout' | 'invalid'
 
 const REASON_COPY: Record<BindFailReasonKind, string> = {
-  already_bound: 'This device is already added to an account.',
+  already_bound: 'Device already added to another account.',
   device_offline: 'The device is offline. Keep it powered on and close to the router.',
   timeout: 'Adding the device timed out. Try adding again.',
   invalid: "Couldn't add this device. Check the details and try again.",
