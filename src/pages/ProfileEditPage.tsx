@@ -1,16 +1,14 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { useState, useRef, useEffect } from 'react'
-import {
-} from 'lucide-react'
+import { useState, useRef } from 'react'
 import Icon from '../components/Icon'
 import TextField from '../components/TextField'
 import BottomSheet from '../components/BottomSheet'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useAuthStore } from '../stores/authStore'
-import { saveUserProfile, getUserProfile, clearUserProfile } from '../db/powerflowDB'
+import { saveUserProfile, clearUserProfile } from '../db/powerflowDB'
+import { useUserProfile } from '../hooks/useUserProfile'
 import { toast } from '../components/Toast'
 import {
-  fetchUserInfo,
   updateUserInfo,
   updateUserEmail,
   sendEmailCaptcha,
@@ -27,21 +25,9 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
   const { settings, activateFounderBadge } = usePowerStationStore()
   const { user: authUser, logout } = useAuthStore()
 
-  // 用户个人信息状态 - 从 authStore 获取登录账号
-  const account = authUser?.account ?? ''
-  // LoginData has an index signature, so the nickname arrives as `unknown`.
-  const authNickname = typeof authUser?.nickname === 'string' ? authUser.nickname : ''
-  const [profile, setProfile] = useState<UserProfile>({
-    name: authNickname || account,
-    email: authUser?.email ?? account,
-    avatar: null,
-    memberSince: new Date().toISOString().slice(0, 10),
-  })
-
-  // 用户 ID（从服务端获取）
-
-  // 加载状态
-  const [isLoading, setIsLoading] = useState(true)
+  // Settings renders the same name from the same loader, so the two screens
+  // cannot drift apart the way they used to.
+  const { profile, setProfile, account } = useUserProfile()
 
   // 编辑状态
   const [editingField, setEditingField] = useState<string | null>(null)
@@ -70,52 +56,6 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
 
   // 头像上传
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  // 加载用户资料
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const savedProfile = await getUserProfile(account)
-        if (savedProfile) {
-          // Merge rather than replace: the cache may legitimately hold only an
-          // avatar, and the account that is signed in now outranks anything the
-          // cache has to say about who the user is.
-          setProfile(prev => ({
-            ...prev,
-            ...savedProfile,
-            name: savedProfile.name || prev.name,
-            email: savedProfile.email || prev.email,
-          }))
-        }
-        // Fetch live user info from server
-        const apiResult = await fetchUserInfo()
-        if (apiResult.code === 0 || apiResult.code === '0') {
-          const u = apiResult.data
-          if (u) {
-            const serverEmail = typeof u.email === 'string' ? u.email : ''
-            const unmasked = serverEmail && !serverEmail.includes('*') ? serverEmail : ''
-            setProfile(prev => ({
-              ...prev,
-              // `Profile -v Default` shows an editable display name, so prefer the
-              // nickname and fall back to the account it was registered with.
-              name: u.nickname || u.account || prev.name,
-              // /user/select/iotUserInfo returns the address masked (j****@sierro.us),
-              // and the design shows it in full, so a full address we already hold for
-              // this account wins. But the registration account is a username and need
-              // not be an address at all, so when that is all we have, the masked
-              // server value is the more truthful thing to show.
-              email: unmasked || (prev.email.includes('@') ? prev.email : serverEmail) || prev.email,
-            }))
-          }
-        }
-      } catch (error) {
-        console.error('Failed to load user profile:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-    loadProfile()
-  }, [account])
 
   // 保存用户资料到 IndexedDB
   const persistProfile = async (newProfile: UserProfile) => {
