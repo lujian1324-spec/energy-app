@@ -47,8 +47,9 @@ export default function BottomNavigation() {
       style={{ paddingBottom: 'calc(max(8px, var(--safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px)) + 4px)' }}
     >
       {/* Handoff `Bottom` → `Tab_new`: 192x64 pill, primary-darker fill, 0.5px primary
-          hairline, 4px padding, 8px gap, 56px slots, 48px selected circle in
-          primary dark:hover (#018072), 24px glyphs. */}
+          hairline, 4px padding, 8px gap, 56px slots, 48px selected circle, 24px
+          glyphs. The selected circle is the brand teal with the glyph knocked out
+          in primary-darker, the same pairing the primary buttons use. */}
       <nav
         ref={pillRef}
         className="flex items-center gap-2 p-1 rounded-full bg-primary-darker border-xs border-primary pointer-events-auto"
@@ -66,8 +67,8 @@ export default function BottomNavigation() {
           >
             {({ isActive }) => (
               isActive ? (
-                <span className="flex items-center justify-center w-12 h-12 rounded-full bg-primary-dark-hover transition-colors duration-200">
-                  <Icon name={item.icon} size={24} alt={item.label} color="#B0F2EB" />
+                <span className="flex items-center justify-center w-12 h-12 rounded-full bg-primary transition-colors duration-200">
+                  <Icon name={item.icon} size={24} alt={item.label} color="#004B43" />
                 </span>
               ) : (
                 <Icon

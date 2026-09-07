@@ -763,31 +763,8 @@ export default function StatsPage() {
                     </button>
                   </div>
                 )}
-
+                {/* C_1.1 (new): the chart leads and the CO₂ card sits under it. */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                  className="bg-ink-10 rounded-l p-5 mb-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="text-headline-lg font-semibold text-ink-1 leading-none tnum">{displayCo2}</span>
-                        <span className="text-body-md text-ink-6">Kg</span>
-                      </div>
-                      <p className="text-body-md text-ink-6 mt-2">{chartFrame.ecoInsight}</p>
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <Leaf size={14} className="text-success" />
-                      <span className="text-body-lg text-ink-4">CO₂ Reduced</span>
-                    </div>
-                  </div>
-                  <div className="mt-3">
-                    <CalcAudit
-                      formula={`Solar generated: ${chartFrame.totalInputKwh} kWh\nGrid CO2 factor: 0.5 kg CO₂/kWh (US EPA average)\nCO₂ avoided: ${chartFrame.totalInputKwh} kWh × 0.5 kg/kWh = ${chartFrame.co2Kg} kg\n\nData source: US EPA eGRID 2024 average emission rate`}
-                      label="How we calculated CO₂"
-                    />
-                  </div>
-                </motion.div>
-
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
                   className="bg-ink-10 rounded-l p-4 mb-4">
                   <div className="flex justify-between items-start mb-4">
                     <div>
@@ -884,6 +861,29 @@ export default function StatsPage() {
                       No power history for this period yet.
                     </p>
                   )}
+                </motion.div>
+
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+                  className="bg-ink-10 rounded-l p-5 mb-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="text-headline-lg font-semibold text-ink-1 leading-none tnum">{displayCo2}</span>
+                        <span className="text-body-md text-ink-6">Kg</span>
+                      </div>
+                      <p className="text-body-md text-ink-6 mt-2">{chartFrame.ecoInsight}</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <Leaf size={14} className="text-success" />
+                      <span className="text-body-lg text-ink-4">CO₂ Reduced</span>
+                    </div>
+                  </div>
+                  <div className="mt-3">
+                    <CalcAudit
+                      formula={`Solar generated: ${chartFrame.totalInputKwh} kWh\nGrid CO2 factor: 0.5 kg CO₂/kWh (US EPA average)\nCO₂ avoided: ${chartFrame.totalInputKwh} kWh × 0.5 kg/kWh = ${chartFrame.co2Kg} kg\n\nData source: US EPA eGRID 2024 average emission rate`}
+                      label="How we calculated CO₂"
+                    />
+                  </div>
                 </motion.div>
               </>
             )}

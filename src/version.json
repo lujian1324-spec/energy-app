@@ -1,9 +1,10 @@
 {
-  "version": "4.7.94",
-  "build": 2816,
+  "version": "4.8.0",
+  "build": 2817,
   "date": "2026-09-06",
   "changelog": [
-    "Feedback sends again on iOS and Android. The request went out through Capacitor's native HTTP bridge, so it reached EmailJS without a browser origin and was refused; it now uses the browser's own fetch.",
-    "The address typed into the form is the one sent. It was being overridden by the registration account name, which is not an address."
+    "New sign-in screen: the SIERRO wordmark and its line carry the page, and Continue with Email is an outlined button at the bottom edge. Continue as Guest stays for now.",
+    "The selected tab in the bottom bar is the brand teal with the glyph knocked out dark.",
+    "Insights leads with the Input vs. Output chart; the CO₂ card now sits under it."
   ]
 }
