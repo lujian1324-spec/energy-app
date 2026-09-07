@@ -90,7 +90,7 @@ function NotificationRow({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, height: 0 }}
-      className="relative overflow-hidden border-b border-xs border-ink-9"
+      className="relative overflow-hidden border-b border-ink-9"
     >
       <button
         type="button"

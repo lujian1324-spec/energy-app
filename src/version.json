@@ -1,8 +1,10 @@
 {
-  "version": "4.7.85",
-  "build": 2807,
+  "version": "4.7.86",
+  "build": 2808,
   "date": "2026-09-06",
   "changelog": [
-    "The unread badge on the notification bell uses the frame's own red (#F23E16) rather than the shared error red, as a new danger-dot token."
+    "Text fields draw the design's single rule under the value again — `border-xs` alongside `border-b` was setting a width on all four sides, so the field read as a box.",
+    "The value sits against that rule rather than centred in the row, matching the frames.",
+    "Same fix on the notification row separator."
   ]
 }

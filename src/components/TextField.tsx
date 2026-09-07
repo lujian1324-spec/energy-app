@@ -7,7 +7,8 @@ import Icon from './Icon'
  * `D_1.3.1` all draw the same box, measured off the 402x874 frames:
  *
  *   card       370 wide, radius 12 (`l`), ink-10
- *   value row  44 tall, body_large, ink-1 (placeholder ink-7)
+ *   value row  44 tall, the value sat against the rule rather than centred,
+ *              body_large, ink-1 (placeholder ink-7)
  *   rule       1px ink-8 (#595959) across the card inset 8 each side
  *   below      24, which is where the error line sits
  *   clear      16px ink-6 disc with the glyph knocked out in ink-10
@@ -64,8 +65,8 @@ export default function TextField({
           </label>
         )}
         <div
-          className={`flex items-center gap-2 border-b border-xs border-ink-8 ${
-            rows ? 'items-start pb-2' : label ? 'h-[26px]' : 'h-[44px]'
+          className={`flex gap-2 border-b border-ink-8 ${
+            rows ? 'items-start pb-2' : label ? 'items-end h-[26px] pb-0.5' : 'items-end h-[44px] pb-0.5'
           }`}
         >
           {leading}
