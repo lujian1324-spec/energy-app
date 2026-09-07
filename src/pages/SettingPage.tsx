@@ -15,9 +15,9 @@ import {
   LogOut,
   RotateCcw,
 } from 'lucide-react'
-import emailjs from '@emailjs/browser'
 import Icon from '../components/Icon'
-import { EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, EMAILJS_PUBLIC_KEY, FEEDBACK_TO_EMAIL, isEmailJsConfigured } from '../config/emailjs'
+import { FEEDBACK_TO_EMAIL, isEmailJsConfigured } from '../config/emailjs'
+import { sendFeedbackEmail } from '../utils/sendFeedbackEmail'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useAuthStore } from '../stores/authStore'
 import { deleteAccount } from '../api/authApi'
@@ -111,24 +111,17 @@ export default function SettingPage() {
     setSupportSending(true)
     setSupportError('')
 
-    // Prefer logged-in profile/account email (Figma Feedback has no email field).
-    const fromEmail = (userProfile?.email || authUser?.account || supportEmail || '').trim()
+    // The form asks for an address, so what was typed wins; the profile address is
+    // the fallback. The registration account is a username, not an address — sending
+    // it as from_email is what made EmailJS reject the message.
+    const typed = supportEmail.trim()
+    const profileEmail = (userProfile?.email ?? '').trim()
+    const fromEmail = typed || (profileEmail.includes('@') ? profileEmail : '')
 
     // Preferred path: send via EmailJS (recipient is fixed in the template).
     if (isEmailJsConfigured()) {
       try {
-        await emailjs.send(
-          EMAILJS_SERVICE_ID,
-          EMAILJS_TEMPLATE_ID,
-          {
-            name: fromEmail || 'Sierro App User',
-            from_email: fromEmail,
-            message: supportMessage,
-            subject: 'Sierro App Feedback',
-            to_email: FEEDBACK_TO_EMAIL,
-          },
-          { publicKey: EMAILJS_PUBLIC_KEY }
-        )
+        await sendFeedbackEmail({ fromEmail, message: supportMessage })
         setSupportSubmitted(true)
         setTimeout(() => {
           setShowSupport(false)
