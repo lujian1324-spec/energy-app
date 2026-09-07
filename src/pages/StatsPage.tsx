@@ -318,13 +318,13 @@ function buildFrameFromRecords(
   const KG_CO2_PER_TREE_YEAR = 21.8
   const trees = Math.round((co2Kg / KG_CO2_PER_TREE_YEAR) * 10) / 10
 
-  // Solar is "connected" once the device has reported any generation in the
-  // period. Without it the deck drops the card rather than showing a zero.
+  // The deck splits the audience three ways, but nothing in the app says whether
+  // solar is fitted — every inverter reports 0 W without panels — so the third
+  // group (fitted, but nothing generated this period) is out of scope for now.
+  // Generation in the period is the signal: without it the card is not drawn.
   const hasSolar = input.some(v => v > 0)
 
-  const ecoInsight = hasSolar
-    ? `Equal to planting ${trees} ${trees === 1 ? 'tree' : 'trees'}`
-    : 'No solar contribution detected in this period yet'
+  const ecoInsight = `Equal to planting ${trees} ${trees === 1 ? 'tree' : 'trees'}`
 
   return { input, output, remainingBatteryCapacity, labels, co2Kg, totalInputKwh, totalOutputKwh, insight, ecoInsight, hasData, hasSolar, trees }
 }

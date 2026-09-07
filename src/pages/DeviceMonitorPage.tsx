@@ -203,8 +203,11 @@ export default function DeviceMonitorPage() {
           transition={{ duration: 0.4 }}
           className="bg-ink-10 rounded-l p-5"
         >
-          {/* Ring */}
-          <div className="flex justify-center mt-1 mb-6">
+          {/* 0907 deck 新樣式 3: ring on the left, Input over Output down the right.
+              The ring is fixed at 170 and the column takes the rest, so the two
+              input boxes land on the deck's ~64 and nothing overflows on a
+              narrower phone. */}
+          <div className="flex items-center gap-4">
             <BatteryRing
               percentage={remainingBatteryCapacity}
               size={170}
@@ -215,18 +218,11 @@ export default function DeviceMonitorPage() {
               timeToFull={timeStr}
               rawTimeLabel
             />
-          </div>
 
-          {/* Input / Output — 4x export: boxes 48 tall, two inputs grouped around the "+",
-              a wider Output column, and the "Output" label aligned to that column. */}
-          <div>
-            <div className="flex items-end gap-5 mb-1">
-              <p className="flex-1 text-caption text-ink-3">Input</p>
-              <p className="w-[97px] shrink-0 text-caption text-ink-3">Output</p>
-            </div>
-            <div className="flex items-stretch gap-5">
-              <div className="flex-1 flex items-stretch gap-2.5">
-                <div className="flex-1 h-12 border-xs border-ink-9 rounded-m text-center flex flex-col items-center justify-center">
+            <div className="flex-1 min-w-0">
+              <p className="text-caption text-ink-3">Input</p>
+              <div className="mt-1 flex items-stretch gap-1.5">
+                <div className="flex-1 min-w-0 h-[42px] border-xs border-ink-9 rounded-m text-center flex flex-col items-center justify-center">
                   <div className="flex items-baseline gap-0.5">
                     <span className="text-body-lg font-semibold text-white tnum">{fmtW(acPower)}</span>
                     <span className="text-tiny text-ink-5">W</span>
@@ -234,7 +230,7 @@ export default function DeviceMonitorPage() {
                   <p className="text-tiny text-ink-7">AC</p>
                 </div>
                 <span className="text-ink-7 text-body-md font-semibold self-center">+</span>
-                <div className="flex-1 h-12 border-xs border-ink-9 rounded-m text-center flex flex-col items-center justify-center">
+                <div className="flex-1 min-w-0 h-[42px] border-xs border-ink-9 rounded-m text-center flex flex-col items-center justify-center">
                   <div className="flex items-baseline gap-0.5">
                     <span className="text-body-lg font-semibold text-white tnum">{fmtW(solarPower)}</span>
                     <span className="text-tiny text-ink-5">W</span>
@@ -242,7 +238,9 @@ export default function DeviceMonitorPage() {
                   <p className="text-tiny text-ink-7">Solar</p>
                 </div>
               </div>
-              <div className="w-[97px] shrink-0 h-12 border-xs border-ink-9 rounded-m text-center flex flex-col items-center justify-center">
+
+              <p className="mt-3 text-caption text-ink-3">Output</p>
+              <div className="mt-1 h-[42px] border-xs border-ink-9 rounded-m text-center flex items-center justify-center">
                 <div className="flex items-baseline gap-0.5">
                   <span className="text-body-lg font-semibold text-white tnum">{fmtW(outputPower)}</span>
                   <span className="text-tiny text-ink-5">W</span>

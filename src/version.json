@@ -1,9 +1,8 @@
 {
-  "version": "4.8.1",
-  "build": 2818,
+  "version": "4.8.2",
+  "build": 2819,
   "date": "2026-09-06",
   "changelog": [
-    "Bottom bar takes the 0907 deck's 新樣式 1: an ink-10 bar with an ink-9 hairline, the selected tab a primary disc with the glyph knocked out dark, and the rest in ink-7.",
-    "The CO₂ card is only drawn when there was solar in the period, reads \"Equal to planting N trees\", and puts the calculation behind a ? next to that line."
+    "Device Monitor puts the battery ring on the left with Input and Output stacked down its right, instead of the ring above a full-width row."
   ]
 }
