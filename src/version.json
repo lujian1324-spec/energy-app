@@ -1,8 +1,9 @@
 {
-  "version": "4.7.88",
-  "build": 2810,
+  "version": "4.7.89",
+  "build": 2811,
   "date": "2026-09-06",
   "changelog": [
-    "Android: the page header no longer sits under the status bar. The safe-area inset now includes the display cutout, is re-asked for once the app's own document is up, and the web side keeps a 24px floor so a missed inject can only over-pad, never overlap."
+    "Scan Wi-Fi Networks now opens the network list. It used to run the scan while leaving the screen on the verify step, where the list is not rendered, so the tap looked like nothing happened.",
+    "Steps that need the device id say so instead of returning silently."
   ]
 }

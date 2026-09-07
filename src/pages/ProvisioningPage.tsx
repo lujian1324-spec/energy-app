@@ -20,6 +20,9 @@ import DeviceScannedScreen from './provisioning/DeviceScannedScreen'
 import { useProvisionBind, type ConfigStage } from './provisioning/useProvisionBind'
 import { useProvisionScan, displayTitleFromDtuid, type FoundDevice } from './provisioning/useProvisionScan'
 
+/** Shown wherever a step needs the device id and it is missing. */
+const NO_DEVICE_ID = "Couldn't read this device's ID. Reconnect the device and try again."
+
 type UiScreen = 'scan' | 'qr' | 'scanned' | 'naming' | 'icon' | 'provisioning'
 
 export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
@@ -148,7 +151,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   }, [recheckBle, handleScan])
 
   const handleVerify = useCallback(async () => {
-    if (!store.dtuid) return
+    if (!store.dtuid) { store.setErrorMessage(NO_DEVICE_ID); toast.error(NO_DEVICE_ID); return }
     store.setIsOperating(true)
     store.setErrorMessage(null)
     try {
@@ -194,7 +197,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   }, [store, bleKeyInput, handleVerify])
 
   const handleScanWifi = useCallback(async () => {
-    if (!store.dtuid) return
+    if (!store.dtuid) { store.setErrorMessage(NO_DEVICE_ID); toast.error(NO_DEVICE_ID); return }
     store.setApLoading(true)
     store.setErrorMessage(null)
     try {
@@ -238,6 +241,17 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     if (store.step !== 'password') setShowPassword(false)
   }, [store.step])
+
+  /**
+   * The verify screen's Wi-Fi button. It used to call handleScanWifi, which fills
+   * apList but leaves store.step on 'verify' — the network list only renders under
+   * step 'wifi', so the tap changed nothing on screen. Moving to the step is the
+   * action; the effect below scans on entry.
+   */
+  const handleGoToWifi = useCallback(() => {
+    if (!store.dtuid) { store.setErrorMessage(NO_DEVICE_ID); toast.error(NO_DEVICE_ID); return }
+    store.setStep('wifi')
+  }, [store])
 
   const autoScannedRef = useRef(false)
   useEffect(() => {
@@ -398,6 +412,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
       setUiScreen={setUiScreen}
       handleConfirmBleKey={handleConfirmBleKey}
       handleScanWifi={handleScanWifi}
+      handleGoToWifi={handleGoToWifi}
       handleConfig={handleConfig}
       handleCheckStatus={handleCheckStatus}
       handleBindToCloud={handleBindToCloud}

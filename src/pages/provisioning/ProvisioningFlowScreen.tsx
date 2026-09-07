@@ -32,6 +32,7 @@ type FlowProps = {
   setUiScreen: (s: 'scan' | 'qr' | 'naming' | 'icon' | 'provisioning') => void
   handleConfirmBleKey: () => void
   handleScanWifi: () => void
+  handleGoToWifi: () => void
   handleConfig: () => void
   handleCheckStatus: () => void
   handleBindToCloud: () => void
@@ -46,7 +47,7 @@ export default function ProvisioningFlowScreen(p: FlowProps) {
     failKind, bindRetrying, restarting, showRestartHelp, bindReason, bindErrorId,
     configStage, bleKeyInput, setBleKeyInput, showPassword, setShowPassword,
     showNotifSheet, setShowNotifSheet, wifiConfiguredRef, setUiScreen,
-    handleConfirmBleKey, handleScanWifi, handleConfig, handleCheckStatus,
+    handleConfirmBleKey, handleScanWifi, handleGoToWifi, handleConfig, handleCheckStatus,
     handleBindToCloud, handleRetryCurrentStage, handleRestart, handleClose,
   } = p
   return (
@@ -111,12 +112,17 @@ export default function ProvisioningFlowScreen(p: FlowProps) {
 
               {!store.needBleKey && (
                 <button
-                  onClick={handleScanWifi}
-                  disabled={store.isOperating}
+                  // Moves to the Wi-Fi step, which scans on entry and owns the
+                  // spinner. Calling the scan from here filled the list behind a
+                  // screen that never changed, so the tap looked like a no-op.
+                  onClick={handleGoToWifi}
+                  disabled={store.isOperating || store.apLoading}
                   className="w-full h-14 rounded-l bg-primary text-black text-body-lg font-semibold
                     disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  {store.isOperating ? <Loader2 size={18} className="animate-spin" /> : 'Scan Wi-Fi Networks'}
+                  {store.isOperating || store.apLoading
+                    ? <Loader2 size={18} className="animate-spin" />
+                    : 'Scan Wi-Fi Networks'}
                 </button>
               )}
             </motion.div>
