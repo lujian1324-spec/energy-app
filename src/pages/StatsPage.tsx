@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Loader2, Plus, Zap, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
+import { Loader2, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
 import Icon from '../components/Icon'
 import EmptyState from '../components/EmptyState'
 import { PageHeaderShell } from '../components/PageHeader'
@@ -660,7 +660,9 @@ export default function StatsPage() {
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
                 className="-mx-4 h-[110px] flex flex-col items-center justify-center text-center bg-ink-10">
                 <div className="flex items-baseline justify-center gap-2">
-                  <Zap size={26} strokeWidth={1.5} className="text-primary self-center" />
+                  {/* C_1.1 draws the handoff's solid bolt, not an outlined one. Its ink
+                      is 11x20 in a 24 box, so 33 lands it on the frame’s 14.5x26.5. */}
+                  <Icon name="thunder" size={33} color="#01D6BE" className="self-center" />
                   <span className="text-headline-xl font-semibold text-ink-1 leading-none tnum">{displayDeviceDays}</span>
                   <span className="text-caption text-ink-5">Days</span>
                 </div>
@@ -766,15 +768,6 @@ export default function StatsPage() {
 
             {!loading && (
               <>
-                {error && (
-                  <div className="flex items-center justify-between gap-2 bg-ink-10 rounded-l px-4 py-3 mb-4">
-                    <span className="text-label text-ink-6">Couldn't load history data.</span>
-                    <button onClick={loadHistory}
-                      className="flex items-center gap-1.5 text-label font-semibold text-primary active:opacity-70">
-                      <RefreshCw size={13} /> Retry
-                    </button>
-                  </div>
-                )}
                 {/* C_1.1 (new): the chart leads and the CO₂ card sits under it. */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                   className="bg-ink-10 rounded-l p-4 mb-4">

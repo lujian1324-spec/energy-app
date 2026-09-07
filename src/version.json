@@ -1,9 +1,9 @@
 {
-  "version": "4.8.4",
-  "build": 2821,
+  "version": "4.8.5",
+  "build": 2822,
   "date": "2026-09-06",
   "changelog": [
-    "Sleep Mode is the toggle and a Time section with From and To, each showing the hour in a chip. The wattage sub-lines, the summary line and the Scheduler Status block are gone.",
-    "Those times read in 12-hour form regardless of the device's clock setting."
+    "The bolt beside the days count on Insights is the handoff's solid one, at the size the frame draws it.",
+    "Removed the \"Couldn't load history data.\" row from Insights."
   ]
 }
