@@ -55,6 +55,47 @@ function AddDeviceHeader({ onBack, onScanQr }: { onBack: () => void; onScanQr: (
   )
 }
 
+/**
+ * Lights up the three rings the radar art already draws, inner to outer, so a
+ * live scan reads as a wave travelling outward.
+ *
+ * The circles are traced off the handoff frame: in the art's own 317x239.5 box
+ * they share a centre at (158, 158) with radii 61.25, 112.25 and 158. The art
+ * fades each ring towards its own bottom, so the stroke carries the same fade
+ * as a gradient over the ring's bounding box.
+ */
+function RadarPulse() {
+  return (
+    <svg
+      viewBox="0 0 317 239.5"
+      aria-hidden="true"
+      className="absolute inset-0 w-full h-full pointer-events-none"
+    >
+      <defs>
+        <linearGradient id="radar-fade" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#BFBFBF" stopOpacity="0.85" />
+          <stop offset="0.25" stopColor="#BFBFBF" stopOpacity="1" />
+          <stop offset="0.5" stopColor="#BFBFBF" stopOpacity="0.9" />
+          <stop offset="0.75" stopColor="#BFBFBF" stopOpacity="0.45" />
+          <stop offset="1" stopColor="#BFBFBF" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {[61.25, 112.25, 158].map((r, i) => (
+        <circle
+          key={r}
+          cx={158}
+          cy={158}
+          r={r}
+          fill="none"
+          stroke="url(#radar-fade)"
+          strokeWidth={1}
+          className={`radar-ring${i > 0 ? ` radar-ring-${i + 1}` : ''}`}
+        />
+      ))}
+    </svg>
+  )
+}
+
 export default function ScanDevicesScreen(p: Props) {
   const store = useProvisionStore()
   const { bleStatus, setBleStatus, foundDevices, handleClose, handleScan, handleSelectDevice, setUiScreen } = p
@@ -148,14 +189,17 @@ export default function ScanDevicesScreen(p: Props) {
           <p className="mt-2 text-label text-ink-5 max-w-[344px]">{subtitle}</p>
           {/* Cropped straight out of the handoff frame at 3x, so the rings and the
               product shot land on the same pixels the design does. */}
-          <img
-            src={`${import.meta.env.BASE_URL}ds-scan-radar.png`}
-            alt=""
-            width={317}
-            height={240}
-            className="mt-[33px] w-[317px] max-w-full h-auto select-none"
-            draggable={false}
-          />
+          <div className="relative mt-[33px] w-[317px] max-w-full">
+            <img
+              src={`${import.meta.env.BASE_URL}ds-scan-radar.png`}
+              alt=""
+              width={317}
+              height={240}
+              className="w-full h-auto select-none"
+              draggable={false}
+            />
+            {isSearching && <RadarPulse />}
+          </div>
         </div>
 
         {(hasError || showWebPickerCta) && (

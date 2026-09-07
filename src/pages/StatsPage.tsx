@@ -648,7 +648,7 @@ export default function StatsPage() {
             art={`${import.meta.env.BASE_URL}ds-insights-empty.svg`}
             title="Insights will appear here"
             subtitle="Connect a Sierro device to start tracking battery performance and power usage."
-            action={{ label: 'Add Device', icon: 'add', onClick: () => navigate('/devices') }}
+            action={{ label: 'Add Device', icon: 'add', onClick: () => navigate('/devices', { state: { addDevice: true } }) }}
           />
         )}
 

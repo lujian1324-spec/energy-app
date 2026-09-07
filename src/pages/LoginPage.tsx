@@ -355,12 +355,18 @@ export default function LoginPage() {
         {/* One bordered row split into six 62px cells (4x export), with a transparent
             input on top so the numeric keyboard and one-time-code autofill still work. */}
         <div className="relative mt-[22px] h-[62px]">
-          <div className="absolute inset-0 flex rounded-m border-s border-ink-7 overflow-hidden">
+          {/* A_2.1.2 -v 錯誤 turns the whole row red — danger hairlines over a
+              danger-darker fill — and keeps the digits in ink-2. */}
+          <div
+            className={`absolute inset-0 flex rounded-m border-s overflow-hidden ${
+              error ? 'border-danger bg-danger-darker' : 'border-ink-7'
+            }`}
+          >
             {Array.from({ length: OTP_LEN }, (_, i) => (
               <div
                 key={i}
                 className={`flex-1 flex items-center justify-center text-headline-md font-semibold text-ink-2
-                  ${i > 0 ? 'border-l border-ink-7' : ''}`}
+                  ${i > 0 ? (error ? 'border-l border-danger' : 'border-l border-ink-7') : ''}`}
               >
                 {otpCode[i] ?? ''}
               </div>
@@ -380,7 +386,11 @@ export default function LoginPage() {
           />
         </div>
 
-        <div className="mt-[10px] text-center">
+        {/* The message belongs under the row and pushes Resend Code down, rather
+            than stacking below it. */}
+        {error && <p className="mt-1 pl-1 text-caption text-danger">{error}</p>}
+
+        <div className={`text-center ${error ? 'mt-2' : 'mt-[10px]'}`}>
           <button
             onClick={() => { void sendCode() }}
             disabled={cooldown > 0 || sending}
@@ -389,7 +399,6 @@ export default function LoginPage() {
             {cooldown > 0 ? `Resend Code (${cooldown})` : 'Resend Code'}
           </button>
         </div>
-        {error && <p className="mt-3 text-caption text-danger text-center">{error}</p>}
       </div>
       <BottomAction
         label="Continue"

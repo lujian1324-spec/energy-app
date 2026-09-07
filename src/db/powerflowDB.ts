@@ -8,7 +8,7 @@
  * - alerts 告警日志 (自增 id, timestamp/resolved 索引)
  * - connection_logs  连接历史 (自增 id)
  * - commands 命令审计 (自增 id)
- * - user_profile 用户资料 (key: 'profile')
+ * - user_profile 用户资料 (key: 'account:<account>')
  */
 
 import { openDB, type IDBPDatabase } from 'idb'
@@ -484,22 +484,43 @@ export async function getDBStats(): Promise<Record<string, number>> {
 // 用户资料
 // ================================================================
 
-const USER_PROFILE_KEY = 'profile'
+/* One device can hold several accounts, so the cache is keyed by the account it
+   belongs to. It used to sit under a single unscoped key, which meant signing in
+   as somebody else read back the previous account's name, email and avatar. */
+const LEGACY_USER_PROFILE_KEY = 'profile'
 
-export async function saveUserProfile(profile: UserProfile): Promise<void> {
+const profileKey = (account: string) => `account:${account}`
+
+export async function saveUserProfile(account: string, profile: UserProfile): Promise<void> {
+  if (!account) return
   const db = await getDB()
-  await db.put('user_profile', profile, USER_PROFILE_KEY)
+  await db.put('user_profile', profile, profileKey(account))
 }
 
-export async function getUserProfile(): Promise<UserProfile | null> {
+export async function getUserProfile(account: string): Promise<UserProfile | null> {
+  if (!account) return null
   const db = await getDB()
-  const profile = await db.get('user_profile', USER_PROFILE_KEY)
-  return profile ?? null
+  const scoped = await db.get('user_profile', profileKey(account))
+  if (scoped) return scoped
+
+  // A record written before the key carried an account has no owner, so its name
+  // and email cannot be attributed and must not be handed to whoever signs in
+  // next. The avatar is the one field the user picked by hand and is worth
+  // keeping on what is almost always a single-account device, so adopt that
+  // alone and retire the unscoped record.
+  const legacy = await db.get('user_profile', LEGACY_USER_PROFILE_KEY)
+  if (!legacy) return null
+  await db.delete('user_profile', LEGACY_USER_PROFILE_KEY)
+  if (!legacy.avatar) return null
+  const adopted: UserProfile = { ...legacy, name: '', email: '' }
+  await db.put('user_profile', adopted, profileKey(account))
+  return adopted
 }
 
-export async function clearUserProfile(): Promise<void> {
+export async function clearUserProfile(account: string): Promise<void> {
+  if (!account) return
   const db = await getDB()
-  await db.delete('user_profile', USER_PROFILE_KEY)
+  await db.delete('user_profile', profileKey(account))
 }
 
 // ================================================================

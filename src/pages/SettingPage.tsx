@@ -92,10 +92,16 @@ export default function SettingPage() {
     // nickname here too and only fall back to the registration account. LoginData
     // has an index signature, so the nickname arrives as `unknown`.
     const nickname = typeof authUser?.nickname === 'string' ? authUser.nickname : ''
-    getUserProfile().then(p => {
+    const account = authUser?.account ?? ''
+    getUserProfile(account).then(p => {
       setUserProfile(prev => ({
         ...(p ?? prev),
-        name: nickname || p?.name || authUser?.account || 'Sierro User',
+        name: nickname || p?.name || account || 'Sierro User',
+        // Spell out the identity fields rather than letting `prev` carry them: on
+        // a sign-out/sign-in this component can outlive the account it was mounted
+        // for, and the previous user's address and avatar must not survive it.
+        email: p?.email || authUser?.email || account || '',
+        avatar: p?.avatar ?? null,
       }))
     }).catch(err => console.error('[SettingPage] getUserProfile failed:', err))
   }, [authUser?.nickname, authUser?.account])

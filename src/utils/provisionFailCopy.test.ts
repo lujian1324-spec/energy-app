@@ -22,6 +22,7 @@ describe('bindFailTitle', () => {
 describe('mapBindFailReason', () => {
   it('maps already_bound / device_offline / timeout / invalid', () => {
     expect(mapBindFailReason(409, 'already_bound').kind).toBe('already_bound')
+    expect(mapBindFailReason(409, 'already_bound').reason).toBe('Device already added to another account.')
     expect(mapBindFailReason('device_offline', 'Device is offline').kind).toBe('device_offline')
     expect(mapBindFailReason(null, 'BIND_TIMEOUT').kind).toBe('timeout')
     expect(mapBindFailReason(400, 'invalid serial').kind).toBe('invalid')

@@ -5,7 +5,7 @@ import { App } from '@capacitor/app'
 import { requestCamera } from '../utils/permissions'
 import { toast } from '../components/Toast'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import jsQR from 'jsqr'
 import ProvisioningPage from './ProvisioningPage'
 import {
@@ -50,6 +50,7 @@ interface DeviceRealtimeCache {
 
 export default function DevicePage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const {
     devices,
     deviceLoading,
@@ -266,6 +267,17 @@ export default function DevicePage() {
   const handleBleScan = useCallback(() => {
     setShowProvisioning(true)
   }, [])
+
+  /* Add Device elsewhere in the app (Insights' empty state) routes here, because
+     provisioning is this page's own overlay rather than a route of its own. Open
+     it straight away and drop the flag, so going back or reloading lands on the
+     plain list instead of reopening the scan. */
+  useEffect(() => {
+    if ((location.state as { addDevice?: boolean } | null)?.addDevice) {
+      setShowProvisioning(true)
+      navigate(location.pathname, { replace: true, state: null })
+    }
+  }, [location.state, location.pathname, navigate])
   useEffect(() => {
     if (!isAuthenticated || isGuest || !devicesListReady || devices.length < 1) return
     try {
