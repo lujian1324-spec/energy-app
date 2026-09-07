@@ -226,6 +226,23 @@ textarea.text-body-lg {
   50% { opacity: 0.3; }
 }
 
+/* Add Device radar: the three rings light up in turn, inner to outer, so the
+   scan reads as a wave travelling outward. They sit exactly on the rings the
+   art already draws, so this brightens them rather than adding new circles.
+   The base opacity is 0, which is also where the global reduced-motion rule
+   above parks them — leaving the static art untouched. */
+@keyframes radar-ring {
+  0%, 100% { opacity: 0; }
+  30%      { opacity: 1; }
+}
+
+.radar-ring {
+  opacity: 0;
+  animation: radar-ring 2.4s ease-in-out infinite;
+}
+.radar-ring-2 { animation-delay: 0.3s; }
+.radar-ring-3 { animation-delay: 0.6s; }
+
 .animate-wave {
   animation: wave-move 4s linear infinite;
 }
