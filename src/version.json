@@ -1,10 +1,9 @@
 {
-  "version": "4.8.0",
-  "build": 2817,
+  "version": "4.8.1",
+  "build": 2818,
   "date": "2026-09-06",
   "changelog": [
-    "New sign-in screen: the SIERRO wordmark and its line carry the page, and Continue with Email is an outlined button at the bottom edge. Continue as Guest stays for now.",
-    "The selected tab in the bottom bar is the brand teal with the glyph knocked out dark.",
-    "Insights leads with the Input vs. Output chart; the CO₂ card now sits under it."
+    "Bottom bar takes the 0907 deck's 新樣式 1: an ink-10 bar with an ink-9 hairline, the selected tab a primary disc with the glyph knocked out dark, and the rest in ink-7.",
+    "The CO₂ card is only drawn when there was solar in the period, reads \"Equal to planting N trees\", and puts the calculation behind a ? next to that line."
   ]
 }

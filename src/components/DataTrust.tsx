@@ -2,6 +2,7 @@
 // BLE Direct | Modbus RTU | Cloud API | Demo
 
 import { Bluetooth, Cable, Cloud, FlaskConical } from 'lucide-react'
+import Icon from './Icon'
 
 export type DataSource = 'ble' | 'modbus' | 'cloud' | 'demo'
 
@@ -89,15 +90,28 @@ export function LastSync({ lastSyncAt, className = '' }: LastSyncProps) {
 interface CalcAuditProps {
   formula: string
   label?: string
+  /**
+   * `icon` is the 0907 deck's CO₂ card: a bare `?` sitting after the line it
+   * explains. `link` is the labelled disclosure used everywhere else.
+   */
+  variant?: 'link' | 'icon'
 }
 
-/** PRD v1.1 §8.3: 计算逻辑可审计 - ℹ️ 展开计算公式 */
-export function CalcAudit({ formula, label = 'How we calculated this' }: CalcAuditProps) {
+/** PRD v1.1 §8.3: 计算逻辑可审计 - 展开计算公式 */
+export function CalcAudit({ formula, label = 'How we calculated this', variant = 'link' }: CalcAuditProps) {
   return (
     <details className="text-caption text-ink-6 group">
-      <summary className="cursor-pointer list-none flex items-center gap-1 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded">
-        <span aria-hidden="true">ℹ️</span>
-        <span className="underline">{label}</span>
+      <summary className={`cursor-pointer list-none flex items-center gap-1 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded ${
+        variant === 'icon' ? 'w-4 h-4 justify-center' : ''
+      }`}>
+        {variant === 'icon' ? (
+          <Icon name="question-outined" size={16} alt={label} color="currentColor" />
+        ) : (
+          <>
+            <span aria-hidden="true">ℹ️</span>
+            <span className="underline">{label}</span>
+          </>
+        )}
       </summary>
       <pre className="mt-2 p-3 bg-ink-11 rounded-m text-tiny text-ink-6 whitespace-pre-wrap font-mono leading-relaxed">
 {formula}

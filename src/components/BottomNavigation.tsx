@@ -46,13 +46,12 @@ export default function BottomNavigation() {
       // SET --safe-area-inset-bottom of 0px cannot hide the iOS inset. +4px breathing room.
       style={{ paddingBottom: 'calc(max(8px, var(--safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px)) + 4px)' }}
     >
-      {/* Handoff `Bottom` → `Tab_new`: 192x64 pill, primary-darker fill, 0.5px primary
-          hairline, 4px padding, 8px gap, 56px slots, 48px selected circle, 24px
-          glyphs. The selected circle is the brand teal with the glyph knocked out
-          in primary-darker, the same pairing the primary buttons use. */}
+      {/* 0907 deck, 底部導覽列 新樣式 1: bar ink-10 with an ink-9 hairline, 4px
+          padding, 8px gap, 56px slots, a 48px selected disc in primary with the
+          glyph knocked out in primary-darker, and ink-7 for the rest. */}
       <nav
         ref={pillRef}
-        className="flex items-center gap-2 p-1 rounded-full bg-primary-darker border-xs border-primary pointer-events-auto"
+        className="flex items-center gap-2 p-1 rounded-full bg-ink-10 border-xs border-ink-9 pointer-events-auto"
         role="navigation"
         aria-label="Main navigation"
       >
@@ -76,7 +75,7 @@ export default function BottomNavigation() {
                   size={24}
                   className="transition-colors duration-200"
                   alt={item.label}
-                  color="#018072"
+                  color="#8C8C8C"
                 />
               )
             )}
