@@ -268,19 +268,27 @@ export default function LoginPage() {
   if (step === 'landing') {
     return (
       <div className="h-full flex flex-col bg-ink-12 safe-area-top-header">
-        <div className="flex-1 px-4">
-          <h1 className="mt-[100px] text-headline-lg text-white text-center">Sign up or log in</h1>
+        {/* The wordmark and its line carry the screen; nothing else competes. */}
+        <div className="flex-1 flex flex-col items-center justify-center px-4">
+          {/* Not the Anton display face: `.text-display` forces Anton and zero
+              tracking, and the frame sets the wordmark in the body face, spaced out. */}
+          <h1 className="font-sans text-[32px] leading-none font-semibold text-white tracking-[0.22em] pl-[0.22em]">
+            SIERRO
+          </h1>
+          <p className="mt-3 text-body-lg text-ink-4">Protect What Matters Most</p>
+        </div>
 
+        <div className="px-4 pb-8">
           <button
             onClick={() => { setError(null); setStep('email') }}
-            className="mt-5 w-full h-[68px] rounded-l bg-ink-10 px-4 flex items-center gap-3
+            className="w-full h-14 rounded-l border-s border-ink-8 px-4 flex items-center gap-3
               active:scale-[0.99] transition-transform"
           >
             <Icon name="email" size={24} />
             <span className="text-body-lg font-semibold text-ink-2">Continue with Email</span>
           </button>
 
-          <p className="mt-[235px] text-caption text-ink-7 text-center leading-snug">
+          <p className="mt-4 text-caption text-ink-7 text-center leading-snug">
             By continuing, you agree to our{' '}
             <a href={TERMS_URL} target="_blank" rel="noopener noreferrer" className="text-primary">Terms of Use</a>
             {' '}and{' '}
@@ -288,7 +296,7 @@ export default function LoginPage() {
           </p>
 
           {/* Not in the handoff, kept because guest mode is a shipped feature. */}
-          <div className="mt-8 flex flex-col items-center">
+          <div className="mt-6 flex flex-col items-center">
             <button onClick={continueAsGuest} disabled={loading} className="text-body-md text-ink-7">
               Continue as Guest
             </button>

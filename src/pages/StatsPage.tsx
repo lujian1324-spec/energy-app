@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Loader2, Plus, Zap, ChevronLeft, ChevronRight, Leaf, RefreshCw } from 'lucide-react'
+import { Loader2, Plus, Zap, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
 import Icon from '../components/Icon'
 import EmptyState from '../components/EmptyState'
 import { PageHeaderShell } from '../components/PageHeader'
@@ -208,6 +208,9 @@ interface ChartFrame {
   remainingBatteryCapacity: number[]
   labels: string[]
   co2Kg: number
+  /** Any solar generation in this period — the CO2 card only exists when true. */
+  hasSolar: boolean
+  trees: number
   totalInputKwh: number
   totalOutputKwh: number
   insight: string
@@ -310,11 +313,20 @@ function buildFrameFromRecords(
     } else insight = 'Power usage data from device'
   }
 
-  const ecoInsight = totalOutputKwh > 0
-    ? `Equivalent to driving ${Math.round(totalOutputKwh * 3.5)} fewer miles`
-    : 'Connect solar to reduce carbon footprint'
+  // A mature tree takes up about 21.8 kg of CO2 a year (US EPA). The deck writes
+  // this as "Equal to planting XX trees" without fixing the factor.
+  const KG_CO2_PER_TREE_YEAR = 21.8
+  const trees = Math.round((co2Kg / KG_CO2_PER_TREE_YEAR) * 10) / 10
 
-  return { input, output, remainingBatteryCapacity, labels, co2Kg, totalInputKwh, totalOutputKwh, insight, ecoInsight, hasData }
+  // The deck splits the audience three ways, but nothing in the app says whether
+  // solar is fitted — every inverter reports 0 W without panels — so the third
+  // group (fitted, but nothing generated this period) is out of scope for now.
+  // Generation in the period is the signal: without it the card is not drawn.
+  const hasSolar = input.some(v => v > 0)
+
+  const ecoInsight = `Equal to planting ${trees} ${trees === 1 ? 'tree' : 'trees'}`
+
+  return { input, output, remainingBatteryCapacity, labels, co2Kg, totalInputKwh, totalOutputKwh, insight, ecoInsight, hasData, hasSolar, trees }
 }
 
 function DaysSkeleton() {
@@ -763,31 +775,8 @@ export default function StatsPage() {
                     </button>
                   </div>
                 )}
-
+                {/* C_1.1 (new): the chart leads and the CO₂ card sits under it. */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-                  className="bg-ink-10 rounded-l p-5 mb-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="text-headline-lg font-semibold text-ink-1 leading-none tnum">{displayCo2}</span>
-                        <span className="text-body-md text-ink-6">Kg</span>
-                      </div>
-                      <p className="text-body-md text-ink-6 mt-2">{chartFrame.ecoInsight}</p>
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <Leaf size={14} className="text-success" />
-                      <span className="text-body-lg text-ink-4">CO₂ Reduced</span>
-                    </div>
-                  </div>
-                  <div className="mt-3">
-                    <CalcAudit
-                      formula={`Solar generated: ${chartFrame.totalInputKwh} kWh\nGrid CO2 factor: 0.5 kg CO₂/kWh (US EPA average)\nCO₂ avoided: ${chartFrame.totalInputKwh} kWh × 0.5 kg/kWh = ${chartFrame.co2Kg} kg\n\nData source: US EPA eGRID 2024 average emission rate`}
-                      label="How we calculated CO₂"
-                    />
-                  </div>
-                </motion.div>
-
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
                   className="bg-ink-10 rounded-l p-4 mb-4">
                   <div className="flex justify-between items-start mb-4">
                     <div>
@@ -885,6 +874,31 @@ export default function StatsPage() {
                     </p>
                   )}
                 </motion.div>
+
+                {/* No solar in this period means no card at all — the deck drops it
+                    rather than showing a zero to someone with nothing to offset. */}
+                {chartFrame.hasSolar && (
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+                    className="bg-ink-10 rounded-l p-5 mb-4">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-headline-lg font-semibold text-ink-1 leading-none tnum">{displayCo2}</span>
+                          <span className="text-body-md text-ink-6">Kg</span>
+                        </div>
+                        <div className="mt-2 flex items-center gap-1.5">
+                          <p className="text-body-md text-ink-6">{chartFrame.ecoInsight}</p>
+                          <CalcAudit
+                            variant="icon"
+                            formula={`Solar generated: ${chartFrame.totalInputKwh} kWh\nGrid CO2 factor: 0.5 kg CO₂/kWh (US EPA average)\nCO₂ avoided: ${chartFrame.totalInputKwh} kWh × 0.5 kg/kWh = ${chartFrame.co2Kg} kg\n\nData source: US EPA eGRID 2024 average emission rate`}
+                            label="How we calculated CO₂"
+                          />
+                        </div>
+                      </div>
+                      <span className="text-body-lg text-ink-4 mt-1">CO₂ Reduced</span>
+                    </div>
+                  </motion.div>
+                )}
               </>
             )}
           </>
