@@ -1,8 +1,8 @@
 {
-  "version": "4.7.92",
-  "build": 2814,
+  "version": "4.7.93",
+  "build": 2815,
   "date": "2026-09-06",
   "changelog": [
-    "The device name on Device Monitor is centred on the screen, not in the gap the header buttons leave behind."
+    "Feedback is back to the v4.7.57 dialog — the icon-and-subtitle header, Your Email above Your Feedback, and Submit Feedback."
   ]
 }
