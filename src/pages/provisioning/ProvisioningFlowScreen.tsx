@@ -194,10 +194,16 @@ export default function ProvisioningFlowScreen(p: FlowProps) {
                     autoFocus
                     className="flex-1 bg-transparent text-body-lg text-white placeholder:text-ink-7 outline-none caret-primary"
                   />
-                  <button onClick={() => setShowPassword(!showPassword)}>
+                  {/* The glyph reports the current state, not the action: an open
+                      eye while the password is on screen, a struck-through one
+                      while it is masked. */}
+                  <button
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
                     {showPassword
-                      ? <EyeOff size={16} className="text-ink-7" />
-                      : <Eye size={16} className="text-ink-7" />
+                      ? <Eye size={16} className="text-ink-7" />
+                      : <EyeOff size={16} className="text-ink-7" />
                     }
                   </button>
                 </div>
