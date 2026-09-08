@@ -370,9 +370,12 @@ export async function logout(): Promise<void> {
     const token = tokenStore.get()
     const userIdStr = localStorage.getItem('iot_user_id')
     if (token && userIdStr) {
+      // As a String. This was Number(userIdStr), and a real userId is an 18-digit
+      // platform id — 491513787113766912 comes back 491513787113766900, a
+      // different account. logout swallows its errors, so it never showed.
       await api.post('/login/logout', {
         accessToken: token,
-        userId: Number(userIdStr),
+        userId: userIdStr,
       })
     }
   } catch {

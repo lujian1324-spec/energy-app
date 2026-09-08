@@ -999,21 +999,32 @@ export async function fetchLatestAlarm(
 }
 
 /** 忽略/处理告警 — iotAlarmId 必须为数字类型 */
+/**
+ * 忽略/处理告警（UpdateAlarmDtio）。
+ *
+ * The id goes as a String. It was coerced with Number(), and an alarm id is a
+ * platform big-integer like every other id here — past 2^53 that silently
+ * rounds to a different id, which is the same trap deviceId and userId carry.
+ *
+ * The body is only `iotAlarmId`. It also carried an `isProcessed` the DTO does
+ * not list, and this backend answers 20101 for a field it does not recognise —
+ * as /user/update/iotUserInfo did for `nickname` for months. dismissAlarm
+ * swallows its errors, so a rejection here would never have surfaced.
+ */
 export async function ignoreAlarm(
-  iotAlarmId: string | number,
-  isProcessed = true
+  iotAlarmId: string | number
 ): Promise<ApiResponse<unknown>> {
   return api.post<unknown>('/alarm/update/isProcessed', {
-    iotAlarmId: Number(iotAlarmId),
-    isProcessed,
+    iotAlarmId: String(iotAlarmId),
   })
 }
 
 /** 删除告警 */
+/** 删除告警。id 走 query，同样按字符串传，避免大整数被 Number 截断。 */
 export async function deleteAlarm(
-  id: number
+  id: string | number
 ): Promise<ApiResponse<unknown>> {
-  return api.post<unknown>(`/alarm/delete/alarm?id=${id}`)
+  return api.post<unknown>(`/alarm/delete/alarm?id=${String(id)}`)
 }
 
 // ═══════════════════════════════════════════════════════

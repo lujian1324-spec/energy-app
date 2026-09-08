@@ -153,12 +153,15 @@ describe('authApi contracts', () => {
     expect(c.body.intent).toBe('2')
   })
 
-  it('logout → /login/logout with numeric userId', async () => {
+  // A real userId is 18 digits: Number('491513787113766912') is
+  // 491513787113766900, a different account.
+  it('logout → /login/logout with the userId as a String', async () => {
+    localStorage.setItem('iot_user_id', '491513787113766912')
     await auth.logout()
     const c = only()
     expect(c.path).toBe('/login/logout')
-    expect(c.body).toMatchObject({ accessToken: 'ACCESS', userId: 9999 })
-    expect(typeof c.body.userId).toBe('number')
+    expect(c.body).toMatchObject({ accessToken: 'ACCESS', userId: '491513787113766912' })
+    expect(typeof c.body.userId).toBe('string')
   })
 
   it('refreshAccessToken → /login/refresh/access/token', async () => {
@@ -320,15 +323,18 @@ describe('deviceApi contracts', () => {
     expect(last().body).toMatchObject({ deviceId: '1', orderByTimeAsc: true, count: 288 })
   })
 
-  it('alarms: query defaults page/count; ignore requires numeric iotAlarmId', async () => {
+  // Alarm ids are platform big-integers like every other id. Number() rounds
+  // anything past 2^53 to a different id, and UpdateAlarmDtio is iotAlarmId
+  // alone — an unrecognised field is what this backend answers 20101 for.
+  it('alarms: query defaults page/count; ignore sends iotAlarmId as a String, alone', async () => {
     await dev.fetchAlarms()
     expect(last().body).toMatchObject({ page: 1, count: 20 })
-    await dev.ignoreAlarm('12345', true)
+    await dev.ignoreAlarm('9007199254740993')
     expect(last().path).toBe('/alarm/update/isProcessed')
-    expect(last().body.iotAlarmId).toBe(12345)
-    expect(typeof last().body.iotAlarmId).toBe('number')
-    await dev.deleteAlarm(7)
-    expect(last().path).toBe('/alarm/delete/alarm?id=7')
+    expect(last().body).toEqual({ iotAlarmId: '9007199254740993' })
+    expect(last().body).not.toHaveProperty('isProcessed')
+    await dev.deleteAlarm('9007199254740993')
+    expect(last().path).toBe('/alarm/delete/alarm?id=9007199254740993')
   })
 
   it('peakValley endpoints', async () => {
