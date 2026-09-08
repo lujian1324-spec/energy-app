@@ -59,8 +59,17 @@ export const tokenStore = {
 // ─── Auth 过期判定码 ───
 const AUTH_EXPIRED_CODES = new Set([401, '401', 1001, '1001', 1002, '1002'])
 
-function isAuthExpired(code: number | string): boolean {
-  return AUTH_EXPIRED_CODES.has(code)
+/**
+ * Some endpoints answer an expired session with a code that is not in that set
+ * and only say so in the message — /remote/device/passthrough is one, which is
+ * why toggling a device's power surfaced a raw "Token expired" instead of
+ * refreshing and retrying like every other call. Match the wording too.
+ */
+const AUTH_EXPIRED_TEXT = /token\s*(is\s*)?(expired|invalid|missing)|expired\s*token|invalid\s*token|not\s*logged\s*in|登录\s*(已)?(过期|失效)|令牌\s*(过期|失效|无效)|未登录/i
+
+function isAuthExpired(code: number | string, message?: string | null): boolean {
+  if (AUTH_EXPIRED_CODES.has(code)) return true
+  return !!message && AUTH_EXPIRED_TEXT.test(message)
 }
 
 // ─── Token 刷新单例 ───
@@ -271,7 +280,10 @@ export async function request<T = unknown>(
   if (options._isRefresh) return result
 
   // 检测 auth 过期（业务码）
-  if (isAuthExpired(result.code) && !options.skipAuth && !options._retriedAfterRefresh) {
+  if (
+    isAuthExpired(result.code, result.message ?? result.msg) &&
+    !options.skipAuth && !options._retriedAfterRefresh
+  ) {
     const newToken = await getOrCreateRefreshPromise()
     if (newToken) {
       // 刷新成功，重试原请求
