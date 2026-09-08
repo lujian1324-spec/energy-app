@@ -492,7 +492,7 @@ export default function SettingPage() {
                     <form onSubmit={handleFounderSubmit} className="space-y-4">
                       <div>
                         <label className="text-label font-semibold text-ink-6 mb-2 flex items-center gap-2"><Sparkles size={14} />Enter Code</label>
-                        <input type="text" required value={founderCode} onChange={e => setFounderCode(e.target.value)} placeholder="e.g., FOUNDER2024"
+                        <input type="text" required value={founderCode} onChange={e => setFounderCode(e.target.value)} placeholder="Enter your code"
                           className="w-full px-4 py-3 rounded-l bg-ink-12 border border-membership/[0.2] text-ink-1 text-body-md placeholder:text-ink-7 uppercase focus:outline-none focus:border-membership/[0.5] transition-colors" />
                       </div>
                       {founderMessage && <div className={`text-caption text-center ${founderSuccess ? 'text-success' : 'text-danger'}`}>{founderMessage}</div>}

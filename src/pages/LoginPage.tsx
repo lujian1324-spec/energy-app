@@ -8,6 +8,7 @@ import {
   sendEmailCaptcha,
   loginByEmail,
   loginByAccount,
+  defaultPasswordForAccount,
   registerByEmail,
   checkEmailExists,
   checkAccountExists,
@@ -46,10 +47,7 @@ function accountFromEmail(email: string): string {
   return email.trim().split('@')[0].replace(/[^A-Za-z0-9._-]/g, '') || 'user'
 }
 
-/** Default password for a self-registered account: the account plus 1234. */
-function defaultPasswordFor(account: string): string {
-  return `${account}1234`
-}
+
 
 /**
  * `checkEmailExists` / `checkAccountExists` answer "is this free?": code 0 means the
@@ -182,7 +180,7 @@ export default function LoginPage() {
   const registerThenSignIn = async (): Promise<boolean> => {
     const addr = email.trim()
     const account = await pickFreeAccount(addr)
-    const password = defaultPasswordFor(account)
+    const password = defaultPasswordForAccount(account)
     const reg = await registerByEmail(account, password, addr, otpCode, captchaId ?? undefined)
     if (!isApiSuccess(reg.code)) {
       setError(sanitizeUiCopy(reg.message || reg.msg, 'Could not create your account.'))

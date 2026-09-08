@@ -479,7 +479,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
                 ariaLabel="Activation code"
                 value={founderCode}
                 onChange={(next) => { setFounderCode(next); setFounderError('') }}
-                placeholder="e.g. FOUNDER2024"
+                placeholder="Enter your code"
                 error={founderError || null}
                 autoFocus
               />
