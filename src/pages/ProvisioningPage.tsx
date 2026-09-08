@@ -342,7 +342,6 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     return (
       <ScanDevicesScreen
         bleStatus={bleStatus}
-        setBleStatus={setBleStatus}
         foundDevices={foundDevices}
         handleClose={handleClose}
         handleScan={handleScan}

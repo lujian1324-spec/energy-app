@@ -7,7 +7,6 @@ import { toast } from '../../components/Toast'
 import { openAppSettings } from '../../utils/openAppSettings'
 import { isDtuid } from '../../utils/dtuidParser'
 import { formatScanDisplayName } from '../../utils/scanDisplayName'
-import { resetBleInit } from '../../utils/permissions'
 import { supportsDeviceListScan } from '../../protocols/bleProvision'
 import { useProvisionStore } from '../../stores/provisionStore'
 import ErrorToast from '../../components/ErrorToast'
@@ -22,7 +21,6 @@ type FoundDevice = {
 
 type Props = {
   bleStatus: 'checking' | 'no_permission' | 'bt_off' | 'ready'
-  setBleStatus: (s: 'checking' | 'no_permission' | 'bt_off' | 'ready') => void
   foundDevices: FoundDevice[]
   handleClose: () => void
   handleScan: () => void
@@ -98,7 +96,7 @@ function RadarPulse() {
 
 export default function ScanDevicesScreen(p: Props) {
   const store = useProvisionStore()
-  const { bleStatus, setBleStatus, foundDevices, handleClose, handleScan, handleSelectDevice, setUiScreen } = p
+  const { bleStatus, foundDevices, handleClose, handleScan, handleSelectDevice, setUiScreen } = p
   const isSearching = store.isOperating
   const hasDevices = foundDevices.length > 0
   const hasError = !isSearching && store.errorMessage && !hasDevices
@@ -106,27 +104,34 @@ export default function ScanDevicesScreen(p: Props) {
   const openQr = () => setUiScreen('qr')
   const showWebPickerCta = !supportsDeviceListScan() && !isSearching && !hasDevices && !hasError
 
+  /* A_1.3.1 -v Bluetooth and/or local network Access Denied: headline at y210 in
+     two lines, subtitle at y264 in label/ink-5, art at y337 and one filled button
+     at y580. The screen used to start at pt-8, which put the whole block 44 high,
+     and it carried a second "I've Allowed It" button the frame does not have —
+     ProvisioningPage re-checks the permission on resume and restarts the scan by
+     itself, so the manual retry was only ever a fallback. */
   if (bleStatus === 'no_permission') {
     return (
       <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
         <AddDeviceHeader onBack={handleClose} onScanQr={openQr} />
-        <div className="flex-1 flex flex-col items-center px-6 text-center pt-8">
-          <h2 className="text-title-lg font-semibold text-ink-3 mb-3">Allow Bluetooth and Local Network Access</h2>
-          <p className="text-body-md text-ink-6 max-w-[320px] mb-8">
+        <div className="flex-1 min-h-0 flex flex-col items-center px-4 text-center">
+          <h2 className="mt-[76px] text-title-lg font-semibold text-ink-3">
+            Allow Bluetooth and Local Network Access
+          </h2>
+          {/* The frame breaks this after "Sierro". Inter is narrower than the SF
+              Pro the frame is set in and would keep it on one line at the full
+              370 measure, which pulls the art and the button 15 up. */}
+          <p className="mt-[7px] text-label text-ink-5 max-w-[336px]">
             Required to find, connect, and communicate with your Sierro device.
           </p>
-          {/* Cropped out of A_1.3.1 -v Bluetooth and/or local network Access Denied
-              at 3x; the old SVG wrapped a 400px raster. 242 wide, as the frame has it. */}
           <img
             src={`${import.meta.env.BASE_URL}ds-bt-permission.png`}
             alt=""
             width={242}
             height={227}
-            className="w-[242px] max-w-full h-auto select-none"
+            className="mt-[47px] w-[242px] max-w-full h-auto select-none"
             draggable={false}
           />
-        </div>
-        <div className="px-6 pb-10 safe-area-bottom space-y-3">
           <button
             onClick={async () => {
               const ok = await openAppSettings()
@@ -134,37 +139,32 @@ export default function ScanDevicesScreen(p: Props) {
                 toast.info('Open Settings → Apps → Sierro → Permissions → Nearby devices, and allow it.')
               }
             }}
-            className="w-full h-14 rounded-l bg-primary text-black text-body-lg font-semibold active:scale-[0.98] transition-transform"
+            className="mt-[16px] w-full h-12 rounded-l bg-primary text-primary-darker text-body-lg font-semibold active:scale-[0.98] transition-transform"
           >
             Open Settings
-          </button>
-          <button
-            onClick={() => { resetBleInit(); setBleStatus('ready'); store.setErrorMessage(null); handleScan() }}
-            className="w-full h-12 text-body-md text-ink-6 active:opacity-70"
-          >
-            I&apos;ve Allowed It — Try Again
           </button>
         </div>
       </div>
     )
   }
 
+  /* A_1.3.1 -v Bluetooth off: same rhythm — headline y210, subtitle y240, art
+     y313 — and no button. */
   if (bleStatus === 'bt_off') {
     return (
       <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
         <AddDeviceHeader onBack={handleClose} onScanQr={openQr} />
-        <div className="flex-1 flex flex-col items-center px-6 text-center pt-8">
-          <h2 className="text-title-lg font-semibold text-ink-3 mb-2">Turn on Bluetooth</h2>
-          <p className="text-body-md text-ink-6 max-w-[320px] mb-8">
+        <div className="flex-1 min-h-0 flex flex-col items-center px-4 text-center">
+          <h2 className="mt-[76px] text-title-lg font-semibold text-ink-3">Turn on Bluetooth</h2>
+          <p className="mt-[7px] text-label text-ink-5">
             Enable Bluetooth from Control Center or Settings to automatically find and connect your device.
           </p>
-          {/* A_1.3.1 -v Bluetooth off at 3x. 206 wide, as the frame has it. */}
           <img
             src={`${import.meta.env.BASE_URL}ds-bt-off.png`}
             alt=""
             width={206}
             height={227}
-            className="w-[206px] max-w-full h-auto select-none"
+            className="mt-[47px] w-[206px] max-w-full h-auto select-none"
             draggable={false}
           />
         </div>
