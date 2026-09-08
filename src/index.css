@@ -232,16 +232,20 @@ textarea.text-body-lg {
    The base opacity is 0, which is also where the global reduced-motion rule
    above parks them — leaving the static art untouched. */
 @keyframes radar-ring {
-  0%, 100% { opacity: 0; }
-  30%      { opacity: 1; }
+  0%       { opacity: 0; }
+  18%      { opacity: 1; }
+  45%, 100% { opacity: 0; }
 }
 
+/* Each ring is lit for well under half the cycle, and the three peaks are 0.28s
+   apart, so the wave reads as travelling rather than as all three breathing
+   together — which is what the first pass at 2.4s / 0.3s stagger looked like. */
 .radar-ring {
   opacity: 0;
-  animation: radar-ring 2.4s ease-in-out infinite;
+  animation: radar-ring 2s ease-in-out infinite;
 }
-.radar-ring-2 { animation-delay: 0.3s; }
-.radar-ring-3 { animation-delay: 0.6s; }
+.radar-ring-2 { animation-delay: 0.28s; }
+.radar-ring-3 { animation-delay: 0.56s; }
 
 .animate-wave {
   animation: wave-move 4s linear infinite;

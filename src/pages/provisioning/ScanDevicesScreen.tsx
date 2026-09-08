@@ -73,11 +73,11 @@ function RadarPulse() {
     >
       <defs>
         <linearGradient id="radar-fade" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#BFBFBF" stopOpacity="0.85" />
-          <stop offset="0.25" stopColor="#BFBFBF" stopOpacity="1" />
-          <stop offset="0.5" stopColor="#BFBFBF" stopOpacity="0.9" />
-          <stop offset="0.75" stopColor="#BFBFBF" stopOpacity="0.45" />
-          <stop offset="1" stopColor="#BFBFBF" stopOpacity="0" />
+          <stop offset="0" stopColor="#01D6BE" stopOpacity="0.85" />
+          <stop offset="0.25" stopColor="#01D6BE" stopOpacity="1" />
+          <stop offset="0.5" stopColor="#01D6BE" stopOpacity="0.9" />
+          <stop offset="0.75" stopColor="#01D6BE" stopOpacity="0.45" />
+          <stop offset="1" stopColor="#01D6BE" stopOpacity="0" />
         </linearGradient>
       </defs>
       {[61.25, 112.25, 158].map((r, i) => (
@@ -88,7 +88,7 @@ function RadarPulse() {
           r={r}
           fill="none"
           stroke="url(#radar-fade)"
-          strokeWidth={1}
+          strokeWidth={1.5}
           className={`radar-ring${i > 0 ? ` radar-ring-${i + 1}` : ''}`}
         />
       ))}
