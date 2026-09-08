@@ -204,7 +204,8 @@ Canonical names/types for request payloads & query params. Keep these consistent
 - **Station id**: `stationId` (String). **DTU id**: `dtuId` (String).
 - **User id**: `userId`, a **string** big-integer (e.g. `"491513787113766912"`) — it exceeds
   JS safe-int, so never coerce it to `number`. Stored in `localStorage['iot_user_id']`; source of
-  truth is the login response `LoginData.userId`. Sent as a number only to `/login/logout`.
+  truth is the login response `LoginData.userId`. Send it as a **string everywhere**, `/login/logout`
+  included — a real id is 18 digits and `Number()` rounds it to a different account.
 - **Display name**: the field is **`name`**, not `nickname`. `/user/select/iotUserInfo` returns
   `name` and has no `nickname`; `/user/update/iotUserInfo` takes `{ id?, iconResid?, name }` and
   answers 20101 "illegal argument" for anything else. Renaming was sent as `nickname` from the first
