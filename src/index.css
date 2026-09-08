@@ -64,6 +64,10 @@ html, body, #root {
   height: 100%;
   width: 100%;
   overflow: hidden;
+  /* Paint the root too, not just body. A WebView's own background is white, so
+     any strip the document does not cover shows it — which is what a light band
+     under the home indicator looks like. */
+  background: var(--bg-base);
   /* Lock to the WebView visual viewport. Android 100vh often includes system
      chrome and overflows after edge-to-edge; position:fixed + inset avoids that. */
   position: fixed;
