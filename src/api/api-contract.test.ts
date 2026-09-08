@@ -181,11 +181,16 @@ describe('authApi contracts', () => {
     expect(c.body.name).toBe('X')
   })
 
-  it('updateUserEmail / updateUserCellphone → captchaId field', async () => {
+  // The update endpoints prefix the code field with its channel; only login and
+  // register take a plain `verifyCode`. Sending the plain one is what made every
+  // email change answer 20101 "illegal argument".
+  it('updateUserEmail → emailVerifyCode, updateUserCellphone → smsVerifyCode', async () => {
     await auth.updateUserEmail('a@b.com', 'CAP', '123456')
-    expect(last().body).toMatchObject({ email: 'a@b.com', captchaId: 'CAP', verifyCode: '123456' })
+    expect(last().body).toMatchObject({ email: 'a@b.com', captchaId: 'CAP', emailVerifyCode: '123456' })
+    expect(last().body).not.toHaveProperty('verifyCode')
     await auth.updateUserCellphone('555', 'CAP', '123456')
-    expect(last().body).toMatchObject({ cellphone: '555', captchaId: 'CAP' })
+    expect(last().body).toMatchObject({ cellphone: '555', captchaId: 'CAP', smsVerifyCode: '123456' })
+    expect(last().body).not.toHaveProperty('verifyCode')
   })
 
   it('updatePassword → /user/update/authPassword, md5 old/new, NO userId', async () => {

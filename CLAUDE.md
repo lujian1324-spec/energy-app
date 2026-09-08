@@ -202,16 +202,25 @@ Canonical names/types for request payloads & query params. Keep these consistent
 - **Device id**: field name `deviceId` in queries, `id` in device CRUD payloads. ALWAYS send as
   `String(...)` (Java `Long`, exceeds JS safe-int). Responses return ids as strings already.
 - **Station id**: `stationId` (String). **DTU id**: `dtuId` (String).
-- **User id**: `userId`. Stored in `localStorage['iot_user_id']` as a string; source of truth is the
-  login response `LoginData.userId`. Sent as a number only to `/login/logout`. **Do NOT send `userId`
-  to `/user/update/iotUserInfo` or `/user/update/authPassword`** — those identify the user via the
-  `IOT-Token` header and reject a body `userId` (binds to Java `Long` → "illegal argument").
+- **User id**: `userId`, a **string** big-integer (e.g. `"491513787113766912"`) — it exceeds
+  JS safe-int, so never coerce it to `number`. Stored in `localStorage['iot_user_id']`; source of
+  truth is the login response `LoginData.userId`. Sent as a number only to `/login/logout`.
+- **Display name**: the field is **`name`**, not `nickname`. `/user/select/iotUserInfo` returns
+  `name` and has no `nickname`; `/user/update/iotUserInfo` takes `{ id?, iconResid?, name }` and
+  answers 20101 "illegal argument" for anything else. Renaming was sent as `nickname` from the first
+  wiring and failed for months; two attempted fixes moved `userId` around, which was never the cause.
+- **`/user/select/iotUserInfo`** also returns `createdAt` and `lastLoginTime`, which is how
+  `isFirstRunAccount` decides whether onboarding should run — comparing the two to each other, not to
+  the clock, because the backend sends them without a zone.
 - **Token**: only via `tokenStore` (`iot_access_token` / `iot_refresh_token`); header is `IOT-Token`
   (not `Authorization`). Login endpoints use `api.postSkipAuth`.
 - **Password**: always `md5Password()` before send. Fields: `password` (login/register),
   `oldPassword`/`newPassword` (change password).
 - **Captcha**: response field is `iotCaptchaId`; request field is `captchaId` (pass the received
-  `iotCaptchaId` value as `captchaId`). Verification code field is always `verifyCode`.
+  `iotCaptchaId` value as `captchaId`). The code field is `verifyCode` on login/register/reset,
+  but the **update** endpoints prefix it with the channel: `/user/update/iotUserEmail` takes
+  `emailVerifyCode`, `/user/update/iotUserCellphone` and `/user/update/cellphoneVerify` take
+  `smsVerifyCode`. Sending the plain `verifyCode` is what made every email change answer 20101.
 - **Captcha intent**: use the `CaptchaIntent` enum (`'1'`=register `'2'`=reset `'3'`=login `'4'`=update email).
 - **Email captcha quirk**: `/user/send/email/captcha` expects field **`address`**, not `email`.
 - **Country code**: always `normalizeCountryCode()` (strip leading `+`) before send.

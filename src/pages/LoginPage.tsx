@@ -9,12 +9,14 @@ import {
   loginByEmail,
   loginByAccount,
   defaultPasswordForAccount,
+  fetchUserInfo,
   registerByEmail,
   checkEmailExists,
   checkAccountExists,
   CaptchaIntent,
 } from '../api/authApi'
 import { isApiSuccess } from '../utils/apiClient'
+import { isFirstRunAccount } from '../utils/firstRunAccount'
 import { TERMS_URL, PRIVACY_URL } from '../config/legalLinks'
 import { sanitizeUiCopy } from '../utils/uiCopy'
 import TextField from '../components/TextField'
@@ -206,7 +208,20 @@ export default function LoginPage() {
       }
       const result = await loginByEmail(email.trim(), captchaId, otpCode)
       if (isApiSuccess(result.code)) {
-        finishSignIn(result.data)
+        /**
+         * Ask the account whether it was just created rather than inferring it
+         * from the pre-check. /user/email/check answering "free" is what sends
+         * the flow down the register path and sets firstRun; when that check
+         * fails, a brand-new address is treated as an existing one and the
+         * onboarding step is skipped for good. The user object carries
+         * createdAt and lastLoginTime, which settle it.
+         */
+        let firstRun = false
+        try {
+          const me = await fetchUserInfo()
+          if (isApiSuccess(me.code)) firstRun = isFirstRunAccount(me.data)
+        } catch { /* fall back to the ordinary sign-in */ }
+        finishSignIn(result.data, { firstRun })
         return
       }
       // The pre-check can be wrong (it failed, or the address was removed between steps).
