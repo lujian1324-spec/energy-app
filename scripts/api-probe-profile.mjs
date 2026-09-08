@@ -126,7 +126,14 @@ for (const [label, payload] of candidates) {
 // 改邮箱三种写法也都是 20101，说明同样是字段名对不上，而不是验证码的问题
 // ——验证码不对应该报「验证码错误」，不会报 illegal argument。
 // 一律用当前邮箱 + 必然无效的验证码：改不动，也不发信。
-const currentEmail = u.email ?? loginData.email ?? ''
+/**
+ * NEVER send back what /user/select/iotUserInfo returns: it masks the address
+ * (j****@sierro.us), so a shape that did bind would set the account's email to
+ * the mask. The round only runs when a real address is supplied, and it uses
+ * that — set E2E_EMAIL to the address the account already has, so even a
+ * success is a no-op.
+ */
+const currentEmail = (process.env.E2E_EMAIL ?? '').trim()
 const BAD = 'PROBE_INVALID'
 console.log(`\n/user/update/iotUserEmail — 当前邮箱 ${JSON.stringify(currentEmail)}，验证码故意无效，不改动也不发信`)
 
@@ -142,13 +149,19 @@ const emailShapes = [
   ['{email, captchaId, verifyCode, id}', { email: currentEmail, captchaId: BAD, verifyCode: '000000', id: u.id }],
   ['{email, captchaId, verifyCode, uid}', { email: currentEmail, captchaId: BAD, verifyCode: '000000', uid: u.uid }],
 ]
-for (const [label, payload] of emailShapes) {
-  const r = await call('POST', '/user/update/iotUserEmail', { data: payload, token })
-  console.log(`  · ${label.padEnd(46)} ${say(r.json)}`)
+if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(currentEmail)) {
+  console.log('  跳过：需要 E2E_EMAIL=<该账号当前的真实邮箱>。')
+  console.log('  服务端只回传打码地址，把打码值发回去会把邮箱改成 "j****@..."。')
+} else {
+  for (const [label, payload] of emailShapes) {
+    const r = await call('POST', '/user/update/iotUserEmail', { data: payload, token })
+    console.log(`  · ${label.padEnd(46)} ${say(r.json)}`)
+  }
 }
 
 console.log('')
 console.log('读法：')
 console.log('  报「验证码错误 / 失效 / captcha」= 字段名对了，只差一个真验证码。')
 console.log('  仍报「illegal argument / 20101」= 字段名或类型还是不对。')
-console.log('  如果十种全一样，就得找后端要 UserUpdateByEmailDtio 的字段定义。')
+console.log('  注意：验证码是故意无效的，而这个接口对「验证码不对」和「字段名不对」')
+console.log('  可能回同一个 20101 —— 十种全一样时，这一轮就分辨不出是哪一种。')
