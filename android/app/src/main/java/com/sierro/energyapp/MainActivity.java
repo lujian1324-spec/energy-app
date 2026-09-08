@@ -22,6 +22,7 @@ public class MainActivity extends BridgeActivity {
     /** Last system-bar insets in Android px. Survives the Capacitor SPA document swap. */
     private int lastTopPx;
     private int lastBottomPx;
+    private int lastImePx;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -94,7 +95,15 @@ public class MainActivity extends BridgeActivity {
                     WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout());
             lastTopPx = bars.top;
             lastBottomPx = bars.bottom;
+            // The keyboard, from the same listener. android:windowSoftInputMode=adjustResize
+            // no longer resizes the window once the app is edge-to-edge (targetSdk 35+), so
+            // the WebView keeps its full height, window.innerHeight never shrinks, and the
+            // arithmetic the web side used to infer a keyboard height reported zero — which
+            // is why bottom-anchored fields and buttons stayed under the IME on Android.
+            // Hand the real inset to CSS and let the app lift itself.
+            lastImePx = windowInsets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
             injectSafeAreaVars(v, lastTopPx, lastBottomPx);
+            injectKeyboardVar(v, lastImePx);
             return WindowInsetsCompat.CONSUMED;
         });
         ViewCompat.requestApplyInsets(webView);
@@ -108,6 +117,7 @@ public class MainActivity extends BridgeActivity {
             public void onPageLoaded(WebView view) {
                 view.post(() -> {
                     injectSafeAreaVars(view, lastTopPx, lastBottomPx);
+                    injectKeyboardVar(view, lastImePx);
                     // The first apply often runs before the window is attached, so
                     // lastTopPx can still be 0 here. The WebView is full-bleed and never
                     // resizes when insets change, so onLayoutChange will not retry —
@@ -130,6 +140,18 @@ public class MainActivity extends BridgeActivity {
             webView.setImportantForAutofill(noAutofill);
             getWindow().getDecorView().setImportantForAutofill(noAutofill);
         }
+    }
+
+    /** Publishes the IME height as --keyboard-inset-bottom and wakes the web side. */
+    private static void injectKeyboardVar(View v, int imePx) {
+        if (!(v instanceof WebView)) return;
+        DisplayMetrics dm = v.getResources().getDisplayMetrics();
+        float d = dm.density <= 0f ? 1f : dm.density;
+        int ime = Math.round(imePx / d);
+        String js = "document.documentElement.style.setProperty('--keyboard-inset-bottom','"
+                + ime + "px');"
+                + "window.dispatchEvent(new CustomEvent('sierro:keyboardinset',{detail:" + ime + "}));";
+        ((WebView) v).evaluateJavascript(js, null);
     }
 
     /** CSS px = Android px / density. env(safe-area-*) is 0 in Android WebView. */

@@ -28,6 +28,16 @@ interface AlarmDismissState {
   seen: string[]
   /** 批量标记为已读 */
   markSeen: (keys: string[]) => void
+  /**
+   * When each alarm was first seen, keyed the same way. The device state does not
+   * carry a timestamp for a firing alarm, so `A_1.2` had nothing to put in its
+   * right-hand time column and the rows rendered without one. First-seen is the
+   * honest stand-in: it is when this phone first observed the alarm, it never
+   * moves once set, and syncActive drops it with the rest when the alarm clears.
+   */
+  firstSeen: Record<string, number>
+  /** Record the first sighting of these keys; existing entries are left alone. */
+  markFirstSeen: (keys: string[]) => void
   /** 清除单条 */
   dismiss: (key: string) => void
   /**
@@ -42,6 +52,16 @@ export const useAlarmDismissStore = create<AlarmDismissState>()(
     (set) => ({
       dismissed: [],
       seen: [],
+      firstSeen: {},
+      markFirstSeen: (keys) =>
+        set((s) => {
+          const now = Date.now()
+          const add = keys.filter((k) => s.firstSeen[k] === undefined)
+          if (add.length === 0) return s
+          const next = { ...s.firstSeen }
+          add.forEach((k) => { next[k] = now })
+          return { firstSeen: next }
+        }),
       markSeen: (keys) =>
         set((s) => {
           const add = keys.filter((k) => !s.seen.includes(k))
@@ -55,9 +75,13 @@ export const useAlarmDismissStore = create<AlarmDismissState>()(
           const active = new Set(activeKeys)
           const next = s.dismissed.filter((k) => !k.startsWith(prefix) || active.has(k))
           const nextSeen = s.seen.filter((k) => !k.startsWith(prefix) || active.has(k))
+          const keptFirst = Object.keys(s.firstSeen).filter((k) => !k.startsWith(prefix) || active.has(k))
           // Avoid a needless state update (and re-render loop) when nothing changed.
-          if (next.length === s.dismissed.length && nextSeen.length === s.seen.length) return s
-          return { dismissed: next, seen: nextSeen }
+          if (next.length === s.dismissed.length && nextSeen.length === s.seen.length
+              && keptFirst.length === Object.keys(s.firstSeen).length) return s
+          const nextFirst: Record<string, number> = {}
+          keptFirst.forEach((k) => { nextFirst[k] = s.firstSeen[k] })
+          return { dismissed: next, seen: nextSeen, firstSeen: nextFirst }
         }),
     }),
     { name: 'sierro-alarm-dismissed' },
