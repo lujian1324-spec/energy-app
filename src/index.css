@@ -173,8 +173,16 @@ p {
   ) + 20px);
 }
 
+/* --keyboard-inset-bottom is set only by MainActivity, from WindowInsets.ime().
+   Android stopped resizing the window for the keyboard once the app went
+   edge-to-edge, so a bar pinned to the bottom of a full-height screen sat under
+   it; adding the inset here lifts every one of them. It is absent on iOS and on
+   the web, where the value falls back to 0 and nothing changes. */
 .safe-area-bottom {
-  padding-bottom: max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+  padding-bottom: calc(
+    max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px))
+    + var(--keyboard-inset-bottom, 0px)
+  );
 }
 
 /* ============================================================

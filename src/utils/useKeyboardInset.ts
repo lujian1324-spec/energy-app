@@ -26,11 +26,28 @@ export function useKeyboardInset(): number {
   useEffect(() => {
     let cancelled = false
 
+    // ── Android: the IME inset MainActivity publishes ─────────────────────────
+    // adjustResize stopped resizing the window once the app went edge-to-edge
+    // (targetSdk 35+), so the WebView keeps its full height and neither
+    // window.innerHeight nor visualViewport moves — the arithmetic below reported
+    // 0 and nothing lifted. MainActivity reads WindowInsets.ime() and sets
+    // --keyboard-inset-bottom, announcing each change.
+    if (Capacitor.getPlatform() === 'android') {
+      const read = () => {
+        const raw = getComputedStyle(document.documentElement)
+          .getPropertyValue('--keyboard-inset-bottom')
+        const px = parseFloat(raw)
+        if (!cancelled) setInset(Number.isFinite(px) && px > 1 ? Math.floor(px) : 0)
+      }
+      read()
+      window.addEventListener('sierro:keyboardinset', read)
+      return () => {
+        cancelled = true
+        window.removeEventListener('sierro:keyboardinset', read)
+      }
+    }
+
     // ── iOS: ask the OS, via @capacitor/keyboard ──────────────────────────────
-    // Only iOS. Android's manifest sets adjustResize, so the WebView itself
-    // shrinks and window.innerHeight shrinks with it — the arithmetic below then
-    // correctly reports 0, and padding by the keyboard height on top of that
-    // would lift the sheet twice as far as the keyboard is tall.
     if (Capacitor.getPlatform() === 'ios') {
       const handles: { remove: () => void }[] = []
       void (async () => {

@@ -294,7 +294,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
         {editingField === 'email' && (
           <div
             className="border-t border-ink-9 px-4 pt-3"
-            style={{ paddingBottom: 'calc(max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)) + 16px)' }}
+            style={{ paddingBottom: 'calc(max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)) + var(--keyboard-inset-bottom, 0px) + 16px)' }}
           >
             <button
               onClick={handleSave}

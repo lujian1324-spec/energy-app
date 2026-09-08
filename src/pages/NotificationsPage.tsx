@@ -25,6 +25,21 @@ function notificationIcon(text: string): string {
   return 'alert'
 }
 
+/**
+ * The wire field for when an alarm started is not settled: the state response is
+ * typed with `timestamp`, but a live device sends nothing under that name, which
+ * is why the rows shipped with an empty time column. Take the first of the names
+ * the platform uses, so a real one starts working the moment it appears.
+ */
+export function alarmStartedAt(a: Record<string, unknown>): string | undefined {
+  for (const k of ['timestamp', 'alarmTime', 'startTime', 'triggerTime', 'createTime', 'occurTime']) {
+    const v = a[k]
+    if (typeof v === 'string' && v.trim()) return v
+    if (typeof v === 'number' && Number.isFinite(v)) return new Date(v).toISOString()
+  }
+  return undefined
+}
+
 /** "2 mins ago" then "Today 3:42 PM" then "May 3", matching the export's timestamps. */
 export function formatNotificationTime(iso: string | undefined, now = Date.now()): string {
   if (!iso) return ''
@@ -136,6 +151,8 @@ export default function NotificationsPage() {
   const syncActive = useAlarmDismissStore(s => s.syncActive)
   const seen = useAlarmDismissStore(s => s.seen)
   const markSeen = useAlarmDismissStore(s => s.markSeen)
+  const firstSeen = useAlarmDismissStore(s => s.firstSeen)
+  const markFirstSeen = useAlarmDismissStore(s => s.markFirstSeen)
 
   // Refresh live device state so firing alarms are current on entering the page.
   // This is a side effect (a store fetch), so it belongs in useEffect, a useMemo
@@ -173,7 +190,8 @@ export default function NotificationsPage() {
       unreadSnapshot.current = new Set(keys.filter(k => !seen.includes(k)))
     }
     markSeen(keys)
-  }, [visibleAlarms, selectedDeviceId, seen, markSeen])
+    markFirstSeen(keys)
+  }, [visibleAlarms, selectedDeviceId, seen, markSeen, markFirstSeen])
 
   const deviceName = devices.find(d => String(d.id) === String(selectedDeviceId))?.name ?? ''
 
@@ -201,7 +219,10 @@ export default function NotificationsPage() {
                 key={`firing-${a.title}`}
                 title={row.title}
                 description={row.description}
-                time={formatNotificationTime(a.timestamp)}
+                time={formatNotificationTime(
+                  alarmStartedAt(a as unknown as Record<string, unknown>)
+                  ?? (firstSeen[key] ? new Date(firstSeen[key]).toISOString() : undefined)
+                )}
                 unread={unreadSnapshot.current?.has(key) ?? false}
                 onDismiss={() => dismiss(key)}
               />
