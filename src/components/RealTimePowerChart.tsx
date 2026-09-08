@@ -194,19 +194,38 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
   // auto-scaling to the window's max would misleadingly stretch e.g. a 40–50%
   // range to full height). Power tabs keep auto-scaling to their own max.
   const isSocView = batteryAsSoc && powerDataSource === 'battery'
-  const chartMax = useMemo(
-    () => (isSocView ? 100 : Math.max(...chartPoints.map(p => Math.abs(p.val)), 1)),
-    [chartPoints, isSocView]
+
+  /**
+   * The plotted range. Battery power is signed — charge positive, discharge
+   * negative — and the curve used to be drawn from Math.abs(), so a 500W
+   * discharge landed on exactly the same height as a 500W charge and the axis,
+   * which only ever went 0..max, said the value was +500W. The shape did not
+   * mean what the coordinates said.
+   *
+   * The range now spans the signed values. A series that never goes negative
+   * (AC, Solar, Output, and SOC) keeps 0 at the bottom exactly as before.
+   */
+  const [chartMin, chartMax] = useMemo(() => {
+    if (isSocView) return [0, 100] as const
+    const vals = chartPoints.map(p => p.val)
+    const lo = Math.min(0, ...vals)
+    const hi = Math.max(...vals, lo + 1)
+    return [lo, hi] as const
+  }, [chartPoints, isSocView])
+
+  /** viewBox y for a value: chartMax sits at 5, chartMin at 60. */
+  const yFor = useCallback(
+    (v: number) => 5 + ((chartMax - v) / (chartMax - chartMin)) * 55,
+    [chartMax, chartMin]
   )
+  /** Where zero falls — the bottom of the band unless the series goes negative. */
+  const zeroY = useMemo(() => yFor(0), [yFor])
 
   const chartSvgPts = useMemo(() => {
     return chartPoints
       .filter(p => p.x >= -10 && p.x <= 310)
-      .map(p => {
-        const y = 60 - (Math.abs(p.val) / chartMax) * 55
-        return [p.x, y] as const
-      })
-  }, [chartPoints, chartMax])
+      .map(p => [p.x, yFor(p.val)] as const)
+  }, [chartPoints, yFor])
 
   // ─── Y-axis scale labels (2 levels: max at top, 0 at bottom) ───
   // Rendered as an HTML overlay (like the X-axis labels) because the SVG uses
@@ -215,15 +234,24 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
   const SVG_PX_H = 136
   const Y_TICKS = useMemo(() => {
     const unit = currentChartData.unit
-    return [
-      { label: `${fmtAxis(chartMax)}${unit}`, vy: 5 },   // top = chartMax
-      { label: '0', vy: 60 },                            // bottom = zero baseline
-    ].map(t => ({ label: t.label, py: t.vy * (SVG_PX_H / 70) }))
-  }, [chartMax, currentChartData.unit])
+    const ticks = [{ label: `${fmtAxis(chartMax)}${unit}`, vy: 5 }]
+    // Only label zero separately when it is not the bottom of the band; below
+    // that, the minimum, so a negative reading can be read off the axis.
+    if (chartMin < 0) {
+      ticks.push({ label: '0', vy: zeroY })
+      ticks.push({ label: `${fmtAxis(chartMin)}${unit}`, vy: 60 })
+    } else {
+      ticks.push({ label: '0', vy: 60 })
+    }
+    return ticks.map(t => ({ label: t.label, py: t.vy * (SVG_PX_H / 70) }))
+  }, [chartMax, chartMin, zeroY, currentChartData.unit])
 
   const chartLinePoints = chartSvgPts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ')
+  // The fill closes on the zero line, so the shaded area is the part of the
+  // reading that is actually above (or below) nothing.
   const chartAreaPoints = chartSvgPts.length >= 2
-    ? `${chartLinePoints} ${chartSvgPts[chartSvgPts.length-1][0].toFixed(1)},70 ${chartSvgPts[0][0].toFixed(1)},70`
+    ? `${chartLinePoints} ${chartSvgPts[chartSvgPts.length-1][0].toFixed(1)},${zeroY.toFixed(1)}`
+      + ` ${chartSvgPts[0][0].toFixed(1)},${zeroY.toFixed(1)}`
     : ''
 
   // ─── X-axis tick labels at 0/4/8/12/16/20/24 hours ───
@@ -314,6 +342,11 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
           <line x1="0" y1="5" x2="300" y2="5" stroke="rgba(255,255,255,0.06)" strokeWidth="0.8" />
           <line x1="0" y1="32.5" x2="300" y2="32.5" stroke="rgba(255,255,255,0.04)" strokeWidth="0.8" />
           <line x1="0" y1="60" x2="300" y2="60" stroke="rgba(255,255,255,0.08)" strokeWidth="0.8" />
+          {/* Zero, when the series goes negative and it is not the bottom line. */}
+          {chartMin < 0 && (
+            <line x1="0" y1={zeroY} x2="300" y2={zeroY}
+              stroke="rgba(255,255,255,0.14)" strokeWidth="0.8" />
+          )}
 
           {/* X-axis tick lines at 4-hour boundaries */}
           {X_TICKS.map(tick => tick.x >= -2 && tick.x <= 302 ? (
@@ -349,7 +382,7 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
               strokeLinejoin="round"
             />
           ) : !historyLoading && (
-            <line x1="0" y1="60" x2="300" y2="60"
+            <line x1="0" y1={zeroY} x2="300" y2={zeroY}
               stroke={currentChartData.color} strokeWidth="1.5"
               strokeOpacity="0.3" strokeLinecap="round" strokeDasharray="4 4" />
           )}

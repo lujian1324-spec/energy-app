@@ -1,14 +1,14 @@
 {
-  "version": "4.9.14",
-  "build": 2840,
+  "version": "4.9.15",
+  "build": 2841,
   "date": "2026-09-08",
   "changelog": [
+    "Real-Time Power draws battery charge and discharge on either side of zero — a 500W discharge used to be drawn at the same height as a 500W charge, on an axis that only went up.",
     "Signing in with an email code now also sets up background alerts — until now only a brand-new account did, so Power Outage and Low Battery never fired for anyone else once the app was closed.",
     "The founder code field no longer shows a working code as its example.",
     "Onboarding asks what to call you before the first device, and that name becomes the one the app shows and the nickname on your account.",
     "Notifications rows show a time again — the device never sends one for a live alarm, so the app remembers when it first saw it.",
     "Feedback is the handoff's sheet now: title, two outlined fields and a filled Send Feedback button.",
-    "Android: the keyboard no longer covers bottom-anchored fields and buttons — the inset now comes from the system, which stopped resizing the window when the app went edge-to-edge.",
-    "The Bluetooth permission and Bluetooth-off screens sit where the handoff puts them; the permission screen drops the extra retry button the design does not have."
+    "Android: the keyboard no longer covers bottom-anchored fields and buttons — the inset now comes from the system, which stopped resizing the window when the app went edge-to-edge."
   ]
 }
