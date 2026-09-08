@@ -433,7 +433,15 @@ export async function updateUserInfo(data: Partial<UserInfo>): Promise<ApiRespon
   return api.post<unknown>('/user/update/iotUserInfo', payload)
 }
 
-/** 更新用户邮箱（需先通过 sendEmailCaptcha 获取 iotCaptchaId） */
+/**
+ * 更新用户邮箱（需先通过 sendEmailCaptcha 获取 iotCaptchaId）。
+ *
+ * The code field is `emailVerifyCode`, not `verifyCode` — `UserUpdateByEmailDtio`
+ * per the platform's own API mapping, and confirmed by probing: every shape
+ * without it answered 20101 "illegal argument", the same error a wrong field name
+ * gives on iotUserInfo. The login and register endpoints do use plain
+ * `verifyCode`; the update endpoints prefix it with the channel.
+ */
 export async function updateUserEmail(
   email: string,
   iotCaptchaId: string,
@@ -442,36 +450,54 @@ export async function updateUserEmail(
   return api.post<unknown>('/user/update/iotUserEmail', {
     email,
     captchaId: iotCaptchaId,
-    verifyCode,
+    emailVerifyCode: verifyCode,
   })
 }
 
-/** 发送手机验证码用于修改手机号 */
-export async function sendCellphoneUpdateVerify(
-  cellphone: string
+/**
+ * 验证手机号修改（UpdateTelephoneVerifyDtio）。Not wired to any screen yet.
+ * The platform's mapping shows this takes { captchaId, smsVerifyCode } — it
+ * *verifies* a code rather than sending one; the code comes from sendSmsCaptcha.
+ */
+export async function verifyCellphoneUpdate(
+  iotCaptchaId: string,
+  smsVerifyCode: string
 ): Promise<ApiResponse<SendCaptchaResponse>> {
-  return api.post<SendCaptchaResponse>('/user/update/cellphoneVerify', { cellphone })
+  return api.post<SendCaptchaResponse>('/user/update/cellphoneVerify', {
+    captchaId: iotCaptchaId,
+    smsVerifyCode,
+  })
 }
 
-/** 修改手机号 */
+/**
+ * 修改手机号（UpdateTelephoneDtio）。Not wired to any screen yet.
+ * Like the email one, the code field carries its channel: `smsVerifyCode`.
+ */
 export async function updateUserCellphone(
   cellphone: string,
   iotCaptchaId: string,
-  verifyCode: string
+  smsVerifyCode: string,
+  countryTelephoneCode?: string
 ): Promise<ApiResponse<unknown>> {
   return api.post<unknown>('/user/update/iotUserCellphone', {
     cellphone,
+    ...(countryTelephoneCode ? { countryTelephoneCode: normalizeCountryCode(countryTelephoneCode) } : {}),
     captchaId: iotCaptchaId,
-    verifyCode,
+    smsVerifyCode,
   })
 }
 
 /**
  * 修改密码（均需 MD5 加密）。
  *
- * 后端通过 IOT-Token 请求头识别当前用户，请求体只接受 oldPassword / newPassword。
- * 不要再传 userId：authPassword 接口会把 userId 绑定为 Java Long，传入字符串形式
- * 的 userId 会触发 "illegal argument"。第三个参数保留仅为向后兼容，已不再使用。
+ * NOT wired to any screen — Change Password was removed from Profile in 4.7.75.
+ *
+ * The body below is almost certainly wrong and will answer 20101 if it is ever
+ * called again: the platform's mapping gives UserUpdatePasswordDtio as
+ * { authId, originalPassword, newPassword, confirmPassword, userId } — so the
+ * field is `originalPassword`, and `confirmPassword` and `authId` (which the
+ * login response returns) are both required. Left as-is rather than half-fixed;
+ * whoever wires the screen back up should send that shape and probe it.
  */
 export async function updatePassword(
   oldPlainPassword: string,

@@ -1,14 +1,14 @@
 {
-  "version": "4.9.16",
-  "build": 2842,
+  "version": "4.9.17",
+  "build": 2843,
   "date": "2026-09-08",
   "changelog": [
+    "Changing your linked email works — the verification code was being sent under the wrong field name.",
+    "A brand-new account reliably lands on the name step, even when the sign-in took the ordinary path.",
     "Changing your name works — the app was writing it to a field the backend does not have, which is what \"illegal argument\" meant.",
     "Switching a device on or off no longer fails with \"Token expired\" — that endpoint reports an expired session in a way the app was not recognising, so it never refreshed and retried.",
     "Signing in with an email code now also sets up background alerts — until now only a brand-new account did, so Power Outage and Low Battery never fired for anyone else once the app was closed.",
     "The founder code field no longer shows a working code as its example.",
-    "Onboarding asks what to call you before the first device, and that name becomes the one the app shows and the nickname on your account.",
-    "Notifications rows show a time again — the device never sends one for a live alarm, so the app remembers when it first saw it.",
-    "Feedback is the handoff's sheet now: title, two outlined fields and a filled Send Feedback button."
+    "Onboarding asks what to call you before the first device, and that name becomes the one the app shows and the nickname on your account."
   ]
 }
