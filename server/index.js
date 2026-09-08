@@ -148,7 +148,12 @@ export async function sendToUser(userId, { title = 'Sierro', body = '', data = {
         const apn = (await import('@parse/node-apn')).default
         const note = new apn.Notification()
         note.alert = { title, body }
-        note.topic = process.env.APNS_BUNDLE_ID || 'com.sierro.energyapp'
+        // The two platforms do NOT share an id: iOS is com.sierro.energy (see
+        // PRODUCT_BUNDLE_IDENTIFIER), Android is com.sierro.energyapp. The default
+        // here was the Android one, so an APNs push from a deployment that had not
+        // set APNS_BUNDLE_ID went out with a topic the certificate does not cover
+        // and Apple rejected every one of them.
+        note.topic = process.env.APNS_BUNDLE_ID || 'com.sierro.energy'
         note.sound = 'default'
         note.payload = data
         const r = await provider.send(note, ios)

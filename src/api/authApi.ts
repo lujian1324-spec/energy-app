@@ -207,6 +207,15 @@ export async function loginByAccount(
   return result
 }
 
+/**
+ * Password this app gives an account it registers itself: the account plus 1234.
+ * Kept here as well as in LoginPage so a code sign-in can re-derive it — see
+ * loginByEmail below.
+ */
+export function defaultPasswordForAccount(account: string): string {
+  return `${account}1234`
+}
+
 /** 邮箱验证码登录（无密码） */
 export async function loginByEmail(
   email: string,
@@ -223,6 +232,21 @@ export async function loginByEmail(
     if (accessToken) tokenStore.set(accessToken)
     const refreshToken = result.data.refreshToken
     if (refreshToken) tokenStore.setRefresh(refreshToken)
+    /**
+     * Mint the relay's own session here too. provisionPollerSession needs a
+     * password and this flow has none, so only a brand-new registration — which
+     * signs in with the password it just generated — ever seeded one. Everyone
+     * signing back in with a code got a push token the relay could register but
+     * no session to poll their devices with, which is why Power Outage and Low
+     * Battery never fired once the app was closed.
+     *
+     * The account the app registers carries a password derived from its own
+     * name, and the login response tells us that name, so it can be re-derived.
+     * An account created elsewhere, or one whose password was changed, simply
+     * fails this extra login the way it already did — silently, no regression.
+     */
+    const account = typeof result.data.account === 'string' ? result.data.account : ''
+    if (account) void provisionPollerSession(account, defaultPasswordForAccount(account))
   }
   return result
 }
