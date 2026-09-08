@@ -1,14 +1,14 @@
 {
-  "version": "4.9.9",
-  "build": 2835,
+  "version": "4.9.10",
+  "build": 2836,
   "date": "2026-09-08",
   "changelog": [
+    "Android: nothing white can show under the home indicator — the navigation bar, the WebView and the page root are all pinned dark.",
     "Device Monitor's bell only shows its red dot when Notifications actually has something to show.",
     "The scan animation reads clearly now — the rings light in the brand teal and travel outward one at a time, instead of all three breathing together in grey.",
     "Every illustration is re-cut at 3x — the Bluetooth permission and Bluetooth-off screens, Enable Notifications, and the Insights and Notifications empty states were all upscaling a 400px image.",
     "The Add Your First Device artwork is sharp again — it was a 400px image drawn 300 wide, so a phone upscaled it.",
     "iOS: the keyboard no longer covers bottom-anchored fields — the lift now comes from the OS's own keyboard height instead of being inferred, and it reaches the Add Device and Smart Schedule sheets too.",
-    "Device names are capped at 20 characters, wherever one can be typed.",
-    "A newly registered account now lands on the Add Your First Device step instead of going straight to the device list."
+    "Device names are capped at 20 characters, wherever one can be typed."
   ]
 }

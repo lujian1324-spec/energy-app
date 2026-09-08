@@ -1,5 +1,6 @@
 package com.sierro.energyapp;
 
+import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
 import android.os.Bundle;
@@ -7,6 +8,7 @@ import android.util.DisplayMetrics;
 import android.view.View;
 import android.webkit.WebView;
 import androidx.activity.EdgeToEdge;
+import androidx.activity.SystemBarStyle;
 import androidx.core.graphics.Insets;
 import androidx.core.splashscreen.SplashScreen;
 import androidx.core.view.ViewCompat;
@@ -47,7 +49,19 @@ public class MainActivity extends BridgeActivity {
         // EdgeToEdge.enable() makes that behavior consistent on older APIs and
         // avoids relying on the deprecated Window.setStatusBarColor /
         // setNavigationBarColor APIs that Play Console flagged.
-        EdgeToEdge.enable(this);
+        //
+        // Pass both bar styles explicitly. The no-argument overload defaults the
+        // NAVIGATION bar to SystemBarStyle.auto(DefaultLightScrim, DefaultDarkScrim),
+        // and androidx's DefaultLightScrim is 90% white — `auto` picks it whenever
+        // the SYSTEM is in light mode, which this app cannot follow because its own
+        // UI is dark-only. That is the white band under the home indicator. The
+        // status bar never showed it because its default is auto(TRANSPARENT,
+        // TRANSPARENT). dark() also keeps the bar icons light, which is what the
+        // WindowInsetsController calls below already ask for.
+        EdgeToEdge.enable(
+                this,
+                SystemBarStyle.dark(Color.TRANSPARENT),
+                SystemBarStyle.dark(Color.TRANSPARENT));
         super.onCreate(savedInstanceState);
         // Belt-and-suspenders for the same bug: force the window background to the dark
         // app color programmatically, so no @drawable/splash can ever be revealed behind
@@ -67,6 +81,10 @@ public class MainActivity extends BridgeActivity {
         // 100vh. Keep the WebView full-bleed and push insets into CSS so the UI insets
         // itself (status / home indicator) without changing the aspect ratio.
         View webView = getBridge().getWebView();
+        // A WebView paints white by default. Everything above is about the window
+        // and the system bars; this is the view itself, so nothing white can show
+        // through in the strip the document has not painted yet.
+        webView.setBackgroundColor(0xFF0B0B0B);
         ViewCompat.setOnApplyWindowInsetsListener(webView, (v, windowInsets) -> {
             // systemBars() alone misses the punch-hole / notch, and the theme sets
             // windowLayoutInDisplayCutoutMode=shortEdges so the app draws into it. On
