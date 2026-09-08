@@ -645,7 +645,7 @@ export default function StatsPage() {
       <div ref={shareRef} className="flex-1 overflow-y-auto scrollbar-hide px-4 pb-4">
         {!hasDevice && (
           <EmptyState
-            art={`${import.meta.env.BASE_URL}ds-insights-empty.svg`}
+            art={`${import.meta.env.BASE_URL}ds-insights-empty.png`}
             title="Insights will appear here"
             subtitle="Connect a Sierro device to start tracking battery performance and power usage."
             action={{ label: 'Add Device', icon: 'add', onClick: () => navigate('/devices', { state: { addDevice: true } }) }}

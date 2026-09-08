@@ -115,10 +115,14 @@ export default function ScanDevicesScreen(p: Props) {
           <p className="text-body-md text-ink-6 max-w-[320px] mb-8">
             Required to find, connect, and communicate with your Sierro device.
           </p>
+          {/* Cropped out of A_1.3.1 -v Bluetooth and/or local network Access Denied
+              at 3x; the old SVG wrapped a 400px raster. 242 wide, as the frame has it. */}
           <img
-            src={`${import.meta.env.BASE_URL}ds-bt-permission.svg`}
+            src={`${import.meta.env.BASE_URL}ds-bt-permission.png`}
             alt=""
-            className="w-full max-w-[280px] h-auto select-none"
+            width={242}
+            height={227}
+            className="w-[242px] max-w-full h-auto select-none"
             draggable={false}
           />
         </div>
@@ -154,10 +158,13 @@ export default function ScanDevicesScreen(p: Props) {
           <p className="text-body-md text-ink-6 max-w-[320px] mb-8">
             Enable Bluetooth from Control Center or Settings to automatically find and connect your device.
           </p>
+          {/* A_1.3.1 -v Bluetooth off at 3x. 206 wide, as the frame has it. */}
           <img
-            src={`${import.meta.env.BASE_URL}ds-bt-off.svg`}
+            src={`${import.meta.env.BASE_URL}ds-bt-off.png`}
             alt=""
-            className="w-full max-w-[240px] h-auto select-none"
+            width={206}
+            height={227}
+            className="w-[206px] max-w-full h-auto select-none"
             draggable={false}
           />
         </div>

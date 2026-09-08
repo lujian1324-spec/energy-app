@@ -56,10 +56,16 @@ export default function OnboardingPage() {
         <p className="mt-3 text-body-md text-ink-5">
           We'll help you find and connect your Sierro device in a few simple steps.
         </p>
+        {/* Cropped out of A_2.2.2 at 3x. The old ds-onboarding.svg wrapped a 400px
+            raster and was drawn 300 wide, so a 3x phone upscaled it 2.25x — which
+            is why it looked soft. 264 wide, centred on the frame the way the
+            handoff has it. */}
         <img
-          src={`${import.meta.env.BASE_URL}ds-onboarding.svg`}
+          src={`${import.meta.env.BASE_URL}ds-onboarding-device.png`}
           alt=""
-          className="mt-[65px] w-[300px] h-auto select-none"
+          width={264}
+          height={250}
+          className="mt-[90px] w-[264px] max-w-full h-auto select-none"
           draggable={false}
         />
       </div>

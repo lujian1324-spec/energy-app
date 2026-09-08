@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import Icon from '../components/Icon'
 import BottomSheet from '../components/BottomSheet'
+import { useKeyboardInset } from '../utils/useKeyboardInset'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useDeviceStore } from '../stores/deviceStore'
 import { mapBundleToSettings, mapSettingsToGeneralConfig } from '../api/deviceApi'
@@ -213,6 +214,8 @@ export default function SmartSchedulePage() {
     }
   }, [selectedDeviceId, apiConfigLoaded, peakShavingSettings, savePeakValleyGeneral])
 
+  // Both schedule sheets sit on the bottom edge and take typed input.
+  const keyboardInset = useKeyboardInset()
   const [showInfo, setShowInfo] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingSchedule, setEditingSchedule] = useState<PeakShavingSchedule | null>(null)
@@ -724,6 +727,7 @@ export default function SmartSchedulePage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="absolute inset-0 bg-black/[0.8] z-50 flex items-end"
+            style={{ paddingBottom: keyboardInset }}
             onClick={() => setShowAddModal(false)}
           >
             <motion.div
@@ -806,6 +810,7 @@ export default function SmartSchedulePage() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="absolute inset-0 bg-black/[0.8] z-50 flex items-end"
+            style={{ paddingBottom: keyboardInset }}
             onClick={() => setEditingSchedule(null)}
           >
             <motion.div

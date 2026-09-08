@@ -185,7 +185,7 @@ export default function NotificationsPage() {
         {/* Empty state, handoff `A_1.2_Notifications -v Empty State` */}
         {visibleAlarms.length === 0 && (
           <EmptyState
-            art={`${import.meta.env.BASE_URL}ds-noti-empty.svg`}
+            art={`${import.meta.env.BASE_URL}ds-noti-empty.png`}
             title={'You’re all caught up'}
             subtitle="Battery alerts, outage notifications, and device updates will appear here."
             topOffset={157}
