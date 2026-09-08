@@ -1,14 +1,14 @@
 {
-  "version": "4.9.18",
-  "build": 2844,
+  "version": "4.9.19",
+  "build": 2845,
   "date": "2026-09-08",
   "changelog": [
+    "iOS/Android push: Settings now requests remote-notification permission and retries APNs/FCM register when the first attempt failed, so TestFlight tokens actually reach the relay.",
     "Dismissing an alarm and signing out send their ids the way the platform issues them, so neither silently addressed the wrong record.",
-    "Changing your linked email works — the verification code was being sent under the wrong field name.",
+    "Changing your linked email works \u2014 the verification code was being sent under the wrong field name.",
     "A brand-new account reliably lands on the name step, even when the sign-in took the ordinary path.",
-    "Changing your name works — the app was writing it to a field the backend does not have, which is what \"illegal argument\" meant.",
-    "Switching a device on or off no longer fails with \"Token expired\" — that endpoint reports an expired session in a way the app was not recognising, so it never refreshed and retried.",
-    "Signing in with an email code now also sets up background alerts — until now only a brand-new account did, so Power Outage and Low Battery never fired for anyone else once the app was closed.",
-    "The founder code field no longer shows a working code as its example."
+    "Changing your name works \u2014 the app was writing it to a field the backend does not have, which is what \"illegal argument\" meant.",
+    "Switching a device on or off no longer fails with \"Token expired\" \u2014 that endpoint reports an expired session in a way the app was not recognising, so it never refreshed and retried.",
+    "Signing in with an email code now also sets up background alerts \u2014 until now only a brand-new account did, so Power Outage and Low Battery never fired for anyone else once the app was closed."
   ]
 }
