@@ -17,6 +17,7 @@ import { isApiSuccess } from '../utils/apiClient'
 import { TERMS_URL, PRIVACY_URL } from '../config/legalLinks'
 import { sanitizeUiCopy } from '../utils/uiCopy'
 import TextField from '../components/TextField'
+import BottomAction from '../components/BottomAction'
 
 /**
  * Passwordless email sign-in — handoff `A_2.1_Sign up & Log in`,
@@ -81,34 +82,6 @@ async function pickFreeAccount(email: string): Promise<string> {
 const OTP_LEN = 6
 
 /** Bottom action bar: ink-9 hairline over a 370x44 primary button (disabled = 50%). */
-function BottomAction({
-  label,
-  onPress,
-  disabled,
-  busy,
-}: {
-  label: string
-  onPress: () => void
-  disabled: boolean
-  busy: boolean
-}) {
-  return (
-    <div
-      className="border-t border-ink-9 px-4 pt-3"
-      style={{ paddingBottom: 'calc(max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)) + 16px)' }}
-    >
-      <button
-        onClick={onPress}
-        disabled={disabled || busy}
-        className="w-full h-11 rounded-m bg-primary text-primary-darker text-body-lg font-semibold
-          disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]
-          transition-[transform,opacity] flex items-center justify-center gap-2"
-      >
-        {busy ? <Loader2 size={18} className="animate-spin" /> : label}
-      </button>
-    </div>
-  )
-}
 
 export default function LoginPage() {
   const { loading, isAuthenticated } = useAuthStore()
