@@ -66,14 +66,28 @@ export interface RegisterRequest {
   countryTelephoneCode?: string  // 手机区号，如 "1"（不带 +）
   verifyCode?: string   // 验证码（API 字段名，非 captcha）
   captchaId?: string    // 验证码会话ID
-  nickname?: string     // 昵称
+  name?: string         // 显示名（后端字段是 name，不是 nickname）
 }
 
-/** 用户信息 */
+/**
+ * 用户信息 — /user/select/iotUserInfo 的实测字段。
+ *
+ * The display name is `name`. It is NOT `nickname`: that field does not exist on
+ * this object and `/user/update/iotUserInfo` rejects it with 20101 "illegal
+ * argument", which is what every rename has failed with. Probed against the live
+ * backend — {name} is the only body it accepts.
+ */
 export interface UserInfo {
-  userId?: number
+  /** 大整数，后端以字符串下发（例："491513787113766912"） */
+  userId?: number | string
+  /** 主键，同样是字符串大整数 */
+  id?: string
+  uid?: string
   account?: string
-  nickname?: string
+  /** 显示名。改名走 updateUserInfo({ name })。 */
+  name?: string
+  /** ISO 时间；账号创建时刻。 */
+  createdAt?: string
   email?: string
   cellphone?: string
   countryTelephoneCode?: string
@@ -403,11 +417,16 @@ export async function fetchUserInfo(): Promise<ApiResponse<UserInfo>> {
 }
 
 /**
- * 更新个人用户信息（如昵称/头像）。
+ * 更新个人用户信息。
  *
  * 后端通过 IOT-Token 请求头识别当前用户，请求体只需带要更新的字段。
- * 不要传字符串形式的 userId：iotUserInfo 接口把 userId 绑定为 Java Long，
- * 传入字符串会触发 "illegal argument"。这里直接剔除 userId，由 token 识别用户。
+ *
+ * The display-name field is `name`. Renaming was sent as `nickname` from the
+ * first wiring and always came back 20101 "illegal argument"; two attempted
+ * fixes moved `userId` around instead, which was never the problem. Probed
+ * against the live backend: {name} → code 0, while {nickname}, {userName},
+ * {realName} and every userId variant → 20101. `userId` is still stripped —
+ * the token identifies the user and the id is a string big-integer.
  */
 export async function updateUserInfo(data: Partial<UserInfo>): Promise<ApiResponse<unknown>> {
   const { userId: _userId, ...payload } = data

@@ -10,7 +10,7 @@ import type { UserProfile } from '../types/protocol'
  * it.
  *
  * Settings and Profile used to load it separately and rank the sources
- * differently — Settings put the login response's nickname above the saved
+ * differently — Settings put the login response's name above the saved
  * profile and never asked the server at all, Profile asked the server but never
  * wrote the answer back — so the two could sit on one account showing different
  * names. Both now run this, and both write what they resolved to into the same
@@ -22,8 +22,10 @@ import type { UserProfile } from '../types/protocol'
 export function useUserProfile() {
   const authUser = useAuthStore((s) => s.user)
   const account = authUser?.account ?? ''
-  // LoginData has an index signature, so the nickname arrives as `unknown`.
-  const authNickname = typeof authUser?.nickname === 'string' ? authUser.nickname : ''
+  // LoginData has an index signature, so this arrives as `unknown`. The login
+  // response has no display name of its own — /user/select/iotUserInfo calls it
+  // `name` — so this is only a hint and the server value below outranks it.
+  const authNickname = typeof authUser?.name === 'string' ? authUser.name : ''
   const authEmail = authUser?.email ?? ''
 
   const seed = useCallback((): UserProfile => ({
@@ -68,7 +70,8 @@ export function useUserProfile() {
         next = {
           ...next,
           name: resolveDisplayName({
-            serverNickname: typeof u.nickname === 'string' ? u.nickname : null,
+            // `name`, not `nickname` — the latter is not a field on this object.
+            serverNickname: typeof u.name === 'string' ? u.name : null,
             cachedName: next.name,
             authNickname,
             serverAccount: typeof u.account === 'string' ? u.account : null,

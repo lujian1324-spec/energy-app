@@ -16,12 +16,12 @@
  *     目的只是看后端先报「字段绑定失败」还是先报「验证码错误」；
  *   - 不调用 /user/send/email/captcha，不会真的发验证码邮件。
  *
- * 背景：改名一直返回 "illegal argument"。历史上试过
- *   {nickname}            → 失败（b29d5b4 时期）
- *   {nickname, userId:字符串} → 失败（5c437ed）
- *   {nickname}            → 失败（cb5e72e 至今，等于回到第一种）
- * 从没试过的是「userId 用数字发」。Java 端若把 userId 绑成基本类型 long，
- * 传 null 同样会抛 IllegalArgumentException，所以这是首要怀疑对象。
+ * 改名已定案（2026-09-08 对线上实测）：字段名是 **name**，不是 nickname。
+ *   {name}                                  → code 0 Success
+ *   {nickname} / {userName} / {realName}    → 20101 Iillegal argument
+ *   {nickname, userId:数字 / 字符串}          → 20101（userId 从来不是原因）
+ * /user/select/iotUserInfo 返回里也只有 name，没有 nickname。
+ * 改邮箱仍未定案，见文件末尾那一轮。
  */
 import CryptoJS from 'crypto-js'
 import { randomBytes } from 'node:crypto'
@@ -119,17 +119,36 @@ for (const [label, payload] of candidates) {
   console.log(`  ${good ? '✓' : '✗'} ${label.padEnd(34)} ${say(r.json)}`)
 }
 
-// ── 4) 改邮箱：用必然无效的验证码，只看错误是「字段绑定」还是「验证码」 ───────
+
+// ── 4) 改邮箱：仍是 20101，逐个试字段名 ───────────────────────────────────────
+// 改名已经定案（2026-09-08 实测）：{name} → code 0，
+// {nickname} / {userName} / {realName} 以及各种 userId 写法全部 20101。
+// 改邮箱三种写法也都是 20101，说明同样是字段名对不上，而不是验证码的问题
+// ——验证码不对应该报「验证码错误」，不会报 illegal argument。
+// 一律用当前邮箱 + 必然无效的验证码：改不动，也不发信。
 const currentEmail = u.email ?? loginData.email ?? ''
-console.log(`\n/user/update/iotUserEmail — 故意用无效验证码，不会改动邮箱，也不发信`)
+const BAD = 'PROBE_INVALID'
+console.log(`\n/user/update/iotUserEmail — 当前邮箱 ${JSON.stringify(currentEmail)}，验证码故意无效，不改动也不发信`)
+
 const emailShapes = [
-  ['{email, captchaId, verifyCode}  ← app 现在发的', { email: currentEmail, captchaId: 'PROBE_INVALID', verifyCode: '000000' }],
-  ['{address, captchaId, verifyCode}', { address: currentEmail, captchaId: 'PROBE_INVALID', verifyCode: '000000' }],
-  ['{email, iotCaptchaId, verifyCode}', { email: currentEmail, iotCaptchaId: 'PROBE_INVALID', verifyCode: '000000' }],
+  ['{} 空体，看它说缺什么', {}],
+  ['{email, captchaId, verifyCode}  ← app 现在发的', { email: currentEmail, captchaId: BAD, verifyCode: '000000' }],
+  ['{email, verifyCode}', { email: currentEmail, verifyCode: '000000' }],
+  ['{email, captcha, verifyCode}', { email: currentEmail, captcha: BAD, verifyCode: '000000' }],
+  ['{email, captchaId, code}', { email: currentEmail, captchaId: BAD, code: '000000' }],
+  ['{email, iotCaptchaId, verifyCode}', { email: currentEmail, iotCaptchaId: BAD, verifyCode: '000000' }],
+  ['{address, captchaId, verifyCode}', { address: currentEmail, captchaId: BAD, verifyCode: '000000' }],
+  ['{newEmail, captchaId, verifyCode}', { newEmail: currentEmail, captchaId: BAD, verifyCode: '000000' }],
+  ['{email, captchaId, verifyCode, id}', { email: currentEmail, captchaId: BAD, verifyCode: '000000', id: u.id }],
+  ['{email, captchaId, verifyCode, uid}', { email: currentEmail, captchaId: BAD, verifyCode: '000000', uid: u.uid }],
 ]
 for (const [label, payload] of emailShapes) {
   const r = await call('POST', '/user/update/iotUserEmail', { data: payload, token })
-  console.log(`  · ${label.padEnd(44)} ${say(r.json)}`)
+  console.log(`  · ${label.padEnd(46)} ${say(r.json)}`)
 }
-console.log('\n读法：报「验证码错误/失效」= 字段名对了，流程走得通；')
-console.log('      报「illegal argument / 参数错误 / 缺少参数」= 字段名或类型不对。')
+
+console.log('')
+console.log('读法：')
+console.log('  报「验证码错误 / 失效 / captcha」= 字段名对了，只差一个真验证码。')
+console.log('  仍报「illegal argument / 20101」= 字段名或类型还是不对。')
+console.log('  如果十种全一样，就得找后端要 UserUpdateByEmailDtio 的字段定义。')

@@ -87,7 +87,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
       if (editingField === 'name') {
         const next = tempValue.trim()
         if (!next) { setFieldError('Enter a name'); return }
-        const r = await updateUserInfo({ nickname: next })
+        const r = await updateUserInfo({ name: next })
         if (r.code !== 0 && r.code !== '0') throw new Error(r.message ?? 'Failed')
         const newProfile = { ...profile, name: next }
         setProfile(newProfile)
