@@ -7,6 +7,7 @@ import BatteryRing from '../components/BatteryRing'
 import Icon from '../components/Icon'
 import RealTimePowerChart from '../components/RealTimePowerChart'
 import { useDeviceStore } from '../stores/deviceStore'
+import { useActiveAlarmCount } from '../hooks/useActiveAlarmCount'
 import { mapFieldsToRealtime } from '../api/deviceApi'
 import { batteryTimeLabel } from '../utils/batteryTime'
 import { loadRatedParams } from '../db/powerflowDB'
@@ -60,6 +61,9 @@ export default function DeviceMonitorPage() {
     selectDevice,
     loadDeviceState,
   } = useDeviceStore()
+  // Same count Notifications shows under Active Now, so the dot cannot outlive
+  // the list it opens.
+  const activeAlarmCount = useActiveAlarmCount()
 
   const device = devices.find(d => String(d.id) === id)
 
@@ -187,7 +191,7 @@ export default function DeviceMonitorPage() {
             label="Notifications"
             onClick={() => navigate('/notifications')}
           >
-            {device?.isAlarmed && (
+            {activeAlarmCount > 0 && (
               <span className="absolute top-px right-px w-2.5 h-2.5 rounded-full bg-danger-dot" />
             )}
           </HeaderIconButton>
