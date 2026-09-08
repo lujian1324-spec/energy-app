@@ -1,8 +1,8 @@
 /**
- * 原生推送（APNs / FCM）接线 — 仅在 Capacitor 原生平台生效。
+ * 原生推送（APNs / FCM）接入 — 仅在 Capacitor 原生平台生效。
  *
  * 流程：
- *   1) 请求通知权限并 register() → 触发 'registration' 事件拿到 token
+ *   1) 请求通知权限 → register() → 触发 'registration' 事件拿到 token
  *   2) 把 token 上报后端（registerNativePushToken），与 userId 绑定
  *   3) 'pushNotificationReceived'（前台收到）→ 用 LocalNotifications 弹出
  *   4) 'pushNotificationActionPerformed'（点击通知）→ 跳转 App
@@ -16,57 +16,74 @@ import { NATIVE_PUSH_READY } from '../config/webPush'
 
 let initialized = false
 let lastToken: string | null = null
+let listenersAttached = false
 
 /** 初始化原生推送监听并注册 token。重复调用安全（幂等）。 */
 export async function initNativePush(): Promise<void> {
-  if (!Capacitor.isNativePlatform() || initialized) return
-  // google-services.json / APNs 证书尚未接入 — register() 会因 FirebaseApp
+  if (!Capacitor.isNativePlatform()) return
+  // google-services.json / APNs 证书尚未接入 → register() 会因 FirebaseApp
   // 未初始化而失败，所以在真实凭据就绪前完全跳过原生 token 注册流程。
   if (!NATIVE_PUSH_READY) return
+  // Already wired and we have a token — just re-upload prefs/userId binding.
+  if (initialized && lastToken) {
+    const platform = Capacitor.getPlatform() === 'ios' ? 'ios' : 'android'
+    await registerNativePushToken(lastToken, platform)
+    return
+  }
+  // If a prior attempt set initialized but never got a token (registrationError),
+  // allow a full retry instead of permanently no-op'ing.
+  if (initialized && !lastToken) {
+    initialized = false
+  }
+  if (initialized) return
   initialized = true
   try {
     const { PushNotifications } = await import('@capacitor/push-notifications')
 
-    // Permission is asked for once, up front, through LocalNotifications
-    // (requestNotificationPermission). Do not ask again here: that put a second
-    // Activity permission request on the same tap as register(), and enabling
-    // Power Outage / Low Battery was taking Android down. Only read the state —
-    // and without a grant there is nothing to register.
-    const perm = await PushNotifications.checkPermissions()
+    // Settings historically only prompted LocalNotifications. On some iOS builds
+    // PushNotifications.receive can still be prompt/denied until we ask here.
+    let perm = await PushNotifications.checkPermissions()
+    if (perm.receive !== 'granted') {
+      perm = await PushNotifications.requestPermissions()
+    }
     if (perm.receive !== 'granted') {
       initialized = false
       return
     }
 
-    // token 注册成功 → 上报后端
-    await PushNotifications.addListener('registration', (token) => {
-      lastToken = token.value
-      const platform = Capacitor.getPlatform() === 'ios' ? 'ios' : 'android'
-      void registerNativePushToken(token.value, platform)
-    })
+    if (!listenersAttached) {
+      await PushNotifications.addListener('registration', (token) => {
+        lastToken = token.value
+        const platform = Capacitor.getPlatform() === 'ios' ? 'ios' : 'android'
+        void registerNativePushToken(token.value, platform)
+      })
 
-    await PushNotifications.addListener('registrationError', (err) => {
-      console.warn('[NativePush] registration error:', err)
-    })
+      await PushNotifications.addListener('registrationError', (err) => {
+        console.warn('[NativePush] registration error:', err)
+        // Allow a later toggle / cold start to retry register().
+        initialized = false
+        lastToken = null
+      })
 
-    // 前台收到推送 → 用本地通知呈现（部分系统前台不自动弹）
-    await PushNotifications.addListener('pushNotificationReceived', async (notification) => {
-      try {
-        const { LocalNotifications } = await import('@capacitor/local-notifications')
-        await LocalNotifications.schedule({
-          notifications: [{
-            id: Math.floor(Date.now() % 2147483647),
-            title: notification.title ?? 'Sierro',
-            body: notification.body ?? '',
-          }],
-        })
-      } catch { /* ignore */ }
-    })
+      await PushNotifications.addListener('pushNotificationReceived', async (notification) => {
+        try {
+          const { LocalNotifications } = await import('@capacitor/local-notifications')
+          await LocalNotifications.schedule({
+            notifications: [{
+              id: Math.floor(Date.now() % 2147483647),
+              title: notification.title ?? 'Sierro',
+              body: notification.body ?? '',
+            }],
+          })
+        } catch { /* ignore */ }
+      })
 
-    // 点击通知 → 聚焦 App（路由跳转可按 data.type 扩展）
-    await PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
-      console.log('[NativePush] action performed:', action.notification?.data)
-    })
+      await PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+        console.log('[NativePush] action performed:', action.notification?.data)
+      })
+
+      listenersAttached = true
+    }
 
     // 触发 token 注册（APNs/FCM）
     await PushNotifications.register()
@@ -79,9 +96,14 @@ export async function initNativePush(): Promise<void> {
 /**
  * 推送 prefs（三类告警开关 / 低电量阈值）变更后，把最新 prefs 重新上报 relay。
  * 仅在原生平台且 token 已注册时生效（否则空跑——首次注册流程本身已带上 prefs）。
+ * 若尚未拿到 token，改为完整 init（覆盖“先开开关、后才授权”的时序）。
  */
 export async function reuploadNativePushPrefs(): Promise<void> {
-  if (!Capacitor.isNativePlatform() || !lastToken) return
+  if (!Capacitor.isNativePlatform()) return
+  if (!lastToken) {
+    await initNativePush()
+    return
+  }
   const platform = Capacitor.getPlatform() === 'ios' ? 'ios' : 'android'
   await registerNativePushToken(lastToken, platform)
 }
@@ -94,5 +116,6 @@ export async function teardownNativePush(): Promise<void> {
     const { PushNotifications } = await import('@capacitor/push-notifications')
     await PushNotifications.removeAllListeners()
   } catch { /* ignore */ }
+  listenersAttached = false
   initialized = false
 }

@@ -143,6 +143,18 @@ export const requestNotificationPermission = async (): Promise<NotificationPermi
       let { display } = await LocalNotifications.checkPermissions()
       if (display !== 'granted') ({ display } = await LocalNotifications.requestPermissions())
       nativeNotifState = display === 'granted' ? 'granted' : display === 'denied' ? 'denied' : 'default'
+      // Also request remote-push permission. Settings used to only hit
+      // LocalNotifications; initNativePush then saw PushNotifications.receive
+      // still prompt and skipped APNs/FCM register entirely.
+      try {
+        const { PushNotifications } = await import('@capacitor/push-notifications')
+        let push = await PushNotifications.checkPermissions()
+        if (push.receive !== 'granted') push = await PushNotifications.requestPermissions()
+        if (push.receive === 'granted') nativeNotifState = 'granted'
+        else if (push.receive === 'denied') nativeNotifState = 'denied'
+      } catch (e) {
+        console.warn('[Native] PushNotifications permission request failed:', e)
+      }
     } catch (e) {
       console.warn('[Native] notification permission request failed:', e)
       nativeNotifState = 'default'
