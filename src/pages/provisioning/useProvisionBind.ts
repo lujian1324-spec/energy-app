@@ -54,6 +54,7 @@ export function useProvisionBind(opts: {
   setConfigStage: Dispatch<SetStateAction<ConfigStage>>
   setFailKind: Dispatch<SetStateAction<FailKind>>
   setBindReason: Dispatch<SetStateAction<string | null>>
+  setBindDetails: Dispatch<SetStateAction<string | null>>
   setBindReasonKind: Dispatch<SetStateAction<BindFailReasonKind | null>>
   setBindErrorId: Dispatch<SetStateAction<string | null>>
 }) {
@@ -62,7 +63,7 @@ export function useProvisionBind(opts: {
     configGuardRef, wifiConfiguredRef, lastBleRef, bleGoneRef, provisionStepRef,
     onWifiConfigured,
     setBindRetrying, setRestarting, setShowRestartHelp, setConfigStage,
-    setFailKind, setBindReason, setBindReasonKind, setBindErrorId,
+    setFailKind, setBindReason, setBindReasonKind, setBindErrorId, setBindDetails,
   } = opts
 
   const handleBindToCloud = useCallback(async () => {
@@ -114,7 +115,20 @@ export function useProvisionBind(opts: {
        * devicesAlreadyAdded is also the authoritative answer to "is this on
        * someone else's account" — far better than matching words in an error.
        */
-      const dtuInfo = await fetchDtuInfo(dtuDtuid).catch(() => null)
+      /*
+       * Everything the add depended on, recorded as it is decided. Three separate
+       * theories about this failure were argued from the source and each was
+       * wrong, because the one thing nobody had was what the server actually
+       * said — the raw message goes to a log no one can open, and the screen
+       * shows a code. This is that missing evidence, on the screen, copyable.
+       */
+      const diag: string[] = [`dtu=${dtuDtuid || '(none)'}`]
+
+      const dtuInfo = await fetchDtuInfo(dtuDtuid).catch((e) => {
+        diag.push(`dtu/info threw: ${e instanceof Error ? e.message : String(e)}`)
+        return null
+      })
+      if (dtuInfo) diag.push(`dtu/info code=${String(dtuInfo.code)} msg=${String(dtuInfo.message ?? '')}`)
       const toBeAdded = dtuInfo && isOk(dtuInfo.code) ? dtuInfo.data?.devicesToBeAdded ?? [] : []
       const alreadyAdded = dtuInfo && isOk(dtuInfo.code) ? dtuInfo.data?.devicesAlreadyAdded ?? [] : []
 
@@ -126,9 +140,11 @@ export function useProvisionBind(opts: {
 
       const reportedSerial = toBeAdded[0]?.deviceSerialNumber
       const serialNumber = reportedSerial || generateSerial(spec, dtuDtuid)
+      diag.push(`toBeAdded=${toBeAdded.length} alreadyAdded=${alreadyAdded.length} serial=${reportedSerial ? 'reported' : 'virtual'}:${serialNumber}`)
 
       const stationsFresh = await ds.loadStations()
       const stationId = stationsFresh ? useDeviceStore.getState().stations[0]?.id : undefined
+      diag.push(`stationsFresh=${stationsFresh} stationId=${stationId ?? '(none)'}`)
       const base = {
         deviceName,
         dtuDtuid,
@@ -139,6 +155,8 @@ export function useProvisionBind(opts: {
         installedAt: '',
         ratedPower: spec.ratedPower,
       }
+      diag.push(`POST ${stationId != null ? '/device/add/single' : '/device/add/single/addStationTogether'}`)
+      diag.push(`body=${JSON.stringify(stationId != null ? { ...base, stationId: String(stationId) } : { ...base, station: { stationName: deviceName } })}`)
       const bindPromise = stationId != null
         ? ds.addNewDevice({ ...base, stationId })
         : ds.addNewDeviceWithStation({ ...base, station: { stationName: deviceName } })
@@ -170,15 +188,19 @@ export function useProvisionBind(opts: {
         setBindReason(null)
         setBindReasonKind(null)
         setBindErrorId(null)
+        setBindDetails(null)
         store.setStep('result')
       } else {
         const raw = String(devResult?.message ?? (devResult as { msg?: string } | undefined)?.msg ?? '')
+        diag.push(`reply code=${String(devResult?.code)} msg=${raw || '(empty)'}`)
+        setBindDetails(diag.join(String.fromCharCode(10)))
         applyBindFail(raw, devResult?.code)
         if (!stayOnResult) store.setStep('result')
       }
     } catch (err) {
       const m = err instanceof Error ? err.message : 'bind failed'
       store.addLog(`addNewDevice exception: ${m}`)
+      setBindDetails(`threw: ${m}`)
       applyBindFail(m, undefined, m === 'BIND_TIMEOUT')
       if (!stayOnResult) store.setStep('result')
     } finally {
