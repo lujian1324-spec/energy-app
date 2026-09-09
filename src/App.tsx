@@ -28,7 +28,7 @@ import { initNativePush } from './utils/nativePush'
 import { Capacitor } from '@capacitor/core'
 import { ToastContainer, useToast } from './components/Toast'
 import { ErrorBoundary } from './components/ErrorBoundary'
-import { Zap, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 
 /** 路由守卫：未登录且非游客则跳转到 /login */
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -55,13 +55,17 @@ function SessionLoadingScreen() {
 
   return (
     <div className="h-full w-full bg-ink-12 flex items-center justify-center" role="status" aria-live="polite">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-16 h-16 rounded-l bg-primary/[0.12] border border-primary/[0.3]
-          flex items-center justify-center">
-          <Zap size={32} className="text-primary" aria-hidden="true" />
-        </div>
-        <Loader2 size={20} className="animate-spin text-primary" aria-hidden="true" />
-        <p className="text-body-md text-ink-6">Restoring session...</p>
+      <div className="flex flex-col items-center">
+        {/* The same wordmark A_2.1 sets, so this screen and the one it hands over
+            to are the same picture — body face, spaced out, not the Anton display
+            face. Drawn as text rather than an image on purpose: this screen has to
+            be up before anything can be fetched, and an image would flash. */}
+        <h1 className="font-sans text-[32px] leading-none font-semibold text-white tracking-[0.22em] pl-[0.22em]">
+          SIERRO
+        </h1>
+        <Loader2 size={20} className="mt-8 animate-spin text-primary" aria-hidden="true" />
+        {/* Still announced, just not drawn — the wordmark says nothing to a screen reader. */}
+        <span className="sr-only">Restoring session</span>
       </div>
     </div>
   )
