@@ -173,7 +173,10 @@ p {
   ) + 20px);
 }
 
-/* --keyboard-inset-bottom is set only by MainActivity, from WindowInsets.ime().
+/* --keyboard-inset-bottom is set only on Android, by androidKeyboardInset.ts from
+   the IME height MainActivity publishes — and it is what the keyboard STILL
+   covers after the Keyboard plugin's own body resize, not the raw height, which
+   added on top of that resize lifted every bottom bar twice.
    Android stopped resizing the window for the keyboard once the app went
    edge-to-edge, so a bar pinned to the bottom of a full-height screen sat under
    it; adding the inset here lifts every one of them. It is absent on iOS and on

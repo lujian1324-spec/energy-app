@@ -142,13 +142,22 @@ public class MainActivity extends BridgeActivity {
         }
     }
 
-    /** Publishes the IME height as --keyboard-inset-bottom and wakes the web side. */
+    /**
+     * Publishes the IME height as --keyboard-inset-raw and wakes the web side.
+     *
+     * Deliberately NOT --keyboard-inset-bottom, which is what the CSS adds as
+     * padding: the Keyboard plugin runs with resize = Body and has usually
+     * shortened the document already, so feeding the raw height straight to CSS
+     * lifted everything twice and pushed the top of the screen out of view. The
+     * web side (androidKeyboardInset.ts) measures what is actually still covered
+     * and sets --keyboard-inset-bottom from that.
+     */
     private static void injectKeyboardVar(View v, int imePx) {
         if (!(v instanceof WebView)) return;
         DisplayMetrics dm = v.getResources().getDisplayMetrics();
         float d = dm.density <= 0f ? 1f : dm.density;
         int ime = Math.round(imePx / d);
-        String js = "document.documentElement.style.setProperty('--keyboard-inset-bottom','"
+        String js = "document.documentElement.style.setProperty('--keyboard-inset-raw','"
                 + ime + "px');"
                 + "window.dispatchEvent(new CustomEvent('sierro:keyboardinset',{detail:" + ime + "}));";
         ((WebView) v).evaluateJavascript(js, null);

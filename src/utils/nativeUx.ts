@@ -3,6 +3,7 @@
  * 仅在 Capacitor 原生环境生效；PWA/浏览器下全部为 no-op。
  */
 import { Capacitor } from '@capacitor/core'
+import { startAndroidKeyboardInset } from './androidKeyboardInset'
 
 const isNative = () => Capacitor.isNativePlatform()
 
@@ -80,5 +81,8 @@ export async function setupKeyboard(): Promise<void> {
 
 export async function setupNativeUx(): Promise<void> {
   applyAndroidTopInsetFloor()
+  // Resolve MainActivity's raw IME height into the insets the UI adds, before
+  // anything can render with a stale one.
+  startAndroidKeyboardInset()
   await Promise.all([setupStatusBar(), setupBackButton(), setupKeyboard()])
 }
