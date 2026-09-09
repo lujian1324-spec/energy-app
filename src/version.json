@@ -1,9 +1,8 @@
 {
-  "version": "4.9.25",
-  "build": 2851,
+  "version": "4.9.26",
+  "build": 2852,
   "date": "2026-09-09",
   "changelog": [
-    "iOS: the keyboard no longer covers the button under it. Sign in, the verification code, the onboarding name step, Profile, and the Wi-Fi password step all had a button pinned below the keyboard — the lift that fixed this on Android had never been switched on for iOS.",
-    "Naming a device during setup: its Next button now clears the keyboard too. That one had never lifted on either platform."
+    "Scan QR Code: the bottom-right corner of the viewfinder is square again — one number in its outline was wrong, which bent the stroke back on itself instead of rounding the corner."
   ]
 }

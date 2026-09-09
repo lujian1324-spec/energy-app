@@ -137,7 +137,7 @@ function QrScanScreen({ onBack, onScanned }: {
           {[['top-0 left-0', 'M0 20V4C0 1.79 1.79 0 4 0H20'],
             ['top-0 right-0', 'M24 20V4C24 1.79 22.21 0 20 0H4'],
             ['bottom-0 left-0', 'M0 4V20C0 22.21 1.79 24 4 24H20'],
-            ['bottom-0 right-0', 'M24 4V20C24 22.21 22.21 0 20 24H4'],
+            ['bottom-0 right-0', 'M24 4V20C24 22.21 22.21 24 20 24H4'],
           ].map(([pos, d], i) => (
             <svg key={i} className={`absolute ${pos}`} width="36" height="36" viewBox="0 0 24 24" fill="none">
               <path d={d} stroke="#01D6BE" strokeWidth="2.5" strokeLinecap="round"/>
