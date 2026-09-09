@@ -1,9 +1,8 @@
 {
-  "version": "4.9.35",
-  "build": 2861,
+  "version": "4.9.37",
+  "build": 2863,
   "date": "2026-09-09",
   "changelog": [
-    "Adding a device on an account that has none works. The power station the app creates for it is now built from the exact body the platform publishes for that call — the country's name rather than its code, the grid type the example uses, and none of the fields the example leaves out. Every previous attempt was refused before the device was ever reached.",
-    "If it still fails, Try every variant asks the server what a station may look like, prints one it has already accepted, and sweeps thirteen bodies around the published example."
+    "Adding a device on an account that has none works. The power station created for it is now built exactly the way a create the server accepted was built — every value sent as text, the platform's own region codes included, and the install time carrying the local offset. The app had been sending plain numbers, no region codes, and a UTC stamp, and the station was refused before the device was ever reached."
   ]
 }

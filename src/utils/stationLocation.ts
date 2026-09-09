@@ -96,20 +96,51 @@ export function stationPlace(): StationPlace {
  * and a code where a name is expected is an illegal argument.
  */
 export function countryName(code: string): string {
+  // The table first, on purpose. Intl.DisplayNames is the platform's opinion,
+  // not the backend's: on iOS it answers "China mainland" for CN, where the
+  // endpoint's own example says "China" — and a name the server does not know
+  // is an illegal argument like any other.
+  const known = COUNTRY_NAMES[code]
+  if (known) return known
   try {
     const n = new Intl.DisplayNames(['en'], { type: 'region' }).of(code)
     if (n && n !== code) return n
   } catch { /* fall through */ }
-  return FALLBACK_NAMES[code] ?? code
+  return code
 }
 
-/** For a platform without Intl.DisplayNames — the zones the table above covers. */
-const FALLBACK_NAMES: Record<string, string> = {
+/** Names as the backend writes them — "China", not "China mainland". */
+const COUNTRY_NAMES: Record<string, string> = {
   CN: 'China', HK: 'Hong Kong', TW: 'Taiwan', SG: 'Singapore', JP: 'Japan',
   KR: 'South Korea', AU: 'Australia', GB: 'United Kingdom', DE: 'Germany',
   FR: 'France', ES: 'Spain', NL: 'Netherlands', US: 'United States',
   CA: 'Canada', BR: 'Brazil', ZA: 'South Africa', IN: 'India',
   AE: 'United Arab Emirates',
+}
+
+/** GADM/ISO-3 codes, as the captured request carries them: "CHN", "USA". */
+const ISO3: Record<string, string> = {
+  CN: 'CHN', HK: 'HKG', TW: 'TWN', SG: 'SGP', JP: 'JPN', KR: 'KOR',
+  AU: 'AUS', GB: 'GBR', DE: 'DEU', FR: 'FRA', ES: 'ESP', NL: 'NLD',
+  US: 'USA', CA: 'CAN', BR: 'BRA', ZA: 'ZAF', IN: 'IND', AE: 'ARE',
+}
+
+export function iso3(code: string): string {
+  return ISO3[code] ?? code
+}
+
+/**
+ * Local time with the zone's own offset and no milliseconds — the shape the
+ * captured request carries ("2026-09-09T08:15:26-07:00"). toISOString gives
+ * UTC with a Z and three decimals, which is not what went up.
+ */
+export function localIsoWithOffset(d: Date = new Date()): string {
+  const pad = (n: number) => String(Math.floor(Math.abs(n))).padStart(2, '0')
+  const off = -d.getTimezoneOffset()
+  const sign = off >= 0 ? '+' : '-'
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+    + `T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+    + `${sign}${pad(off / 60)}:${pad(off % 60)}`
 }
 
 /** The currency that goes with a country, falling back to USD. */

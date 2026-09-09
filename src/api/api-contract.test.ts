@@ -275,23 +275,44 @@ describe('deviceApi contracts', () => {
     expect(dev.defaultStationPayload('x'.repeat(60)).name).toHaveLength(40)
   })
 
-  it('newStationRequest → the seven keys /station/add publishes, and no others', async () => {
-    // The endpoint's own request example:
-    //   { name, latitude, longitude, installedCapacity, connectedGridType,
-    //     country, city }
-    // Sending stationType: 0 — a field the example does not have — and the ISO
-    // code where it carries a country NAME are two of the three things every
-    // refused body had in common.
+  it('newStationRequest → mirrors the create the server accepted', async () => {
+    // Captured off the vendor's console. Two things settled it: every value goes
+    // up as a STRING, and the body carries four region codes no doc mentions.
     const st = dev.newStationRequest('My Station', 0.5)
-    expect(Object.keys(st).sort()).toEqual(
-      ['city', 'connectedGridType', 'country', 'installedCapacity', 'latitude', 'longitude', 'name'])
-    expect(st).not.toHaveProperty('stationType')
-    expect(st.connectedGridType).toBe(2)
-    // A name, not a code: "China", never "CN".
+
+    for (const k of ['latitude', 'longitude', 'stationType', 'connectedGridType',
+                     'installedCapacity', 'energyIncomePrice'] as const) {
+      expect(typeof st[k], `${k} must go up as a string`).toBe('string')
+    }
+    for (const k of ['countryCode', 'provinceCode', 'cityCode', 'areaCode'] as const) {
+      expect(st, `missing ${k}`).toHaveProperty(k)
+    }
+    // Empty strings, not absent — as captured.
+    expect(st.imageResid).toBe('')
+    expect(st.areaCode).toBe('')
+    // Valid dictionary members, never 0.
+    expect(st.stationType).toBe('4')
+    expect(st.connectedGridType).toBe('2')
+    // A country name, and an ISO-3 code beside it.
     expect(st.country.length).toBeGreaterThan(2)
-    expect(st.installedCapacity).toBeGreaterThanOrEqual(0.001)
-    expect(dev.newStationRequest('x', 0).installedCapacity).toBeGreaterThanOrEqual(0.001)
+    expect(st.countryCode).toMatch(/^[A-Z]{3}$/)
+    // The zone's offset, no milliseconds, no trailing Z.
+    expect(st.installedAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}$/)
+    expect(Number(st.installedCapacity)).toBeGreaterThanOrEqual(0.001)
+    expect(Number(dev.newStationRequest('x', 0).installedCapacity)).toBeGreaterThanOrEqual(0.001)
     expect(dev.newStationRequest('x'.repeat(60), 1).name).toHaveLength(40)
+  })
+
+  it('newStationRequest → prefers the region the platform named', async () => {
+    const st = dev.newStationRequest('S', 1, {
+      country: 'China', province: 'Beijing', city: 'Dongcheng',
+      countryCode: 'CHN', provinceCode: 'CHN.110000', cityCode: 'CHN.110101',
+    })
+    expect(st.country).toBe('China')
+    expect(st.province).toBe('Beijing')
+    expect(st.city).toBe('Dongcheng')
+    expect(st.provinceCode).toBe('CHN.110000')
+    expect(st.cityCode).toBe('CHN.110101')
   })
 
   it('addStation → POST /station/add, body passed through', async () => {

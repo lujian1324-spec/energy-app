@@ -8,7 +8,8 @@ import type { ProvisionStoreState, ProvisionStep } from '../../stores/provisionS
 import { getProvisionManager } from '../../protocols/bleProvision'
 import { SIERRO_MODELS, generateSerial, type SierroModel } from '../../data/deviceModels'
 import { saveRatedParams } from '../../db/powerflowDB'
-import { fetchDtuInfo, newStationRequest, ratedPowerKw, addStation } from '../../api/deviceApi'
+import { fetchDtuInfo, newStationRequest, ratedPowerKw, addStation, reverseGisRegion, type RegionCodes } from '../../api/deviceApi'
+import { stationPlace } from '../../utils/stationLocation'
 import type { ProbeInput } from '../../utils/bindProbe'
 import { fetchUserInfo } from '../../api/authApi'
 import { useDeviceStore } from '../../stores/deviceStore'
@@ -184,7 +185,40 @@ export function useProvisionBind(opts: {
        * works, since that is how the first account's device was added.
        */
       if (stationId == null) {
-        const stReq = newStationRequest(deviceName, ratedPowerKw(spec.ratedPower))
+        /*
+         * Ask the platform to name the region first. The create the server
+         * accepted carries countryCode / provinceCode / cityCode as its own
+         * codes ("CHN", "CHN.110000", "CHN.110101"), which are not values this
+         * app can invent — so they come from the reverse lookup when it answers,
+         * and the ISO-3 country alone when it does not.
+         */
+        const place = stationPlace()
+        let region: RegionCodes | undefined
+        try {
+          const rr = await reverseGisRegion(place.latitude, place.longitude)
+          diag.push(`region reverse code=${String(rr.code)} data=${JSON.stringify(rr.data ?? '').slice(0, 300)}`)
+          if (isOk(rr.code) && rr.data && typeof rr.data === 'object') {
+            const d = rr.data as Record<string, unknown>
+            const str = (...k: string[]) => {
+              for (const key of k) { const v = d[key]; if (typeof v === 'string' && v) return v }
+              return undefined
+            }
+            region = {
+              country: str('country', 'countryName'),
+              province: str('province', 'provinceName'),
+              city: str('city', 'cityName'),
+              area: str('area', 'areaName'),
+              countryCode: str('countryCode'),
+              provinceCode: str('provinceCode'),
+              cityCode: str('cityCode'),
+              areaCode: str('areaCode'),
+            }
+          }
+        } catch (e) {
+          diag.push(`region reverse threw: ${e instanceof Error ? e.message : String(e)}`)
+        }
+
+        const stReq = newStationRequest(deviceName, ratedPowerKw(spec.ratedPower), region)
         diag.push(`POST /station/add body=${JSON.stringify(stReq)}`)
         const stRes = await addStation(stReq).catch((e) => {
           diag.push(`station/add threw: ${e instanceof Error ? e.message : String(e)}`)
