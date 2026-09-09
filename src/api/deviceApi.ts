@@ -188,7 +188,8 @@ export interface AddDeviceRequest {
   extraProperty?: Record<string, unknown>
 }
 
-export interface AddDeviceWithStationRequest extends AddDeviceRequest {
+/** The station to create alongside the device. Sent nested, see below. */
+export interface NewStationPayload {
   stationName?: string
   country?: string
   province?: string
@@ -202,6 +203,30 @@ export interface AddDeviceWithStationRequest extends AddDeviceRequest {
   installedCapacity?: number
   timezone?: string
   currencyCode?: string
+}
+
+/**
+ * Adding a device AND its station carries no stationId — there is no station yet
+ * — and the station's own fields go in a nested `station` object rather than
+ * flattened alongside the device's. Sending `stationId: 0` and a flat
+ * `stationName`, which is what this used to do, is an illegal argument, and it
+ * is the call every brand-new account makes for its first device.
+ */
+export type AddDeviceWithStationRequest = Omit<AddDeviceRequest, 'stationId'> & {
+  station: NewStationPayload
+}
+
+/** What `/device/dtu/info` reports about a collector's devices. */
+export interface DtuDeviceEntry {
+  deviceSerialNumber?: string
+  [k: string]: unknown
+}
+export interface DtuInfoResponse {
+  /** Reported by the collector and not yet added — carries the REAL serial. */
+  devicesToBeAdded?: DtuDeviceEntry[]
+  /** Already on an account. Adding again is refused. */
+  devicesAlreadyAdded?: DtuDeviceEntry[]
+  [k: string]: unknown
 }
 
 // ─── 删除设备 ───
@@ -709,8 +734,9 @@ export async function addDevice(
 export async function addDeviceWithStation(
   data: AddDeviceWithStationRequest
 ): Promise<ApiResponse<unknown>> {
-  return api.post<unknown>('/device/add/single/addStationTogether', { ...data, stationId: String(data.stationId) })
+  return api.post<unknown>('/device/add/single/addStationTogether', data)
 }
+
 
 /** 删除设备（解绑）— 参数为单个 id（非数组） */
 export async function deleteDevice(
@@ -741,9 +767,17 @@ export async function unpinDevice(ids: number[]): Promise<ApiResponse<unknown>> 
   return api.post<unknown>('/device/unpin', { ids })
 }
 
-/** 获取设备采集器信息 */
-export async function fetchDtuInfo(dtuDtuid: string): Promise<ApiResponse<unknown>> {
-  return api.get<unknown>(`/device/dtu/info?dtuDtuid=${encodeURIComponent(dtuDtuid)}`)
+/**
+ * 获取设备采集器信息 — what the collector says about itself before anything is
+ * added. Wrapped since the API layer was first written, and never called.
+ *
+ * The serial number is not ours to invent: a collector that has detected its
+ * inverter reports the real one in `devicesToBeAdded`, and that is what the add
+ * call has to carry. Only when it reports none is a virtual serial correct —
+ * the one case provisioning used to assume always held.
+ */
+export async function fetchDtuInfo(dtuDtuid: string): Promise<ApiResponse<DtuInfoResponse>> {
+  return api.get<DtuInfoResponse>(`/device/dtu/info?dtuDtuid=${encodeURIComponent(dtuDtuid)}`)
 }
 
 /** 查询设备属性分组列表 */

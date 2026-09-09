@@ -1,8 +1,10 @@
 {
-  "version": "4.9.29",
-  "build": 2855,
+  "version": "4.9.30",
+  "build": 2856,
   "date": "2026-09-09",
   "changelog": [
-    "Adding a device works on any account again. Signing out left the previous account's power station behind in memory, so the next account's first device was sent up attached to it — which the server refuses, and which showed as \"Couldn't add device\" with error 20101 no matter how many times you deleted the device and tried again."
+    "Adding a device to an account that has none works. The call that creates the first station was sending it in the wrong shape, which the server refused — and every brand-new account makes exactly that call for its first device.",
+    "The device's serial number now comes from the device. The app was making one up and declaring it virtual, which a collector that has already detected its inverter rejects.",
+    "\"Device already linked\" is now decided by asking the device, not by reading words out of an error message."
   ]
 }

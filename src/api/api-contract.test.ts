@@ -255,17 +255,32 @@ describe('deviceApi contracts', () => {
     expect(typeof last().body.id).toBe('string')
   })
 
-  it('addDevice / addDeviceWithStation → pass payload through, stationId as string (Long-safe)', async () => {
+  it('addDevice → stationId as string (Long-safe)', async () => {
     // stationId is a Java Long — it must be sent as an exact decimal string so a
     // big id can't be corrupted into a backend "illegal argument".
     await dev.addDevice({ deviceName: 'D', dtuDtuid: 'x', stationId: '7300000000000000123' } as any)
     expect(last().path).toBe('/device/add/single')
     expect(last().body.stationId).toBe('7300000000000000123')
     expect(typeof last().body.stationId).toBe('string')
+  })
 
-    await dev.addDeviceWithStation({ deviceName: 'D', stationId: 1 } as any)
+  it('addDeviceWithStation → nested station, and NO stationId', async () => {
+    // There is no station yet — this call is what creates it — and its fields go
+    // nested. Sending `stationId: 0` with the station's fields flattened beside
+    // the device's is an illegal argument, and this is the call every brand-new
+    // account makes for its first device.
+    await dev.addDeviceWithStation({
+      deviceName: 'D', dtuDtuid: 'x', station: { stationName: "D's Station" },
+    } as any)
     expect(last().path).toBe('/device/add/single/addStationTogether')
-    expect(last().body.stationId).toBe('1')
+    expect(last().body.station).toEqual({ stationName: "D's Station" })
+    expect(last().body).not.toHaveProperty('stationId')
+    expect(last().body).not.toHaveProperty('stationName')
+  })
+
+  it('fetchDtuInfo → GET with the collector id on the query string', async () => {
+    await dev.fetchDtuInfo('43767893781169874514')
+    expect(last().path).toBe('/device/dtu/info?dtuDtuid=43767893781169874514')
   })
 
   it('pin / unpin → ids array', async () => {
