@@ -3,6 +3,7 @@
   "build": 2861,
   "date": "2026-09-09",
   "changelog": [
-    "Try every variant now asks the server what a power station is allowed to look like before it sends anything, and reports an existing station's own values, so the remaining unknowns stop being guesses."
+    "Adding a device on an account that has none works. The power station the app creates for it is now built from the exact body the platform publishes for that call — the country's name rather than its code, the grid type the example uses, and none of the fields the example leaves out. Every previous attempt was refused before the device was ever reached.",
+    "If it still fails, Try every variant asks the server what a station may look like, prints one it has already accepted, and sweeps thirteen bodies around the published example."
   ]
 }

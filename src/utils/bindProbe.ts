@@ -15,7 +15,7 @@
  */
 import { api, isApiSuccess } from './apiClient'
 import type { ApiResponse } from './apiClient'
-import { stationPlace, currencyFor } from './stationLocation'
+import { stationPlace, currencyFor, countryName } from './stationLocation'
 import { fetchStationDictionary, fetchStationList } from '../api/deviceApi'
 
 export interface ProbeInput {
@@ -78,43 +78,44 @@ export function fullStation(name: string, capacityKw: number, lat: number, lng: 
  */
 export function stationVariants(name: string, capacityKw: number): Array<{ label: string; body: Record<string, unknown> }> {
   const p = stationPlace()
-  const base = () => ({
-    name: name.slice(0, 40),
-    country: p.country,
-    province: p.city,
-    city: p.city,
-    area: p.area,
-    address: p.address,
-    latitude: p.latitude,
-    longitude: p.longitude,
-    stationType: 0,
-    connectedGridType: 0,
-    installedCapacity: Math.max(capacityKw, 0.001),
-    installedAt: new Date().toISOString(),
-    timezone: p.timezone,
-    currencyCode: currencyFor(p.country),
-  })
+  const cap = Math.max(capacityKw, 0.001)
   const plain = name.replace(/[^\w\s-]/g, '').replace(/\s+/g, ' ').trim() || 'My Station'
   const dateOnly = new Date().toISOString().slice(0, 10)
-  const noMs = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
+
+  /** The endpoint's own request example, key for key. */
+  const example = (over: Record<string, unknown> = {}) => ({
+    name: name.slice(0, 40),
+    latitude: p.latitude,
+    longitude: p.longitude,
+    installedCapacity: cap,
+    connectedGridType: 2,
+    country: countryName(p.country),
+    city: p.city,
+    ...over,
+  })
 
   return [
-    { label: 'types 1/1', body: { ...base(), stationType: 1, connectedGridType: 1 } },
-    { label: 'types 1/0', body: { ...base(), stationType: 1, connectedGridType: 0 } },
-    { label: 'types 0/1', body: { ...base(), stationType: 0, connectedGridType: 1 } },
-    { label: 'types 2/1', body: { ...base(), stationType: 2, connectedGridType: 1 } },
-    { label: 'plain ASCII name', body: { ...base(), name: plain } },
-    { label: 'plain name + types 1/1', body: { ...base(), name: plain, stationType: 1, connectedGridType: 1 } },
-    { label: 'installedAt without milliseconds', body: { ...base(), installedAt: noMs } },
-    { label: 'installedAt date only', body: { ...base(), installedAt: dateOnly } },
-    { label: 'plain name, types 1/1, date only', body: { ...base(), name: plain, stationType: 1, connectedGridType: 1, installedAt: dateOnly } },
-    { label: 'capacity 1 (integer)', body: { ...base(), installedCapacity: 1 } },
-    { label: 'no currencyCode', body: (() => { const b = base() as Record<string, unknown>; delete b.currencyCode; return b })() },
-    { label: 'no timezone', body: (() => { const b = base() as Record<string, unknown>; delete b.timezone; return b })() },
-    { label: 'name only + required numerics', body: {
-      name: plain, country: p.country, latitude: p.latitude, longitude: p.longitude,
-      stationType: 1, connectedGridType: 1, installedCapacity: Math.max(capacityKw, 0.001),
+    { label: 'example, as published', body: example() },
+    { label: 'example + plain ASCII name', body: example({ name: plain }) },
+    { label: 'example + ISO country code', body: example({ country: p.country }) },
+    { label: 'example + connectedGridType 1', body: example({ connectedGridType: 1 }) },
+    { label: 'example + connectedGridType 0', body: example({ connectedGridType: 0 }) },
+    { label: 'example + stationType 1', body: example({ stationType: 1 }) },
+    { label: 'example + stationType 0', body: example({ stationType: 0 }) },
+    { label: 'example + timezone + currency', body: example({ timezone: p.timezone, currencyCode: currencyFor(p.country) }) },
+    { label: 'example + installedAt (date only)', body: example({ installedAt: dateOnly }) },
+    { label: 'example + address fields', body: example({ province: p.city, area: p.area, address: p.address }) },
+    { label: 'example, capacity 10.5 as published', body: example({ installedCapacity: 10.5 }) },
+    { label: 'everything: name plain, all optionals', body: example({
+      name: plain, stationType: 1, province: p.city, area: p.area, address: p.address,
       installedAt: dateOnly, timezone: p.timezone, currencyCode: currencyFor(p.country),
+    }) },
+    { label: 'the ten-field body that was refused (control)', body: {
+      name: name.slice(0, 40), country: p.country, province: p.city, city: p.city,
+      area: p.area, address: p.address, latitude: p.latitude, longitude: p.longitude,
+      stationType: 0, connectedGridType: 0, installedCapacity: cap,
+      installedAt: new Date().toISOString(), timezone: p.timezone,
+      currencyCode: currencyFor(p.country),
     } },
   ]
 }
