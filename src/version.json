@@ -1,8 +1,8 @@
 {
-  "version": "4.9.31",
-  "build": 2857,
+  "version": "4.9.32",
+  "build": 2858,
   "date": "2026-09-09",
   "changelog": [
-    "When a device can't be added, the failure screen now offers Technical details: what the collector reported, which call was made, exactly what was sent, and the server's own reply. Until now it showed a code and nothing else, and the reply went to a log nobody could open."
+    "Adding a device to an account that has no power station yet works. The station created alongside it was being sent with its name under the wrong field and none of the ten the server requires, which is why it answered \"illegal argument\" every time."
   ]
 }

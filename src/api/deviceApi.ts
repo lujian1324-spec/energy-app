@@ -188,21 +188,61 @@ export interface AddDeviceRequest {
   extraProperty?: Record<string, unknown>
 }
 
-/** The station to create alongside the device. Sent nested, see below. */
+/**
+ * The station to create alongside the device — the same shape as StationAddDtio,
+ * and it is mostly REQUIRED. The name field is `name`, not `stationName`, and
+ * nine more fields have to be there. Sending `{ stationName }` alone, which is
+ * what provisioning did, is the illegal argument that stopped any account
+ * without a station from adding its first device.
+ */
 export interface NewStationPayload {
-  stationName?: string
-  country?: string
+  /** *required*, max 40 */
+  name: string
+  /** *required* */
+  country: string
+  /** *required*, -90..90 */
+  latitude: number
+  /** *required*, -180..180 */
+  longitude: number
+  /** *required* */
+  stationType: number
+  /** *required* */
+  connectedGridType: number
+  /** *required*, >= 0.001 */
+  installedCapacity: number
+  /** *required*, ISO 8601 */
+  installedAt: string
+  /** *required* */
+  timezone: string
+  /** *required* */
+  currencyCode: string
   province?: string
   city?: string
   area?: string
+  /** max 400 */
   address?: string
-  latitude?: number
-  longitude?: number
-  stationType?: number
-  connectedGridType?: number
-  installedCapacity?: number
-  timezone?: string
-  currencyCode?: string
+  energyIncomePrice?: number
+  totalCost?: number
+  imageResid?: string
+}
+
+/** Fills in everything StationAddDtio requires for a station named `name`. */
+export function defaultStationPayload(name: string, capacityKw: number): NewStationPayload {
+  let timezone = 'UTC'
+  try { timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC' } catch { /* keep UTC */ }
+  return {
+    name: name.slice(0, 40),
+    country: 'US',
+    latitude: 0,
+    longitude: 0,
+    stationType: 0,
+    connectedGridType: 0,
+    // The floor is 0.001, so a device that reports nothing still passes.
+    installedCapacity: Math.max(capacityKw, 0.001),
+    installedAt: new Date().toISOString(),
+    timezone,
+    currencyCode: 'USD',
+  }
 }
 
 /**
