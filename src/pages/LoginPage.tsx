@@ -365,7 +365,9 @@ export default function LoginPage() {
         <h1 className="mt-[18px] text-headline-md font-semibold text-white text-center">Enter verification code</h1>
         <p className="mt-2 text-body-md text-ink-5 text-center">
           We sent a 6-digit verification code to<br />
-          <span className="font-semibold text-ink-2">{email.trim()}</span>
+          {/* The subject line, so the message can be found in a crowded inbox or
+              fished out of spam — it does not carry the Sierro name. */}
+          <span className="font-semibold text-ink-2">{email.trim()}</span> titled [Solar of things]
         </p>
 
         {/* One bordered row split into six 62px cells (4x export), with a transparent
