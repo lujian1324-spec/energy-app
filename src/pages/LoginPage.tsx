@@ -16,6 +16,7 @@ import {
   CaptchaIntent,
 } from '../api/authApi'
 import { isApiSuccess } from '../utils/apiClient'
+import { accountFromEmail } from '../utils/accountName'
 import { isFirstRunAccount } from '../utils/firstRunAccount'
 import { TERMS_URL, PRIVACY_URL } from '../config/legalLinks'
 import { sanitizeUiCopy } from '../utils/uiCopy'
@@ -44,24 +45,50 @@ type Step = 'landing' | 'email' | 'code'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-/** Account for a self-registered address: the local part of the email. */
-function accountFromEmail(email: string): string {
-  return email.trim().split('@')[0].replace(/[^A-Za-z0-9._-]/g, '') || 'user'
-}
 
 
 
 /**
- * `checkEmailExists` / `checkAccountExists` answer "is this free?": code 0 means the
- * value is available, code 5 means it is already taken. Anything else is a transport or
- * server problem, so treat it as "unknown" and let the caller fall back.
+ * `/user/account/check` answers "is this name free?" without a session: code 0
+ * means free, 20008 means taken.
+ */
+async function isAccountTaken(account: string): Promise<boolean | null> {
+  try {
+    const r = await checkAccountExists(account)
+    return !isApiSuccess(r.code)
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Whether this address already has an account. `null` means the question could
+ * not be answered.
+ *
+ * `/user/email/check` is the direct answer, but it sits behind the session: with
+ * no token it replies 100009 "Token missing", which apiClient reads as an expired
+ * session — and the one screen that asks is the sign-in screen, where by
+ * definition there is no session. So the answer was never available, every
+ * address looked like an existing one, the code went out with the sign-in intent
+ * instead of the register intent, and a brand-new address could only reach
+ * registration through the message sniff in handleVerify. That is why signing up
+ * with a fresh address came back with an error.
+ *
+ * `/user/account/check` needs no session, and the account name is derived from
+ * the address, so a free name means the address has not been registered through
+ * this app. It is a weaker signal than the email check — someone could hold an
+ * account under another name — but it is an answer, and handleVerify still
+ * covers the miss in both directions.
  */
 async function isEmailRegistered(email: string): Promise<boolean | null> {
   try {
     const r = await checkEmailExists(email)
-    return !isApiSuccess(r.code)
+    if (isApiSuccess(r.code)) return false
+    // Not an answer about the address, just a refusal to look without a session.
+    if (String(r.code) === '100009') return await isAccountTaken(accountFromEmail(email))
+    return true
   } catch {
-    return null
+    return await isAccountTaken(accountFromEmail(email))
   }
 }
 
@@ -239,6 +266,27 @@ export default function LoginPage() {
     }
   }
 
+  /**
+   * The sixth digit signs in: A_2.1.2 has no confirm step, and reaching for a
+   * button after the code is already complete is a step nobody wants. The button
+   * stays as the fallback for a code that arrives by paste or autofill without an
+   * input event landing.
+   *
+   * The ref keeps the effect off handleVerify's identity, which changes every
+   * render. A code is submitted once — editing it after a rejection makes a new
+   * one, which submits again on the sixth digit.
+   */
+  const verifyRef = useRef(handleVerify)
+  verifyRef.current = handleVerify
+  const submittedCode = useRef<string | null>(null)
+  useEffect(() => {
+    if (step !== 'code') { submittedCode.current = null; return }
+    if (busy || !captchaId || otpCode.length < OTP_LEN) return
+    if (submittedCode.current === otpCode) return
+    submittedCode.current = otpCode
+    void verifyRef.current()
+  }, [step, otpCode, captchaId, busy])
+
   const continueAsGuest = () => {
     useAuthStore.getState().setGuestMode()
     navigate('/', { replace: true })
@@ -306,7 +354,7 @@ export default function LoginPage() {
         <div className="px-4 pb-5 safe-area-top-header">
           <BackButton to="landing" />
         </div>
-        <div className="flex-1 px-4">
+        <div className="flex-1 min-h-0 px-4">
           <h1 className="mt-[18px] text-headline-md font-semibold text-white text-center">Enter your email</h1>
           <p className="mt-2 text-body-md text-ink-5 text-center">
             We&apos;ll send a verification code to your email.
@@ -338,7 +386,7 @@ export default function LoginPage() {
       <div className="px-4 pb-5 safe-area-top-header">
         <BackButton to="email" />
       </div>
-      <div className="flex-1 px-4">
+      <div className="flex-1 min-h-0 px-4">
         <h1 className="mt-[18px] text-headline-md font-semibold text-white text-center">Enter verification code</h1>
         <p className="mt-2 text-body-md text-ink-5 text-center">
           We sent a 6-digit verification code to<br />
