@@ -12,6 +12,7 @@ import { useDeviceStore } from '../../stores/deviceStore'
 import {
   BIND_FAIL_COPY, RESTART_HELP_COPY,
   isJunkError, mapBindFailReason,
+  type BindFailReasonKind,
   type FailKind,
 } from '../../utils/provisionFailCopy'
 import { sanitizeUiCopy } from '../../utils/uiCopy'
@@ -52,6 +53,7 @@ export function useProvisionBind(opts: {
   setConfigStage: Dispatch<SetStateAction<ConfigStage>>
   setFailKind: Dispatch<SetStateAction<FailKind>>
   setBindReason: Dispatch<SetStateAction<string | null>>
+  setBindReasonKind: Dispatch<SetStateAction<BindFailReasonKind | null>>
   setBindErrorId: Dispatch<SetStateAction<string | null>>
 }) {
   const {
@@ -59,7 +61,7 @@ export function useProvisionBind(opts: {
     configGuardRef, wifiConfiguredRef, lastBleRef, bleGoneRef, provisionStepRef,
     onWifiConfigured,
     setBindRetrying, setRestarting, setShowRestartHelp, setConfigStage,
-    setFailKind, setBindReason, setBindErrorId,
+    setFailKind, setBindReason, setBindReasonKind, setBindErrorId,
   } = opts
 
   const handleBindToCloud = useCallback(async () => {
@@ -89,6 +91,7 @@ export function useProvisionBind(opts: {
       store.setConfigResult('fail')
       store.setErrorMessage(timeout ? BIND_TIMEOUT_COPY : BIND_FAIL_COPY)
       setBindReason(mapped.reason ?? null)
+      setBindReasonKind(mapped.kind ?? null)
       setBindErrorId(mapped.errorId ?? null)
     }
 
@@ -131,6 +134,7 @@ export function useProvisionBind(opts: {
         store.setErrorMessage(null)
         setFailKind(null)
         setBindReason(null)
+        setBindReasonKind(null)
         setBindErrorId(null)
         store.setStep('result')
       } else {
@@ -152,7 +156,7 @@ export function useProvisionBind(opts: {
       }
       configGuardRef.current = false
     }
-  }, [store, deviceNameInput, selectedModel, failKind, configGuardRef, setBindRetrying, setConfigStage, setFailKind, setBindReason, setBindErrorId])
+  }, [store, deviceNameInput, selectedModel, failKind, configGuardRef, setBindRetrying, setConfigStage, setFailKind, setBindReason, setBindReasonKind, setBindErrorId])
 
   const handleConfig = useCallback(async () => {
     // Live read: `store` here is a render snapshot too (see currentDtuid).

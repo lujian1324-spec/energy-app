@@ -1,8 +1,9 @@
 {
-  "version": "4.9.26",
-  "build": 2852,
+  "version": "4.9.27",
+  "build": 2853,
   "date": "2026-09-09",
   "changelog": [
-    "Scan QR Code: the bottom-right corner of the viewfinder is square again — one number in its outline was wrong, which bent the stroke back on itself instead of rounding the corner."
+    "A device that is already on somebody else's account now says so on its own screen, with a diagram of what has happened and where to undo it, instead of one more red line on the generic failure panel.",
+    "The Add Device title keeps clear of the back button and Scan QR when a longer translation or larger type would previously have run underneath them."
   ]
 }

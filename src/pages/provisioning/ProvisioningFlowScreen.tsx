@@ -12,7 +12,8 @@ import {
 import Icon from '../../components/Icon'
 import { toast } from '../../components/Toast'
 import { useProvisionStore } from '../../stores/provisionStore'
-import { bindFailTitle, BIND_WIFI_HELPER, RESTART_HELP_COPY, type FailKind } from '../../utils/provisionFailCopy'
+import { bindFailTitle, BIND_WIFI_HELPER, RESTART_HELP_COPY, type FailKind, type BindFailReasonKind } from '../../utils/provisionFailCopy'
+import DeviceLinkedScreen from './DeviceLinkedScreen'
 
 type FlowProps = {
   failKind: FailKind
@@ -20,6 +21,7 @@ type FlowProps = {
   restarting: boolean
   showRestartHelp: boolean
   bindReason: string | null
+  bindReasonKind: BindFailReasonKind | null
   bindErrorId: string | null
   configStage: string
   bleKeyInput: string
@@ -44,12 +46,28 @@ type FlowProps = {
 export default function ProvisioningFlowScreen(p: FlowProps) {
   const store = useProvisionStore()
   const {
-    failKind, bindRetrying, restarting, showRestartHelp, bindReason, bindErrorId,
+    failKind, bindRetrying, restarting, showRestartHelp, bindReason, bindReasonKind, bindErrorId,
     configStage, bleKeyInput, setBleKeyInput, showPassword, setShowPassword,
     showNotifSheet, setShowNotifSheet, wifiConfiguredRef, setUiScreen,
     handleConfirmBleKey, handleScanWifi, handleGoToWifi, handleConfig, handleCheckStatus,
     handleBindToCloud, handleRetryCurrentStage, handleRestart, handleClose,
   } = p
+
+  /*
+   * A device bound to somebody else's account is not a failure to retry through
+   * — nothing here can succeed until it is removed over there — so it gets its
+   * own screen instead of another red line on the generic result panel.
+   */
+  if (store.step === 'result' && store.configResult === 'fail' && bindReasonKind === 'already_bound') {
+    return (
+      <DeviceLinkedScreen
+        onBack={handleClose}
+        onScanQr={() => setUiScreen('qr')}
+        onRetry={handleRestart}
+      />
+    )
+  }
+
   return (
     <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
       {/* Header */}

@@ -11,7 +11,7 @@ import { useDeviceStore } from '../stores/deviceStore'
 import { isDtuid } from '../utils/dtuidParser'
 import { App } from '@capacitor/app'
 import { checkBluetooth, resetBleInit, bleStatusFromCheck } from '../utils/permissions'
-import { type FailKind } from '../utils/provisionFailCopy'
+import { type FailKind, type BindFailReasonKind } from '../utils/provisionFailCopy'
 import QrScanScreen from './provisioning/QrScanScreen'
 import { NameDeviceScreen, ChooseIconScreen } from './provisioning/NameIconScreens'
 import ProvisioningFlowScreen from './provisioning/ProvisioningFlowScreen'
@@ -55,6 +55,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   const [restarting, setRestarting] = useState(false)
   const [showRestartHelp, setShowRestartHelp] = useState(false)
   const [bindReason, setBindReason] = useState<string | null>(null)
+  const [bindReasonKind, setBindReasonKind] = useState<BindFailReasonKind | null>(null)
   const [bindErrorId, setBindErrorId] = useState<string | null>(null)
 
   type BleStatus = 'checking' | 'no_permission' | 'bt_off' | 'ready'
@@ -90,6 +91,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     setConfigStage,
     setFailKind,
     setBindReason,
+    setBindReasonKind,
     setBindErrorId,
   })
 
@@ -406,6 +408,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
       restarting={restarting}
       showRestartHelp={showRestartHelp}
       bindReason={bindReason}
+      bindReasonKind={bindReasonKind}
       bindErrorId={bindErrorId}
       configStage={configStage}
       bleKeyInput={bleKeyInput}
