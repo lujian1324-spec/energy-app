@@ -1,8 +1,9 @@
 {
-  "version": "4.9.24",
-  "build": 2850,
+  "version": "4.9.25",
+  "build": 2851,
   "date": "2026-09-09",
   "changelog": [
-    "The verification-code screen now names the email you are looking for — it arrives titled [Solar of things], which is easy to miss in a full inbox or a spam folder."
+    "iOS: the keyboard no longer covers the button under it. Sign in, the verification code, the onboarding name step, Profile, and the Wi-Fi password step all had a button pinned below the keyboard — the lift that fixed this on Android had never been switched on for iOS.",
+    "Naming a device during setup: its Next button now clears the keyboard too. That one had never lifted on either platform."
   ]
 }
