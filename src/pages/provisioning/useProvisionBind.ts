@@ -8,7 +8,7 @@ import type { ProvisionStoreState, ProvisionStep } from '../../stores/provisionS
 import { getProvisionManager } from '../../protocols/bleProvision'
 import { SIERRO_MODELS, generateSerial, type SierroModel } from '../../data/deviceModels'
 import { saveRatedParams } from '../../db/powerflowDB'
-import { fetchDtuInfo } from '../../api/deviceApi'
+import { fetchDtuInfo, defaultStationPayload } from '../../api/deviceApi'
 import { useDeviceStore } from '../../stores/deviceStore'
 import {
   BIND_FAIL_COPY, RESTART_HELP_COPY,
@@ -152,14 +152,16 @@ export function useProvisionBind(opts: {
         deviceSerialNumber: reportedSerial || serialNumber,
         isVirtualSerialNumber: !reportedSerial,
         installVendor: '',
-        installedAt: '',
+        // No installedAt: it is optional here, and an empty string where the
+        // backend wants a datetime is its own illegal argument.
         ratedPower: spec.ratedPower,
       }
       diag.push(`POST ${stationId != null ? '/device/add/single' : '/device/add/single/addStationTogether'}`)
-      diag.push(`body=${JSON.stringify(stationId != null ? { ...base, stationId: String(stationId) } : { ...base, station: { stationName: deviceName } })}`)
+      const station = defaultStationPayload(deviceName, spec.ratedPower / 1000)
+      diag.push(`body=${JSON.stringify(stationId != null ? { ...base, stationId: String(stationId) } : { ...base, station })}`)
       const bindPromise = stationId != null
         ? ds.addNewDevice({ ...base, stationId })
-        : ds.addNewDeviceWithStation({ ...base, station: { stationName: deviceName } })
+        : ds.addNewDeviceWithStation({ ...base, station })
       const devResult = await withTimeout(bindPromise, 25000, 'BIND_TIMEOUT')
 
       if (devResult && isOk(devResult.code)) {

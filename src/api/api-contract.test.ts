@@ -264,6 +264,26 @@ describe('deviceApi contracts', () => {
     expect(typeof last().body.stationId).toBe('string')
   })
 
+  it('defaultStationPayload → carries every field StationAddDtio requires', async () => {
+    // `{ stationName }` alone is what provisioning used to send, and it is the
+    // illegal argument that stopped any account without a station from adding
+    // its first device. The name field is `name`, and nine more are required.
+    const st = dev.defaultStationPayload('My Station', 0.5)
+    for (const k of ['name', 'country', 'latitude', 'longitude', 'stationType',
+                     'connectedGridType', 'installedCapacity', 'installedAt',
+                     'timezone', 'currencyCode']) {
+      expect(st, `missing required ${k}`).toHaveProperty(k)
+    }
+    expect(st).not.toHaveProperty('stationName')
+    expect(st.name).toBe('My Station')
+    expect(st.installedCapacity).toBeGreaterThanOrEqual(0.001)
+    expect(Number.isNaN(Date.parse(st.installedAt))).toBe(false)
+    // A device reporting nothing must still clear the 0.001 floor.
+    expect(dev.defaultStationPayload('x', 0).installedCapacity).toBeGreaterThanOrEqual(0.001)
+    // max 40
+    expect(dev.defaultStationPayload('x'.repeat(60), 1).name).toHaveLength(40)
+  })
+
   it('addDeviceWithStation → nested station, and NO stationId', async () => {
     // There is no station yet — this call is what creates it — and its fields go
     // nested. Sending `stationId: 0` with the station's fields flattened beside

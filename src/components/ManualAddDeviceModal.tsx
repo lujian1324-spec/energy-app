@@ -8,6 +8,7 @@ import { X, Loader2, AlertCircle, Keyboard } from 'lucide-react'
 import { useDeviceStore } from '../stores/deviceStore'
 import { useToast } from '../components/Toast'
 import { DEVICE_NAME_MAX } from '../data/deviceModels'
+import { defaultStationPayload } from '../api/deviceApi'
 import { useKeyboardInset } from '../utils/useKeyboardInset'
 
 interface Props {
@@ -53,17 +54,10 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
           deviceSerialNumber: serialNumber.trim(),
           // The station goes nested, and there is no stationId to send —
           // this call is what creates it.
-          station: {
-            stationName: newStationName.trim() || `${deviceName.trim()}'s Station`,
-            country: 'US',
-            latitude: 0,
-            longitude: 0,
-            stationType: 0,
-            connectedGridType: 0,
-            installedCapacity: 1,
-            timezone: 'America/Los_Angeles',
-            currencyCode: 'USD',
-          },
+          station: defaultStationPayload(
+            newStationName.trim() || `${deviceName.trim()}'s Station`,
+            1,
+          ),
         })
 
         if (result.code === 0 || result.code === '0') {
