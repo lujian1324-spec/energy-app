@@ -20,3 +20,12 @@ run:
       value: "8787"
     - name: POLL_INTERVAL_MS
       value: "60000"
+    # iOS: the app ships aps-environment=production (App.entitlements), so its
+    # tokens are production tokens — the sandbox gateway rejects every one with
+    # BadDeviceToken. The topic must be the iOS bundle id, which is NOT the
+    # Android applicationId (com.sierro.energyapp). Neither is a secret; the
+    # .p8 and its key/team ids stay in the console.
+    - name: APNS_PRODUCTION
+      value: "true"
+    - name: APNS_BUNDLE_ID
+      value: "com.sierro.energy"
