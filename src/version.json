@@ -1,9 +1,8 @@
 {
-  "version": "4.9.20",
-  "build": 2846,
+  "version": "4.9.21",
+  "build": 2847,
   "date": "2026-09-09",
   "changelog": [
-    "iOS push is sent to Apple's production gateway with the app's own bundle id, matching what the app is signed for. Before, the relay defaulted to the sandbox gateway and Apple rejected every iOS notification.",
-    "The relay can now report which push channels it is able to deliver on, and what alerts it holds for an account, so this can be checked without sending anyone a notification."
+    "Android: with the keyboard open, screens no longer run off the top. The keyboard was being allowed for twice — once by the system, which already shortens the page, and again by the app — so the Feedback sheet lost its title and the onboarding step put Continue over its own headline. The app now measures what the keyboard actually still covers instead of assuming."
   ]
 }

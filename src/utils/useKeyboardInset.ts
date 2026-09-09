@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Capacitor } from '@capacitor/core'
+import { currentFixedKeyboardInset, subscribeFixedKeyboardInset } from './androidKeyboardInset'
 
 /**
  * How many pixels the soft keyboard covers at the bottom of a `position: fixed`
@@ -26,24 +27,20 @@ export function useKeyboardInset(): number {
   useEffect(() => {
     let cancelled = false
 
-    // ── Android: the IME inset MainActivity publishes ─────────────────────────
+    // ── Android: what the keyboard still covers of a fixed layer ──────────────
     // adjustResize stopped resizing the window once the app went edge-to-edge
     // (targetSdk 35+), so the WebView keeps its full height and neither
     // window.innerHeight nor visualViewport moves — the arithmetic below reported
-    // 0 and nothing lifted. MainActivity reads WindowInsets.ime() and sets
-    // --keyboard-inset-bottom, announcing each change.
+    // 0 and nothing lifted. MainActivity reads WindowInsets.ime() and publishes
+    // it; androidKeyboardInset works out how much of it is still uncovered after
+    // the Keyboard plugin's own body resize, because adding the raw height on top
+    // of that lifted everything twice.
     if (Capacitor.getPlatform() === 'android') {
-      const read = () => {
-        const raw = getComputedStyle(document.documentElement)
-          .getPropertyValue('--keyboard-inset-bottom')
-        const px = parseFloat(raw)
-        if (!cancelled) setInset(Number.isFinite(px) && px > 1 ? Math.floor(px) : 0)
-      }
-      read()
-      window.addEventListener('sierro:keyboardinset', read)
+      setInset(currentFixedKeyboardInset())
+      const stop = subscribeFixedKeyboardInset((px) => { if (!cancelled) setInset(px) })
       return () => {
         cancelled = true
-        window.removeEventListener('sierro:keyboardinset', read)
+        stop()
       }
     }
 

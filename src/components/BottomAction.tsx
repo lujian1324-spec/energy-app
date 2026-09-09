@@ -8,7 +8,11 @@ import { Loader2 } from 'lucide-react'
  * The padding carries --keyboard-inset-bottom because Android stopped
  * resizing the window for the IME once the app went edge-to-edge, so a bar
  * pinned to the bottom of the layout viewport sits under the keyboard
- * unless it lifts itself. The variable is unset on iOS and on the web.
+ * unless it lifts itself. The variable is unset on iOS and on the web, and on
+ * Android it is what the keyboard still covers once the Keyboard plugin's own
+ * body resize is accounted for (androidKeyboardInset.ts) — the raw IME height
+ * used to go straight into it, which lifted this bar a second time and put it
+ * over the headline above.
  */
 export default function BottomAction({
   label,
