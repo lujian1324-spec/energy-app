@@ -140,7 +140,8 @@ interface DeviceStoreState {
   stopRealtimeReport: (deviceId: string | number, clientId: string) => Promise<void>
   loadAlarms: (deviceId?: string | number, page?: number, count?: number, append?: boolean) => Promise<void>
   dismissAlarm: (alarmId: string | number) => Promise<void>
-  loadStations: (page?: number, count?: number) => Promise<void>
+  /** Resolves true only when the list was actually refreshed from the server. */
+  loadStations: (page?: number, count?: number) => Promise<boolean>
   createStation: (data: StationAddRequest) => Promise<ApiResponse<unknown>>
   loadPeakValley: (deviceId: string | number) => Promise<PeakValleyBundleResponse | null>
   enablePeakValley: (deviceId: string | number, enabled: boolean) => Promise<ApiResponse<unknown>>
@@ -460,17 +461,31 @@ export const useDeviceStore = create<DeviceStoreState>()(
 
       // ─── 电站 ───
 
-      loadStations: async (page = 1, count = 20) => {
+      /*
+       * An account with no stations is the normal state of a brand-new account,
+       * and the server says so by answering with an empty (or absent) payload.
+       * This used to require `result.data` to be truthy before writing anything,
+       * so that answer left the PREVIOUS account's stations sitting in the store
+       * — and provisioning then bound the new account's device to the old
+       * account's station, which the backend rejects as an illegal argument.
+       *
+       * Success now always replaces the list, empty included. The boolean says
+       * whether the list in the store was actually confirmed against the server
+       * on this call, so a caller can refuse to act on a stale one.
+       */
+      loadStations: async (page = 1, count = 20): Promise<boolean> => {
         try {
           const result = await fetchStationList(page, count)
-          if ((result.code === 0 || result.code === '0') && result.data) {
+          if (result.code === 0 || result.code === '0') {
             set({
-              stations: result.data.list ?? [],
-              stationTotal: result.data.total ?? 0,
+              stations: result.data?.list ?? [],
+              stationTotal: result.data?.total ?? 0,
             })
+            return true
           }
+          return false
         } catch {
-          // ignore
+          return false
         }
       },
 
@@ -658,6 +673,11 @@ export const useDeviceStore = create<DeviceStoreState>()(
           devicesListReady: false,
           devices: [],
           deviceTotal: 0,
+          // Signing out runs through here, and stations are per-account just as
+          // devices are. Leaving them behind is what let one account's station
+          // id follow the next account into provisioning.
+          stations: [],
+          stationTotal: 0,
           selectedDeviceId: null,
           selectedDeviceDetails: null,
           selectedDeviceState: null,

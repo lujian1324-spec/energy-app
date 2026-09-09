@@ -96,8 +96,16 @@ export function useProvisionBind(opts: {
     }
 
     try {
-      await ds.loadStations().catch(() => {})
-      const stationId = useDeviceStore.getState().stations[0]?.id
+      /*
+       * Only a station confirmed against the server on THIS call may be reused.
+       * If the refresh did not land, the list in the store may belong to whoever
+       * was signed in before, and binding a device into someone else's station
+       * comes back as an illegal argument. Treating that as "no station" takes
+       * the addStationTogether path, which creates one — the right outcome for
+       * the account that has none.
+       */
+      const stationsFresh = await ds.loadStations()
+      const stationId = stationsFresh ? useDeviceStore.getState().stations[0]?.id : undefined
       const base = {
         deviceName,
         dtuDtuid,
