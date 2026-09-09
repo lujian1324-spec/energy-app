@@ -56,7 +56,6 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
           // this call is what creates it.
           station: defaultStationPayload(
             newStationName.trim() || `${deviceName.trim()}'s Station`,
-            1,
           ),
         })
 
