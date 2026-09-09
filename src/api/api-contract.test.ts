@@ -264,24 +264,22 @@ describe('deviceApi contracts', () => {
     expect(typeof last().body.stationId).toBe('string')
   })
 
-  it('defaultStationPayload → carries every field StationAddDtio requires', async () => {
-    // `{ stationName }` alone is what provisioning used to send, and it is the
-    // illegal argument that stopped any account without a station from adding
-    // its first device. The name field is `name`, and nine more are required.
-    const st = dev.defaultStationPayload('My Station', 0.5)
-    for (const k of ['name', 'country', 'latitude', 'longitude', 'stationType',
-                     'connectedGridType', 'installedCapacity', 'installedAt',
-                     'timezone', 'currencyCode']) {
-      expect(st, `missing required ${k}`).toHaveProperty(k)
-    }
-    expect(st).not.toHaveProperty('stationName')
+  it('defaultStationPayload → exactly the three keys the platform example carries', async () => {
+    // The nested station is NOT StationAddDtio. The platform's own example is
+    //   "station": { "name": ..., "latitude": ..., "longitude": ... }
+    // and filling it out to StationAddDtio's ten fields puts keys in it that
+    // this DTO does not define — which is what 20101 flags.
+    const st = dev.defaultStationPayload('My Station')
+    expect(Object.keys(st).sort()).toEqual(['latitude', 'longitude', 'name'])
     expect(st.name).toBe('My Station')
-    expect(st.installedCapacity).toBeGreaterThanOrEqual(0.001)
-    expect(Number.isNaN(Date.parse(st.installedAt))).toBe(false)
-    // A device reporting nothing must still clear the 0.001 floor.
-    expect(dev.defaultStationPayload('x', 0).installedCapacity).toBeGreaterThanOrEqual(0.001)
-    // max 40
-    expect(dev.defaultStationPayload('x'.repeat(60), 1).name).toHaveLength(40)
+    expect(dev.defaultStationPayload('x'.repeat(60)).name).toHaveLength(40)
+  })
+
+  it('ratedPowerKw → watts converted, because the field is kilowatts', async () => {
+    // Every published example shows "ratedPower": 5.0 for a residential
+    // inverter — kW, not W. The model spec is in watts.
+    expect(dev.ratedPowerKw(500)).toBe(0.5)
+    expect(dev.ratedPowerKw(1000)).toBe(1)
   })
 
   it('addDeviceWithStation → nested station, and NO stationId', async () => {

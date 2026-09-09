@@ -1,8 +1,8 @@
 {
-  "version": "4.9.32",
-  "build": 2858,
+  "version": "4.9.33",
+  "build": 2859,
   "date": "2026-09-09",
   "changelog": [
-    "Adding a device to an account that has no power station yet works. The station created alongside it was being sent with its name under the wrong field and none of the ten the server requires, which is why it answered \"illegal argument\" every time."
+    "Adding a device to a new account sends the body the platform documents: the station block carries just its name and location, and the rated power goes in kilowatts. 4.9.32 filled the station out from the wrong schema and sent the power in watts, and the server rejected both."
   ]
 }

@@ -189,60 +189,40 @@ export interface AddDeviceRequest {
 }
 
 /**
- * The station to create alongside the device — the same shape as StationAddDtio,
- * and it is mostly REQUIRED. The name field is `name`, not `stationName`, and
- * nine more fields have to be there. Sending `{ stationName }` alone, which is
- * what provisioning did, is the illegal argument that stopped any account
- * without a station from adding its first device.
+ * The station nested inside an addStationTogether body.
+ *
+ * This is NOT StationAddDtio. The platform's own request example for
+ * /device/add/single/addStationTogether carries exactly three keys:
+ *
+ *     "station": { "name": "新建电站", "latitude": 30.5728, "longitude": 104.0668 }
+ *
+ * Filling it out to StationAddDtio's ten fields — country, stationType,
+ * connectedGridType, installedCapacity, installedAt, timezone, currencyCode —
+ * puts keys in it that this DTO does not define, and an unrecognised field is
+ * exactly what the backend answers 20101 to.
  */
 export interface NewStationPayload {
-  /** *required*, max 40 */
-  name: string
   /** *required* */
-  country: string
+  name: string
   /** *required*, -90..90 */
   latitude: number
   /** *required*, -180..180 */
   longitude: number
-  /** *required* */
-  stationType: number
-  /** *required* */
-  connectedGridType: number
-  /** *required*, >= 0.001 */
-  installedCapacity: number
-  /** *required*, ISO 8601 */
-  installedAt: string
-  /** *required* */
-  timezone: string
-  /** *required* */
-  currencyCode: string
-  province?: string
-  city?: string
-  area?: string
-  /** max 400 */
-  address?: string
-  energyIncomePrice?: number
-  totalCost?: number
-  imageResid?: string
 }
 
-/** Fills in everything StationAddDtio requires for a station named `name`. */
-export function defaultStationPayload(name: string, capacityKw: number): NewStationPayload {
-  let timezone = 'UTC'
-  try { timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC' } catch { /* keep UTC */ }
-  return {
-    name: name.slice(0, 40),
-    country: 'US',
-    latitude: 0,
-    longitude: 0,
-    stationType: 0,
-    connectedGridType: 0,
-    // The floor is 0.001, so a device that reports nothing still passes.
-    installedCapacity: Math.max(capacityKw, 0.001),
-    installedAt: new Date().toISOString(),
-    timezone,
-    currencyCode: 'USD',
-  }
+/** The station block, matching the platform's request example key for key. */
+export function defaultStationPayload(name: string): NewStationPayload {
+  return { name: name.slice(0, 40), latitude: 0, longitude: 0 }
+}
+
+/**
+ * ratedPower is in KILOWATTS. Every example the platform publishes for both add
+ * endpoints shows `"ratedPower": 5.0` — a residential inverter, so 5 kW, not
+ * 5 W. This app carries the model's rating in watts (500 / 1000) and was
+ * sending that number straight through, which reads as 500 kW.
+ */
+export function ratedPowerKw(watts: number): number {
+  return watts / 1000
 }
 
 /**

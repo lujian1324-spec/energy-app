@@ -8,7 +8,7 @@ import type { ProvisionStoreState, ProvisionStep } from '../../stores/provisionS
 import { getProvisionManager } from '../../protocols/bleProvision'
 import { SIERRO_MODELS, generateSerial, type SierroModel } from '../../data/deviceModels'
 import { saveRatedParams } from '../../db/powerflowDB'
-import { fetchDtuInfo, defaultStationPayload } from '../../api/deviceApi'
+import { fetchDtuInfo, defaultStationPayload, ratedPowerKw } from '../../api/deviceApi'
 import { useDeviceStore } from '../../stores/deviceStore'
 import {
   BIND_FAIL_COPY, RESTART_HELP_COPY,
@@ -151,13 +151,14 @@ export function useProvisionBind(opts: {
         // Only a serial the collector did NOT report is a virtual one.
         deviceSerialNumber: reportedSerial || serialNumber,
         isVirtualSerialNumber: !reportedSerial,
+        // Both empty strings are in the platform's own request example.
         installVendor: '',
-        // No installedAt: it is optional here, and an empty string where the
-        // backend wants a datetime is its own illegal argument.
-        ratedPower: spec.ratedPower,
+        installedAt: '',
+        // Kilowatts — see ratedPowerKw. The model's spec is in watts.
+        ratedPower: ratedPowerKw(spec.ratedPower),
       }
       diag.push(`POST ${stationId != null ? '/device/add/single' : '/device/add/single/addStationTogether'}`)
-      const station = defaultStationPayload(deviceName, spec.ratedPower / 1000)
+      const station = defaultStationPayload(deviceName)
       diag.push(`body=${JSON.stringify(stationId != null ? { ...base, stationId: String(stationId) } : { ...base, station })}`)
       const bindPromise = stationId != null
         ? ds.addNewDevice({ ...base, stationId })
