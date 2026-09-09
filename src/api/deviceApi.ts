@@ -29,6 +29,7 @@
  */
 
 import { api } from '../utils/apiClient'
+import { stationPlace, currencyFor } from '../utils/stationLocation'
 import type { ApiResponse } from '../utils/apiClient'
 
 // ═══════════════════════════════════════════════════════
@@ -225,20 +226,26 @@ export function defaultStationPayload(name: string): NewStationPayload {
  * demonstrably the path that works.
  */
 export function newStationRequest(name: string, capacityKw: number): StationAddRequest {
-  let timezone = 'UTC'
-  try { timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC' } catch { /* keep UTC */ }
+  // The vendor's own form makes address, city, area and a map-picked location
+  // required. This sent none of them, at latitude 0, longitude 0 — see
+  // stationLocation for where a real one comes from without a permission prompt.
+  const p = stationPlace()
   return {
     name: name.slice(0, 40),
-    country: 'US',
-    latitude: 0,
-    longitude: 0,
+    country: p.country,
+    province: p.city,
+    city: p.city,
+    area: p.area,
+    address: p.address,
+    latitude: p.latitude,
+    longitude: p.longitude,
     stationType: 0,
     connectedGridType: 0,
     // The documented floor is 0.001, so a device reporting nothing still passes.
     installedCapacity: Math.max(capacityKw, 0.001),
     installedAt: new Date().toISOString(),
-    timezone,
-    currencyCode: 'USD',
+    timezone: p.timezone,
+    currencyCode: currencyFor(p.country),
   }
 }
 

@@ -15,6 +15,7 @@
  */
 import { api, isApiSuccess } from './apiClient'
 import type { ApiResponse } from './apiClient'
+import { stationPlace, currencyFor } from './stationLocation'
 
 export interface ProbeInput {
   deviceName: string
@@ -40,24 +41,38 @@ export interface ProbeVariant {
   stepCount: number
 }
 
-function timezone(): string {
-  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC' } catch { return 'UTC' }
-}
-
-/** A full StationAddDtio — the documented standalone create. */
+/**
+ * A full StationAddDtio — the documented standalone create.
+ *
+ * `lat`/`lng` are passed rather than taken from stationPlace so the sweep can
+ * test 0,0 against a real location: the vendor's form picks the point off a map,
+ * and 0,0 is what this app was sending.
+ */
 export function fullStation(name: string, capacityKw: number, lat: number, lng: number) {
+  const p = stationPlace()
   return {
     name: name.slice(0, 40),
-    country: 'US',
+    country: p.country,
+    province: p.city,
+    city: p.city,
+    area: p.area,
+    address: p.address,
     latitude: lat,
     longitude: lng,
     stationType: 0,
     connectedGridType: 0,
     installedCapacity: Math.max(capacityKw, 0.001),
     installedAt: new Date().toISOString(),
-    timezone: timezone(),
-    currencyCode: 'USD',
+    timezone: p.timezone,
+    currencyCode: currencyFor(p.country),
   }
+}
+
+/** The same station with no address fields at all — what this app used to send. */
+export function bareStation(name: string, capacityKw: number, lat: number, lng: number) {
+  const full = fullStation(name, capacityKw, lat, lng)
+  const { province: _p, city: _c, area: _a, address: _ad, ...rest } = full
+  return { ...rest, country: 'US', currencyCode: 'USD' }
 }
 
 /** The device half, shared by every variant. */
@@ -87,10 +102,14 @@ function deviceBody(i: ProbeInput, opts: {
  */
 export function buildVariants(i: ProbeInput): ProbeVariant[] {
   const LAT = 31.2304, LNG = 121.4737
+  const place = stationPlace()
   const kwOn = { kw: true, emptyStrings: true, virtual: !i.reportedSerial }
   const wOn = { kw: false, emptyStrings: true, virtual: !i.reportedSerial }
 
-  const twoStep = (label: string, lat: number, lng: number, dev: typeof kwOn): ProbeVariant => ({
+  const twoStep = (
+    label: string, lat: number, lng: number, dev: typeof kwOn,
+    station: (n: string, c: number, la: number, lo: number) => Record<string, unknown> = fullStation,
+  ): ProbeVariant => ({
     label,
     stepCount: 2,
     steps: (prev) => {
@@ -98,7 +117,7 @@ export function buildVariants(i: ProbeInput): ProbeVariant[] {
         return {
           label: 'create station',
           path: '/station/add',
-          body: fullStation(i.deviceName, i.ratedPowerW / 1000, lat, lng),
+          body: station(i.deviceName, i.ratedPowerW / 1000, lat, lng),
         }
       }
       const stationId = prev == null ? null : String(prev)
@@ -124,9 +143,13 @@ export function buildVariants(i: ProbeInput): ProbeVariant[] {
   return [
     // Two documented calls. /device/add/single with a real station id is the
     // path that demonstrably works on an account that already has one.
-    twoStep('two-step · station 0,0 · kW', 0, 0, kwOn),
-    twoStep('two-step · station real coords · kW', LAT, LNG, kwOn),
-    twoStep('two-step · station real coords · watts', LAT, LNG, wOn),
+    // The vendor's form requires address, city and area and picks the point off
+    // a map, so the located station goes first.
+    twoStep('two-step · located station · kW', place.latitude, place.longitude, kwOn),
+    twoStep('two-step · located station · watts', place.latitude, place.longitude, wOn),
+    twoStep('two-step · located station, 0,0 coords · kW', 0, 0, kwOn),
+    twoStep('two-step · no address fields, real coords · kW', LAT, LNG, kwOn, bareStation),
+    twoStep('two-step · no address fields, 0,0 · kW', 0, 0, kwOn, bareStation),
 
     // The combined call, through every station shape that has been suggested.
     together('together · station {name,lat,lng} real coords · kW',

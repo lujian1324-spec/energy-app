@@ -3,8 +3,8 @@
   "build": 2860,
   "date": "2026-09-09",
   "changelog": [
-    "An account with no power station now gets one created on its own before the device is added, using the documented call, and the device is then added the same way it is for an account that already has one — the path that has always worked.",
-    "If it still fails, the failure screen has a Try every variant button: it sends every remaining candidate body in turn and reports which one the server accepts, instead of the answer costing a release per guess.",
-    "The failure details also name the account and the roles it holds, since one account can add devices from any phone and no other can add any."
+    "Adding a device on an account that has none works. The app creates that account's first power station itself, and it was creating it with no address, no city and no location at all — at latitude 0, longitude 0 — which the server refuses, so the device that would have gone into it was refused too. The station now gets a real place, derived from the phone's own time zone, and can be corrected afterwards.",
+    "The device is then added the same way it is for an account that already has a station — the path that has always worked.",
+    "If it still fails, the failure screen has a Try every variant button that sends each remaining candidate in turn and reports which one the server accepts, along with the account's own roles."
   ]
 }
