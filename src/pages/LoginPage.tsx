@@ -11,12 +11,12 @@ import {
   defaultPasswordForAccount,
   fetchUserInfo,
   registerByEmail,
-  checkEmailExists,
   checkAccountExists,
   CaptchaIntent,
 } from '../api/authApi'
 import { isApiSuccess } from '../utils/apiClient'
 import { accountFromEmail } from '../utils/accountName'
+import { correctedIntent, type Intent } from '../utils/captchaIntent'
 import { isFirstRunAccount } from '../utils/firstRunAccount'
 import { TERMS_URL, PRIVACY_URL } from '../config/legalLinks'
 import { sanitizeUiCopy } from '../utils/uiCopy'
@@ -47,50 +47,6 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 
 
-
-/**
- * `/user/account/check` answers "is this name free?" without a session: code 0
- * means free, 20008 means taken.
- */
-async function isAccountTaken(account: string): Promise<boolean | null> {
-  try {
-    const r = await checkAccountExists(account)
-    return !isApiSuccess(r.code)
-  } catch {
-    return null
-  }
-}
-
-/**
- * Whether this address already has an account. `null` means the question could
- * not be answered.
- *
- * `/user/email/check` is the direct answer, but it sits behind the session: with
- * no token it replies 100009 "Token missing", which apiClient reads as an expired
- * session — and the one screen that asks is the sign-in screen, where by
- * definition there is no session. So the answer was never available, every
- * address looked like an existing one, the code went out with the sign-in intent
- * instead of the register intent, and a brand-new address could only reach
- * registration through the message sniff in handleVerify. That is why signing up
- * with a fresh address came back with an error.
- *
- * `/user/account/check` needs no session, and the account name is derived from
- * the address, so a free name means the address has not been registered through
- * this app. It is a weaker signal than the email check — someone could hold an
- * account under another name — but it is an answer, and handleVerify still
- * covers the miss in both directions.
- */
-async function isEmailRegistered(email: string): Promise<boolean | null> {
-  try {
-    const r = await checkEmailExists(email)
-    if (isApiSuccess(r.code)) return false
-    // Not an answer about the address, just a refusal to look without a session.
-    if (String(r.code) === '100009') return await isAccountTaken(accountFromEmail(email))
-    return true
-  } catch {
-    return await isAccountTaken(accountFromEmail(email))
-  }
-}
 
 /** First account name derived from the email that nobody has taken yet. */
 async function pickFreeAccount(email: string): Promise<string> {
@@ -161,16 +117,35 @@ export default function LoginPage() {
     setError(null)
     setSending(true)
     try {
-      const registered = await isEmailRegistered(email.trim())
-      // Unknown (the check itself failed) behaves like an existing account; verify falls
-      // back to registering if the sign-in then says there is no such account.
-      const newAccount = registered === false
-      setIsNewAccount(newAccount)
-      const result = await sendEmailCaptcha(
-        email.trim(),
-        newAccount ? CaptchaIntent.REGISTER : CaptchaIntent.LOGIN,
-      )
-      if (result.code === 0 || result.code === '0') {
+      /*
+       * Which intent the code needs is not knowable before asking. The direct
+       * question, /user/email/check, sits behind the session, and the screen that
+       * asks it is the one screen with no session.
+       *
+       * 4.9.22 tried to guess from whether the derived account name was free.
+       * That reads an existing user as new whenever their account was created
+       * under a different name than today's rule produces — jason@sierro.us is
+       * `jasonSierro` on the server and `jasons` by the current derivation — and
+       * the register-intent code then came back "Email has been registered",
+       * with no way past it.
+       *
+       * So do not guess. Ask for the ordinary case and let the backend correct
+       * us: it says exactly which way the intent was wrong, and a refused send
+       * costs no mail. Whichever intent the code was actually issued under is
+       * what decides register-or-sign-in at verify time.
+       */
+      const addr = email.trim()
+      let intent: Intent = CaptchaIntent.LOGIN
+      let result = await sendEmailCaptcha(addr, intent)
+      if (!isApiSuccess(result.code)) {
+        const corrected = correctedIntent(`${result.message ?? ''} ${result.msg ?? ''}`)
+        if (corrected && corrected !== intent) {
+          intent = corrected
+          result = await sendEmailCaptcha(addr, intent)
+        }
+      }
+      if (isApiSuccess(result.code)) {
+        setIsNewAccount(intent === CaptchaIntent.REGISTER)
         setCaptchaId(result.data?.iotCaptchaId ?? null)
         startCooldown()
         return true
