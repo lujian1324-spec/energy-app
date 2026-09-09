@@ -16,6 +16,7 @@
 import { api, isApiSuccess } from './apiClient'
 import type { ApiResponse } from './apiClient'
 import { stationPlace, currencyFor } from './stationLocation'
+import { fetchStationDictionary, fetchStationList } from '../api/deviceApi'
 
 export interface ProbeInput {
   deviceName: string
@@ -66,6 +67,56 @@ export function fullStation(name: string, capacityKw: number, lat: number, lng: 
     timezone: p.timezone,
     currencyCode: currencyFor(p.country),
   }
+}
+
+/**
+ * Station bodies that differ in the three values every previous attempt held
+ * constant, because they were copied from a doc example and never questioned:
+ * the enums (0 may be a placeholder, not a member), the name (it carries a
+ * middle dot), and the install time (ISO with milliseconds, where the vendor's
+ * own form collects a plain date).
+ */
+export function stationVariants(name: string, capacityKw: number): Array<{ label: string; body: Record<string, unknown> }> {
+  const p = stationPlace()
+  const base = () => ({
+    name: name.slice(0, 40),
+    country: p.country,
+    province: p.city,
+    city: p.city,
+    area: p.area,
+    address: p.address,
+    latitude: p.latitude,
+    longitude: p.longitude,
+    stationType: 0,
+    connectedGridType: 0,
+    installedCapacity: Math.max(capacityKw, 0.001),
+    installedAt: new Date().toISOString(),
+    timezone: p.timezone,
+    currencyCode: currencyFor(p.country),
+  })
+  const plain = name.replace(/[^\w\s-]/g, '').replace(/\s+/g, ' ').trim() || 'My Station'
+  const dateOnly = new Date().toISOString().slice(0, 10)
+  const noMs = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')
+
+  return [
+    { label: 'types 1/1', body: { ...base(), stationType: 1, connectedGridType: 1 } },
+    { label: 'types 1/0', body: { ...base(), stationType: 1, connectedGridType: 0 } },
+    { label: 'types 0/1', body: { ...base(), stationType: 0, connectedGridType: 1 } },
+    { label: 'types 2/1', body: { ...base(), stationType: 2, connectedGridType: 1 } },
+    { label: 'plain ASCII name', body: { ...base(), name: plain } },
+    { label: 'plain name + types 1/1', body: { ...base(), name: plain, stationType: 1, connectedGridType: 1 } },
+    { label: 'installedAt without milliseconds', body: { ...base(), installedAt: noMs } },
+    { label: 'installedAt date only', body: { ...base(), installedAt: dateOnly } },
+    { label: 'plain name, types 1/1, date only', body: { ...base(), name: plain, stationType: 1, connectedGridType: 1, installedAt: dateOnly } },
+    { label: 'capacity 1 (integer)', body: { ...base(), installedCapacity: 1 } },
+    { label: 'no currencyCode', body: (() => { const b = base() as Record<string, unknown>; delete b.currencyCode; return b })() },
+    { label: 'no timezone', body: (() => { const b = base() as Record<string, unknown>; delete b.timezone; return b })() },
+    { label: 'name only + required numerics', body: {
+      name: plain, country: p.country, latitude: p.latitude, longitude: p.longitude,
+      stationType: 1, connectedGridType: 1, installedCapacity: Math.max(capacityKw, 0.001),
+      installedAt: dateOnly, timezone: p.timezone, currencyCode: currencyFor(p.country),
+    } },
+  ]
 }
 
 /** The same station with no address fields at all — what this app used to send. */
@@ -198,6 +249,62 @@ export async function runBindProbe(
 ): Promise<ProbeResult> {
   const lines: ProbeLine[] = []
   const emit = (l: ProbeLine) => { lines.push(l); onLine?.(l) }
+
+  /*
+   * Before sending anything: what does the server say the valid values ARE, and
+   * what does a station it accepted actually look like? /station/add refuses
+   * every body this app builds, so the answer is more likely in what we are
+   * guessing at — the two enums — than in another shape.
+   */
+  try {
+    const dict = await fetchStationDictionary()
+    emit({ variant: 'lookup', step: 'station dictionary', path: '/dictionary/data/station',
+      body: '', code: String(dict.code), message: JSON.stringify(dict.data ?? dict.message ?? '').slice(0, 1500),
+      ok: isApiSuccess(dict.code) })
+  } catch (e) {
+    emit({ variant: 'lookup', step: 'station dictionary', path: '/dictionary/data/station',
+      body: '', code: 'threw', message: e instanceof Error ? e.message : String(e), ok: false })
+  }
+  try {
+    const list = await fetchStationList(1, 5)
+    emit({ variant: 'lookup', step: 'existing stations', path: '/station/list',
+      body: '', code: String(list.code), message: JSON.stringify(list.data ?? '').slice(0, 1500),
+      ok: isApiSuccess(list.code) })
+  } catch (e) {
+    emit({ variant: 'lookup', step: 'existing stations', path: '/station/list',
+      body: '', code: 'threw', message: e instanceof Error ? e.message : String(e), ok: false })
+  }
+
+  // Then the station bodies, since /station/add is where it stops.
+  for (const v of stationVariants(input.deviceName, input.ratedPowerW / 1000)) {
+    let res: ApiResponse<unknown> | null = null
+    try {
+      res = await api.post<unknown>('/station/add', v.body)
+    } catch (e) {
+      emit({ variant: `station · ${v.label}`, step: 'create station', path: '/station/add',
+        body: JSON.stringify(v.body), code: 'threw',
+        message: e instanceof Error ? e.message : String(e), ok: false })
+      continue
+    }
+    const ok = isApiSuccess(res.code)
+    emit({ variant: `station · ${v.label}`, step: 'create station', path: '/station/add',
+      body: JSON.stringify(v.body), code: String(res.code), message: String(res.message ?? ''), ok })
+    if (ok) {
+      // A station exists now; add the device into it and stop.
+      const stationId = res.data == null ? null : String(res.data)
+      if (stationId && stationId !== 'null') {
+        const add = await api.post<unknown>('/device/add/single', {
+          ...deviceBody(input, { kw: true, emptyStrings: true, virtual: !input.reportedSerial }),
+          stationId,
+        }).catch(() => null)
+        emit({ variant: `station · ${v.label}`, step: `add device to station ${stationId}`,
+          path: '/device/add/single', body: '', code: String(add?.code ?? 'threw'),
+          message: String(add?.message ?? ''), ok: !!add && isApiSuccess(add.code) })
+        if (add && isApiSuccess(add.code)) return { lines, winner: `station · ${v.label}` }
+      }
+      return { lines, winner: `station created · ${v.label} (device add still pending)` }
+    }
+  }
 
   for (const variant of buildVariants(input)) {
     let prev: unknown = undefined

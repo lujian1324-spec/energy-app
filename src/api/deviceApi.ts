@@ -1207,6 +1207,17 @@ export async function addStation(
   return api.post<unknown>('/station/add', data)
 }
 
+/**
+ * 站点数据字典 — the server's own list of valid stationType / connectedGridType
+ * values. /station/add refuses every body this app sends with 20101, and those
+ * two are enums whose only documented value is the 0 in an example, where a 0
+ * is as likely to be a placeholder as a real member. Rather than guess again,
+ * ask.
+ */
+export async function fetchStationDictionary(): Promise<ApiResponse<unknown>> {
+  return api.get<unknown>('/dictionary/data/station')
+}
+
 /** 更新电站 */
 export async function updateStation(
   data: Partial<StationItem> & { id: number }
