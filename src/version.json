@@ -1,11 +1,8 @@
 {
-  "version": "4.9.22",
-  "build": 2848,
+  "version": "4.9.23",
+  "build": 2849,
   "date": "2026-09-09",
   "changelog": [
-    "Smart Schedule now says why it will not turn on. The switch only moves once the device has accepted it, and a refusal comes back as a message instead of a switch that quietly does nothing.",
-    "Signing up with a new email address works. The app asked “is this address already registered?” through an endpoint that needs you to be signed in already — on the sign-in screen it never got an answer, so every address was treated as an existing account and a genuine sign-up failed.",
-    "An account name taken from a very short email address, or one with a dot or hyphen in it, is now filled out from the address itself instead of being left too short or carrying characters an account name cannot have.",
-    "The sixth digit of a verification code signs you in — no need to reach for Continue afterwards."
+    "Signing in with an existing email address works again. 4.9.22 guessed whether an address was already registered and got it wrong for accounts whose name was created under an older rule, which left them stuck on “Email has been registered”. The app no longer guesses — it asks for a sign-in code and lets the server correct it to a sign-up code, or the other way round, without you seeing it."
   ]
 }
