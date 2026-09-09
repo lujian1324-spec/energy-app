@@ -6,10 +6,14 @@ import { useHistoryFetcher } from '../hooks/useHistoryFetcher'
 
 type PowerTab = 'battery' | 'ac' | 'solar' | 'output'
 
-/** Compact Y-axis number: integers, with a k suffix at ≥1000 so the narrow axis gutter never wraps. */
+/**
+ * Y-axis number. The axis now tops out at the model's rated power — 500 W on a
+ * Sierro 1000, 1000 W on a Sierro 2000 — so every label is at most four digits
+ * and the k-suffix this used to add only ever turned a readable "1000" into
+ * "1.0k".
+ */
 function fmtAxis(v: number): string {
-  const n = Math.round(v)
-  return Math.abs(n) >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n)
+  return String(Math.round(v))
 }
 
 export interface RealTimePowerChartProps {
@@ -25,6 +29,13 @@ export interface RealTimePowerChartProps {
    */
   batteryAsSoc?: boolean
   batterySoc?: number | null
+  /**
+   * Full-scale of the AC / Solar / Output axis, in watts: the device's rated
+   * power, which is 500 W on a Sierro 1000 and 1000 W on a Sierro 2000. Fixed
+   * rather than fitted to the data so the same height means the same watts on
+   * every tab and at every zoom. Defaults to the larger model.
+   */
+  powerAxisMax?: number
   /** Kept for API compatibility; the handoff card has no "Last sync" footer. */
   lastSyncAt?: number
   className?: string
@@ -37,7 +48,7 @@ export interface RealTimePowerChartProps {
  * DeviceMonitorPage; the Battery tab can plot SOC (%) instead of power via the
  * batteryAsSoc prop.
  */
-export default function RealTimePowerChart({ deviceId, isOnline, values, batteryAsSoc = false, batterySoc, className }: RealTimePowerChartProps) {
+export default function RealTimePowerChart({ deviceId, isOnline, values, batteryAsSoc = false, batterySoc, powerAxisMax = 1000, className }: RealTimePowerChartProps) {
   const [powerDataSource, setPowerDataSource] = useState<PowerTab>('battery')
 
   const powerChartData = useMemo(() => ({
@@ -190,20 +201,30 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
       })
   }, [rawHistoryPoints, viewStart, viewEnd, powerDataSource, batteryAsSoc])
 
-  // The Battery-as-SOC view uses a FIXED 0–100% y-axis (SOC is a percentage, so
-  // auto-scaling to the window's max would misleadingly stretch e.g. a 40–50%
-  // range to full height). Power tabs keep auto-scaling to their own max.
+  /*
+   * Both axes are FIXED, and neither is fitted to the data.
+   *
+   * Battery plots state of charge, so its axis is the percentage itself: 0–100.
+   * The power tabs read watts against the device's rated power — 500 W on a
+   * Sierro 1000, 1000 W on a Sierro 2000 — which real output never exceeds.
+   *
+   * Fitting the axis to the window's own maximum, which is what this used to do,
+   * meant the top label changed as you switched tabs or zoomed, and the same
+   * height on screen stood for a different number of watts each time. A curve
+   * that never moved could look like it filled the chart.
+   */
   const isSocView = batteryAsSoc && powerDataSource === 'battery'
-  const chartMax = useMemo(
-    () => (isSocView ? 100 : Math.max(...chartPoints.map(p => Math.abs(p.val)), 1)),
-    [chartPoints, isSocView]
-  )
+  const chartMax = isSocView ? 100 : powerAxisMax
 
   const chartSvgPts = useMemo(() => {
     return chartPoints
       .filter(p => p.x >= -10 && p.x <= 310)
       .map(p => {
-        const y = 60 - (Math.abs(p.val) / chartMax) * 55
+        // Clamped, not |val|: the axis starts at zero, so a negative reading
+        // belongs on the baseline. Mirroring it drew a discharge as if it were
+        // the same size of charge.
+        const v = Math.min(Math.max(p.val, 0), chartMax)
+        const y = 60 - (v / chartMax) * 55
         return [p.x, y] as const
       })
   }, [chartPoints, chartMax])
@@ -213,17 +234,22 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
   // preserveAspectRatio="none", which would distort any <text> inside it. The
   // SVG is 78px tall over a 0..70 viewBox, so a viewBox y maps to y*(78/70) px.
   const SVG_PX_H = 136
+  // One label per gridline. The middle line used to be drawn but left unnamed,
+  // which is what made the chart look like it had no scale between 0 and the top.
   const Y_TICKS = useMemo(() => {
     const unit = currentChartData.unit
     return [
-      { label: `${fmtAxis(chartMax)}${unit}`, vy: 5 },   // top = chartMax
-      { label: '0', vy: 60 },                            // bottom = zero baseline
+      { label: `${fmtAxis(chartMax)}${unit}`, vy: 5 },       // top   = full scale
+      { label: `${fmtAxis(chartMax / 2)}${unit}`, vy: 32.5 },// mid   = half
+      { label: '0', vy: 60 },                                // bottom = zero
     ].map(t => ({ label: t.label, py: t.vy * (SVG_PX_H / 70) }))
   }, [chartMax, currentChartData.unit])
 
   const chartLinePoints = chartSvgPts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ')
+  // Closes on the zero baseline (y=60), not on the bottom of the viewBox (y=70)
+  // — the fill used to hang ten units below the line the axis calls zero.
   const chartAreaPoints = chartSvgPts.length >= 2
-    ? `${chartLinePoints} ${chartSvgPts[chartSvgPts.length-1][0].toFixed(1)},70 ${chartSvgPts[0][0].toFixed(1)},70`
+    ? `${chartLinePoints} ${chartSvgPts[chartSvgPts.length-1][0].toFixed(1)},60 ${chartSvgPts[0][0].toFixed(1)},60`
     : ''
 
   // ─── X-axis tick labels at 0/4/8/12/16/20/24 hours ───
@@ -309,10 +335,10 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
           preserveAspectRatio="none"
           style={{ display: 'block', touchAction: 'none' }}
         >
-          {/* Y grid lines — aligned to the Y-axis labels: max (y=5) and 0 baseline
-              (y=60), plus a fainter unlabeled mid line (y=32.5) for readability. */}
+          {/* Y grid lines, one per axis label: full scale (y=5), half (y=32.5) and
+              the zero baseline (y=60). */}
           <line x1="0" y1="5" x2="300" y2="5" stroke="rgba(255,255,255,0.06)" strokeWidth="0.8" />
-          <line x1="0" y1="32.5" x2="300" y2="32.5" stroke="rgba(255,255,255,0.04)" strokeWidth="0.8" />
+          <line x1="0" y1="32.5" x2="300" y2="32.5" stroke="rgba(255,255,255,0.06)" strokeWidth="0.8" />
           <line x1="0" y1="60" x2="300" y2="60" stroke="rgba(255,255,255,0.08)" strokeWidth="0.8" />
 
           {/* X-axis tick lines at 4-hour boundaries */}

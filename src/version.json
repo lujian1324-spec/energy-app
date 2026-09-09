@@ -1,9 +1,10 @@
 {
-  "version": "4.9.27",
-  "build": 2853,
+  "version": "4.9.28",
+  "build": 2854,
   "date": "2026-09-09",
   "changelog": [
-    "A device that is already on somebody else's account now says so on its own screen, with a diagram of what has happened and where to undo it, instead of one more red line on the generic failure panel.",
-    "The Add Device title keeps clear of the back button and Scan QR when a longer translation or larger type would previously have run underneath them."
+    "The Real-Time Power chart's scale is now fixed and labelled: Battery reads 0–100% state of charge, and AC, Solar and Output read watts against the device's rated power — 500W on a Sierro 1000, 1000W on a Sierro 2000. It used to stretch itself to whatever the visible data happened to reach, so the top number changed as you switched tabs or zoomed and the same height meant a different figure each time.",
+    "Every gridline on that chart now carries its number; the middle one was drawn but left unlabelled.",
+    "A negative reading sits on the baseline instead of being mirrored upward, and the shaded area under the curve stops at zero rather than hanging below it."
   ]
 }

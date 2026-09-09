@@ -11,6 +11,7 @@ import { useActiveAlarmCount } from '../hooks/useActiveAlarmCount'
 import { mapFieldsToRealtime } from '../api/deviceApi'
 import { batteryTimeLabel } from '../utils/batteryTime'
 import { loadRatedParams } from '../db/powerflowDB'
+import { SIERRO_MODELS, type SierroModel } from '../data/deviceModels'
 import { useBleLiveStatusStore, lookupBleLiveStatus, mergeCloudWithBle } from '../stores/bleLiveStatusStore'
 
 /**
@@ -103,12 +104,24 @@ export default function DeviceMonitorPage() {
 
   // 额定容量（Wh）= acInvOutputPower × 2，与 Device Info 页 Rated Capacity 同源
   const [batteryCapacityWh, setBatteryCapacityWh] = useState<number | undefined>(undefined)
+  // The chart's watt axis is the device's rated power, so the model has to be
+  // resolved the same way Device Info resolves it — saved rated params first,
+  // then whatever the device record carries, then the smaller model.
+  const [ratedModel, setRatedModel] = useState<string | null>(null)
   useEffect(() => {
-    if (!id) { setBatteryCapacityWh(undefined); return }
+    if (!id) { setBatteryCapacityWh(undefined); setRatedModel(null); return }
     loadRatedParams(id)
-      .then(p => setBatteryCapacityWh(p ? p.acInvOutputPower * 2 : undefined))
-      .catch(() => setBatteryCapacityWh(undefined))
+      .then(p => {
+        setBatteryCapacityWh(p ? p.acInvOutputPower * 2 : undefined)
+        setRatedModel(p?.model ?? null)
+      })
+      .catch(() => { setBatteryCapacityWh(undefined); setRatedModel(null) })
   }, [id])
+
+  const powerAxisMax = useMemo(() => {
+    const model = ratedModel ?? device?.model ?? 'Sierro 1000'
+    return (SIERRO_MODELS[model as SierroModel] ?? SIERRO_MODELS['Sierro 1000']).ratedPower
+  }, [ratedModel, device?.model])
 
   // 统一口径：电池剩余/充满时间（见 utils/batteryTime）
   const timeStr = batteryTimeLabel({
@@ -266,6 +279,7 @@ export default function DeviceMonitorPage() {
             values={{ battery: batteryPower, ac: acPower, solar: solarPower, output: outputPower }}
             batteryAsSoc
             batterySoc={remainingBatteryCapacity}
+            powerAxisMax={powerAxisMax}
             lastSyncAt={parseDeviceStateTime(selectedDeviceState?.time)}
           />
         </motion.div>
