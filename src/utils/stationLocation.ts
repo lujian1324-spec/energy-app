@@ -118,6 +118,31 @@ const COUNTRY_NAMES: Record<string, string> = {
   AE: 'United Arab Emirates',
 }
 
+/** GADM/ISO-3 codes, as the captured request carries them: "CHN", "USA". */
+const ISO3: Record<string, string> = {
+  CN: 'CHN', HK: 'HKG', TW: 'TWN', SG: 'SGP', JP: 'JPN', KR: 'KOR',
+  AU: 'AUS', GB: 'GBR', DE: 'DEU', FR: 'FRA', ES: 'ESP', NL: 'NLD',
+  US: 'USA', CA: 'CAN', BR: 'BRA', ZA: 'ZAF', IN: 'IND', AE: 'ARE',
+}
+
+export function iso3(code: string): string {
+  return ISO3[code] ?? code
+}
+
+/**
+ * Local time with the zone's own offset and no milliseconds — the shape the
+ * captured request carries ("2026-09-09T08:15:26-07:00"). toISOString gives
+ * UTC with a Z and three decimals, which is not what went up.
+ */
+export function localIsoWithOffset(d: Date = new Date()): string {
+  const pad = (n: number) => String(Math.floor(Math.abs(n))).padStart(2, '0')
+  const off = -d.getTimezoneOffset()
+  const sign = off >= 0 ? '+' : '-'
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+    + `T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+    + `${sign}${pad(off / 60)}:${pad(off % 60)}`
+}
+
 /** The currency that goes with a country, falling back to USD. */
 const CURRENCY: Record<string, string> = {
   CN: 'CNY', HK: 'HKD', TW: 'TWD', SG: 'SGD', JP: 'JPY', KR: 'KRW',

@@ -29,7 +29,7 @@
  */
 
 import { api } from '../utils/apiClient'
-import { stationPlace, countryName } from '../utils/stationLocation'
+import { stationPlace, countryName, iso3, localIsoWithOffset, currencyFor } from '../utils/stationLocation'
 import type { ApiResponse } from '../utils/apiClient'
 
 // ═══════════════════════════════════════════════════════
@@ -225,37 +225,44 @@ export function defaultStationPayload(name: string): NewStationPayload {
  * against it answered 20101, and /device/add/single with a real stationId is
  * demonstrably the path that works.
  */
-export function newStationRequest(name: string, capacityKw: number): StationAddRequest {
+export function newStationRequest(
+  name: string,
+  capacityKw: number,
+  region?: RegionCodes,
+): StationAddRequest {
   /*
-   * The platform's own request example for this endpoint, key for key:
-   *
-   *   { "name": "屋顶光伏电站", "latitude": 30.5728, "longitude": 104.0668,
-   *     "installedCapacity": 10.5, "connectedGridType": 2,
-   *     "country": "China", "city": "Chengdu" }
-   *
-   * Seven fields, and three of them contradict what this app was sending:
-   * `country` is the country's NAME and not its ISO code, `connectedGridType`
-   * is 2 where we sent 0, and `stationType` is not in it at all — so the 0 we
-   * were sending for that is a value nobody has said exists.
-   *
-   * The doc's field table marks installedAt, timezone and currencyCode required
-   * too, but the example omits all three, and the example is the only shape
-   * anyone has evidence of the server accepting. It wins.
+   * Mirrors a create the server accepted, captured off the vendor's console —
+   * every value a string, the four region codes present, installedAt carrying
+   * the zone's offset, and imageResid / area / areaCode as empty strings rather
+   * than absent. See StationAddRequest for what that replaced.
    */
   const p = stationPlace()
   return {
     name: name.slice(0, 40),
-    latitude: p.latitude,
-    longitude: p.longitude,
-    // The documented floor is 0.001, so a device reporting nothing still passes.
-    installedCapacity: Math.max(capacityKw, 0.001),
-    // 1-4, from /dictionary/data/station: 2 = Distributed & Full Grid-Connection.
-    // 0, which this app sent for months, is not a member of that list.
-    connectedGridType: 2,
-    country: countryName(p.country),
-    city: p.city,
+    imageResid: '',
+    timezone: p.timezone,
+    address: region?.city ?? p.address,
+    longitude: String(p.longitude),
+    latitude: String(p.latitude),
+    // 1-4 from /dictionary/data/station; 4 = Ground, which the capture used.
+    stationType: '4',
+    installedCapacity: String(Math.max(capacityKw, 0.001)),
+    // 2 = Distributed & Full Grid-Connection, as captured.
+    connectedGridType: '2',
+    installedAt: localIsoWithOffset(),
+    currencyCode: currencyFor(p.country),
+    energyIncomePrice: '0',
+    country: region?.country ?? countryName(p.country),
+    province: region?.province ?? p.city,
+    city: region?.city ?? p.city,
+    area: region?.area ?? '',
+    countryCode: region?.countryCode ?? iso3(p.country),
+    provinceCode: region?.provinceCode ?? '',
+    cityCode: region?.cityCode ?? '',
+    areaCode: region?.areaCode ?? '',
   }
 }
+
 
 /**
  * ratedPower is in KILOWATTS. Every example the platform publishes for both add
@@ -740,32 +747,54 @@ export interface StationListResponse {
 }
 
 /**
- * StationAddDtio. The doc's field table marks ten of these required, but the
- * endpoint's own request example carries seven and omits stationType,
- * installedAt, timezone and currencyCode entirely — and the example is the only
- * shape anyone has evidence of the server accepting. Those four are optional
- * here so the example can be sent as written.
+ * StationAddDtio, as a request the server has actually accepted carries it.
  *
- * `country` is the country's NAME ("China"), not its ISO code.
+ * A successful create was captured off the vendor's own console, and it settles
+ * two things the docs did not. Every value goes up as a STRING — latitude,
+ * stationType, installedCapacity, connectedGridType, energyIncomePrice
+ * included — and the body carries four region codes the docs never mention:
+ *
+ *   "countryCode": "CHN", "provinceCode": "CHN.110000",
+ *   "cityCode": "CHN.110101", "areaCode": ""
+ *
+ * It also sends imageResid, area and areaCode as empty strings rather than
+ * leaving them out, and installedAt with the zone's offset and no milliseconds.
+ * This app was sending JSON numbers, no codes at all, and a UTC Z stamp.
  */
 export interface StationAddRequest {
   name: string
   country: string
-  latitude: number
-  longitude: number
-  installedCapacity: number
-  connectedGridType: number
-  city?: string
   province?: string
+  city?: string
   area?: string
   address?: string
-  stationType?: number
-  installedAt?: string
-  timezone?: string
-  currencyCode?: string
-  energyIncomePrice?: number
-  totalCost?: number
+  countryCode?: string
+  provinceCode?: string
+  cityCode?: string
+  areaCode?: string
+  latitude: string
+  longitude: string
+  stationType: string
+  connectedGridType: string
+  installedCapacity: string
+  installedAt: string
+  timezone: string
+  currencyCode: string
+  energyIncomePrice?: string
+  totalCost?: string
   imageResid?: string
+}
+
+/** Region names and codes, from /admin/region/coding/reverse. */
+export interface RegionCodes {
+  country?: string
+  province?: string
+  city?: string
+  area?: string
+  countryCode?: string
+  provinceCode?: string
+  cityCode?: string
+  areaCode?: string
 }
 
 // ═══════════════════════════════════════════════════════

@@ -1,9 +1,8 @@
 {
-  "version": "4.9.36",
-  "build": 2862,
+  "version": "4.9.37",
+  "build": 2863,
   "date": "2026-09-09",
   "changelog": [
-    "The country sent when creating a power station is written the way the server writes it. The phone was translating the code itself and answering \"China mainland\", which the server does not recognise.",
-    "Try every variant now asks the platform to name the caller's own region and builds stations from those words, rather than from anything this app invents."
+    "Adding a device on an account that has none works. The power station created for it is now built exactly the way a create the server accepted was built — every value sent as text, the platform's own region codes included, and the install time carrying the local offset. The app had been sending plain numbers, no region codes, and a UTC stamp, and the station was refused before the device was ever reached."
   ]
 }
