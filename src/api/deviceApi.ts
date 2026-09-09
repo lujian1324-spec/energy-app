@@ -29,6 +29,7 @@
  */
 
 import { api } from '../utils/apiClient'
+import { stationPlace, currencyFor } from '../utils/stationLocation'
 import type { ApiResponse } from '../utils/apiClient'
 
 // ═══════════════════════════════════════════════════════
@@ -213,6 +214,39 @@ export interface NewStationPayload {
 /** The station block, matching the platform's request example key for key. */
 export function defaultStationPayload(name: string): NewStationPayload {
   return { name: name.slice(0, 40), latitude: 0, longitude: 0 }
+}
+
+/**
+ * A complete StationAddDtio for /station/add — the documented, standalone way to
+ * create a station, with all ten of its required fields.
+ *
+ * Provisioning uses this instead of the combined addStationTogether call: that
+ * one's nested station DTO is published only as an example, every shape tried
+ * against it answered 20101, and /device/add/single with a real stationId is
+ * demonstrably the path that works.
+ */
+export function newStationRequest(name: string, capacityKw: number): StationAddRequest {
+  // The vendor's own form makes address, city, area and a map-picked location
+  // required. This sent none of them, at latitude 0, longitude 0 — see
+  // stationLocation for where a real one comes from without a permission prompt.
+  const p = stationPlace()
+  return {
+    name: name.slice(0, 40),
+    country: p.country,
+    province: p.city,
+    city: p.city,
+    area: p.area,
+    address: p.address,
+    latitude: p.latitude,
+    longitude: p.longitude,
+    stationType: 0,
+    connectedGridType: 0,
+    // The documented floor is 0.001, so a device reporting nothing still passes.
+    installedCapacity: Math.max(capacityKw, 0.001),
+    installedAt: new Date().toISOString(),
+    timezone: p.timezone,
+    currencyCode: currencyFor(p.country),
+  }
 }
 
 /**

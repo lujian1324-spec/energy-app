@@ -275,6 +275,28 @@ describe('deviceApi contracts', () => {
     expect(dev.defaultStationPayload('x'.repeat(60)).name).toHaveLength(40)
   })
 
+  it('newStationRequest → a complete StationAddDtio for /station/add', async () => {
+    // Provisioning creates the station on its own now: /station/add's body IS
+    // documented, all ten fields, while the combined call's nested station is
+    // published only as an example and answered 20101 for every shape tried.
+    const st = dev.newStationRequest('My Station', 0.5)
+    for (const k of ['name', 'country', 'latitude', 'longitude', 'stationType',
+                     'connectedGridType', 'installedCapacity', 'installedAt',
+                     'timezone', 'currencyCode']) {
+      expect(st, `missing required ${k}`).toHaveProperty(k)
+    }
+    expect(st.installedCapacity).toBeGreaterThanOrEqual(0.001)
+    expect(dev.newStationRequest('x', 0).installedCapacity).toBeGreaterThanOrEqual(0.001)
+    expect(Number.isNaN(Date.parse(st.installedAt))).toBe(false)
+    expect(dev.newStationRequest('x'.repeat(60), 1).name).toHaveLength(40)
+  })
+
+  it('addStation → POST /station/add, body passed through', async () => {
+    await dev.addStation(dev.newStationRequest('S', 1))
+    expect(last().path).toBe('/station/add')
+    expect(last().body.name).toBe('S')
+  })
+
   it('ratedPowerKw → watts converted, because the field is kilowatts', async () => {
     // Every published example shows "ratedPower": 5.0 for a residential
     // inverter — kW, not W. The model spec is in watts.
