@@ -7,12 +7,15 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
 import { stationPlace, currencyFor, deviceTimezone } from './stationLocation'
 
+/**
+ * Only resolvedOptions().timeZone is read, so the stub answers that and nothing
+ * else — building a real DateTimeFormat here just to override one field is what
+ * made this untypeable.
+ */
 function withZone(tz: string, fn: () => void) {
-  const real = Intl.DateTimeFormat
-  vi.spyOn(Intl, 'DateTimeFormat').mockImplementation(((...a: unknown[]) => {
-    const d = new (real as never)(...(a as []))
-    return { ...d, resolvedOptions: () => ({ ...d.resolvedOptions(), timeZone: tz }) }
-  }) as never)
+  vi.spyOn(Intl, 'DateTimeFormat').mockReturnValue(
+    { resolvedOptions: () => ({ timeZone: tz }) } as unknown as Intl.DateTimeFormat,
+  )
   try { fn() } finally { vi.restoreAllMocks() }
 }
 
