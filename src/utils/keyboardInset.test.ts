@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { resolveKeyboardInsets } from './androidKeyboardInset'
+import { resolveKeyboardInsets } from './keyboardInset'
 
 /**
  * The Android keyboard reaches the page through up to three mechanisms at once,

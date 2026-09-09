@@ -5,14 +5,13 @@ import { Loader2 } from 'lucide-react'
  * an ink-9 hairline, then a 44px filled button inset 16 from the edges.
  * `A_2.1.1`, `A_2.1.2`, `A_2.2.1` and `A_2.2.2` all draw the same one.
  *
- * The padding carries --keyboard-inset-bottom because Android stopped
- * resizing the window for the IME once the app went edge-to-edge, so a bar
- * pinned to the bottom of the layout viewport sits under the keyboard
- * unless it lifts itself. The variable is unset on iOS and on the web, and on
- * Android it is what the keyboard still covers once the Keyboard plugin's own
- * body resize is accounted for (androidKeyboardInset.ts) — the raw IME height
- * used to go straight into it, which lifted this bar a second time and put it
- * over the headline above.
+ * The padding carries --keyboard-inset-bottom, which keyboardInset.ts sets on
+ * every platform to what the keyboard still covers after whatever else already
+ * moved for it. A bar pinned to the bottom of the layout viewport sits under the
+ * keyboard unless it lifts itself, and both ways of getting that wrong have
+ * shipped: the raw height went straight in on Android, which lifted this bar
+ * twice and put it over the headline above, and the variable was set on Android
+ * only, which left it under the keyboard on iOS.
  */
 export default function BottomAction({
   label,

@@ -47,7 +47,14 @@ function StepAction({
   return (
     <div
       className="border-t border-ink-9 px-4 pt-3"
-      style={{ paddingBottom: 'calc(max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px)) + 16px)' }}
+      style={{
+        // Same bar as BottomAction, and it needs the same keyboard inset: the
+        // screen above it is a single autofocused name field, so the keyboard is
+        // always up and this used to sit straight underneath it.
+        paddingBottom:
+          'calc(max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px))'
+          + ' + var(--keyboard-inset-bottom, 0px) + 16px)',
+      }}
     >
       <button
         onClick={onPress}
