@@ -2,7 +2,7 @@
  * Provisioning verify → wifi → password → result screens.
  */
 
-import { type Dispatch, type SetStateAction, type MutableRefObject } from 'react'
+import { useState, type Dispatch, type SetStateAction, type MutableRefObject } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Wifi, WifiOff, Lock, Loader2,
@@ -14,6 +14,7 @@ import { toast } from '../../components/Toast'
 import { useProvisionStore } from '../../stores/provisionStore'
 import { bindFailTitle, BIND_WIFI_HELPER, RESTART_HELP_COPY, type FailKind, type BindFailReasonKind } from '../../utils/provisionFailCopy'
 import DeviceLinkedScreen from './DeviceLinkedScreen'
+import { runBindProbe, formatProbe, type ProbeInput } from '../../utils/bindProbe'
 
 type FlowProps = {
   failKind: FailKind
@@ -24,6 +25,7 @@ type FlowProps = {
   bindReasonKind: BindFailReasonKind | null
   bindErrorId: string | null
   bindDetails: string | null
+  bindProbeInput: ProbeInput | null
   configStage: string
   bleKeyInput: string
   setBleKeyInput: Dispatch<SetStateAction<string>>
@@ -46,8 +48,11 @@ type FlowProps = {
 
 export default function ProvisioningFlowScreen(p: FlowProps) {
   const store = useProvisionStore()
+  // The one-tap probe: every candidate body, sent in order, first success wins.
+  const [probeOut, setProbeOut] = useState<string | null>(null)
+  const [probing, setProbing] = useState(false)
   const {
-    failKind, bindRetrying, restarting, showRestartHelp, bindReason, bindReasonKind, bindErrorId, bindDetails,
+    failKind, bindRetrying, restarting, showRestartHelp, bindReason, bindReasonKind, bindErrorId, bindDetails, bindProbeInput,
     configStage, bleKeyInput, setBleKeyInput, showPassword, setShowPassword,
     showNotifSheet, setShowNotifSheet, wifiConfiguredRef, setUiScreen,
     handleConfirmBleKey, handleScanWifi, handleGoToWifi, handleConfig, handleCheckStatus,
@@ -303,7 +308,7 @@ export default function ProvisioningFlowScreen(p: FlowProps) {
                     <button
                       type="button"
                       onClick={() => {
-                        void navigator.clipboard?.writeText(bindDetails).then(
+                        void navigator.clipboard?.writeText(probeOut ?? bindDetails).then(
                           () => toast.info('Details copied'),
                           () => { /* clipboard unavailable — the text is on screen */ },
                         )
@@ -312,6 +317,35 @@ export default function ProvisioningFlowScreen(p: FlowProps) {
                     >
                       Copy
                     </button>
+                    {bindProbeInput && (
+                      <button
+                        type="button"
+                        disabled={probing}
+                        onClick={async () => {
+                          setProbing(true)
+                          setProbeOut('running…')
+                          try {
+                            const r = await runBindProbe(bindProbeInput)
+                            setProbeOut(formatProbe(r))
+                            if (r.winner) {
+                              toast.info('Added — see which body worked')
+                              store.setConfigResult('success')
+                              store.setErrorMessage(null)
+                            }
+                          } catch (e) {
+                            setProbeOut(`probe threw: ${e instanceof Error ? e.message : String(e)}`)
+                          } finally {
+                            setProbing(false)
+                          }
+                        }}
+                        className="mt-1 ml-3 text-caption text-primary underline disabled:opacity-50"
+                      >
+                        {probing ? 'Trying every variant…' : 'Try every variant'}
+                      </button>
+                    )}
+                    {probeOut && (
+                      <pre className="mt-2 p-2 rounded-m bg-ink-11 text-[10px] leading-relaxed text-ink-6 whitespace-pre-wrap break-all">{probeOut}</pre>
+                    )}
                   </details>
                 )}
               </div>

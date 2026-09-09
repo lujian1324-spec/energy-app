@@ -216,6 +216,33 @@ export function defaultStationPayload(name: string): NewStationPayload {
 }
 
 /**
+ * A complete StationAddDtio for /station/add — the documented, standalone way to
+ * create a station, with all ten of its required fields.
+ *
+ * Provisioning uses this instead of the combined addStationTogether call: that
+ * one's nested station DTO is published only as an example, every shape tried
+ * against it answered 20101, and /device/add/single with a real stationId is
+ * demonstrably the path that works.
+ */
+export function newStationRequest(name: string, capacityKw: number): StationAddRequest {
+  let timezone = 'UTC'
+  try { timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC' } catch { /* keep UTC */ }
+  return {
+    name: name.slice(0, 40),
+    country: 'US',
+    latitude: 0,
+    longitude: 0,
+    stationType: 0,
+    connectedGridType: 0,
+    // The documented floor is 0.001, so a device reporting nothing still passes.
+    installedCapacity: Math.max(capacityKw, 0.001),
+    installedAt: new Date().toISOString(),
+    timezone,
+    currencyCode: 'USD',
+  }
+}
+
+/**
  * ratedPower is in KILOWATTS. Every example the platform publishes for both add
  * endpoints shows `"ratedPower": 5.0` — a residential inverter, so 5 kW, not
  * 5 W. This app carries the model's rating in watts (500 / 1000) and was

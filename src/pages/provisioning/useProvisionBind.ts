@@ -8,7 +8,8 @@ import type { ProvisionStoreState, ProvisionStep } from '../../stores/provisionS
 import { getProvisionManager } from '../../protocols/bleProvision'
 import { SIERRO_MODELS, generateSerial, type SierroModel } from '../../data/deviceModels'
 import { saveRatedParams } from '../../db/powerflowDB'
-import { fetchDtuInfo, defaultStationPayload, ratedPowerKw } from '../../api/deviceApi'
+import { fetchDtuInfo, newStationRequest, ratedPowerKw, addStation } from '../../api/deviceApi'
+import type { ProbeInput } from '../../utils/bindProbe'
 import { useDeviceStore } from '../../stores/deviceStore'
 import {
   BIND_FAIL_COPY, RESTART_HELP_COPY,
@@ -55,6 +56,7 @@ export function useProvisionBind(opts: {
   setFailKind: Dispatch<SetStateAction<FailKind>>
   setBindReason: Dispatch<SetStateAction<string | null>>
   setBindDetails: Dispatch<SetStateAction<string | null>>
+  setBindProbeInput: Dispatch<SetStateAction<ProbeInput | null>>
   setBindReasonKind: Dispatch<SetStateAction<BindFailReasonKind | null>>
   setBindErrorId: Dispatch<SetStateAction<string | null>>
 }) {
@@ -64,6 +66,7 @@ export function useProvisionBind(opts: {
     onWifiConfigured,
     setBindRetrying, setRestarting, setShowRestartHelp, setConfigStage,
     setFailKind, setBindReason, setBindReasonKind, setBindErrorId, setBindDetails,
+    setBindProbeInput,
   } = opts
 
   const handleBindToCloud = useCallback(async () => {
@@ -140,11 +143,54 @@ export function useProvisionBind(opts: {
 
       const reportedSerial = toBeAdded[0]?.deviceSerialNumber
       const serialNumber = reportedSerial || generateSerial(spec, dtuDtuid)
+      // Everything the one-tap probe needs, should this add fail.
+      setBindProbeInput({
+        deviceName, dtuDtuid,
+        reportedSerial: typeof reportedSerial === 'string' ? reportedSerial : undefined,
+        virtualSerial: generateSerial(spec, dtuDtuid),
+        ratedPowerW: spec.ratedPower,
+      })
       diag.push(`toBeAdded=${toBeAdded.length} alreadyAdded=${alreadyAdded.length} serial=${reportedSerial ? 'reported' : 'virtual'}:${serialNumber}`)
 
       const stationsFresh = await ds.loadStations()
-      const stationId = stationsFresh ? useDeviceStore.getState().stations[0]?.id : undefined
+      let stationId = stationsFresh ? useDeviceStore.getState().stations[0]?.id : undefined
       diag.push(`stationsFresh=${stationsFresh} stationId=${stationId ?? '(none)'}`)
+
+      /*
+       * No station yet: create one on its own rather than through the combined
+       * addStationTogether call. That call's nested station DTO is published as
+       * an example and nothing else, every shape tried against it answered
+       * 20101 — while /station/add has a fully documented body, and
+       * /device/add/single with a real stationId is the path that demonstrably
+       * works, since that is how the first account's device was added.
+       */
+      if (stationId == null) {
+        const stReq = newStationRequest(deviceName, ratedPowerKw(spec.ratedPower))
+        diag.push(`POST /station/add body=${JSON.stringify(stReq)}`)
+        const stRes = await addStation(stReq).catch((e) => {
+          diag.push(`station/add threw: ${e instanceof Error ? e.message : String(e)}`)
+          return null
+        })
+        if (stRes) diag.push(`station/add reply code=${String(stRes.code)} msg=${String(stRes.message ?? '')}`)
+        if (stRes && isOk(stRes.code)) {
+          const created = stRes.data
+          if (created != null && (typeof created === 'string' || typeof created === 'number')) {
+            stationId = String(created)
+          }
+          if (stationId == null) {
+            await ds.loadStations()
+            stationId = useDeviceStore.getState().stations[0]?.id
+          }
+          diag.push(`station created id=${stationId ?? '(still none)'}`)
+        }
+      }
+
+      if (stationId == null) {
+        setBindDetails(diag.join(String.fromCharCode(10)))
+        applyBindFail('Could not create a power station for this account')
+        if (!stayOnResult) store.setStep('result')
+        return
+      }
       const base = {
         deviceName,
         dtuDtuid,
@@ -158,11 +204,8 @@ export function useProvisionBind(opts: {
         ratedPower: ratedPowerKw(spec.ratedPower),
       }
       diag.push(`POST ${stationId != null ? '/device/add/single' : '/device/add/single/addStationTogether'}`)
-      const station = defaultStationPayload(deviceName)
-      diag.push(`body=${JSON.stringify(stationId != null ? { ...base, stationId: String(stationId) } : { ...base, station })}`)
-      const bindPromise = stationId != null
-        ? ds.addNewDevice({ ...base, stationId })
-        : ds.addNewDeviceWithStation({ ...base, station })
+      diag.push(`POST /device/add/single body=${JSON.stringify({ ...base, stationId: String(stationId) })}`)
+      const bindPromise = ds.addNewDevice({ ...base, stationId })
       const devResult = await withTimeout(bindPromise, 25000, 'BIND_TIMEOUT')
 
       if (devResult && isOk(devResult.code)) {

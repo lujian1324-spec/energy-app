@@ -1,8 +1,9 @@
 {
-  "version": "4.9.33",
-  "build": 2859,
+  "version": "4.9.34",
+  "build": 2860,
   "date": "2026-09-09",
   "changelog": [
-    "Adding a device to a new account sends the body the platform documents: the station block carries just its name and location, and the rated power goes in kilowatts. 4.9.32 filled the station out from the wrong schema and sent the power in watts, and the server rejected both."
+    "An account with no power station now gets one created on its own before the device is added, using the documented call, and the device is then added the same way it is for an account that already has one — the path that has always worked.",
+    "If it still fails, the failure screen has a Try every variant button: it sends every remaining candidate body in turn and reports which one the server accepts, instead of the answer costing a release per guess."
   ]
 }
