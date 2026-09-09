@@ -275,19 +275,22 @@ describe('deviceApi contracts', () => {
     expect(dev.defaultStationPayload('x'.repeat(60)).name).toHaveLength(40)
   })
 
-  it('newStationRequest → a complete StationAddDtio for /station/add', async () => {
-    // Provisioning creates the station on its own now: /station/add's body IS
-    // documented, all ten fields, while the combined call's nested station is
-    // published only as an example and answered 20101 for every shape tried.
+  it('newStationRequest → the seven keys /station/add publishes, and no others', async () => {
+    // The endpoint's own request example:
+    //   { name, latitude, longitude, installedCapacity, connectedGridType,
+    //     country, city }
+    // Sending stationType: 0 — a field the example does not have — and the ISO
+    // code where it carries a country NAME are two of the three things every
+    // refused body had in common.
     const st = dev.newStationRequest('My Station', 0.5)
-    for (const k of ['name', 'country', 'latitude', 'longitude', 'stationType',
-                     'connectedGridType', 'installedCapacity', 'installedAt',
-                     'timezone', 'currencyCode']) {
-      expect(st, `missing required ${k}`).toHaveProperty(k)
-    }
+    expect(Object.keys(st).sort()).toEqual(
+      ['city', 'connectedGridType', 'country', 'installedCapacity', 'latitude', 'longitude', 'name'])
+    expect(st).not.toHaveProperty('stationType')
+    expect(st.connectedGridType).toBe(2)
+    // A name, not a code: "China", never "CN".
+    expect(st.country.length).toBeGreaterThan(2)
     expect(st.installedCapacity).toBeGreaterThanOrEqual(0.001)
     expect(dev.newStationRequest('x', 0).installedCapacity).toBeGreaterThanOrEqual(0.001)
-    expect(Number.isNaN(Date.parse(st.installedAt))).toBe(false)
     expect(dev.newStationRequest('x'.repeat(60), 1).name).toHaveLength(40)
   })
 

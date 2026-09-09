@@ -29,7 +29,7 @@
  */
 
 import { api } from '../utils/apiClient'
-import { stationPlace, currencyFor } from '../utils/stationLocation'
+import { stationPlace, countryName } from '../utils/stationLocation'
 import type { ApiResponse } from '../utils/apiClient'
 
 // ═══════════════════════════════════════════════════════
@@ -226,26 +226,32 @@ export function defaultStationPayload(name: string): NewStationPayload {
  * demonstrably the path that works.
  */
 export function newStationRequest(name: string, capacityKw: number): StationAddRequest {
-  // The vendor's own form makes address, city, area and a map-picked location
-  // required. This sent none of them, at latitude 0, longitude 0 — see
-  // stationLocation for where a real one comes from without a permission prompt.
+  /*
+   * The platform's own request example for this endpoint, key for key:
+   *
+   *   { "name": "屋顶光伏电站", "latitude": 30.5728, "longitude": 104.0668,
+   *     "installedCapacity": 10.5, "connectedGridType": 2,
+   *     "country": "China", "city": "Chengdu" }
+   *
+   * Seven fields, and three of them contradict what this app was sending:
+   * `country` is the country's NAME and not its ISO code, `connectedGridType`
+   * is 2 where we sent 0, and `stationType` is not in it at all — so the 0 we
+   * were sending for that is a value nobody has said exists.
+   *
+   * The doc's field table marks installedAt, timezone and currencyCode required
+   * too, but the example omits all three, and the example is the only shape
+   * anyone has evidence of the server accepting. It wins.
+   */
   const p = stationPlace()
   return {
     name: name.slice(0, 40),
-    country: p.country,
-    province: p.city,
-    city: p.city,
-    area: p.area,
-    address: p.address,
     latitude: p.latitude,
     longitude: p.longitude,
-    stationType: 0,
-    connectedGridType: 0,
     // The documented floor is 0.001, so a device reporting nothing still passes.
     installedCapacity: Math.max(capacityKw, 0.001),
-    installedAt: new Date().toISOString(),
-    timezone: p.timezone,
-    currencyCode: currencyFor(p.country),
+    connectedGridType: 2,
+    country: countryName(p.country),
+    city: p.city,
   }
 }
 
@@ -731,21 +737,30 @@ export interface StationListResponse {
   count: number
 }
 
+/**
+ * StationAddDtio. The doc's field table marks ten of these required, but the
+ * endpoint's own request example carries seven and omits stationType,
+ * installedAt, timezone and currencyCode entirely — and the example is the only
+ * shape anyone has evidence of the server accepting. Those four are optional
+ * here so the example can be sent as written.
+ *
+ * `country` is the country's NAME ("China"), not its ISO code.
+ */
 export interface StationAddRequest {
   name: string
   country: string
-  province?: string
-  city?: string
-  area?: string
-  address?: string
   latitude: number
   longitude: number
-  stationType: number
-  connectedGridType: number
   installedCapacity: number
-  installedAt: string
-  timezone: string
-  currencyCode: string
+  connectedGridType: number
+  city?: string
+  province?: string
+  area?: string
+  address?: string
+  stationType?: number
+  installedAt?: string
+  timezone?: string
+  currencyCode?: string
   energyIncomePrice?: number
   totalCost?: number
   imageResid?: string
@@ -1205,6 +1220,17 @@ export async function addStation(
   data: StationAddRequest
 ): Promise<ApiResponse<unknown>> {
   return api.post<unknown>('/station/add', data)
+}
+
+/**
+ * 站点数据字典 — the server's own list of valid stationType / connectedGridType
+ * values. /station/add refuses every body this app sends with 20101, and those
+ * two are enums whose only documented value is the 0 in an example, where a 0
+ * is as likely to be a placeholder as a real member. Rather than guess again,
+ * ask.
+ */
+export async function fetchStationDictionary(): Promise<ApiResponse<unknown>> {
+  return api.get<unknown>('/dictionary/data/station')
 }
 
 /** 更新电站 */

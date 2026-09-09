@@ -5,7 +5,7 @@
  * whatever the device's zone is, the station gets a real place.
  */
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { stationPlace, currencyFor, deviceTimezone } from './stationLocation'
+import { stationPlace, currencyFor, deviceTimezone, countryName } from './stationLocation'
 
 /**
  * Only resolvedOptions().timeZone is read, so the stub answers that and nothing
@@ -64,5 +64,17 @@ describe('currencyFor', () => {
 describe('deviceTimezone', () => {
   it('answers something even when the platform will not', () => {
     expect(deviceTimezone()).toBeTruthy()
+  })
+})
+
+describe('countryName', () => {
+  it('gives the name /station/add asks for, never the ISO code', () => {
+    // The endpoint's example carries "country": "China". This app was sending
+    // "CN", and a code where a name is expected is an illegal argument.
+    expect(countryName('CN')).toBe('China')
+    expect(countryName('US')).toMatch(/United States/)
+    expect(countryName('DE')).toBe('Germany')
+    // Nothing recognisable still comes back as something, never empty.
+    expect(countryName('ZZ')).toBeTruthy()
   })
 })

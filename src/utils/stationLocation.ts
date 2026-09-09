@@ -90,6 +90,28 @@ export function stationPlace(): StationPlace {
   }
 }
 
+/**
+ * The country's English NAME, which is what /station/add's own request example
+ * carries — `"country": "China"`, not `"CN"`. This app was sending the ISO code,
+ * and a code where a name is expected is an illegal argument.
+ */
+export function countryName(code: string): string {
+  try {
+    const n = new Intl.DisplayNames(['en'], { type: 'region' }).of(code)
+    if (n && n !== code) return n
+  } catch { /* fall through */ }
+  return FALLBACK_NAMES[code] ?? code
+}
+
+/** For a platform without Intl.DisplayNames — the zones the table above covers. */
+const FALLBACK_NAMES: Record<string, string> = {
+  CN: 'China', HK: 'Hong Kong', TW: 'Taiwan', SG: 'Singapore', JP: 'Japan',
+  KR: 'South Korea', AU: 'Australia', GB: 'United Kingdom', DE: 'Germany',
+  FR: 'France', ES: 'Spain', NL: 'Netherlands', US: 'United States',
+  CA: 'Canada', BR: 'Brazil', ZA: 'South Africa', IN: 'India',
+  AE: 'United Arab Emirates',
+}
+
 /** The currency that goes with a country, falling back to USD. */
 const CURRENCY: Record<string, string> = {
   CN: 'CNY', HK: 'HKD', TW: 'TWD', SG: 'SGD', JP: 'JPY', KR: 'KRW',

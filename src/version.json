@@ -1,10 +1,9 @@
 {
-  "version": "4.9.34",
-  "build": 2860,
+  "version": "4.9.35",
+  "build": 2861,
   "date": "2026-09-09",
   "changelog": [
-    "Adding a device on an account that has none works. The app creates that account's first power station itself, and it was creating it with no address, no city and no location at all — at latitude 0, longitude 0 — which the server refuses, so the device that would have gone into it was refused too. The station now gets a real place, derived from the phone's own time zone, and can be corrected afterwards.",
-    "The device is then added the same way it is for an account that already has a station — the path that has always worked.",
-    "If it still fails, the failure screen has a Try every variant button that sends each remaining candidate in turn and reports which one the server accepts, along with the account's own roles."
+    "Adding a device on an account that has none works. The power station the app creates for it is now built from the exact body the platform publishes for that call — the country's name rather than its code, the grid type the example uses, and none of the fields the example leaves out. Every previous attempt was refused before the device was ever reached.",
+    "If it still fails, Try every variant asks the server what a station may look like, prints one it has already accepted, and sweeps thirteen bodies around the published example."
   ]
 }
