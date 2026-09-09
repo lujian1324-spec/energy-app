@@ -49,18 +49,21 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
         // 没有电站时，自动创建电站并添加设备
         const result = await addNewDeviceWithStation({
           deviceName: deviceName.trim(),
-          stationId: 0,
           dtuDtuid: dtuDtuid.trim() || serialNumber.trim(),
           deviceSerialNumber: serialNumber.trim(),
-          stationName: newStationName.trim() || `${deviceName.trim()}'s Station`,
-          country: 'US',
-          latitude: 0,
-          longitude: 0,
-          stationType: 0,
-          connectedGridType: 0,
-          installedCapacity: 1,
-          timezone: 'America/Los_Angeles',
-          currencyCode: 'USD',
+          // The station goes nested, and there is no stationId to send —
+          // this call is what creates it.
+          station: {
+            stationName: newStationName.trim() || `${deviceName.trim()}'s Station`,
+            country: 'US',
+            latitude: 0,
+            longitude: 0,
+            stationType: 0,
+            connectedGridType: 0,
+            installedCapacity: 1,
+            timezone: 'America/Los_Angeles',
+            currencyCode: 'USD',
+          },
         })
 
         if (result.code === 0 || result.code === '0') {

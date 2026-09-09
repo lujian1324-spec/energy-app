@@ -8,6 +8,7 @@ import type { ProvisionStoreState, ProvisionStep } from '../../stores/provisionS
 import { getProvisionManager } from '../../protocols/bleProvision'
 import { SIERRO_MODELS, generateSerial, type SierroModel } from '../../data/deviceModels'
 import { saveRatedParams } from '../../db/powerflowDB'
+import { fetchDtuInfo } from '../../api/deviceApi'
 import { useDeviceStore } from '../../stores/deviceStore'
 import {
   BIND_FAIL_COPY, RESTART_HELP_COPY,
@@ -72,7 +73,6 @@ export function useProvisionBind(opts: {
     const dtuDtuid = store.dtuid ?? ''
     const isOk = (c: number | string | undefined) => c === 0 || c === '0'
     const spec = SIERRO_MODELS[selectedModel]
-    const serialNumber = generateSerial(spec, dtuDtuid)
 
     const stayOnResult = store.step === 'result' && failKind === 'bind'
     if (stayOnResult) {
@@ -104,18 +104,44 @@ export function useProvisionBind(opts: {
        * the addStationTogether path, which creates one — the right outcome for
        * the account that has none.
        */
+      /*
+       * Ask the collector what it has before adding anything. The serial number
+       * is not ours to invent: once the collector has detected its inverter it
+       * reports the real one, and the add call has to carry that. Making one up
+       * and always claiming isVirtualSerialNumber is what the app did, and it
+       * only holds for a collector that reports nothing at all.
+       *
+       * devicesAlreadyAdded is also the authoritative answer to "is this on
+       * someone else's account" — far better than matching words in an error.
+       */
+      const dtuInfo = await fetchDtuInfo(dtuDtuid).catch(() => null)
+      const toBeAdded = dtuInfo && isOk(dtuInfo.code) ? dtuInfo.data?.devicesToBeAdded ?? [] : []
+      const alreadyAdded = dtuInfo && isOk(dtuInfo.code) ? dtuInfo.data?.devicesAlreadyAdded ?? [] : []
+
+      if (alreadyAdded.length > 0) {
+        applyBindFail('Device already exists', 'already_bound')
+        if (!stayOnResult) store.setStep('result')
+        return
+      }
+
+      const reportedSerial = toBeAdded[0]?.deviceSerialNumber
+      const serialNumber = reportedSerial || generateSerial(spec, dtuDtuid)
+
       const stationsFresh = await ds.loadStations()
       const stationId = stationsFresh ? useDeviceStore.getState().stations[0]?.id : undefined
       const base = {
         deviceName,
         dtuDtuid,
-        deviceSerialNumber: serialNumber,
-        isVirtualSerialNumber: true,
+        // Only a serial the collector did NOT report is a virtual one.
+        deviceSerialNumber: reportedSerial || serialNumber,
+        isVirtualSerialNumber: !reportedSerial,
+        installVendor: '',
+        installedAt: '',
         ratedPower: spec.ratedPower,
       }
       const bindPromise = stationId != null
         ? ds.addNewDevice({ ...base, stationId })
-        : ds.addNewDeviceWithStation({ ...base, stationId: 0, stationName: deviceName })
+        : ds.addNewDeviceWithStation({ ...base, station: { stationName: deviceName } })
       const devResult = await withTimeout(bindPromise, 25000, 'BIND_TIMEOUT')
 
       if (devResult && isOk(devResult.code)) {
