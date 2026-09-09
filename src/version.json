@@ -1,10 +1,8 @@
 {
-  "version": "4.9.28",
-  "build": 2854,
+  "version": "4.9.29",
+  "build": 2855,
   "date": "2026-09-09",
   "changelog": [
-    "The Real-Time Power chart's scale is now fixed and labelled: Battery reads 0–100% state of charge, and AC, Solar and Output read watts against the device's rated power — 500W on a Sierro 1000, 1000W on a Sierro 2000. It used to stretch itself to whatever the visible data happened to reach, so the top number changed as you switched tabs or zoomed and the same height meant a different figure each time.",
-    "Every gridline on that chart now carries its number; the middle one was drawn but left unlabelled.",
-    "A negative reading sits on the baseline instead of being mirrored upward, and the shaded area under the curve stops at zero rather than hanging below it."
+    "Adding a device works on any account again. Signing out left the previous account's power station behind in memory, so the next account's first device was sent up attached to it — which the server refuses, and which showed as \"Couldn't add device\" with error 20101 no matter how many times you deleted the device and tried again."
   ]
 }
