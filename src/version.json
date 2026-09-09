@@ -1,9 +1,9 @@
 {
-  "version": "4.9.35",
-  "build": 2861,
+  "version": "4.9.36",
+  "build": 2862,
   "date": "2026-09-09",
   "changelog": [
-    "Adding a device on an account that has none works. The power station the app creates for it is now built from the exact body the platform publishes for that call — the country's name rather than its code, the grid type the example uses, and none of the fields the example leaves out. Every previous attempt was refused before the device was ever reached.",
-    "If it still fails, Try every variant asks the server what a station may look like, prints one it has already accepted, and sweeps thirteen bodies around the published example."
+    "The country sent when creating a power station is written the way the server writes it. The phone was translating the code itself and answering \"China mainland\", which the server does not recognise.",
+    "Try every variant now asks the platform to name the caller's own region and builds stations from those words, rather than from anything this app invents."
   ]
 }

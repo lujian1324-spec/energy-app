@@ -96,15 +96,21 @@ export function stationPlace(): StationPlace {
  * and a code where a name is expected is an illegal argument.
  */
 export function countryName(code: string): string {
+  // The table first, on purpose. Intl.DisplayNames is the platform's opinion,
+  // not the backend's: on iOS it answers "China mainland" for CN, where the
+  // endpoint's own example says "China" — and a name the server does not know
+  // is an illegal argument like any other.
+  const known = COUNTRY_NAMES[code]
+  if (known) return known
   try {
     const n = new Intl.DisplayNames(['en'], { type: 'region' }).of(code)
     if (n && n !== code) return n
   } catch { /* fall through */ }
-  return FALLBACK_NAMES[code] ?? code
+  return code
 }
 
-/** For a platform without Intl.DisplayNames — the zones the table above covers. */
-const FALLBACK_NAMES: Record<string, string> = {
+/** Names as the backend writes them — "China", not "China mainland". */
+const COUNTRY_NAMES: Record<string, string> = {
   CN: 'China', HK: 'Hong Kong', TW: 'Taiwan', SG: 'Singapore', JP: 'Japan',
   KR: 'South Korea', AU: 'Australia', GB: 'United Kingdom', DE: 'Germany',
   FR: 'France', ES: 'Spain', NL: 'Netherlands', US: 'United States',

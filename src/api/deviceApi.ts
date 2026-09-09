@@ -249,6 +249,8 @@ export function newStationRequest(name: string, capacityKw: number): StationAddR
     longitude: p.longitude,
     // The documented floor is 0.001, so a device reporting nothing still passes.
     installedCapacity: Math.max(capacityKw, 0.001),
+    // 1-4, from /dictionary/data/station: 2 = Distributed & Full Grid-Connection.
+    // 0, which this app sent for months, is not a member of that list.
     connectedGridType: 2,
     country: countryName(p.country),
     city: p.city,
@@ -1231,6 +1233,24 @@ export async function addStation(
  */
 export async function fetchStationDictionary(): Promise<ApiResponse<unknown>> {
   return api.get<unknown>('/dictionary/data/station')
+}
+
+/**
+ * 将我的IP地址反转为管理区域 — the platform naming its own regions.
+ *
+ * Every country string this app has invented has been refused, and a name the
+ * server does not recognise is an illegal argument whether it came from a table
+ * or from Intl. This asks the platform to say where the caller is in the exact
+ * words its own region table uses, so the station can be built from those
+ * instead of from a guess.
+ */
+export async function reverseMyIpRegion(): Promise<ApiResponse<unknown>> {
+  return api.post<unknown>('/admin/region/coding/reverse/myip', {})
+}
+
+/** 将gis点反转为管理区域 */
+export async function reverseGisRegion(latitude: number, longitude: number): Promise<ApiResponse<unknown>> {
+  return api.post<unknown>('/admin/region/coding/reverse', { latitude, longitude })
 }
 
 /** 更新电站 */

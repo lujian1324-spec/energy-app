@@ -16,7 +16,7 @@
 import { api, isApiSuccess } from './apiClient'
 import type { ApiResponse } from './apiClient'
 import { stationPlace, currencyFor, countryName } from './stationLocation'
-import { fetchStationDictionary, fetchStationList } from '../api/deviceApi'
+import { fetchStationDictionary, fetchStationList, reverseMyIpRegion, reverseGisRegion } from '../api/deviceApi'
 
 export interface ProbeInput {
   deviceName: string
@@ -76,7 +76,11 @@ export function fullStation(name: string, capacityKw: number, lat: number, lng: 
  * middle dot), and the install time (ISO with milliseconds, where the vendor's
  * own form collects a plain date).
  */
-export function stationVariants(name: string, capacityKw: number): Array<{ label: string; body: Record<string, unknown> }> {
+export function stationVariants(
+  name: string,
+  capacityKw: number,
+  region?: { country?: string; province?: string; city?: string },
+): Array<{ label: string; body: Record<string, unknown> }> {
   const p = stationPlace()
   const cap = Math.max(capacityKw, 0.001)
   const plain = name.replace(/[^\w\s-]/g, '').replace(/\s+/g, ' ').trim() || 'My Station'
@@ -94,7 +98,28 @@ export function stationVariants(name: string, capacityKw: number): Array<{ label
     ...over,
   })
 
+  const variants: Array<{ label: string; body: Record<string, unknown> }> = []
+
+  // The platform's own words for where we are beat anything invented here.
+  if (region?.country) {
+    variants.push(
+      { label: 'platform region · country', body: example({ country: region.country, city: region.city ?? p.city }) },
+      { label: 'platform region · country + province + city', body: example({
+        country: region.country, province: region.province, city: region.city ?? p.city }) },
+      { label: 'platform region · with valid enums', body: example({
+        country: region.country, city: region.city ?? p.city, stationType: 1, connectedGridType: 2 }) },
+    )
+  }
+
+  // "China" exactly — the endpoint's example says so, and every run so far has
+  // sent "China mainland" (Intl's name on iOS) or the bare code instead.
+  variants.push(
+    { label: 'country exactly as the example writes it', body: example({ country: 'China' }) },
+    { label: 'country as the example + valid enums', body: example({ country: 'China', stationType: 1, connectedGridType: 2 }) },
+  )
+
   return [
+    ...variants,
     { label: 'example, as published', body: example() },
     { label: 'example + plain ASCII name', body: example({ name: plain }) },
     { label: 'example + ISO country code', body: example({ country: p.country }) },
@@ -266,6 +291,34 @@ export async function runBindProbe(
     emit({ variant: 'lookup', step: 'station dictionary', path: '/dictionary/data/station',
       body: '', code: 'threw', message: e instanceof Error ? e.message : String(e), ok: false })
   }
+  let region: { country?: string; province?: string; city?: string } | undefined
+  for (const [label, path, call] of [
+    ['region from my IP', '/admin/region/coding/reverse/myip', () => reverseMyIpRegion()],
+    ['region from coordinates', '/admin/region/coding/reverse', () => reverseGisRegion(stationPlace().latitude, stationPlace().longitude)],
+  ] as Array<[string, string, () => Promise<ApiResponse<unknown>>]>) {
+    try {
+      const r = await call()
+      emit({ variant: 'lookup', step: label, path, body: '', code: String(r.code),
+        message: JSON.stringify(r.data ?? r.message ?? '').slice(0, 800), ok: isApiSuccess(r.code) })
+      if (isApiSuccess(r.code) && r.data && typeof r.data === 'object' && !region) {
+        const d = r.data as Record<string, unknown>
+        const pick = (...k: string[]) => {
+          for (const key of k) { const v = d[key]; if (typeof v === 'string' && v) return v }
+          return undefined
+        }
+        region = {
+          country: pick('country', 'countryName', 'nation'),
+          province: pick('province', 'provinceName', 'state'),
+          city: pick('city', 'cityName'),
+        }
+        if (!region.country) region = undefined
+      }
+    } catch (e) {
+      emit({ variant: 'lookup', step: label, path, body: '', code: 'threw',
+        message: e instanceof Error ? e.message : String(e), ok: false })
+    }
+  }
+
   try {
     const list = await fetchStationList(1, 5)
     emit({ variant: 'lookup', step: 'existing stations', path: '/station/list',
@@ -277,7 +330,7 @@ export async function runBindProbe(
   }
 
   // Then the station bodies, since /station/add is where it stops.
-  for (const v of stationVariants(input.deviceName, input.ratedPowerW / 1000)) {
+  for (const v of stationVariants(input.deviceName, input.ratedPowerW / 1000, region)) {
     let res: ApiResponse<unknown> | null = null
     try {
       res = await api.post<unknown>('/station/add', v.body)
