@@ -1,8 +1,8 @@
 {
-  "version": "4.9.23",
-  "build": 2849,
+  "version": "4.9.24",
+  "build": 2850,
   "date": "2026-09-09",
   "changelog": [
-    "Signing in with an existing email address works again. 4.9.22 guessed whether an address was already registered and got it wrong for accounts whose name was created under an older rule, which left them stuck on “Email has been registered”. The app no longer guesses — it asks for a sign-in code and lets the server correct it to a sign-up code, or the other way round, without you seeing it."
+    "The verification-code screen now names the email you are looking for — it arrives titled [Solar of things], which is easy to miss in a full inbox or a spam folder."
   ]
 }
