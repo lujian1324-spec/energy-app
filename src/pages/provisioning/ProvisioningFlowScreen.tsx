@@ -23,6 +23,7 @@ type FlowProps = {
   bindReason: string | null
   bindReasonKind: BindFailReasonKind | null
   bindErrorId: string | null
+  bindDetails: string | null
   configStage: string
   bleKeyInput: string
   setBleKeyInput: Dispatch<SetStateAction<string>>
@@ -46,7 +47,7 @@ type FlowProps = {
 export default function ProvisioningFlowScreen(p: FlowProps) {
   const store = useProvisionStore()
   const {
-    failKind, bindRetrying, restarting, showRestartHelp, bindReason, bindReasonKind, bindErrorId,
+    failKind, bindRetrying, restarting, showRestartHelp, bindReason, bindReasonKind, bindErrorId, bindDetails,
     configStage, bleKeyInput, setBleKeyInput, showPassword, setShowPassword,
     showNotifSheet, setShowNotifSheet, wifiConfiguredRef, setUiScreen,
     handleConfirmBleKey, handleScanWifi, handleGoToWifi, handleConfig, handleCheckStatus,
@@ -290,6 +291,28 @@ export default function ProvisioningFlowScreen(p: FlowProps) {
                 )}
                 {store.configResult === 'fail' && showRestartHelp && (
                   <p className="text-body-md text-ink-6 text-center mt-3">{RESTART_HELP_COPY}</p>
+                )}
+                {/* What the server actually said, and what was sent to it.
+                    Three theories about this failure were argued from the
+                    source and each was wrong, because the raw reply went to a
+                    log nobody can open while the screen showed only a code. */}
+                {store.configResult === 'fail' && bindDetails && (
+                  <details className="mt-3 w-full text-left">
+                    <summary className="text-caption text-ink-6 cursor-pointer">Technical details</summary>
+                    <pre className="mt-2 p-2 rounded-m bg-ink-11 text-[10px] leading-relaxed text-ink-6 whitespace-pre-wrap break-all">{bindDetails}</pre>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void navigator.clipboard?.writeText(bindDetails).then(
+                          () => toast.info('Details copied'),
+                          () => { /* clipboard unavailable — the text is on screen */ },
+                        )
+                      }}
+                      className="mt-1 text-caption text-primary underline"
+                    >
+                      Copy
+                    </button>
+                  </details>
                 )}
               </div>
 

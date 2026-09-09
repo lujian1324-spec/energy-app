@@ -57,6 +57,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   const [bindReason, setBindReason] = useState<string | null>(null)
   const [bindReasonKind, setBindReasonKind] = useState<BindFailReasonKind | null>(null)
   const [bindErrorId, setBindErrorId] = useState<string | null>(null)
+  const [bindDetails, setBindDetails] = useState<string | null>(null)
 
   type BleStatus = 'checking' | 'no_permission' | 'bt_off' | 'ready'
   const [bleStatus, setBleStatus] = useState<BleStatus>('checking')
@@ -93,6 +94,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     setBindReason,
     setBindReasonKind,
     setBindErrorId,
+    setBindDetails,
   })
 
   const recheckBle = useCallback(async (): Promise<BleStatus> => {
@@ -410,6 +412,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
       bindReason={bindReason}
       bindReasonKind={bindReasonKind}
       bindErrorId={bindErrorId}
+      bindDetails={bindDetails}
       configStage={configStage}
       bleKeyInput={bleKeyInput}
       setBleKeyInput={setBleKeyInput}
