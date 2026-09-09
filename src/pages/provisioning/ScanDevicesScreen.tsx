@@ -3,6 +3,7 @@
  */
 import { Loader2 } from 'lucide-react'
 import Icon from '../../components/Icon'
+import AddDeviceHeader from './AddDeviceHeader'
 import { toast } from '../../components/Toast'
 import { openAppSettings } from '../../utils/openAppSettings'
 import { isDtuid } from '../../utils/dtuidParser'
@@ -26,31 +27,6 @@ type Props = {
   handleScan: () => void
   handleSelectDevice: (d: FoundDevice) => void
   setUiScreen: (s: 'scan' | 'qr' | 'naming' | 'icon' | 'provisioning') => void
-}
-
-function AddDeviceHeader({ onBack, onScanQr }: { onBack: () => void; onScanQr: () => void }) {
-  return (
-    <div className="relative px-4 pb-4 flex items-center safe-area-top-header">
-      <button
-        onClick={onBack}
-        aria-label="Back"
-        className="relative w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center before:absolute before:content-[''] before:-inset-1"
-      >
-        <Icon name="chevron-left" size={24} />
-      </button>
-      {/* A_1.3.1 centres the title on the frame, not in the space the back button
-          and Scan QR leave behind — a grid column put it 17px off centre. */}
-      <h1 className="absolute left-1/2 -translate-x-1/2 text-title-md font-semibold text-white">
-        Add Device
-      </h1>
-      <button
-        onClick={onScanQr}
-        className="ml-auto text-body-lg font-normal text-primary active:opacity-70 px-1"
-      >
-        Scan QR
-      </button>
-    </div>
-  )
 }
 
 /**
