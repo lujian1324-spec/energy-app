@@ -4,6 +4,7 @@
   "date": "2026-09-09",
   "changelog": [
     "An account with no power station now gets one created on its own before the device is added, using the documented call, and the device is then added the same way it is for an account that already has one — the path that has always worked.",
-    "If it still fails, the failure screen has a Try every variant button: it sends every remaining candidate body in turn and reports which one the server accepts, instead of the answer costing a release per guess."
+    "If it still fails, the failure screen has a Try every variant button: it sends every remaining candidate body in turn and reports which one the server accepts, instead of the answer costing a release per guess.",
+    "The failure details also name the account and the roles it holds, since one account can add devices from any phone and no other can add any."
   ]
 }

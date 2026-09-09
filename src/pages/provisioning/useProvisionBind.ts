@@ -10,6 +10,7 @@ import { SIERRO_MODELS, generateSerial, type SierroModel } from '../../data/devi
 import { saveRatedParams } from '../../db/powerflowDB'
 import { fetchDtuInfo, newStationRequest, ratedPowerKw, addStation } from '../../api/deviceApi'
 import type { ProbeInput } from '../../utils/bindProbe'
+import { fetchUserInfo } from '../../api/authApi'
 import { useDeviceStore } from '../../stores/deviceStore'
 import {
   BIND_FAIL_COPY, RESTART_HELP_COPY,
@@ -126,6 +127,24 @@ export function useProvisionBind(opts: {
        * shows a code. This is that missing evidence, on the screen, copyable.
        */
       const diag: string[] = [`dtu=${dtuDtuid || '(none)'}`]
+
+      /*
+       * Which account is asking. One account can add devices — several of them,
+       * from any phone — and no other account can add any, which leaves the
+       * token on the request as the only thing that differs. The user record
+       * carries roles (userType, isAdmin, isStationOwner, isIntegrator,
+       * isDealer) and app registration sends userType: 0, so this is the line
+       * that says whether the difference is a permission rather than a payload.
+       */
+      try {
+        const me = await fetchUserInfo()
+        const u = me.data ?? {}
+        diag.push(`account=${String(u.account ?? '?')} userType=${String(u.userType ?? '?')} `
+          + `isAdmin=${String(u.isAdmin ?? '?')} isStationOwner=${String(u.isStationOwner ?? '?')} `
+          + `isIntegrator=${String(u.isIntegrator ?? '?')} isDealer=${String(u.isDealer ?? '?')}`)
+      } catch (e) {
+        diag.push(`user info threw: ${e instanceof Error ? e.message : String(e)}`)
+      }
 
       const dtuInfo = await fetchDtuInfo(dtuDtuid).catch((e) => {
         diag.push(`dtu/info threw: ${e instanceof Error ? e.message : String(e)}`)
