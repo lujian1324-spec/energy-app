@@ -22,7 +22,7 @@ import cors from 'cors'
 import webpush from 'web-push'
 import {
   addWebPush, removeWebPush, addNative, removeNative, getWebPush, getNative,
-  setUserAuth, setUserSchedule,
+  setUserAuth, setUserSchedule, getUser,
 } from './store.js'
 import { startPoller } from './poller.js'
 
@@ -180,7 +180,59 @@ function stringifyData(d) {
   return out
 }
 
-app.get('/health', (_req, res) => ok(res, { up: true }))
+/**
+ * Health + a read-only report of which push channels this deployment can
+ * actually deliver on. Booleans and the (public) APNs topic only — no keys, no
+ * tokens, no user data — because the alternative way to answer "can iOS receive
+ * a push" is to send someone a real notification.
+ *
+ * `apns.production` matters as much as `apns.configured`: ios/App/App/
+ * App.entitlements pins aps-environment to `production`, so a device token is a
+ * production token and a relay left on the sandbox gateway gets BadDeviceToken
+ * for every send.
+ */
+app.get('/health', (_req, res) => ok(res, {
+  up: true,
+  poller: process.env.POLLER_ENABLED === 'true',
+  channels: {
+    webpush: !!(VAPID_PUBLIC && VAPID_PRIVATE),
+    fcm: !!process.env.GOOGLE_APPLICATION_CREDENTIALS,
+    apns: !!process.env.APNS_KEY_PATH,
+  },
+  apns: {
+    topic: process.env.APNS_BUNDLE_ID || 'com.sierro.energy',
+    production: process.env.APNS_PRODUCTION === 'true',
+    keyId: !!process.env.APNS_KEY_ID,
+    teamId: !!process.env.APNS_TEAM_ID,
+  },
+}))
+
+/**
+ * Which alerts the poller is currently configured to send for ONE user, and on
+ * what channels — the other half of "verify push works", answerable without
+ * pushing anything. Gated by the same INTERNAL_KEY as /notify, and it returns
+ * device-token counts rather than the tokens themselves.
+ */
+app.get('/debug/user/:userId', (req, res) => {
+  if (process.env.INTERNAL_KEY && req.get('X-Internal-Key') !== process.env.INTERNAL_KEY) {
+    return res.status(401).json({ code: 1, message: 'unauthorized' })
+  }
+  const { userId } = req.params
+  const u = getUser(userId)
+  const natives = getNative(userId)
+  ok(res, {
+    userId,
+    known: !!u,
+    // The poller can only read devices while it holds a session of its own.
+    hasPollerSession: !!(u && (u.refreshToken || u.accessToken)),
+    prefs: u ? u.prefs : null,
+    subscriptions: {
+      android: natives.filter((t) => t.platform === 'android').length,
+      ios: natives.filter((t) => t.platform === 'ios').length,
+      webpush: getWebPush(userId).length,
+    },
+  })
+})
 
 const PORT = process.env.PORT || 8787
 app.listen(PORT, () => {
