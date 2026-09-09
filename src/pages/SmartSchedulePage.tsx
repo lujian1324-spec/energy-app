@@ -20,6 +20,9 @@ import {
 } from 'lucide-react'
 import Icon from '../components/Icon'
 import BottomSheet from '../components/BottomSheet'
+import { toast } from '../components/Toast'
+import { isApiSuccess } from '../utils/apiClient'
+import { sanitizeUiCopy } from '../utils/uiCopy'
 import { useKeyboardInset } from '../utils/useKeyboardInset'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useDeviceStore } from '../stores/deviceStore'
@@ -187,30 +190,63 @@ export default function SmartSchedulePage() {
     }
   }, [selectedDeviceId, loadPeakValley, updatePeakShavingSettings])
 
+  /**
+   * The switch only moves once the device has actually accepted it, so what the
+   * screen shows is what the device is doing.
+   *
+   * Both halves of that used to be wrong. A thrown request was swallowed by an
+   * empty catch, so a failure looked exactly like a dead switch — no movement,
+   * no reason, nothing to report. And a request that came back with a non-zero
+   * code was treated as success, so the switch went on and then reverted on the
+   * next load. Either way there was no way to find out why from the phone, which
+   * is the whole difficulty with "Smart Schedule will not turn on".
+   */
   const handleTogglePeakShaving = useCallback(async (enabled: boolean) => {
     if (!selectedDeviceId) {
       togglePeakShaving(enabled)
       return
     }
+    const failed = (detail: string) => {
+      toast.error(
+        enabled ? 'Could not turn Smart Schedule on' : 'Could not turn Smart Schedule off',
+        sanitizeUiCopy(detail, '') || undefined,
+      )
+    }
     try {
-      await enablePeakValley(selectedDeviceId, enabled)
+      const r = await enablePeakValley(selectedDeviceId, enabled)
+      if (!isApiSuccess(r.code)) {
+        failed(String(r.message ?? r.msg ?? ''))
+        return
+      }
       togglePeakShaving(enabled)
-    } catch { /* noop */ }
+    } catch (e) {
+      failed(e instanceof Error ? e.message : String(e))
+    }
   }, [selectedDeviceId, enablePeakValley, togglePeakShaving])
 
+  /** Leaves the screen only if the device took the settings — otherwise says why. */
   const handleSaveToDevice = useCallback(async () => {
     if (!selectedDeviceId) return
     try {
       const config = mapSettingsToGeneralConfig(selectedDeviceId, peakShavingSettings)
-      await savePeakValleyGeneral(config)
-    } catch { /* noop */ }
+      const r = await savePeakValleyGeneral(config)
+      if (!isApiSuccess(r.code)) {
+        toast.error('Could not save to the device', sanitizeUiCopy(String(r.message ?? r.msg ?? ''), '') || undefined)
+        return
+      }
+    } catch (e) {
+      toast.error('Could not save to the device', e instanceof Error ? e.message : undefined)
+      return
+    }
     navigate(-1)
   }, [selectedDeviceId, peakShavingSettings, savePeakValleyGeneral, navigate])
 
   const handleScheduleChanged = useCallback(() => {
     if (selectedDeviceId && apiConfigLoaded) {
       const config = mapSettingsToGeneralConfig(selectedDeviceId, { ...peakShavingSettings })
-      savePeakValleyGeneral(config).catch(() => {})
+      savePeakValleyGeneral(config).catch((e: unknown) => {
+        toast.error('Could not save the schedule', e instanceof Error ? e.message : undefined)
+      })
     }
   }, [selectedDeviceId, apiConfigLoaded, peakShavingSettings, savePeakValleyGeneral])
 

@@ -1,8 +1,11 @@
 {
-  "version": "4.9.21",
-  "build": 2847,
+  "version": "4.9.22",
+  "build": 2848,
   "date": "2026-09-09",
   "changelog": [
-    "Android: with the keyboard open, screens no longer run off the top. The keyboard was being allowed for twice — once by the system, which already shortens the page, and again by the app — so the Feedback sheet lost its title and the onboarding step put Continue over its own headline. The app now measures what the keyboard actually still covers instead of assuming."
+    "Smart Schedule now says why it will not turn on. The switch only moves once the device has accepted it, and a refusal comes back as a message instead of a switch that quietly does nothing.",
+    "Signing up with a new email address works. The app asked “is this address already registered?” through an endpoint that needs you to be signed in already — on the sign-in screen it never got an answer, so every address was treated as an existing account and a genuine sign-up failed.",
+    "An account name taken from a very short email address, or one with a dot or hyphen in it, is now filled out from the address itself instead of being left too short or carrying characters an account name cannot have.",
+    "The sixth digit of a verification code signs you in — no need to reach for Continue afterwards."
   ]
 }
