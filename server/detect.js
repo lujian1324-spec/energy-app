@@ -35,6 +35,36 @@ export function detectOutage(fields) {
   return { outage: false }
 }
 
+/**
+ * An outage told by the ALARM list rather than by a state field.
+ *
+ * The same classification the alarm centre uses (NotificationsPage), applied to
+ * whichever of the record's fields carries the text. An alarm is only counted
+ * while it is still firing — a processed or recovered one must not push.
+ */
+const OUTAGE_TEXT = /mains|grid|utility|outage|power\s*fail|ac\s*input|市电|停电/i
+
+export function isAlarmActive(a) {
+  if (!a) return false
+  // The platform marks a handled alarm with isProcessed / recoveredAt.
+  if (a.isProcessed === true || a.isProcessed === 1) return false
+  if (a.recoveredAt || a.recoveryAt || a.endAt) return false
+  return true
+}
+
+export function detectOutageFromAlarms(alarms) {
+  if (!Array.isArray(alarms)) return { outage: false }
+  for (const a of alarms) {
+    if (!isAlarmActive(a)) continue
+    const key = String(a.key ?? a.alarmKey ?? a.code ?? '')
+    if (POWER_OUTAGE_KEYS.has(key)) return { outage: true, reason: `alarm:${key}` }
+    const text = [a.alarmMessage, a.message, a.name, a.description, a.title]
+      .filter((v) => typeof v === 'string').join(' ')
+    if (text && OUTAGE_TEXT.test(text)) return { outage: true, reason: `alarm:${text.slice(0, 40)}` }
+  }
+  return { outage: false }
+}
+
 /** Low battery when SOC (remainingBatteryCapacity) is a positive number below threshold. */
 export function detectLowBattery(fields, threshold = 30) {
   const soc = Number(fieldVal(fields, 'remainingBatteryCapacity'))

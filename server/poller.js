@@ -18,8 +18,8 @@ import {
   getAllUsers, updateUserTokens, noteUserFailure, removeUserAuth,
   getNotifyTs, setNotifyTs, getSchedulePhase, setSchedulePhase,
 } from './store.js'
-import { refreshAccessToken, listDevices, getLatestState, writePassthrough } from './iotClient.js'
-import { detectOutage, detectLowBattery, detectSolar } from './detect.js'
+import { refreshAccessToken, listDevices, getLatestState, listAlarms, writePassthrough } from './iotClient.js'
+import { detectOutage, detectOutageFromAlarms, detectLowBattery, detectSolar } from './detect.js'
 import { phaseFor, chargePowerForPhase } from './sleepSchedule.js'
 import { acChargePowerBase64 } from './modbus.js'
 
@@ -81,14 +81,27 @@ async function mapLimit(items, limit, fn) {
 const online = (d) => d.isOnline === true || d.isOnline === 1 || d.isOnline === 'true'
 
 /** Build the list of notifications a single device should fire this tick. */
-function evaluateDevice({ deviceId, name, isOnline, fields, prefs }) {
+function evaluateDevice({ deviceId, name, isOnline, fields, alarms, prefs }) {
   const notes = []
   const soc = Number(fields?.remainingBatteryCapacity?.value)
 
-  // Power Outage — gated by `pushNotifications`, only for online devices (matches client).
-  if (prefs.pushNotifications && isOnline) {
-    const { outage } = detectOutage(fields)
-    notes.push({ type: 'outage', cond: outage, title: '⚡ Power Outage Detected',
+  /*
+   * Power Outage, from EITHER source.
+   *
+   * The state field is only meaningful while the device is reachable — an offline
+   * device's last state is whatever it was before it went quiet. An alarm record
+   * is not stale in that way: the platform timestamps it and marks it processed
+   * when it clears, so it counts whether or not the device is answering now.
+   *
+   * Reading only the field is why Low Battery could push and this never did:
+   * both were gated on the same fields map, and the platform records the mains
+   * failure as an alarm.
+   */
+  if (prefs.pushNotifications) {
+    const fromFields = isOnline ? detectOutage(fields) : { outage: false }
+    const fromAlarms = detectOutageFromAlarms(alarms)
+    notes.push({ type: 'outage', cond: fromFields.outage || fromAlarms.outage,
+      title: '⚡ Power Outage Detected',
       body: `${name}: AC grid power lost. Running on battery.`, data: { deviceId, kind: 'outage' } })
   }
 
@@ -207,8 +220,10 @@ async function processUser(u, now, sendToUser, dryRun) {
       const stateDue = isOnline || !seen || now - seen.lastStatePoll >= IDLE_POLL_MS
       if (stateDue) {
         const { fields } = await getLatestState(token, deviceId)
+        // Only when the outage channel is on: one extra call per device per tick.
+        const alarms = u.prefs.pushNotifications ? await listAlarms(token, deviceId) : []
         deviceSeen.set(dkey, { online: isOnline, lastStatePoll: now })
-        const notes = evaluateDevice({ deviceId, name: d.name || deviceId, isOnline, fields, prefs: u.prefs })
+        const notes = evaluateDevice({ deviceId, name: d.name || deviceId, isOnline, fields, alarms, prefs: u.prefs })
         for (const note of notes) {
           if (!shouldFire(u.userId, deviceId, note, now)) continue
           fired.push({ userId: u.userId, deviceId, type: note.type, title: note.title, body: note.body })

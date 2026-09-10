@@ -1,10 +1,8 @@
 {
-  "version": "4.9.38",
-  "build": 2864,
+  "version": "4.9.39",
+  "build": 2865,
   "date": "2026-09-10",
   "changelog": [
-    "The battery ring shows a charging bolt at the top while more power is coming in than going out.",
-    "Its colour now follows the level whether or not the device is charging — red below 20%, orange to 59%, teal above. A nearly flat battery used to turn teal the moment it started charging, which is the one time the colour is worth reading.",
-    "The time under the number is hidden only at a full 100%."
+    "Power Outage alerts now fire for a mains failure the device reports as an alarm, not only as a state field. Low Battery arrived while this never did, because both were read from the same place and the outage is not recorded there."
   ]
 }
