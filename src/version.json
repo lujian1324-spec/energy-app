@@ -1,8 +1,8 @@
 {
-  "version": "4.9.44",
-  "build": 2870,
+  "version": "4.9.45",
+  "build": 2871,
   "date": "2026-09-10",
   "changelog": [
-    "Signing in to an existing account sends a sign-in code again, not a sign-up one. The code's purpose was being sent as text where the server expects a number, so it fell back to its default — which is sign-up — and the app was also choosing that purpose from a check whose meaning is documented nowhere."
+    "Sign-in codes use purpose 6 again. The app had been sending 3, which the platform still treats as a sign-up mail (Register Account); the official web login page sends 6 for email login."
   ]
 }

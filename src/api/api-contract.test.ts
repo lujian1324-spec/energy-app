@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 全接口契约测试 —— mock 传输层,逐个调用每个 API 函数,断言它生成的
  * 端点(method+path)、payload 与 CLAUDE.md 记录的字段约定。
  * 不连真实后端(沙箱不可达),但把"接口契约"固化,防止静默回归。
@@ -137,16 +137,13 @@ describe('authApi contracts', () => {
   })
 
   it('sendEmailCaptcha → /user/send/email/captcha, uses `address` field (not email)', async () => {
-    await auth.sendEmailCaptcha('a@b.com', '3')
+    await auth.sendEmailCaptcha('a@b.com', '6')
     const c = only()
     expect(c.path).toBe('/user/send/email/captcha')
     expect(c.body.address).toBe('a@b.com')
     expect(c.body.email).toBeUndefined()
-    // A NUMBER. Both API documents type intent `integer` and the published
-    // example carries "intent": 1. Sending the string "3" is what put a
-    // "Register account" email in front of accounts that already existed: a
-    // backend that cannot parse it falls back to its default, which is register.
-    expect(c.body.intent).toBe(3)
+    // A NUMBER, and 6 for email login (official web). Intent 3 is not login.
+    expect(c.body.intent).toBe(6)
     expect(typeof c.body.intent).toBe('number')
   })
 

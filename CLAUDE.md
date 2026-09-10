@@ -1,4 +1,4 @@
-# Sierro Energy App
+﻿# Sierro Energy App
 
 React 18 + TypeScript + Vite + Tailwind PWA for managing Sierro energy-storage
 devices. Routing via React Router (HashRouter), state via Zustand, API layer in
@@ -222,7 +222,7 @@ Canonical names/types for request payloads & query params. Keep these consistent
   but the **update** endpoints prefix it with the channel: `/user/update/iotUserEmail` takes
   `emailVerifyCode`, `/user/update/iotUserCellphone` and `/user/update/cellphoneVerify` take
   `smsVerifyCode`. Sending the plain `verifyCode` is what made every email change answer 20101.
-- **Captcha intent**: use the `CaptchaIntent` enum (`'1'`=register `'2'`=reset `'3'`=login `'4'`=update email).
+- **Captcha intent**: use the `CaptchaIntent` enum (`'1'`=register `'2'`=reset `'6'`=email login `'5'`=SMS login `'4'`=update email). Do **not** use `'3'` for login.
 - **Email captcha quirk**: `/user/send/email/captcha` expects field **`address`**, not `email`.
 - **Country code**: always `normalizeCountryCode()` (strip leading `+`) before send.
 - **Pagination**: `page` (1-based) + `count` per page across all list endpoints.
