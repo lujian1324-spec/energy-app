@@ -1,8 +1,10 @@
 {
-  "version": "4.9.37",
-  "build": 2863,
-  "date": "2026-09-09",
+  "version": "4.9.38",
+  "build": 2864,
+  "date": "2026-09-10",
   "changelog": [
-    "Adding a device on an account that has none works. The power station created for it is now built exactly the way a create the server accepted was built — every value sent as text, the platform's own region codes included, and the install time carrying the local offset. The app had been sending plain numbers, no region codes, and a UTC stamp, and the station was refused before the device was ever reached."
+    "The battery ring shows a charging bolt at the top while more power is coming in than going out.",
+    "Its colour now follows the level whether or not the device is charging — red below 20%, orange to 59%, teal above. A nearly flat battery used to turn teal the moment it started charging, which is the one time the colour is worth reading.",
+    "The time under the number is hidden only at a full 100%."
   ]
 }
