@@ -1,4 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react'
+import { readEmailCheck } from '../utils/emailRegistration'
 import { useNavigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import Icon from '../components/Icon'
@@ -6,6 +7,7 @@ import { useAuthStore } from '../stores/authStore'
 import { useDeviceStore } from '../stores/deviceStore'
 import {
   sendEmailCaptcha,
+  checkEmailExists,
   loginByEmail,
   loginByAccount,
   defaultPasswordForAccount,
@@ -118,24 +120,26 @@ export default function LoginPage() {
     setSending(true)
     try {
       /*
-       * Which intent the code needs is not knowable before asking. The direct
-       * question, /user/email/check, sits behind the session, and the screen that
-       * asks it is the one screen with no session.
+       * A first-time address needs a REGISTER code and an existing one a LOGIN
+       * code, so ask which this is: /user/email/check answers it directly.
        *
-       * 4.9.22 tried to guess from whether the derived account name was free.
+       * Only a clear answer is acted on. Anything else falls through to asking
+       * for the ordinary sign-in code and letting the backend correct the intent
+       * — which is what shipped before this and is known to work, and which the
+       * correction below still performs either way.
+       *
+       * 4.9.22 guessed instead, from whether the DERIVED ACCOUNT NAME was free.
        * That reads an existing user as new whenever their account was created
        * under a different name than today's rule produces — jason@sierro.us is
        * `jasonSierro` on the server and `jasons` by the current derivation — and
        * the register-intent code then came back "Email has been registered",
-       * with no way past it.
-       *
-       * So do not guess. Ask for the ordinary case and let the backend correct
-       * us: it says exactly which way the intent was wrong, and a refused send
-       * costs no mail. Whichever intent the code was actually issued under is
-       * what decides register-or-sign-in at verify time.
+       * with no way past it. Asking about the address itself is a different
+       * question with no such gap; an unreadable answer still must not be acted
+       * on, which is what 'unknown' is for.
        */
       const addr = email.trim()
-      let intent: Intent = CaptchaIntent.LOGIN
+      const registration = readEmailCheck(await checkEmailExists(addr).catch(() => null))
+      let intent: Intent = registration === 'free' ? CaptchaIntent.REGISTER : CaptchaIntent.LOGIN
       let result = await sendEmailCaptcha(addr, intent)
       if (!isApiSuccess(result.code)) {
         const corrected = correctedIntent(`${result.message ?? ''} ${result.msg ?? ''}`)

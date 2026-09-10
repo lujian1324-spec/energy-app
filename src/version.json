@@ -1,9 +1,8 @@
 {
-  "version": "4.9.41",
-  "build": 2867,
+  "version": "4.9.42",
+  "build": 2868,
   "date": "2026-09-10",
   "changelog": [
-    "The Real-Time Power chart draws today's readings again. Its local copy of the history had become able to stop the request for it: a failure reading that copy skipped the request entirely, and a failure writing it discarded what had just been fetched. Insights read the same data over the same hours and kept working, because it keeps no local copy.",
-    "When the chart genuinely has nothing to draw it now says whether today has no readings yet or the request failed, with the reason. Both used to show the same dashed line."
+    "The sign-in screen now asks whether an address already has an account before sending its code, so a first-time address gets a sign-up code and an existing one a sign-in code without a refused attempt in between."
   ]
 }
