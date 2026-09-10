@@ -94,6 +94,27 @@ export async function getLatestState(token, deviceId) {
 }
 
 /**
+ * Active alarms for one device.
+ *
+ * The poller used to read only /state/latest, so an outage the platform records
+ * as an ALARM rather than as a truthy state field was invisible to it — which is
+ * how Low Battery could push while Mains power failure never did, both being
+ * gated on the same fields map.
+ *
+ * Returns [] on any failure: a missing alarm list must never stop the state-based
+ * checks from running.
+ */
+export async function listAlarms(token, deviceId, { count = 20 } = {}) {
+  try {
+    const r = await call('POST', '/alarm/query/list', { data: { page: 1, count, deviceId: String(deviceId) }, token })
+    if (!ok(r.json.code)) return []
+    return r.json.data?.list ?? r.json.data?.records ?? []
+  } catch {
+    return []
+  }
+}
+
+/**
  * Write a single device config attribute (the {key,value} control model). Used by
  * the sleep-schedule executor to set AC charge power server-side (key
  * `ratedACChargingPower`, value in W). This is the FIRST write path in this client
