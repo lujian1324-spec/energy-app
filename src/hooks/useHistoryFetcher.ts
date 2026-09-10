@@ -101,8 +101,25 @@ export function useHistoryFetcher(
     async function run() {
       setLoading(true)
       try {
+        /*
+         * The cache is an optimisation and must never be able to stop the data
+         * reaching the chart. Both halves of it used to sit bare inside the one
+         * try that wraps the whole fetch, so a failing read jumped straight to
+         * the catch and the request was never made at all — and a failing write
+         * skipped the setPoints on the line after it. Either way the chart drew
+         * its no-data placeholder while the records sat on the server, and the
+         * error went to a field nothing rendered.
+         *
+         * Insights reads the same endpoint and touches none of this, which is
+         * why it kept working while this did not.
+         */
         // 1. 先读本地缓存
-        const cached = await getHistoryByDeviceAndRange(deviceId!, fromTime, toTime)
+        let cached: PowerHistoryRecord[] = []
+        try {
+          cached = await getHistoryByDeviceAndRange(deviceId!, fromTime, toTime)
+        } catch (e) {
+          console.warn('[history] cache read failed, fetching instead:', e)
+        }
         if (cancelRef.current) return
 
         if (cached.length > 0) {
@@ -179,12 +196,18 @@ export function useHistoryFetcher(
             })
           }
 
-          const saved = await saveHistoryBatch(pageRecords, existingTs)
+          // Points first: what was fetched is on screen whether or not it can
+          // also be written down.
           allPoints.push(...pagePoints)
-
           setPoints([...allPoints])
           setCurrentPage(page)
-          setSavedCount(prev => prev + saved)
+
+          try {
+            const saved = await saveHistoryBatch(pageRecords, existingTs)
+            setSavedCount(prev => prev + saved)
+          } catch (e) {
+            console.warn('[history] cache write failed, continuing:', e)
+          }
 
           if (list.length < PAGE_SIZE) break
           page++
