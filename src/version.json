@@ -3,6 +3,7 @@
   "build": 2867,
   "date": "2026-09-10",
   "changelog": [
-    "When the Real-Time Power chart has nothing to draw it now says whether today has no readings yet or the request for them failed, with the reason. Both used to show the same dashed line."
+    "The Real-Time Power chart draws today's readings again. Its local copy of the history had become able to stop the request for it: a failure reading that copy skipped the request entirely, and a failure writing it discarded what had just been fetched. Insights read the same data over the same hours and kept working, because it keeps no local copy.",
+    "When the chart genuinely has nothing to draw it now says whether today has no readings yet or the request failed, with the reason. Both used to show the same dashed line."
   ]
 }
