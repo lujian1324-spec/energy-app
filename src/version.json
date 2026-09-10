@@ -1,8 +1,8 @@
 {
-  "version": "4.9.43",
-  "build": 2869,
+  "version": "4.9.44",
+  "build": 2870,
   "date": "2026-09-10",
   "changelog": [
-    "The Try every variant button is gone from the add-device failure screen. It existed to find out why a device could not be added, that is settled, and it is not something to leave in front of anyone. The failure details it sat under stay."
+    "Signing in to an existing account sends a sign-in code again, not a sign-up one. The code's purpose was being sent as text where the server expects a number, so it fell back to its default — which is sign-up — and the app was also choosing that purpose from a check whose meaning is documented nowhere."
   ]
 }

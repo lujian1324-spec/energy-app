@@ -1,5 +1,4 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react'
-import { readEmailCheck } from '../utils/emailRegistration'
 import { useNavigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import Icon from '../components/Icon'
@@ -7,7 +6,6 @@ import { useAuthStore } from '../stores/authStore'
 import { useDeviceStore } from '../stores/deviceStore'
 import {
   sendEmailCaptcha,
-  checkEmailExists,
   loginByEmail,
   loginByAccount,
   defaultPasswordForAccount,
@@ -120,26 +118,30 @@ export default function LoginPage() {
     setSending(true)
     try {
       /*
-       * A first-time address needs a REGISTER code and an existing one a LOGIN
-       * code, so ask which this is: /user/email/check answers it directly.
+       * Ask for the sign-in code, and let the backend say if this address needs
+       * the other one. Never pick REGISTER from a guess.
        *
-       * Only a clear answer is acted on. Anything else falls through to asking
-       * for the ordinary sign-in code and letting the backend correct the intent
-       * — which is what shipped before this and is known to work, and which the
-       * correction below still performs either way.
+       * The two mistakes do not cost the same. A new address asked for a LOGIN
+       * code is refused, the reply says so, the intent flips and the second send
+       * works — one wasted round trip and no mail. An existing address asked for
+       * a REGISTER code gets a "Register account" email it cannot use, and the
+       * correction cannot help because the send SUCCEEDED. So the only safe
+       * default is the sign-in code.
        *
-       * 4.9.22 guessed instead, from whether the DERIVED ACCOUNT NAME was free.
-       * That reads an existing user as new whenever their account was created
-       * under a different name than today's rule produces — jason@sierro.us is
-       * `jasonSierro` on the server and `jasons` by the current derivation — and
-       * the register-intent code then came back "Email has been registered",
-       * with no way past it. Asking about the address itself is a different
-       * question with no such gap; an unreadable answer still must not be acted
-       * on, which is what 'unknown' is for.
+       * 4.9.42 tried to decide up front from /user/email/check and got the
+       * meaning of its answer backwards, which sent existing accounts down the
+       * register path — exactly the failure above. 4.9.22 did the same thing
+       * from a different signal, whether the DERIVED ACCOUNT NAME was free,
+       * which reads an existing user as new whenever their account was created
+       * under a name other than today's rule produces (jason@sierro.us is
+       * `jasonSierro` on the server, `jasons` by the current derivation).
+       *
+       * Twice now the up-front check has been the thing that broke it. What the
+       * endpoint actually returns is still not written down anywhere, so until
+       * it is, this does not read it.
        */
       const addr = email.trim()
-      const registration = readEmailCheck(await checkEmailExists(addr).catch(() => null))
-      let intent: Intent = registration === 'free' ? CaptchaIntent.REGISTER : CaptchaIntent.LOGIN
+      let intent: Intent = CaptchaIntent.LOGIN
       let result = await sendEmailCaptcha(addr, intent)
       if (!isApiSuccess(result.code)) {
         const corrected = correctedIntent(`${result.message ?? ''} ${result.msg ?? ''}`)

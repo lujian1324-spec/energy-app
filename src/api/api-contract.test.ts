@@ -142,7 +142,12 @@ describe('authApi contracts', () => {
     expect(c.path).toBe('/user/send/email/captcha')
     expect(c.body.address).toBe('a@b.com')
     expect(c.body.email).toBeUndefined()
-    expect(c.body.intent).toBe('3')
+    // A NUMBER. Both API documents type intent `integer` and the published
+    // example carries "intent": 1. Sending the string "3" is what put a
+    // "Register account" email in front of accounts that already existed: a
+    // backend that cannot parse it falls back to its default, which is register.
+    expect(c.body.intent).toBe(3)
+    expect(typeof c.body.intent).toBe('number')
   })
 
   it('sendSmsCaptcha → country code normalized', async () => {
@@ -150,7 +155,8 @@ describe('authApi contracts', () => {
     const c = only()
     expect(c.path).toBe('/user/send/sms/captcha')
     expect(c.body.countryTelephoneCode).toBe('1')
-    expect(c.body.intent).toBe('2')
+    expect(c.body.intent).toBe(2)
+    expect(typeof c.body.intent).toBe('number')
   })
 
   // A real userId is 18 digits: Number('491513787113766912') is
