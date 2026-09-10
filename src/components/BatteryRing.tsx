@@ -22,17 +22,23 @@ interface BatteryRingProps {
 // 6=full (>=95%), 7=charging, 8=plugged
 export type BatteryState = 'critical' | 'low' | 'warning' | 'normal' | 'good' | 'full' | 'charging' | 'plugged' | 'unknown'
 
-function getBatteryState(percentage: number, isCharging: boolean, isPlugged: boolean): BatteryState {
-  // At the literal cap (>=99%) a battery can't still be "charging" even if net
-  // power into it is momentarily positive — show Full. Below that, an actively
-  // charging battery (e.g. 95% rising toward 100%) should still show Charging.
-  if (percentage >= 99) return 'full'
-  if (isCharging) return 'charging'
-  if (isPlugged) return 'plugged'
-  if (percentage <= 5) return 'critical'
-  if (percentage <= 15) return 'low'
-  if (percentage <= 25) return 'warning'
-  if (percentage >= 95) return 'full'
+/*
+ * Bands, straight off the Battery Ring sheet:
+ *
+ *   1-19%   red      20-59%  orange     60-99%  teal     100%  teal, no time line
+ *
+ * The colour follows the LEVEL only. The sheet draws the Input>Output column in
+ * the same colour as the other one at every level, and shows charging with the
+ * bolt at the top of the ring instead. Returning 'charging' here painted a
+ * nearly flat battery teal for as long as it was charging — the one moment the
+ * colour is worth reading.
+ */
+export function getBatteryState(percentage: number, isCharging = false, isPlugged = false): BatteryState {
+  void isCharging
+  void isPlugged
+  if (percentage >= 100) return 'full'
+  if (percentage <= 19) return 'low'
+  if (percentage <= 59) return 'warning'
   return 'normal'
 }
 
@@ -46,6 +52,26 @@ const STATE_COLOR: Record<BatteryState, string> = {
   charging: '#01D6BE',
   plugged: '#01D6BE',
   unknown: '#8C8C8C',
+}
+
+/**
+ * The charging bolt, as the handoff draws it: white, at the top of the ring,
+ * sitting on the stroke rather than anywhere near the number in the middle.
+ */
+function ChargingBolt({ size, strokeWidth }: { size: number; strokeWidth: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+      className="absolute left-1/2"
+      style={{ top: (strokeWidth - size) / 2, transform: 'translateX(-50%)' }}
+    >
+      <path d="M13.6 2 5 13.6h5.6L9.4 22 18 10.4h-5.6L13.6 2Z" fill="#FFFFFF" />
+    </svg>
+  )
 }
 
 export default function BatteryRing({
@@ -129,6 +155,12 @@ export default function BatteryRing({
         />
       </svg>
 
+      {/* Charging: the bolt sits on the ring at twelve o'clock, centred on the
+          stroke, so the number in the middle keeps its own space. */}
+      {isCharging && connected && !noData && (
+        <ChargingBolt size={Math.round(size * 0.13)} strokeWidth={strokeWidth} />
+      )}
+
       {/* 中心内容 */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         {/* 电量百分比 — Disconnected/0 显示 - (PRD §5.1) */}
@@ -149,7 +181,7 @@ export default function BatteryRing({
           <div className="text-tiny font-semibold tracking-wide text-ink-7 mt-1">
             No data
           </div>
-        ) : safePercent >= 99 ? null : isCharging ? (
+        ) : displayPercent >= 100 ? null : isCharging ? (
           <div className="text-body-md text-ink-5 mt-4" aria-hidden="true">
             {rawTimeLabel ? timeToFull : `${timeToFull} to full`}
           </div>

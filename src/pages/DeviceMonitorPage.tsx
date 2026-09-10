@@ -99,7 +99,14 @@ export default function DeviceMonitorPage() {
   const solarPower = rt?.solarPower ?? 0
   const outputPower = rt?.outputPower ?? 0
   const batteryPower = rt?.batteryPower ?? 0
-  const isCharging = batteryPower > 0
+  /*
+   * The Battery Ring sheet defines the charging state as Input > Output — what
+   * is coming in from AC and solar against what the load is drawing — not the
+   * sign of batteryPower. The history feed carries no batteryPower field at all
+   * (it is derived), so reading the two sides directly is both what the design
+   * asks for and the more dependable of the two.
+   */
+  const isCharging = acPower + solarPower > outputPower
   const isOnline = device?.isOnline ?? true
 
   // 额定容量（Wh）= acInvOutputPower × 2，与 Device Info 页 Rated Capacity 同源
