@@ -10,7 +10,6 @@ import { SIERRO_MODELS, generateSerial, type SierroModel } from '../../data/devi
 import { saveRatedParams } from '../../db/powerflowDB'
 import { fetchDtuInfo, newStationRequest, ratedPowerKw, addStation, reverseGisRegion, type RegionCodes } from '../../api/deviceApi'
 import { stationPlace } from '../../utils/stationLocation'
-import type { ProbeInput } from '../../utils/bindProbe'
 import { fetchUserInfo } from '../../api/authApi'
 import { useDeviceStore } from '../../stores/deviceStore'
 import {
@@ -58,7 +57,6 @@ export function useProvisionBind(opts: {
   setFailKind: Dispatch<SetStateAction<FailKind>>
   setBindReason: Dispatch<SetStateAction<string | null>>
   setBindDetails: Dispatch<SetStateAction<string | null>>
-  setBindProbeInput: Dispatch<SetStateAction<ProbeInput | null>>
   setBindReasonKind: Dispatch<SetStateAction<BindFailReasonKind | null>>
   setBindErrorId: Dispatch<SetStateAction<string | null>>
 }) {
@@ -68,7 +66,6 @@ export function useProvisionBind(opts: {
     onWifiConfigured,
     setBindRetrying, setRestarting, setShowRestartHelp, setConfigStage,
     setFailKind, setBindReason, setBindReasonKind, setBindErrorId, setBindDetails,
-    setBindProbeInput,
   } = opts
 
   const handleBindToCloud = useCallback(async () => {
@@ -163,13 +160,6 @@ export function useProvisionBind(opts: {
 
       const reportedSerial = toBeAdded[0]?.deviceSerialNumber
       const serialNumber = reportedSerial || generateSerial(spec, dtuDtuid)
-      // Everything the one-tap probe needs, should this add fail.
-      setBindProbeInput({
-        deviceName, dtuDtuid,
-        reportedSerial: typeof reportedSerial === 'string' ? reportedSerial : undefined,
-        virtualSerial: generateSerial(spec, dtuDtuid),
-        ratedPowerW: spec.ratedPower,
-      })
       diag.push(`toBeAdded=${toBeAdded.length} alreadyAdded=${alreadyAdded.length} serial=${reportedSerial ? 'reported' : 'virtual'}:${serialNumber}`)
 
       const stationsFresh = await ds.loadStations()
