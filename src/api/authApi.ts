@@ -145,8 +145,11 @@ export function normalizeCountryCode(code: string): string {
 }
 
 /**
- * 验证码用途（intent）枚举 —— 平台用数值字符串区分场景。
- * 所有发送验证码的调用统一使用此枚举，避免散落魔法字符串。
+ * 验证码用途（intent）枚举。
+ *
+ * The values are strings because everything here compares them as strings, but
+ * they go up the wire as NUMBERS — see sendEmailCaptcha. Both API documents type
+ * this field `integer`, and the published request example carries `"intent": 1`.
  */
 export const CaptchaIntent = {
   REGISTER: '1',
@@ -340,10 +343,22 @@ export async function checkEmailExists(email: string): Promise<ApiResponse<unkno
   return api.get<unknown>(`/user/email/check?email=${encodeURIComponent(email)}`)
 }
 
-/** 发送邮箱验证码 — 返回 iotCaptchaId */
+/**
+ * 发送邮箱验证码 — 返回 iotCaptchaId
+ *
+ * `intent` goes as a NUMBER. Both API documents type it `integer` and the
+ * published example carries `"intent": 1`; this sent the string "3" for a
+ * sign-in code, and a backend that cannot parse that falls back to its default —
+ * which is 1, register. That is what put a "Register account" email in front of
+ * accounts that already existed while the same request made by hand, with a real
+ * integer, came back titled "login".
+ */
 export async function sendEmailCaptcha(email: string, intent = '1'): Promise<ApiResponse<SendCaptchaResponse>> {
   // API 字段名是 address（非 email）
-  return api.postSkipAuth<SendCaptchaResponse>('/user/send/email/captcha', { address: email, intent })
+  return api.postSkipAuth<SendCaptchaResponse>('/user/send/email/captcha', {
+    address: email,
+    intent: Number(intent),
+  })
 }
 
 /** 发送短信验证码 — 返回 iotCaptchaId */
@@ -356,7 +371,8 @@ export async function sendSmsCaptcha(
   return api.postSkipAuth<SendCaptchaResponse>('/user/send/sms/captcha', {
     cellphone,
     countryTelephoneCode: normalizedCode,
-    intent,
+    // A number here too, for the same reason as the email one.
+    intent: Number(intent),
   })
 }
 
