@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Sierro Inc. - 认证与用户 API
  *
  * 账号登录:    POST /login/account
@@ -121,7 +121,7 @@ export interface SendCaptchaRequest {
   email?: string
   cellphone?: string
   countryTelephoneCode?: string
-  intent?: string  // 用途：数值字符串 "1"=注册 "2"=重置密码 "3"=登录
+  intent?: string  // 1=register 2=reset 6=email-login 5=sms-login 4=update-email (number on wire)
 }
 
 /** 发送验证码响应 */
@@ -154,7 +154,10 @@ export function normalizeCountryCode(code: string): string {
 export const CaptchaIntent = {
   REGISTER: '1',
   RESET_PASSWORD: '2',
-  LOGIN: '3',
+  /** Email sign-in. Official web login uses 6; 3 is NOT login. */
+  LOGIN: '6',
+  /** Official web SMS login uses 5. */
+  SMS_LOGIN: '5',
   UPDATE_EMAIL: '4',
 } as const
 
