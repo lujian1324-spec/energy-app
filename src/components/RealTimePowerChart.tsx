@@ -75,6 +75,7 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
   const {
     points: rawHistoryPoints,
     loading: historyLoading,
+    error: historyError,
   } = useHistoryFetcher(deviceId, todayFrom, todayTo)
 
   // ─── Chart zoom / pan state (unix ms within today) ───
@@ -324,6 +325,17 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
         {isOnline && historyLoading && rawHistoryPoints.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center z-10">
             <Loader2 size={20} className="text-primary animate-spin" />
+          </div>
+        )}
+        {/* A dashed line said both "nothing recorded yet" and "the request
+            failed", which are not the same thing to anyone looking at it. */}
+        {isOnline && !historyLoading && rawHistoryPoints.length === 0 && (
+          <div className="absolute inset-0 flex items-center justify-center z-10 px-4 text-center">
+            <p className="text-label text-ink-7">
+              {historyError
+                ? `Couldn't load today's history — ${historyError}`
+                : 'No readings recorded yet today'}
+            </p>
           </div>
         )}
 
