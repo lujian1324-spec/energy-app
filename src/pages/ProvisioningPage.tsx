@@ -12,7 +12,6 @@ import { isDtuid } from '../utils/dtuidParser'
 import { App } from '@capacitor/app'
 import { checkBluetooth, resetBleInit, bleStatusFromCheck } from '../utils/permissions'
 import { type FailKind, type BindFailReasonKind } from '../utils/provisionFailCopy'
-import type { ProbeInput } from '../utils/bindProbe'
 import QrScanScreen from './provisioning/QrScanScreen'
 import { NameDeviceScreen, ChooseIconScreen } from './provisioning/NameIconScreens'
 import ProvisioningFlowScreen from './provisioning/ProvisioningFlowScreen'
@@ -59,7 +58,6 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   const [bindReasonKind, setBindReasonKind] = useState<BindFailReasonKind | null>(null)
   const [bindErrorId, setBindErrorId] = useState<string | null>(null)
   const [bindDetails, setBindDetails] = useState<string | null>(null)
-  const [bindProbeInput, setBindProbeInput] = useState<ProbeInput | null>(null)
 
   type BleStatus = 'checking' | 'no_permission' | 'bt_off' | 'ready'
   const [bleStatus, setBleStatus] = useState<BleStatus>('checking')
@@ -97,7 +95,6 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     setBindReasonKind,
     setBindErrorId,
     setBindDetails,
-    setBindProbeInput,
   })
 
   const recheckBle = useCallback(async (): Promise<BleStatus> => {
@@ -416,7 +413,6 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
       bindReasonKind={bindReasonKind}
       bindErrorId={bindErrorId}
       bindDetails={bindDetails}
-      bindProbeInput={bindProbeInput}
       configStage={configStage}
       bleKeyInput={bleKeyInput}
       setBleKeyInput={setBleKeyInput}

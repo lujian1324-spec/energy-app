@@ -1,8 +1,8 @@
 {
-  "version": "4.9.42",
-  "build": 2868,
+  "version": "4.9.43",
+  "build": 2869,
   "date": "2026-09-10",
   "changelog": [
-    "The sign-in screen now asks whether an address already has an account before sending its code, so a first-time address gets a sign-up code and an existing one a sign-in code without a refused attempt in between."
+    "The Try every variant button is gone from the add-device failure screen. It existed to find out why a device could not be added, that is settled, and it is not something to leave in front of anyone. The failure details it sat under stay."
   ]
 }
