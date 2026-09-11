@@ -15,15 +15,22 @@ import Icon from '../../components/Icon'
 import TextField from '../../components/TextField'
 import { DEVICE_NAME_MAX } from '../../data/deviceModels'
 
-/** The eight glyphs `A_1.3.4` offers, in the frame's order. */
+/**
+ * The eight glyphs `A_1.3.4` offers, in the frame's order. The `id` values are the
+ * SAME canon Device Info (DeviceDetailPage `DISPLAY_ICONS`) and the home card
+ * (DeviceListCard `PACK_ICON_MAP`) persist and look up under
+ * `sierro-display-icon-<deviceId>`. They used to be a private set
+ * (`power`/`fridge`/`plug`/`router`), so even once the pick was saved the card
+ * couldn't resolve fridge/power-strip/router and fell back to the lightning bolt.
+ */
 export const DEVICE_ICONS: { id: string; pack: string; label: string }[] = [
-  { id: 'power', pack: 'thunder', label: 'Power Station' },
-  { id: 'fridge', pack: 'fridge', label: 'Refrigerator' },
+  { id: 'zap', pack: 'thunder', label: 'Power Station' },
+  { id: 'refrigerator', pack: 'fridge', label: 'Refrigerator' },
   { id: 'server', pack: 'NAS', label: 'Server' },
   { id: 'lamp', pack: 'lamp', label: 'Lamp' },
   { id: 'fish', pack: 'fish tank', label: 'Aquarium' },
-  { id: 'plug', pack: 'power strip', label: 'Power strip' },
-  { id: 'router', pack: 'router', label: 'Router' },
+  { id: 'plugzap', pack: 'power strip', label: 'Power strip' },
+  { id: 'wifi', pack: 'router', label: 'Router' },
   { id: 'cpap', pack: 'CPAP', label: 'CPAP' },
 ]
 

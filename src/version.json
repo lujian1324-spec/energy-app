@@ -1,8 +1,12 @@
 {
-  "version": "4.9.45",
-  "build": 2871,
-  "date": "2026-09-10",
+  "version": "4.10.0",
+  "build": 2872,
+  "date": "2026-09-11",
   "changelog": [
-    "Sign-in codes use purpose 6 again. The app had been sending 3, which the platform still treats as a sign-up mail (Register Account); the official web login page sends 6 for email login."
+    "Device monitor now reads Input / AC / Solar / Output and battery straight from the device over pass-through every 5 seconds while the page is open, and stops the moment you leave.",
+    "The energy ring shows a whole-number battery percentage (61%, not 61.1%) so it matches the device card and the Real-Time Power badge — no more flicker between an integer and one decimal.",
+    "The icon you pick while adding a device (fridge, router, power strip …) now sticks instead of falling back to the lightning bolt.",
+    "The notification bell's red dot clears once you've opened Notifications and only shows for genuinely unread alerts.",
+    "The device-switcher chevron by the device name only appears when you have more than one device."
   ]
 }

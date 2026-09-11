@@ -8,7 +8,9 @@ import Icon from '../components/Icon'
 import RealTimePowerChart from '../components/RealTimePowerChart'
 import { useDeviceStore } from '../stores/deviceStore'
 import { useActiveAlarmCount } from '../hooks/useActiveAlarmCount'
-import { mapFieldsToRealtime } from '../api/deviceApi'
+import { mapFieldsToRealtime, passthroughDevice } from '../api/deviceApi'
+import { FRAMES, decodePassthroughBase64, decodeLiveStatus, type LiveStatus } from '../protocols/modbusProtocol'
+import { isApiSuccess } from '../utils/apiClient'
 import { batteryTimeLabel } from '../utils/batteryTime'
 import { loadRatedParams } from '../db/powerflowDB'
 import { SIERRO_MODELS, type SierroModel } from '../data/deviceModels'
@@ -82,6 +84,35 @@ export default function DeviceMonitorPage() {
     return () => clearInterval(timer)
   }, [id, loadDeviceState])
 
+  // Pass-through polling for the ring + the Input/AC/Solar/Output boxes beside it.
+  // The cloud state above refreshes slowly (30s) and lags real hardware; the same
+  // READ_ALL_STATUS pass-through frame the device list uses gives a live read of
+  // SOC / AC / Solar / Output / battery power. Read once on enter, then every 5s
+  // while the page stays mounted, and tear the timer down on leave so nothing
+  // keeps polling in the background.
+  const [ptLive, setPtLive] = useState<LiveStatus | null>(null)
+  useEffect(() => {
+    setPtLive(null)
+    if (!id) return
+    if (useDeviceStore.getState().isDemoMode) return
+    let cancelled = false
+    const readOnce = async () => {
+      try {
+        const res = await passthroughDevice(id, { data: FRAMES.READ_ALL_STATUS })
+        if (cancelled || !isApiSuccess(res.code)) return
+        const b64 = res.data?.base64Output ?? res.data?.content ?? res.data?.data
+        const registers = decodePassthroughBase64(b64, 8)
+        if (!registers) return
+        if (!cancelled) setPtLive(decodeLiveStatus(registers))
+      } catch {
+        // pass-through can fail silently; the cloud state remains the fallback
+      }
+    }
+    readOnce()
+    const timer = setInterval(readOnce, 5000)
+    return () => { cancelled = true; clearInterval(timer) }
+  }, [id])
+
   // Map realtime fields —— 仅当 store 里的实时状态确实属于「当前」设备时才用它。
   // 切换设备时 store 可能仍短暂持有上一台设备的状态，此时返回 null，卡片显示占位
   // 而非上一台设备的数据，直到本设备(id)的状态加载完成。
@@ -94,11 +125,14 @@ export default function DeviceMonitorPage() {
     return mergeCloudWithBle(mapFieldsToRealtime(selectedDeviceState.fields), ble)
   }, [selectedDeviceState, id, bleEpoch])
 
-  const remainingBatteryCapacity = rt?.remainingBatteryCapacity ?? null
-  const acPower = rt?.acPower ?? 0
-  const solarPower = rt?.solarPower ?? 0
-  const outputPower = rt?.outputPower ?? 0
-  const batteryPower = rt?.batteryPower ?? 0
+  // Pass-through (live, 5s) is the primary source for the ring and the Input /
+  // AC / Solar / Output boxes — the same source the device list reads — with the
+  // slower cloud state as the fallback until the first pass-through read lands.
+  const remainingBatteryCapacity = ptLive?.soc ?? rt?.remainingBatteryCapacity ?? null
+  const acPower = ptLive?.acPower ?? rt?.acPower ?? 0
+  const solarPower = ptLive?.solarPower ?? rt?.solarPower ?? 0
+  const outputPower = ptLive?.outputPower ?? rt?.outputPower ?? 0
+  const batteryPower = ptLive?.batteryPower ?? rt?.batteryPower ?? 0
   /*
    * The Battery Ring sheet defines the charging state as Input > Output — what
    * is coming in from AC and solar against what the load is drawing — not the
@@ -164,11 +198,16 @@ export default function DeviceMonitorPage() {
               <span className="text-title-md font-semibold text-white">
                 {device?.name ?? 'Device'}
               </span>
-              <Icon
-                name="chevron-down"
-                size={20}
-                className={`transition-transform duration-200 ${showDeviceDropdown ? 'rotate-180' : ''}`}
-              />
+              {/* The switcher chevron only earns its place when there is more than
+                  one device to switch between; with a single device the dropdown
+                  never opens, so the fold marker would just be noise. */}
+              {devices.length > 1 && (
+                <Icon
+                  name="chevron-down"
+                  size={20}
+                  className={`transition-transform duration-200 ${showDeviceDropdown ? 'rotate-180' : ''}`}
+                />
+              )}
             </div>
             <span className="text-tiny text-ink-5">
               {isOnline ? 'Connected' : 'Disconnected'}

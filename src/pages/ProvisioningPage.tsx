@@ -45,7 +45,11 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   const [nameError, setNameError] = useState('')
   const [bleKeyInput, setBleKeyInput] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [selectedIcon, setSelectedIcon] = useState<string>('power')
+  const [selectedIcon, setSelectedIcon] = useState<string>('zap')
+  // Held in a ref too, so the memoised bind handler always persists the icon the
+  // user actually picked rather than a value captured when it was first created.
+  const selectedIconRef = useRef(selectedIcon)
+  selectedIconRef.current = selectedIcon
 
   const [foundDevices, setFoundDevices] = useState<FoundDevice[]>([])
   const [showNotifSheet, setShowNotifSheet] = useState(false)
@@ -85,6 +89,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     lastBleRef,
     bleGoneRef,
     provisionStepRef,
+    selectedIconRef,
     onWifiConfigured: () => goToNaming(),
     setBindRetrying,
     setRestarting,
