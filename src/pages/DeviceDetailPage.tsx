@@ -747,64 +747,56 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           Device Settings
         </h1>
       </div>
-      {/* 4x/6x export: rows 68 tall, 12px apart inside a group, 24px between groups,
-          groups = [Name, Icon] / [Info] / [Sleep, Battery, Smart] / [Delete 52]. */}
-      <div className="flex-1 overflow-y-auto px-4 pb-8 space-y-6">
-        <div className="space-y-3">
-          <SettingsRow
-            label="Device Name"
-            value={deviceName}
-            onPress={() => {
-              const targetId = routeId ?? selectedDeviceId ?? ''
-              setEditTargetId(targetId)
-              setEditName(deviceName)
-              setScreen('editName')
-            }}
-          />
-          <SettingsRow
-            label="Display Icon"
-            preview={
-              effectiveIcon === 'photo' ? (
-                <img src={sierro1000Img} alt="Device" className="w-6 h-6 object-contain" />
-              ) : effectiveIcon === 'custom' && customImage ? (
-                <img src={customImage} alt="Custom" className="w-6 h-6 object-cover rounded-s" />
-              ) : (
-                <Icon name={currentPack} size={24} />
-              )
-            }
-            onPress={() => {
-              setPendingIcon(effectiveIcon)
-              setShowIconSheet(true)
-            }}
-          />
-        </div>
-
+      {/* B.1.2: rows 68 tall (Delete 52), 12px between every consecutive list item. */}
+      <div className="flex-1 overflow-y-auto px-4 pb-8 space-y-3">
+        <SettingsRow
+          label="Device Name"
+          value={deviceName}
+          onPress={() => {
+            const targetId = routeId ?? selectedDeviceId ?? ''
+            setEditTargetId(targetId)
+            setEditName(deviceName)
+            setScreen('editName')
+          }}
+        />
+        <SettingsRow
+          label="Display Icon"
+          preview={
+            effectiveIcon === 'photo' ? (
+              <img src={sierro1000Img} alt="Device" className="w-6 h-6 object-contain" />
+            ) : effectiveIcon === 'custom' && customImage ? (
+              <img src={customImage} alt="Custom" className="w-6 h-6 object-cover rounded-s" />
+            ) : (
+              <Icon name={currentPack} size={24} />
+            )
+          }
+          onPress={() => {
+            setPendingIcon(effectiveIcon)
+            setShowIconSheet(true)
+          }}
+        />
         <SettingsRow
           label="Device Info"
           onPress={() => setScreen('deviceInfo')}
         />
-
-        <div className="space-y-3">
-          <SettingsRow
-            label="Sleep Mode"
-            value={sleepMode}
-            onPress={() => setScreen('sleepMode')}
-          />
-          <SettingsRow
-            label="Battery Priority"
-            value={workModeRowLabel(workMode)}
-            onPress={() => {
-              setWorkModeDraft(workMode === 2 ? 2 : 1)
-              setShowWorkModeMenu(true)
-            }}
-          />
-          <SettingsRow
-            label="Smart Schedule"
-            value={peakShavingSettings?.enabled ? 'On' : 'Off'}
-            onPress={() => navigate('/smart-schedule')}
-          />
-        </div>
-
+        <SettingsRow
+          label="Sleep Mode"
+          value={sleepMode}
+          onPress={() => setScreen('sleepMode')}
+        />
+        <SettingsRow
+          label="Battery Priority"
+          value={workModeRowLabel(workMode)}
+          onPress={() => {
+            setWorkModeDraft(workMode === 2 ? 2 : 1)
+            setShowWorkModeMenu(true)
+          }}
+        />
+        <SettingsRow
+          label="Smart Schedule"
+          value={peakShavingSettings?.enabled ? 'On' : 'Off'}
+          onPress={() => navigate('/smart-schedule')}
+        />
         <button
           onClick={() => setShowDeleteConfirm(true)}
           className="w-full rounded-l bg-ink-10 h-[52px] text-body-lg font-semibold text-danger active:opacity-70 transition-opacity"
@@ -812,6 +804,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           Delete Device
         </button>
       </div>
+
       {showWorkModeMenu && (
         <BottomSheet
           title="Select Battery Priority"
