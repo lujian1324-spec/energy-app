@@ -58,22 +58,22 @@ describe('resolveAlarmText', () => {
 describe('dedupeAndFilterAlarms', () => {
   const titles = (arr: Array<{ title: string }>) => arr.map(a => a.title)
 
-  it('collapses duplicate descriptions (e.g. lineLoss + mainsFailure)', () => {
+  it('hides Mains power failure entirely (lineLoss + mainsFailure both suppressed)', () => {
     const out = dedupeAndFilterAlarms([
       { key: 'lineLoss', alarmId: '1' },
       { key: 'mainsFailure', alarmId: '2' },
     ])
-    expect(titles(out)).toEqual(['Mains power failure'])
+    expect(titles(out)).toEqual([])
   })
 
-  it('hides Mains/Bypass undervoltage when a Mains power failure is present', () => {
+  it('hides a Mains power failure and its correlated undervoltage symptoms, keeps unrelated', () => {
     const out = dedupeAndFilterAlarms([
-      { key: 'lineLoss', alarmId: '1' },
-      { key: 'gridVoltLows', alarmId: '2' },        // Mains undervoltage
-      { key: 'bypassUndervoltageFault', alarmId: '3' }, // Bypass undervoltage
+      { key: 'lineLoss', alarmId: '1' },            // Mains power failure → hidden
+      { key: 'gridVoltLows', alarmId: '2' },        // Mains undervoltage → hidden (correlated)
+      { key: 'bypassUndervoltageFault', alarmId: '3' }, // Bypass undervoltage → hidden (correlated)
       { key: 'cellOverVoltage', alarmId: '4' },     // unrelated → kept
     ])
-    expect(titles(out)).toEqual(['Mains power failure', 'Cell overvoltage'])
+    expect(titles(out)).toEqual(['Cell overvoltage'])
   })
 
   it('keeps undervoltage alarms when there is no Mains power failure', () => {
@@ -88,6 +88,46 @@ describe('dedupeAndFilterAlarms', () => {
     const out = dedupeAndFilterAlarms([{ key: 'fanFault', alarmId: '9', severity: 'high' } as any])
     expect(out[0].title).toBe('Fan fault')
     expect((out[0] as any).severity).toBe('high')
+  })
+})
+
+describe('dedupeAndFilterAlarms — suppressed alarms (Jason)', () => {
+  const titles = (arr: Array<{ title: string }>) => arr.map(a => a.title)
+
+  it('hides PV under voltage (spaced, joined, and the "votage" typo)', () => {
+    const out = dedupeAndFilterAlarms([
+      { key: 'x1', name: 'PV under voltage', alarmId: '1' },
+      { key: 'x2', name: 'PV undervoltage', alarmId: '2' },
+      { key: 'x3', name: 'PV under votage', alarmId: '3' },   // typo variant
+      { key: 'cellOverVoltage', alarmId: '4' },               // kept
+    ])
+    expect(titles(out)).toEqual(['Cell overvoltage'])
+  })
+
+  it('hides PV not connected', () => {
+    const out = dedupeAndFilterAlarms([{ name: 'PV not connected', alarmId: '1' }])
+    expect(out).toEqual([])
+  })
+
+  it('hides "Mains power fail" close variants and the CJK mains-input name', () => {
+    const out = dedupeAndFilterAlarms([
+      { name: 'Mains power fail', alarmId: '1' },
+      { name: '市电输入失效', alarmId: '2' },
+    ])
+    expect(out).toEqual([])
+  })
+
+  it('matches case-insensitively and on the raw wire fields', () => {
+    const out = dedupeAndFilterAlarms([
+      { alarmMessage: 'DEVICE REPORTS PV NOT CONNECTED', alarmId: '1' },
+      { key: 'pvNotConnected', alarmId: '2' },
+    ])
+    expect(out).toEqual([])
+  })
+
+  it('does NOT hide Grid power not connected (only PV/mains variants)', () => {
+    const out = dedupeAndFilterAlarms([{ name: 'Grid power not connected', alarmId: '1' }])
+    expect(titles(out)).toEqual(['Grid power not connected'])
   })
 })
 
