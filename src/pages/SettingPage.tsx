@@ -25,6 +25,7 @@ import { deleteAccount } from '../api/authApi'
 import { useUserProfile } from '../hooks/useUserProfile'
 import BottomSheet from '../components/BottomSheet'
 import TextField from '../components/TextField'
+import ToggleSwitch from '../components/ToggleSwitch'
 import appVersion from '../version.json'
 import ProfileEditPage from './ProfileEditPage'
 import { requestNotificationPermission, getNotificationPermission, enableWebPush, disableWebPush } from '../utils/pushNotification'
@@ -202,60 +203,56 @@ export default function SettingPage() {
         <h3 className="text-body-lg font-semibold text-ink-1 mb-3.5">Push Notifications</h3>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
           className="space-y-3 mb-6">
-          {/* Power Outage */}
-          <button
-            type="button"
-            onClick={async () => {
-              const next = !pushOutage
-              setPushOutage(next)
-              updateSettings({ pushNotifications: next })
-              if (next && getNotificationPermission() !== 'granted') {
-                await requestNotificationPermission()
-              }
-              await syncWebPush(next, pushLowBattery)
-            }}
-            className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 text-left active:scale-[0.99] transition-transform"
-            aria-label="Power outage alerts"
-          >
-            {/* 6x export D_1.1: 40px circle on ink-9 with a 24px glyph; the card box is 68. */}
-            <div className="w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
+          {/* Power Outage — Toggle on the right (ui-fix-doc-20260911/03).
+              Shared Sierro list row (ui-fix-doc-20260911/04): 24px glyph in a
+              36px circle, 14px title over a 10px subtitle. */}
+          <div className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5">
+            <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
               <Icon name="outage" size={24} />
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-body-md font-semibold text-ink-2">Power Outage</div>
               <div className="text-tiny text-ink-4 mt-0.5">Get alerted during outages</div>
             </div>
-            <span className="text-body-md text-ink-6 mr-1">{pushOutage ? 'On' : 'Off'}</span>
-            <Icon name="chevron-right" size={24} className="opacity-70" />
-          </button>
+            <ToggleSwitch
+              isOn={pushOutage}
+              ariaLabel="Power outage alerts"
+              onToggle={async () => {
+                const next = !pushOutage
+                setPushOutage(next)
+                updateSettings({ pushNotifications: next })
+                if (next && getNotificationPermission() !== 'granted') {
+                  await requestNotificationPermission()
+                }
+                await syncWebPush(next, pushLowBattery)
+              }}
+            />
+          </div>
 
-          {/* Low Battery */}
-          <button
-            type="button"
-            onClick={async () => {
-              const next = !pushLowBattery
-              setPushLowBattery(next)
-              updateSettings({ pushLowBattery: next })
-              if (next && getNotificationPermission() !== 'granted') {
-                await requestNotificationPermission()
-              }
-              await syncWebPush(pushOutage, next)
-            }}
-            className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 text-left active:scale-[0.99] transition-transform"
-            aria-label="Low battery alerts"
-          >
-            <div className="w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
+          {/* Low Battery — Toggle on the right; threshold lives in the slider
+              below rather than in the subtitle (ui-fix-doc-20260911/03). */}
+          <div className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5">
+            <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
               <Icon name="low-battery" size={24} />
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-body-md font-semibold text-ink-2">Low Battery</div>
-              <div className="text-tiny text-ink-4 mt-0.5">
-                {pushLowBattery ? `Get alerted when battery falls below ${lowBatteryThreshold}%` : 'Get notified when battery gets low'}
-              </div>
+              <div className="text-tiny text-ink-4 mt-0.5">Get notified when battery gets low.</div>
             </div>
-            <span className="text-body-md text-ink-6 mr-1">{pushLowBattery ? 'On' : 'Off'}</span>
-            <Icon name="chevron-right" size={24} className="opacity-70" />
-          </button>
+            <ToggleSwitch
+              isOn={pushLowBattery}
+              ariaLabel="Low battery alerts"
+              onToggle={async () => {
+                const next = !pushLowBattery
+                setPushLowBattery(next)
+                updateSettings({ pushLowBattery: next })
+                if (next && getNotificationPermission() !== 'granted') {
+                  await requestNotificationPermission()
+                }
+                await syncWebPush(pushOutage, next)
+              }}
+            />
+          </div>
 
           {/* Low Battery Threshold Slider — shown when enabled */}
           <AnimatePresence>
@@ -320,11 +317,11 @@ export default function SettingPage() {
             onClick={() => setShowSupport(true)}
             className="w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 active:scale-[0.99] transition-transform text-left">
             <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
-              <Icon name="feedback" size={20} />
+              <Icon name="feedback" size={24} />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-body-lg font-semibold text-ink-1">Feedback</div>
-              <div className="text-body-md text-ink-6 mt-0.5">Send feedback to the Sierro team</div>
+              <div className="text-body-md font-semibold text-ink-2">Feedback</div>
+              <div className="text-tiny text-ink-4 mt-0.5">Send feedback to the Sierro team</div>
             </div>
           </button>
         </motion.div>
@@ -371,6 +368,7 @@ export default function SettingPage() {
                   <div className="mt-6">
                     <TextField
                       outlined
+                      dense
                       label="Your Contact Email"
                       ariaLabel="Your contact email"
                       type="email"
@@ -380,12 +378,13 @@ export default function SettingPage() {
                       placeholder="you@example.com"
                     />
                   </div>
+                  {/* Text Area — no rule, auto-grows 120→210 (ui-fix-doc-20260911/07). */}
                   <div className="mt-3">
                     <TextField
                       outlined
                       label="Your Feedback"
                       ariaLabel="Your feedback"
-                      rows={2}
+                      rows={3}
                       value={supportMessage}
                       onChange={setSupportMessage}
                       placeholder="Describe your issue or suggestion..."

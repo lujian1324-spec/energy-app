@@ -123,21 +123,23 @@ function NotificationRow({
         animate={{ x: open ? -SWIPE_W : 0 }}
         transition={{ type: 'spring', stiffness: 500, damping: 40 }}
         onDragEnd={(_, info) => setOpen(info.offset.x < -SWIPE_W / 2)}
-        className="relative bg-ink-12 flex items-start gap-2 px-4 py-[21px]"
+        className="relative bg-ink-12 flex items-center gap-2 px-4 py-[21px]"
       >
         <div className="w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
           <Icon name={notificationIcon(`${title} ${description}`)} size={24} />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-start gap-2">
-            <p className="flex-1 min-w-0 text-body-md font-semibold text-ink-2">{title}</p>
-            {unread && <span className="mt-1.5 w-2 h-2 rounded-full bg-danger flex-shrink-0" />}
-          </div>
-          <div className="mt-0.5 flex items-start gap-2">
-            <p className="flex-1 min-w-0 text-tiny text-ink-4">{description}</p>
-            {time && <p className="text-tiny text-ink-6 whitespace-nowrap flex-shrink-0">{time}</p>}
-          </div>
+          <p className="text-body-md font-semibold text-ink-2">{title}</p>
+          <p className="mt-0.5 text-tiny text-ink-4">{description}</p>
         </div>
+        {/* Timestamp + unread dot column, vertically centred in the row rather than
+            pinned to the first line (`ui-fix-doc-20260911/06-notif-align`). */}
+        {(time || unread) && (
+          <div className="flex items-center gap-2 flex-shrink-0 self-center">
+            {time && <p className="text-tiny text-ink-6 whitespace-nowrap">{time}</p>}
+            {unread && <span className="w-2 h-2 rounded-full bg-danger" />}
+          </div>
+        )}
       </motion.div>
     </motion.div>
   )

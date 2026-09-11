@@ -51,26 +51,144 @@ function fmt12(t: string): string {
 }
 
 /**
- * Chip showing the 12-hour label with the native picker invisible on top.
+ * Chip showing the 12-hour label. Tapping it toggles an inline wheel picker that
+ * opens 12px below its row rather than the native OS picker, which floated over
+ * the other time row and hid it (`ui-fix-doc-20260911/02-sleep-timepicker`).
  *
  * Declared here, not inside the page: a component defined during render is a new
- * type on every render, so React throws the old <input> away and mounts a fresh
- * one. This page polls live device state, and each poll was remounting the input
- * out from under the open picker — which is what made the picker close by itself
- * a moment after it opened.
+ * type on every render, so React throws the old node away and mounts a fresh one.
+ * This page polls live device state, and each poll was remounting the control out
+ * from under the open picker — which is what made the picker close by itself a
+ * moment after it opened.
  */
-function TimeChip({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function TimeChip({ label, value, active, onToggle }: {
+  label: string
+  value: string
+  active: boolean
+  onToggle: () => void
+}) {
   return (
-    <span className="relative inline-flex items-center rounded-m bg-ink-9 px-3 py-1.5">
-      <span className="text-body-md text-white tnum">{fmt12(value)}</span>
-      <input
-        type="time"
-        aria-label={label}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer [color-scheme:dark]"
+    <button
+      type="button"
+      aria-label={label}
+      aria-expanded={active}
+      onClick={onToggle}
+      className={`inline-flex items-center rounded-m px-3 py-1.5 transition-colors ${
+        active ? 'bg-primary/[0.15] text-primary' : 'bg-ink-9 text-white'
+      }`}
+    >
+      <span className="text-body-md tnum">{fmt12(value)}</span>
+    </button>
+  )
+}
+
+const WHEEL_ITEM = 36 // px — one row in the wheel column
+
+/**
+ * One scroll-snap wheel column (hours or minutes). Two spacers half the visible
+ * height tall let the first and last value snap to the centred highlight band.
+ * A short debounce after scrolling settles on the nearest row and reports it.
+ */
+function WheelColumn({ values, selected, onSelect, ariaLabel, format }: {
+  values: number[]
+  selected: number
+  onSelect: (v: number) => void
+  ariaLabel: string
+  format?: (v: number) => string
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const settle = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
+  // Line the column up with the current value on open and on external changes.
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const idx = values.indexOf(selected)
+    if (idx >= 0) el.scrollTop = idx * WHEEL_ITEM
+  }, [selected, values])
+
+  const onScroll = () => {
+    const el = ref.current
+    if (!el) return
+    if (settle.current) clearTimeout(settle.current)
+    settle.current = setTimeout(() => {
+      const idx = Math.max(0, Math.min(values.length - 1, Math.round(el.scrollTop / WHEEL_ITEM)))
+      el.scrollTo({ top: idx * WHEEL_ITEM, behavior: 'smooth' })
+      const v = values[idx]
+      if (v !== selected) onSelect(v)
+    }, 110)
+  }
+
+  return (
+    <div className="relative flex-1" style={{ height: WHEEL_ITEM * 5 }}>
+      <div
+        ref={ref}
+        role="listbox"
+        aria-label={ariaLabel}
+        onScroll={onScroll}
+        className="h-full overflow-y-scroll scrollbar-hide snap-y snap-mandatory"
+      >
+        <div style={{ height: WHEEL_ITEM * 2 }} />
+        {values.map((v) => (
+          <button
+            key={v}
+            type="button"
+            onClick={() => onSelect(v)}
+            className={`w-full snap-center flex items-center justify-center tnum text-title-md transition-colors ${
+              v === selected ? 'text-white font-semibold' : 'text-ink-6'
+            }`}
+            style={{ height: WHEEL_ITEM }}
+          >
+            {format ? format(v) : String(v).padStart(2, '0')}
+          </button>
+        ))}
+        <div style={{ height: WHEEL_ITEM * 2 }} />
+      </div>
+      {/* Centred highlight band over the selected row. */}
+      <div
+        className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 rounded-m border-y border-ink-8"
+        style={{ height: WHEEL_ITEM }}
       />
-    </span>
+    </div>
+  )
+}
+
+/** Inline hour + minute wheel picker for a "HH:MM" (24h) value. */
+function InlineTimePicker({ value, onChange, onDone }: {
+  value: string
+  onChange: (v: string) => void
+  onDone: () => void
+}) {
+  const [h, m] = value.split(':').map(Number)
+  const hours = useMemo(() => Array.from({ length: 24 }, (_, i) => i), [])
+  const minutes = useMemo(() => Array.from({ length: 60 }, (_, i) => i), [])
+  const hourLabel = (v: number) => `${v % 12 === 0 ? 12 : v % 12} ${v < 12 ? 'AM' : 'PM'}`
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return (
+    <div className="rounded-l bg-ink-10 px-4 py-3">
+      <div className="flex items-stretch gap-3">
+        <WheelColumn
+          values={hours}
+          selected={Number.isNaN(h) ? 0 : h}
+          onSelect={(nh) => onChange(`${pad(nh)}:${pad(Number.isNaN(m) ? 0 : m)}`)}
+          ariaLabel="Hour"
+          format={hourLabel}
+        />
+        <WheelColumn
+          values={minutes}
+          selected={Number.isNaN(m) ? 0 : m}
+          onSelect={(nm) => onChange(`${pad(Number.isNaN(h) ? 0 : h)}:${pad(nm)}`)}
+          ariaLabel="Minute"
+        />
+      </div>
+      <button
+        type="button"
+        onClick={onDone}
+        className="mt-2 w-full h-10 rounded-m bg-primary text-primary-darker font-semibold text-body-md active:scale-[0.98] transition-transform"
+      >
+        Done
+      </button>
+    </div>
   )
 }
 
@@ -138,6 +256,8 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const [sleepMode, setSleepMode] = useState<'Off' | 'On'>('Off')
   const [sleepFrom, setSleepFrom] = useState('22:00')
   const [sleepTo, setSleepTo] = useState('09:00')
+  // Which row's inline time picker is open (`ui-fix-doc-20260911/02`); null = none.
+  const [openTimePicker, setOpenTimePicker] = useState<'from' | 'to' | null>(null)
   // Snapshot taken when the Sleep Mode screen opens; the design keeps Save dim until
   // one of these actually changes.
   const sleepBaseline = useRef({ sleepMode, sleepFrom, sleepTo })
@@ -552,7 +672,8 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             Save
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto px-4 pt-2 pb-8 space-y-6">
+        {/* 16px above the first card, not 8 (`ui-fix-doc-20260911/05-sleep-padding`). */}
+        <div className="flex-1 overflow-y-auto px-4 pt-4 pb-8 space-y-6">
           {/* B_1.2.4 sets the title's line box 8 below the card top, not 16. */}
           <div className="rounded-l bg-ink-10 px-4 pt-2 pb-4">
             <div className="flex items-center justify-between">
@@ -575,15 +696,41 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           {enabled && (
             <div>
               <p className="text-body-md font-semibold text-white mb-3">Time</p>
+              {/* space-y-3 (12px) drops the open picker 12px below its row and
+                  pushes the other row down so it stays visible (doc 02). */}
               <div className="space-y-3">
                 <div className="rounded-l bg-ink-10 h-[68px] px-4 flex items-center justify-between">
                   <span className="text-body-lg text-white">From</span>
-                  <TimeChip label="Sleep from" value={sleepFrom} onChange={setSleepFrom} />
+                  <TimeChip
+                    label="Sleep from"
+                    value={sleepFrom}
+                    active={openTimePicker === 'from'}
+                    onToggle={() => setOpenTimePicker(p => (p === 'from' ? null : 'from'))}
+                  />
                 </div>
+                {openTimePicker === 'from' && (
+                  <InlineTimePicker
+                    value={sleepFrom}
+                    onChange={setSleepFrom}
+                    onDone={() => setOpenTimePicker(null)}
+                  />
+                )}
                 <div className="rounded-l bg-ink-10 h-[68px] px-4 flex items-center justify-between">
                   <span className="text-body-lg text-white">To</span>
-                  <TimeChip label="Sleep to" value={sleepTo} onChange={setSleepTo} />
+                  <TimeChip
+                    label="Sleep to"
+                    value={sleepTo}
+                    active={openTimePicker === 'to'}
+                    onToggle={() => setOpenTimePicker(p => (p === 'to' ? null : 'to'))}
+                  />
                 </div>
+                {openTimePicker === 'to' && (
+                  <InlineTimePicker
+                    value={sleepTo}
+                    onChange={setSleepTo}
+                    onDone={() => setOpenTimePicker(null)}
+                  />
+                )}
               </div>
             </div>
           )}
