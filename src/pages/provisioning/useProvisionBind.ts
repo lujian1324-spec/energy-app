@@ -48,6 +48,9 @@ export function useProvisionBind(opts: {
   lastBleRef: MutableRefObject<{ deviceId?: string; bleName?: string }>
   bleGoneRef: MutableRefObject<boolean>
   provisionStepRef: MutableRefObject<ProvisionStep>
+  /** The display icon the user picked on the Choose Icon step, persisted once the
+   *  device is bound and its id is known. */
+  selectedIconRef: MutableRefObject<string>
   /** Called once Wi-Fi is configured — naming and the icon come next, then the bind. */
   onWifiConfigured: () => void
   setBindRetrying: Dispatch<SetStateAction<boolean>>
@@ -63,6 +66,7 @@ export function useProvisionBind(opts: {
   const {
     store, deviceNameInput, selectedModel, failKind, bindRetrying, restarting,
     configGuardRef, wifiConfiguredRef, lastBleRef, bleGoneRef, provisionStepRef,
+    selectedIconRef,
     onWifiConfigured,
     setBindRetrying, setRestarting, setShowRestartHelp, setConfigStage,
     setFailKind, setBindReason, setBindReasonKind, setBindErrorId, setBindDetails,
@@ -269,6 +273,14 @@ export function useProvisionBind(opts: {
               batteryHealth: spec.batteryHealth,
               serialNumber,
             })
+            // Persist the icon chosen on the Choose Icon step now that we finally
+            // have the device id. Same key Device Info and the home card read, so
+            // the pick (fridge, router, …) shows straight away instead of falling
+            // back to the guessed-from-name lightning bolt.
+            try {
+              const icon = selectedIconRef.current
+              if (icon) localStorage.setItem(`sierro-display-icon-${added.id}`, icon)
+            } catch { /* ignore local write */ }
           }
         } catch { /* ignore local write */ }
         store.setConfigResult('success')

@@ -359,16 +359,21 @@ export default function DevicePage() {
     : null
 
   const dismissedAlarms = useAlarmDismissStore(s => s.dismissed)
+  const seenAlarms = useAlarmDismissStore(s => s.seen)
+  // Unread count: firing, minus dismissed, minus already-seen — so the dot clears
+  // once Notifications has been opened (which marks alerts seen) and only lights
+  // for genuinely new alerts. Matches useActiveAlarmCount on the monitor page.
   const activeAlarmCount = useMemo(() => {
     let count = 0
     for (const [idStr, entry] of Object.entries(realtimeCache)) {
       const firing = dedupeAndFilterAlarms((entry.firingAlarms ?? []) as FiringAlarm[])
       for (const a of firing) {
-        if (!dismissedAlarms.includes(alarmKey(idStr, a.title))) count++
+        const key = alarmKey(idStr, a.title)
+        if (!dismissedAlarms.includes(key) && !seenAlarms.includes(key)) count++
       }
     }
     return count
-  }, [realtimeCache, dismissedAlarms])
+  }, [realtimeCache, dismissedAlarms, seenAlarms])
 
   if (!isAuthenticated && !isGuest) {
     return <DeviceSignInGate onSignIn={() => navigate('/login')} />

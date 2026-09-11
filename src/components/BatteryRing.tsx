@@ -89,7 +89,13 @@ export default function BatteryRing({
   const radius = (size - strokeWidth) / 2
   const circumference = 2 * Math.PI * radius
   const noData = percentage == null
-  const safePercent = noData ? 0 : Math.max(0, Math.min(100, percentage))
+  // Round to a whole percent. The pass-through SOC register is reported in tenths
+  // (0x011A ×0.1%), so a raw value like 61.1 reaches here; the device card
+  // (BatteryTag) and the Real-Time Power badge both Math.round it, and feeding the
+  // raw fraction into useCountUp left the ring settling on "61.1%" while everything
+  // else showed "61%" — the int↔1-decimal flicker. Rounding here is the single
+  // integer formatting for the ring.
+  const safePercent = noData ? 0 : Math.round(Math.max(0, Math.min(100, percentage)))
   // 数字 count-up：电量变化时百分比平滑滚动到新值（尊重「减少动态」）
   const displayPercent = useCountUp(safePercent)
   // Missing SoC (connected but no telemetry) and Disconnected both draw a muted ring with no progress.
