@@ -22,6 +22,7 @@ import { TERMS_URL, PRIVACY_URL } from '../config/legalLinks'
 import { sanitizeUiCopy } from '../utils/uiCopy'
 import TextField from '../components/TextField'
 import BottomAction from '../components/BottomAction'
+import otpNotificationBanner from '../assets/otp-notification-banner.png'
 
 /**
  * Passwordless email sign-in — handoff `A_2.1_Sign up & Log in`,
@@ -32,7 +33,9 @@ import BottomAction from '../components/BottomAction'
  *             legal footer at y533
  *   email     title headline_medium at y155, subtitle body_medium/ink-5 at y190,
  *             underlined field, hairline + 370x44 Continue at the bottom
- *   code      six 62px cells across 370, ink-7 hairlines, "Resend Code (n)" in primary
+ *   code      light screen (white bg): plain back chevron, left-aligned headline_large
+ *             title, Gmail notification banner, six cells across 370 with ink-5
+ *             hairlines, "Resend Code (n)" in primary-darker for contrast on white
  *
  * Google / Apple are deliberately out of scope for this pass, so the "OR" block and
  * those two rows are not built.
@@ -361,36 +364,58 @@ export default function LoginPage() {
     )
   }
 
-  // ─── A_2.1.2 Enter verification code ─────────────────────────────────────
+  // ─── A_2.1.2 Enter verification code (light) ─────────────────────────────
+  // Jason's handoff redesigns this one screen to the light mock: white bg, a
+  // simple (no-chip) back chevron, a left-aligned bold title, and the Gmail
+  // notification illustration under the copy. It intentionally departs from the
+  // dark landing/email steps — the rest of auth stays dark.
   return (
-    <div className="h-full flex flex-col bg-ink-12">
+    <div className="h-full flex flex-col bg-white text-ink-12">
       <div className="px-4 pb-5 safe-area-top-header">
-        <BackButton to="email" />
+        {/* Simple chevron, no grey chip. The shipped SVG is white, so tint it dark. */}
+        <button
+          onClick={backTo('email')}
+          aria-label="Back"
+          className="relative -ml-1 w-10 h-10 flex items-center justify-center
+            active:scale-95 transition-transform before:absolute before:content-[''] before:-inset-1"
+        >
+          <Icon name="chevron-left" size={28} color="#141414" />
+        </button>
       </div>
-      <div className="flex-1 min-h-0 px-4">
-        <h1 className="mt-[18px] text-headline-md font-semibold text-white text-center">Enter verification code</h1>
-        <p className="mt-2 text-body-md text-ink-5 text-center">
-          We sent a 6-digit verification code to<br />
+      <div className="flex-1 min-h-0 overflow-y-auto px-4">
+        <h1 className="mt-[18px] text-headline-lg font-semibold text-ink-12">Enter verification code</h1>
+        <p className="mt-2 text-body-md text-ink-8">
+          We sent a 6-digit verification code to{' '}
           {/* The subject line, so the message can be found in a crowded inbox or
               fished out of spam — it does not carry the Sierro name. */}
-          <span className="font-semibold text-ink-2">{email.trim()}</span> titled [Solar of things]
+          <span className="font-semibold text-ink-11">{email.trim()}</span> from{' '}
+          <span className="font-semibold text-ink-11">Solar of Things</span>
         </p>
 
-        {/* One bordered row split into six 62px cells (4x export), with a transparent
-            input on top so the numeric keyboard and one-time-code autofill still work. */}
-        <div className="relative mt-[22px] h-[62px]">
-          {/* A_2.1.2 -v 錯誤 turns the whole row red — danger hairlines over a
-              danger-darker fill — and keeps the digits in ink-2. */}
+        {/* The Gmail push illustration the mock shows between the copy and the
+            code row — reassures where the code lands. */}
+        <img
+          src={otpNotificationBanner}
+          alt="Solar of Things notification preview"
+          className="mt-6 w-full max-w-[360px] mx-auto h-auto select-none pointer-events-none"
+          draggable={false}
+        />
+
+        {/* One bordered row split into six cells, with a transparent input on top
+            so the numeric keyboard and one-time-code autofill still work. */}
+        <div className="relative mt-6 h-[62px]">
+          {/* Error turns the whole row red — danger hairlines over a light danger
+              tint — and keeps the digits dark. */}
           <div
             className={`absolute inset-0 flex rounded-m border-s overflow-hidden ${
-              error ? 'border-danger bg-danger-darker' : 'border-ink-7'
+              error ? 'border-danger bg-danger-light' : 'border-ink-5'
             }`}
           >
             {Array.from({ length: OTP_LEN }, (_, i) => (
               <div
                 key={i}
-                className={`flex-1 flex items-center justify-center text-headline-md font-semibold text-ink-2
-                  ${i > 0 ? (error ? 'border-l border-danger' : 'border-l border-ink-7') : ''}`}
+                className={`flex-1 flex items-center justify-center text-headline-md font-semibold text-ink-12
+                  ${i > 0 ? (error ? 'border-l border-danger' : 'border-l border-ink-5') : ''}`}
               >
                 {otpCode[i] ?? ''}
               </div>
@@ -418,18 +443,33 @@ export default function LoginPage() {
           <button
             onClick={() => { void sendCode() }}
             disabled={cooldown > 0 || sending}
-            className="text-body-md text-primary disabled:text-primary/50"
+            className="text-body-md text-primary-darker disabled:text-primary-darker/50"
           >
             {cooldown > 0 ? `Resend Code (${cooldown})` : 'Resend Code'}
           </button>
         </div>
       </div>
-      <BottomAction
-        label="Continue"
-        onPress={handleVerify}
-        disabled={otpCode.length < OTP_LEN || !captchaId}
-        busy={busy}
-      />
+      {/* Light-theme action bar — same 44px primary button and keyboard-inset
+          lift as the shared BottomAction, but a light hairline for the white bg. */}
+      <div
+        className="border-t border-ink-4 px-4 pt-3"
+        style={{
+          paddingBottom:
+            'calc(max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px))'
+            + ' + var(--keyboard-inset-bottom, 0px) + 16px)',
+        }}
+      >
+        <button
+          onClick={handleVerify}
+          disabled={otpCode.length < OTP_LEN || !captchaId || busy}
+          className="w-full h-11 rounded-m bg-primary text-primary-darker text-body-lg font-semibold
+            disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]
+            transition-[transform,opacity] flex items-center justify-center gap-2"
+        >
+          {busy && <Loader2 size={16} className="animate-spin" />}
+          Continue
+        </button>
+      </div>
     </div>
   )
 }
