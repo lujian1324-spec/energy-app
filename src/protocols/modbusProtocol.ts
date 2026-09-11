@@ -42,21 +42,97 @@ export function fromHexString(hex: string): Uint8Array {
 }
 
 /**
- * 解码透传接口返回的 base64 载荷 → Modbus 寄存器数组。
- * CRC 校验失败或帧不完整时返回 null（损坏帧绝不能当真数据用）。
- * 统一入口：OverviewPage 实时轮询与 deviceStore 额定参数读取都走这里。
+ * 在字节流中定位一个「合法」的 FC03 读响应帧并返回其寄存器数组。
+ *
+ * 真机透传返回的载荷未必从第 0 字节就是响应帧本体——可能带回显的请求帧、
+ * 网关包裹头或多余尾字节。这里从每个偏移量尝试解析 FC03 帧，只有 CRC 校验
+ * 通过且寄存器数量达到 minRegisters 的帧才被接受（损坏/错位帧绝不当真数据用）。
  */
-export function decodePassthroughBase64(b64: string | undefined, minRegisters = 1): number[] | null {
-  if (!b64) return null
+export function locateReadResponse(bytes: Uint8Array, minRegisters = 1): number[] | null {
+  for (let off = 0; off + 5 <= bytes.length; off++) {
+    if (bytes[off + 1] !== FC.READ) continue          // 功能码必须是 0x03
+    const byteCount = bytes[off + 2]
+    if (byteCount === 0 || byteCount % 2 !== 0) continue
+    const frameLen = 3 + byteCount + 2
+    if (off + frameLen > bytes.length) continue
+    const parsed = parseReadResponse(bytes.slice(off, off + frameLen))
+    if (parsed && parsed.crcOk && parsed.registers.length >= minRegisters) {
+      return parsed.registers
+    }
+  }
+  return null
+}
+
+/** base64 字符串 → 字节数组；解码失败返回 null。 */
+function base64ToBytes(s: string): Uint8Array | null {
   try {
-    const bytes = atob(b64)
-    const hex = Array.from(bytes).map(c => c.charCodeAt(0).toString(16).padStart(2, '0')).join('')
-    const parsed = parseReadResponse(fromHexString(hex))
-    if (!parsed || !parsed.crcOk || parsed.registers.length < minRegisters) return null
-    return parsed.registers
+    const bin = atob(s)
+    const out = new Uint8Array(bin.length)
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i)
+    return out
   } catch {
     return null
   }
+}
+
+/**
+ * 把一个「可能是 base64、也可能是 hex」的字符串解释成候选字节数组。
+ * 两种解释都尝试——真正的 FC03 帧由 CRC 校验来甄别，绝不会误判。
+ * hex 优先（真机常见的是纯十六进制串），其次 base64。
+ */
+function candidateByteArrays(raw: string): Uint8Array[] {
+  const clean = raw.replace(/\s+/g, '')
+  if (!clean) return []
+  const out: Uint8Array[] = []
+  if (clean.length >= 2 && clean.length % 2 === 0 && /^[0-9a-fA-F]+$/.test(clean)) {
+    out.push(fromHexString(clean))
+  }
+  const b64 = base64ToBytes(clean)
+  if (b64 && b64.length) out.push(b64)
+  return out
+}
+
+/**
+ * 从透传接口响应的 `data` 字段里挑出承载 modbus 载荷的字符串。
+ * 真机的形态不统一：`res.data` 可能直接就是字符串，也可能是对象——载荷藏在
+ * `base64Output` / `data` / `content` 之一。PassthroughPage 能收到 RX 正是因为
+ * 它容忍了这些形态，而实时页此前只认「对象 + base64」这一种，于是永远解不出。
+ */
+function pickPayloadString(payload: unknown): string | undefined {
+  if (typeof payload === 'string') return payload
+  if (payload && typeof payload === 'object') {
+    const o = payload as Record<string, unknown>
+    const v = o.base64Output ?? o.data ?? o.content
+    return typeof v === 'string' ? v : undefined
+  }
+  return undefined
+}
+
+/**
+ * 透传响应 → Modbus 寄存器数组的加固入口。
+ *
+ * 直接吃 `res.data`（字符串或对象皆可），容忍 base64 / hex 值、回显请求帧或
+ * 网关包裹头，内部用 CRC 校验定位真正的 FC03 帧。CRC 不过或寄存器不足返回 null。
+ * DeviceMonitorPage 5s 轮询与下拉刷新、DevicePage 列表透传、deviceStore 额定参数
+ * 读取都走这里，保证列表和监控页拿到的是同一套「真机实时值」。
+ */
+export function extractPassthroughRegisters(payload: unknown, minRegisters = 1): number[] | null {
+  const raw = pickPayloadString(payload)
+  if (!raw) return null
+  for (const bytes of candidateByteArrays(raw)) {
+    const registers = locateReadResponse(bytes, minRegisters)
+    if (registers) return registers
+  }
+  return null
+}
+
+/**
+ * 解码透传接口返回的 base64 载荷 → Modbus 寄存器数组（向后兼容入口）。
+ * 现委托给 {@link extractPassthroughRegisters}，因此同样容忍 hex 值与回显/包裹帧。
+ * CRC 校验失败或帧不完整时返回 null（损坏帧绝不能当真数据用）。
+ */
+export function decodePassthroughBase64(b64: string | undefined, minRegisters = 1): number[] | null {
+  return extractPassthroughRegisters(b64, minRegisters)
 }
 
 // ─────────────────────────────────────────────
