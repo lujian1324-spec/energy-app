@@ -1,9 +1,9 @@
 {
-  "version": "4.11.1",
-  "build": 2874,
+  "version": "4.11.2",
+  "build": 2875,
   "date": "2026-09-11",
   "changelog": [
-    "Device Monitor now reliably shows live pass-through readings: after switching a real load, Input / AC / Solar / Output and battery update within ~5 seconds instead of lagging on the 30-second cloud feed. The decoder that turns the device's pass-through reply into numbers is now tolerant of the exact shapes real hardware sends — the reply arriving as a plain string or an object, the payload encoded as base64 or hex, and a frame that trails an echoed request or gateway wrapper — so the live read sticks instead of silently falling back to the cloud value forever.",
-    "The device list's battery pass-through read and the cached rated-parameter read use the same hardened decode, so the list and the monitor agree on real-device readings."
+    "Notifications no longer show PV undervoltage, PV not connected, or mains-power-failure alarms — and the bell's red dot no longer counts them either.",
+    "The \"Grid power not connected\" alert now explains what to check: “AC grid input isn’t detected. Confirm the AC cable and that the wall outlet.”"
   ]
 }

@@ -58,6 +58,14 @@ export function formatNotificationTime(iso: string | undefined, now = Date.now()
 }
 
 /**
+ * Grid-power-not-connected gets a Jason-approved explanation as its subtitle,
+ * overriding whatever body the server sent. Exact copy — do not paraphrase.
+ */
+const GRID_NOT_CONNECTED_TITLE = 'grid power not connected'
+const GRID_NOT_CONNECTED_BODY =
+  'AC grid input isn’t detected. Confirm the AC cable and that the wall outlet.'
+
+/**
  * The design's row is a category headline over a "{device} - {detail}" line, but a
  * firing alarm only carries one text blob. Prefer the curated short label for the
  * alarm code, fall back to a humanised code, and only then to the first clause of
@@ -71,6 +79,10 @@ export function splitAlarmForRow(
   const short = knownAlarmText(code) || describeAlarmCode(code)
   const message = (alarm.alarmMessage ?? '').trim()
   const title = short || alarm.title.split(/,\s*/)[0] || alarm.title
+  // Grid power not connected: keep the title, replace the body with the approved copy.
+  if (title.trim().toLowerCase() === GRID_NOT_CONNECTED_TITLE) {
+    return { title, description: GRID_NOT_CONNECTED_BODY }
+  }
   const detail = message && message !== title
     ? message
     : (alarm.severity ? alarm.severity.charAt(0).toUpperCase() + alarm.severity.slice(1) : '')

@@ -152,18 +152,56 @@ const MAINS_POWER_FAILURE = 'Mains power failure'
 const MAINS_FAILURE_SYMPTOMS = new Set(['Mains undervoltage', 'Bypass undervoltage'])
 
 /**
+ * Alarms Jason asked to suppress entirely from the alarm center (list + bell badge):
+ * PV undervoltage / PV not connected / mains-power-failure and its close variants.
+ * Matched case-insensitively as substrings against every text an alarm carries —
+ * the resolved display title AND the raw wire fields (name / alarmMessage / key /
+ * alarmCode) — because the backend may deliver the same fault as a curated title,
+ * a raw English name, or a CJK name that never mapped. Whitespace is collapsed so
+ * "PV  under   voltage" still matches. Patterns cover:
+ *   - "PV under voltage" / "PV undervoltage" and the "votage" typo (spaced + joined)
+ *   - "PV not connected"
+ *   - "Mains power failure" via the "mains power fail" stem (also "Mains power fail")
+ *   - the Chinese mains-input-failure name 市电输入失效
+ */
+const HIDDEN_ALARM_PATTERNS = [
+  'pv under voltage',
+  'pv undervoltage',
+  'pv under votage',
+  'pv undervotage',
+  'pv not connected',
+  'mains power fail',
+  '市电输入失效',
+]
+
+/** True when any text this alarm carries matches a suppressed pattern. */
+function isHiddenAlarm(alarm: ResolvableAlarm & { title?: string }): boolean {
+  const haystack = [alarm.title, alarm.name, alarm.alarmMessage, alarm.key, alarm.alarmCode]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+  return HIDDEN_ALARM_PATTERNS.some(p => haystack.includes(p))
+}
+
+/**
  * Prepare firing alarms for the alarm center: resolve each to its display title,
+ * suppress the alarms Jason asked to hide entirely (see HIDDEN_ALARM_PATTERNS),
  * drop exact duplicates (same title — collapses e.g. lineLoss + mainsFailure that
  * both read "Mains power failure"), and, when a Mains power failure is present, hide
  * its correlated undervoltage symptoms. Preserves order; each kept alarm is annotated
- * with the resolved `title` so callers don't re-resolve.
+ * with the resolved `title` so callers don't re-resolve. Both the list and the bell
+ * badge run through here, so a hidden alarm can never light the unread dot either.
  */
 export function dedupeAndFilterAlarms<T extends ResolvableAlarm>(alarms: T[]): Array<T & { title: string }> {
   const withTitle = alarms.map(a => ({ ...a, title: resolveAlarmText(a) }))
+  // Compute mains-failure presence before hiding it, so its correlated symptoms
+  // stay suppressed even though the root cause itself is now hidden.
   const hasMainsFailure = withTitle.some(a => a.title === MAINS_POWER_FAILURE)
   const seen = new Set<string>()
   const out: Array<T & { title: string }> = []
   for (const a of withTitle) {
+    if (isHiddenAlarm(a)) continue
     if (hasMainsFailure && MAINS_FAILURE_SYMPTOMS.has(a.title)) continue
     if (seen.has(a.title)) continue
     seen.add(a.title)
