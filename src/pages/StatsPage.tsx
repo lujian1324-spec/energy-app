@@ -243,10 +243,13 @@ function buildFrameFromRecords(
       return dd.getTime() === sel.getTime() ? d.getHours() : -1
     }
   } else if (period === 'Week') {
-    labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    const ws = weekStart(selectedDate)
+    labels = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(ws); d.setDate(ws.getDate() + i)
+      return `${d.getMonth() + 1}/${d.getDate()}`
+    })
     bucketCount = 7
     hoursPerBucket = 24
-    const ws = weekStart(selectedDate)
     const we = new Date(ws); we.setDate(ws.getDate() + 6); we.setHours(23, 59, 59, 999)
     bucketOf = (d) => (d >= ws && d <= we ? (d.getDay() + 6) % 7 : -1)
   } else if (period === 'Month') {

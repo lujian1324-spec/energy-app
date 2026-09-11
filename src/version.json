@@ -1,9 +1,8 @@
 {
-  "version": "4.11.2",
-  "build": 2875,
+  "version": "4.11.4",
+  "build": 2877,
   "date": "2026-09-11",
   "changelog": [
-    "Notifications no longer show PV undervoltage, PV not connected, or mains-power-failure alarms — and the bell's red dot no longer counts them either.",
-    "The \"Grid power not connected\" alert now explains what to check: “AC grid input isn’t detected. Confirm the AC cable and that the wall outlet.”"
+    "Insights Week view now labels the X-axis with concrete dates (9/7, 9/8 …) starting from the week's Monday instead of generic weekday names."
   ]
 }
