@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   crc16modbus,
   decodePassthroughBase64,
+  extractPassthroughRegisters,
   decodeLiveStatus,
   toInt16,
   parseReadResponse,
@@ -26,6 +27,13 @@ function buildResponse(registers: number[]): Uint8Array {
   return frame
 }
 const toB64 = (b: Uint8Array) => Buffer.from(b).toString('base64')
+const toHex = (b: Uint8Array) => Array.from(b).map(x => x.toString(16).padStart(2, '0')).join('')
+const concat = (...parts: Uint8Array[]) => {
+  const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0))
+  let o = 0
+  for (const p of parts) { out.set(p, o); o += p.length }
+  return out
+}
 
 describe('crc16modbus', () => {
   it('matches the known Modbus CRC for 01 03 00 00 00 12', () => {
@@ -86,6 +94,80 @@ describe('decodePassthroughBase64 + decodeLiveStatus', () => {
   it('enforces the minRegisters floor', () => {
     // a 2-register frame cannot satisfy minRegisters=8
     expect(decodePassthroughBase64(toB64(buildResponse([1, 2])), 8)).toBeNull()
+  })
+})
+
+// The hardened entry the live pages actually call. Real hardware returns the
+// passthrough payload in shapes the old object-only + strict-frame path dropped,
+// which pinned Device Monitor to the 30s cloud feed. These lock the tolerated shapes.
+describe('extractPassthroughRegisters (hardened passthrough decode)', () => {
+  const regs = new Array(0x24).fill(0)
+  regs[0x04] = 168   // output
+  regs[0x06] = 120   // solar
+  regs[0x07] = 400   // ac
+  regs[0x1a] = 856   // soc ×0.1 => 85.6
+
+  const expectLive = (registers: number[] | null) => {
+    expect(registers).not.toBeNull()
+    const live = decodeLiveStatus(registers!)
+    expect(live.outputPower).toBe(168)
+    expect(live.solarPower).toBe(120)
+    expect(live.acPower).toBe(400)
+    expect(live.soc).toBeCloseTo(85.6, 5)
+  }
+
+  it('decodes a pure base64 frame string', () => {
+    expectLive(extractPassthroughRegisters(toB64(buildResponse(regs)), 8))
+  })
+
+  it('decodes a hex string frame (with and without spaces)', () => {
+    const hex = toHex(buildResponse(regs))
+    expectLive(extractPassthroughRegisters(hex, 8))
+    const spaced = hex.match(/.{2}/g)!.join(' ')
+    expectLive(extractPassthroughRegisters(spaced, 8))
+  })
+
+  it('locates a valid frame after leading echo/wrapper bytes (base64)', () => {
+    // Gateway echoes the read request, then appends the real FC03 response.
+    const echo = buildReadFrame(0x0100, 0x38)               // 8-byte request echo
+    const wrapped = concat(echo, buildResponse(regs))
+    expectLive(extractPassthroughRegisters(toB64(wrapped), 8))
+  })
+
+  it('locates a valid frame after leading echo/wrapper bytes (hex)', () => {
+    const junk = new Uint8Array([0xaa, 0xbb, 0xcc])          // gateway header noise
+    const wrapped = concat(junk, buildResponse(regs))
+    expectLive(extractPassthroughRegisters(toHex(wrapped), 8))
+  })
+
+  it('reads the payload from object shapes: base64Output | data | content', () => {
+    const b64 = toB64(buildResponse(regs))
+    expectLive(extractPassthroughRegisters({ base64Output: b64 }, 8))
+    expectLive(extractPassthroughRegisters({ data: b64 }, 8))
+    expectLive(extractPassthroughRegisters({ content: b64 }, 8))
+    // hex value inside the object works too
+    expectLive(extractPassthroughRegisters({ base64Output: toHex(buildResponse(regs)) }, 8))
+  })
+
+  it('rejects a corrupted-CRC frame across every shape', () => {
+    const bad = buildResponse(regs)
+    bad[10] ^= 0xff
+    expect(extractPassthroughRegisters(toB64(bad), 8)).toBeNull()
+    expect(extractPassthroughRegisters(toHex(bad), 8)).toBeNull()
+    expect(extractPassthroughRegisters({ base64Output: toB64(bad) }, 8)).toBeNull()
+  })
+
+  it('returns null for empty / missing / non-payload input', () => {
+    expect(extractPassthroughRegisters(undefined, 8)).toBeNull()
+    expect(extractPassthroughRegisters(null, 8)).toBeNull()
+    expect(extractPassthroughRegisters('', 8)).toBeNull()
+    expect(extractPassthroughRegisters({}, 8)).toBeNull()
+    expect(extractPassthroughRegisters({ base64Output: '' }, 8)).toBeNull()
+    expect(extractPassthroughRegisters({ success: true }, 8)).toBeNull()
+  })
+
+  it('still enforces the minRegisters floor', () => {
+    expect(extractPassthroughRegisters(toB64(buildResponse([1, 2])), 8)).toBeNull()
   })
 })
 

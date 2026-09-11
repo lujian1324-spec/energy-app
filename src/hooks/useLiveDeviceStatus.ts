@@ -22,7 +22,7 @@ import {
   checkFastReportSupported,
   mapFieldsToRealtime,
 } from '../api/deviceApi'
-import { FRAMES, decodePassthroughBase64, decodeLiveStatus, type LiveStatus } from '../protocols/modbusProtocol'
+import { FRAMES, extractPassthroughRegisters, decodeLiveStatus, type LiveStatus } from '../protocols/modbusProtocol'
 import { readLiveStatusBle } from '../protocols/bleDirect'
 import type { IBleProvisionManager } from '../protocols/bleProvision'
 import { isApiSuccess } from '../utils/apiClient'
@@ -110,8 +110,7 @@ export function useLiveDeviceStatus(
       const res = await passthroughDevice(deviceId, { data: FRAMES.READ_ALL_STATUS })
       if (cancelled) return
       if (!isApiSuccess(res.code)) { onFail(); return }
-      const registers = decodePassthroughBase64(
-        res.data?.base64Output ?? res.data?.content ?? res.data?.data, 8)
+      const registers = extractPassthroughRegisters(res.data, 8)
       if (registers) onOk(decodeLiveStatus(registers))
       else onFail()
     }

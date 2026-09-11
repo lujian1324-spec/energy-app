@@ -56,7 +56,7 @@ import {
   getDemoHistoryData,
 } from '../data/demoData'
 import { passthroughDevice } from '../api/deviceApi'
-import { FRAMES, decodePassthroughBase64 } from '../protocols/modbusProtocol'
+import { FRAMES, extractPassthroughRegisters } from '../protocols/modbusProtocol'
 import { saveRatedParams, loadRatedParams } from '../db/powerflowDB'
 
 /** 透传读取设备额定参数并缓存到 IndexedDB（24h TTL，fire-and-forget）*/
@@ -65,8 +65,7 @@ async function fetchAndCacheRatedParams(deviceId: string): Promise<void> {
     const cached = await loadRatedParams(deviceId)
     if (cached && Date.now() - cached.fetchedAt < 86_400_000) return  // 24h cache
     const res = await passthroughDevice(deviceId, { data: FRAMES.READ_ALL_PARAMS })
-    const b64 = res.data?.base64Output ?? res.data?.content ?? res.data?.data
-    const registers = decodePassthroughBase64(b64, 11)
+    const registers = extractPassthroughRegisters(res.data, 11)
     if (!registers) return
     const acInvOutputPower = registers[10]  // offset 10 = register 0x000A
     if (acInvOutputPower === undefined || acInvOutputPower === 0) return

@@ -10,7 +10,7 @@ import RealTimePowerChart from '../components/RealTimePowerChart'
 import { useDeviceStore } from '../stores/deviceStore'
 import { useActiveAlarmCount } from '../hooks/useActiveAlarmCount'
 import { mapFieldsToRealtime, passthroughDevice } from '../api/deviceApi'
-import { FRAMES, decodePassthroughBase64, decodeLiveStatus, type LiveStatus } from '../protocols/modbusProtocol'
+import { FRAMES, extractPassthroughRegisters, decodeLiveStatus, type LiveStatus } from '../protocols/modbusProtocol'
 import { isApiSuccess } from '../utils/apiClient'
 import { batteryTimeLabel } from '../utils/batteryTime'
 import { loadRatedParams } from '../db/powerflowDB'
@@ -102,8 +102,11 @@ export default function DeviceMonitorPage() {
     try {
       const res = await passthroughDevice(reqId, { data: FRAMES.READ_ALL_STATUS })
       if (currentIdRef.current !== reqId || !isApiSuccess(res.code)) return
-      const b64 = res.data?.base64Output ?? res.data?.content ?? res.data?.data
-      const registers = decodePassthroughBase64(b64, 8)
+      // Hardened decode: tolerates res.data being a string or object, a base64 or
+      // hex value, and an echoed/wrapped frame — the shapes PassthroughPage handles
+      // but the old object-only + strict-frame path silently dropped, which is why
+      // the monitor stayed pinned to the 30s cloud feed on real hardware.
+      const registers = extractPassthroughRegisters(res.data, 8)
       if (!registers) return
       if (currentIdRef.current === reqId) setPtLive(decodeLiveStatus(registers))
     } catch {

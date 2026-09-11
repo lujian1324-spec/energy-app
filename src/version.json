@@ -1,15 +1,9 @@
 {
-  "version": "4.11.0",
-  "build": 2873,
+  "version": "4.11.1",
+  "build": 2874,
   "date": "2026-09-11",
   "changelog": [
-    "Pull down on a device's live monitor to refresh: it now runs an immediate pass-through read (Input / AC / Solar / Output and battery) and refreshes the cloud device state at once, while the every-5-seconds background poll keeps running.",
-    "Text fields now use 12px side padding, and the clear (✕) button sits just off the end of the underline instead of on top of it.",
-    "The Sleep Mode time picker opens inline just below the row you tapped and pushes the other time row down, so it no longer covers it.",
-    "Push Notifications settings use switches for Power Outage and Low Battery instead of On/Off chevrons; setting list rows (Push + Support) now share one icon and text size.",
-    "Sleep Mode adds 16px of breathing room above its first card.",
-    "Notifications rows now centre the timestamp and unread dot vertically instead of pinning them to the top line.",
-    "Feedback uses a proper auto-growing text area (no underline), and the email field sits closer to it.",
-    "Insights gives the date selector bar more room, 24px above and below."
+    "Device Monitor now reliably shows live pass-through readings: after switching a real load, Input / AC / Solar / Output and battery update within ~5 seconds instead of lagging on the 30-second cloud feed. The decoder that turns the device's pass-through reply into numbers is now tolerant of the exact shapes real hardware sends — the reply arriving as a plain string or an object, the payload encoded as base64 or hex, and a frame that trails an echoed request or gateway wrapper — so the live read sticks instead of silently falling back to the cloud value forever.",
+    "The device list's battery pass-through read and the cached rated-parameter read use the same hardened decode, so the list and the monitor agree on real-device readings."
   ]
 }
