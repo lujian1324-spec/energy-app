@@ -672,7 +672,9 @@ export default function StatsPage() {
               </motion.div>
             )}
 
-            <div className="flex bg-ink-9 rounded-pill p-1 mt-[13px] mb-3 max-w-[322px] mx-auto w-full">
+            {/* 24px above & below the date selector bar, not 12
+                (`ui-fix-doc-20260911/08-insights-padding`). */}
+            <div className="flex bg-ink-9 rounded-pill p-1 mt-[13px] mb-6 max-w-[322px] mx-auto w-full">
               {periods.map((p) => (
                 <button key={p} onClick={() => setPeriod(p)}
                   className={`flex-1 text-body-md py-2 rounded-pill active:scale-[0.96] transition-[color,background-color,transform] duration-200
@@ -682,7 +684,7 @@ export default function StatsPage() {
               ))}
             </div>
 
-            <div className="mb-4">
+            <div className="mb-6">
               <div className="flex items-center justify-center gap-3">
                 <button
                   aria-label="Previous"

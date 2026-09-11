@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { PageHeaderShell, HeaderIconButton } from '../components/PageHeader'
+import PullToRefresh from '../components/PullToRefresh'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Check } from 'lucide-react'
@@ -91,27 +92,43 @@ export default function DeviceMonitorPage() {
   // while the page stays mounted, and tear the timer down on leave so nothing
   // keeps polling in the background.
   const [ptLive, setPtLive] = useState<LiveStatus | null>(null)
+  // Latest selected id, so a pass-through response that lands after the user has
+  // switched devices (or left) is dropped instead of painting a stale reading.
+  const currentIdRef = useRef(id)
+  currentIdRef.current = id
+  const readPassthrough = useCallback(async () => {
+    const reqId = id
+    if (!reqId || useDeviceStore.getState().isDemoMode) return
+    try {
+      const res = await passthroughDevice(reqId, { data: FRAMES.READ_ALL_STATUS })
+      if (currentIdRef.current !== reqId || !isApiSuccess(res.code)) return
+      const b64 = res.data?.base64Output ?? res.data?.content ?? res.data?.data
+      const registers = decodePassthroughBase64(b64, 8)
+      if (!registers) return
+      if (currentIdRef.current === reqId) setPtLive(decodeLiveStatus(registers))
+    } catch {
+      // pass-through can fail silently; the cloud state remains the fallback
+    }
+  }, [id])
   useEffect(() => {
     setPtLive(null)
     if (!id) return
     if (useDeviceStore.getState().isDemoMode) return
-    let cancelled = false
-    const readOnce = async () => {
-      try {
-        const res = await passthroughDevice(id, { data: FRAMES.READ_ALL_STATUS })
-        if (cancelled || !isApiSuccess(res.code)) return
-        const b64 = res.data?.base64Output ?? res.data?.content ?? res.data?.data
-        const registers = decodePassthroughBase64(b64, 8)
-        if (!registers) return
-        if (!cancelled) setPtLive(decodeLiveStatus(registers))
-      } catch {
-        // pass-through can fail silently; the cloud state remains the fallback
-      }
-    }
-    readOnce()
-    const timer = setInterval(readOnce, 5000)
-    return () => { cancelled = true; clearInterval(timer) }
-  }, [id])
+    readPassthrough()
+    const timer = setInterval(readPassthrough, 5000)
+    return () => clearInterval(timer)
+  }, [id, readPassthrough])
+
+  // Pull-to-refresh: run the same live pass-through read the 5s poller uses AND
+  // refresh the cloud device state, in parallel. The mounted 5s interval keeps
+  // ticking; this is an on-demand extra read, and the poller's teardown on leave
+  // is untouched.
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([
+      readPassthrough(),
+      id ? loadDeviceState(id) : Promise.resolve(),
+    ])
+  }, [readPassthrough, id, loadDeviceState])
 
   // Map realtime fields —— 仅当 store 里的实时状态确实属于「当前」设备时才用它。
   // 切换设备时 store 可能仍短暂持有上一台设备的状态，此时返回 null，卡片显示占位
@@ -257,8 +274,9 @@ export default function DeviceMonitorPage() {
         </div>
       </PageHeaderShell>
 
-      {/* Scrollable body */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pt-4 pb-6 space-y-4">
+      {/* Scrollable body — pull down to force an immediate live read + cloud refresh */}
+      <PullToRefresh onRefresh={handleRefresh}>
+      <div className="px-4 pt-4 pb-6 space-y-4">
         {/* ─── SoC Card ─────────────────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -330,6 +348,7 @@ export default function DeviceMonitorPage() {
           />
         </motion.div>
       </div>
+      </PullToRefresh>
     </div>
   )
 }
