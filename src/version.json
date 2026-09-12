@@ -1,8 +1,8 @@
 ﻿{
-  "version": "4.11.6",
-  "build": 2879,
+  "version": "4.11.7",
+  "build": 2880,
   "date": "2026-09-12",
   "changelog": [
-    "Email OTP enter-code screen uses the light mock: white background, plain dark back chevron, left-aligned title, otp notification banner, light OTP cells, and a 44px primary Continue on a light action bar. Landing and email steps stay dark."
+    "The restoring-session screen now shows the same SIERRO wordmark as splash and sign-in (32px, white), instead of a generic bolt."
   ]
 }
