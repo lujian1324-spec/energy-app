@@ -1,8 +1,8 @@
 {
-  "version": "4.11.4",
-  "build": 2877,
-  "date": "2026-09-11",
+  "version": "4.11.5",
+  "build": 2878,
+  "date": "2026-09-12",
   "changelog": [
-    "Insights Week view now labels the X-axis with concrete dates (9/7, 9/8 …) starting from the week's Monday instead of generic weekday names."
+    "Device Settings list cards now sit 12px apart end to end (Name, Icon, Info, Sleep, Battery Priority, Smart Schedule, Delete) - no more 24px gaps between groups."
   ]
 }
