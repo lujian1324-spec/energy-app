@@ -1,8 +1,8 @@
-{
-  "version": "4.11.5",
-  "build": 2878,
+﻿{
+  "version": "4.11.6",
+  "build": 2879,
   "date": "2026-09-12",
   "changelog": [
-    "Device Settings list cards now sit 12px apart end to end (Name, Icon, Info, Sleep, Battery Priority, Smart Schedule, Delete) - no more 24px gaps between groups."
+    "Email OTP enter-code screen uses the light mock: white background, plain dark back chevron, left-aligned title, otp notification banner, light OTP cells, and a 44px primary Continue on a light action bar. Landing and email steps stay dark."
   ]
 }
