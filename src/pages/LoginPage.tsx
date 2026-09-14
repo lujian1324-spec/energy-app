@@ -21,6 +21,7 @@ import { TERMS_URL, PRIVACY_URL } from '../config/legalLinks'
 import { sanitizeUiCopy } from '../utils/uiCopy'
 import TextField from '../components/TextField'
 import BottomAction from '../components/BottomAction'
+import otpNotificationBannerDark from '../assets/otp-notification-banner-dark.png'
 
 /**
  * Passwordless email sign-in — handoff `A_2.1_Sign up & Log in`,
@@ -31,9 +32,9 @@ import BottomAction from '../components/BottomAction'
  *             legal footer at y533
  *   email     title headline_medium at y155, subtitle body_medium/ink-5 at y190,
  *             underlined field, hairline + 370x44 Continue at the bottom
- *   code      dark screen (bg-ink-12): chip back chevron, centered headline_md
- *             title, six dark cells across 370 with ink-7 hairlines, Resend in
- *             primary, BottomAction Continue — matches landing/email
+ *   code      dark screen (bg-ink-12): circular chip back, left-aligned headline_lg
+ *             title, dark phone+notification banner, six dark cells with ink-7
+ *             hairlines, "Resend Code (n)" in primary, BottomAction Continue
  *
  * Google / Apple are deliberately out of scope for this pass, so the "OR" block and
  * those two rows are not built.
@@ -363,26 +364,32 @@ export default function LoginPage() {
   }
 
   // ─── A_2.1.2 Enter verification code ─────────────────────────────────────
-  // Dark theme to match landing/email. Banner and light mock removed per Jason.
+  // Pixel-aligned to Jason's dark mock (402x864): bg-ink-12, circular back chip,
+  // left-aligned title, dark notification banner (phone silhouette + Gmail chip),
+  // six dark OTP cells, primary Resend, shared BottomAction Continue.
   return (
     <div className="h-full flex flex-col bg-ink-12">
       <div className="px-4 pb-5 safe-area-top-header">
         <BackButton to="email" />
       </div>
-      <div className="flex-1 min-h-0 px-4">
-        <h1 className="mt-[18px] text-headline-md font-semibold text-white text-center">Enter verification code</h1>
-        <p className="mt-2 text-body-md text-ink-5 text-center">
-          We sent a 6-digit verification code to<br />
-          {/* The subject line, so the message can be found in a crowded inbox or
-              fished out of spam — it does not carry the Sierro name. */}
-          <span className="font-semibold text-ink-2">{email.trim()}</span> titled [Solar of things]
+      <div className="flex-1 min-h-0 overflow-y-auto px-4">
+        <h1 className="mt-[18px] text-headline-lg font-semibold text-white">Enter verification code</h1>
+        <p className="mt-2 text-body-md text-ink-5">
+          We sent a 6-digit verification code to{' '}
+          <span className="font-semibold text-white">{email.trim()}</span> from{' '}
+          <span className="font-semibold text-white">Solar of Things</span>
         </p>
 
-        {/* One bordered row split into six 62px cells (4x export), with a transparent
-            input on top so the numeric keyboard and one-time-code autofill still work. */}
-        <div className="relative mt-[22px] h-[62px]">
-          {/* Error turns the whole row red — danger hairlines over a
-              danger-darker fill — and keeps the digits in ink-2. */}
+        {/* Dark phone silhouette + notification banner - asset includes the frame. */}
+        <img
+          src={otpNotificationBannerDark}
+          alt="Solar of Things notification preview"
+          className="mt-6 w-full max-w-[360px] mx-auto h-auto select-none pointer-events-none"
+          draggable={false}
+        />
+
+        {/* One bordered row split into six cells; transparent input for OTP autofill. */}
+        <div className="relative mt-6 h-[62px]">
           <div
             className={`absolute inset-0 flex rounded-m border-s overflow-hidden ${
               error ? 'border-danger bg-danger-darker' : 'border-ink-7'
@@ -407,13 +414,11 @@ export default function LoginPage() {
             maxLength={OTP_LEN}
             autoFocus
             aria-label="Verification code"
-            className="absolute inset-0 w-full h-full bg-transparent text-transparent caret-transparent
+            className="absolute inset-0 w-full h-full bg-transparent text-transparent caret-white
               outline-none select-none"
           />
         </div>
 
-        {/* The message belongs under the row and pushes Resend Code down, rather
-            than stacking below it. */}
         {error && <p className="mt-1 pl-1 text-caption text-danger">{error}</p>}
 
         <div className={`text-center ${error ? 'mt-2' : 'mt-[10px]'}`}>

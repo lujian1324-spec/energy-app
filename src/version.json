@@ -1,8 +1,8 @@
 {
-  "version": "4.11.8",
-  "build": 2881,
+  "version": "4.11.9",
+  "build": 2882,
   "date": "2026-09-14",
   "changelog": [
-    "OTP enter-code step uses dark theme (bg-ink-12) to match landing/email: dark digit boxes, light back chevron, primary Resend, BottomAction Continue; light banner removed."
+    "OTP enter-code pixel-aligned to dark mock; dark notification banner asset."
   ]
 }
