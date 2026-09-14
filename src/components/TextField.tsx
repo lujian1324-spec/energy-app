@@ -13,8 +13,8 @@ import Icon from './Icon'
  *   padding    12 each side (`ui-fix-doc-20260911/01-textfield`)
  *   below      24, which is where the error line sits (12 with `dense`)
  *   clear      16px ink-6 disc with the glyph knocked out in ink-10, sitting 8px
- *              to the right of where the rule ends — off the rule, not on it
- *              (`ui-fix-doc-20260911/01-textfield`)
+ *              to the right of where the rule ends — off the rule, not on it —
+ *              and vertically centered in the filled card (`ui-fix-textfield-x`)
  *
  * With `label` the card grows by the 18px caption row above the value (D_2.8.1,
  * D_1.3.1). `rows` turns the value into a Text Area (`ui-fix-doc-20260911/07`):
@@ -82,7 +82,7 @@ export default function TextField({
 
   return (
     <div>
-      <div className={`px-3 ${dense ? 'pb-3' : 'pb-6'} ${outlined ? 'rounded-m border-s border-ink-9' : 'rounded-l bg-ink-10'}`}>
+      <div className={`relative px-3 ${dense ? 'pb-3' : 'pb-6'} ${outlined ? 'rounded-m border-s border-ink-9' : 'rounded-l bg-ink-10'}`}>
         {label && (
           <label htmlFor={id} className="block pt-2 text-caption text-ink-6">
             {label}
@@ -128,17 +128,21 @@ export default function TextField({
                 className={shared}
               />
             </div>
-            {onClear && value && (
-              <button
-                type="button"
-                onClick={onClear}
-                aria-label="Clear"
-                className="shrink-0 w-4 h-4 rounded-full bg-ink-6 flex items-center justify-center"
-              >
-                <Icon name="close" size={10} color="#262626" />
-              </button>
-            )}
+            {/* Spacer keeps the underline ending 8px before the clear disc
+                (`ui-fix-doc` / ui-fix-textfield-x). Real button is absolutely
+                centered on the filled card so it is not optically high. */}
+            {onClear && value && <div className="shrink-0 w-4 h-4" aria-hidden="true" />}
           </div>
+        )}
+        {!isTextArea && onClear && value && (
+          <button
+            type="button"
+            onClick={onClear}
+            aria-label="Clear"
+            className="absolute right-3 top-1/2 -translate-y-1/2 shrink-0 w-4 h-4 rounded-full bg-ink-6 flex items-center justify-center"
+          >
+            <Icon name="close" size={10} color="#262626" />
+          </button>
         )}
       </div>
       {error && <p className="mt-2 px-3 text-caption text-danger">{error}</p>}

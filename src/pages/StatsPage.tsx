@@ -7,7 +7,7 @@ import EmptyState from '../components/EmptyState'
 import { PageHeaderShell } from '../components/PageHeader'
 import html2canvas from 'html2canvas'
 import { toast } from '../components/Toast'
-import { CalcAudit } from '../components/DataTrust'
+import BottomSheet from '../components/BottomSheet'
 import { useDeviceStore } from '../stores/deviceStore'
 import { fetchDeviceRecordHistory, type DeviceAttributeRecord } from '../api/deviceApi'
 import { isApiSuccess } from '../utils/apiClient'
@@ -332,6 +332,58 @@ function buildFrameFromRecords(
   return { input, output, remainingBatteryCapacity, labels, co2Kg, totalInputKwh, totalOutputKwh, insight, ecoInsight, hasData, hasSolar, trees }
 }
 
+
+/** Insights CO2 ? -> bottom sheet (Smart Schedule info pattern; ui-fix-co2-sheet). */
+function Co2InfoSheet({
+  onClose,
+  solarKwh,
+  co2Kg,
+}: {
+  onClose: () => void
+  solarKwh: number
+  co2Kg: number
+}) {
+  const solar = Number(solarKwh)
+  const avoided = Number(co2Kg)
+  const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1))
+  return (
+    <BottomSheet ariaLabel="How CO2 reduction is calculated" onClose={onClose}>
+      <div className="mt-[51px] px-4 pb-6">
+        <div className="flex items-center gap-1">
+          <Icon name="thunder" size={33} color="#01D6BE" />
+          <h3 className="text-title-md font-semibold text-ink-2">
+            How CO₂ reduction is calculated
+          </h3>
+        </div>
+        <p className="mt-[9px] text-body-md text-ink-5">
+          Your CO₂ reduction is estimated based on the solar energy generated and the
+          average carbon emissions from grid electricity.
+        </p>
+        <ul className="mt-4 space-y-2 list-disc pl-[22px] marker:text-ink-3">
+          <li className="text-body-md text-ink-3">
+            Solar generated:{' '}
+            <span className="text-primary">{fmt(solar)} kWh</span>
+          </li>
+          <li className="text-body-md text-ink-3">
+            Grid CO₂ factor:{' '}
+            <span className="text-primary">0.5 kg CO₂/kWh</span>
+            <span className="text-ink-5"> (US EPA average)</span>
+          </li>
+          <li className="text-body-md text-ink-3">
+            CO₂ avoided:{' '}
+            <span className="text-primary">
+              {fmt(solar)} kWh × 0.5 kg/kWh = {fmt(avoided)} kg
+            </span>
+          </li>
+        </ul>
+        <p className="mt-6 text-caption text-ink-7">
+          Data source: US EPA eGRID 2024 average emission rate
+        </p>
+      </div>
+    </BottomSheet>
+  )
+}
+
 function DaysSkeleton() {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
@@ -399,6 +451,7 @@ export default function StatsPage() {
   const [records, setRecords] = useState<DeviceAttributeRecord[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showCo2Info, setShowCo2Info] = useState(false)
 
   const deviceId = useMemo(() => {
     if (devices.length === 0) return null
@@ -886,11 +939,14 @@ export default function StatsPage() {
                         </div>
                         <div className="mt-2 flex items-center gap-1.5">
                           <p className="text-body-md text-ink-6">{chartFrame.ecoInsight}</p>
-                          <CalcAudit
-                            variant="icon"
-                            formula={`Solar generated: ${chartFrame.totalInputKwh} kWh\nGrid CO2 factor: 0.5 kg CO₂/kWh (US EPA average)\nCO₂ avoided: ${chartFrame.totalInputKwh} kWh × 0.5 kg/kWh = ${chartFrame.co2Kg} kg\n\nData source: US EPA eGRID 2024 average emission rate`}
-                            label="How we calculated CO₂"
-                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowCo2Info(true)}
+                            aria-label="How we calculated CO₂"
+                            className="w-4 h-4 flex items-center justify-center text-ink-6 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+                          >
+                            <Icon name="question-outined" size={16} alt="" color="currentColor" />
+                          </button>
                         </div>
                       </div>
                       <span className="text-body-lg text-ink-4 mt-1">CO₂ Reduced</span>
@@ -901,6 +957,16 @@ export default function StatsPage() {
             )}
           </>
         )}
+
+      <AnimatePresence>
+        {showCo2Info && chartFrame && (
+          <Co2InfoSheet
+            onClose={() => setShowCo2Info(false)}
+            solarKwh={chartFrame.totalInputKwh}
+            co2Kg={chartFrame.co2Kg}
+          />
+        )}
+      </AnimatePresence>
       </div>
     </div>
   )
