@@ -1,8 +1,8 @@
 {
-  "version": "4.11.10",
-  "build": 2884,
+  "version": "4.11.11",
+  "build": 2885,
   "date": "2026-09-14",
   "changelog": [
-    "UI fixes 4.11.10: Sleep Mode card inner top padding 16px (pt-2 to pt-4, matches Figma); Settings toggle thumb; TextField clear X; Insights CO2 sheet; OTP banner for keyboard."
+    "Version bump 4.11.11 for TestFlight/Play visibility; includes Sleep Mode card inner top padding 16px and prior 4.11.10 UI fixes."
   ]
 }
