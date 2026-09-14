@@ -380,11 +380,11 @@ export default function LoginPage() {
           <span className="font-semibold text-white">Solar of Things</span>
         </p>
 
-        {/* Dark phone silhouette + notification banner - asset includes the frame. */}
+        {/* Dark phone silhouette + notification banner - sized to compact mock (~120px) so title stays visible with keyboard. */}
         <img
           src={otpNotificationBannerDark}
           alt="Solar of Things notification preview"
-          className="mt-6 w-full max-w-[360px] mx-auto h-auto select-none pointer-events-none"
+          className="mt-6 mx-auto block h-auto max-h-[120px] w-auto max-w-[240px] select-none pointer-events-none"
           draggable={false}
         />
 

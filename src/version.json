@@ -1,8 +1,8 @@
 {
-  "version": "4.11.9",
-  "build": 2882,
+  "version": "4.11.10",
+  "build": 2883,
   "date": "2026-09-14",
   "changelog": [
-    "OTP enter-code pixel-aligned to dark mock; dark notification banner asset."
+    "UI fixes 4.11.10: Settings toggle thumb centering, TextField clear X vertical center, Sleep Mode list top padding 16px, Insights CO2 explanation bottom sheet, OTP banner sized to mock for keyboard."
   ]
 }

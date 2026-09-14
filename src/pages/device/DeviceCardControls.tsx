@@ -1,5 +1,6 @@
 import React from 'react'
 import Icon from '../../components/Icon'
+import ToggleSwitch from '../../components/ToggleSwitch'
 
 /** BatteryTag 9-state color: 60-100% teal, 20-59% orange, 1-19% red, 0% gray. */
 export function getTagColor(level: number): string {
@@ -53,24 +54,17 @@ export function PowerToggle({ deviceId, on, disabled, onToggle }: {
   disabled: boolean
   onToggle: (deviceId: string | number, e: React.MouseEvent) => void
 }) {
+  // Shared correctly-centered track with Settings ToggleSwitch (ui-fix-toggle).
   return (
-    <button
-      onClick={(e) => { if (!disabled) onToggle(deviceId, e) }}
+    <ToggleSwitch
+      isOn={on}
       disabled={disabled}
-      aria-label="Power toggle"
-      className={`relative w-[50px] h-[28px] rounded-full transition-colors duration-200 flex-shrink-0 ${
-        disabled
-          ? 'bg-ink-7 opacity-30 cursor-not-allowed'
-          : on
-            ? 'bg-primary active:scale-95'
-            : 'bg-ink-7 active:scale-95'
-      } transition-transform`}
-    >
-      <span
-        className={`absolute top-[2px] w-[24px] h-[24px] rounded-full bg-white shadow-sm transition-[left,transform] duration-200 ${
-          on && !disabled ? 'left-[24px]' : 'left-[2px]'
-        }`}
-      />
-    </button>
+      haptic={false}
+      ariaLabel="Power toggle"
+      onToggle={() => {
+        // Synthetic event: DeviceListCard already stopPropagations on the wrapper.
+        onToggle(deviceId, { stopPropagation() {}, preventDefault() {} } as React.MouseEvent)
+      }}
+    />
   )
 }
