@@ -1,8 +1,8 @@
-﻿{
-  "version": "4.11.7",
-  "build": 2880,
-  "date": "2026-09-12",
+{
+  "version": "4.11.8",
+  "build": 2881,
+  "date": "2026-09-14",
   "changelog": [
-    "The restoring-session screen now shows the same SIERRO wordmark as splash and sign-in (32px, white), instead of a generic bolt."
+    "OTP enter-code step uses dark theme (bg-ink-12) to match landing/email: dark digit boxes, light back chevron, primary Resend, BottomAction Continue; light banner removed."
   ]
 }
