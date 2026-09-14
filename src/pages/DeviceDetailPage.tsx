@@ -674,8 +674,8 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
         </div>
         {/* 16px above the first card, not 8 (`ui-fix-doc-20260911/05-sleep-padding`). */}
         <div className="flex-1 overflow-y-auto px-4 pt-4 pb-8 space-y-6">
-          {/* B_1.2.4 sets the title's line box 8 below the card top, not 16. */}
-          <div className="rounded-l bg-ink-10 px-4 pt-2 pb-4">
+          {/* Figma: 16px top padding inside Sleep Mode card (was 8 / pt-2). */}
+          <div className="rounded-l bg-ink-10 px-4 pt-4 pb-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-body-lg text-white">Sleep Mode</p>

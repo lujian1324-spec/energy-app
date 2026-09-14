@@ -1,8 +1,8 @@
 {
   "version": "4.11.10",
-  "build": 2883,
+  "build": 2884,
   "date": "2026-09-14",
   "changelog": [
-    "UI fixes 4.11.10: Settings toggle thumb centering, TextField clear X vertical center, Sleep Mode list top padding 16px, Insights CO2 explanation bottom sheet, OTP banner sized to mock for keyboard."
+    "UI fixes 4.11.10: Sleep Mode card inner top padding 16px (pt-2 to pt-4, matches Figma); Settings toggle thumb; TextField clear X; Insights CO2 sheet; OTP banner for keyboard."
   ]
 }
