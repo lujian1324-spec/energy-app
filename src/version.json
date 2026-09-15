@@ -1,8 +1,8 @@
 {
   "version": "4.11.11",
-  "build": 2887,
+  "build": 2889,
   "date": "2026-09-15",
   "changelog": [
-    "Restore 4.11.11 - revert Device Monitor energy ring passthrough (#100)."
+    "Revert #102 — Jason requested stop; restore 4.11.11 ring behavior."
   ]
 }
