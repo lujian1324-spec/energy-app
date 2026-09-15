@@ -1,8 +1,8 @@
 {
-  "version": "4.11.12",
-  "build": 2886,
-  "date": "2026-09-15",
+  "version": "4.11.11",
+  "build": 2885,
+  "date": "2026-09-14",
   "changelog": [
-    "Device Monitor energy ring updates via same 5s passthrough as Input/Output/Solar."
+    "Version bump 4.11.11 for TestFlight/Play visibility; includes Sleep Mode card inner top padding 16px and prior 4.11.10 UI fixes."
   ]
 }

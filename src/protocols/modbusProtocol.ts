@@ -49,12 +49,6 @@ export function fromHexString(hex: string): Uint8Array {
  * 通过且寄存器数量达到 minRegisters 的帧才被接受（损坏/错位帧绝不当真数据用）。
  */
 export function locateReadResponse(bytes: Uint8Array, minRegisters = 1): number[] | null {
-  // Prefer the longest CRC-valid FC03 frame that meets minRegisters. A short
-  // frame earlier in the buffer (echo / wrapper noise) can still CRC-check; if
-  // we returned that first, LiveStatus would get AC/Solar/Output (offsets 4/6/7)
-  // but SOC at 0x1A would silently become 0 — powers look live, the energy ring
-  // does not. Taking the longest match keeps power and SOC on the same payload.
-  let best: number[] | null = null
   for (let off = 0; off + 5 <= bytes.length; off++) {
     if (bytes[off + 1] !== FC.READ) continue          // 功能码必须是 0x03
     const byteCount = bytes[off + 2]
@@ -63,10 +57,10 @@ export function locateReadResponse(bytes: Uint8Array, minRegisters = 1): number[
     if (off + frameLen > bytes.length) continue
     const parsed = parseReadResponse(bytes.slice(off, off + frameLen))
     if (parsed && parsed.crcOk && parsed.registers.length >= minRegisters) {
-      if (!best || parsed.registers.length > best.length) best = parsed.registers
+      return parsed.registers
     }
   }
-  return best
+  return null
 }
 
 /** base64 字符串 → 字节数组；解码失败返回 null。 */
@@ -264,21 +258,12 @@ export function parseReadResponse(buf: Uint8Array): ReadResponse | null {
   }
 }
 
-/**
- * Minimum register count for a READ_ALL_STATUS payload that can feed LiveStatus
- * completely — including Cell SOC at offset 0x1A (register 0x011A). Callers that
- * decode LiveStatus (Device Monitor energy ring + Input/Output/Solar, device list
- * battery overlay, useLiveDeviceStatus) must pass this so a short frame cannot
- * update power boxes while leaving the ring at a synthetic 0%.
- */
-export const LIVE_STATUS_MIN_REGISTERS = 0x1B // offsets 0x00..0x1A inclusive
-
 /** READ_ALL_STATUS(0x0100 起) 解析出的实时功率/电量子集 */
 export interface LiveStatus {
   acPower: number       // 交流充电功率 W (0x0107)
   solarPower: number    // 光伏充电功率 W (0x0106)
   outputPower: number   // 交流输出功率 W (0x0104)
-  soc: number           // 电量 % (0x011A, ×0.1%) — Device Monitor energy ring
+  soc: number           // 电量 % (0x011A, ×0.1%)
   batteryTemp: number   // 电芯温度 ℃ (0x0123, Int16 ×0.1)
   batteryPower: number  // 电池功率 W = AC + Solar − Output（充电为正）
 }
