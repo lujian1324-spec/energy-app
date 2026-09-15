@@ -1,8 +1,8 @@
 {
   "version": "4.11.11",
-  "build": 2885,
-  "date": "2026-09-14",
+  "build": 2887,
+  "date": "2026-09-15",
   "changelog": [
-    "Version bump 4.11.11 for TestFlight/Play visibility; includes Sleep Mode card inner top padding 16px and prior 4.11.10 UI fixes."
+    "Restore 4.11.11 - revert Device Monitor energy ring passthrough (#100)."
   ]
 }
