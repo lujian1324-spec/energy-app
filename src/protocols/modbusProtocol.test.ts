@@ -4,6 +4,8 @@ import {
   decodePassthroughBase64,
   extractPassthroughRegisters,
   decodeLiveStatus,
+  locateReadResponse,
+  LIVE_STATUS_MIN_REGISTERS,
   toInt16,
   parseReadResponse,
   parseResponseToParams,
@@ -117,57 +119,94 @@ describe('extractPassthroughRegisters (hardened passthrough decode)', () => {
   }
 
   it('decodes a pure base64 frame string', () => {
-    expectLive(extractPassthroughRegisters(toB64(buildResponse(regs)), 8))
+    expectLive(extractPassthroughRegisters(toB64(buildResponse(regs)), LIVE_STATUS_MIN_REGISTERS))
   })
 
   it('decodes a hex string frame (with and without spaces)', () => {
     const hex = toHex(buildResponse(regs))
-    expectLive(extractPassthroughRegisters(hex, 8))
+    expectLive(extractPassthroughRegisters(hex, LIVE_STATUS_MIN_REGISTERS))
     const spaced = hex.match(/.{2}/g)!.join(' ')
-    expectLive(extractPassthroughRegisters(spaced, 8))
+    expectLive(extractPassthroughRegisters(spaced, LIVE_STATUS_MIN_REGISTERS))
   })
 
   it('locates a valid frame after leading echo/wrapper bytes (base64)', () => {
     // Gateway echoes the read request, then appends the real FC03 response.
     const echo = buildReadFrame(0x0100, 0x38)               // 8-byte request echo
     const wrapped = concat(echo, buildResponse(regs))
-    expectLive(extractPassthroughRegisters(toB64(wrapped), 8))
+    expectLive(extractPassthroughRegisters(toB64(wrapped), LIVE_STATUS_MIN_REGISTERS))
   })
 
   it('locates a valid frame after leading echo/wrapper bytes (hex)', () => {
     const junk = new Uint8Array([0xaa, 0xbb, 0xcc])          // gateway header noise
     const wrapped = concat(junk, buildResponse(regs))
-    expectLive(extractPassthroughRegisters(toHex(wrapped), 8))
+    expectLive(extractPassthroughRegisters(toHex(wrapped), LIVE_STATUS_MIN_REGISTERS))
   })
 
   it('reads the payload from object shapes: base64Output | data | content', () => {
     const b64 = toB64(buildResponse(regs))
-    expectLive(extractPassthroughRegisters({ base64Output: b64 }, 8))
-    expectLive(extractPassthroughRegisters({ data: b64 }, 8))
-    expectLive(extractPassthroughRegisters({ content: b64 }, 8))
+    expectLive(extractPassthroughRegisters({ base64Output: b64 }, LIVE_STATUS_MIN_REGISTERS))
+    expectLive(extractPassthroughRegisters({ data: b64 }, LIVE_STATUS_MIN_REGISTERS))
+    expectLive(extractPassthroughRegisters({ content: b64 }, LIVE_STATUS_MIN_REGISTERS))
     // hex value inside the object works too
-    expectLive(extractPassthroughRegisters({ base64Output: toHex(buildResponse(regs)) }, 8))
+    expectLive(extractPassthroughRegisters({ base64Output: toHex(buildResponse(regs)) }, LIVE_STATUS_MIN_REGISTERS))
   })
 
   it('rejects a corrupted-CRC frame across every shape', () => {
     const bad = buildResponse(regs)
     bad[10] ^= 0xff
-    expect(extractPassthroughRegisters(toB64(bad), 8)).toBeNull()
-    expect(extractPassthroughRegisters(toHex(bad), 8)).toBeNull()
-    expect(extractPassthroughRegisters({ base64Output: toB64(bad) }, 8)).toBeNull()
+    expect(extractPassthroughRegisters(toB64(bad), LIVE_STATUS_MIN_REGISTERS)).toBeNull()
+    expect(extractPassthroughRegisters(toHex(bad), LIVE_STATUS_MIN_REGISTERS)).toBeNull()
+    expect(extractPassthroughRegisters({ base64Output: toB64(bad) }, LIVE_STATUS_MIN_REGISTERS)).toBeNull()
   })
 
   it('returns null for empty / missing / non-payload input', () => {
-    expect(extractPassthroughRegisters(undefined, 8)).toBeNull()
-    expect(extractPassthroughRegisters(null, 8)).toBeNull()
-    expect(extractPassthroughRegisters('', 8)).toBeNull()
-    expect(extractPassthroughRegisters({}, 8)).toBeNull()
-    expect(extractPassthroughRegisters({ base64Output: '' }, 8)).toBeNull()
-    expect(extractPassthroughRegisters({ success: true }, 8)).toBeNull()
+    expect(extractPassthroughRegisters(undefined, LIVE_STATUS_MIN_REGISTERS)).toBeNull()
+    expect(extractPassthroughRegisters(null, LIVE_STATUS_MIN_REGISTERS)).toBeNull()
+    expect(extractPassthroughRegisters('', LIVE_STATUS_MIN_REGISTERS)).toBeNull()
+    expect(extractPassthroughRegisters({}, LIVE_STATUS_MIN_REGISTERS)).toBeNull()
+    expect(extractPassthroughRegisters({ base64Output: '' }, LIVE_STATUS_MIN_REGISTERS)).toBeNull()
+    expect(extractPassthroughRegisters({ success: true }, LIVE_STATUS_MIN_REGISTERS)).toBeNull()
   })
 
   it('still enforces the minRegisters floor', () => {
-    expect(extractPassthroughRegisters(toB64(buildResponse([1, 2])), 8)).toBeNull()
+    expect(extractPassthroughRegisters(toB64(buildResponse([1, 2])), LIVE_STATUS_MIN_REGISTERS)).toBeNull()
+  })
+
+  it('rejects a power-only (8-reg) frame for LiveStatus — SOC at 0x1A must be present', () => {
+    // Offsets 0x04/0x06/0x07 alone are enough for Input/Output/Solar, but the
+    // energy ring needs Cell SOC at 0x1A. A short frame must not set ptLive.
+    const short = new Array(8).fill(0)
+    short[0x04] = 168
+    short[0x06] = 120
+    short[0x07] = 400
+    expect(extractPassthroughRegisters(toB64(buildResponse(short)), LIVE_STATUS_MIN_REGISTERS)).toBeNull()
+    // Same short frame still satisfies the old power-only floor of 8.
+    expect(extractPassthroughRegisters(toB64(buildResponse(short)), 8)).not.toBeNull()
+  })
+})
+
+describe('locateReadResponse prefers the longest valid frame', () => {
+  it('skips a short leading FC03 frame when a longer one follows', () => {
+    const short = new Array(8).fill(0)
+    short[0x04] = 1
+    short[0x06] = 2
+    short[0x07] = 3
+    const full = new Array(0x24).fill(0)
+    full[0x04] = 168
+    full[0x06] = 120
+    full[0x07] = 400
+    full[0x1a] = 856
+    const bytes = new Uint8Array([
+      ...buildResponse(short),
+      ...buildResponse(full),
+    ])
+    const regs = locateReadResponse(bytes, LIVE_STATUS_MIN_REGISTERS)
+    expect(regs).not.toBeNull()
+    const live = decodeLiveStatus(regs!)
+    expect(live.outputPower).toBe(168)
+    expect(live.solarPower).toBe(120)
+    expect(live.acPower).toBe(400)
+    expect(live.soc).toBeCloseTo(85.6, 5)
   })
 })
 
