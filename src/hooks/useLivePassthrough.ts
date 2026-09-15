@@ -25,7 +25,11 @@ import {
   type LiveStatus,
 } from '../protocols/modbusProtocol'
 import { isApiSuccess } from '../utils/apiClient'
-import { saveLivePassthrough } from '../stores/livePassthroughStore'
+import {
+  saveLivePassthrough,
+  markLivePassthroughPending,
+  markLivePassthroughFailed,
+} from '../stores/livePassthroughStore'
 
 /** The Device list cadence, as asked: once a minute. */
 export const LIVE_PASSTHROUGH_INTERVAL_MS = 60_000
@@ -74,12 +78,24 @@ export function useLivePassthrough(
       inFlight = true
       lastRunAt = Date.now()
       try {
+        // Every device is claimed BEFORE the first read, not each in its turn.
+        // Reads run one at a time, so a device claimed only when its turn came
+        // would show the cloud value, then the placeholder, then the real
+        // figure — two transitions instead of one. This is a no-op for a device
+        // that already has a sample, which is the ordinary case.
+        for (const id of ids) markLivePassthroughPending(id)
         for (const id of ids) {
           if (cancelled) break
           try {
             const live = await readLivePassthroughOnce(id)
-            if (!cancelled && live) saveLivePassthrough(id, live)
-          } catch { /* keep the previous sample; try again next tick */ }
+            if (cancelled) break
+            if (live) saveLivePassthrough(id, live)
+            else markLivePassthroughFailed(id)
+          } catch {
+            // Keep the previous sample and try again next tick; only a device
+            // that has never answered is handed back to the cloud value.
+            if (!cancelled) markLivePassthroughFailed(id)
+          }
         }
       } finally {
         inFlight = false

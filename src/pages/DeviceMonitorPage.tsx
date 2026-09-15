@@ -122,7 +122,7 @@ export default function DeviceMonitorPage() {
     const ble = lookupBleLiveStatus({ deviceId: id })?.live
     // Keyed by this device, so a sample left over from the one viewed before
     // cannot paint here — the same guard the cloud state gets.
-    const pass = lookupLivePassthrough(id)?.live
+    const pass = lookupLivePassthrough(id)
     const wrongDevice = !!(id && selectedDeviceState?.deviceId && String(selectedDeviceState.deviceId) !== id)
     const cloud = wrongDevice || !selectedDeviceState?.fields
       ? null
@@ -134,6 +134,20 @@ export default function DeviceMonitorPage() {
   // Every live figure on this screen comes out of the one merge above — the
   // energy ring (SOC, register 0x011A) and the Input / AC / Solar / Output
   // boxes beside it are one READ_ALL_STATUS frame of one device at one instant.
+  /*
+   * True only while the FIRST live read for this device is still outstanding.
+   * For that moment the boxes show -- and the ring its No data state, rather
+   * than a cloud number the reply is about to contradict — that replacement is
+   * the jump on entering a page. It is not the same as "the field is missing":
+   * a cloud sample that simply never carries AC or Solar still reads 0 W here,
+   * exactly as it did before.
+   */
+  const awaitingFirstLiveRead = useMemo(() => {
+    void passthroughEpoch
+    const e = lookupLivePassthrough(id)
+    return !!e && e.phase === 'pending' && !e.live && !lookupBleLiveStatus({ deviceId: id })?.live
+  }, [id, passthroughEpoch, bleEpoch])
+
   const remainingBatteryCapacity = rt?.remainingBatteryCapacity ?? null
   const acPower = rt?.acPower ?? 0
   const solarPower = rt?.solarPower ?? 0
@@ -179,6 +193,8 @@ export default function DeviceMonitorPage() {
   })
 
   const fmtW = (w: number) => Math.abs(Math.round(w))
+  /** -- until the first live read lands, so no figure has to be taken back. */
+  const fmtWatts = (w: number) => (awaitingFirstLiveRead ? '--' : fmtW(w))
 
   return (
     <div
@@ -294,7 +310,7 @@ export default function DeviceMonitorPage() {
               <div className="mt-1 flex items-stretch gap-1.5">
                 <div className="flex-1 min-w-0 h-[42px] border-xs border-ink-9 rounded-m text-center flex flex-col items-center justify-center">
                   <div className="flex items-baseline gap-0.5">
-                    <span className="text-body-lg font-semibold text-white tnum">{fmtW(acPower)}</span>
+                    <span className="text-body-lg font-semibold text-white tnum">{fmtWatts(acPower)}</span>
                     <span className="text-tiny text-ink-5">W</span>
                   </div>
                   <p className="text-tiny text-ink-7">AC</p>
@@ -302,7 +318,7 @@ export default function DeviceMonitorPage() {
                 <span className="text-ink-7 text-body-md font-semibold self-center">+</span>
                 <div className="flex-1 min-w-0 h-[42px] border-xs border-ink-9 rounded-m text-center flex flex-col items-center justify-center">
                   <div className="flex items-baseline gap-0.5">
-                    <span className="text-body-lg font-semibold text-white tnum">{fmtW(solarPower)}</span>
+                    <span className="text-body-lg font-semibold text-white tnum">{fmtWatts(solarPower)}</span>
                     <span className="text-tiny text-ink-5">W</span>
                   </div>
                   <p className="text-tiny text-ink-7">Solar</p>
@@ -312,7 +328,7 @@ export default function DeviceMonitorPage() {
               <p className="mt-3 text-caption text-ink-3">Output</p>
               <div className="mt-1 h-[42px] border-xs border-ink-9 rounded-m text-center flex items-center justify-center">
                 <div className="flex items-baseline gap-0.5">
-                  <span className="text-body-lg font-semibold text-white tnum">{fmtW(outputPower)}</span>
+                  <span className="text-body-lg font-semibold text-white tnum">{fmtWatts(outputPower)}</span>
                   <span className="text-tiny text-ink-5">W</span>
                 </div>
               </div>

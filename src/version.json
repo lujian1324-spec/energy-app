@@ -3,6 +3,6 @@
   "build": 2888,
   "date": "2026-09-15",
   "changelog": [
-    "The battery ring and the power figures on the Device list and the Device monitor now come from one live device reading, merged in one place, instead of a fresh reading and an older cloud sample taking turns in the same slot. A reply too short to carry the battery level is rejected rather than read as 0%."
+    "The battery ring and the power figures on the Device list and the Device monitor now come from one live device reading, merged in one place. Entering a page no longer shows the slower cloud figure first and replaces it a moment later: the last reading is kept across screens, and a device with nothing to show yet waits rather than showing a number it is about to take back. A reply too short to carry the battery level is rejected rather than read as 0%."
   ]
 }
