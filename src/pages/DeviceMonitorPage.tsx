@@ -10,7 +10,7 @@ import RealTimePowerChart from '../components/RealTimePowerChart'
 import { useDeviceStore } from '../stores/deviceStore'
 import { useActiveAlarmCount } from '../hooks/useActiveAlarmCount'
 import { mapFieldsToRealtime, passthroughDevice } from '../api/deviceApi'
-import { FRAMES, extractPassthroughRegisters, decodeLiveStatus, LIVE_STATUS_MIN_REGISTERS, type LiveStatus } from '../protocols/modbusProtocol'
+import { FRAMES, extractPassthroughRegisters, decodeLiveStatus, type LiveStatus } from '../protocols/modbusProtocol'
 import { isApiSuccess } from '../utils/apiClient'
 import { batteryTimeLabel } from '../utils/batteryTime'
 import { loadRatedParams } from '../db/powerflowDB'
@@ -106,7 +106,7 @@ export default function DeviceMonitorPage() {
       // hex value, and an echoed/wrapped frame — the shapes PassthroughPage handles
       // but the old object-only + strict-frame path silently dropped, which is why
       // the monitor stayed pinned to the 30s cloud feed on real hardware.
-      const registers = extractPassthroughRegisters(res.data, LIVE_STATUS_MIN_REGISTERS)
+      const registers = extractPassthroughRegisters(res.data, 8)
       if (!registers) return
       if (currentIdRef.current === reqId) setPtLive(decodeLiveStatus(registers))
     } catch {
@@ -145,10 +145,9 @@ export default function DeviceMonitorPage() {
     return mergeCloudWithBle(mapFieldsToRealtime(selectedDeviceState.fields), ble)
   }, [selectedDeviceState, id, bleEpoch])
 
-  // Pass-through (live, 5s) is the primary source for the energy ring (SOC from
-  // register 0x011A via decodeLiveStatus) and the Input / AC / Solar / Output
-  // boxes beside it — one READ_ALL_STATUS frame, same cadence, same ptLive.
-  // Cloud state stays the fallback until the first pass-through read lands.
+  // Pass-through (live, 5s) is the primary source for the ring and the Input /
+  // AC / Solar / Output boxes — the same source the device list reads — with the
+  // slower cloud state as the fallback until the first pass-through read lands.
   const remainingBatteryCapacity = ptLive?.soc ?? rt?.remainingBatteryCapacity ?? null
   const acPower = ptLive?.acPower ?? rt?.acPower ?? 0
   const solarPower = ptLive?.solarPower ?? rt?.solarPower ?? 0
