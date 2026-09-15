@@ -29,7 +29,7 @@ import { usePowerStationStore } from '../stores/powerStationStore'
 import { dedupeAndFilterAlarms } from '../utils/alarmText'
 import type { FiringAlarm } from '../utils/powerOutageNotification'
 import { mapFieldsToRealtime, fetchDeviceState, passthroughDevice } from '../api/deviceApi'
-import { FRAMES, extractPassthroughRegisters, decodeLiveStatus } from '../protocols/modbusProtocol'
+import { FRAMES, extractPassthroughRegisters, decodeLiveStatus, LIVE_STATUS_MIN_REGISTERS } from '../protocols/modbusProtocol'
 import { isApiSuccess } from '../utils/apiClient'
 import { batteryTimeLabel } from '../utils/batteryTime'
 import { hapticMedium } from '../utils/haptics'
@@ -212,7 +212,7 @@ export default function DevicePage() {
       if (!isApiSuccess(res.code)) return
       // Same hardened decode the monitor uses, so the list overlay and the monitor
       // agree on real-device readings instead of one of them silently falling back.
-      const registers = extractPassthroughRegisters(res.data, 8)
+      const registers = extractPassthroughRegisters(res.data, LIVE_STATUS_MIN_REGISTERS)
       if (!registers) return
       const live = decodeLiveStatus(registers)
       setRealtimeCache(prev => {
