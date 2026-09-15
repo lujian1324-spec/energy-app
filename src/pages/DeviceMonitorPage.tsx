@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { PageHeaderShell, HeaderIconButton } from '../components/PageHeader'
 import PullToRefresh from '../components/PullToRefresh'
 import { useParams, useNavigate } from 'react-router-dom'
@@ -9,13 +9,13 @@ import Icon from '../components/Icon'
 import RealTimePowerChart from '../components/RealTimePowerChart'
 import { useDeviceStore } from '../stores/deviceStore'
 import { useActiveAlarmCount } from '../hooks/useActiveAlarmCount'
-import { mapFieldsToRealtime } from '../api/deviceApi'
+import { mapFieldsToRealtime, passthroughDevice } from '../api/deviceApi'
+import { FRAMES, extractPassthroughRegisters, decodeLiveStatus, type LiveStatus } from '../protocols/modbusProtocol'
+import { isApiSuccess } from '../utils/apiClient'
 import { batteryTimeLabel } from '../utils/batteryTime'
 import { loadRatedParams } from '../db/powerflowDB'
 import { SIERRO_MODELS, type SierroModel } from '../data/deviceModels'
-import { useBleLiveStatusStore, lookupBleLiveStatus } from '../stores/bleLiveStatusStore'
-import { useLivePassthroughStore, lookupLivePassthrough, resolveLiveValues } from '../stores/livePassthroughStore'
-import { useLivePassthrough, LIVE_PASSTHROUGH_FAST_INTERVAL_MS } from '../hooks/useLivePassthrough'
+import { useBleLiveStatusStore, lookupBleLiveStatus, mergeCloudWithBle } from '../stores/bleLiveStatusStore'
 
 /**
  * /state/latest 的 `time` 是「Unix 秒的字串」（见 demoData.getDemoDeviceState），
@@ -65,7 +65,6 @@ export default function DeviceMonitorPage() {
     selectDevice,
     loadDeviceState,
   } = useDeviceStore()
-  const isDemoMode = useDeviceStore(s => s.isDemoMode)
   // Same count Notifications shows under Active Now, so the dot cannot outlive
   // the list it opens.
   const activeAlarmCount = useActiveAlarmCount()
@@ -86,20 +85,42 @@ export default function DeviceMonitorPage() {
     return () => clearInterval(timer)
   }, [id, loadDeviceState])
 
-  /*
-   * The live layer for this screen: the same passthrough read the Device list
-   * files, at the 5s cadence the Input / Solar / Output boxes already ran at.
-   *
-   * It used to live in this component's own `ptLive` state, read through
-   * `ptLive?.x ?? rt?.x`. That is a fallback per field, so a figure whose read
-   * came back short or failed dropped to the 30s cloud sample on its own and
-   * the ring could be showing a different instant from the boxes beside it.
-   * They come out of one merge now, keyed by device, and a failed read keeps
-   * the last good sample rather than falling back.
-   */
-  const { refresh: refreshPassthrough } = useLivePassthrough(
-    id ? [id] : [], !!id && !isDemoMode, LIVE_PASSTHROUGH_FAST_INTERVAL_MS,
-  )
+  // Pass-through polling for the ring + the Input/AC/Solar/Output boxes beside it.
+  // The cloud state above refreshes slowly (30s) and lags real hardware; the same
+  // READ_ALL_STATUS pass-through frame the device list uses gives a live read of
+  // SOC / AC / Solar / Output / battery power. Read once on enter, then every 5s
+  // while the page stays mounted, and tear the timer down on leave so nothing
+  // keeps polling in the background.
+  const [ptLive, setPtLive] = useState<LiveStatus | null>(null)
+  // Latest selected id, so a pass-through response that lands after the user has
+  // switched devices (or left) is dropped instead of painting a stale reading.
+  const currentIdRef = useRef(id)
+  currentIdRef.current = id
+  const readPassthrough = useCallback(async () => {
+    const reqId = id
+    if (!reqId || useDeviceStore.getState().isDemoMode) return
+    try {
+      const res = await passthroughDevice(reqId, { data: FRAMES.READ_ALL_STATUS })
+      if (currentIdRef.current !== reqId || !isApiSuccess(res.code)) return
+      // Hardened decode: tolerates res.data being a string or object, a base64 or
+      // hex value, and an echoed/wrapped frame — the shapes PassthroughPage handles
+      // but the old object-only + strict-frame path silently dropped, which is why
+      // the monitor stayed pinned to the 30s cloud feed on real hardware.
+      const registers = extractPassthroughRegisters(res.data, 8)
+      if (!registers) return
+      if (currentIdRef.current === reqId) setPtLive(decodeLiveStatus(registers))
+    } catch {
+      // pass-through can fail silently; the cloud state remains the fallback
+    }
+  }, [id])
+  useEffect(() => {
+    setPtLive(null)
+    if (!id) return
+    if (useDeviceStore.getState().isDemoMode) return
+    readPassthrough()
+    const timer = setInterval(readPassthrough, 5000)
+    return () => clearInterval(timer)
+  }, [id, readPassthrough])
 
   // Pull-to-refresh: run the same live pass-through read the 5s poller uses AND
   // refresh the cloud device state, in parallel. The mounted 5s interval keeps
@@ -107,38 +128,31 @@ export default function DeviceMonitorPage() {
   // is untouched.
   const handleRefresh = useCallback(async () => {
     await Promise.all([
-      refreshPassthrough(),
+      readPassthrough(),
       id ? loadDeviceState(id) : Promise.resolve(),
     ])
-  }, [refreshPassthrough, id, loadDeviceState])
+  }, [readPassthrough, id, loadDeviceState])
 
   // Map realtime fields —— 仅当 store 里的实时状态确实属于「当前」设备时才用它。
   // 切换设备时 store 可能仍短暂持有上一台设备的状态，此时返回 null，卡片显示占位
   // 而非上一台设备的数据，直到本设备(id)的状态加载完成。
   const bleEpoch = useBleLiveStatusStore(s => s.epoch)
-  const passthroughEpoch = useLivePassthroughStore(s => s.epoch)
   const rt = useMemo(() => {
-    void bleEpoch; void passthroughEpoch
     const ble = lookupBleLiveStatus({ deviceId: id })?.live
-    // Keyed by this device, so a sample left over from the one viewed before
-    // cannot paint here — the same guard the cloud state gets.
-    const pass = lookupLivePassthrough(id)?.live
     const wrongDevice = !!(id && selectedDeviceState?.deviceId && String(selectedDeviceState.deviceId) !== id)
-    const cloud = wrongDevice || !selectedDeviceState?.fields
-      ? null
-      : mapFieldsToRealtime(selectedDeviceState.fields)
-    if (!cloud && !ble && !pass) return null
-    return resolveLiveValues(cloud ?? {}, ble, pass)
-  }, [selectedDeviceState, id, bleEpoch, passthroughEpoch])
+    if (wrongDevice) return ble ? mergeCloudWithBle({}, ble) : null
+    if (!selectedDeviceState?.fields) return ble ? mergeCloudWithBle({}, ble) : null
+    return mergeCloudWithBle(mapFieldsToRealtime(selectedDeviceState.fields), ble)
+  }, [selectedDeviceState, id, bleEpoch])
 
-  // Every live figure on this screen comes out of the one merge above — the
-  // energy ring (SOC, register 0x011A) and the Input / AC / Solar / Output
-  // boxes beside it are one READ_ALL_STATUS frame of one device at one instant.
-  const remainingBatteryCapacity = rt?.remainingBatteryCapacity ?? null
-  const acPower = rt?.acPower ?? 0
-  const solarPower = rt?.solarPower ?? 0
-  const outputPower = rt?.outputPower ?? 0
-  const batteryPower = rt?.batteryPower ?? 0
+  // Pass-through (live, 5s) is the primary source for the ring and the Input /
+  // AC / Solar / Output boxes — the same source the device list reads — with the
+  // slower cloud state as the fallback until the first pass-through read lands.
+  const remainingBatteryCapacity = ptLive?.soc ?? rt?.remainingBatteryCapacity ?? null
+  const acPower = ptLive?.acPower ?? rt?.acPower ?? 0
+  const solarPower = ptLive?.solarPower ?? rt?.solarPower ?? 0
+  const outputPower = ptLive?.outputPower ?? rt?.outputPower ?? 0
+  const batteryPower = ptLive?.batteryPower ?? rt?.batteryPower ?? 0
   /*
    * The Battery Ring sheet defines the charging state as Input > Output — what
    * is coming in from AC and solar against what the load is drawing — not the

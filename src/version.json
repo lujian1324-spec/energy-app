@@ -1,8 +1,8 @@
 {
-  "version": "4.11.13",
-  "build": 2888,
+  "version": "4.11.11",
+  "build": 2889,
   "date": "2026-09-15",
   "changelog": [
-    "The battery ring and the power figures on the Device list and the Device monitor now come from one live device reading, merged in one place, instead of a fresh reading and an older cloud sample taking turns in the same slot. A reply too short to carry the battery level is rejected rather than read as 0%."
+    "Revert #102 — Jason requested stop; restore 4.11.11 ring behavior."
   ]
 }

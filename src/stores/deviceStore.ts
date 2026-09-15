@@ -56,7 +56,6 @@ import {
   getDemoHistoryData,
 } from '../data/demoData'
 import { passthroughDevice } from '../api/deviceApi'
-import { clearLivePassthrough } from './livePassthroughStore'
 import { FRAMES, extractPassthroughRegisters } from '../protocols/modbusProtocol'
 import { saveRatedParams, loadRatedParams } from '../db/powerflowDB'
 
@@ -643,9 +642,6 @@ export const useDeviceStore = create<DeviceStoreState>()(
 
       // ─── Demo 模式：加载 demo 设备列表 ───
       loadDemoDevices: () => {
-        // Demo never polls passthrough, so anything still in the live layer is
-        // a real device's. Nothing may survive into a session showing mock data.
-        clearLivePassthrough()
         set({
           isDemoMode: true,
           devices: demoDevices,
@@ -671,10 +667,6 @@ export const useDeviceStore = create<DeviceStoreState>()(
 
       // ─── Demo 模式：退出 demo 模式 ───
       exitDemoMode: () => {
-        // Live passthrough samples are per-device and per-account, like the
-        // stations below: the next account must not inherit the last one's
-        // battery percentage on first paint.
-        clearLivePassthrough()
         set({
           isDemoMode: false,
           devicesListReady: false,
