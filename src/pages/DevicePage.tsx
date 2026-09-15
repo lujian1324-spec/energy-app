@@ -29,14 +29,16 @@ import { usePowerStationStore } from '../stores/powerStationStore'
 import { dedupeAndFilterAlarms } from '../utils/alarmText'
 import type { FiringAlarm } from '../utils/powerOutageNotification'
 import { mapFieldsToRealtime, fetchDeviceState, passthroughDevice } from '../api/deviceApi'
-import { FRAMES, extractPassthroughRegisters, decodeLiveStatus } from '../protocols/modbusProtocol'
+import { FRAMES } from '../protocols/modbusProtocol'
 import { isApiSuccess } from '../utils/apiClient'
 import { batteryTimeLabel } from '../utils/batteryTime'
 import { hapticMedium } from '../utils/haptics'
 import { loadRatedParams } from '../db/powerflowDB'
 import type { DeviceListItem, DeviceStateField } from '../api/deviceApi'
 import { getDemoDeviceState } from '../data/demoData'
-import { useBleLiveStatusStore, lookupBleLiveStatus, mergeCloudWithBle } from '../stores/bleLiveStatusStore'
+import { useBleLiveStatusStore, lookupBleLiveStatus } from '../stores/bleLiveStatusStore'
+import { useLivePassthroughStore, lookupLivePassthrough, resolveLiveValues } from '../stores/livePassthroughStore'
+import { useLivePassthrough } from '../hooks/useLivePassthrough'
 
 interface DeviceRealtimeCache {
   [deviceId: string]: {
@@ -62,6 +64,9 @@ export default function DevicePage() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
   const isGuest = useAuthStore(s => s.isGuest)
   const bleEpoch = useBleLiveStatusStore(s => s.epoch)
+  const passthroughEpoch = useLivePassthroughStore(s => s.epoch)
+  const isDemoMode = useDeviceStore(s => s.isDemoMode)
+  const deviceIds = useMemo(() => devices.map(d => String(d.id)), [devices])
   const { settings } = usePowerStationStore()
 
   const [showManualAdd, setShowManualAdd] = useState(false)
@@ -204,49 +209,17 @@ export default function DevicePage() {
     }
   }, [selectedDeviceState])
 
-  const fetchBatteryPassthrough = useCallback(async (deviceId: string | number) => {
-    const idStr = String(deviceId)
-    if (useDeviceStore.getState().isDemoMode) return
-    try {
-      const res = await passthroughDevice(idStr, { data: FRAMES.READ_ALL_STATUS })
-      if (!isApiSuccess(res.code)) return
-      // Same hardened decode the monitor uses, so the list overlay and the monitor
-      // agree on real-device readings instead of one of them silently falling back.
-      const registers = extractPassthroughRegisters(res.data, 8)
-      if (!registers) return
-      const live = decodeLiveStatus(registers)
-      setRealtimeCache(prev => {
-        const existing = prev[idStr]
-        return {
-          ...prev,
-          [idStr]: {
-            fields: existing?.fields ?? {},
-            raw: {
-              ...existing?.raw,
-              remainingBatteryCapacity: live.soc,
-              batteryPower: live.batteryPower,
-              acPower: live.acPower,
-              solarPower: live.solarPower,
-              outputPower: live.outputPower,
-              batteryTemp: live.batteryTemp,
-            },
-            loading: false,
-            lastUpdated: Date.now(),
-          },
-        }
-      })
-    } catch {
-      // passthrough can fail silently
-    }
-  }, [])
-
-  useEffect(() => {
-    if (devices.length === 0 || !isAuthenticated) return
-    const pollBattery = () => devices.forEach(d => fetchBatteryPassthrough(d.id))
-    pollBattery()
-    const timer = setInterval(pollBattery, 10_000)
-    return () => clearInterval(timer)
-  }, [devices, isAuthenticated, fetchBatteryPassthrough])
+  /*
+   * The live layer: passthrough once a minute, filed on its own rather than
+   * written into the cloud cache below.
+   *
+   * It used to be written into `realtimeCache[id].raw`, which the 60s
+   * /state/latest poll replaces wholesale — two writers into one slot, so the
+   * battery percentage swung between a fresh Modbus read and a cloud sample
+   * minutes older, once a minute, forever. The two are layered now and merged
+   * at read time in getDeviceNum.
+   */
+  useLivePassthrough(deviceIds, isAuthenticated && !isDemoMode)
 
   useEffect(() => {
     if (devices.length === 0 || !isAuthenticated) return
@@ -258,9 +231,11 @@ export default function DevicePage() {
 
   const getDeviceNum = (deviceId: string | number, key: string): number | null => {
     void bleEpoch
+    void passthroughEpoch
     const cache = realtimeCache[String(deviceId)]
     const ble = lookupBleLiveStatus({ deviceId, dtuDtuid: (devices.find(d => String(d.id) === String(deviceId)) as { dtuDtuid?: string } | undefined)?.dtuDtuid })?.live
-    const merged = mergeCloudWithBle(cache?.raw, ble)
+    // cloud → BLE → passthrough, the same order the monitor page reads in.
+    const merged = resolveLiveValues(cache?.raw, ble, lookupLivePassthrough(deviceId))
     const val = merged[key as keyof typeof merged]
     return val !== undefined && val !== null ? Number(val) : null
   }
