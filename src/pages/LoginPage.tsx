@@ -15,7 +15,7 @@ import {
 } from '../api/authApi'
 import { isApiSuccess } from '../utils/apiClient'
 import { accountFromEmail } from '../utils/accountName'
-import { correctedIntent, type Intent } from '../utils/captchaIntent'
+import { correctedIntent, saysNoSuchAccount, type Intent } from '../utils/captchaIntent'
 import { isFirstRunAccount } from '../utils/firstRunAccount'
 import { TERMS_URL, PRIVACY_URL } from '../config/legalLinks'
 import { sanitizeUiCopy } from '../utils/uiCopy'
@@ -234,10 +234,15 @@ export default function LoginPage() {
         finishSignIn(result.data, { firstRun })
         return
       }
-      // The pre-check can be wrong (it failed, or the address was removed between steps).
-      // If sign-in says there is no such account, register with the code we already have.
+      // Sign-in can still come back with "no such account" — the address was
+      // removed between steps, or the send was corrected on a phrase this does
+      // not cover. Register with the code we already have.
+      //
+      // Shares saysNoSuchAccount with the code-send path above. These were two
+      // regexes written at different times: this one knew `account error` from
+      // 4.7.77, the other never learned it, and a new address hit the other.
       const msg = `${result.message ?? ''} ${result.msg ?? ''}`.toLowerCase()
-      if (/not exist|no such|unregistered|not found|account error|\u8d26\u53f7/.test(msg)) {
+      if (saysNoSuchAccount(msg)) {
         await registerThenSignIn()
         return
       }
