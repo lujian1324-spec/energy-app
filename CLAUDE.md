@@ -161,6 +161,13 @@ lives on independently and is still referenced elsewhere.)
   `NATIVE_PUSH_READY` (same file, default `false`), gates whether native `PushNotifications.register()`
   actually runs — it stays off until `google-services.json`/APNs credentials are real, because calling
   `register()` without them crashes on Android (fixed in v3.35.8 by adding this second gate).
+- *Delete Account* (also on `ProfileEditPage`): goes through `deleteAccountAndContents()`
+  (`src/utils/deleteAccountFlow.ts`) — **devices, then stations, then `/user/logout/account`**.
+  The account endpoint refuses an account that still owns a station, and a device is bound INTO
+  a station, so that order is the only one the backend accepts. A failure stops the run before
+  the account is touched and is shown to the user; never sign out on a failed delete, which is
+  what made a refused deletion look successful. The confirmation copy must say devices and
+  stations go too.
 - *Feedback modal* (EmailJS), *Founder badge modal*, legal links + version. (The inline "Export My Data" button was removed in v4.7.7; full export lives on `/data-export`.) `ProfileEditPage`'s "Link Accounts" (Google/Apple placeholder rows) was also removed in v4.7.7.
 
 **OnboardingPage** (`/onboarding`) — runs once after a first sign-up

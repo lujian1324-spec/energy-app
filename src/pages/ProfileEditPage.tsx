@@ -9,12 +9,15 @@ import { saveUserProfile, clearUserProfile } from '../db/powerflowDB'
 import { useUserProfile } from '../hooks/useUserProfile'
 import { toast } from '../components/Toast'
 import {
+  deleteAccountAndContents,
+  deleteAccountProgressLabel,
+  type DeleteAccountProgress,
+} from '../utils/deleteAccountFlow'
+import {
   updateUserInfo,
   updateUserEmail,
   sendEmailCaptcha,
-  deleteAccount,
 } from '../api/authApi'
-import { isApiSuccess } from '../utils/apiClient'
 import type { UserProfile } from '../types/protocol'
 
 interface ProfileEditPageProps {
@@ -48,6 +51,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
   // 二次确认弹窗：'signout' | 'delete' | null
   const [confirmAction, setConfirmAction] = useState<'signout' | 'delete' | null>(null)
   const [deleteBusy, setDeleteBusy] = useState(false)
+  const [deleteProgress, setDeleteProgress] = useState<DeleteAccountProgress | null>(null)
 
   // Redeem Founder Badge 弹窗
   const [showRedeem, setShowRedeem] = useState(false)
@@ -166,21 +170,23 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
   // 弹窗内确认 → 执行登出 / 真正删除账号
   const handleConfirm = async () => {
     if (confirmAction === 'delete') {
-      // 真正调用注销账户接口（此前只登出，不满足 Apple 5.1.1(v) / Play 删除政策）
+      /*
+       * Devices, then stations, then the account — /user/logout/account refuses
+       * an account that still owns a station, and the app used to report that
+       * rejection as a deleted account. If any step fails the account is left
+       * standing and the user is told what stopped it, so they can try again.
+       */
       setDeleteBusy(true)
-      try {
-        const res = await deleteAccount()
-        if (!isApiSuccess(res.code)) {
-          toast.error(res.message || res.msg || 'Failed to delete account. Please try again.')
-          setDeleteBusy(false)
-          return
-        }
-      } catch {
-        toast.error('Failed to delete account. Please try again.')
+      setDeleteProgress(null)
+      const res = await deleteAccountAndContents(setDeleteProgress)
+      if (!res.ok) {
+        toast.error(res.message ?? 'Failed to delete account. Please try again.')
         setDeleteBusy(false)
+        setDeleteProgress(null)
         return
       }
       setDeleteBusy(false)
+      setDeleteProgress(null)
       setConfirmAction(null)
       // 账号已在服务端删除 → 清本地会话/数据并退出
       await clearUserProfile(account)
@@ -521,7 +527,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
               <p className="mt-1.5 text-label text-ink-5 text-center">
                 {confirmAction === 'signout'
                   ? "You'll need to sign in again to access your account."
-                  : "This will permanently delete your account and saved data. This action can't be undone."}
+                  : "This deletes your devices and power stations as well as your account and saved data. This action can't be undone."}
               </p>
               <div className="mt-[18px] flex gap-3">
                 <button
@@ -540,7 +546,9 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
                       : 'bg-danger text-white'
                   }`}
                 >
-                  {confirmAction === 'signout' ? 'Sign Out' : deleteBusy ? 'Deleting…' : 'Delete'}
+                  {confirmAction === 'signout'
+                    ? 'Sign Out'
+                    : deleteBusy ? deleteAccountProgressLabel(deleteProgress) : 'Delete'}
                 </button>
               </div>
             </motion.div>
