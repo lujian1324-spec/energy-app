@@ -1,8 +1,8 @@
 {
-  "version": "4.12.1",
-  "build": 2894,
+  "version": "4.12.2",
+  "build": 2895,
   "date": "2026-09-17",
   "changelog": [
-    "Deleting your account now removes your devices and power stations first, which is the order the server accepts. Before, the request was refused whenever an account still had a power station, and Settings signed you out anyway, so an account that had not been deleted looked as though it had. A deletion that cannot finish now says what stopped it and leaves you signed in."
+    "The Founding Member tag on Settings and on your profile is now just a badge: tapping it no longer opens the Founder Badge card or the code-redemption sheet. Membership comes from the founding-member list when you sign up, so there is no code to redeem, and redeeming one could have replaced your real member number with a generated one."
   ]
 }

@@ -154,7 +154,12 @@ lives on independently and is still referenced elsewhere.)
 - (Battery Health card removed.)
 
 **SettingPage** (`/setting`)
-- *Profile card*: avatar, name, account action, founder badge.
+- *Profile card*: avatar, name, account action, Founding Member tag. The tag and the matching
+  pill on `ProfileEditPage` are **not tappable** — membership comes from the VIP roster at
+  sign-up, so there is nothing to open. The Founder Badge modal and the Redeem Founder Badge
+  sheet were removed with `activateFounderBadge()`: it generated the number from the clock,
+  could hand two people the same badge, and redeeming as a real member would overwrite their
+  roster number with a made-up one. `applyFoundingMember()` is now the only writer.
 - *Push Notifications*: Power Outage (`pushNotifications`), Low Battery (`pushLowBattery`)+threshold slider (`lowBatteryThreshold`), Solar Status (`pushSolarStatus`). Toggles drive Web Push enable/disable. (The `pushDeviceAlarms` "Device Alarms" toggle was removed from the UI in v4.7.7 — the setting field and relay/notification plumbing remain, but it no longer surfaces so it stays at its default `false`; the Notifications alarm center still lists every alarm type regardless.)
   Section visibility is gated by `PUSH_ENABLED` (`src/config/webPush.ts`) — `true` in every production
   build since v3.35.5 (requests the OS notification permission; safe on its own). A **separate** flag,
@@ -168,7 +173,7 @@ lives on independently and is still referenced elsewhere.)
   the account is touched and is shown to the user; never sign out on a failed delete, which is
   what made a refused deletion look successful. The confirmation copy must say devices and
   stations go too.
-- *Feedback modal* (EmailJS), *Founder badge modal*, legal links + version. (The inline "Export My Data" button was removed in v4.7.7; full export lives on `/data-export`.) `ProfileEditPage`'s "Link Accounts" (Google/Apple placeholder rows) was also removed in v4.7.7.
+- *Feedback modal* (EmailJS), legal links + version. (The inline "Export My Data" button was removed in v4.7.7; full export lives on `/data-export`.) `ProfileEditPage`'s "Link Accounts" (Google/Apple placeholder rows) was also removed in v4.7.7.
 
 **OnboardingPage** (`/onboarding`) — runs once after a first sign-up
 - *Name step* (A_2.2.1): "What should we call you?" → writes the profile cache and `/user/update/iotUserInfo`.

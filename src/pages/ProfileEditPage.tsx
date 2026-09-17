@@ -2,7 +2,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useRef } from 'react'
 import Icon from '../components/Icon'
 import TextField from '../components/TextField'
-import BottomSheet from '../components/BottomSheet'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useAuthStore } from '../stores/authStore'
 import { saveUserProfile, clearUserProfile } from '../db/powerflowDB'
@@ -25,7 +24,7 @@ interface ProfileEditPageProps {
 }
 
 export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
-  const { settings, activateFounderBadge } = usePowerStationStore()
+  const { settings } = usePowerStationStore()
   const { user: authUser, logout } = useAuthStore()
 
   // Settings renders the same name from the same loader, so the two screens
@@ -53,10 +52,6 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
   const [deleteBusy, setDeleteBusy] = useState(false)
   const [deleteProgress, setDeleteProgress] = useState<DeleteAccountProgress | null>(null)
 
-  // Redeem Founder Badge 弹窗
-  const [showRedeem, setShowRedeem] = useState(false)
-  const [founderCode, setFounderCode] = useState('')
-  const [founderError, setFounderError] = useState('')
 
   // 头像上传
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -198,19 +193,6 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
     setConfirmAction(null)
     if (typeof logout === 'function') logout()
     onBack()
-  }
-
-  // 激活 Founder Badge：验证码正确则点亮徽章
-  const handleActivateBadge = () => {
-    const result = activateFounderBadge(founderCode.trim())
-    if (result.success) {
-      setShowRedeem(false)
-      setFounderCode('')
-      setFounderError('')
-      toast.success('Founder badge activated')
-    } else {
-      setFounderError(result.message)
-    }
   }
 
   // If editing a field, show sub-screen
@@ -411,15 +393,14 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
             className="hidden"
           />
 
-          {/* Founder badge pill — tap to open redeem modal (APP-005: CTA hidden for non-founders) */}
+          {/* Founder badge pill. Not a button: membership now comes from the VIP
+              roster at sign-up, so there is nothing for a tap to open — the
+              redeem sheet it used to lead to could only hand out a random
+              number over the real one. */}
           {settings.founderBadge && (
-            <button
-              type="button"
-              onClick={() => { setFounderCode(''); setFounderError(''); setShowRedeem(true) }}
-              className="mt-3 flex items-center gap-1 px-3 py-1 rounded-full bg-membership/[0.15] text-membership border border-membership text-caption"
-            >
+            <span className="mt-3 flex items-center gap-1 px-3 py-1 rounded-full bg-membership/[0.15] text-membership border border-membership text-caption">
               👑 Founding Member #{settings.founderBadgeNumber}
-            </button>
+            </span>
           )}
         </div>
 
@@ -457,51 +438,7 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
         </div>
 
 
-        {/* Footer: founder redeem CTA, as `Profile -v Default` has it. The gold badge
-            still opens the same modal for members who already redeemed. */}
-        {!settings.founderBadge && (
-          <p className="mt-6 text-caption text-ink-7 text-center">
-            Have a founder code?{' '}
-            <button onClick={() => setShowRedeem(true)} className="text-primary font-semibold">
-              Redeem founder badge
-            </button>
-          </p>
-        )}
       </div>
-
-      {/* ==================== Redeem Founder Badge 弹窗 (bottom sheet) ==================== */}
-      <AnimatePresence>
-        {showRedeem && (
-          <BottomSheet
-            title="Redeem Founder Badge"
-            titleAlign="left"
-            labelledBy="redeem-title"
-            onClose={() => setShowRedeem(false)}
-          >
-            <div className="mt-6 px-6">
-              <TextField
-                outlined
-                label="Activation Code"
-                ariaLabel="Activation code"
-                value={founderCode}
-                onChange={(next) => { setFounderCode(next); setFounderError('') }}
-                placeholder="Enter your code"
-                error={founderError || null}
-                autoFocus
-              />
-            </div>
-            <div className="mt-6 px-6">
-              <button
-                onClick={handleActivateBadge}
-                disabled={!founderCode.trim()}
-                className="w-full h-12 rounded-m bg-primary text-primary-darker font-semibold text-body-lg active:scale-[0.98] transition-transform disabled:opacity-50 disabled:active:scale-100"
-              >
-                Activate Badge
-              </button>
-            </div>
-          </BottomSheet>
-        )}
-      </AnimatePresence>
 
       {/* ==================== 二次确认弹窗 (Sign out / Delete Account) ==================== */}
       <AnimatePresence>

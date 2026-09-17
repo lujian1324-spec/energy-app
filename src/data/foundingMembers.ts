@@ -4,9 +4,10 @@
  * Onboarding shows the Founding Member screen when the address the account was
  * registered with is on the list, and the number beside it is the one printed
  * on the badge — a real place in the order people joined, not something
- * generated at runtime. The redeem-code path in Settings (`activateFounderBadge`)
- * invents a number from the clock and so can hand two people the same badge;
- * this cannot.
+ * generated at runtime. It is the only source of the badge: the redeem-code
+ * path that used to sit in Settings invented a number from the clock, could
+ * hand two people the same badge, and would overwrite a real member's number
+ * if they ever redeemed one. It and its dialogs were removed.
  *
  * ADDRESSES ARE NOT STORED. The roster ships inside the app, and the app ships
  * to anyone who wants it, so a readable list would hand whoever unpacks the

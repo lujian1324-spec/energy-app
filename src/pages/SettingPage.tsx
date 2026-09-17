@@ -2,15 +2,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  X,
   Send,
   Loader2,
   CheckCircle,
-  Crown,
-  Gift,
-  Sparkles,
-  Tag,
-  Star,
   Gem,
   LogOut,
   RotateCcw,
@@ -41,23 +35,18 @@ import { Capacitor } from '@capacitor/core'
 
 export default function SettingPage() {
   const navigate = useNavigate()
-  const { settings, updateSettings, activateFounderBadge } = usePowerStationStore()
+  const { settings, updateSettings } = usePowerStationStore()
   const { user: authUser, logout, isGuest } = useAuthStore()
   const [showSupport, setShowSupport] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [deleteProgress, setDeleteProgress] = useState<DeleteAccountProgress | null>(null)
-  const [showFounderModal, setShowFounderModal] = useState(false)
 
   // Support form
   const [supportEmail, setSupportEmail] = useState('')
   const [supportMessage, setSupportMessage] = useState('')
   const [supportSubmitted, setSupportSubmitted] = useState(false)
 
-  // Founder Badge
-  const [founderCode, setFounderCode] = useState('')
-  const [founderMessage, setFounderMessage] = useState('')
-  const [founderSuccess, setFounderSuccess] = useState(false)
 
   // Profile - 从 authStore 获取登录账号信息
   const [showProfileEdit, setShowProfileEdit] = useState(false)
@@ -141,20 +130,7 @@ export default function SettingPage() {
     }, 1500)
   }
 
-  const handleFounderSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    const result = activateFounderBadge(founderCode)
-    setFounderSuccess(result.success)
-    setFounderMessage(result.message)
-    if (result.success) setTimeout(() => { setShowFounderModal(false); setFounderCode(''); setFounderMessage('') }, 2000)
-  }
 
-  const founderBenefits = [
-    { icon: Sparkles, label: 'Early Access', desc: 'Priority access to new products' },
-    { icon: Tag, label: 'Exclusive Discounts', desc: 'Special pricing on new releases' },
-    { icon: Gift, label: 'Product Updates', desc: 'First to know about new features' },
-    { icon: Star, label: 'VIP Support', desc: 'Priority customer service' },
-  ]
 
 
   return (
@@ -192,15 +168,17 @@ export default function SettingPage() {
               <Icon name="chevron-right" size={14} className="opacity-60" />
             </div>
           </button>
-          {/* Founding Member gold tag */}
+          {/* Founding Member gold tag. Not a button: membership now comes from
+              the VIP roster at sign-up, so there is nothing for a tap to open —
+              the Founder Badge card it used to raise was a code-redemption
+              form, and redeeming could only overwrite a real member's number
+              with a generated one. */}
           {settings.founderBadge && (
-            <button
-              onClick={() => setShowFounderModal(true)}
-              className="flex-shrink-0 px-3 py-1 rounded-pill bg-membership/[0.18] border-s border-membership active:scale-[0.96] transition-transform">
+            <span className="flex-shrink-0 px-3 py-1 rounded-pill bg-membership/[0.18] border-s border-membership">
               <span className="text-label font-semibold text-membership whitespace-nowrap">
                 Founding Member #{settings.founderBadgeNumber}
               </span>
-            </button>
+            </span>
           )}
         </motion.div>
 
@@ -467,64 +445,6 @@ export default function SettingPage() {
                     ) : 'Delete'}
                   </button>
                 </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ==================== Founder Badge Modal ==================== */}
-      <AnimatePresence>
-        {showFounderModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/60 p-4"
-            onClick={() => setShowFounderModal(false)}>
-            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="w-full max-w-md bg-ink-10 rounded-[28px] border border-membership/[0.2] overflow-hidden"
-              onClick={e => e.stopPropagation()}>
-              <div className="flex items-center justify-between px-5 py-4 border-b border-membership/[0.1]">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-l bg-membership/[0.1] flex items-center justify-center"><Crown size={20} className="text-membership" /></div>
-                  <div>
-                    <h3 className="text-base font-bold text-ink-1">Founder Badge</h3>
-                    <p className="text-caption text-ink-6">Unlock exclusive benefits</p>
-                  </div>
-                </div>
-                <button onClick={() => setShowFounderModal(false)} className="p-2 rounded-full hover:bg-white/[0.05]"><X size={20} className="text-ink-6" /></button>
-              </div>
-              <div className="p-5">
-                {founderSuccess ? (
-                  <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-8">
-                    <div className="w-16 h-16 rounded-full bg-membership/[0.15] flex items-center justify-center mx-auto mb-4"><Crown size={32} className="text-membership" /></div>
-                    <h4 className="text-body-lg font-bold text-membership mb-2">Welcome, Founding Member!</h4>
-                    <p className="text-label text-ink-6">Your exclusive benefits are now active.</p>
-                  </motion.div>
-                ) : (
-                  <>
-                    <div className="mb-5">
-                      <p className="text-label text-ink-6 mb-3">Founding Members enjoy:</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {founderBenefits.map(b => { const Icon = b.icon; return (
-                          <div key={b.label} className="flex items-center gap-2 bg-membership/[0.05] rounded-l p-2">
-                            <Icon size={14} className="text-membership" /><span className="text-caption text-ink-1">{b.label}</span>
-                          </div>
-                        )})}
-                      </div>
-                    </div>
-                    <form onSubmit={handleFounderSubmit} className="space-y-4">
-                      <div>
-                        <label className="text-label font-semibold text-ink-6 mb-2 flex items-center gap-2"><Sparkles size={14} />Enter Code</label>
-                        <input type="text" required value={founderCode} onChange={e => setFounderCode(e.target.value)} placeholder="Enter your code"
-                          className="w-full px-4 py-3 rounded-l bg-ink-12 border border-membership/[0.2] text-ink-1 text-body-md placeholder:text-ink-7 uppercase focus:outline-none focus:border-membership/[0.5] transition-colors" />
-                      </div>
-                      {founderMessage && <div className={`text-caption text-center ${founderSuccess ? 'text-success' : 'text-danger'}`}>{founderMessage}</div>}
-                      <button type="submit" className="w-full py-3.5 rounded-l bg-membership/[0.12] text-membership font-semibold text-body-md flex items-center justify-center gap-2 active:scale-95 transition-transform border border-membership/[0.25]">
-                        <Crown size={16} />Activate Badge
-                      </button>
-                    </form>
-                  </>
-                )}
               </div>
             </motion.div>
           </motion.div>
