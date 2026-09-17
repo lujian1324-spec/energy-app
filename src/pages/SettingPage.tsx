@@ -21,7 +21,12 @@ import { FEEDBACK_TO_EMAIL, isEmailJsConfigured } from '../config/emailjs'
 import { sendFeedbackEmail } from '../utils/sendFeedbackEmail'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useAuthStore } from '../stores/authStore'
-import { deleteAccount } from '../api/authApi'
+import { toast } from '../components/Toast'
+import {
+  deleteAccountAndContents,
+  deleteAccountProgressLabel,
+  type DeleteAccountProgress,
+} from '../utils/deleteAccountFlow'
 import { useUserProfile } from '../hooks/useUserProfile'
 import BottomSheet from '../components/BottomSheet'
 import TextField from '../components/TextField'
@@ -41,6 +46,7 @@ export default function SettingPage() {
   const [showSupport, setShowSupport] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [deleteProgress, setDeleteProgress] = useState<DeleteAccountProgress | null>(null)
   const [showFounderModal, setShowFounderModal] = useState(false)
 
   // Support form
@@ -423,7 +429,7 @@ export default function SettingPage() {
                     <Icon name="trash" size={24} />
                   </div>
                   <h3 className="text-base font-bold text-ink-1 mb-2">Delete Account</h3>
-                  <p className="text-body-md text-ink-6">This will permanently delete your account and all associated data. This action cannot be undone.</p>
+                  <p className="text-body-md text-ink-6">This deletes your devices and power stations as well as your account and all associated data. This action cannot be undone.</p>
                 </div>
                 <div className="flex gap-3">
                   <button disabled={deleteLoading} onClick={() => setShowDeleteConfirm(false)}
@@ -431,16 +437,34 @@ export default function SettingPage() {
                     Cancel
                   </button>
                   <button disabled={deleteLoading} onClick={async () => {
+                    /*
+                     * Devices, then stations, then the account. This used to
+                     * call the account delete alone, swallow whatever came
+                     * back and sign out regardless — so an account the backend
+                     * had REFUSED to delete (because it still owned a station)
+                     * looked deleted to the person who asked for it. Now a
+                     * failure is shown and the session is kept, so they still
+                     * have an account to try again with.
+                     */
                     setDeleteLoading(true)
-                    try {
-                      await deleteAccount()
-                    } catch { /* ignore — server may reject already-deleted accounts */ }
+                    setDeleteProgress(null)
+                    const res = await deleteAccountAndContents(setDeleteProgress)
+                    setDeleteLoading(false)
+                    setDeleteProgress(null)
+                    if (!res.ok) {
+                      toast.error(res.message ?? 'Failed to delete account. Please try again.')
+                      return
+                    }
                     await logout()
                     setShowDeleteConfirm(false)
-                    setDeleteLoading(false)
                   }}
                     className="flex-1 py-3 rounded-l bg-danger/[0.15] text-danger font-semibold text-body-md border border-danger/[0.3] flex items-center justify-center gap-2 disabled:opacity-50">
-                    {deleteLoading ? <Loader2 size={16} className="animate-spin" /> : 'Delete'}
+                    {deleteLoading ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        {deleteAccountProgressLabel(deleteProgress)}
+                      </>
+                    ) : 'Delete'}
                   </button>
                 </div>
               </div>

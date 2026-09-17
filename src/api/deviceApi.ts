@@ -1289,11 +1289,17 @@ export async function updateStation(
   return api.post<unknown>('/station/update', data)
 }
 
-/** 删除电站 */
+/**
+ * 删除电站.
+ *
+ * The id is a Java Long — 18 digits, past what a JS number holds exactly — so
+ * it is taken as a string and sent as one. The old signature said `number`,
+ * which would have rounded a real id to a different station's.
+ */
 export async function deleteStation(
-  stationId: number
+  stationId: string | number
 ): Promise<ApiResponse<unknown>> {
-  return api.post<unknown>(`/station/delete?stationId=${stationId}`)
+  return api.post<unknown>(`/station/delete?stationId=${encodeURIComponent(String(stationId))}`)
 }
 
 /** 获取电站能量流动 */

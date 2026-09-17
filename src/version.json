@@ -1,8 +1,8 @@
 {
-  "version": "4.12.0",
-  "build": 2893,
+  "version": "4.12.1",
+  "build": 2894,
   "date": "2026-09-17",
   "changelog": [
-    "Onboarding now welcomes founding members: after you enter your name, an account registered with a founding-member address sees its member number and badge, then continues to adding a device. Everyone else goes straight to adding a device as before. The 223-member VIP list is carried as hashes rather than addresses, so the app does not ship a readable customer email list."
+    "Deleting your account now removes your devices and power stations first, which is the order the server accepts. Before, the request was refused whenever an account still had a power station, and Settings signed you out anyway, so an account that had not been deleted looked as though it had. A deletion that cannot finish now says what stopped it and leaves you signed in."
   ]
 }
