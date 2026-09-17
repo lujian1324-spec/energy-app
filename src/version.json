@@ -1,8 +1,8 @@
 {
   "version": "4.12.0",
-  "build": 2891,
+  "build": 2893,
   "date": "2026-09-17",
   "changelog": [
-    "Onboarding now welcomes founding members: after you enter your name, an account registered with a founding-member address sees its member number and badge, then continues to adding a device. Everyone else goes straight to adding a device as before."
+    "Onboarding now welcomes founding members: after you enter your name, an account registered with a founding-member address sees its member number and badge, then continues to adding a device. Everyone else goes straight to adding a device as before. The 223-member VIP list is carried as hashes rather than addresses, so the app does not ship a readable customer email list."
   ]
 }

@@ -13,7 +13,7 @@
  * something anyone chose, so the name is asked for again here and becomes both
  * the name the app shows and the name on the account.
  */
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../components/Icon'
 import TextField from '../components/TextField'
@@ -41,8 +41,22 @@ export default function OnboardingPage() {
    * gives one, otherwise the account itself, which for an email sign-up IS the
    * address. Same fallback the profile cache below uses, so the roster is
    * checked against the same string the profile is keyed on.
+   *
+   * The lookup hashes the address, so it is async and starts on mount rather
+   * than when the name is saved: by the time anyone has typed a name it has
+   * long since answered. `saveName` awaits the same promise anyway, so a slow
+   * device cannot race past it and skip a member's screen.
    */
-  const memberNumber = foundingMemberNumber(authUser?.email ?? account)
+  const rosterAddress = authUser?.email ?? account
+  const rosterLookup = useRef<Promise<number | null> | null>(null)
+  const [memberNumber, setMemberNumber] = useState<number | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    const p = foundingMemberNumber(rosterAddress)
+    rosterLookup.current = p
+    void p.then((n) => { if (!cancelled) setMemberNumber(n) })
+    return () => { cancelled = true }
+  }, [rosterAddress])
 
   const [step, setStep] = useState<Step>('name')
   const [name, setName] = useState('')
@@ -90,8 +104,10 @@ export default function OnboardingPage() {
      * a founding member is a fact about the account, not a reward for reaching
      * the end of onboarding.
      */
-    if (memberNumber !== null) {
-      applyFoundingMember(memberNumber)
+    const member = (await rosterLookup.current) ?? null
+    if (member !== null) {
+      setMemberNumber(member)
+      applyFoundingMember(member)
       setStep('founder')
       return
     }
