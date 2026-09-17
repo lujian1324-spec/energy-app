@@ -25,6 +25,8 @@ interface PowerStationState {
   setChargeLimit: (limit: number) => void;
   updateDeviceName: (name: string) => void;
   activateFounderBadge: (code: string) => { success: boolean; message: string };
+  /** Award the badge from the roster, with the member's real number. */
+  applyFoundingMember: (memberNumber: number) => void;
   selectDevice: (deviceId: string) => void;
   updateDeviceNameById: (deviceId: string, name: string) => void;
   updateDeviceSpecs: (specs: Partial<PowerStation['specs']>) => void;
@@ -322,6 +324,20 @@ updateDeviceName: (name) => {
 set((state) => ({
 powerStation: { ...state.powerStation, name }
 }))
+},
+
+applyFoundingMember: (memberNumber: number) => {
+  // The roster's number, not a generated one. activateFounderBadge below makes
+  // one up from the clock, which can hand two people the same badge; a member
+  // who came in through the roster has a real place in the order.
+  set((state) => ({
+    settings: {
+      ...state.settings,
+      founderBadge: true,
+      founderBadgeActivatedAt: state.settings.founderBadgeActivatedAt ?? new Date().toISOString(),
+      founderBadgeNumber: memberNumber,
+    }
+  }));
 },
 
 activateFounderBadge: (code: string) => {

@@ -1,8 +1,11 @@
 /**
  * Onboarding, run once after a first sign-up (PRD §4.7.3).
  *
- * Two steps, both straight off the handoff:
+ * Three steps, straight off the handoff — the middle one only sometimes:
  *   A_2.2.1_Onboarding_Name    — "What should we call you?"
+ *   A_2.2.1b_Founding_Member   — only when this account's registered address is
+ *                                on the roster (src/data/foundingMembers.ts);
+ *                                everyone else goes straight to the device step
  *   A_2.2.2_Onboarding_Device  — add the first device, or skip
  *
  * The name step was removed in v4.1.4, which unified the display name to the
@@ -10,24 +13,50 @@
  * something anyone chose, so the name is asked for again here and becomes both
  * the name the app shows and the name on the account.
  */
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../components/Icon'
 import TextField from '../components/TextField'
 import BottomAction from '../components/BottomAction'
 import ProvisioningPage from './ProvisioningPage'
+import FoundingMemberScreen from './onboarding/FoundingMemberScreen'
 import { useAuthStore } from '../stores/authStore'
+import { usePowerStationStore } from '../stores/powerStationStore'
+import { foundingMemberNumber } from '../data/foundingMembers'
 import { getUserProfile, saveUserProfile } from '../db/powerflowDB'
 import { updateUserInfo } from '../api/authApi'
 import { isApiSuccess } from '../utils/apiClient'
 import { toast } from '../components/Toast'
 
-type Step = 'name' | 'device'
+type Step = 'name' | 'founder' | 'device'
 
 export default function OnboardingPage() {
   const navigate = useNavigate()
   const authUser = useAuthStore((s) => s.user)
   const account = authUser?.account ?? ''
+  const applyFoundingMember = usePowerStationStore((s) => s.applyFoundingMember)
+
+  /*
+   * The address the account was registered with — `email` when the backend
+   * gives one, otherwise the account itself, which for an email sign-up IS the
+   * address. Same fallback the profile cache below uses, so the roster is
+   * checked against the same string the profile is keyed on.
+   *
+   * The lookup hashes the address, so it is async and starts on mount rather
+   * than when the name is saved: by the time anyone has typed a name it has
+   * long since answered. `saveName` awaits the same promise anyway, so a slow
+   * device cannot race past it and skip a member's screen.
+   */
+  const rosterAddress = authUser?.email ?? account
+  const rosterLookup = useRef<Promise<number | null> | null>(null)
+  const [memberNumber, setMemberNumber] = useState<number | null>(null)
+  useEffect(() => {
+    let cancelled = false
+    const p = foundingMemberNumber(rosterAddress)
+    rosterLookup.current = p
+    void p.then((n) => { if (!cancelled) setMemberNumber(n) })
+    return () => { cancelled = true }
+  }, [rosterAddress])
 
   const [step, setStep] = useState<Step>('name')
   const [name, setName] = useState('')
@@ -69,6 +98,19 @@ export default function OnboardingPage() {
       toast.info("Saved on this phone — we couldn't update the name on your account.")
     }
     setSaving(false)
+    /*
+     * The badge is awarded here rather than on the screen itself, so a member
+     * who backs out of the screen or kills the app on it still keeps it — being
+     * a founding member is a fact about the account, not a reward for reaching
+     * the end of onboarding.
+     */
+    const member = (await rosterLookup.current) ?? null
+    if (member !== null) {
+      setMemberNumber(member)
+      applyFoundingMember(member)
+      setStep('founder')
+      return
+    }
     setStep('device')
   }
 
@@ -124,6 +166,17 @@ export default function OnboardingPage() {
     )
   }
 
+  // ─── Step 1b: founding member (A_2.2.1b), roster accounts only ────────────
+  if (step === 'founder' && memberNumber !== null) {
+    return (
+      <FoundingMemberScreen
+        memberNumber={memberNumber}
+        onBack={() => setStep('name')}
+        onContinue={() => setStep('device')}
+      />
+    )
+  }
+
   // ─── Step 2: add the first device (A_2.2.2) ───────────────────────────────
   return (
     <div className="h-full flex flex-col bg-ink-12">
@@ -132,7 +185,7 @@ export default function OnboardingPage() {
           370x44 filled button (radius m, primary-darker label) at y781. */}
       <div className="px-4 pb-5 safe-area-top-header flex items-center justify-between">
         <button
-          onClick={() => setStep('name')}
+          onClick={() => setStep(memberNumber !== null ? 'founder' : 'name')}
           aria-label="Back"
           className="relative w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center before:absolute before:content-[''] before:-inset-1"
         >

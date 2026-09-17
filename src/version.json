@@ -1,8 +1,8 @@
 {
-  "version": "4.11.14",
-  "build": 2890,
-  "date": "2026-09-15",
+  "version": "4.12.0",
+  "build": 2893,
+  "date": "2026-09-17",
   "changelog": [
-    "The battery ring and the power figures on the Device list and the Device monitor now come from one live device reading, merged in one place, instead of a fresh reading and an older cloud sample taking turns in the same slot. Entering a page no longer shows the slower cloud figure first and replaces it a moment later: the last reading is kept across screens, and a device with nothing to show yet waits rather than showing a number it is about to take back."
+    "Onboarding now welcomes founding members: after you enter your name, an account registered with a founding-member address sees its member number and badge, then continues to adding a device. Everyone else goes straight to adding a device as before. The 223-member VIP list is carried as hashes rather than addresses, so the app does not ship a readable customer email list."
   ]
 }

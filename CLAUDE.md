@@ -163,6 +163,25 @@ lives on independently and is still referenced elsewhere.)
   `register()` without them crashes on Android (fixed in v3.35.8 by adding this second gate).
 - *Feedback modal* (EmailJS), *Founder badge modal*, legal links + version. (The inline "Export My Data" button was removed in v4.7.7; full export lives on `/data-export`.) `ProfileEditPage`'s "Link Accounts" (Google/Apple placeholder rows) was also removed in v4.7.7.
 
+**OnboardingPage** (`/onboarding`) — runs once after a first sign-up
+- *Name step* (A_2.2.1): "What should we call you?" → writes the profile cache and `/user/update/iotUserInfo`.
+- *Founding Member step* (A_2.2.1b): shown **only** when the account's registered address is on the
+  VIP roster. Prints the member's real number, awards the badge (`applyFoundingMember` →
+  `settings.founderBadge`/`founderBadgeNumber`, which is what SettingPage's gold ring and tag read),
+  then Continue → the device step. Everyone else skips straight past it.
+  **The roster stores SHA-256 hashes, never addresses** — it ships inside the app, and a readable
+  list would hand anyone who unpacks the bundle every VIP customer's email. `foundingMembers.ts`
+  hashes the signed-in address and looks it up (async — WebCrypto); `foundingMemberRoster.ts` is
+  **generated, never hand-edited**. To change the list, edit the VIP workbook and re-run
+  `python scripts/build_founding_roster.py <workbook.xlsx>` (reads its "Email Lookup" sheet).
+  Team accounts that are not on the sheet live in the script's `EXTRA` map with numbers outside
+  the sheet's 1..N range, so regenerating never drops them and they can never take a real
+  member's place in the order.
+  `normalizeEmail()` must stay identical to the script's `normalise()`, or every member silently
+  stops matching. There is no endpoint for this yet; `foundingMemberNumber()` is the single place
+  that answers the question, so an endpoint later replaces only that function.
+- *Device step* (A_2.2.2): add the first device, or skip.
+
 **SmartSchedulePage** (`/smart-schedule`)
 - *Enable toggle*, *24h clock donut* (charge/discharge/idle arcs).
 - *Peak/Off-peak cards*, *periods list* (`startTime–endTime`,`type`).
