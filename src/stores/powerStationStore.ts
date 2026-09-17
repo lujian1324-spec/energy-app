@@ -24,7 +24,6 @@ interface PowerStationState {
   updateSettings: (settings: Partial<AppSettings>) => void;
   setChargeLimit: (limit: number) => void;
   updateDeviceName: (name: string) => void;
-  activateFounderBadge: (code: string) => { success: boolean; message: string };
   /** Award the badge from the roster, with the member's real number. */
   applyFoundingMember: (memberNumber: number) => void;
   selectDevice: (deviceId: string) => void;
@@ -327,9 +326,14 @@ powerStation: { ...state.powerStation, name }
 },
 
 applyFoundingMember: (memberNumber: number) => {
-  // The roster's number, not a generated one. activateFounderBadge below makes
-  // one up from the clock, which can hand two people the same badge; a member
-  // who came in through the roster has a real place in the order.
+  /*
+   * The roster's number — the member's real place in the order.
+   *
+   * This replaced activateFounderBadge(code), which generated a number from
+   * the clock: two people could be handed the same badge, and redeeming a code
+   * as a real member would OVERWRITE their number with a made-up one. Its two
+   * dialogs are gone with it, so the badge now has exactly one source.
+   */
   set((state) => ({
     settings: {
       ...state.settings,
@@ -338,36 +342,6 @@ applyFoundingMember: (memberNumber: number) => {
       founderBadgeNumber: memberNumber,
     }
   }));
-},
-
-activateFounderBadge: (code: string) => {
-  // 有效的兑换码列表（实际项目中应该从服务器验证）
-  const validCodes = ['FOUNDER2024', 'SIERROVIP', 'EARLYBIRD', 'POWERFLOW'];
-  
-  if (validCodes.includes(code.toUpperCase())) {
-    // 生成 0-100 之间的唯一身份编码
-    const generateUniqueNumber = (): number => {
-      // 使用当前时间戳和随机数生成唯一编码
-      const timestamp = Date.now();
-      const random = Math.floor(Math.random() * 1000);
-      const combined = (timestamp + random) % 101; // 0-100
-      return combined;
-    };
-    
-    const badgeNumber = generateUniqueNumber();
-    
-    set((state) => ({
-      settings: {
-        ...state.settings,
-        founderBadge: true,
-        founderBadgeActivatedAt: new Date().toISOString(),
-        founderBadgeNumber: badgeNumber,
-      }
-    }));
-    return { success: true, message: `Founder Badge activated! Your member number is #${badgeNumber}` };
-  }
-  
-  return { success: false, message: 'Invalid code. Please try again.' };
 },
 
 selectDevice: (deviceId: string) => {
