@@ -254,6 +254,13 @@ Canonical names/types for request payloads & query params. Keep these consistent
   `emailVerifyCode`, `/user/update/iotUserCellphone` and `/user/update/cellphoneVerify` take
   `smsVerifyCode`. Sending the plain `verifyCode` is what made every email change answer 20101.
 - **Captcha intent**: use the `CaptchaIntent` enum (`'1'`=register `'2'`=reset `'6'`=email login `'5'`=SMS login `'4'`=update email). Do **not** use `'3'` for login.
+  The sign-in screen has no session, so it cannot pre-check whether an address is registered —
+  it asks for a LOGIN code and lets the refusal correct it (`src/utils/captchaIntent.ts`). Every
+  "no such account" phrasing the backend uses must live in that file's `NOT_REGISTERED`, and both
+  callers go through `saysNoSuchAccount()` — they were two regexes once, disagreed about
+  **`account error`**, and new sign-ups died on the one that did not know it. Never match a bare
+  `账号`: it also appears in `账号已注册`, and flipping a registered address to REGISTER mails them
+  a sign-up code, because that send SUCCEEDS.
 - **Email captcha quirk**: `/user/send/email/captcha` expects field **`address`**, not `email`.
 - **Country code**: always `normalizeCountryCode()` (strip leading `+`) before send.
 - **Pagination**: `page` (1-based) + `count` per page across all list endpoints.

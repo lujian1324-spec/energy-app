@@ -1,8 +1,8 @@
 {
-  "version": "4.12.2",
-  "build": 2895,
+  "version": "4.12.3",
+  "build": 2896,
   "date": "2026-09-17",
   "changelog": [
-    "The Founding Member tag on Settings and on your profile is now just a badge: tapping it no longer opens the Founder Badge card or the code-redemption sheet. Membership comes from the founding-member list when you sign up, so there is no code to redeem, and redeeming one could have replaced your real member number with a generated one."
+    "New accounts can sign up again. Asking for a code with a brand-new email address was refused by the server with a message the app did not recognise, so it never retried as a sign-up, no code was ever sent, and the raw error appeared on the email screen."
   ]
 }
