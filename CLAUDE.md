@@ -163,6 +163,16 @@ lives on independently and is still referenced elsewhere.)
   `register()` without them crashes on Android (fixed in v3.35.8 by adding this second gate).
 - *Feedback modal* (EmailJS), *Founder badge modal*, legal links + version. (The inline "Export My Data" button was removed in v4.7.7; full export lives on `/data-export`.) `ProfileEditPage`'s "Link Accounts" (Google/Apple placeholder rows) was also removed in v4.7.7.
 
+**OnboardingPage** (`/onboarding`) — runs once after a first sign-up
+- *Name step* (A_2.2.1): "What should we call you?" → writes the profile cache and `/user/update/iotUserInfo`.
+- *Founding Member step* (A_2.2.1b): shown **only** when the account's registered address is on the
+  roster in `src/data/foundingMembers.ts`. Prints the member's real number, awards the badge
+  (`applyFoundingMember` → `settings.founderBadge`/`founderBadgeNumber`, which is what SettingPage's
+  gold ring and tag read), then Continue → the device step. Everyone else skips straight past it.
+  The roster is a local table because there is no endpoint for it yet; `foundingMemberNumber()` is
+  the single place that answers the question, so an endpoint later replaces only that function.
+- *Device step* (A_2.2.2): add the first device, or skip.
+
 **SmartSchedulePage** (`/smart-schedule`)
 - *Enable toggle*, *24h clock donut* (charge/discharge/idle arcs).
 - *Peak/Off-peak cards*, *periods list* (`startTime–endTime`,`type`).
