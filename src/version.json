@@ -1,6 +1,6 @@
 {
-  "version": "4.12.8",
-  "build": 2902,
+  "version": "4.12.9",
+  "build": 2903,
   "date": "2026-09-20",
   "changelog": [
     "Power outage alerts now go only to the accounts a device is actually bound to. A push registration without a signed-in account is refused, and signing in on a device moves its push token off whichever account held it before, so an outage on someone else's battery can no longer reach you.",
@@ -8,6 +8,7 @@
     "Device Info shows your battery's own serial number, or nothing at all when the platform has not reported one. It used to fall back to a fixed placeholder, so two batteries could both show the same serial — and a stand-in serial derived from the device is now stable instead of being re-rolled on each reading.",
     "Adding a device can now read the barcode on units whose label carries one instead of a QR code. The scanner only ever looked for QR codes, so owners of those units had nothing to point the camera at. QR codes scan exactly as before.",
     "The power switch on a device card now follows the device. Turning the AC output on or off with the button on the unit is reflected in the app, and the switch shows the output's real state instead of assuming it is on whenever the device is reachable over Wi-Fi.",
-    "When your sign-in runs out, the app says so and takes you back to the sign-in screen. It used to leave you signed in with a session the server no longer accepted, and show the server's own wording — \"Token missing\" — as the reason a feature such as Smart Schedule would not turn on."
+    "When your sign-in runs out, the app says so and takes you back to the sign-in screen. It used to leave you signed in with a session the server no longer accepted, and show the server's own wording — \"Token missing\" — as the reason a feature such as Smart Schedule would not turn on.",
+    "A battery at 100% now reads Full on the ring. It used to show \"0h0m to full\", which looks like an estimate that has got stuck — especially on a unit that sits at 100% and keeps drawing charge. A full battery being drawn down still shows how long it has left."
   ]
 }

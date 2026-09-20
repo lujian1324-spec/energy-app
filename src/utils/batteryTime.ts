@@ -12,6 +12,7 @@ import { MAX_PLAUSIBLE_POWER_W } from '../protocols/powerU16'
  *   remainingEnergyWh = (soc% / 100) × capacityWh
  *   neededEnergyWh    = (1 - soc% / 100) × capacityWh
  *
+ *   SOC 100% & not draining  → "Full"
  *   netChargeW > 0           → "Xh Ym to full"   = neededEnergyWh   / netChargeW
  *   netChargeW < 0 & SOC > 0 → "Xh Ym remaining" = remainingEnergyWh / |netChargeW|
  *   isCharging (battery +)   → "Charging"
@@ -69,6 +70,16 @@ export function batteryTimeLabel({
   if (!Number.isFinite(netChargeW) || Math.abs(netChargeW) > MAX_PLAUSIBLE_NET_W) return '--'
   const capacity = capacityWh && capacityWh > 0 ? capacityWh : DEFAULT_CAPACITY_WH
   const socFrac = Math.max(0, Math.min(100, soc)) / 100
+
+  /*
+   * At 100% there is nothing left to count down to. The arithmetic gave
+   * "0h0m to full", which reads as an estimate that has stuck — and owners
+   * already write in about a unit that sits at 100% while still drawing
+   * charge, so the ring saying "0h0m to full" next to it confirms exactly the
+   * wrong thing. Discharging at 100% still gets its remaining time; this is
+   * only for a battery that is full and not being drawn down.
+   */
+  if (socFrac >= 1 && netChargeW >= 0) return 'Full'
 
   if (netChargeW > 0) {
     const neededWh = (1 - socFrac) * capacity
