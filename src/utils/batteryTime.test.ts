@@ -37,4 +37,12 @@ describe('batteryTimeLabel', () => {
     expect(batteryTimeLabel({ acPower: 100, solarPower: 30, outputPower: 420, soc: 75, capacityWh: 1000 }))
       .toMatch(/remaining$/)
   })
+  it('an impossible output reading gives no estimate at all', () => {
+    // The customer's screen: 98%, nothing coming in, output reported as 65534 W.
+    // It used to read "0h1m remaining", which looks like a dying battery.
+    expect(batteryTimeLabel({ acPower: 0, solarPower: 0, outputPower: 65534, soc: 98, capacityWh: 2000 }))
+      .toBe('--')
+    expect(batteryTimeLabel({ acPower: 65535, solarPower: 0, outputPower: 0, soc: 20, capacityWh: 2000 }))
+      .toBe('--')
+  })
 })

@@ -177,11 +177,11 @@ export function mergeWithPassthrough<T extends CloudLiveSlice>(
   return {
     ...merged,
     remainingBatteryCapacity: live.soc,
-    batteryPower: live.batteryPower,
-    acPower: live.acPower,
-    solarPower: live.solarPower,
-    outputPower: live.outputPower,
     batteryTemp: live.batteryTemp,
+    ...(live.batteryPower !== undefined ? { batteryPower: live.batteryPower } : {}),
+    ...(live.acPower !== undefined ? { acPower: live.acPower } : {}),
+    ...(live.solarPower !== undefined ? { solarPower: live.solarPower } : {}),
+    ...(live.outputPower !== undefined ? { outputPower: live.outputPower } : {}),
   }
 }
 

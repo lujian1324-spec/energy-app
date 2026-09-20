@@ -1,8 +1,8 @@
 {
-  "version": "4.12.3",
-  "build": 2896,
-  "date": "2026-09-17",
+  "version": "4.12.4",
+  "build": 2897,
+  "date": "2026-09-20",
   "changelog": [
-    "New accounts can sign up again. Asking for a code with a brand-new email address was refused by the server with a message the app did not recognise, so it never retried as a sign-up, no code was ever sent, and the raw error appeared on the email screen."
+    "AC, solar and output power now read as unavailable instead of a nonsense figure such as 65534 W when the device has no reading for that channel, and the battery ring no longer turns one into a time estimate like \"0h1m remaining\". Battery power is left out too whenever one of those channels is missing, rather than being computed from a placeholder."
   ]
 }
