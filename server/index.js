@@ -75,6 +75,9 @@ async function getApn() {
 app.post('/notification/webpush/subscribe', (req, res) => {
   const { endpoint, p256dh, auth, userId, refreshToken, accessToken, accessExpiresAt, prefs } = req.body || {}
   if (!endpoint) return res.status(400).json({ code: 1, message: 'endpoint required' })
+  if (!userId || !String(userId).trim() || String(userId).trim() === 'anon') {
+    return res.status(400).json({ code: 1, message: 'userId required' })
+  }
   addWebPush(userId, { endpoint, keys: { p256dh, auth } })
   // Store the dedicated poller session (access + refresh pair) + push prefs so the
   // poller can watch this user's devices while the app is closed. Refresh token is
@@ -90,6 +93,9 @@ app.post('/notification/webpush/unsubscribe', (req, res) => {
 app.post('/notification/nativepush/register', (req, res) => {
   const { token, platform, userId, refreshToken, accessToken, accessExpiresAt, prefs } = req.body || {}
   if (!token) return res.status(400).json({ code: 1, message: 'token required' })
+  if (!userId || !String(userId).trim() || String(userId).trim() === 'anon') {
+    return res.status(400).json({ code: 1, message: 'userId required' })
+  }
   addNative(userId, token, platform === 'ios' ? 'ios' : 'android')
   // Seed the poller session + push prefs so the poller can watch this user's
   // devices while the app is CLOSED (mirrors /notification/webpush/subscribe).
@@ -170,6 +176,9 @@ app.post('/notify', async (req, res) => {
     return res.status(401).json({ code: 1, message: 'unauthorized' })
   }
   const { userId, title, body, data } = req.body || {}
+  if (!userId || !String(userId).trim()) {
+    return res.status(400).json({ code: 1, message: 'userId required' })
+  }
   const results = await sendToUser(userId, { title, body, data })
   ok(res, results)
 })
