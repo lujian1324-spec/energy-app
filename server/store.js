@@ -23,11 +23,45 @@ function load() {
 function save(db) { writeFileSync(FILE, JSON.stringify(db, null, 2)) }
 
 const db = load()
+/** Legacy reads may still hit the old `anon` bucket; new writes never create it. */
 const uid = (u) => String(u ?? 'anon')
+
+/** Non-empty userId for new push registrations — rejects missing / blank / `anon`. */
+export function requireUserId(userId) {
+  const k = String(userId ?? '').trim()
+  if (!k || k === 'anon') {
+    const err = new Error('userId required')
+    err.code = 'USER_ID_REQUIRED'
+    throw err
+  }
+  return k
+}
+
+/** Drop a web-push endpoint from every userId except `keepUserId` (optional). */
+function scrubWebPushEndpoint(endpoint, keepUserId) {
+  for (const other of Object.keys(db.webpush)) {
+    if (keepUserId != null && other === keepUserId) continue
+    const next = (db.webpush[other] || []).filter((s) => s.endpoint !== endpoint)
+    if (next.length) db.webpush[other] = next
+    else delete db.webpush[other]
+  }
+}
+
+/** Drop a native token from every userId except `keepUserId` (optional). */
+function scrubNativeToken(token, keepUserId) {
+  for (const other of Object.keys(db.native)) {
+    if (keepUserId != null && other === keepUserId) continue
+    const next = (db.native[other] || []).filter((t) => t.token !== token)
+    if (next.length) db.native[other] = next
+    else delete db.native[other]
+  }
+}
 
 // ── Web Push / Native token subscriptions ────────────────────────────────────
 export function addWebPush(userId, sub) {
-  const k = uid(userId)
+  const k = requireUserId(userId)
+  // One endpoint → one user: steal it from any other bucket first.
+  scrubWebPushEndpoint(sub.endpoint, k)
   db.webpush[k] = (db.webpush[k] || []).filter(s => s.endpoint !== sub.endpoint)
   db.webpush[k].push(sub)
   save(db)
@@ -39,7 +73,9 @@ export function removeWebPush(userId, endpoint) {
   save(db)
 }
 export function addNative(userId, token, platform) {
-  const k = uid(userId)
+  const k = requireUserId(userId)
+  // One device token → one user: steal it from any other bucket first.
+  scrubNativeToken(token, k)
   db.native[k] = (db.native[k] || []).filter(t => t.token !== token)
   db.native[k].push({ token, platform })
   save(db)
