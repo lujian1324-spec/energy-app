@@ -1,8 +1,8 @@
 {
-  "version": "4.12.3",
-  "build": 2896,
-  "date": "2026-09-17",
+  "version": "4.12.8",
+  "build": 2902,
+  "date": "2026-09-20",
   "changelog": [
-    "New accounts can sign up again. Asking for a code with a brand-new email address was refused by the server with a message the app did not recognise, so it never retried as a sign-up, no code was ever sent, and the raw error appeared on the email screen."
+    "When your sign-in runs out, the app says so and takes you back to the sign-in screen. It used to leave you signed in with a session the server no longer accepted, and show the server's own wording — \"Token missing\" — as the reason a feature such as Smart Schedule would not turn on."
   ]
 }
