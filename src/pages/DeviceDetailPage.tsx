@@ -17,7 +17,7 @@ import { formatTemp } from '../utils/localization'
 import { sanitizeUiCopy } from '../utils/uiCopy'
 import { FRAMES } from '../protocols/modbusProtocol'
 import { loadRatedParams, saveRatedParams, type RatedParams } from '../db/powerflowDB'
-import { SIERRO_MODELS, SIERRO_MODEL_LIST, DEVICE_NAME_MAX, generateSerial, type SierroModel } from '../data/deviceModels'
+import { SIERRO_MODELS, SIERRO_MODEL_LIST, DEVICE_NAME_MAX, type SierroModel } from '../data/deviceModels'
 import sierro1000Img from '../assets/sierro-1000.webp'
 import { DEV_TOOLS_ENABLED } from '../config/devTools'
 import { uploadSleepSchedule } from '../api/scheduleApi'
@@ -296,7 +296,9 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const applyModel = async (model: SierroModel) => {
     if (!deviceIdForRated) return
     const spec = SIERRO_MODELS[model]
-    const serialNumber = ratedParams?.serialNumber || realDevice?.serialNumber || generateSerial(spec, deviceIdForRated)
+    // Picking a model changes the nameplate, not the hardware's identity: keep
+    // whichever real serial we already have and leave it unset otherwise.
+    const serialNumber = ratedParams?.serialNumber || realDevice?.serialNumber || undefined
     const profile: RatedParams = {
       deviceId: deviceIdForRated,
       acInvOutputPower: spec.acInvOutputPower,
@@ -523,9 +525,17 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               {/* B_1.2.3 draws Model like every other row — the value alone, no chevron. */}
               <span className="text-body-md text-ink-6">{ratedParams?.model || realDevice?.model || powerStation.model || 'Sierro 1000'}</span>
             </button>
+            {/*
+              * Only this device's own serial belongs here. The row used to fall
+              * back to the demo store's hardcoded SR-2024-08842 and then to
+              * 'SNXXXX', so every unit whose serial the platform did not report
+              * showed the same string — two owners reported their two batteries
+              * sharing one serial, and a made-up serial is worse than none when
+              * someone reads it out to support.
+              */}
             <InfoRow
               label="Serial Number"
-              value={realDevice?.serialNumber || ratedParams?.serialNumber || (powerStation as any).serialNumber || 'SNXXXX'}
+              value={realDevice?.serialNumber || ratedParams?.serialNumber || '—'}
             />
             <InfoRow
               label="Capacity"
