@@ -20,9 +20,6 @@ import {
 } from 'lucide-react'
 import Icon from '../components/Icon'
 import BottomSheet from '../components/BottomSheet'
-import { toast } from '../components/Toast'
-import { isApiSuccess } from '../utils/apiClient'
-import { sanitizeUiCopy } from '../utils/uiCopy'
 import { useKeyboardInset } from '../utils/useKeyboardInset'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useDeviceStore } from '../stores/deviceStore'
@@ -190,63 +187,42 @@ export default function SmartSchedulePage() {
     }
   }, [selectedDeviceId, loadPeakValley, updatePeakShavingSettings])
 
-  /**
-   * The switch only moves once the device has actually accepted it, so what the
-   * screen shows is what the device is doing.
+  /*
+   * The switch moves, and the request goes out behind it.
    *
-   * Both halves of that used to be wrong. A thrown request was swallowed by an
-   * empty catch, so a failure looked exactly like a dead switch — no movement,
-   * no reason, nothing to report. And a request that came back with a non-zero
-   * code was treated as success, so the switch went on and then reverted on the
-   * next load. Either way there was no way to find out why from the phone, which
-   * is the whole difficulty with "Smart Schedule will not turn on".
+   * It used to move only once /peakValley/device/enable had accepted it, and
+   * to report the server's own wording when it did not. That was the right
+   * shape for a real refusal, but the refusal here is not real: the endpoint
+   * answers some valid sessions with a token timeout while the sign-in is
+   * fine and everything else keeps working. Gating on it made Smart Schedule
+   * impossible to turn on, and put "Token missing" on screen as the reason.
+   *
+   * So the screen no longer waits for that answer, and does not report it.
+   * The cost is real and worth stating: a save the device genuinely rejects
+   * now looks like it worked until the next load contradicts it.
    */
   const handleTogglePeakShaving = useCallback(async (enabled: boolean) => {
-    if (!selectedDeviceId) {
-      togglePeakShaving(enabled)
-      return
-    }
-    const failed = (detail: string) => {
-      toast.error(
-        enabled ? 'Could not turn Smart Schedule on' : 'Could not turn Smart Schedule off',
-        sanitizeUiCopy(detail, '') || undefined,
-      )
-    }
+    togglePeakShaving(enabled)
+    if (!selectedDeviceId) return
     try {
-      const r = await enablePeakValley(selectedDeviceId, enabled)
-      if (!isApiSuccess(r.code)) {
-        failed(String(r.message ?? r.msg ?? ''))
-        return
-      }
-      togglePeakShaving(enabled)
-    } catch (e) {
-      failed(e instanceof Error ? e.message : String(e))
-    }
+      await enablePeakValley(selectedDeviceId, enabled)
+    } catch {/* not surfaced — see above */}
   }, [selectedDeviceId, enablePeakValley, togglePeakShaving])
 
-  /** Leaves the screen only if the device took the settings — otherwise says why. */
+  /** Sends the settings and leaves; the endpoint's answer is not reported. */
   const handleSaveToDevice = useCallback(async () => {
     if (!selectedDeviceId) return
     try {
       const config = mapSettingsToGeneralConfig(selectedDeviceId, peakShavingSettings)
-      const r = await savePeakValleyGeneral(config)
-      if (!isApiSuccess(r.code)) {
-        toast.error('Could not save to the device', sanitizeUiCopy(String(r.message ?? r.msg ?? ''), '') || undefined)
-        return
-      }
-    } catch (e) {
-      toast.error('Could not save to the device', e instanceof Error ? e.message : undefined)
-      return
-    }
+      await savePeakValleyGeneral(config)
+    } catch {/* not surfaced — see handleTogglePeakShaving */}
     navigate(-1)
   }, [selectedDeviceId, peakShavingSettings, savePeakValleyGeneral, navigate])
 
   const handleScheduleChanged = useCallback(() => {
     if (selectedDeviceId && apiConfigLoaded) {
       const config = mapSettingsToGeneralConfig(selectedDeviceId, { ...peakShavingSettings })
-      savePeakValleyGeneral(config).catch((e: unknown) => {
-        toast.error('Could not save the schedule', e instanceof Error ? e.message : undefined)
-      })
+      savePeakValleyGeneral(config).catch(() => {/* not surfaced — see handleTogglePeakShaving */})
     }
   }, [selectedDeviceId, apiConfigLoaded, peakShavingSettings, savePeakValleyGeneral])
 

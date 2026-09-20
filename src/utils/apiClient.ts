@@ -72,6 +72,24 @@ function isAuthExpired(code: number | string, message?: string | null): boolean 
   return !!message && AUTH_EXPIRED_TEXT.test(message)
 }
 
+/**
+ * Endpoints whose token complaints are not about the session.
+ *
+ * /peakValley/* answers some perfectly good sessions with a token timeout:
+ * the sign-in is valid, every other endpoint keeps working, and refreshing
+ * changes nothing. Taken at face value it ended the session and threw the
+ * user back to the sign-in screen over a message that was never about them.
+ *
+ * A reply from one of these paths is handed to the caller exactly as it
+ * arrived — no refresh, no auth:expired, no sign-out. It cannot be used to
+ * decide a session is over, because it is not evidence of that.
+ */
+export const SESSION_SAFE_PATHS = ['/peakValley/']
+
+export function saysNothingAboutTheSession(path: string): boolean {
+  return SESSION_SAFE_PATHS.some(p => path.startsWith(p))
+}
+
 // ─── Token 刷新单例 ───
 let refreshPromise: Promise<string | null> | null = null
 
@@ -263,7 +281,8 @@ export async function request<T = unknown>(
     // 而不是 HTTP 200 + 业务码）
     if (
       err instanceof ApiError && err.status === 401 &&
-      !options._isRefresh && !options.skipAuth && !options._retriedAfterRefresh
+      !options._isRefresh && !options.skipAuth && !options._retriedAfterRefresh &&
+      !saysNothingAboutTheSession(path)
     ) {
       const newToken = await getOrCreateRefreshPromise()
       if (newToken) {
@@ -282,7 +301,8 @@ export async function request<T = unknown>(
   // 检测 auth 过期（业务码）
   if (
     isAuthExpired(result.code, result.message ?? result.msg) &&
-    !options.skipAuth && !options._retriedAfterRefresh
+    !options.skipAuth && !options._retriedAfterRefresh &&
+    !saysNothingAboutTheSession(path)
   ) {
     const newToken = await getOrCreateRefreshPromise()
     if (newToken) {
