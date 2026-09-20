@@ -25,6 +25,19 @@ describe('batteryTimeLabel', () => {
     expect(batteryTimeLabel({ acPower: 1000, solarPower: 0, outputPower: 0, soc: 0 }))
       .toBe('1h0m to full')
   })
+  it('a full battery says so instead of counting down to nothing', () => {
+    // 100% and still taking 400 W — the case owners report. It used to read
+    // "0h0m to full".
+    expect(batteryTimeLabel({ acPower: 400, solarPower: 0, outputPower: 0, soc: 100, capacityWh: 2000 }))
+      .toBe('Full')
+    // full and idle, with or without the charging flag
+    expect(batteryTimeLabel({ acPower: 0, solarPower: 0, outputPower: 0, soc: 100 })).toBe('Full')
+    expect(batteryTimeLabel({ acPower: 0, solarPower: 0, outputPower: 0, soc: 100, isCharging: true })).toBe('Full')
+  })
+  it('a full battery being drawn down still counts down', () => {
+    expect(batteryTimeLabel({ acPower: 0, solarPower: 0, outputPower: 1000, soc: 100, capacityWh: 1000 }))
+      .toBe('1h0m remaining')
+  })
   it('idle + charging flag → "Charging"', () => {
     expect(batteryTimeLabel({ acPower: 0, solarPower: 0, outputPower: 0, soc: 50, isCharging: true }))
       .toBe('Charging')
