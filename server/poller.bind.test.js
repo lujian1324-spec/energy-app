@@ -1,7 +1,7 @@
 // Run with:  node --test server/poller.bind.test.js
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { deviceBoundToUser } from './poller.js'
+import { deviceBoundToUser } from './deviceBind.js'
 
 test('deviceBoundToUser: ownerUserId match (DeviceListItem shape)', () => {
   assert.equal(deviceBoundToUser({ id: '1', ownerUserId: '9999' }, '9999'), true)
