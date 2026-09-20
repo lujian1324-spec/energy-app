@@ -1,5 +1,13 @@
 /**
- * QR scanner used by ProvisioningPage (jsQR + getUserMedia).
+ * Device-code scanner used by ProvisioningPage (getUserMedia + jsQR, plus
+ * BarcodeDetector where the engine has it).
+ *
+ * jsQR reads QR and nothing else, so units labelled with a 1D barcode and no
+ * QR — which owners have reported — had nothing this screen could read, with
+ * no way forward but giving up. BarcodeDetector covers the 1D formats and is
+ * used when the engine provides it; jsQR stays the universal QR path, since
+ * iOS WKWebView has no BarcodeDetector at all.
+ *
  * video.qr-scan-video hides the WebView default media play overlay.
  */
 import { useState, useEffect, useRef } from 'react'
@@ -9,6 +17,7 @@ import jsQR from 'jsqr'
 import { Capacitor } from '@capacitor/core'
 import { requestCamera } from '../../utils/permissions'
 import { formatScanDisplayName } from '../../utils/scanDisplayName'
+import { createBarcodeDetector, DETECT_INTERVAL_MS, type BarcodeDetectorLike } from '../../utils/barcodeDetector'
 
 function QrScanScreen({ onBack, onScanned }: {
   onBack: () => void
@@ -46,7 +55,7 @@ function QrScanScreen({ onBack, onScanned }: {
           const cam = await requestCamera()
           if (stopped) return
           if (cam.state === 'denied') {
-            setError('Camera access was denied. Please enable camera permission in Settings to scan QR codes.')
+            setError('Camera access was denied. Please enable camera permission in Settings to scan your device code.')
             return
           }
         }
@@ -78,6 +87,31 @@ function QrScanScreen({ onBack, onScanned }: {
 
   useEffect(() => {
     if (!cameraReady) return
+    let cancelled = false
+    /*
+     * The 1D reader, where the engine has one. Built once per camera session:
+     * a detector whose format list the engine rejects is no detector, and the
+     * screen still scans QR without it.
+     */
+    let detector: BarcodeDetectorLike | null = null
+    void createBarcodeDetector().then(d => { if (!cancelled) detector = d })
+
+    /* detect() is far heavier than a jsQR pass — once every few frames is plenty. */
+    let nextDetectAt = 0
+    let detecting = false
+
+    const accept = (raw: string) => {
+      // Sierro code format: "SIERRO:<model>:<serial>" or a plain serial, which
+      // is what a 1D barcode carries.
+      const parts = raw.split(':')
+      const rawName = parts.length >= 2 ? parts[1] : 'Sierro Device'
+      const serial = parts.length >= 3 ? parts[2] : raw
+      const name = formatScanDisplayName({ name: rawName, serial })
+      streamRef.current?.getTracks().forEach(t => t.stop())
+      // A_1.3.1 has no result card — a good read moves to A_1.3.2 Device Scanned.
+      onScanned(name, serial)
+    }
+
     const scan = () => {
       const video = videoRef.current
       const canvas = canvasRef.current
@@ -90,20 +124,33 @@ function QrScanScreen({ onBack, onScanned }: {
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
       const code = jsQR(imageData.data, imageData.width, imageData.height)
       if (code?.data) {
-        // Sierro QR format: "SIERRO:<model>:<serial>" or plain serial
-        const parts = code.data.split(':')
-        const rawName = parts.length >= 2 ? parts[1] : 'Sierro Device'
-        const serial = parts.length >= 3 ? parts[2] : code.data
-        const name = formatScanDisplayName({ name: rawName, serial })
-        streamRef.current?.getTracks().forEach(t => t.stop())
-        // A_1.3.1 has no result card — a good read moves to A_1.3.2 Device Scanned.
-        onScanned(name, serial)
+        accept(code.data)
         return
       }
+
+      const now = Date.now()
+      if (detector && !detecting && now >= nextDetectAt) {
+        detecting = true
+        nextDetectAt = now + DETECT_INTERVAL_MS
+        void detector.detect(canvas)
+          .then(found => {
+            const raw = found?.[0]?.rawValue
+            if (raw && !cancelled) {
+              if (rafRef.current !== null) { cancelAnimationFrame(rafRef.current); rafRef.current = null }
+              accept(raw)
+            }
+          })
+          .catch(() => {/* a frame the reader could not use */})
+          .finally(() => { detecting = false })
+      }
+
       rafRef.current = requestAnimationFrame(scan)
     }
     rafRef.current = requestAnimationFrame(scan)
-    return () => { if (rafRef.current !== null) cancelAnimationFrame(rafRef.current) }
+    return () => {
+      cancelled = true
+      if (rafRef.current !== null) { cancelAnimationFrame(rafRef.current); rafRef.current = null }
+    }
   }, [cameraReady])
 
   return (
@@ -113,7 +160,7 @@ function QrScanScreen({ onBack, onScanned }: {
           <ChevronLeft size={24} className="text-white" />
         </button>
         <h1 className="absolute left-1/2 -translate-x-1/2 text-title-lg font-semibold text-white">
-          Scan QR Code
+          Scan Device Code
         </h1>
       </div>
 
@@ -148,9 +195,9 @@ function QrScanScreen({ onBack, onScanned }: {
 
       {/* Caption under the viewfinder, then the failure toast at the bottom edge. */}
       <div className="absolute left-0 right-0 px-4 text-center" style={{ top: 605 }}>
-        <p className="text-title-lg font-semibold text-white">Scan the QR Code on Your Device</p>
+        <p className="text-title-lg font-semibold text-white">Scan the Code on Your Device</p>
         <p className="mt-2 text-body-md text-white/[0.8]">
-          The QR code is located on the side of your Sierro device near the power outlet.
+          The QR code or barcode is on the side of your Sierro device, near the power outlet.
         </p>
       </div>
 

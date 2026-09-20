@@ -1,8 +1,8 @@
 {
-  "version": "4.12.3",
-  "build": 2896,
-  "date": "2026-09-17",
+  "version": "4.12.6",
+  "build": 2900,
+  "date": "2026-09-20",
   "changelog": [
-    "New accounts can sign up again. Asking for a code with a brand-new email address was refused by the server with a message the app did not recognise, so it never retried as a sign-up, no code was ever sent, and the raw error appeared on the email screen."
+    "Adding a device can now read the barcode on units whose label carries one instead of a QR code. The scanner only ever looked for QR codes, so owners of those units had nothing to point the camera at. QR codes scan exactly as before."
   ]
 }
