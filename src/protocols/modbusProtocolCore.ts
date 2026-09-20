@@ -1,5 +1,5 @@
-import { decodePowerU16, INVALID_POWER_U16 } from './powerU16'
-export { decodePowerU16, INVALID_POWER_U16 } from './powerU16'
+import { decodePowerU16 } from './powerU16'
+export { decodePowerU16, INVALID_POWER_U16, MAX_PLAUSIBLE_POWER_W } from './powerU16'
 /**
  * FYK3001000W Modbus RTU 透传协议
  * 文档版本：2025.12.29
