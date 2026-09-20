@@ -67,9 +67,28 @@ const AUTH_EXPIRED_CODES = new Set([401, '401', 1001, '1001', 1002, '1002'])
  */
 const AUTH_EXPIRED_TEXT = /token\s*(is\s*)?(expired|invalid|missing)|expired\s*token|invalid\s*token|not\s*logged\s*in|登录\s*(已)?(过期|失效)|令牌\s*(过期|失效|无效)|未登录/i
 
-function isAuthExpired(code: number | string, message?: string | null): boolean {
+export function isAuthExpired(code: number | string, message?: string | null): boolean {
   if (AUTH_EXPIRED_CODES.has(code)) return true
   return !!message && AUTH_EXPIRED_TEXT.test(message)
+}
+
+/**
+ * What the user is told when the session is finished. The backend's own
+ * wording for this reaches nobody useful: "Token missing" appeared under
+ * "Could not turn Smart Schedule on", which reads as a broken feature rather
+ * than a sign-in that has run out.
+ */
+export const SESSION_EXPIRED_MESSAGE = 'Your session has expired. Please sign in again.'
+
+/**
+ * The session is over: tell authStore, which clears the login and lets the
+ * router send the user to sign in, and give the caller an error it can show.
+ */
+function expireSession(code: number | string): never {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('auth:expired'))
+  }
+  throw new ApiError(code, SESSION_EXPIRED_MESSAGE, 401)
 }
 
 // ─── Token 刷新单例 ───
@@ -267,11 +286,13 @@ export async function request<T = unknown>(
     ) {
       const newToken = await getOrCreateRefreshPromise()
       if (newToken) {
-        return requestInternal<T>(path, { ...options, _retriedAfterRefresh: true })
+        const retried = await requestInternal<T>(path, { ...options, _retriedAfterRefresh: true })
+        // A fresh token the backend refuses as well is a dead session, not a
+        // failure of whatever the caller was doing.
+        if (isAuthExpired(retried.code, retried.message ?? retried.msg)) expireSession(retried.code)
+        return retried
       }
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('auth:expired'))
-      }
+      expireSession(err.code)
     }
     throw err
   }
@@ -280,23 +301,28 @@ export async function request<T = unknown>(
   if (options._isRefresh) return result
 
   // 检测 auth 过期（业务码）
-  if (
-    isAuthExpired(result.code, result.message ?? result.msg) &&
-    !options.skipAuth && !options._retriedAfterRefresh
-  ) {
-    const newToken = await getOrCreateRefreshPromise()
-    if (newToken) {
-      // 刷新成功，重试原请求
-      return requestInternal<T>(path, {
-        ...options,
-        _retriedAfterRefresh: true,
-      })
+  if (isAuthExpired(result.code, result.message ?? result.msg) && !options.skipAuth) {
+    if (!options._retriedAfterRefresh) {
+      const newToken = await getOrCreateRefreshPromise()
+      if (newToken) {
+        // 刷新成功，重试原请求
+        const retried = await requestInternal<T>(path, {
+          ...options,
+          _retriedAfterRefresh: true,
+        })
+        /*
+         * The retry's own answer was handed straight back before, expired or
+         * not. A refresh that succeeds and a request the backend still refuses
+         * left the user signed in with a token nothing accepts, and the raw
+         * "Token missing" surfaced as the reason a feature would not turn on.
+         * It is the session that is over.
+         */
+        if (!isAuthExpired(retried.code, retried.message ?? retried.msg)) return retried
+        expireSession(retried.code)
+      }
     }
-    // 刷新失败，广播事件通知 authStore 清除登录状态
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('auth:expired'))
-    }
-    throw new ApiError(result.code, result.message ?? result.msg ?? 'Session expired', 401)
+    // 刷新失败或刷新后仍被拒绝：广播事件通知 authStore 清除登录状态
+    expireSession(result.code)
   }
 
   return result
