@@ -1,8 +1,8 @@
 {
-  "version": "4.12.3",
-  "build": 2896,
-  "date": "2026-09-17",
+  "version": "4.12.7",
+  "build": 2901,
+  "date": "2026-09-20",
   "changelog": [
-    "New accounts can sign up again. Asking for a code with a brand-new email address was refused by the server with a message the app did not recognise, so it never retried as a sign-up, no code was ever sent, and the raw error appeared on the email screen."
+    "The power switch on a device card now follows the device. Turning the AC output on or off with the button on the unit is reflected in the app, and the switch shows the output's real state instead of assuming it is on whenever the device is reachable over Wi-Fi."
   ]
 }

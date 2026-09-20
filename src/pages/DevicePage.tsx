@@ -19,6 +19,7 @@ import DeviceQrScanOverlay from './device/DeviceQrScanOverlay'
 import LowBatteryBanner from './device/LowBatteryBanner'
 import DeviceSignInGate from './device/DeviceSignInGate'
 import EnableNotiSheet, { ENABLE_NOTI_SEEN_KEY } from './device/EnableNotiSheet'
+import { powerSwitchOn } from '../utils/powerSwitchState'
 import { refreshNotificationPermission } from '../utils/pushNotification'
 import PullToRefresh from '../components/PullToRefresh'
 import ManualAddDeviceModal from '../components/ManualAddDeviceModal'
@@ -74,7 +75,15 @@ export default function DevicePage() {
   const [showProvisioning, setShowProvisioning] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [bannerDismissed, setBannerDismissed] = useState(false)
-  const [powerStates, setPowerStates] = useState<Record<string, boolean>>({})
+  /*
+   * What we asked the AC output to become, and when. The switch used to be
+   * nothing but this map, defaulting to on and never read back, so pressing
+   * the button on the front of the unit changed the hardware and left the app
+   * showing the opposite — owners reported the app could neither see nor
+   * control the outputs. The device's own reading decides now; this only
+   * carries the moment between sending a command and the device reporting it.
+   */
+  const [pendingPower, setPendingPower] = useState<Record<string, { value: boolean; at: number }>>({})
   const [realtimeCache, setRealtimeCache] = useState<DeviceRealtimeCache>(() => {
     const store = useDeviceStore.getState()
     if (!store.isDemoMode) return {}
@@ -240,6 +249,26 @@ export default function DevicePage() {
     return val !== undefined && val !== null ? Number(val) : null
   }
 
+  const getDeviceBool = (deviceId: string | number, key: string): boolean | null => {
+    void bleEpoch
+    void passthroughEpoch
+    const cache = realtimeCache[String(deviceId)]
+    const ble = lookupBleLiveStatus({ deviceId, dtuDtuid: (devices.find(d => String(d.id) === String(deviceId)) as { dtuDtuid?: string } | undefined)?.dtuDtuid })?.live
+    const merged = resolveLiveValues(cache?.raw, ble, lookupLivePassthrough(deviceId))
+    const val = merged[key as keyof typeof merged]
+    return typeof val === 'boolean' ? val : null
+  }
+
+  /** Whether the AC output is on — see powerSwitchOn for the rules. */
+  const devicePowerOn = (deviceId: string | number): boolean => {
+    const idStr = String(deviceId)
+    return powerSwitchOn({
+      reported: getDeviceBool(deviceId, 'acOut1Enable'),
+      pending: pendingPower[idStr],
+      online: devices.find(d => String(d.id) === idStr)?.isOnline,
+    })
+  }
+
   const handleBleScan = useCallback(() => {
     setShowProvisioning(true)
   }, [])
@@ -289,9 +318,9 @@ export default function DevicePage() {
     const idStr = String(deviceId)
     if (togglingPower.has(idStr)) return
     hapticMedium()
-    const current = powerStates[idStr] ?? true
+    const current = devicePowerOn(deviceId)
     const next = !current
-    setPowerStates(prev => ({ ...prev, [idStr]: next }))
+    setPendingPower(prev => ({ ...prev, [idStr]: { value: next, at: Date.now() } }))
     setTogglingPower(prev => new Set(prev).add(idStr))
     try {
       const res = await passthroughDevice(idStr, {
@@ -302,7 +331,9 @@ export default function DevicePage() {
         throw new Error(res.message ?? res.msg ?? 'Power command rejected')
       }
     } catch (err) {
-      setPowerStates(prev => ({ ...prev, [idStr]: current }))
+      // The command never landed, so there is nothing to wait for the device
+      // to confirm — drop back to whatever it is actually reporting.
+      setPendingPower(prev => { const n = { ...prev }; delete n[idStr]; return n })
       setError(err instanceof Error ? err.message : 'Failed to switch power')
     } finally {
       setTogglingPower(prev => { const s = new Set(prev); s.delete(idStr); return s })
@@ -435,7 +466,7 @@ export default function DevicePage() {
               const batteryPower = getDeviceNum(device.id, 'batteryPower')
               const isCharging = batteryPower !== null && batteryPower > 0
               const connected = device.isOnline
-              const powerOn = powerStates[String(device.id)] ?? device.isOnline
+              const powerOn = devicePowerOn(device.id)
               return (
                 <DeviceListCard
                   key={device.id}
