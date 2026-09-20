@@ -1,5 +1,6 @@
 /** REG_DESC part A (split for MCP push size). */
-export const REG_DESC_A = {
+import type { RegDesc } from './modbusProtocolParams'
+export const REG_DESC_A: Record<number, RegDesc> = {
 
   // ── Config 0x00-0x0A ────────────────────────
   0x0000: { name: 'AC Input Low-V Cutout',   group: 'AC Config',  scale: 0.1,  unit: 'V' },

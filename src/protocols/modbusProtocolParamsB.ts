@@ -1,5 +1,6 @@
 /** REG_DESC part B (split for MCP push size). */
-export const REG_DESC_B = {
+import type { RegDesc } from './modbusProtocolParams'
+export const REG_DESC_B: Record<number, RegDesc> = {
   // ── Current / temperature 0x120-0x125 ───────
   0x0120: { name: 'Cell Current',             group: 'Temp/Current', scale: 0.01, unit: 'A', signed: true },
   0x0121: { name: 'MPPT Heatsink Temp',       group: 'Temp/Current', scale: 0.1,  unit: '℃', signed: true },

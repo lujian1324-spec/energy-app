@@ -165,15 +165,19 @@ export function overlayBleOnStateFields(
       ? undefined
       : Number(socRaw)
   if (hasRealCloudSoc(soc)) return fields ?? current
-  return {
-    ...current,
-    remainingBatteryCapacity: bleField('remainingBatteryCapacity', ble.soc, '%'),
-    batteryPower: bleField('batteryPower', ble.batteryPower, 'W'),
-    exchangeChargingPower: current.exchangeChargingPower ?? bleField('exchangeChargingPower', ble.acPower, 'W'),
-    generationPower: current.generationPower ?? bleField('generationPower', ble.solarPower, 'W'),
-    outputPower: current.outputPower ?? bleField('outputPower', ble.outputPower, 'W'),
-    cellTemperature1: current.cellTemperature1 ?? bleField('cellTemperature1', ble.batteryTemp, '°C'),
+  // A channel BLE could not read has no field at all — writing `undefined` in
+  // would leave the key present and empty, which reads as 0 downstream.
+  const overlay: Record<string, LooseStateField> = { ...current }
+  const put = (key: string, field: LooseStateField | undefined) => {
+    if (field) overlay[key] = field
   }
+  put('remainingBatteryCapacity', bleField('remainingBatteryCapacity', ble.soc, '%'))
+  put('batteryPower', bleField('batteryPower', ble.batteryPower, 'W'))
+  if (!current.exchangeChargingPower) put('exchangeChargingPower', bleField('exchangeChargingPower', ble.acPower, 'W'))
+  if (!current.generationPower) put('generationPower', bleField('generationPower', ble.solarPower, 'W'))
+  if (!current.outputPower) put('outputPower', bleField('outputPower', ble.outputPower, 'W'))
+  if (!current.cellTemperature1) put('cellTemperature1', bleField('cellTemperature1', ble.batteryTemp, '°C'))
+  return overlay
 }
 
 /** Overlay BLE SOC onto GET /remote/device/state/latest responses (used by apiClient). */
