@@ -1,8 +1,8 @@
 {
-  "version": "4.12.3",
-  "build": 2896,
-  "date": "2026-09-17",
+  "version": "4.12.9",
+  "build": 2903,
+  "date": "2026-09-20",
   "changelog": [
-    "New accounts can sign up again. Asking for a code with a brand-new email address was refused by the server with a message the app did not recognise, so it never retried as a sign-up, no code was ever sent, and the raw error appeared on the email screen."
+    "A battery at 100% now reads Full on the ring. It used to show \"0h0m to full\", which looks like an estimate that has got stuck — especially on a unit that sits at 100% and keeps drawing charge. A full battery being drawn down still shows how long it has left."
   ]
 }
