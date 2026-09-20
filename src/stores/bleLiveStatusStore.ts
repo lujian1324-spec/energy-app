@@ -68,11 +68,11 @@ export function mergeCloudWithBle<T extends CloudLiveSlice>(
   return {
     ...base,
     remainingBatteryCapacity: ble.soc,
-    batteryPower: ble.batteryPower,
-    acPower: ble.acPower,
-    solarPower: ble.solarPower,
-    outputPower: ble.outputPower,
     batteryTemp: ble.batteryTemp,
+    ...(ble.batteryPower !== undefined ? { batteryPower: ble.batteryPower } : {}),
+    ...(ble.acPower !== undefined ? { acPower: ble.acPower } : {}),
+    ...(ble.solarPower !== undefined ? { solarPower: ble.solarPower } : {}),
+    ...(ble.outputPower !== undefined ? { outputPower: ble.outputPower } : {}),
   }
 }
 
@@ -137,7 +137,8 @@ export type LooseStateField = {
   category?: string
 }
 
-function bleField(key: string, value: number, unit: string): LooseStateField {
+function bleField(key: string, value: number | undefined, unit: string): LooseStateField | undefined {
+  if (value === undefined || !Number.isFinite(value)) return undefined
   const rounded = Math.round(value * 10) / 10
   return {
     key,
