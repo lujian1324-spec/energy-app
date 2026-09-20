@@ -32,9 +32,9 @@ export function parseResponseToParams(requestHex: string, responseHex: string): 
         value = desc.fmt(raw)
         unit = ''
       } else {
-        const n = desc.signed ? toInt16(raw) : raw
-        const scaled = desc.scale != null ? n * desc.scale : n
-        value = Number.isInteger(scaled) ? String(scaled) : scaled.toFixed(2)
+        const scale = desc.scale ?? 1
+        const numVal = desc.signed ? toInt16(raw) * scale : raw * scale
+        value = Number.isInteger(numVal) ? String(numVal) : numVal.toFixed(scale < 0.1 ? 3 : scale < 1 ? 1 : 0)
       }
       result.push({ addr, name: desc.name, value, unit, raw, group: desc.group })
     }
@@ -44,9 +44,22 @@ export function parseResponseToParams(requestHex: string, responseHex: string): 
   }
 }
 
+// ─────────────────────────────────────────────
+// 工作模式设置（0x02，FC06，对应 §4.2）
+// ─────────────────────────────────────────────
+
+/**
+ * 工作模式寄存器 0x0002
+ * 示例 (默认 0x0019 = 25):
+ *   01 06 00 02 00 19 E9 C0
+ */
 export function buildSetWorkMode(modeValue: number): string {
-  return toHexString(buildWriteSingleFrame(0x0086, modeValue))
+  return toHexString(buildWriteSingleFrame(0x0002, modeValue))
 }
+
+// ─────────────────────────────────────────────
+// 错误码说明
+// ─────────────────────────────────────────────
 
 export const MODBUS_ERROR_CODES: Record<number, string> = {
   0x01: 'Invalid function code',
