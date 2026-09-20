@@ -3,13 +3,17 @@
   "private": true,
 <<<<<<< HEAD
 <<<<<<< HEAD
-  "version": "4.12.6",
+<<<<<<< HEAD
+  "version": "4.12.7",
 =======
   "version": "4.12.5",
 >>>>>>> origin/fix/serial-no-invented-values
 =======
   "version": "4.12.6",
 >>>>>>> origin/fix/scan-barcodes-and-jsqr
+=======
+  "version": "4.12.7",
+>>>>>>> origin/fix/output-state-from-device
   "type": "module",
   "scripts": {
     "dev": "vite",
