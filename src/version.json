@@ -1,8 +1,8 @@
 {
-  "version": "4.12.3",
-  "build": 2896,
-  "date": "2026-09-17",
+  "version": "4.12.5",
+  "build": 2899,
+  "date": "2026-09-20",
   "changelog": [
-    "New accounts can sign up again. Asking for a code with a brand-new email address was refused by the server with a message the app did not recognise, so it never retried as a sign-up, no code was ever sent, and the raw error appeared on the email screen."
+    "Device Info shows your battery's own serial number, or nothing at all when the platform has not reported one. It used to fall back to a fixed placeholder, so two batteries could both show the same serial — and a stand-in serial derived from the device is now stable instead of being re-rolled on each reading."
   ]
 }

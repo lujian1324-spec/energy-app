@@ -47,11 +47,31 @@ export const SIERRO_MODEL_LIST: ModelSpec[] = [
   SIERRO_MODELS['Sierro 2000'],
 ]
 
-/** 按型号生成序列号：<prefix>-<DTUID 末6位 或 随机6位> */
+/** Six digits folded from a string — same input, same output, every time. */
+function foldToSixDigits(input: string): string {
+  let h = 0x811c9dc5
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i)
+    h = Math.imul(h, 0x01000193) >>> 0
+  }
+  return (h % 1_000_000).toString().padStart(6, '0')
+}
+
+/**
+ * A stand-in serial for a device whose own serial the platform never reported:
+ * `<prefix>-<last 6 digits of the DTUID>`.
+ *
+ * It must be derived from the unit, never rolled: the suffix used to fall back
+ * to `Math.random()` whenever the DTUID held fewer than six digits, so the same
+ * unit could answer with a different serial on each call and two units could
+ * collide outright. Without a DTUID there is nothing to derive from and this
+ * returns an empty string — callers show the device has no serial rather than
+ * print one that belongs to no hardware.
+ */
 export function generateSerial(spec: ModelSpec, dtuid?: string | null): string {
-  const digits = (dtuid ?? '').replace(/\D/g, '')
-  const suffix = digits.length >= 6
-    ? digits.slice(-6)
-    : Math.floor(Math.random() * 1_000_000).toString().padStart(6, '0')
+  const id = (dtuid ?? '').trim()
+  if (!id) return ''
+  const digits = id.replace(/\D/g, '')
+  const suffix = digits.length >= 6 ? digits.slice(-6) : foldToSixDigits(id)
   return `${spec.serialPrefix}-${suffix}`
 }
