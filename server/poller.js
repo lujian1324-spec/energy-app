@@ -22,6 +22,7 @@ import { refreshAccessToken, listDevices, getLatestState, listAlarms, writePasst
 import { detectOutage, detectOutageFromAlarms, detectLowBattery, detectSolar } from './detect.js'
 import { phaseFor, chargePowerForPhase } from './sleepSchedule.js'
 import { acChargePowerBase64 } from './modbus.js'
+import { deviceBoundToUser } from './deviceBind.js'
 
 /**
  * Server-side Sleep Mode: apply the device's charge power for the current phase,
@@ -226,6 +227,11 @@ async function processUser(u, now, sendToUser, dryRun) {
         const notes = evaluateDevice({ deviceId, name: d.name || deviceId, isOnline, fields, alarms, prefs: u.prefs })
         for (const note of notes) {
           if (!shouldFire(u.userId, deviceId, note, now)) continue
+          // Outage only: never notify a user who is not bound/owner of this device.
+          if (note.type === 'outage' && !deviceBoundToUser(d, u.userId)) {
+            console.log(`[poller] skip outage ${u.userId}/${deviceId}: device not bound to user`)
+            continue
+          }
           fired.push({ userId: u.userId, deviceId, type: note.type, title: note.title, body: note.body })
           if (!dryRun) {
             setNotifyTs(u.userId, deviceId, note.type, now)
