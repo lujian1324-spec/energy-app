@@ -1,10 +1,11 @@
 {
-  "version": "4.12.5",
-  "build": 2899,
+  "version": "4.12.6",
+  "build": 2900,
   "date": "2026-09-20",
   "changelog": [
     "Power outage alerts now go only to the accounts a device is actually bound to. A push registration without a signed-in account is refused, and signing in on a device moves its push token off whichever account held it before, so an outage on someone else's battery can no longer reach you.",
     "AC, solar and output power now read as unavailable instead of a nonsense figure such as 65534 W when the device has no reading for that channel, and the battery ring no longer turns one into a time estimate like \"0h1m remaining\". Battery power is left out too whenever one of those channels is missing, rather than being computed from a placeholder.",
-    "Device Info shows your battery's own serial number, or nothing at all when the platform has not reported one. It used to fall back to a fixed placeholder, so two batteries could both show the same serial — and a stand-in serial derived from the device is now stable instead of being re-rolled on each reading."
+    "Device Info shows your battery's own serial number, or nothing at all when the platform has not reported one. It used to fall back to a fixed placeholder, so two batteries could both show the same serial — and a stand-in serial derived from the device is now stable instead of being re-rolled on each reading.",
+    "Adding a device can now read the barcode on units whose label carries one instead of a QR code. The scanner only ever looked for QR codes, so owners of those units had nothing to point the camera at. QR codes scan exactly as before."
   ]
 }

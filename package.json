@@ -2,10 +2,14 @@
   "name": "powerflow-app",
   "private": true,
 <<<<<<< HEAD
-  "version": "4.12.5",
+<<<<<<< HEAD
+  "version": "4.12.6",
 =======
   "version": "4.12.5",
 >>>>>>> origin/fix/serial-no-invented-values
+=======
+  "version": "4.12.6",
+>>>>>>> origin/fix/scan-barcodes-and-jsqr
   "type": "module",
   "scripts": {
     "dev": "vite",
