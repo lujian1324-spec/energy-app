@@ -151,9 +151,12 @@ export default function ScanDevicesScreen(p: Props) {
   /* A_1.3.1 / A_1.3.2 keep one header block across every scan state: headline at
      y210, subtitle at y240 and the radar at y300. The list, the Search Again CTA
      and the connect-fail toast all hang off the bottom of that same art. */
-  const headline = hasError ? 'No Devices Found' : 'Searching for nearby devices...'
+  const locationOff = hasError && /location services are off/i.test(store.errorMessage ?? '')
+  const headline = hasError ? (locationOff ? 'Turn on Location' : 'No Devices Found') : 'Searching for nearby devices...'
   const subtitle = hasError
-    ? "We couldn't find any nearby devices. Make sure your Sierro device is powered on and nearby."
+    ? (locationOff
+      ? 'Turn on Location in Android Settings, then search again. Android needs this setting to find nearby Bluetooth devices.'
+      : `${store.errorMessage} Keep the device powered on and close by, with its LED in pairing mode. Enable Bluetooth and, on older Android phones, Location, then try again.`)
     : "Keep your phone near the Sierro device and make sure it's powered on."
 
   return (
@@ -166,7 +169,7 @@ export default function ScanDevicesScreen(p: Props) {
       )}
       <AddDeviceHeader onBack={handleClose} onScanQr={openQr} />
 
-      <div className="flex-1 min-h-0 flex flex-col px-4 safe-area-bottom">
+      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col px-4 safe-area-bottom">
         <div className="shrink-0 flex flex-col items-center text-center">
           <h2 className="mt-[76px] text-title-lg font-semibold text-ink-3">{headline}</h2>
           <p className="mt-2 text-label text-ink-5 max-w-[344px]">{subtitle}</p>
@@ -192,6 +195,12 @@ export default function ScanDevicesScreen(p: Props) {
             className="mt-[17px] shrink-0 w-full h-12 rounded-l bg-primary text-primary-darker text-body-lg font-semibold active:scale-[0.98] transition-transform disabled:opacity-40"
           >
             {hasError ? 'Search Again' : 'Search for Devices'}
+          </button>
+        )}
+
+        {hasError && (
+          <button onClick={openQr} className="mt-2 shrink-0 min-h-10 text-primary text-label active:scale-[0.96] transition-transform">
+            Scan QR Code
           </button>
         )}
 

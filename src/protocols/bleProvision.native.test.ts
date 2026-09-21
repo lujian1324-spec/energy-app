@@ -9,7 +9,7 @@ import type { ProvisionScanDevice } from './bleProvision'
  *  - The Location gate is VERSION-GATED: on Android 11 and below (where BLE scan
  *    silently returns zero results when Location is off) scanDevices() pre-checks
  *    isLocationEnabled() and throws a 'location' error; on Android 12+
- *    (BLUETOOTH_SCAN neverForLocation decouples scan from Location) it is skipped.
+ *    (BLUETOOTH_SCAN neverForLocation decouples scan from Location) it is diagnostic only.
  *  - iOS never calls isLocationEnabled().
  * Android version is read from navigator.userAgent, stubbed per test.
  */
@@ -27,6 +27,7 @@ const h = vi.hoisted(() => ({
     isLocationEnabled: vi.fn(),
     requestLEScan: vi.fn(),
     stopLEScan: vi.fn(),
+    read: vi.fn(),
   },
 }))
 
@@ -72,11 +73,11 @@ describe('NativeBleProvisionManager.scanDevices', () => {
 
     expect(found.map(d => d.deviceId)).toEqual(['a', 'c'])
     // scanned with no hardware name filter (allowDuplicates only)
-    expect(h.ble.requestLEScan).toHaveBeenCalledWith({ allowDuplicates: false }, expect.any(Function))
+    expect(h.ble.requestLEScan).toHaveBeenCalledWith({ allowDuplicates: true }, expect.any(Function))
   })
 
-  it('iOS scans with allowDuplicates so scan-response name/UUID packets are not dropped', async () => {
-    h.platform = 'ios'
+  it.each(['android', 'ios'] as const)('%s delivers later scan-response names', async (platform) => {
+    h.platform = platform
     h.scanResults = [
       { device: { deviceId: 'a' } },                              // first ADV: no name, no UUID → drop
       { device: { deviceId: 'a' }, localName: 'SSL_0F3A' },       // scan response: keep
@@ -98,14 +99,14 @@ describe('NativeBleProvisionManager.scanDevices', () => {
 
   it('Android 12+: does NOT require Location (neverForLocation) — scans even when it is off', async () => {
     // Default UA is Android 13. Location reported off must NOT block; isLocationEnabled
-    // should not even be consulted, and the scan proceeds.
+    // is diagnostic only, and the scan proceeds.
     h.ble.isLocationEnabled.mockResolvedValue(false)
     h.scanResults = [{ device: { deviceId: 'a', name: 'SSL_1' } }]
     const mgr = await loadManager()
     const found: ProvisionScanDevice[] = []
     await mgr.scanDevices(d => found.push(d))
     expect(found.map(d => d.deviceId)).toEqual(['a'])
-    expect(h.ble.isLocationEnabled).not.toHaveBeenCalled()
+    expect(h.ble.isLocationEnabled).toHaveBeenCalled()
     expect(h.ble.requestLEScan).toHaveBeenCalled()
   })
 
@@ -128,3 +129,30 @@ describe('NativeBleProvisionManager.scanDevices', () => {
     expect(h.ble.requestLEScan).toHaveBeenCalled()
   })
 })
+
+  it('does not start a scan cancelled during initialization', async () => {
+    let ready!: () => void
+    h.ble.initialize.mockImplementationOnce(() => new Promise<void>(resolve => { ready = resolve }))
+    const mgr = await loadManager()
+    const pending = mgr.scanDevices(vi.fn())
+    await vi.waitFor(() => expect(ready).toBeDefined())
+    await mgr.stopScan()
+    ready()
+    await pending
+    expect(h.ble.requestLEScan).not.toHaveBeenCalled()
+  })
+
+  it('reads GAP for an unnamed candidate and never reuses the previous device ID', async () => {
+    const mgr = await loadManager()
+    vi.spyOn(mgr as any, 'openLink').mockResolvedValue(undefined)
+    const name = 'SSL_0IIOTUJF3AgEpIA=='
+    h.ble.read.mockResolvedValue(new DataView(new TextEncoder().encode(name).buffer))
+    await mgr.connectTo('first', name)
+    expect(mgr.getDuid()).toBe('20839350917702012920')
+    await mgr.connectTo('second')
+    expect(h.ble.read).toHaveBeenCalledWith('second', expect.any(String), expect.any(String))
+    expect(mgr.getDuid()).toBe('20839350917702012920')
+    h.ble.read.mockRejectedValue(new Error('unreadable'))
+    await mgr.connectTo('third')
+    expect(mgr.getDuid()).toBeNull()
+  })

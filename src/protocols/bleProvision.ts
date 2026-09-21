@@ -314,17 +314,24 @@ class WebBleProvisionManager extends BaseProvisionManager {
   }
 }
 
-export function isSierroScanResult(r: {
+type ScanAdvertisement = {
   device?: { name?: string }
   localName?: string
   uuids?: string[]
   rawAdvertisement?: DataView
-}): boolean {
-  const fromRaw = parseRawAdvertisement(r.rawAdvertisement)
-  const name = (r.device?.name ?? r.localName ?? fromRaw.name ?? '').trim()
-  if (looksLikeSierroName(name)) return true
-  const uuids = [...(r.uuids ?? []), ...fromRaw.uuids]
-  return uuids.some(u => u.toLowerCase().includes('fee7'))
+}
+
+/** Prefer a complete ID, including the scan-response/raw name, over a cached name. */
+export function provisionScanName(r: ScanAdvertisement): string | undefined {
+  const names = [r.localName, parseRawAdvertisement(r.rawAdvertisement).name, r.device?.name]
+    .map(n => n?.replace(/\0/g, '').trim()).filter((n): n is string => !!n)
+  return names.find(n => parseBleName(n)) ?? names.find(looksLikeSierroName) ?? names[0]
+}
+
+export function isSierroScanResult(r: ScanAdvertisement): boolean {
+  if (looksLikeSierroName(provisionScanName(r) ?? '')) return true
+  const uuids = [...(r.uuids ?? []), ...parseRawAdvertisement(r.rawAdvertisement).uuids]
+  return uuids.some(u => /^(?:fee7|0000fee7|0000fee7-0000-1000-8000-00805f9b34fb)$/i.test(u))
 }
 
 function looksLikeSierroName(name: string): boolean {
@@ -353,10 +360,9 @@ export function parseRawAdvertisement(raw?: DataView): { name: string; uuids: st
         uuids.push(uuid16.toString(16).padStart(4, '0'))
       }
     } else if (type === 0x06 || type === 0x07) {
-      if (data.length >= 16) {
-        const b = Array.from(data.subarray(0, 16))
-        const le = [...b.slice(0, 4).reverse(), ...b.slice(4, 6).reverse(), ...b.slice(6, 8).reverse(), ...b.slice(8)]
-        const hex = le.map(x => x.toString(16).padStart(2, '0')).join('')
+      for (let j = 0; j + 16 <= data.length; j += 16) {
+        const hex = Array.from(data.subarray(j, j + 16)).reverse()
+          .map(x => x.toString(16).padStart(2, '0')).join('')
         uuids.push(`${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`)
       }
     }
@@ -375,6 +381,8 @@ class NativeBleProvisionManager extends BaseProvisionManager {
   private deviceId: string | null = null
   private connected = false
   private maxDataPerPacket = 237
+  private scanGeneration = 0
+  private scanCounts = { advertisements: 0, matched: new Set<string>() }
 
   private async ble() {
     const m = await import('@capacitor-community/bluetooth-le')
@@ -411,37 +419,55 @@ class NativeBleProvisionManager extends BaseProvisionManager {
   }
 
   async scanDevices(onFound: (d: ProvisionScanDevice) => void): Promise<void> {
+    const generation = ++this.scanGeneration
     const BleClient = await this.ble()
-    await BleClient.initialize({ androidNeverForLocation: true })
-    await this.ensureBlePermission(BleClient)
-    if (Capacitor.getPlatform() === 'android' && androidMajorVersion() !== null && androidMajorVersion()! <= 11) {
-      let locationOn = true
-      try { locationOn = await BleClient.isLocationEnabled() }
-      catch { /* ignore */ }
-      if (!locationOn) throw new Error('Location services are off — enable location to scan for Bluetooth devices.')
+    const platform = Capacitor.getPlatform()
+    const androidVersion = androidMajorVersion()
+    this.scanCounts = { advertisements: 0, matched: new Set<string>() }
+    this.log(`[ble-scan] ${JSON.stringify({ event: 'initialize', platform, androidVersion, androidNeverForLocation: true, permission: 'requesting' })}`)
+    try {
+      await BleClient.initialize({ androidNeverForLocation: true })
+    } catch (err) {
+      this.log('[ble-scan] {"event":"initialize_failed","permission":"not_granted_or_unavailable"}')
+      throw err
     }
-    this.log('Scanning for nearby devices...')
-    const ios = Capacitor.getPlatform() === 'ios'
+    this.log('[ble-scan] {"event":"initialized","permission":"granted"}')
+    if (generation !== this.scanGeneration) return
+    if (platform === 'android') {
+      let locationOn: boolean | null = null
+      try { locationOn = await BleClient.isLocationEnabled() } catch { /* report unknown */ }
+      const required = androidVersion !== null && androidVersion <= 11
+      this.log(`[ble-scan] ${JSON.stringify({ event: 'location', enabled: locationOn, required })}`)
+      if (required && locationOn === false) {
+        throw new Error('Location services are off. Turn on Location in Android Settings, then search again.')
+      }
+    }
+    if (generation !== this.scanGeneration) return
+    // Already broad: no OS name/UUID filter. Android must deliver later scan
+    // responses too; the plugin otherwise deduplicates before our name filter.
+    this.log('[ble-scan] {"event":"start","filterUUIDs":[],"allowDuplicates":true}')
     await BleClient.requestLEScan(
-      { allowDuplicates: ios },
+      { allowDuplicates: true },
       (result) => {
-        if (!result?.device?.deviceId) return
-        if (!isSierroScanResult(result)) return
-        onFound({
-          deviceId: result.device.deviceId,
-          name: result.device.name ?? result.localName,
-          rssi: result.rssi,
-        })
+        if (generation !== this.scanGeneration) return
+        this.scanCounts.advertisements++
+        if (!result?.device?.deviceId || !isSierroScanResult(result)) return
+        this.scanCounts.matched.add(result.device.deviceId)
+        onFound({ deviceId: result.device.deviceId, name: provisionScanName(result), rssi: result.rssi })
       },
     )
   }
 
   async stopScan(): Promise<void> {
+    ++this.scanGeneration
+    this.log(`[ble-scan] ${JSON.stringify({ event: 'stop', advertisements: this.scanCounts.advertisements, resultCount: this.scanCounts.matched.size })}`)
     try { const BleClient = await this.ble(); await BleClient.stopLEScan() } catch { /* ignore */ }
   }
 
   async connectTo(deviceId: string, name?: string): Promise<void> {
     await this.stopScan()
+    this.dtuid = null
+    this._deviceName = undefined
     this.deviceId = deviceId
     this.log(`Connecting ${name ?? deviceId}...`)
     await this.openLink()
@@ -585,11 +611,12 @@ export function getProvisionManager(callbacks?: ProvisionCallbacks): IBleProvisi
   return instance
 }
 
-export function destroyProvisionManager(): void {
+export async function destroyProvisionManager(): Promise<void> {
   if (instance) {
-    instance.stopScan().catch(() => { /* ignore */ })
-    instance.disconnect().catch(err => console.error('[bleProvision] disconnect failed:', err))
+    const previous = instance
     instance = null
+    await previous.stopScan()
+    await previous.disconnect().catch(err => console.error('[bleProvision] disconnect failed:', err))
   }
 }
 

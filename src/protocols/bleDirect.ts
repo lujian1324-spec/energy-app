@@ -59,7 +59,7 @@ export async function connectDirectWeb(callbacks?: ProvisionCallbacks): Promise<
 
 /** 断开并清理直连会话，回到云端模式 */
 export async function disconnectDirect(): Promise<void> {
-  destroyProvisionManager()
+  await destroyProvisionManager()
 }
 
 /** 发送一个只关心 RC===0 的控制帧（端口/睡眠功率等一次性写入） */

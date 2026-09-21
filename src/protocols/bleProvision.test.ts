@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isSierroScanResult, parseRawAdvertisement } from './bleProvision'
+import { isSierroScanResult, parseRawAdvertisement, provisionScanName } from './bleProvision'
 
 // v4.4.3 Android "no devices found" fix: scanDevices() no longer OS-filters by namePrefix.
 // isSierroScanResult() is the client-side filter — a device qualifies if its name starts
@@ -35,5 +35,31 @@ describe('isSierroScanResult', () => {
     const named = new DataView(new Uint8Array(nameBytes).buffer)
     expect(isSierroScanResult({ rawAdvertisement: named })).toBe(true)
     expect(parseRawAdvertisement(fee7).uuids.some(u => u.includes('fee7'))).toBe(true)
+  })
+})
+
+
+describe('scan-response name recovery', () => {
+  const name = 'SSL_0IIOTUJF3AgEpIA=='
+  it('uses the local name instead of an empty or stale cached name', () => {
+    for (const cached of ['', 'Unknown', 'SSL_0']) {
+      const result = { device: { name: cached }, localName: name }
+      expect(isSierroScanResult(result)).toBe(true)
+      expect(provisionScanName(result)).toBe(name)
+    }
+  })
+  it('forwards a complete name found only in raw advertisement bytes', () => {
+    const bytes = new TextEncoder().encode(name)
+    const rawAdvertisement = new DataView(new Uint8Array([bytes.length + 1, 9, ...bytes]).buffer)
+    expect(provisionScanName({ device: { name: '' }, rawAdvertisement })).toBe(name)
+  })
+  it('does not accept an unrelated UUID merely containing fee7', () => {
+    expect(isSierroScanResult({ uuids: ['1234fee7-1234-1234-1234-123456789abc'] })).toBe(false)
+  })
+  it('decodes all 128-bit UUIDs in Bluetooth little-endian order', () => {
+    const uuidBytes = FEE7.replace(/-/g, '').match(/../g)!.map(x => parseInt(x, 16)).reverse()
+    const rawAdvertisement = new DataView(new Uint8Array([33, 7, ...Array(16).fill(0), ...uuidBytes]).buffer)
+    expect(parseRawAdvertisement(rawAdvertisement).uuids).toContain(FEE7)
+    expect(isSierroScanResult({ rawAdvertisement })).toBe(true)
   })
 })

@@ -1,14 +1,15 @@
 /**
  * BLE scan handler for provisioning.
  */
-import { useCallback, type Dispatch, type MutableRefObject, type SetStateAction } from 'react'
+import { useCallback, useEffect, useRef, type Dispatch, type MutableRefObject, type SetStateAction } from 'react'
 import { toast } from '../../components/Toast'
 import type { ProvisionStoreState, ProvisionStep } from '../../stores/provisionStore'
-import { getProvisionManager, destroyProvisionManager, supportsDeviceListScan } from '../../protocols/bleProvision'
+import { getProvisionManager, destroyProvisionManager, stopProvisionScan, supportsDeviceListScan } from '../../protocols/bleProvision'
 import { isDtuid, parseBleName } from '../../utils/dtuidParser'
 import { formatScanDisplayName } from '../../utils/scanDisplayName'
 import { classifyBleError } from '../../utils/permissions'
 import { DISCONNECT_COPY } from './useProvisionBind'
+import { scanDeviceToFound, PROVISION_SCAN_MS } from './scanDiscovery'
 import type { FailKind } from '../../utils/provisionFailCopy'
 
 export type FoundDevice = {
@@ -42,14 +43,30 @@ export function useProvisionScan(opts: {
     reconnectingRef, configGuardRef, scanStopRef,
   } = opts
 
+  const generation = useRef(0)
+  const starting = useRef(false)
+  const cancelScan = useCallback(() => {
+    generation.current++
+    if (scanStopRef.current) clearTimeout(scanStopRef.current)
+    scanStopRef.current = null
+    stopProvisionScan()
+  }, [scanStopRef])
+  useEffect(() => cancelScan, [cancelScan])
+
   const handleScan = useCallback(async () => {
+    if (starting.current) return
+    starting.current = true
+    cancelScan()
+    const run = generation.current
+    const isCurrent = () => run === generation.current
     store.setIsOperating(true)
     store.setErrorMessage(null)
     store.addLog('Starting BLE scan...')
     setFoundDevices([])
     wifiConfiguredRef.current = false
     setFailKind(null)
-    destroyProvisionManager()
+    await destroyProvisionManager()
+    if (!isCurrent()) { starting.current = false; return }
     const manager = getProvisionManager({
       onLog: (msg) => store.addLog(msg),
       onDisconnected: () => {
@@ -99,52 +116,58 @@ export function useProvisionScan(opts: {
 
     if (supportsDeviceListScan()) {
       const seen = new Set<string>()
-      if (scanStopRef.current) clearTimeout(scanStopRef.current)
-      scanStopRef.current = setTimeout(async () => {
-        try { await manager.stopScan() } catch { /* ignore */ }
-        store.setIsOperating(false)
-        if (seen.size === 0) {
-          store.setErrorMessage('No nearby Sierro devices found. Make sure the device is powered on and close by.')
-        }
-      }, 10000)
       try {
         await manager.scanDevices((d) => {
-          const parsed = d.name ? parseBleName(d.name) : null
-          if (!parsed) return
-          const dtuid = parsed.dtuid
+          if (!isCurrent()) return
+          const next = scanDeviceToFound(d)
           seen.add(d.deviceId)
           setFoundDevices(prev => {
             const idx = prev.findIndex(x => x.deviceId === d.deviceId)
-            const next: FoundDevice = {
-              name: displayTitleFromDtuid(dtuid),
-              serial: dtuid,
-              deviceId: d.deviceId,
-              bleName: d.name,
-              status: parsed.status,
-            }
             if (idx >= 0) {
               const copy = [...prev]
-              copy[idx] = next
+              // A later nameless packet must not erase a complete ID.
+              copy[idx] = next.serial || !prev[idx].serial ? next : prev[idx]
               return copy.sort((a, b) => (a.status ?? 99) - (b.status ?? 99))
             }
             return [...prev, next].sort((a, b) => (a.status ?? 99) - (b.status ?? 99))
           })
         })
+        if (!isCurrent()) return
+        store.addLog(`[ble-scan] ${JSON.stringify({ event: 'window', timeoutMs: PROVISION_SCAN_MS })}`)
+        scanStopRef.current = setTimeout(async () => {
+          if (!isCurrent()) return
+          scanStopRef.current = null
+          generation.current++
+          await manager.stopScan()
+          if (generation.current !== run + 1) return
+          store.addLog(`[ble-scan] ${JSON.stringify({ event: 'timeout', resultCount: seen.size, timeoutMs: PROVISION_SCAN_MS })}`)
+          store.setIsOperating(false)
+          if (seen.size === 0) store.setErrorMessage('No nearby Sierro devices found.')
+        }, PROVISION_SCAN_MS)
       } catch (err) {
+        if (!isCurrent()) return
+        await manager.stopScan()
+        if (!isCurrent()) return
         if (scanStopRef.current) { clearTimeout(scanStopRef.current); scanStopRef.current = null }
         const { kind, msg } = classifyBleError(err)
         store.addLog(`Scan failed: ${msg}`)
         store.setIsOperating(false)
-        if (kind === 'permission') { setBleStatus('no_permission') }
+        if (/location services are off/i.test(msg)) {
+          store.setErrorMessage(msg)
+        }
+        else if (kind === 'permission') { setBleStatus('no_permission') }
         else if (kind === 'bluetooth_off') {
           if (/location/i.test(msg)) toast.info('Turn on Location (system setting) so Android can scan for Bluetooth devices, then try again.')
           setBleStatus('bt_off')
         }
         else { store.setErrorMessage(msg); toast.error(msg) }
+      } finally {
+        starting.current = false
       }
       return
     }
 
+    starting.current = false
     try {
       await manager.connect()
       const rawName = manager.deviceName ?? 'Sierro Device'
@@ -168,7 +191,7 @@ export function useProvisionScan(opts: {
     } finally {
       store.setIsOperating(false)
     }
-  }, [store, setFoundDevices, setFailKind, setBleStatus, wifiConfiguredRef, lastBleRef, bleGoneRef, provisionStepRef, reconnectingRef, configGuardRef, scanStopRef])
+  }, [cancelScan, store, setFoundDevices, setFailKind, setBleStatus, wifiConfiguredRef, lastBleRef, bleGoneRef, provisionStepRef, reconnectingRef, configGuardRef, scanStopRef])
 
-  return { handleScan }
+  return { handleScan, cancelScan }
 }
