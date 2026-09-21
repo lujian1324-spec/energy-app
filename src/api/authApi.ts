@@ -44,7 +44,7 @@ export interface LoginData {
   account?: string
   email?: string
   authId?: number
-  userId?: number
+  userId?: number | string
   userType?: number
   isAdmin?: boolean
   isDealer?: boolean
@@ -203,6 +203,13 @@ async function provisionPollerSession(username: string, plainPassword: string): 
   }
 }
 
+/** Persist account ownership without losing precision on large user IDs. */
+export function persistSession(data: { userId?: unknown } | null | undefined): void {
+  if (data?.userId != null && data.userId !== '') {
+    localStorage.setItem('iot_user_id', String(data.userId))
+  }
+}
+
 /** 账号密码登录 */
 export async function loginByAccount(
   username: string,
@@ -220,6 +227,7 @@ export async function loginByAccount(
     if (accessToken) tokenStore.set(accessToken)
     const refreshToken = result.data.refreshToken
     if (refreshToken) tokenStore.setRefresh(refreshToken)
+    persistSession(result.data)
     // 顺手为服务端 poller 铸造一条独立会话(fire-and-forget)。
     void provisionPollerSession(username, plainPassword)
   }
@@ -252,6 +260,7 @@ export async function loginByEmail(
     if (accessToken) tokenStore.set(accessToken)
     const refreshToken = result.data.refreshToken
     if (refreshToken) tokenStore.setRefresh(refreshToken)
+    persistSession(result.data)
     /**
      * Mint the relay's own session here too. provisionPollerSession needs a
      * password and this flow has none, so only a brand-new registration — which
@@ -290,6 +299,7 @@ export async function loginBySms(
     if (accessToken) tokenStore.set(accessToken)
     const refreshToken = result.data.refreshToken
     if (refreshToken) tokenStore.setRefresh(refreshToken)
+    persistSession(result.data)
   }
   return result
 }

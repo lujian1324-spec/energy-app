@@ -22,7 +22,7 @@ import cors from 'cors'
 import webpush from 'web-push'
 import {
   addWebPush, removeWebPush, addNative, removeNative, getWebPush, getNative,
-  setUserAuth, setUserSchedule, getUser,
+  setUserAuth, setUserSchedule, getUser, requireUserId,
 } from './store.js'
 import { startPoller } from './poller.js'
 
@@ -72,7 +72,16 @@ async function getApn() {
 }
 
 // ── Subscription endpoints (called by the app) ───────────────────────────────
-app.post('/notification/webpush/subscribe', (req, res) => {
+function requireBodyUserId(req, res, next) {
+  try {
+    requireUserId(req.body?.userId)
+  } catch {
+    return res.status(400).json({ code: 1, message: 'userId required' })
+  }
+  next()
+}
+
+app.post('/notification/webpush/subscribe', requireBodyUserId, (req, res) => {
   const { endpoint, p256dh, auth, userId, refreshToken, accessToken, accessExpiresAt, prefs } = req.body || {}
   if (!endpoint) return res.status(400).json({ code: 1, message: 'endpoint required' })
   addWebPush(userId, { endpoint, keys: { p256dh, auth } })
@@ -83,11 +92,11 @@ app.post('/notification/webpush/subscribe', (req, res) => {
   if (refreshToken || accessToken || prefs) setUserAuth(userId, { refreshToken, accessToken, accessExpiresAt, prefs })
   ok(res)
 })
-app.post('/notification/webpush/unsubscribe', (req, res) => {
+app.post('/notification/webpush/unsubscribe', requireBodyUserId, (req, res) => {
   removeWebPush(req.body?.userId, req.body?.endpoint)
   ok(res)
 })
-app.post('/notification/nativepush/register', (req, res) => {
+app.post('/notification/nativepush/register', requireBodyUserId, (req, res) => {
   const { token, platform, userId, refreshToken, accessToken, accessExpiresAt, prefs } = req.body || {}
   if (!token) return res.status(400).json({ code: 1, message: 'token required' })
   addNative(userId, token, platform === 'ios' ? 'ios' : 'android')
@@ -97,7 +106,7 @@ app.post('/notification/nativepush/register', (req, res) => {
   if (refreshToken || accessToken || prefs) setUserAuth(userId, { refreshToken, accessToken, accessExpiresAt, prefs })
   ok(res)
 })
-app.post('/notification/nativepush/unregister', (req, res) => {
+app.post('/notification/nativepush/unregister', requireBodyUserId, (req, res) => {
   removeNative(req.body?.userId, req.body?.token)
   ok(res)
 })
@@ -106,7 +115,7 @@ app.post('/notification/nativepush/unregister', (req, res) => {
 // The app uploads one device's sleep window when the user saves Sleep Mode. Like
 // subscribe, it may carry the one-time poller-session bootstrap (access+refresh
 // pair) so the poller can control this user's device while the app is closed.
-app.post('/schedule', (req, res) => {
+app.post('/schedule', requireBodyUserId, (req, res) => {
   const { userId, deviceId, schedule, refreshToken, accessToken, accessExpiresAt, prefs } = req.body || {}
   if (!deviceId || !schedule) return res.status(400).json({ code: 1, message: 'deviceId and schedule required' })
   if (refreshToken || accessToken || prefs) setUserAuth(userId, { refreshToken, accessToken, accessExpiresAt, prefs })
@@ -165,7 +174,7 @@ export async function sendToUser(userId, { title = 'Sierro', body = '', data = {
 }
 
 // ── Internal trigger: push an alert to a user across all their devices ────────
-app.post('/notify', async (req, res) => {
+app.post('/notify', requireBodyUserId, async (req, res) => {
   if (process.env.INTERNAL_KEY && req.get('X-Internal-Key') !== process.env.INTERNAL_KEY) {
     return res.status(401).json({ code: 1, message: 'unauthorized' })
   }

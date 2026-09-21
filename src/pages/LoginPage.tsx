@@ -7,6 +7,8 @@ import {
   sendEmailCaptcha,
   loginByEmail,
   loginByAccount,
+  persistSession,
+  type LoginData,
   defaultPasswordForAccount,
   fetchUserInfo,
   registerByEmail,
@@ -178,7 +180,8 @@ export default function LoginPage() {
    * greets with the add-your-first-device step. Signing in to an account that
    * already exists goes straight to the device list, as before.
    */
-  const finishSignIn = (user: unknown, { firstRun = false } = {}) => {
+  const finishSignIn = (user: LoginData | null | undefined, { firstRun = false } = {}) => {
+    persistSession(user)
     signedInHere.current = true
     useDeviceStore.getState().exitDemoMode()
     useAuthStore.setState({ isAuthenticated: true, isGuest: false, user: (user as never) ?? null })
