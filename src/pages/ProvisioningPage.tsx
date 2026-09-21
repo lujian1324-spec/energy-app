@@ -5,7 +5,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { toast } from '../components/Toast'
 import { useProvisionStore } from '../stores/provisionStore'
-import { getProvisionManager, destroyProvisionManager, stopProvisionScan, supportsDeviceListScan } from '../protocols/bleProvision'
+import { getProvisionManager, destroyProvisionManager, supportsDeviceListScan } from '../protocols/bleProvision'
 import { type SierroModel } from '../data/deviceModels'
 import { useDeviceStore } from '../stores/deviceStore'
 import { isDtuid } from '../utils/dtuidParser'
@@ -118,7 +118,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
 
   const scanStopRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const { handleScan } = useProvisionScan({
+  const { handleScan, cancelScan } = useProvisionScan({
     store,
     setFoundDevices,
     setFailKind,
@@ -132,10 +132,12 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     scanStopRef,
   })
 
-  useEffect(() => () => {
-    if (scanStopRef.current) clearTimeout(scanStopRef.current)
-    stopProvisionScan()
-  }, [])
+  useEffect(() => {
+    if (uiScreen !== 'scan') {
+      cancelScan()
+      if (uiScreen === 'qr') store.setIsOperating(false)
+    }
+  }, [uiScreen, cancelScan])
 
   useEffect(() => {
     let removed = false
@@ -282,11 +284,12 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   }, [store.step, store.apLoading, handleScanWifi])
 
   const handleClose = useCallback(() => {
-    destroyProvisionManager()
+    cancelScan()
+    void destroyProvisionManager()
     wifiConfiguredRef.current = false
     store.reset()
     onClose()
-  }, [store, onClose])
+  }, [store, onClose, cancelScan])
 
   const goToNaming = useCallback(() => {
     setDeviceNameInput(store.deviceName ?? 'My Device')
@@ -303,6 +306,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
 
   const handleSelectDevice = useCallback(async (device: FoundDevice) => {
     if (device.deviceId && supportsDeviceListScan()) {
+      cancelScan()
       store.setIsOperating(true)
       store.setErrorMessage(null)
       try {
@@ -329,7 +333,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     } else {
       startProvisioning()
     }
-  }, [store, startProvisioning])
+  }, [store, startProvisioning, cancelScan])
 
   const handleNameNext = useCallback(() => {
     const trimmed = deviceNameInput.trim()

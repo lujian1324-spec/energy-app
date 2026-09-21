@@ -66,7 +66,7 @@ export default function BleDebugPage() {
     addLog('info', `Service=${BLE_PROVISION_UUIDS.SERVICE}`)
     addLog('info', `Write(TX)=${BLE_PROVISION_UUIDS.WRITE_TX}  Indicate(RX)=${BLE_PROVISION_UUIDS.INDICATE_RX}`)
     addLog('info', `MTU=${BLE_PROVISION_MTU}`)
-    destroyProvisionManager()
+    await destroyProvisionManager()
     try {
       const manager = getProvisionManager({
         onLog: (m) => addLog('info', m),

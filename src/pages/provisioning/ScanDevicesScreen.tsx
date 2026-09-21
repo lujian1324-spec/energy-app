@@ -11,6 +11,8 @@ import { formatScanDisplayName } from '../../utils/scanDisplayName'
 import { supportsDeviceListScan } from '../../protocols/bleProvision'
 import { useProvisionStore } from '../../stores/provisionStore'
 import ErrorToast from '../../components/ErrorToast'
+import ScanTroubleshooting from './ScanTroubleshooting'
+import { WEAK_SCAN_COPY } from './scanDiscovery'
 
 type FoundDevice = {
   name: string
@@ -79,6 +81,9 @@ export default function ScanDevicesScreen(p: Props) {
   const isCheckingBle = bleStatus === 'checking'
   const openQr = () => setUiScreen('qr')
   const showWebPickerCta = !supportsDeviceListScan() && !isSearching && !hasDevices && !hasError
+  const troubleshooting = !isSearching && !hasDevices
+    ? <ScanTroubleshooting failures={store.consecutiveScanFailures} onScanQr={openQr} />
+    : null
 
   /* A_1.3.1 -v Bluetooth and/or local network Access Denied: headline at y210 in
      two lines, subtitle at y264 in label/ink-5, art at y337 and one filled button
@@ -90,7 +95,7 @@ export default function ScanDevicesScreen(p: Props) {
     return (
       <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
         <AddDeviceHeader onBack={handleClose} onScanQr={openQr} />
-        <div className="flex-1 min-h-0 flex flex-col items-center px-4 text-center">
+        <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center px-4 text-center">
           <h2 className="mt-[76px] text-title-lg font-semibold text-ink-3">
             Allow Bluetooth and Local Network Access
           </h2>
@@ -119,6 +124,7 @@ export default function ScanDevicesScreen(p: Props) {
           >
             Open Settings
           </button>
+          {troubleshooting}
         </div>
       </div>
     )
@@ -130,7 +136,7 @@ export default function ScanDevicesScreen(p: Props) {
     return (
       <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
         <AddDeviceHeader onBack={handleClose} onScanQr={openQr} />
-        <div className="flex-1 min-h-0 flex flex-col items-center px-4 text-center">
+        <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center px-4 text-center">
           <h2 className="mt-[76px] text-title-lg font-semibold text-ink-3">Turn on Bluetooth</h2>
           <p className="mt-[7px] text-label text-ink-5">
             Enable Bluetooth from Control Center or Settings to automatically find and connect your device.
@@ -143,6 +149,7 @@ export default function ScanDevicesScreen(p: Props) {
             className="mt-[47px] w-[206px] max-w-full h-auto select-none"
             draggable={false}
           />
+          {troubleshooting}
         </div>
       </div>
     )
@@ -151,9 +158,13 @@ export default function ScanDevicesScreen(p: Props) {
   /* A_1.3.1 / A_1.3.2 keep one header block across every scan state: headline at
      y210, subtitle at y240 and the radar at y300. The list, the Search Again CTA
      and the connect-fail toast all hang off the bottom of that same art. */
-  const headline = hasError ? 'No Devices Found' : 'Searching for nearby devices...'
+  const locationOff = hasError && /location services are off/i.test(store.errorMessage ?? '')
+  const weakSignal = hasError && store.errorMessage === WEAK_SCAN_COPY
+  const headline = hasError ? (locationOff ? 'Turn on Location' : weakSignal ? 'Move Closer and Try Again' : 'No Devices Found') : 'Searching for nearby devices...'
   const subtitle = hasError
-    ? "We couldn't find any nearby devices. Make sure your Sierro device is powered on and nearby."
+    ? (locationOff
+      ? 'Turn on Location in Android Settings, then search again. Android needs this setting to find nearby Bluetooth devices.'
+      : `${store.errorMessage} Keep the device powered on and close by, with its LED in pairing mode. Enable Bluetooth and, on older Android phones, Location, then try again.`)
     : "Keep your phone near the Sierro device and make sure it's powered on."
 
   return (
@@ -166,7 +177,7 @@ export default function ScanDevicesScreen(p: Props) {
       )}
       <AddDeviceHeader onBack={handleClose} onScanQr={openQr} />
 
-      <div className="flex-1 min-h-0 flex flex-col px-4 safe-area-bottom">
+      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col px-4 safe-area-bottom">
         <div className="shrink-0 flex flex-col items-center text-center">
           <h2 className="mt-[76px] text-title-lg font-semibold text-ink-3">{headline}</h2>
           <p className="mt-2 text-label text-ink-5 max-w-[344px]">{subtitle}</p>
@@ -194,6 +205,14 @@ export default function ScanDevicesScreen(p: Props) {
             {hasError ? 'Search Again' : 'Search for Devices'}
           </button>
         )}
+
+        {hasError && store.consecutiveScanFailures < 2 && (
+          <button onClick={openQr} className="mt-2 shrink-0 min-h-10 text-primary text-label active:scale-[0.96] transition-transform">
+            Scan QR Code
+          </button>
+        )}
+
+        {troubleshooting}
 
         {hasDevices && (
           <div className="mt-[17px] flex-1 min-h-0 flex flex-col">
