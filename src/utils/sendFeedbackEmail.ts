@@ -3,6 +3,7 @@ import {
   EMAILJS_TEMPLATE_ID,
   EMAILJS_PUBLIC_KEY,
   FEEDBACK_TO_EMAIL,
+  FEEDBACK_BCC_EMAIL,
 } from '../config/emailjs'
 
 const EMAILJS_ENDPOINT = 'https://api.emailjs.com/api/v1.0/email/send'
@@ -42,6 +43,7 @@ export async function sendFeedbackEmail(params: {
         message: params.message,
         subject: 'Sierro App Feedback',
         to_email: FEEDBACK_TO_EMAIL,
+        bcc_email: FEEDBACK_BCC_EMAIL,
       },
     }),
   })
