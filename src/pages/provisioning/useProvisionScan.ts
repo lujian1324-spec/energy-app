@@ -9,7 +9,7 @@ import { isDtuid, parseBleName } from '../../utils/dtuidParser'
 import { formatScanDisplayName } from '../../utils/scanDisplayName'
 import { classifyBleError } from '../../utils/permissions'
 import { DISCONNECT_COPY } from './useProvisionBind'
-import { scanDeviceToFound, PROVISION_SCAN_MS } from './scanDiscovery'
+import { scanDeviceToFound, PROVISION_SCAN_MS, emptyScanMessage } from './scanDiscovery'
 import type { FailKind } from '../../utils/provisionFailCopy'
 
 export type FoundDevice = {
@@ -116,11 +116,13 @@ export function useProvisionScan(opts: {
 
     if (supportsDeviceListScan()) {
       const seen = new Set<string>()
+      let strongestRssi: number | undefined
       try {
         await manager.scanDevices((d) => {
           if (!isCurrent()) return
           const next = scanDeviceToFound(d)
           seen.add(d.deviceId)
+          store.clearScanFailures()
           setFoundDevices(prev => {
             const idx = prev.findIndex(x => x.deviceId === d.deviceId)
             if (idx >= 0) {
@@ -131,6 +133,8 @@ export function useProvisionScan(opts: {
             }
             return [...prev, next].sort((a, b) => (a.status ?? 99) - (b.status ?? 99))
           })
+        }, rssi => {
+          if (isCurrent()) strongestRssi = Math.max(strongestRssi ?? -Infinity, rssi)
         })
         if (!isCurrent()) return
         store.addLog(`[ble-scan] ${JSON.stringify({ event: 'window', timeoutMs: PROVISION_SCAN_MS })}`)
@@ -140,9 +144,12 @@ export function useProvisionScan(opts: {
           generation.current++
           await manager.stopScan()
           if (generation.current !== run + 1) return
-          store.addLog(`[ble-scan] ${JSON.stringify({ event: 'timeout', resultCount: seen.size, timeoutMs: PROVISION_SCAN_MS })}`)
+          store.addLog(`[ble-scan] ${JSON.stringify({ event: 'timeout', resultCount: seen.size, timeoutMs: PROVISION_SCAN_MS, strongestRssi })}`)
           store.setIsOperating(false)
-          if (seen.size === 0) store.setErrorMessage('No nearby Sierro devices found.')
+          if (seen.size === 0) {
+            store.recordScanFailure()
+            store.setErrorMessage(emptyScanMessage(strongestRssi))
+          }
         }, PROVISION_SCAN_MS)
       } catch (err) {
         if (!isCurrent()) return
@@ -150,6 +157,7 @@ export function useProvisionScan(opts: {
         if (!isCurrent()) return
         if (scanStopRef.current) { clearTimeout(scanStopRef.current); scanStopRef.current = null }
         const { kind, msg } = classifyBleError(err)
+        store.recordScanFailure()
         store.addLog(`Scan failed: ${msg}`)
         store.setIsOperating(false)
         if (/location services are off/i.test(msg)) {
@@ -170,10 +178,12 @@ export function useProvisionScan(opts: {
     starting.current = false
     try {
       await manager.connect()
+      if (!isCurrent()) return
       const rawName = manager.deviceName ?? 'Sierro Device'
       const parsed = parseBleName(rawName)
       const duid = manager.getDuid() || parsed?.dtuid
       if (!duid) {
+        store.recordScanFailure()
         const msg = "Couldn't read this device's ID. Make sure it's a Sierro device and try again."
         store.setErrorMessage(msg); toast.error(msg)
         return
@@ -183,13 +193,16 @@ export function useProvisionScan(opts: {
       bleGoneRef.current = false
       store.setDeviceInfo(display, duid)
       setFoundDevices([{ name: display, serial: duid, bleName: rawName, status: parsed?.status }])
+      store.clearScanFailures()
     } catch (err) {
+      if (!isCurrent()) return
+      store.recordScanFailure()
       const msg = err instanceof Error ? err.message : 'Scan failed'
       store.setErrorMessage(msg)
       store.addLog(`Scan failed: ${err}`)
       toast.error(msg)
     } finally {
-      store.setIsOperating(false)
+      if (isCurrent()) store.setIsOperating(false)
     }
   }, [cancelScan, store, setFoundDevices, setFailKind, setBleStatus, wifiConfiguredRef, lastBleRef, bleGoneRef, provisionStepRef, reconnectingRef, configGuardRef, scanStopRef])
 

@@ -7,6 +7,9 @@ import type { BleWifiAp, BleProvisionResponse, BleWifiStatus } from '../types/pr
 export type ProvisionStep = 'scan' | 'verify' | 'wifi' | 'password' | 'configuring' | 'result'
 
 export interface ProvisionStoreState {
+  consecutiveScanFailures: number
+  recordScanFailure: () => void
+  clearScanFailures: () => void
   // 当前步骤
   step: ProvisionStep
   setStep: (step: ProvisionStep) => void
@@ -58,6 +61,7 @@ export interface ProvisionStoreState {
 }
 
 const initialState = {
+  consecutiveScanFailures: 0,
   step: 'scan' as ProvisionStep,
   deviceName: null as string | null,
   dtuid: null as string | null,
@@ -78,6 +82,8 @@ const initialState = {
 
 export const useProvisionStore = create<ProvisionStoreState>()((set) => ({
   ...initialState,
+  recordScanFailure: () => set(state => ({ consecutiveScanFailures: state.consecutiveScanFailures + 1 })),
+  clearScanFailures: () => set({ consecutiveScanFailures: 0 }),
 
   setStep: (step) => set({ step }),
 

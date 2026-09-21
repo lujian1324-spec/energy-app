@@ -60,6 +60,26 @@ beforeEach(() => {
 afterEach(() => { vi.unstubAllGlobals() })
 
 describe('NativeBleProvisionManager.scanDevices', () => {
+  it('reports valid RSSI from unmatched advertisements without adding unrelated devices', async () => {
+    h.scanResults = [-95, -85, undefined, NaN, 127, 0, -128].map(rssi => ({ device: { deviceId: 'unknown' }, rssi }))
+    const mgr = await loadManager()
+    const found = vi.fn()
+    const signal = vi.fn()
+    await mgr.scanDevices(found, signal)
+    expect(found).not.toHaveBeenCalled()
+    expect(signal.mock.calls).toEqual([[-95], [-85]])
+  })
+
+  it('does not deliver signal diagnostics after cancellation', async () => {
+    let callback!: (result: any) => void
+    h.ble.requestLEScan.mockImplementation(async (_opts, cb) => { callback = cb })
+    const mgr = await loadManager()
+    const signal = vi.fn()
+    await mgr.scanDevices(vi.fn(), signal)
+    await mgr.stopScan()
+    callback({ device: { deviceId: 'late' }, rssi: -95 })
+    expect(signal).not.toHaveBeenCalled()
+  })
   it('forwards only Sierro devices (SSL_ name or FEE7 service) and drops the rest', async () => {
     h.scanResults = [
       { device: { deviceId: 'a', name: 'SSL_0F3A' } },                 // SSL_ name → keep

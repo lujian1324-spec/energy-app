@@ -45,7 +45,7 @@ export interface IBleProvisionManager {
   getDuid(): string | null
   readonly deviceName: string | undefined
   /** 原生：扫描并回调附近 SSL_ 设备；Web：抛出（不支持列表扫描） */
-  scanDevices(onFound: (d: ProvisionScanDevice) => void): Promise<void>
+  scanDevices(onFound: (d: ProvisionScanDevice) => void, onSignal?: (rssi: number) => void): Promise<void>
   stopScan(): Promise<void>
   /** 原生：连接指定 deviceId（来自 scanDevices）；Web：抛出 */
   connectTo(deviceId: string, name?: string): Promise<void>
@@ -418,7 +418,7 @@ class NativeBleProvisionManager extends BaseProvisionManager {
     this.log('GATT connected')
   }
 
-  async scanDevices(onFound: (d: ProvisionScanDevice) => void): Promise<void> {
+  async scanDevices(onFound: (d: ProvisionScanDevice) => void, onSignal?: (rssi: number) => void): Promise<void> {
     const generation = ++this.scanGeneration
     const BleClient = await this.ble()
     const platform = Capacitor.getPlatform()
@@ -451,6 +451,11 @@ class NativeBleProvisionManager extends BaseProvisionManager {
       (result) => {
         if (generation !== this.scanGeneration) return
         this.scanCounts.advertisements++
+        // Unidentified advertisements can still provide a weak-signal retry hint.
+        // Ignore missing/invalid RSSI and the positive "unavailable" sentinel.
+        if (typeof result.rssi === 'number' && Number.isFinite(result.rssi) && result.rssi < 0 && result.rssi >= -127) {
+          onSignal?.(result.rssi)
+        }
         if (!result?.device?.deviceId || !isSierroScanResult(result)) return
         this.scanCounts.matched.add(result.device.deviceId)
         onFound({ deviceId: result.device.deviceId, name: provisionScanName(result), rssi: result.rssi })

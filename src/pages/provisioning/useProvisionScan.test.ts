@@ -1,7 +1,8 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
 import { useProvisionScan, type FoundDevice } from './useProvisionScan'
 import type { ProvisionScanDevice } from '../../protocols/bleProvision'
-import { PROVISION_SCAN_MS } from './scanDiscovery'
+import { PROVISION_SCAN_MS, WEAK_SCAN_COPY } from './scanDiscovery'
+import { useProvisionStore } from '../../stores/provisionStore'
 
 const h = vi.hoisted(() => ({
   scanDevices: vi.fn(), stopScan: vi.fn(), destroy: vi.fn(), cleanup: () => {},
@@ -23,7 +24,8 @@ vi.mock('../../components/Toast', () => ({ toast: { error: vi.fn(), info: vi.fn(
 
 function setup() {
   let found: FoundDevice[] = []
-  const store = { setIsOperating: vi.fn(), setErrorMessage: vi.fn(), addLog: vi.fn() }
+  useProvisionStore.getState().reset()
+  const store = { ...useProvisionStore.getState(), setIsOperating: vi.fn(), setErrorMessage: vi.fn(), addLog: vi.fn() }
   const setBleStatus = vi.fn()
   const hook = useProvisionScan({
     store: store as any,
@@ -47,6 +49,52 @@ beforeEach(() => {
 afterEach(() => { h.cleanup(); vi.useRealTimers() })
 
 describe('provisioning scan lifecycle', () => {
+  it('uses the required 30-second window', () => {
+    expect(PROVISION_SCAN_MS).toBe(30000)
+  })
+
+  it.each([
+    [[-95, -90], WEAK_SCAN_COPY],
+    [[-95, -50], 'No nearby Sierro devices found.'],
+    [[], 'No nearby Sierro devices found.'],
+  ])('classifies empty results using available signals %j', async (signals, message) => {
+    h.scanDevices.mockImplementation(async (_found, onSignal) => signals.forEach(onSignal))
+    const scan = setup()
+    await scan.handleScan()
+    await vi.advanceTimersByTimeAsync(PROVISION_SCAN_MS)
+    expect(scan.store.setErrorMessage).toHaveBeenLastCalledWith(message)
+  })
+
+  it('counts consecutive failures, ignores cancellation, and resets on discovery', async () => {
+    const scan = setup()
+    for (let count = 1; count <= 2; count++) {
+      await scan.handleScan()
+      await vi.advanceTimersByTimeAsync(PROVISION_SCAN_MS)
+      expect(useProvisionStore.getState().consecutiveScanFailures).toBe(count)
+    }
+    await scan.handleScan()
+    scan.cancelScan()
+    await vi.advanceTimersByTimeAsync(PROVISION_SCAN_MS)
+    expect(useProvisionStore.getState().consecutiveScanFailures).toBe(2)
+    h.scanDevices.mockImplementationOnce(async onFound => onFound({ deviceId: 'weak', rssi: -100 }))
+    await scan.handleScan()
+    await vi.advanceTimersByTimeAsync(PROVISION_SCAN_MS)
+    expect(scan.found()).toHaveLength(1)
+    expect(useProvisionStore.getState().consecutiveScanFailures).toBe(0)
+    await scan.handleScan()
+    await vi.advanceTimersByTimeAsync(PROVISION_SCAN_MS)
+    expect(useProvisionStore.getState().consecutiveScanFailures).toBe(1)
+    useProvisionStore.getState().reset()
+    expect(useProvisionStore.getState().consecutiveScanFailures).toBe(0)
+  })
+
+  it('counts startup errors as failed scans', async () => {
+    h.scanDevices.mockRejectedValue(new Error('Bluetooth is off'))
+    const scan = setup()
+    await scan.handleScan()
+    await scan.handleScan()
+    expect(useProvisionStore.getState().consecutiveScanFailures).toBe(2)
+  })
   it('gives a full scan window after slow permission/startup completes', async () => {
     let ready!: () => void
     h.scanDevices.mockImplementation(() => new Promise<void>(resolve => { ready = resolve }))
