@@ -11,6 +11,7 @@ import { useDeviceStore } from '../stores/deviceStore'
 import { mapFieldsToRealtime } from '../api/deviceApi'
 import { useHistoryFetcher } from '../hooks/useHistoryFetcher'
 import { batteryTimeLabel } from '../utils/batteryTime'
+import { parseWorkMode } from '../utils/batteryPriority'
 import { loadRatedParams } from '../db/powerflowDB'
 
 // ─── 参数分组描述 ─────────────────────────────────────────────────────────────
@@ -24,7 +25,9 @@ interface ParamDef {
 
 const fmt1 = (v: unknown) => (typeof v === 'number' ? v.toFixed(1) : String(v ?? '--'))
 const fmtBool = (v: unknown) => (v === true || v === 1 || v === '1' ? 'On' : v === false || v === 0 || v === '0' ? 'Off' : '--')
-const fmtMode = (v: unknown) => ({ 0: 'Backup', 1: 'Normal', 2: 'Power Saving' }[v as 0|1|2] ?? String(v ?? '--'))
+// workMode is 0=正常 Normal / 1=备份 Backup / 2=节能 Savings (API_REFERENCE.md). This
+// page had 0 and 1 swapped, which disagreed with the Battery Priority sheet.
+const fmtMode = (v: unknown) => ({ 0: 'Normal', 1: 'Backup', 2: 'Savings' }[parseWorkMode(v) as 0|1|2] ?? String(v ?? '--'))
 
 const PARAM_GROUPS: { title: string; color: string; params: ParamDef[] }[] = [
   {
