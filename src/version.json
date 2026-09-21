@@ -1,8 +1,8 @@
 {
-  "version": "4.12.4",
-  "build": 2897,
+  "version": "4.12.5",
+  "build": 2898,
   "date": "2026-09-21",
   "changelog": [
-    "Fixed push tokens binding to the real userId and prevented anonymous cross-account notification fan-out."
+    "Fixed Smart Schedule failing with \"illegal argument\" by sending the device id as an exact string, trimming the save payload to the fields the backend accepts, and never sending these requests without a session token."
   ]
 }

@@ -14,7 +14,11 @@ const h = vi.hoisted(() => {
   }
   return {
     calls,
-    api: { get: mk('get'), post: mk('post'), postSkipAuth: mk('postSkipAuth') },
+    api: {
+      get: mk('get'), post: mk('post'), postSkipAuth: mk('postSkipAuth'),
+      // peakValley 走「无 Token 不发」的变体（见 RequestOptions.requireAuth）
+      getAuthed: mk('get'), postAuthed: mk('post'),
+    },
     tokenStore: {
       get: () => 'ACCESS', set: () => {}, setRefresh: () => {},
       getRefresh: () => 'REFRESH', clear: () => {},
@@ -458,7 +462,7 @@ describe('deviceApi contracts', () => {
     await dev.fetchPeakValleyConfig('1'); expect(last().path).toBe('/peakValley/device/get?deviceId=1')
     await dev.setPeakValleyEnabled({ deviceId: '1', isEnabled: true } as any)
     expect(last().path).toBe('/peakValley/device/enable')
-    await dev.setPeakValleyGeneral({ deviceId: '1' } as any)
+    await dev.setPeakValleyGeneral({ deviceId: '1', isEnabled: false, items: [] } as any)
     expect(last().path).toBe('/peakValley/device/general/set')
   })
 

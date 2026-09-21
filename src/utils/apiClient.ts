@@ -78,14 +78,24 @@ let refreshPromise: Promise<string | null> | null = null
 async function doRefreshToken(): Promise<string | null> {
   const accessToken = tokenStore.get()
   const refreshToken = tokenStore.getRefresh()
-  if (!accessToken || !refreshToken) return null
+  /**
+   * Only the refresh token is indispensable. This used to bail whenever the
+   * access token was missing — which is exactly the state a half-restored
+   * session is in: refresh token still on disk, access token gone. Nothing
+   * could put the access token back, so every authed call went out with no
+   * IOT-Token header, and endpoints that key off the session answered with a
+   * business error of their own choosing instead of an auth code, so no
+   * refresh was ever triggered. Send what we have; if the platform refuses an
+   * empty accessToken we return null exactly as before.
+   */
+  if (!refreshToken) return null
 
   try {
     const result = await requestInternal<{ accessToken?: string; refreshToken?: string }>(
       '/login/refresh/access/token',
       {
         method: 'POST',
-        body: compactStringify({ accessToken, refreshToken }),
+        body: compactStringify({ accessToken: accessToken ?? '', refreshToken }),
         skipAuth: true,
         _isRefresh: true,
       }
@@ -133,6 +143,17 @@ export interface RequestOptions {
   _isRefresh?: boolean
   /** 内部标记：是否已重试过（避免无限刷新重试） */
   _retriedAfterRefresh?: boolean
+  /**
+   * Refuse to send this request without an IOT-Token.
+   *
+   * A tokenless request is otherwise just sent anonymously, and a
+   * session-scoped endpoint then rejects it however it likes — the peakValley
+   * group answers 20101 "illegal argument", which reads like a malformed
+   * payload and never reaches the auth-expired handling below. With this set,
+   * one refresh is attempted first and the caller otherwise gets the same 401
+   * every other expired session produces.
+   */
+  requireAuth?: boolean
 }
 
 /** 指数退避 sleep */
@@ -255,6 +276,17 @@ export async function request<T = unknown>(
   path: string,
   options: RequestOptions = {}
 ): Promise<ApiResponse<T>> {
+  // Session-only endpoints: recover the token first, never send without one.
+  if (options.requireAuth && !options.skipAuth && !options._isRefresh && !tokenStore.get()) {
+    const recovered = await getOrCreateRefreshPromise()
+    if (!recovered) {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('auth:expired'))
+      }
+      throw new ApiError(401, 'Session expired', 401)
+    }
+  }
+
   let result: ApiResponse<T>
   try {
     result = await requestInternal<T>(path, options)
@@ -314,6 +346,21 @@ export const api = {
       method: 'POST',
       body: data !== undefined ? compactStringify(data) : '',
       headers,
+    })
+  },
+
+  /** GET that will not go out without an IOT-Token（见 RequestOptions.requireAuth） */
+  getAuthed<T = unknown>(path: string, headers?: Record<string, string>) {
+    return request<T>(path, { method: 'GET', headers, requireAuth: true })
+  },
+
+  /** POST that will not go out without an IOT-Token（见 RequestOptions.requireAuth） */
+  postAuthed<T = unknown>(path: string, data?: unknown, headers?: Record<string, string>) {
+    return request<T>(path, {
+      method: 'POST',
+      body: data !== undefined ? compactStringify(data) : '',
+      headers,
+      requireAuth: true,
     })
   },
 
