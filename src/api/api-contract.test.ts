@@ -85,6 +85,41 @@ describe('helpers', () => {
 // Auth 接口
 // ─────────────────────────────────────────────────────────────
 describe('authApi contracts', () => {
+  for (const [name, login] of [
+    ['account', () => auth.loginByAccount('account', 'password')],
+    ['email', () => auth.loginByEmail('a@b.com', 'CAP', '123456')],
+    ['sms', () => auth.loginBySms('5551234', '+1', 'CAP', '123456')],
+  ] as const) {
+    it.each([0, '0'])(`${name} login persists the exact userId on success code %s`, async (code) => {
+      const spy = vi.spyOn(h.api, 'postSkipAuth').mockResolvedValue({
+        code, data: { accessToken: 'ACCESS', userId: '491513787113766912' },
+      } as any)
+      try {
+        await login()
+        expect(store.iot_user_id).toBe('491513787113766912')
+      } finally { spy.mockRestore() }
+    })
+
+    it(`${name} login does not persist a failed response`, async () => {
+      const spy = vi.spyOn(h.api, 'postSkipAuth').mockResolvedValue({
+        code: 7, data: { userId: '491513787113766912' },
+      } as any)
+      try {
+        await login()
+        expect(store.iot_user_id).toBe('9999')
+      } finally { spy.mockRestore() }
+    })
+  }
+
+  it('persistSession stringifies numeric IDs and ignores absent IDs', () => {
+    auth.persistSession({ userId: 123 })
+    expect(store.iot_user_id).toBe('123')
+    for (const data of [null, undefined, {}, { userId: '' }, { userId: null }]) {
+      auth.persistSession(data)
+      expect(store.iot_user_id).toBe('123')
+    }
+  })
+
   it('loginByAccount → POST(skipAuth) /login/account, password md5 (+ mints poller session)', async () => {
     await auth.loginByAccount('benson', 'pw123')
     const c = h.calls[0]

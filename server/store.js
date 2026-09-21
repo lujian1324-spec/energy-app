@@ -23,40 +23,58 @@ function load() {
 function save(db) { writeFileSync(FILE, JSON.stringify(db, null, 2)) }
 
 const db = load()
-const uid = (u) => String(u ?? 'anon')
+export function requireUserId(u) {
+  const s = u == null ? '' : String(u).trim()
+  if (!s || s === 'anon' || s === 'undefined' || s === 'null') {
+    throw new Error('userId required')
+  }
+  return s
+}
 
 // ── Web Push / Native token subscriptions ────────────────────────────────────
 export function addWebPush(userId, sub) {
-  const k = uid(userId)
-  db.webpush[k] = (db.webpush[k] || []).filter(s => s.endpoint !== sub.endpoint)
+  const k = requireUserId(userId)
+  // A shared phone/browser belongs only to the most recently registered account.
+  for (const owner of Object.keys(db.webpush)) {
+    const previousCount = db.webpush[owner].length
+    db.webpush[owner] = db.webpush[owner].filter(entry => entry.endpoint !== sub.endpoint)
+    if (owner !== k && db.webpush[owner].length < previousCount) pruneUserIfNoSubs(owner)
+  }
+  db.webpush[k] ||= []
   db.webpush[k].push(sub)
   save(db)
 }
 export function removeWebPush(userId, endpoint) {
-  const k = uid(userId)
+  const k = requireUserId(userId)
   db.webpush[k] = (db.webpush[k] || []).filter(s => s.endpoint !== endpoint)
   pruneUserIfNoSubs(k)
   save(db)
 }
 export function addNative(userId, token, platform) {
-  const k = uid(userId)
-  db.native[k] = (db.native[k] || []).filter(t => t.token !== token)
+  const k = requireUserId(userId)
+  // A shared phone/browser belongs only to the most recently registered account.
+  for (const owner of Object.keys(db.native)) {
+    const previousCount = db.native[owner].length
+    db.native[owner] = db.native[owner].filter(entry => entry.token !== token)
+    if (owner !== k && db.native[owner].length < previousCount) pruneUserIfNoSubs(owner)
+  }
+  db.native[k] ||= []
   db.native[k].push({ token, platform })
   save(db)
 }
 export function removeNative(userId, token) {
-  const k = uid(userId)
+  const k = requireUserId(userId)
   db.native[k] = (db.native[k] || []).filter(t => t.token !== token)
   pruneUserIfNoSubs(k)
   save(db)
 }
-export function getWebPush(userId) { return db.webpush[uid(userId)] || [] }
-export function getNative(userId) { return db.native[uid(userId)] || [] }
+export function getWebPush(userId) { return db.webpush[requireUserId(userId)] || [] }
+export function getNative(userId) { return db.native[requireUserId(userId)] || [] }
 
 // ── Poller auth (users) ──────────────────────────────────────────────────────
 /** Store/refresh a user's IoT credentials + push prefs (called on subscribe). */
 export function setUserAuth(userId, { refreshToken, accessToken, accessExpiresAt, prefs }) {
-  const k = uid(userId)
+  const k = requireUserId(userId)
   const prev = db.users[k] || {}
   db.users[k] = {
     ...prev,
@@ -72,7 +90,7 @@ export function setUserAuth(userId, { refreshToken, accessToken, accessExpiresAt
 }
 /** Persist rotated tokens after a poller refresh. */
 export function updateUserTokens(userId, { refreshToken, accessToken, accessExpiresAt }) {
-  const k = uid(userId)
+  const k = requireUserId(userId)
   const u = db.users[k]
   if (!u) return
   if (refreshToken) u.refreshTokenEnc = encryptToken(refreshToken)
@@ -84,7 +102,7 @@ export function updateUserTokens(userId, { refreshToken, accessToken, accessExpi
 }
 /** Record a failed refresh; returns the running fail count. */
 export function noteUserFailure(userId) {
-  const k = uid(userId)
+  const k = requireUserId(userId)
   const u = db.users[k]
   if (!u) return 0
   u.failCount = (u.failCount || 0) + 1
@@ -93,12 +111,15 @@ export function noteUserFailure(userId) {
 }
 /** Drop a user's stored credentials (e.g. refresh permanently failing). */
 export function removeUserAuth(userId) {
-  delete db.users[uid(userId)]
+  delete db.users[requireUserId(userId)]
   save(db)
 }
 /** All users with stored auth, refreshToken decrypted for immediate use. */
 export function getAllUsers() {
-  return Object.entries(db.users).map(([userId, u]) => ({
+  // Legacy anonymous credentials must never be polled, even before ops cleanup.
+  return Object.entries(db.users).filter(([userId]) => {
+    try { requireUserId(userId); return true } catch { return false }
+  }).map(([userId, u]) => ({
     userId,
     refreshToken: decryptToken(u.refreshTokenEnc),
     accessToken: u.accessToken,
@@ -112,7 +133,7 @@ export function getAllUsers() {
 // ── Per-device Sleep schedules (drives the server-side schedule executor) ─────
 /** Store/replace one device's sleep schedule for a user (merged per device). */
 export function setUserSchedule(userId, deviceId, schedule) {
-  const k = uid(userId)
+  const k = requireUserId(userId)
   const u = db.users[k]
   if (!u) return // schedule upload always carries the auth bootstrap, so setUserAuth ran first
   u.schedules ||= {}
@@ -122,28 +143,28 @@ export function setUserSchedule(userId, deviceId, schedule) {
 }
 /** Last charge-power phase we actually applied for a (user,device): 'sleep' | 'wake'. */
 export function getSchedulePhase(userId, deviceId) {
-  return db.users[uid(userId)]?.phaseState?.[String(deviceId)] ?? null
+  return db.users[requireUserId(userId)]?.phaseState?.[String(deviceId)] ?? null
 }
 export function setSchedulePhase(userId, deviceId, phase) {
-  const u = db.users[uid(userId)]
+  const u = db.users[requireUserId(userId)]
   if (!u) return
   u.phaseState ||= {}
   u.phaseState[String(deviceId)] = phase
   save(db)
 }
 export function getUser(userId) {
-  const u = db.users[uid(userId)]
+  const u = db.users[requireUserId(userId)]
   if (!u) return null
-  return { userId: uid(userId), refreshToken: decryptToken(u.refreshTokenEnc), accessToken: u.accessToken, prefs: u.prefs || {} }
+  return { userId: requireUserId(userId), refreshToken: decryptToken(u.refreshTokenEnc), accessToken: u.accessToken, prefs: u.prefs || {} }
 }
 
 // ── Per-(device,type) notify throttle state (mirrors client 30-min throttle) ──
 export function getNotifyTs(userId, deviceId, type) {
-  const u = db.users[uid(userId)]
+  const u = db.users[requireUserId(userId)]
   return u?.notifyState?.[`${deviceId}|${type}`] ?? 0
 }
 export function setNotifyTs(userId, deviceId, type, ts) {
-  const k = uid(userId)
+  const k = requireUserId(userId)
   const u = db.users[k]
   if (!u) return
   u.notifyState ||= {}
