@@ -647,6 +647,12 @@ export interface PeakValleyItem {
   socMax?: number
 }
 
+/**
+ * 常规削峰填谷配置。
+ *
+ * Only `deviceId` / `isEnabled` / `items` are part of the wire DTO — see
+ * `setPeakValleyGeneral`. The rest is UI state that rides along in the store.
+ */
 export interface PeakValleyGeneralConfig {
   deviceId: string | number
   isEnabled: boolean
@@ -1165,46 +1171,114 @@ export async function deleteAlarm(
 // 削峰填谷 / Smart Schedule API
 // ═══════════════════════════════════════════════════════
 
+/** Thrown instead of sending a peakValley request the backend cannot answer. */
+export class InvalidDeviceIdError extends Error {
+  constructor(received: unknown) {
+    super(`Smart Schedule needs a device id; got ${JSON.stringify(received) ?? 'undefined'}`)
+    this.name = 'InvalidDeviceIdError'
+  }
+}
+
+/**
+ * The exact decimal string the backend wants for a deviceId.
+ *
+ * Every peakValley call used to interpolate whatever the caller held straight
+ * into the URL or body. A `selectedDeviceId` that had not loaded yet spelled
+ * `?deviceId=undefined`, and a numeric id past JS's safe-integer range spells
+ * `1e+21` — both come back as 20101 "illegal argument", which is the error
+ * Smart Schedule showed instead of opening. A `Long` id also has to travel as
+ * a string (CLAUDE.md, 后端 API 参数约定): `Number()` on an 18-digit id
+ * silently rounds it into a different device.
+ *
+ * Nothing is sent when the id is unusable — a request that cannot succeed is
+ * not worth the round trip, and the throw gives the store a real message
+ * instead of a backend riddle.
+ */
+export function normalizeDeviceId(deviceId: string | number | null | undefined): string {
+  if (typeof deviceId === 'number') {
+    if (!Number.isSafeInteger(deviceId) || deviceId < 0) throw new InvalidDeviceIdError(deviceId)
+    return String(deviceId)
+  }
+  const raw = String(deviceId ?? '').trim()
+  if (!/^\d+$/.test(raw)) throw new InvalidDeviceIdError(deviceId)
+  return raw
+}
+
 /** 获取设备削峰填谷采集属性分组 */
 export async function fetchPeakValleyAttributeGroup(
   deviceId: string | number
 ): Promise<ApiResponse<unknown>> {
-  return api.get<unknown>(`/peakValley/device/attribute/group?deviceId=${deviceId}`)
+  return api.getAuthed<unknown>(
+    `/peakValley/device/attribute/group?deviceId=${normalizeDeviceId(deviceId)}`
+  )
 }
 
 /** 获取设备常规削峰填谷配置 */
 export async function fetchPeakValleyGeneral(
   deviceId: string | number
 ): Promise<ApiResponse<PeakValleyGeneralConfig>> {
-  return api.get<PeakValleyGeneralConfig>(`/peakValley/device/general/get?deviceId=${deviceId}`)
+  return api.getAuthed<PeakValleyGeneralConfig>(
+    `/peakValley/device/general/get?deviceId=${normalizeDeviceId(deviceId)}`
+  )
 }
 
-/** 设置设备常规削峰填谷 */
+/**
+ * 设置设备常规削峰填谷
+ *
+ * `DeviceGeneralPeakValleyDtio` is `{ deviceId, isEnabled, items }` and nothing
+ * else (API_REFERENCE.md §八). The UI config object carries prices, power caps
+ * and SOC bounds alongside those three; they were being posted too, and this
+ * backend answers 20101 "illegal argument" for fields it does not declare —
+ * the same way `/user/update/iotUserInfo` does. They stay in the local store,
+ * which is the only place they have ever actually been read back from.
+ */
 export async function setPeakValleyGeneral(
   data: PeakValleyGeneralConfig
 ): Promise<ApiResponse<unknown>> {
-  return api.post<unknown>('/peakValley/device/general/set', data)
+  return api.postAuthed<unknown>('/peakValley/device/general/set', {
+    deviceId: normalizeDeviceId(data.deviceId),
+    isEnabled: !!data.isEnabled,
+    items: data.items ?? [],
+  })
 }
 
 /** 获取设备削峰填谷配置（完整 bundle） */
 export async function fetchPeakValleyConfig(
   deviceId: string | number
 ): Promise<ApiResponse<PeakValleyBundleResponse>> {
-  return api.get<PeakValleyBundleResponse>(`/peakValley/device/get?deviceId=${deviceId}`)
+  return api.getAuthed<PeakValleyBundleResponse>(
+    `/peakValley/device/get?deviceId=${normalizeDeviceId(deviceId)}`
+  )
 }
 
 /** 设置自定义削峰填谷 */
 export async function setPeakValleyCustomized(
   data: PeakValleyCustomizedConfig
 ): Promise<ApiResponse<unknown>> {
-  return api.post<unknown>('/peakValley/device/customized/set', data)
+  return api.postAuthed<unknown>('/peakValley/device/customized/set', {
+    deviceId: normalizeDeviceId(data.deviceId),
+    isEnabled: !!data.isEnabled,
+    defaultItem: data.defaultItem ?? {},
+    items: data.items ?? [],
+  })
 }
 
-/** 启用/禁用削峰填谷 */
+/**
+ * 启用/禁用削峰填谷
+ *
+ * `DevicePeakValleyEnableDtio` = `{ deviceId*, isEnabled*, category? }`.
+ * `category` is omitted rather than sent as undefined so the compact JSON body
+ * the signature is computed over matches the one the backend parses.
+ */
 export async function setPeakValleyEnabled(
   data: PeakValleyEnableRequest
 ): Promise<ApiResponse<unknown>> {
-  return api.post<unknown>('/peakValley/device/enable', data)
+  const body: Record<string, unknown> = {
+    deviceId: normalizeDeviceId(data.deviceId),
+    isEnabled: !!data.isEnabled,
+  }
+  if (data.category) body.category = data.category
+  return api.postAuthed<unknown>('/peakValley/device/enable', body)
 }
 
 /** 获取设备支持的削峰填谷类型 */
@@ -1212,14 +1286,14 @@ export async function fetchPeakValleyTypes(
   deviceId: string | number,
   includeDefault = true
 ): Promise<ApiResponse<unknown>> {
-  return api.get<unknown>(
-    `/peakValley/types/device?deviceId=${deviceId}&includeDefault=${includeDefault}`
+  return api.getAuthed<unknown>(
+    `/peakValley/types/device?deviceId=${normalizeDeviceId(deviceId)}&includeDefault=${includeDefault}`
   )
 }
 
 /** 获取所有削峰填谷类型 */
 export async function fetchAllPeakValleyTypes(): Promise<ApiResponse<unknown>> {
-  return api.get<unknown>('/peakValley/types/all')
+  return api.getAuthed<unknown>('/peakValley/types/all')
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1467,7 +1541,8 @@ export function mapSettingsToGeneralConfig(
   settings: PeakShavingSettings
 ): PeakValleyGeneralConfig {
   return {
-    deviceId,
+    // A Long id has to stay an exact decimal string all the way to the wire.
+    deviceId: String(deviceId ?? ''),
     isEnabled: settings.enabled,
     items: settings.schedules.map(s => ({
       startTime: s.startTime,
