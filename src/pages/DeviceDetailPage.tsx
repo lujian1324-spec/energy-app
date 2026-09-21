@@ -13,6 +13,15 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useDeviceStore } from '../stores/deviceStore'
 import { mapFieldsToRealtime, toggleSleepMode, setWorkMode, passthroughDevice } from '../api/deviceApi'
+import { isApiSuccess } from '../utils/apiClient'
+import { toast } from '../components/Toast'
+import {
+  loadConfirmedPriority,
+  priorityFromWorkMode,
+  resolveBatteryPriority,
+  saveConfirmedPriority,
+  type BatteryPriority,
+} from '../utils/batteryPriority'
 import { formatTemp } from '../utils/localization'
 import { sanitizeUiCopy } from '../utils/uiCopy'
 import { FRAMES } from '../protocols/modbusProtocol'
@@ -216,12 +225,37 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     }
   }, [selectedDeviceState])
 
+  // ── Battery Priority (SW-04) ──
+  // The device read-back is the source of truth; `pendingWorkModeRef` holds the
+  // value of a write that has not been echoed back yet so the stale polls that
+  // arrive in between cannot snap the row back to its old value.
+  const workModeDeviceId = routeId ?? selectedDeviceId ?? ''
+  const workModeRef = useRef<BatteryPriority>(loadConfirmedPriority(workModeDeviceId) ?? 1)
+  const pendingWorkModeRef = useRef<BatteryPriority | null>(null)
+  const mountedRef = useRef(true)
   useEffect(() => {
-    const val = selectedDeviceState?.fields?.workMode?.value
-    if (val === 0 || val === 1 || val === 2) {
-      setWorkMode_(val as 0 | 1 | 2)
-    }
-  }, [selectedDeviceState])
+    mountedRef.current = true
+    return () => { mountedRef.current = false }
+  }, [])
+
+  /** Adopt a resolved priority into state + ref, remembering it when the device confirmed it. */
+  const applyPriority = (deviceId: string, priority: BatteryPriority, confirmed: boolean) => {
+    workModeRef.current = priority
+    setWorkMode_(priority)
+    if (confirmed) saveConfirmedPriority(deviceId, priority)
+  }
+
+  useEffect(() => {
+    const { priority, confirmed } = resolveBatteryPriority({
+      deviceWorkMode: selectedDeviceState?.fields?.workMode?.value,
+      remembered: loadConfirmedPriority(workModeDeviceId),
+      pending: pendingWorkModeRef.current,
+      current: workModeRef.current,
+    })
+    if (confirmed) pendingWorkModeRef.current = null
+    applyPriority(workModeDeviceId, priority, confirmed)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDeviceState, workModeDeviceId])
 
   const realtime = useMemo(
     () => (selectedDeviceState?.fields ? mapFieldsToRealtime(selectedDeviceState.fields) : null),
@@ -267,17 +301,87 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   }, [screen])
   const [showWorkModeMenu, setShowWorkModeMenu] = useState(false)
   const [showIconSheet, setShowIconSheet] = useState(false)
-  const [workModeDraft, setWorkModeDraft] = useState<0 | 1 | 2>(1)
-  const WORK_MODES: { label: string; desc: string; value: 0 | 1 | 2 }[] = [
+  const [workModeDraft, setWorkModeDraft] = useState<BatteryPriority>(1)
+  const [savingWorkMode, setSavingWorkMode] = useState(false)
+  const WORK_MODES: { label: string; desc: string; value: BatteryPriority }[] = [
     { label: 'Backup', desc: 'Reserve 100% for backup', value: 1 },
     { label: 'Savings', desc: 'Reserve 60% for backup', value: 2 },
   ]
   /** B_1.2 shows the mode on the settings row as "Backup Mode" / "Savings Mode". */
-  const workModeRowLabel = (v: 0 | 1 | 2) => {
+  const workModeRowLabel = (v: BatteryPriority) => {
     const m = WORK_MODES.find((x) => x.value === v) ?? WORK_MODES[0]
     return `${m.label} Mode`
   }
-  const [workMode, setWorkMode_] = useState<0 | 1 | 2>(1)
+  const [workMode, setWorkMode_] = useState<BatteryPriority>(
+    () => loadConfirmedPriority(routeId ?? selectedDeviceId ?? '') ?? 1
+  )
+
+  /** Re-read the device until it echoes the value we wrote, then bind the row to
+   *  whatever it ends up reporting. Devices take a few seconds to report a config
+   *  write back, so a single immediate refresh reads the pre-write value. */
+  const confirmPriorityFromDevice = async (deviceId: string, target: BatteryPriority) => {
+    const readBack = () =>
+      useDeviceStore.getState().selectedDeviceState?.fields?.workMode?.value
+    for (const delay of [0, 1500, 4000]) {
+      if (delay) await new Promise(r => setTimeout(r, delay))
+      if (!mountedRef.current) return
+      await loadDeviceState(deviceId)
+      if (!mountedRef.current) return
+      if (priorityFromWorkMode(readBack()) === target) {
+        pendingWorkModeRef.current = null
+        applyPriority(deviceId, target, true)
+        return
+      }
+    }
+    // The device never echoed it. The write itself was accepted, so keep the value
+    // we sent unless the device is actively reporting the other priority — then it
+    // wins, because the read-back is the source of truth.
+    pendingWorkModeRef.current = null
+    const settled = priorityFromWorkMode(readBack()) ?? target
+    applyPriority(deviceId, settled, true)
+  }
+
+  const saveBatteryPriority = async () => {
+    const deviceId = routeId ?? selectedDeviceId
+    const target = workModeDraft
+    if (!deviceId) { setShowWorkModeMenu(false); return }
+    if (savingWorkMode) return
+
+    const previous = workModeRef.current
+    setSavingWorkMode(true)
+    pendingWorkModeRef.current = target
+    applyPriority(deviceId, target, false)
+
+    try {
+      const res = await setWorkMode(deviceId, target)
+      if (!isApiSuccess(res?.code)) throw new Error(String(res?.message ?? 'write rejected'))
+
+      // Mirror onto the Modbus register (0x86) for firmware that only honours the
+      // passthrough path. Best effort: the config write above is what reads back.
+      try {
+        const frame = target === 2 ? FRAMES.PV_BATT_PRIORITY_ON : FRAMES.PV_BATT_PRIORITY_OFF
+        await passthroughDevice(deviceId, { data: frame, noOutput: true })
+      } catch { /* optional path */ }
+
+      saveConfirmedPriority(deviceId, target)
+      if (mountedRef.current) {
+        setShowWorkModeMenu(false)
+        // The write landed — release the button now rather than holding it grey
+        // for the seconds the device takes to report the new value back.
+        setSavingWorkMode(false)
+      }
+      void confirmPriorityFromDevice(deviceId, target).catch(() => { /* read-back only */ })
+    } catch {
+      // No fake success: put the row back where it was and leave the sheet open,
+      // with the selection still on the failed choice so Save can be retried.
+      pendingWorkModeRef.current = null
+      if (mountedRef.current) {
+        applyPriority(deviceId, previous, false)
+        setSavingWorkMode(false)
+      }
+      toast.error('Could not change Battery Priority')
+    }
+  }
   // Empty until the user picks one — the row then falls back to the icon guessed from the
   // device name, so Device Settings shows the same glyph the home card does.
   const [selectedIcon, setSelectedIcon] = useState(() =>
@@ -788,7 +892,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           label="Battery Priority"
           value={workModeRowLabel(workMode)}
           onPress={() => {
-            setWorkModeDraft(workMode === 2 ? 2 : 1)
+            setWorkModeDraft(workMode)
             setShowWorkModeMenu(true)
           }}
         />
@@ -834,19 +938,8 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           </div>
           <div className="mt-6 px-8">
             <button
-              onClick={async () => {
-                setWorkMode_(workModeDraft)
-                setShowWorkModeMenu(false)
-                const deviceId = routeId ?? selectedDeviceId
-                if (deviceId) {
-                  try { await setWorkMode(deviceId, workModeDraft) } catch { /* noop */ }
-                  try {
-                    const frame = workModeDraft === 2 ? FRAMES.PV_BATT_PRIORITY_ON : FRAMES.PV_BATT_PRIORITY_OFF
-                    await passthroughDevice(deviceId, { data: frame, noOutput: true })
-                  } catch { /* noop */ }
-                }
-              }}
-              disabled={workModeDraft === workMode}
+              onClick={() => { void saveBatteryPriority() }}
+              disabled={savingWorkMode || workModeDraft === workMode}
               className="w-full h-12 rounded-m bg-primary text-primary-darker font-semibold text-body-lg
                 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] transition-transform"
             >

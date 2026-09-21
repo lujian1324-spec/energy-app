@@ -1,8 +1,8 @@
 {
-  "version": "4.12.5",
-  "build": 2898,
+  "version": "4.12.6",
+  "build": 2899,
   "date": "2026-09-21",
   "changelog": [
-    "Fixed Smart Schedule failing with \"illegal argument\" by sending the device id as an exact string, trimming the save payload to the fields the backend accepts, and never sending these requests without a session token."
+    "Fixed Battery Priority losing the Savings selection after leaving and re-entering the device page, and rolled the setting back instead of showing a false success when the write is refused."
   ]
 }
