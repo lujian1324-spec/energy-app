@@ -82,7 +82,7 @@ Node + Express, file‑backed store, no database. Started by systemd; poller run
 | `POST /notification/webpush/unsubscribe` | Remove a Web Push subscription |
 | `POST /notification/nativepush/register` | **Native token** `{token, platform:'ios'\|'android', userId, refreshToken, accessToken, accessExpiresAt, prefs}` — stores token **and** seeds the poller session + prefs |
 | `POST /notification/nativepush/unregister` | Remove a native token |
-| `POST /schedule` | Sleep‑Mode window `{deviceId, enabled, sleepFrom, sleepTo, model, tz}` |
+| `POST /schedule` | Charge window `{deviceId, enabled, sleepFrom, sleepTo, model, tz, sleepW?, wakeW?}` — Sleep Mode omits the watts, Smart Schedule sends them |
 | `POST /notify` | Internal fan‑out entry used by the poller / manual tests |
 
 ### Poller (`server/poller.js`)
@@ -230,19 +230,26 @@ node -e "const a=require('firebase-admin');a.initializeApp({credential:a.credent
 
 ---
 
-## 8. Sleep‑Mode scheduling (same relay, shared poller)
+## 8. Charge‑window scheduling (Sleep Mode **and** Smart Schedule, same relay + poller)
 
 On saving Sleep Mode the app POSTs the device window to `/schedule`; each poller tick
 computes the current phase in the device's IANA timezone (`server/sleepSchedule.js`) and,
-on a phase change, writes charge power (Sierro 1000 = 150 W sleep / 400 W wake; Sierro
-2000 = 300 W sleep / 800 W wake). Client scheduler (`useSleepModeScheduler.ts`) stays as
-instant feedback + fallback.
+on a phase change, writes charge power via **Modbus passthrough 0x0085** (FC06 + CRC16 →
+base64 → `/remote/device/passthrough`) — the same register the client pokes. (The earlier
+`/remote/device/config/write ratedACChargingPower` write was a device no‑op — `Success`
+returned, value unchanged — and was replaced by the passthrough write in `poller.js`.)
+Client scheduler (`useSleepModeScheduler.ts`) stays as instant feedback + fallback.
 
-> **Known issue (tracked separately):** the relay currently writes via
-> `/remote/device/config/write ratedACChargingPower`, which live testing showed is a
-> **no‑op** on the device (`Success` returned but value unchanged). The fix is to switch to
-> **Modbus passthrough 0x0085** (FC06 + CRC16 → base64 → `/remote/device/passthrough`),
-> the same register the client already pokes. Not yet applied.
+**Watts.** Sleep Mode uploads no watts and the relay derives them from the model
+(Sierro 1000 = 150 W sleep / 400 W wake; Sierro 2000 = 300 W sleep / 800 W wake).
+Smart Schedule (SW‑08, app v4.13.0) uploads explicit `sleepW`/`wakeW` — the charge rate
+the user typed inside the window and **0 W** outside it — and those win over the model
+defaults (`chargePowerForPhase`). A relay deployed before that change ignores the extra
+fields and enforces Sleep Mode's rates on Smart Schedule windows until it is redeployed.
+
+**One slot per device.** The relay keeps a single schedule per `(user, device)`, so the
+most recent upload — Sleep Mode's or Smart Schedule's — is the one enforced. That is the
+same "one device, one charge‑power window" rule the app follows on the device itself.
 
 ---
 

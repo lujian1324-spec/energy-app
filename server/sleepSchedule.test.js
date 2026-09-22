@@ -63,3 +63,21 @@ test('chargePowerForPhase', () => {
   assert.equal(chargePowerForPhase('Sierro 2000', 'sleep'), 300)
   assert.equal(chargePowerForPhase('Sierro 2000', 'wake'), 800)
 })
+
+// SW-08: Smart Schedule uploads its own watts (user's charge rate inside the
+// window, 0W outside). Without the override the relay would silently enforce
+// Sleep Mode's per-model rates on a Smart Schedule window.
+test('chargePowerForPhase: an uploaded schedule\'s watts win over the model defaults', () => {
+  const smart = { sleepFrom: '23:00', sleepTo: '07:00', model: 'Sierro 1000', sleepW: 500, wakeW: 0 }
+  assert.equal(chargePowerForPhase(smart.model, 'sleep', smart), 500)
+  assert.equal(chargePowerForPhase(smart.model, 'wake', smart), 0)
+})
+
+test('chargePowerForPhase: a Sleep Mode schedule (no watts) still gets model defaults', () => {
+  const sleep = { sleepFrom: '22:00', sleepTo: '09:00', model: 'Sierro 2000' }
+  assert.equal(chargePowerForPhase(sleep.model, 'sleep', sleep), 300)
+  assert.equal(chargePowerForPhase(sleep.model, 'wake', sleep), 800)
+  // Nonsense overrides are ignored rather than written to the device.
+  assert.equal(chargePowerForPhase('Sierro 1000', 'sleep', { sleepW: 'lots' }), 150)
+  assert.equal(chargePowerForPhase('Sierro 1000', 'wake', { wakeW: -5 }), 400)
+})

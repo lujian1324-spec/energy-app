@@ -1263,15 +1263,23 @@ Bluetooth/Wi-Fi/Storage 五项权限的实时状态，支持逐项 "Allow"/"Re-t
 
 **功能：** 配置峰谷时段自动充放电计划
 
+**控制链路（SW-08 / v4.13.0）**：不再调 `/peakValley/*`（设备无峰谷引擎，后端收下但硬件不动），
+改走 Sleep Mode 同一条链路：`applySmartSchedule()`（`src/api/smartScheduleControl.ts`）依次
+`POST /remote/device/config/write`（`sleepMode`）→ `POST /remote/device/passthrough` 写 Modbus **0x0085**
+→ relay `POST /schedule`（`uploadSleepSchedule`）。窗口 = 启用的 **Charge** 时段；窗口内用用户填的
+**Max Charge**（W），窗口外 0W；关闭时写回机型额定值。窗口/相位/功率计算与 Sleep Mode
+共用 `src/utils/chargeWindow.ts`，页面打开期间的边界执行复用 `useSleepModeScheduler`
+（`storagePrefix: 'sierro-smart'`）。
+
 ```ts
 // Store 读取
-const { selectedDeviceId, peakValleyConfig, peakValleyLoading,
-        loadPeakValley, enablePeakValley, savePeakValleyGeneral } = useDeviceStore()
+const { selectedDeviceId } = useDeviceStore()
 
 // 本地状态
-const [enabled, setEnabled] = useState(peakValleyConfig?.isEnabled ?? false)
-const [socLower, setSocLower] = useState(peakValleyConfig?.generalItem.chargingSocLowerLimit ?? 20)
-const [socUpper, setSocUpper] = useState(peakValleyConfig?.generalItem.chargingSocUpperLimit ?? 80)
+const [model, setModel] = useState(powerStation.model ?? 'Sierro 1000')
+const [modelReady, setModelReady] = useState(false)
+// committed = 已下发给设备的窗口（拖动弧段时避免每帧都写 0x0085）
+const [committed, setCommitted] = useState({ enabled, startTime, endTime, chargePowerW })
 const [saving, setSaving] = useState(false)
 ```
 

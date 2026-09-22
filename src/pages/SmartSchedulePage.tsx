@@ -15,19 +15,26 @@ import {
   Edit2,
   Save,
   Loader2,
-  RefreshCw,
-  CloudOff,
 } from 'lucide-react'
 import Icon from '../components/Icon'
 import BottomSheet from '../components/BottomSheet'
 import { toast } from '../components/Toast'
-import { isApiSuccess } from '../utils/apiClient'
 import { sanitizeUiCopy } from '../utils/uiCopy'
 import { useKeyboardInset } from '../utils/useKeyboardInset'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useDeviceStore } from '../stores/deviceStore'
-import { mapBundleToSettings, mapSettingsToGeneralConfig } from '../api/deviceApi'
+import { applySmartSchedule, type SmartScheduleResult } from '../api/smartScheduleControl'
+import { useSleepModeScheduler } from '../hooks/useSleepModeScheduler'
+import { smartSchedulePowers, MAX_MANUAL_CHARGE_W } from '../utils/chargeWindow'
+import { loadRatedParams } from '../db/powerflowDB'
 import type { PeakShavingSchedule } from '../types'
+
+/**
+ * SW-08: Smart Schedule's window and charge power are remembered under their own
+ * localStorage namespace, so arming Smart Schedule never rewrites the window the
+ * user set in Sleep Mode (they share the device, not the saved settings).
+ */
+const SMART_STORAGE_PREFIX = 'sierro-smart'
 
 const scheduleTypeConfig = {
   charge: { label: 'Charge', color: '#01D6BE', icon: Battery, bgColor: 'rgba(1,214,190,0.15)' },
@@ -153,102 +160,139 @@ export default function SmartSchedulePage() {
     deletePeakShavingSchedule,
     lookupTOURate,
     powerStation,
+    devices,
   } = usePowerStationStore()
 
-  const {
-    selectedDeviceId,
-    peakValleyConfig,
-    peakValleyLoading,
-    peakValleySaving,
-    peakValleyError,
-    loadPeakValley,
-    enablePeakValley,
-    savePeakValleyGeneral,
-  } = useDeviceStore()
+  const { selectedDeviceId } = useDeviceStore()
 
-  const [apiConfigLoaded, setApiConfigLoaded] = useState(false)
+  /* ── SW-08: Smart Schedule runs on Sleep Mode's control path ────────────────
+     The old peakValley endpoints accepted everything and changed nothing at the
+     plug — the device has no peak-valley engine. What it does have is the AC
+     charge-power window Sleep Mode drives, so peak shaving is expressed as that
+     same window: charge at the rate you set while power is cheap (the enabled
+     "Charge" period), draw nothing from the grid outside it, and let the battery
+     carry the load. There is no peakValley request left on this screen. */
+
+  /** The one window that reaches the device: the enabled Charge period. */
+  const chargeWindow = useMemo(
+    () => peakShavingSettings.schedules.find(s => s.type === 'charge' && s.enabled) ?? null,
+    [peakShavingSettings.schedules]
+  )
+
+  /* Model decides the charge power restored when Smart Schedule is switched off,
+     read from the same place Device Info reads it. */
+  const [model, setModel] = useState<string>(powerStation.model ?? 'Sierro 1000')
+  /* The enforcer below stays parked until the model is known, so opening the
+     screen writes the charge power once — with the right restore value — rather
+     than once on the guessed model and again when the real one arrives. */
+  const [modelReady, setModelReady] = useState(false)
   useEffect(() => {
-    if (!selectedDeviceId || apiConfigLoaded) return
-    ;(async () => {
-      const bundle = await loadPeakValley(selectedDeviceId)
-      if (bundle) {
-        const settings = mapBundleToSettings(bundle)
-        if (settings.schedules && settings.schedules.length > 0) {
-          updatePeakShavingSettings(settings)
-        }
-      }
-      setApiConfigLoaded(true)
-    })()
-  }, [selectedDeviceId, apiConfigLoaded, loadPeakValley, updatePeakShavingSettings])
-
-  const handleRefresh = useCallback(async () => {
     if (!selectedDeviceId) return
-    const bundle = await loadPeakValley(selectedDeviceId)
-    if (bundle) {
-      const settings = mapBundleToSettings(bundle)
-      updatePeakShavingSettings(settings)
-    }
-  }, [selectedDeviceId, loadPeakValley, updatePeakShavingSettings])
+    const listed = devices.find(d => String(d.id) === String(selectedDeviceId))?.model
+    const fallback = listed ?? powerStation.model ?? 'Sierro 1000'
+    loadRatedParams(String(selectedDeviceId))
+      .then(p => setModel(p?.model ?? fallback))
+      .catch(() => setModel(fallback))
+      .finally(() => setModelReady(true))
+  }, [selectedDeviceId, devices, powerStation.model])
+
+  /* What the device was last told. Dragging an arc rewrites the store on every
+     pointer move, so the client-side enforcer is fed committed values only —
+     otherwise one drag would write 0x0085 dozens of times. */
+  const [committed, setCommitted] = useState(() => ({
+    enabled: peakShavingSettings.enabled,
+    startTime: chargeWindow?.startTime ?? '',
+    endTime: chargeWindow?.endTime ?? '',
+    chargePowerW: peakShavingSettings.maxChargePower,
+  }))
+
+  /* Same enforcer Sleep Mode uses — it re-applies the charge power at the window
+     boundaries while this screen is open; the relay covers the app-closed case. */
+  useSleepModeScheduler({
+    enabled: committed.enabled && modelReady && !!committed.startTime,
+    sleepFrom: committed.startTime || '00:00',
+    sleepTo: committed.endTime || '00:00',
+    deviceId: selectedDeviceId ? String(selectedDeviceId) : '',
+    model,
+    powers: smartSchedulePowers(model, committed.chargePowerW),
+    storagePrefix: SMART_STORAGE_PREFIX,
+  })
+
+  const [saving, setSaving] = useState(false)
+
+  const stepFailureTitle = (r: SmartScheduleResult, enabling: boolean): string => {
+    if (r.failedStep === 'passthrough') return 'Could not set the charge power'
+    return enabling ? 'Could not turn Smart Schedule on' : 'Could not turn Smart Schedule off'
+  }
 
   /**
-   * The switch only moves once the device has actually accepted it, so what the
-   * screen shows is what the device is doing.
+   * Push the current window to the device over Sleep Mode's three writes:
+   * `config/write` sleepMode → passthrough 0x0085 → relay `POST /schedule`.
    *
-   * Both halves of that used to be wrong. A thrown request was swallowed by an
-   * empty catch, so a failure looked exactly like a dead switch — no movement,
-   * no reason, nothing to report. And a request that came back with a non-zero
-   * code was treated as success, so the switch went on and then reverted on the
-   * next load. Either way there was no way to find out why from the phone, which
-   * is the whole difficulty with "Smart Schedule will not turn on".
+   * The switch and the screen only move once the device has accepted it, so what
+   * is shown is what the device is doing. A thrown request used to be swallowed
+   * by an empty catch and a non-zero code was treated as success, which is what
+   * made "Smart Schedule will not turn on" impossible to diagnose from a phone.
+   *
+   * Settings are read from the store at call time — the callers fire this from a
+   * `setTimeout` right after a store update, so a closed-over copy would be the
+   * pre-edit one.
    */
+  const pushToDevice = useCallback(async (enabled: boolean): Promise<boolean> => {
+    if (!selectedDeviceId) return false
+    const settings = usePowerStationStore.getState().peakShavingSettings
+    const win = settings.schedules.find(s => s.type === 'charge' && s.enabled) ?? null
+    if (enabled && !win) {
+      toast.error('Add a Charge period first', 'Smart Schedule needs one charge window to run.')
+      return false
+    }
+    setSaving(true)
+    try {
+      const r = await applySmartSchedule(selectedDeviceId, {
+        enabled,
+        startTime: win?.startTime ?? '00:00',
+        endTime: win?.endTime ?? '00:00',
+        chargePowerW: settings.maxChargePower,
+        model,
+      })
+      if (!r.ok) {
+        toast.error(stepFailureTitle(r, enabled), sanitizeUiCopy(r.detail ?? '', '') || undefined)
+        return false
+      }
+      setCommitted({
+        enabled,
+        startTime: win?.startTime ?? '',
+        endTime: win?.endTime ?? '',
+        chargePowerW: settings.maxChargePower,
+      })
+      return true
+    } finally {
+      setSaving(false)
+    }
+  }, [selectedDeviceId, model])
+
   const handleTogglePeakShaving = useCallback(async (enabled: boolean) => {
     if (!selectedDeviceId) {
       togglePeakShaving(enabled)
       return
     }
-    const failed = (detail: string) => {
-      toast.error(
-        enabled ? 'Could not turn Smart Schedule on' : 'Could not turn Smart Schedule off',
-        sanitizeUiCopy(detail, '') || undefined,
-      )
-    }
-    try {
-      const r = await enablePeakValley(selectedDeviceId, enabled)
-      if (!isApiSuccess(r.code)) {
-        failed(String(r.message ?? r.msg ?? ''))
-        return
-      }
-      togglePeakShaving(enabled)
-    } catch (e) {
-      failed(e instanceof Error ? e.message : String(e))
-    }
-  }, [selectedDeviceId, enablePeakValley, togglePeakShaving])
+    if (await pushToDevice(enabled)) togglePeakShaving(enabled)
+  }, [selectedDeviceId, pushToDevice, togglePeakShaving])
 
   /** Leaves the screen only if the device took the settings — otherwise says why. */
   const handleSaveToDevice = useCallback(async () => {
     if (!selectedDeviceId) return
-    try {
-      const config = mapSettingsToGeneralConfig(selectedDeviceId, peakShavingSettings)
-      const r = await savePeakValleyGeneral(config)
-      if (!isApiSuccess(r.code)) {
-        toast.error('Could not save to the device', sanitizeUiCopy(String(r.message ?? r.msg ?? ''), '') || undefined)
-        return
-      }
-    } catch (e) {
-      toast.error('Could not save to the device', e instanceof Error ? e.message : undefined)
-      return
+    if (await pushToDevice(usePowerStationStore.getState().peakShavingSettings.enabled)) {
+      navigate(-1)
     }
-    navigate(-1)
-  }, [selectedDeviceId, peakShavingSettings, savePeakValleyGeneral, navigate])
+  }, [selectedDeviceId, pushToDevice, navigate])
 
+  /** A period was added, edited, dragged or deleted — re-push if we're armed. */
   const handleScheduleChanged = useCallback(() => {
-    if (selectedDeviceId && apiConfigLoaded) {
-      const config = mapSettingsToGeneralConfig(selectedDeviceId, { ...peakShavingSettings })
-      savePeakValleyGeneral(config).catch((e: unknown) => {
-        toast.error('Could not save the schedule', e instanceof Error ? e.message : undefined)
-      })
-    }
-  }, [selectedDeviceId, apiConfigLoaded, peakShavingSettings, savePeakValleyGeneral])
+    if (!selectedDeviceId) return
+    if (!usePowerStationStore.getState().peakShavingSettings.enabled) return
+    void pushToDevice(true)
+  }, [selectedDeviceId, pushToDevice])
 
   // Both schedule sheets sit on the bottom edge and take typed input.
   const keyboardInset = useKeyboardInset()
@@ -396,7 +440,8 @@ export default function SmartSchedulePage() {
   ]
 
   const peakSchedule = peakShavingSettings.schedules.find(s => s.type === 'discharge' && s.enabled)
-  const offPeakSchedule = peakShavingSettings.schedules.find(s => s.type === 'charge' && s.enabled)
+  // The charge window IS what gets written to the device — one source of truth.
+  const offPeakSchedule = chargeWindow
 
   return (
     <div className="h-full flex flex-col bg-ink-12 overflow-hidden">
@@ -534,7 +579,8 @@ export default function SmartSchedulePage() {
                 : 'No off-peak set'}
             </div>
             <p className="text-tiny text-ink-6 leading-relaxed">
-              Sierro charging, storing cheap grid electricity overnight.
+              Sierro charging at {peakShavingSettings.maxChargePower}W, storing cheap grid
+              electricity overnight.
             </p>
           </div>
         </div>
@@ -661,10 +707,15 @@ export default function SmartSchedulePage() {
                 Max Charge <span className="text-danger">*</span>
               </label>
               <div className="flex items-center gap-1">
+                {/* The only power value that reaches the device: it is written to
+                    the AC charge-power register for the charge window (SW-08). */}
                 <input
                   type="number"
+                  min="0" max={MAX_MANUAL_CHARGE_W}
                   value={peakShavingSettings.maxChargePower}
-                  onChange={(e) => updatePeakShavingSettings({ maxChargePower: parseInt(e.target.value) || 0 })}
+                  onChange={(e) => updatePeakShavingSettings({
+                    maxChargePower: Math.max(0, Math.min(MAX_MANUAL_CHARGE_W, parseInt(e.target.value) || 0)),
+                  })}
                   className="w-full bg-transparent text-body-md text-white outline-none border-b border-white/[0.12] pb-1"
                 />
                 <span className="text-caption text-ink-7 flex-shrink-0">W</span>
@@ -746,11 +797,11 @@ export default function SmartSchedulePage() {
       <div className="absolute bottom-0 left-0 right-0 px-4 pb-8 pt-3 bg-ink-12">
         <button
           onClick={handleSaveToDevice}
-          disabled={peakValleySaving}
+          disabled={saving}
           className="w-full h-11 rounded-pill bg-primary text-primary-darker text-body-lg font-semibold
             disabled:opacity-50 flex items-center justify-center gap-2"
         >
-          {peakValleySaving ? <Loader2 size={18} className="animate-spin" /> : null}
+          {saving ? <Loader2 size={18} className="animate-spin" /> : null}
           Save
         </button>
       </div>
