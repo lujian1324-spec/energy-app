@@ -34,7 +34,7 @@ async function enforceSchedule(userId, deviceId, schedule, token, now, dryRun) {
   if (!schedule || !schedule.enabled) return null
   const phase = phaseFor(schedule, now)
   if (phase === getSchedulePhase(userId, deviceId)) return null // already applied
-  const watts = chargePowerForPhase(schedule.model, phase)
+  const watts = chargePowerForPhase(schedule.model, phase, schedule)
   if (!dryRun) {
     // Write the realtime AC charge-power register 0x0085 via Modbus passthrough —
     // this actually changes the device (the config/write ratedACChargingPower path

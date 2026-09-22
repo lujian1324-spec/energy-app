@@ -58,8 +58,23 @@ export function phaseFor(schedule, now = Date.now()) {
     : 'wake'
 }
 
-/** AC charge power (W) that a given phase should apply, per model. */
-export function chargePowerForPhase(model, phase) {
+/**
+ * AC charge power (W) that a given phase should apply.
+ *
+ * Sleep Mode uploads a schedule with no watts and gets the per-model defaults.
+ * Smart Schedule (SW-08) uploads explicit `sleepW`/`wakeW` — the rate the user
+ * typed for the charge window, and 0W outside it — and those must win, or the
+ * relay would silently enforce Sleep Mode's rates on a Smart Schedule window.
+ *
+ * @param model    device model string, used when a schedule carries no watts
+ * @param phase    'sleep' (inside the window) | 'wake' (outside)
+ * @param schedule the uploaded schedule, optionally carrying sleepW/wakeW
+ */
+export function chargePowerForPhase(model, phase, schedule) {
   const { sleepW, wakeW } = getPowers(model)
-  return phase === 'sleep' ? sleepW : wakeW
+  const pick = (override, fallback) =>
+    Number.isFinite(override) && override >= 0 ? override : fallback
+  return phase === 'sleep'
+    ? pick(schedule?.sleepW, sleepW)
+    : pick(schedule?.wakeW, wakeW)
 }

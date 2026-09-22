@@ -20,6 +20,14 @@ export interface SleepScheduleUpload {
   sleepFrom: string // "HH:MM"
   sleepTo: string   // "HH:MM"
   model: string
+  /**
+   * Explicit AC charge power (W) for inside / outside the window. Sleep Mode
+   * omits both and the relay derives them from `model`; Smart Schedule (SW-08)
+   * sends them because the rate is typed by the user and 0W outside the window
+   * is what keeps the grid off the load during peak hours.
+   */
+  sleepW?: number
+  wakeW?: number
 }
 
 function getUserId(): string | null {

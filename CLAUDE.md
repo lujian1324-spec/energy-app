@@ -198,6 +198,27 @@ lives on independently and is still referenced elsewhere.)
 - *Enable toggle*, *24h clock donut* (charge/discharge/idle arcs).
 - *Peak/Off-peak cards*, *periods list* (`startTime–endTime`,`type`).
 - *Prices*: peak/off-peak/part-peak $/kWh. *Params*: max charge/discharge W, min/max SOC %. *Estimated savings* daily/monthly/yearly.
+- **Control path (v4.13.0, SW-08): Smart Schedule rides Sleep Mode's path, not `peakValley`.**
+  Every save/enable goes through `applySmartSchedule()` (`src/api/smartScheduleControl.ts`) and makes
+  exactly Sleep Mode's three writes, in order: `POST /remote/device/config/write` (`sleepMode`) →
+  `POST /remote/device/passthrough` writing Modbus **0x0085** (`AC_CHARGE_POWER_RT`) →
+  relay `POST /schedule` via `uploadSleepSchedule`. **No `/peakValley/*` request is issued from this
+  page** — the backend accepts that surface and the hardware has no peak-valley engine, so a schedule
+  saved there changed nothing at the plug. The `peakValley` functions in `deviceApi.ts`/`deviceStore`
+  (SW-05) are left intact but are no longer called by the app.
+  - The device sees **one** window: the enabled **Charge** period. Inside it the AC charge power is the
+    user's **Max Charge** value; outside it is **0W**, which is what makes the battery rather than the
+    grid carry the peak. Turning Smart Schedule off restores the model's normal charge power
+    (`getPowers`) so a device is never left parked at 0W.
+  - Window/phase/power maths is shared with Sleep Mode in `src/utils/chargeWindow.ts`, and enforcement
+    while the screen is open reuses `useSleepModeScheduler` (with `powers` + its own
+    `storagePrefix: 'sierro-smart'`, so the two features never overwrite each other's saved window).
+  - Because both features drive the same register and the relay's single per-device schedule slot,
+    saving Smart Schedule supersedes that device's Sleep Mode window and vice versa. One device has
+    one charge-power schedule; that is inherent to sharing the control path.
+  - The relay honours the uploaded `sleepW`/`wakeW` (`server/sleepSchedule.js`); a Sleep Mode upload
+    omits them and still gets the per-model defaults. A relay older than this change falls back to
+    Sleep Mode's rates for Smart Schedule windows until it is redeployed.
 
 **NotificationsPage** (`/notifications`)
 - *Active Now*: firing alarms (`alarmMessage`, severity, time). *History*: title, severity, device/station, dismiss (`isProcessed`), load-more.

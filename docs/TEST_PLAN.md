@@ -115,7 +115,8 @@ v4.4.3 修复 Android 扫不到设备(客户端过滤)与 PWA Open Settings 跳�
 | IN-02 | 真实用户错误态 | P1 | A | 历史 API 失败 | 显示错误/重试,**不静默展示假数据**(⚠ 待修 U-1,见 RELEASE_PLAN) | 手动 |
 | IN-03 | 周期切换 | P2 | W/A | Day/Week/Month/Range | 图表切换正确 | 手动 |
 | SS-01 | Smart Schedule | P1 | W/A | 进 /smart-schedule | 时钟盘/时段/价格/参数/预估节省 | ✅(加载) |
-| SS-02 | 配置落库 | P1 | A | 改参数保存 | 存到后端 peakValley(非仅本地) | 手动 |
+| SS-02 | 保存走 Sleep 控制链路 | P1 | A | 开启/保存 Smart Schedule | 三写全中：`config/write sleepMode` → passthrough 0x0085 → relay `POST /schedule`；**无任何 `/peakValley` 请求**(SW-08, v4.13.0) | ✅ `src/api/smartScheduleControl.test.ts` |
+| SS-03 | 窗口外不充电 | P1 | A | 在峰时段开启 | 0x0085 写 0W；关闭时写回机型额定充电功率(不停在 0W) | ✅ 同上 |
 | N-01 | 通知中心 | P1 | W/A | 进 /notifications | Active + History,告警文案可读(非原始码) | ✅(加载) |
 | N-02 | 忽略告警 | P2 | W/A | dismiss | 标记已处理 | 手动 |
 

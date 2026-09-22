@@ -1,8 +1,8 @@
 {
-  "version": "4.12.6",
-  "build": 2899,
-  "date": "2026-09-21",
+  "version": "4.13.0",
+  "build": 2900,
+  "date": "2026-09-22",
   "changelog": [
-    "Fixed Battery Priority losing the Savings selection after leaving and re-entering the device page, and rolled the setting back instead of showing a false success when the write is refused."
+    "Smart Schedule now drives the device over the same control path as Sleep Mode — it writes the charge window and your charge power straight to the device instead of the peak-valley service, which the hardware ignored."
   ]
 }

@@ -137,7 +137,7 @@ export function setUserSchedule(userId, deviceId, schedule) {
   const u = db.users[k]
   if (!u) return // schedule upload always carries the auth bootstrap, so setUserAuth ran first
   u.schedules ||= {}
-  u.schedules[String(deviceId)] = schedule // { enabled, sleepFrom, sleepTo, model, tz }
+  u.schedules[String(deviceId)] = schedule // { enabled, sleepFrom, sleepTo, model, tz, sleepW?, wakeW? }
   u.updatedAt = Date.now()
   save(db)
 }

@@ -119,7 +119,7 @@ app.post('/schedule', requireBodyUserId, (req, res) => {
   const { userId, deviceId, schedule, refreshToken, accessToken, accessExpiresAt, prefs } = req.body || {}
   if (!deviceId || !schedule) return res.status(400).json({ code: 1, message: 'deviceId and schedule required' })
   if (refreshToken || accessToken || prefs) setUserAuth(userId, { refreshToken, accessToken, accessExpiresAt, prefs })
-  setUserSchedule(userId, deviceId, schedule) // { enabled, sleepFrom, sleepTo, model, tz }
+  setUserSchedule(userId, deviceId, schedule) // { enabled, sleepFrom, sleepTo, model, tz, sleepW?, wakeW? }
   ok(res)
 })
 
