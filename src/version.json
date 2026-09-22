@@ -1,8 +1,8 @@
 {
-  "version": "4.13.0",
-  "build": 2900,
-  "date": "2026-09-22",
+  "version": "4.14.0",
+  "build": 2901,
+  "date": "2026-09-23",
   "changelog": [
-    "Smart Schedule now drives the device over the same control path as Sleep Mode — it writes the charge window and your charge power straight to the device instead of the peak-valley service, which the hardware ignored."
+    "Battery Priority now writes Backup / Savings straight to the device, including the reserve percentage it keeps (100% for Backup, 60% for Savings), instead of only recording the choice in the cloud. A save that the device refuses now says so and puts the setting back."
   ]
 }
