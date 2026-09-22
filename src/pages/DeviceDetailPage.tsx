@@ -12,19 +12,20 @@ import Icon from '../components/Icon'
 import { useNavigate, useParams } from 'react-router-dom'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useDeviceStore } from '../stores/deviceStore'
-import { mapFieldsToRealtime, toggleSleepMode, setWorkMode, passthroughDevice } from '../api/deviceApi'
-import { isApiSuccess } from '../utils/apiClient'
+import { mapFieldsToRealtime, toggleSleepMode } from '../api/deviceApi'
+import {
+  applyBatteryPriority,
+  batteryPriorityErrorMessage,
+} from '../api/batteryPriorityControl'
 import { toast } from '../components/Toast'
 import {
   loadConfirmedPriority,
-  priorityFromWorkMode,
   resolveBatteryPriority,
   saveConfirmedPriority,
   type BatteryPriority,
 } from '../utils/batteryPriority'
 import { formatTemp } from '../utils/localization'
 import { sanitizeUiCopy } from '../utils/uiCopy'
-import { FRAMES } from '../protocols/modbusProtocol'
 import { loadRatedParams, saveRatedParams, type RatedParams } from '../db/powerflowDB'
 import { SIERRO_MODELS, SIERRO_MODEL_LIST, DEVICE_NAME_MAX, generateSerial, type SierroModel } from '../data/deviceModels'
 import sierro1000Img from '../assets/sierro-1000.webp'
@@ -316,31 +317,15 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     () => loadConfirmedPriority(routeId ?? selectedDeviceId ?? '') ?? 1
   )
 
-  /** Re-read the device until it echoes the value we wrote, then bind the row to
-   *  whatever it ends up reporting. Devices take a few seconds to report a config
-   *  write back, so a single immediate refresh reads the pre-write value. */
-  const confirmPriorityFromDevice = async (deviceId: string, target: BatteryPriority) => {
-    const readBack = () =>
-      useDeviceStore.getState().selectedDeviceState?.fields?.workMode?.value
-    for (const delay of [0, 1500, 4000]) {
-      if (delay) await new Promise(r => setTimeout(r, delay))
-      if (!mountedRef.current) return
-      await loadDeviceState(deviceId)
-      if (!mountedRef.current) return
-      if (priorityFromWorkMode(readBack()) === target) {
-        pendingWorkModeRef.current = null
-        applyPriority(deviceId, target, true)
-        return
-      }
-    }
-    // The device never echoed it. The write itself was accepted, so keep the value
-    // we sent unless the device is actively reporting the other priority — then it
-    // wins, because the read-back is the source of truth.
-    pendingWorkModeRef.current = null
-    const settled = priorityFromWorkMode(readBack()) ?? target
-    applyPriority(deviceId, settled, true)
-  }
-
+  /**
+   * SW-09 — Save writes the device's own registers (0x0086 + 0x0054) over
+   * passthrough and nothing else. There is no cloud `workMode` write on this
+   * path any more, so there is nothing to poll for an echo: the two accepted
+   * writes ARE the confirmation, and the row keeps showing what we wrote.
+   * `pendingWorkModeRef` stays set to that value so the `workMode` polls — which
+   * now report a cloud field this screen no longer drives — cannot snap the row
+   * onto a mode the device was never told to hold.
+   */
   const saveBatteryPriority = async () => {
     const deviceId = routeId ?? selectedDeviceId
     const target = workModeDraft
@@ -352,35 +337,23 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     pendingWorkModeRef.current = target
     applyPriority(deviceId, target, false)
 
-    try {
-      const res = await setWorkMode(deviceId, target)
-      if (!isApiSuccess(res?.code)) throw new Error(String(res?.message ?? 'write rejected'))
+    const res = await applyBatteryPriority(deviceId, target)
+    if (!mountedRef.current) return
 
-      // Mirror onto the Modbus register (0x86) for firmware that only honours the
-      // passthrough path. Best effort: the config write above is what reads back.
-      try {
-        const frame = target === 2 ? FRAMES.PV_BATT_PRIORITY_ON : FRAMES.PV_BATT_PRIORITY_OFF
-        await passthroughDevice(deviceId, { data: frame, noOutput: true })
-      } catch { /* optional path */ }
-
-      saveConfirmedPriority(deviceId, target)
-      if (mountedRef.current) {
-        setShowWorkModeMenu(false)
-        // The write landed — release the button now rather than holding it grey
-        // for the seconds the device takes to report the new value back.
-        setSavingWorkMode(false)
-      }
-      void confirmPriorityFromDevice(deviceId, target).catch(() => { /* read-back only */ })
-    } catch {
-      // No fake success: put the row back where it was and leave the sheet open,
-      // with the selection still on the failed choice so Save can be retried.
-      pendingWorkModeRef.current = null
-      if (mountedRef.current) {
-        applyPriority(deviceId, previous, false)
-        setSavingWorkMode(false)
-      }
-      toast.error('Could not change Battery Priority')
+    if (res.ok) {
+      // Both registers landed, so this is the mode the device is in.
+      applyPriority(deviceId, target, true)
+      setShowWorkModeMenu(false)
+      setSavingWorkMode(false)
+      return
     }
+
+    // No fake success: put the row back where it was and leave the sheet open,
+    // with the selection still on the failed choice so Save can be retried.
+    pendingWorkModeRef.current = null
+    applyPriority(deviceId, previous, false)
+    setSavingWorkMode(false)
+    toast.error(batteryPriorityErrorMessage(res))
   }
   // Empty until the user picks one — the row then falls back to the icon guessed from the
   // device name, so Device Settings shows the same glyph the home card does.

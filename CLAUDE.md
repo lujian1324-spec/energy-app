@@ -145,6 +145,17 @@ lives on independently and is still referenced elsewhere.)
 - *Name edit*, *icon picker*.
 - *Device Info*: model, **Serial Number** (`serialNumber`), **Rated Capacity** (`acInvOutputPower×2`, Wh→kWh), **Rated Output Power** W (`ratedPower`), **Rated Voltage** 120V (fixed), **Cycles** (`numberOfBatteryUsageCycles`), **Temperature** °F (`batteryTemp`), Wi-Fi (`isOnline`), firmware (`softwareVersion`).
 - *Sleep Mode editor* (`sleepFrom`/`sleepTo` + scheduler), *Battery Priority sheet* (Backup 100% / Savings 60%), *delete dialog*.
+- **Battery Priority control path (v4.14.0, SW-09): Modbus passthrough only, no `workMode` write.**
+  Save goes through `applyBatteryPriority()` (`src/api/batteryPriorityControl.ts`) and makes exactly two
+  `POST /remote/device/passthrough` writes, in order: **0x0086** (`PV_BATT_PRIORITY`) then **0x0054**
+  (`PV_BATT_PRIORITY_MIN_SOC`, a **percent**) —
+  Savings → `0x01AA` + `60`, Backup → `0xAA01` + `100` (not 1000).
+  Both count: a refused 0x0054 leaves the old reserve in place, so it is reported as a failure, the row
+  rolls back and the sheet stays open. `setWorkMode()` in `deviceApi.ts` is untouched and simply no
+  longer called from this sheet, so the cloud `workMode` field keeps whatever the backend already holds;
+  there is therefore no cloud echo to poll, and after a successful save the row shows what was written
+  to 0x0086/0x0054 for the rest of the visit. (On re-entry `resolveBatteryPriority` still lets a
+  device-reported `workMode` of 1/2 win — SW-04's rule, deliberately left alone here.)
 
 **StatsPage** (`/insights`)
 - *Header*: days-in-service (from `installedAt`).
