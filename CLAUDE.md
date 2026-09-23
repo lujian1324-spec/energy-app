@@ -240,6 +240,10 @@ lives on independently and is still referenced elsewhere.)
   - The relay honours the uploaded `sleepW`/`wakeW` (`server/sleepSchedule.js`); a Sleep Mode upload
     omits them and still gets the per-model defaults. A relay older than this change falls back to
     Sleep Mode's rates for Smart Schedule windows until it is redeployed.
+  - **SW-11 (v4.14.2):** if step A comes back "config attribute not exist" — the product model has no
+    `sleepMode` key at all — A is **soft-failed**, not surfaced: the run continues to B and C, and the
+    result carries `configSkipped`/`configSkippedDetail` so `ok` is never read as "all three landed"
+    (`isMissingConfigAttribute()` is the matcher). Any other A failure still stops the run as before.
 
 **NotificationsPage** (`/notifications`)
 - *Active Now*: firing alarms (`alarmMessage`, severity, time). *History*: title, severity, device/station, dismiss (`isProcessed`), load-more.
