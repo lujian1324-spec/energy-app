@@ -41,6 +41,7 @@ import { useBleLiveStatusStore, lookupBleLiveStatus } from '../stores/bleLiveSta
 import { useLivePassthroughStore, lookupLivePassthrough, resolveLiveValues } from '../stores/livePassthroughStore'
 import { useLivePassthrough } from '../hooks/useLivePassthrough'
 import { useSmartScheduleFlush } from '../hooks/useSmartScheduleFlush'
+import { flushRejectionNotice } from '../utils/smartScheduleFlushCopy'
 
 interface DeviceRealtimeCache {
   [deviceId: string]: {
@@ -230,7 +231,17 @@ export default function DevicePage() {
      unreachable is replayed here as soon as that device answers, whether or not
      the Smart Schedule screen is open. The shared hook reports device refusals
      and relay failures here as well, rather than silently discarding them. */
-  useSmartScheduleFlush({ devices, active: isAuthenticated && !isDemoMode })
+  useSmartScheduleFlush({
+    devices,
+    active: isAuthenticated && !isDemoMode,
+    /* The realistic reconnect happens here, with only the list open — so the
+       refusal has to be reported here too, in Smart Schedule's own Save copy
+       rather than anything new (AC-13-11). */
+    onRejected: (_id, result, pending, gaveUp) => {
+      const notice = flushRejectionNotice(result, pending.window.enabled, gaveUp)
+      toast.error(notice.title, notice.message)
+    },
+  })
 
   useEffect(() => {
     if (devices.length === 0 || !isAuthenticated) return

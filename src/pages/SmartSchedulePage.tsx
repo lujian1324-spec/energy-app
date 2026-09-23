@@ -23,10 +23,10 @@ import { sanitizeUiCopy } from '../utils/uiCopy'
 import { useKeyboardInset } from '../utils/useKeyboardInset'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useDeviceStore } from '../stores/deviceStore'
-import { type SmartScheduleResult } from '../api/smartScheduleControl'
 import { saveSmartSchedule } from '../api/smartScheduleSave'
 import { useSleepModeScheduler } from '../hooks/useSleepModeScheduler'
 import { useSmartScheduleFlush } from '../hooks/useSmartScheduleFlush'
+import { flushRejectionNotice, stepFailureTitle } from '../utils/smartScheduleFlushCopy'
 import { smartSchedulePowers, MAX_MANUAL_CHARGE_W } from '../utils/chargeWindow'
 import {
   deviceOnlineFlag,
@@ -261,11 +261,6 @@ export default function SmartSchedulePage() {
   const [saving, setSaving] = useState(false)
   const savingRef = useRef(false)
 
-  const stepFailureTitle = (r: SmartScheduleResult, enabling: boolean): string => {
-    if (r.failedStep === 'passthrough') return 'Could not set the charge power'
-    return enabling ? 'Could not turn Smart Schedule on' : 'Could not turn Smart Schedule off'
-  }
-
   /* SW-13: a Save made while this device was unreachable is still owed to it.
      Watch this device's online flag and replay the latest queued save the moment
      it answers — `selectDevice` reloads the details on entry and the list page
@@ -283,10 +278,8 @@ export default function SmartSchedulePage() {
   useSmartScheduleFlush({
     devices: watchedDevices,
     onRejected: (_id, result, pending, gaveUp) => {
-      toast.error(
-        stepFailureTitle(result, pending.window.enabled),
-        gaveUp ? 'Automatic retries stopped. Review the settings and save again.' : sanitizeUiCopy(result.detail ?? '', '') || undefined
-      )
+      const notice = flushRejectionNotice(result, pending.window.enabled, gaveUp)
+      toast.error(notice.title, notice.message)
     },
   })
 
