@@ -337,11 +337,11 @@ export default function SmartSchedulePage() {
         if (r) toast.error(stepFailureTitle(r, enabled), sanitizeUiCopy(r.detail ?? '', '') || undefined)
         return false
       }
-      // The relay is the other half of the save. It failing is not the whole run
-      // failing, but it must not disappear behind a clean toggle either: without
-      // it the window only switches while the app is open (AC-12-7 / AC-12-8).
-      // A queued save reached neither the device nor the relay, so there is
-      // nothing to compare yet — the flush reports on both.
+      // Keep relay diagnostics even when the shared toast policy stays quiet.
+      // A queued save has not attempted the device or relay yet.
+      if (r?.relayConfigured && !r.relayAccepted) {
+        console.warn('[SmartSchedule] relay did not take the window:', r.relayDetail)
+      }
       const notice = r && backgroundScheduleNotice({
         enabling: enabled,
         instantPowerApplied: r.instantPowerApplied,
@@ -351,7 +351,6 @@ export default function SmartSchedulePage() {
       })
       if (notice) {
         toast.warning(notice.title, notice.message)
-        console.warn('[SmartSchedule] relay did not take the window:', r?.relayDetail)
       }
       if (res.queued) {
         toast.warning('Schedule saved on this phone', 'It has not reached the device yet. Keep the app open after reconnecting to apply it; the previous background schedule may still run.')

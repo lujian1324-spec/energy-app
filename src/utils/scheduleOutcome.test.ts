@@ -1,5 +1,5 @@
 /**
- * SW-12 项 3 — a relay refusal must not hide behind a clean device write.
+ * Shared toast policy for saving and stopping background schedules.
  */
 import { describe, it, expect } from 'vitest'
 import { backgroundScheduleNotice } from './scheduleOutcome'
@@ -16,11 +16,9 @@ describe('AC-12-7 — instant power and background schedule are reported apart',
     expect(backgroundScheduleNotice(base)).toBeNull()
   })
 
-  it('warns when the charge power landed but the relay refused the window', () => {
+  it('keeps the background-save warning silent after the charge power was accepted', () => {
     const n = backgroundScheduleNotice({ ...base, relayAccepted: false, relayDetail: 'relay HTTP 500' })
-    expect(n?.severity).toBe('warning')
-    expect(n?.message).toMatch(/only switch while the app is open/i)
-    expect(n?.message).toContain('relay HTTP 500')
+    expect(n).toBeNull()
   })
 
   it('stays quiet in a build with no relay — client-side timing is the design there', () => {
@@ -41,6 +39,7 @@ describe('AC-12-8 — turning a schedule off with the relay down', () => {
     })
     expect(n?.title).toMatch(/may still run/i)
     expect(n?.message).toMatch(/may still switch this device/i)
+    expect(n?.message).toContain('network down')
   })
 
   it('a clean disable says nothing', () => {

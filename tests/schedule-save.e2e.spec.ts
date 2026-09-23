@@ -46,4 +46,27 @@ test.describe('schedule save acknowledgement', () => {
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('sierro-sleep-e2e-device')!))
     expect(saved.enabled).toBe(false)
   })
+
+  test('saves Sleep settings without the background-save toast when enabling', async ({ page }) => {
+    const uploads: boolean[] = []
+    await page.route('**/schedule', route => {
+      const enabled = route.request().postDataJSON().schedule.enabled
+      uploads.push(enabled)
+      return route.fulfill(enabled
+        ? { status: 409, json: { code: 1, reason: 'POLLER_SESSION_REQUIRED' } }
+        : { json: { code: 0 } })
+    })
+    await page.goto('/#/device/e2e-device/settings')
+    for (const enabled of [false, true]) {
+      await page.getByText('Sleep Mode', { exact: true }).click()
+      await page.locator('button.w-12.h-7').click()
+      await page.getByRole('button', { name: 'Save', exact: true }).click()
+      await expect(page.getByRole('heading', { name: 'Device Settings', exact: true })).toBeVisible()
+      const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('sierro-sleep-e2e-device')!))
+      expect(saved.enabled).toBe(enabled)
+    }
+    expect(uploads).toEqual([false, true])
+    await expect(page.getByText('Saved on the device, not in the background', { exact: true })).toHaveCount(0)
+    await expect(page.getByText('Background schedule may still run', { exact: true })).toHaveCount(0)
+  })
 })
