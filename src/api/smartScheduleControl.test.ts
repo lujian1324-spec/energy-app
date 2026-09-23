@@ -44,7 +44,7 @@ vi.mock('../config/scheduling', () => ({
   isRelayConfigured: () => true,
 }))
 
-import { applySmartSchedule, chargePowerFrame } from './smartScheduleControl'
+import { applySmartSchedule, chargePowerFrame, isMissingConfigAttribute } from './smartScheduleControl'
 import { REG_CTRL, buildWriteSingleFrame, toHexString } from '../protocols/modbusProtocol'
 
 // A real platform id: 18 digits, past Number.MAX_SAFE_INTEGER.
@@ -186,5 +186,117 @@ describe('applySmartSchedule — Sleep Mode\'s three writes', () => {
     })
     expect(r.ok).toBe(true)
     expect(r.relayAccepted).toBe(false)
+  })
+})
+
+/**
+ * SW-11 — a product model without a `sleepMode` config attribute must not block
+ * the save. Step A is the only one that can hit that gap; B is the write that
+ * moves the charge rate and C is what keeps the window with the app closed, so
+ * both still have to run.
+ */
+describe('applySmartSchedule — missing sleepMode attribute (SW-11)', () => {
+  for (const message of [
+    'config attribute not exist',
+    'Config Attribute Not Exist',
+    'attribute does not exist',
+    'device config attribute [sleepMode] not exist',
+  ]) {
+    it(`soft-fails A and still writes B and C: "${message}"`, async () => {
+      vi.useFakeTimers(); winAt(2)
+      h.fail['/remote/device/config/write'] = { code: 20101, message }
+      const r = await applySmartSchedule(DEVICE_ID, {
+        enabled: true, startTime: '23:00', endTime: '07:00', chargePowerW: 500, model: 'Sierro 1000',
+      })
+      vi.useRealTimers()
+
+      // B ran even though A was refused, and carries the rate the user typed.
+      expect(h.calls).toHaveLength(2)
+      expect(h.calls[1].path).toBe(`/remote/device/passthrough?deviceId=${DEVICE_ID}`)
+      expect(frameOf(h.calls[1].body)).toBe(bare(chargePowerFrame(500)))
+      // C ran too.
+      expect(relayPosts).toHaveLength(1)
+      expect(r.relayAccepted).toBe(true)
+
+      // AC-4: B/C succeeded, but the skipped A stays visible on the result.
+      expect(r.ok).toBe(true)
+      expect(r.failedStep).toBeUndefined()
+      expect(r.configSkipped).toBe(true)
+      expect(r.configSkippedDetail).toBe(message)
+      expect(r.wattsWritten).toBe(500)
+    })
+  }
+
+  it('soft-fails a thrown missing-attribute error the same way', async () => {
+    vi.useFakeTimers(); winAt(2)
+    const realPost = h.api.post
+    h.api.post = ((path: string, body?: any) => {
+      h.calls.push({ method: 'post', path, body })
+      if (path.startsWith('/remote/device/config/write')) {
+        return Promise.reject(new Error('config attribute not exist'))
+      }
+      return Promise.resolve({ code: 0, data: {} })
+    }) as any
+    let r
+    try {
+      r = await applySmartSchedule(DEVICE_ID, {
+        enabled: true, startTime: '23:00', endTime: '07:00', chargePowerW: 500, model: 'Sierro 1000',
+      })
+    } finally {
+      h.api.post = realPost
+      vi.useRealTimers()
+    }
+    expect(r.ok).toBe(true)
+    expect(r.configSkipped).toBe(true)
+    expect(h.calls).toHaveLength(2)
+    expect(relayPosts).toHaveLength(1)
+  })
+
+  it('a hard B failure after a soft-failed A still fails the save', async () => {
+    h.fail['/remote/device/config/write'] = { code: 20101, message: 'config attribute not exist' }
+    h.fail['/remote/device/passthrough'] = { code: 1, message: 'device offline' }
+    const r = await applySmartSchedule(DEVICE_ID, {
+      enabled: true, startTime: '23:00', endTime: '07:00', chargePowerW: 500, model: 'Sierro 1000',
+    })
+    expect(r.ok).toBe(false)
+    expect(r.failedStep).toBe('passthrough')
+    expect(r.detail).toBe('device offline')
+    expect(r.configSkipped).toBe(true)
+    expect(r.wattsWritten).toBeUndefined()
+    expect(relayPosts).toHaveLength(0)
+  })
+
+  it('a real A refusal is still hard — it is not a missing attribute', async () => {
+    h.fail['/remote/device/config/write'] = { code: 20101, message: 'illegal argument' }
+    const r = await applySmartSchedule(DEVICE_ID, {
+      enabled: true, startTime: '23:00', endTime: '07:00', chargePowerW: 500, model: 'Sierro 1000',
+    })
+    expect(r.ok).toBe(false)
+    expect(r.failedStep).toBe('config')
+    expect(r.configSkipped).toBeFalsy()
+    expect(h.calls).toHaveLength(1)
+  })
+
+  it('a happy-path A leaves the result unflagged (SW-08 unchanged)', async () => {
+    vi.useFakeTimers(); winAt(2)
+    const r = await applySmartSchedule(DEVICE_ID, {
+      enabled: true, startTime: '23:00', endTime: '07:00', chargePowerW: 500, model: 'Sierro 1000',
+    })
+    vi.useRealTimers()
+    expect(r.ok).toBe(true)
+    expect(r.configSkipped).toBeFalsy()
+    expect(r.configSkippedDetail).toBeUndefined()
+    expect(h.calls[0].body).toEqual({ key: 'sleepMode', value: true })
+    expect(h.calls).toHaveLength(2)
+    expect(relayPosts).toHaveLength(1)
+  })
+
+  it('matches the missing-attribute wordings and nothing else', () => {
+    expect(isMissingConfigAttribute('config attribute not exist')).toBe(true)
+    expect(isMissingConfigAttribute('ATTRIBUTE NOT EXIST')).toBe(true)
+    expect(isMissingConfigAttribute('attribute does not exist')).toBe(true)
+    expect(isMissingConfigAttribute('illegal argument')).toBe(false)
+    expect(isMissingConfigAttribute('device offline')).toBe(false)
+    expect(isMissingConfigAttribute('')).toBe(false)
   })
 })

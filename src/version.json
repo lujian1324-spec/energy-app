@@ -1,8 +1,8 @@
 {
-  "version": "4.14.1",
-  "build": 2902,
+  "version": "4.14.2",
+  "build": 2903,
   "date": "2026-09-23",
   "changelog": [
-    "Adding a device now goes through the Bluetooth search only — the Scan QR actions have been taken out of the Add Device screens."
+    "Smart Schedule now still applies the charge power and the window schedule on devices whose product model has no sleepMode setting, instead of stopping with a config-attribute error."
   ]
 }
