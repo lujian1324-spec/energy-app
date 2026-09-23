@@ -162,7 +162,9 @@ export async function writePassthrough(token, deviceId, base64Input, noOutput = 
     data: { base64Input, noOutput }, token,
   })
   if (!ok(r.json.code)) {
-    throw new Error(`passthrough failed: code=${r.json.code} msg=${r.json.message || r.json.msg}`)
+    const error = new Error('Passthrough rejected by upstream')
+    if (/^\d{1,6}$/.test(String(r.json.code))) error.upstreamCode = String(r.json.code)
+    throw error
   }
   return r.json.data
 }

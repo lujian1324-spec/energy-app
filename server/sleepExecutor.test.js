@@ -59,6 +59,16 @@ test('failed writes retry, without advancing phase', async () => {
   assert.equal((await f.executor.tick()).failed, 1)
   assert.equal((await f.executor.tick()).applied, 1)
 })
+test('safe failure diagnostics distinguish timeouts without exposing upstream text', async () => {
+  const f = fixture({ write: async () => {
+    const e = new Error('sensitive upstream response')
+    e.name = 'TimeoutError'
+    throw e
+  } })
+  const result = await f.executor.tick()
+  assert.deepEqual(result.failureReasons, { passthroughTimeout: 1 })
+  assert.equal(JSON.stringify(result).includes('sensitive'), false)
+})
 test('late retry computes CURRENT watts, never replays missed sleep command', async () => {
   const f = fixture({ session: async () => {
     f.setTime('2026-09-24T01:00:00Z')
@@ -105,6 +115,22 @@ test('expired queued lock never runs work later', async () => {
   await first
   await new Promise(r => setTimeout(r, 5))
   assert.equal(ran, false)
+})
+test('timer expiration cancels queued work even before the wall clock deadline', async () => {
+  const original = Date.now
+  const fixed = original()
+  Date.now = () => fixed
+  let release, ran = false
+  try {
+    const first = withUserLock('early-timer', () => new Promise(r => { release = r }))
+    await Promise.resolve()
+    const second = withUserLock('early-timer', () => { ran = true }, { deadline: fixed + 5 })
+    await assert.rejects(second, /DEADLINE/)
+    release()
+    await first
+    await new Promise(r => setImmediate(r))
+    assert.equal(ran, false)
+  } finally { Date.now = original; release?.() }
 })
 test('HMAC rejects tampering, stale timestamps, replay and missing configuration', () => {
   const time = Date.now(), secret = 'x'.repeat(64), nonce = 'a'.repeat(32), body = '{"dryRun":true}'

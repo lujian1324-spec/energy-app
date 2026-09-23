@@ -5,14 +5,15 @@ const pending = new Map()
 export async function withUserLock(userId, work, { deadline = Infinity } = {}) {
   const key = String(userId)
   const previous = pending.get(key) || Promise.resolve()
+  let expired = false
   const current = previous.catch(() => {}).then(() => {
-    if (Date.now() >= deadline) throw new Error('USER_LOCK_DEADLINE')
+    if (expired || Date.now() >= deadline) throw new Error('USER_LOCK_DEADLINE')
     return work()
   })
   pending.set(key, current)
   let timer
   const timeout = Number.isFinite(deadline) ? new Promise((_, reject) => {
-    timer = setTimeout(() => reject(new Error('USER_LOCK_DEADLINE')), Math.max(0, deadline - Date.now()))
+    timer = setTimeout(() => { expired = true; reject(new Error('USER_LOCK_DEADLINE')) }, Math.max(0, deadline - Date.now()))
   }) : null
   try { return await (timeout ? Promise.race([current, timeout]) : current) }
   // Keep the queue intact after a wait timeout. The queued job checks the same
