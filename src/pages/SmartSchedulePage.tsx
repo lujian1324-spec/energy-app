@@ -26,6 +26,12 @@ import { useDeviceStore } from '../stores/deviceStore'
 import { applySmartSchedule, type SmartScheduleResult } from '../api/smartScheduleControl'
 import { useSleepModeScheduler } from '../hooks/useSleepModeScheduler'
 import { smartSchedulePowers, MAX_MANUAL_CHARGE_W } from '../utils/chargeWindow'
+import {
+  getActiveScheduleMode,
+  setActiveScheduleMode,
+  clearActiveScheduleMode,
+} from '../utils/activeScheduleMode'
+import { backgroundScheduleNotice } from '../utils/scheduleOutcome'
 import { loadRatedParams } from '../db/powerflowDB'
 import type { PeakShavingSchedule } from '../types'
 
@@ -216,7 +222,20 @@ export default function SmartSchedulePage() {
     model,
     powers: smartSchedulePowers(model, committed.chargePowerW),
     storagePrefix: SMART_STORAGE_PREFIX,
+    // SW-12: writes 0x0085 only while Smart Schedule owns the device; Sleep Mode
+    // owning it keeps this one quiet (AC-12-5).
+    mode: 'smart',
   })
+
+  /* SW-12: if Sleep Mode has since taken this device, Smart Schedule shows
+     itself off rather than an armed toggle that is not allowed to execute —
+     the relay's single slot holds Sleep's window, not this one. */
+  useEffect(() => {
+    if (!selectedDeviceId) return
+    if (getActiveScheduleMode(String(selectedDeviceId)) !== 'sleep') return
+    if (usePowerStationStore.getState().peakShavingSettings.enabled) togglePeakShaving(false)
+    setCommitted(c => (c.enabled ? { ...c, enabled: false } : c))
+  }, [selectedDeviceId, togglePeakShaving])
 
   const [saving, setSaving] = useState(false)
 
@@ -258,6 +277,23 @@ export default function SmartSchedulePage() {
       if (!r.ok) {
         toast.error(stepFailureTitle(r, enabled), sanitizeUiCopy(r.detail ?? '', '') || undefined)
         return false
+      }
+      // SW-12: the device took it, so Smart Schedule owns this device's charge
+      // power — Sleep Mode's stored window is disarmed and its executor stops.
+      if (enabled) setActiveScheduleMode(String(selectedDeviceId), 'smart')
+      else clearActiveScheduleMode(String(selectedDeviceId), 'smart')
+      // The relay is the other half of the save. It failing is not the whole run
+      // failing, but it must not disappear behind a clean toggle either: without
+      // it the window only switches while the app is open (AC-12-7 / AC-12-8).
+      const notice = backgroundScheduleNotice({
+        enabling: enabled,
+        instantPowerApplied: r.instantPowerApplied,
+        relayConfigured: r.relayConfigured,
+        relayAccepted: r.relayAccepted,
+        relayDetail: r.relayDetail,
+      })
+      if (notice) {
+        console.warn('[SmartSchedule] relay did not take the window:', r.relayDetail)
       }
       setCommitted({
         enabled,

@@ -1,8 +1,8 @@
 {
-  "version": "4.14.2",
-  "build": 2903,
+  "version": "4.14.3",
+  "build": 2904,
   "date": "2026-09-23",
   "changelog": [
-    "Smart Schedule now still applies the charge power and the window schedule on devices whose product model has no sleepMode setting, instead of stopping with a config-attribute error."
+    "Smart Schedule and Sleep Mode now share a single active mode per device, only mark a power phase applied after a successful write with bounded retries, and report instant power vs background schedule separately when relay upload fails."
   ]
 }

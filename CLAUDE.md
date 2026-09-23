@@ -155,6 +155,8 @@ lives on independently and is still referenced elsewhere.)
 - *Name edit*, *icon picker*.
 - *Device Info*: model, **Serial Number** (`serialNumber`), **Rated Capacity** (`acInvOutputPower×2`, Wh→kWh), **Rated Output Power** W (`ratedPower`), **Rated Voltage** 120V (fixed), **Cycles** (`numberOfBatteryUsageCycles`), **Temperature** °F (`batteryTemp`), Wi-Fi (`isOnline`), firmware (`softwareVersion`).
 - *Sleep Mode editor* (`sleepFrom`/`sleepTo` + scheduler), *Battery Priority sheet* (Backup 100% / Savings 60%), *delete dialog*.
+  Saving Sleep Mode claims the device for `sleep` (SW-12 — see Smart Schedule below), which disarms
+  Smart Schedule's window, and reports a relay that refused the upload instead of dropping it.
 - **Battery Priority control path (v4.14.0, SW-09): Modbus passthrough only, no `workMode` write.**
   Save goes through `applyBatteryPriority()` (`src/api/batteryPriorityControl.ts`) and makes exactly two
   `POST /remote/device/passthrough` writes, in order: **0x0086** (`PV_BATT_PRIORITY`) then **0x0054**
@@ -244,6 +246,28 @@ lives on independently and is still referenced elsewhere.)
     `sleepMode` key at all — A is **soft-failed**, not surfaced: the run continues to B and C, and the
     result carries `configSkipped`/`configSkippedDetail` so `ok` is never read as "all three landed"
     (`isMissingConfigAttribute()` is the matcher). Any other A failure still stops the run as before.
+    SW-12 keeps that behaviour and puts a per-model memo in front of the wording
+    (`isMissingSleepModeAttribute()` → `src/utils/configCapability.ts`), so a model only has to be
+    recognised once and a rephrased refusal keeps classifying the same way.
+  - **SW-12 (v4.14.3): one device has one active mode, and `ok` is not the whole story.**
+    - *Active mode* — enabling Smart Schedule claims the device in `src/utils/activeScheduleMode.ts`
+      and disarms Sleep Mode's saved window; enabling Sleep Mode does the reverse. Turning either off
+      releases the claim, scoped to the owner. `useSleepModeScheduler` takes a `mode` and writes
+      0x0085 only while that mode owns the device, so the two never fight over the register or the
+      relay's single per-device slot. An unclaimed device stays open to either mode, so installs from
+      before this keep working.
+    - *Phase / retry* — the shared scheduler's writes live in `src/utils/chargePhaseWriter.ts`. A
+      phase is recorded (in memory and in `${prefix}-phase-${deviceId}`) only after the passthrough
+      returns a **business** success; a refused or thrown write stays pending on a bounded backoff
+      ladder (10s/30s/60s/120s), wake events (online / focus / the 60s tick) restart it at most once
+      per 30s, exactly one write is in flight at a time, and a reply for a device the user has left
+      is dropped. Before this the phase was recorded before the request resolved and failures were
+      swallowed, so every later re-check said "already applied" and a missed window stayed missed.
+    - *Honest relay* — `ok` is the **instant power** result (A/B) only. C is carried separately as
+      `relayConfigured`/`relayAccepted`/`relayDetail` (`uploadSleepScheduleResult`), and both pages
+      raise a warning toast from `backgroundScheduleNotice()` when the device took the write but the
+      relay did not take the window — including the disable path, where the old background schedule
+      may still fire.
 
 **NotificationsPage** (`/notifications`)
 - *Active Now*: firing alarms (`alarmMessage`, severity, time). *History*: title, severity, device/station, dismiss (`isProcessed`), load-more.
