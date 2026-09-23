@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { resolveAlarmText, describeAlarmCode, knownAlarmText, dedupeAndFilterAlarms } from './alarmText'
+import { resolveAlarmText, describeAlarmCode, knownAlarmText, dedupeAndFilterAlarms, isPvAlarm } from './alarmText'
 
 /**
  * resolveAlarmText is the single entry that turns a firing-alarm object into a
@@ -91,7 +91,7 @@ describe('dedupeAndFilterAlarms', () => {
   })
 })
 
-describe('dedupeAndFilterAlarms — suppressed alarms (Jason)', () => {
+describe('dedupeAndFilterAlarms — suppressed PV and mains alarms', () => {
   const titles = (arr: Array<{ title: string }>) => arr.map(a => a.title)
 
   it('hides PV under voltage (spaced, joined, and the "votage" typo)', () => {
@@ -107,6 +107,29 @@ describe('dedupeAndFilterAlarms — suppressed alarms (Jason)', () => {
   it('hides PV not connected', () => {
     const out = dedupeAndFilterAlarms([{ name: 'PV not connected', alarmId: '1' }])
     expect(out).toEqual([])
+  })
+
+  it('hides PV overvoltage, overcurrent, input fault, and MPPT faults', () => {
+    const out = dedupeAndFilterAlarms([
+      { key: 'pvOverVoltage' },
+      { alarmCode: 'pvOverCurrent' },
+      { key: 'pvFault' },
+      { key: 'mpptOverTemp' },
+      { key: 'cellOverVoltage' },
+    ])
+    expect(titles(out)).toEqual(['Cell overvoltage'])
+  })
+
+  it('matches numbered PV inputs, solar aliases, photovoltaic text, and CJK names', () => {
+    const out = dedupeAndFilterAlarms([
+      { key: 'PV1OverVoltage' },
+      { key: 'solarInputFault' },
+      { name: 'Photovoltaic module failure' },
+      { key: 'vendor123', name: '光伏输入异常' },
+      { alarmMessage: '太阳能充电器故障' },
+      { key: 'fanFault' },
+    ])
+    expect(titles(out)).toEqual(['Fan fault'])
   })
 
   it('hides "Mains power fail" close variants and the CJK mains-input name', () => {
@@ -128,6 +151,21 @@ describe('dedupeAndFilterAlarms — suppressed alarms (Jason)', () => {
   it('does NOT hide Grid power not connected (only PV/mains variants)', () => {
     const out = dedupeAndFilterAlarms([{ name: 'Grid power not connected', alarmId: '1' }])
     expect(titles(out)).toEqual(['Grid power not connected'])
+  })
+
+  it('does not misclassify unrelated words or non-PV faults', () => {
+    expect(isPvAlarm({ key: 'supervisorFault' })).toBe(false)
+    expect(isPvAlarm({ key: 'pvalueFault' })).toBe(false)
+    expect(isPvAlarm({ name: 'Grid overvoltage' })).toBe(false)
+    expect(isPvAlarm({ key: 'batteryOverVoltage' })).toBe(false)
+    expect(isPvAlarm({ key: 'pv2UnderVoltage' })).toBe(true)
+    expect(isPvAlarm({ alarmCode: 'PVOVERVOLTAGE' })).toBe(true)
+    const out = dedupeAndFilterAlarms([
+      { key: 'supervisorFault' },
+      { key: 'batteryOverVoltage' },
+      { key: 'gridFault' },
+    ])
+    expect(titles(out)).toEqual(['Supervisor Fault', 'Battery overvoltage', 'Grid fault'])
   })
 })
 

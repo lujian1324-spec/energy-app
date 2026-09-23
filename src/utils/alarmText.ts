@@ -151,31 +151,30 @@ const MAINS_POWER_FAILURE = 'Mains power failure'
  */
 const MAINS_FAILURE_SYMPTOMS = new Set(['Mains undervoltage', 'Bypass undervoltage'])
 
-/**
- * Alarms Jason asked to suppress entirely from the alarm center (list + bell badge):
- * PV undervoltage / PV not connected / mains-power-failure and its close variants.
- * Matched case-insensitively as substrings against every text an alarm carries —
- * the resolved display title AND the raw wire fields (name / alarmMessage / key /
- * alarmCode) — because the backend may deliver the same fault as a curated title,
- * a raw English name, or a CJK name that never mapped. Whitespace is collapsed so
- * "PV  under   voltage" still matches. Patterns cover:
- *   - "PV under voltage" / "PV undervoltage" and the "votage" typo (spaced + joined)
- *   - "PV not connected"
- *   - "Mains power failure" via the "mains power fail" stem (also "Mains power fail")
- *   - the Chinese mains-input-failure name 市电输入失效
- */
+/** Match PV-family alarm markers without matching unrelated words such as "supervisor". */
+const PV_ALARM_MARKER = /(?:^|[^a-z0-9])(?:pv\d*|mppt\d*|solar|photovoltaic)(?=$|[^a-z0-9])|光伏|太阳能/i
+
+/** Check raw wire fields as well as a resolved title: CJK names can be omitted from the UI. */
+export function isPvAlarm(alarm: ResolvableAlarm & { title?: string }): boolean {
+  if ([alarm.key, alarm.alarmCode].some(code => PV_ALARM_MARKER.test(knownAlarmText(code)))) return true
+  return [alarm.key, alarm.alarmCode, alarm.name, alarm.alarmMessage, alarm.title].some(value => {
+    if (!value) return false
+    const spaced = value
+      .replace(/([A-Z])([A-Z][a-z])/g, '$1 $2')
+      .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    return PV_ALARM_MARKER.test(spaced)
+  })
+}
+
+/** Existing mains-power-failure suppression remains independent of the PV rule. */
 const HIDDEN_ALARM_PATTERNS = [
-  'pv under voltage',
-  'pv undervoltage',
-  'pv under votage',
-  'pv undervotage',
-  'pv not connected',
   'mains power fail',
   '市电输入失效',
 ]
 
 /** True when any text this alarm carries matches a suppressed pattern. */
 function isHiddenAlarm(alarm: ResolvableAlarm & { title?: string }): boolean {
+  if (isPvAlarm(alarm)) return true
   const haystack = [alarm.title, alarm.name, alarm.alarmMessage, alarm.key, alarm.alarmCode]
     .filter(Boolean)
     .join(' ')
@@ -186,7 +185,7 @@ function isHiddenAlarm(alarm: ResolvableAlarm & { title?: string }): boolean {
 
 /**
  * Prepare firing alarms for the alarm center: resolve each to its display title,
- * suppress the alarms Jason asked to hide entirely (see HIDDEN_ALARM_PATTERNS),
+ * suppress PV-family alarms and the existing mains-failure exceptions,
  * drop exact duplicates (same title — collapses e.g. lineLoss + mainsFailure that
  * both read "Mains power failure"), and, when a Mains power failure is present, hide
  * its correlated undervoltage symptoms. Preserves order; each kept alarm is annotated

@@ -1,8 +1,7 @@
 /**
  * Generic Device Alarm Push Notification
  *
- * The cloud alarm center (NotificationsPage, `/alarm/query/list` + `firingAlarms`)
- * already shows every alarm the backend reports — no filtering there. But the
+ * The cloud alarm center filters PV-family alarms from `firingAlarms`. The
  * *push*-notification side only ever watched three specific, hand-built local
  * conditions (Power Outage, Low Battery, Solar Status; see
  * `powerOutageNotification.ts` / `useLowBatteryMonitor.ts` / the solar watcher in
@@ -12,7 +11,7 @@
  * covered by the power-outage-specific matcher, deduplicated by alarmId.
  */
 import { showDeviceAlarmNotification } from './pushNotification'
-import { resolveAlarmText } from './alarmText'
+import { isPvAlarm, resolveAlarmText } from './alarmText'
 import { POWER_OUTAGE_KEYS, type FiringAlarm } from './powerOutageNotification'
 
 function isPowerOutageAlarm(alarmCode: string): boolean {
@@ -48,7 +47,7 @@ export async function checkAndNotifyDeviceAlarms(
   if (!isOnline || !firingAlarms?.length) return
 
   const otherAlarms = firingAlarms.filter(a =>
-    !isPowerOutageAlarm(a.key ?? '') && !isPowerOutageAlarm(a.alarmCode ?? '')
+    !isPvAlarm(a) && !isPowerOutageAlarm(a.key ?? '') && !isPowerOutageAlarm(a.alarmCode ?? '')
   )
   if (!otherAlarms.length) return
 
