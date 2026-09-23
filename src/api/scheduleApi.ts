@@ -10,7 +10,7 @@
  * 不再重传已轮换的旧副本。
  *
  * 走原生 fetch 直连 relay 基址（非官方 api）；relay 端已开 CORS。未配置 relay
- * （RELAY_BASE_URL 为空）时安全空跑。email/短信码登录没有可托管会话,则只有客户端调度。
+ * （RELAY_BASE_URL 为空）时安全空跑。验证码登录也会尝试建立独立会话，但可能失败。
  */
 import { POLLER_REFRESH_PENDING_KEY } from './authApi'
 import { RELAY_BASE_URL, SCHEDULE_PATH, isRelayConfigured } from '../config/scheduling'
@@ -82,16 +82,20 @@ export async function uploadSleepScheduleResult(
 ): Promise<ScheduleUploadResult> {
   if (!isRelayConfigured()) return { configured: false, accepted: false }
   try {
+    const userId = getUserId()?.trim()
+    if (!userId || ['anon', 'null', 'undefined'].includes(userId)) {
+      return { configured: true, accepted: false, detail: 'Sign in again before saving a background schedule.' }
+    }
     let boot: { accessToken?: string; refreshToken?: string; accessExpiresAt?: number } = {}
     const rawBoot = localStorage.getItem(POLLER_REFRESH_PENDING_KEY)
-    if (rawBoot) { try { boot = JSON.parse(rawBoot) } catch { /* ignore malformed */ } }
+    if (rawBoot) { try { boot = JSON.parse(rawBoot) ?? {} } catch { /* ignore malformed */ } }
 
     const res = await fetch(`${RELAY_BASE_URL}${SCHEDULE_PATH}`, {
       method: 'POST',
       signal: AbortSignal.timeout(15_000),
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        userId: getUserId() ?? undefined,
+        userId,
         deviceId: String(deviceId),
         schedule: { ...schedule, tz: deviceTimezone() },
         // One-time poller-session bootstrap (see file header); undefined => relay
@@ -101,21 +105,32 @@ export async function uploadSleepScheduleResult(
         accessExpiresAt: boot.accessExpiresAt ?? undefined,
       }),
     })
-    const ok = res.ok
-    // Consume the bootstrap once the relay has it, so we never re-upload a stale pair.
-    if (ok && rawBoot) localStorage.removeItem(POLLER_REFRESH_PENDING_KEY)
+    const body = await res.json().catch(() => null)
+    const ok = res.ok && (body?.code === 0 || body?.code === '0')
+    // A concurrent login can replace the bootstrap while this upload is in flight.
+    if (ok && rawBoot && getUserId()?.trim() === userId && localStorage.getItem(POLLER_REFRESH_PENDING_KEY) === rawBoot) {
+      localStorage.removeItem(POLLER_REFRESH_PENDING_KEY)
+    }
+    const missingSession = res.status === 409 && (
+      body?.reason === 'POLLER_SESSION_REQUIRED'
+      || body?.message === 'A poller session is required for background scheduling. Sign in again.'
+    )
     return {
       configured: true,
       accepted: ok,
       status: typeof res.status === 'number' ? res.status : undefined,
-      detail: ok ? undefined : `relay HTTP ${res.status ?? '?'}`,
+      detail: ok ? undefined : missingSession
+        ? 'Background session is missing. Sign in again and retry Save. If it still fails, contact support.'
+        : `Schedule server did not confirm the save (HTTP ${res.status}). Retry Save.`,
     }
   } catch (e) {
     console.warn('[schedule] uploadSleepSchedule failed:', e)
     return {
       configured: true,
       accepted: false,
-      detail: e instanceof Error ? e.message : String(e),
+      detail: e instanceof Error && (e.name === 'TimeoutError' || e.name === 'AbortError')
+        ? 'Schedule server timed out. Check your connection and retry Save.'
+        : 'Schedule server could not be reached. Check your connection and retry Save.',
     }
   }
 }

@@ -20,6 +20,7 @@ describe('AC-12-7 — instant power and background schedule are reported apart',
     const n = backgroundScheduleNotice({ ...base, relayAccepted: false, relayDetail: 'relay HTTP 500' })
     expect(n?.severity).toBe('warning')
     expect(n?.message).toMatch(/only switch while the app is open/i)
+    expect(n?.message).toContain('relay HTTP 500')
   })
 
   it('stays quiet in a build with no relay — client-side timing is the design there', () => {

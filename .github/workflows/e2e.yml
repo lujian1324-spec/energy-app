@@ -42,6 +42,7 @@ jobs:
       - name: Build web app
         env:
           VITE_PUSH_ENABLED: 'true'
+          VITE_RELAY_URL: 'https://relay.example.test'
         run: npm run build
 
       - name: Run E2E tests against the built app

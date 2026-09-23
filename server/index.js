@@ -124,9 +124,10 @@ app.post('/notification/nativepush/unregister', requireBodyUserId, (req, res) =>
 app.post('/schedule', requireBodyUserId, (req, res) => {
   const { userId, deviceId, schedule, refreshToken, accessToken, accessExpiresAt, prefs } = req.body || {}
   if (!deviceId || !schedule) return res.status(400).json({ code: 1, message: 'deviceId and schedule required' })
+  if (typeof schedule.enabled !== 'boolean') return res.status(400).json({ code: 1, message: 'schedule.enabled must be a boolean' })
   if (refreshToken || accessToken || prefs) setUserAuth(userId, { refreshToken, accessToken, accessExpiresAt, prefs })
   if (!setUserSchedule(userId, deviceId, schedule)) {
-    return res.status(409).json({ code: 1, message: 'A poller session is required for background scheduling. Sign in again.' })
+    return res.status(409).json({ code: 1, reason: 'POLLER_SESSION_REQUIRED', message: 'A poller session is required for background scheduling. Sign in again.' })
   }
   ok(res)
 })

@@ -43,15 +43,16 @@ export function backgroundScheduleNotice(o: ScheduleOutcome): ScheduleNotice | n
   if (!o.instantPowerApplied) return null // the save already failed; that is the message
   if (!o.relayConfigured || o.relayAccepted) return null
 
+  const detail = o.relayDetail ? ` ${o.relayDetail}` : ''
   return o.enabling
     ? {
         severity: 'warning',
         title: 'Saved on the device, not in the background',
-        message: 'The charge power was applied now, but the schedule server did not take the window — it will only switch while the app is open.',
+        message: 'The power command was accepted, but the background schedule was not confirmed. It will only switch while the app is open.' + detail,
       }
     : {
         severity: 'warning',
         title: 'Background schedule may still run',
-        message: 'The charge power was restored now, but the schedule server did not take the change — an earlier background schedule may still switch this device.',
+        message: 'The restore-power command was accepted, but the background stop was not confirmed. An earlier schedule may still switch this device.' + detail,
       }
 }

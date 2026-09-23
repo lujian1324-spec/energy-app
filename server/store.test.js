@@ -83,6 +83,40 @@ test('background schedules require an actual poller session', () => {
   assert.equal(store.setUserSchedule('prefs-only', 'device', { enabled: true }), false)
 })
 
+test('disabling an absent schedule succeeds without creating credentials or state', () => {
+  const before = readFileSync(process.env.STORE_FILE, 'utf8')
+  assert.equal(store.setUserSchedule('never-scheduled', 'device', { enabled: false }), true)
+  assert.equal(readFileSync(process.env.STORE_FILE, 'utf8'), before)
+  assert.equal(store.getUser('never-scheduled'), null)
+})
+
+test('a push preferences-only user can confirm an already-disabled schedule', () => {
+  store.setUserAuth('prefs-disable', { prefs: {} })
+  const before = readFileSync(process.env.STORE_FILE, 'utf8')
+  assert.equal(store.setUserSchedule('prefs-disable', 'device', { enabled: false }), true)
+  assert.equal(readFileSync(process.env.STORE_FILE, 'utf8'), before)
+  assert.equal(store.setUserSchedule('prefs-disable', 'device', { enabled: true }), false)
+})
+
+test('only explicit boolean false is an idempotent disable', () => {
+  for (const enabled of [undefined, null, 0, 'false']) {
+    assert.equal(store.setUserSchedule('never-scheduled', 'device', { enabled }), false)
+  }
+  assert.throws(() => store.setUserSchedule('anon', 'device', { enabled: false }), /userId required/)
+})
+
+test('disable replaces only the selected device schedule and clears its phase', () => {
+  store.setUserAuth('disable-owner', { accessToken: 'session' })
+  store.setUserSchedule('disable-owner', 'one', { enabled: true })
+  store.setUserSchedule('disable-owner', 'two', { enabled: true })
+  store.setSchedulePhase('disable-owner', 'one', 'sleep')
+  assert.equal(store.setUserSchedule('disable-owner', 'one', { enabled: false }), true)
+  const u = store.getAllUsers().find(u => u.userId === 'disable-owner')
+  assert.equal(u.schedules.one.enabled, false)
+  assert.equal(u.schedules.two.enabled, true)
+  assert.equal(store.getSchedulePhase('disable-owner', 'one'), null)
+})
+
 test('editing schedule watts clears the prior applied phase', () => {
   store.setUserAuth('scheduler', { accessToken: 'session' })
   assert.equal(store.setUserSchedule('scheduler', 'device', { enabled: true, sleepW: 150 }), true)

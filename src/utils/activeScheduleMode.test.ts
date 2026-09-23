@@ -15,6 +15,7 @@ import {
   canExecuteScheduleMode,
   subscribeActiveScheduleMode,
   disarmStoredWindow,
+  getSavedScheduleEnabled,
 } from './activeScheduleMode'
 
 const DEVICE = '491513787113766912'
@@ -29,6 +30,25 @@ const store = new Map<string, string>()
 }
 
 beforeEach(() => { store.clear() })
+
+describe('per-device status', () => {
+  it('does not enable a different device or an unsaved window', () => {
+    setActiveScheduleMode(DEVICE, 'smart')
+    expect(getSavedScheduleEnabled(DEVICE, 'smart')).toBe(true)
+    expect(getSavedScheduleEnabled(OTHER, 'smart')).toBe(false)
+  })
+  it('Sleep ownership overrides a stale saved Smart window', () => {
+    store.set('sierro-smart-' + DEVICE, JSON.stringify({ enabled: true }))
+    setActiveScheduleMode(DEVICE, 'sleep')
+    expect(getSavedScheduleEnabled(DEVICE, 'smart')).toBe(false)
+  })
+  it('reads legacy per-device windows but not malformed values', () => {
+    store.set('sierro-smart-' + DEVICE, JSON.stringify({ enabled: true }))
+    expect(getSavedScheduleEnabled(DEVICE, 'smart')).toBe(true)
+    store.set('sierro-smart-' + DEVICE, 'invalid')
+    expect(getSavedScheduleEnabled(DEVICE, 'smart')).toBe(false)
+  })
+})
 
 const armWindow = (prefix: string, deviceId: string) =>
   store.set(`${prefix}-${deviceId}`, JSON.stringify({ enabled: true, sleepFrom: '23:00', sleepTo: '07:00' }))
