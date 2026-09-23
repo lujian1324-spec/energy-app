@@ -12,7 +12,8 @@ import Icon from '../components/Icon'
 import { useNavigate, useParams } from 'react-router-dom'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useDeviceStore } from '../stores/deviceStore'
-import { mapFieldsToRealtime, toggleSleepMode } from '../api/deviceApi'
+import { mapFieldsToRealtime } from '../api/deviceApi'
+import { applySleepSchedule } from '../api/smartScheduleControl'
 import {
   applyBatteryPriority,
   batteryPriorityErrorMessage,
@@ -30,8 +31,6 @@ import { loadRatedParams, saveRatedParams, type RatedParams } from '../db/powerf
 import { SIERRO_MODELS, SIERRO_MODEL_LIST, DEVICE_NAME_MAX, generateSerial, type SierroModel } from '../data/deviceModels'
 import sierro1000Img from '../assets/sierro-1000.webp'
 import { DEV_TOOLS_ENABLED } from '../config/devTools'
-import { uploadSleepScheduleResult } from '../api/scheduleApi'
-import { setActiveScheduleMode, clearActiveScheduleMode } from '../utils/activeScheduleMode'
 import { backgroundScheduleNotice } from '../utils/scheduleOutcome'
 
 interface DeviceDetailPageProps {
@@ -224,7 +223,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   useEffect(() => {
     const val = selectedDeviceState?.fields?.sleepMode?.value
     if (val !== undefined && val !== null) {
-      setSleepMode(val ? 'On' : 'Off')
+      setSleepMode(val === true || val === 1 || val === '1' || val === 'true' ? 'On' : 'Off')
     }
   }, [selectedDeviceState])
 
@@ -293,6 +292,9 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const [sleepMode, setSleepMode] = useState<'Off' | 'On'>('Off')
   const [sleepFrom, setSleepFrom] = useState('22:00')
   const [sleepTo, setSleepTo] = useState('09:00')
+  const [savingSleep, setSavingSleep] = useState(false)
+  const savingSleepRef = useRef(false)
+  const [sleepApplied, setSleepApplied] = useState({ deviceId: '', enabled: false, sleepFrom: '22:00', sleepTo: '09:00' })
   // Which row's inline time picker is open (`ui-fix-doc-20260911/02`); null = none.
   const [openTimePicker, setOpenTimePicker] = useState<'from' | 'to' | null>(null)
   // Snapshot taken when the Sleep Mode screen opens; the design keeps Save dim until
@@ -404,22 +406,21 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
 
   useEffect(() => {
     if (!deviceIdForScheduler) return
-    const saved = loadSchedule(deviceIdForScheduler)
-    if (saved) {
-      setSleepMode(saved.enabled ? 'On' : 'Off')
-      setSleepFrom(saved.sleepFrom)
-      setSleepTo(saved.sleepTo)
-    }
+    const saved = loadSchedule(deviceIdForScheduler) ?? { enabled: false, sleepFrom: '22:00', sleepTo: '09:00' }
+    setSleepMode(saved.enabled ? 'On' : 'Off')
+    setSleepFrom(saved.sleepFrom)
+    setSleepTo(saved.sleepTo)
+    setSleepApplied({ ...saved, deviceId: deviceIdForScheduler })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deviceIdForScheduler])
 
   // Keeps sending the schedule; the new Sleep Mode frame shows only the toggle and
   // the two times, so none of what it reports back is rendered any more.
   useSleepModeScheduler({
-    enabled: sleepMode === 'On',
-    sleepFrom,
-    sleepTo,
-    deviceId: deviceIdForScheduler,
+    enabled: sleepApplied.enabled,
+    sleepFrom: sleepApplied.sleepFrom,
+    sleepTo: sleepApplied.sleepTo,
+    deviceId: sleepApplied.deviceId === deviceIdForScheduler ? deviceIdForScheduler : '',
     model,
     // SW-12: this instance writes only while Sleep Mode owns the device. If the
     // user has armed Smart Schedule on the same device, it owns 0x0085 and the
@@ -730,32 +731,34 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     const b = sleepBaseline.current
     const sleepChanged = b.sleepMode !== sleepMode || b.sleepFrom !== sleepFrom || b.sleepTo !== sleepTo
     const handleSaveSleepMode = async () => {
+      if (savingSleepRef.current) return
       const deviceId = routeId ?? selectedDeviceId
-      if (deviceId) {
-        const id = String(deviceId)
-        try { await toggleSleepMode(deviceId, enabled) } catch { /* noop */ }
-        saveSchedule(deviceId, { enabled, sleepFrom, sleepTo })
-        // SW-12: Sleep Mode takes the device (or gives it back), which disarms
-        // Smart Schedule's stored window and stops its executor, before the relay
-        // slot is rewritten — client and relay end up naming the same owner.
-        if (enabled) setActiveScheduleMode(id, 'sleep')
-        else clearActiveScheduleMode(id, 'sleep')
-        // The charge power itself is the scheduler's job (and is retried there);
-        // what the user cannot otherwise see is whether the background schedule
-        // was taken, so a relay refusal is reported rather than swallowed.
-        const relay = await uploadSleepScheduleResult(id, { enabled, sleepFrom, sleepTo, model })
-        const notice = backgroundScheduleNotice({
-          enabling: enabled,
-          instantPowerApplied: true,
-          relayConfigured: relay.configured,
-          relayAccepted: relay.accepted,
-          relayDetail: relay.detail,
-        })
-        if (notice) {
-          console.warn('[SleepMode] relay did not take the window:', relay.detail)
+      savingSleepRef.current = true
+      setSavingSleep(true)
+      try {
+        if (deviceId) {
+          const id = String(deviceId)
+          const result = await applySleepSchedule(id, { enabled, startTime: sleepFrom, endTime: sleepTo, model })
+          if (!result.ok) {
+            toast.error('Could not save Sleep Mode', sanitizeUiCopy(result.detail ?? '', '') || undefined)
+            return
+          }
+          saveSchedule(deviceId, { enabled, sleepFrom, sleepTo })
+          setSleepApplied({ deviceId: id, enabled, sleepFrom, sleepTo })
+          const notice = backgroundScheduleNotice({
+            enabling: enabled,
+            instantPowerApplied: result.instantPowerApplied,
+            relayConfigured: result.relayConfigured,
+            relayAccepted: result.relayAccepted,
+            relayDetail: result.relayDetail,
+          })
+          if (notice) toast.warning(notice.title, notice.message)
         }
+        setScreen('main')
+      } finally {
+        savingSleepRef.current = false
+        setSavingSleep(false)
       }
-      setScreen('main')
     }
     return (
       <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
@@ -766,7 +769,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           </h1>
           <button
             onClick={handleSaveSleepMode}
-            disabled={!sleepChanged}
+            disabled={!sleepChanged || savingSleep}
             className={`ml-auto text-body-lg font-semibold transition-colors ${
               sleepChanged ? 'text-primary' : 'text-primary/30 cursor-not-allowed'
             }`}
@@ -787,6 +790,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               </div>
               <button
                 onClick={() => setSleepMode(enabled ? 'Off' : 'On')}
+                disabled={savingSleep}
                 className={`relative w-12 h-7 rounded-full transition-colors duration-200 ${enabled ? 'bg-primary' : 'bg-ink-9'}`}
               >
                 <span

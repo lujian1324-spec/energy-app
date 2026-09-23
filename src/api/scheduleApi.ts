@@ -88,6 +88,7 @@ export async function uploadSleepScheduleResult(
 
     const res = await fetch(`${RELAY_BASE_URL}${SCHEDULE_PATH}`, {
       method: 'POST',
+      signal: AbortSignal.timeout(15_000),
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         userId: getUserId() ?? undefined,

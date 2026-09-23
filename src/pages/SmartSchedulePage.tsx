@@ -28,8 +28,6 @@ import { useSleepModeScheduler } from '../hooks/useSleepModeScheduler'
 import { smartSchedulePowers, MAX_MANUAL_CHARGE_W } from '../utils/chargeWindow'
 import {
   getActiveScheduleMode,
-  setActiveScheduleMode,
-  clearActiveScheduleMode,
 } from '../utils/activeScheduleMode'
 import { backgroundScheduleNotice } from '../utils/scheduleOutcome'
 import { loadRatedParams } from '../db/powerflowDB'
@@ -238,6 +236,7 @@ export default function SmartSchedulePage() {
   }, [selectedDeviceId, togglePeakShaving])
 
   const [saving, setSaving] = useState(false)
+  const savingRef = useRef(false)
 
   const stepFailureTitle = (r: SmartScheduleResult, enabling: boolean): string => {
     if (r.failedStep === 'passthrough') return 'Could not set the charge power'
@@ -258,13 +257,14 @@ export default function SmartSchedulePage() {
    * pre-edit one.
    */
   const pushToDevice = useCallback(async (enabled: boolean): Promise<boolean> => {
-    if (!selectedDeviceId) return false
+    if (!selectedDeviceId || savingRef.current) return false
     const settings = usePowerStationStore.getState().peakShavingSettings
     const win = settings.schedules.find(s => s.type === 'charge' && s.enabled) ?? null
     if (enabled && !win) {
       toast.error('Add a Charge period first', 'Smart Schedule needs one charge window to run.')
       return false
     }
+    savingRef.current = true
     setSaving(true)
     try {
       const r = await applySmartSchedule(selectedDeviceId, {
@@ -278,10 +278,6 @@ export default function SmartSchedulePage() {
         toast.error(stepFailureTitle(r, enabled), sanitizeUiCopy(r.detail ?? '', '') || undefined)
         return false
       }
-      // SW-12: the device took it, so Smart Schedule owns this device's charge
-      // power — Sleep Mode's stored window is disarmed and its executor stops.
-      if (enabled) setActiveScheduleMode(String(selectedDeviceId), 'smart')
-      else clearActiveScheduleMode(String(selectedDeviceId), 'smart')
       // The relay is the other half of the save. It failing is not the whole run
       // failing, but it must not disappear behind a clean toggle either: without
       // it the window only switches while the app is open (AC-12-7 / AC-12-8).
@@ -293,6 +289,7 @@ export default function SmartSchedulePage() {
         relayDetail: r.relayDetail,
       })
       if (notice) {
+        toast.warning(notice.title, notice.message)
         console.warn('[SmartSchedule] relay did not take the window:', r.relayDetail)
       }
       setCommitted({
@@ -303,6 +300,7 @@ export default function SmartSchedulePage() {
       })
       return true
     } finally {
+      savingRef.current = false
       setSaving(false)
     }
   }, [selectedDeviceId, model])
@@ -495,6 +493,7 @@ export default function SmartSchedulePage() {
           <span className="text-body-lg text-ink-2">Schedule</span>
           <button
             aria-label="Smart Schedule"
+            disabled={saving}
             onClick={() => handleTogglePeakShaving(!peakShavingSettings.enabled)}
             className={`w-[50px] h-[28px] rounded-full relative transition-colors ${peakShavingSettings.enabled ? 'bg-primary' : 'bg-ink-7'}`}
           >

@@ -180,7 +180,11 @@ export class ChargePhaseWriter {
 
     // The user left this device (or the hook unmounted) while we waited — this
     // reply says nothing about whatever device is selected now.
-    if (epoch !== this.epoch) return
+    if (epoch !== this.epoch) {
+      // A new device/session may already be queued behind this old request.
+      void this.flush()
+      return
+    }
 
     if (res.ok) {
       this.applied = { phase: p.phase, watts: p.watts }

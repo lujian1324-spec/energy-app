@@ -66,7 +66,7 @@ const tick = () => new Promise(r => setTimeout(r, 0))
 
 // A Wi-Fi scan reply long enough to span several packets (>237 bytes of base64).
 const WIFI_RESP: BleProvisionResponse = {
-  CID: 30003,
+  CID: 30004,
   RC: 0,
   PL: Array.from({ length: 16 }, (_, i) => ({
     SSID: `Network-${i}-with-a-fairly-long-name`, RSSI: -40 - i, Auth: 3,
@@ -147,7 +147,7 @@ describe('BLE provisioning multi-packet reassembly', () => {
 
   it('still handles a single-packet reply (getVersion)', async () => {
     const mgr = await connectManager()
-    const packets = makeResponsePackets({ CID: 30001, RC: 0, PL: { SV: '1.2.3', HV: '4.5' } } as unknown as BleProvisionResponse)
+    const packets = makeResponsePackets({ CID: 30002, RC: 0, PL: { SV: '1.2.3', HV: '4.5' } } as unknown as BleProvisionResponse)
     expect(packets).toHaveLength(1)
     const p = mgr.getVersion()
     await tick()

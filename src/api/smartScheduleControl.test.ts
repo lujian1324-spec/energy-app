@@ -46,11 +46,13 @@ vi.mock('../config/scheduling', () => ({
 
 import {
   applySmartSchedule,
+  applySleepSchedule,
   chargePowerFrame,
   isMissingConfigAttribute,
   isMissingSleepModeAttribute,
 } from './smartScheduleControl'
 import { REG_CTRL, buildWriteSingleFrame, toHexString } from '../protocols/modbusProtocol'
+import { getActiveScheduleMode, setActiveScheduleMode } from '../utils/activeScheduleMode'
 
 // A real platform id: 18 digits, past Number.MAX_SAFE_INTEGER.
 const DEVICE_ID = '491513787113766912'
@@ -393,17 +395,16 @@ describe('applySmartSchedule — relay reported apart from the device (SW-12)', 
 })
 
 /**
- * SW-12 optional hardening — the missing-attribute answer is a fact about the
- * model, so it is remembered and consulted before the English wording is.
- * SW-11's behaviour is unchanged either way (AC-12-9).
+ * A historical capability guess must never hide a current transport/refusal error.
  */
-describe('missing sleepMode attribute — capability memo before string match', () => {
-  it('remembers the model, then classifies without the wording', () => {
+describe('missing sleepMode attribute requires current-response evidence', () => {
+  it('accepts explicit absence without sharing capability between devices', () => {
     expect(isMissingSleepModeAttribute('Sierro 1000', 'config attribute not exist')).toBe(true)
-    // A later deployment rephrases the refusal; the model is already known.
+    // Explicit unsupported wording is also accepted for either model.
     expect(isMissingSleepModeAttribute('Sierro 1000', 'sleepMode unsupported')).toBe(true)
-    // …and it is scoped to that model, not to every device on the account.
-    expect(isMissingSleepModeAttribute('Sierro 2000', 'sleepMode unsupported')).toBe(false)
+    // Ambiguous errors are never accepted from a historical capability guess.
+    expect(isMissingSleepModeAttribute('Sierro 2000', 'sleepMode unsupported')).toBe(true)
+    expect(isMissingSleepModeAttribute('Sierro 1000', 'no such key')).toBe(false)
   })
 
   it('does not remember a real refusal', () => {
@@ -411,23 +412,89 @@ describe('missing sleepMode attribute — capability memo before string match', 
     expect(isMissingSleepModeAttribute('Sierro 1000', 'device offline')).toBe(false)
   })
 
-  it('a remembered model still soft-fails A and writes B and C', async () => {
+  it('legacy capability memory cannot turn an unrelated refusal into success', async () => {
     vi.useFakeTimers(); winAt(2)
     h.fail['/remote/device/config/write'] = { code: 20101, message: 'config attribute not exist' }
     await applySmartSchedule(DEVICE_ID, {
       enabled: true, startTime: '23:00', endTime: '07:00', chargePowerW: 500, model: 'Sierro 1000',
     })
     // Second save: the cloud now answers with wording we do not recognise.
+    store.set('sierro-config-missing-sierro 1000-sleepMode', '1')
     h.fail['/remote/device/config/write'] = { code: 20101, message: 'no such key' }
     const r = await applySmartSchedule(DEVICE_ID, {
       enabled: true, startTime: '23:00', endTime: '07:00', chargePowerW: 500, model: 'Sierro 1000',
     })
     vi.useRealTimers()
 
-    expect(r.ok).toBe(true)
-    expect(r.configSkipped).toBe(true)
-    expect(r.configSkippedDetail).toBe('no such key')
-    expect(r.wattsWritten).toBe(500)
-    expect(relayPosts).toHaveLength(2)
+    expect(r.ok).toBe(false)
+    expect(r.failedStep).toBe('config')
+    expect(r.detail).toBe('no such key')
+    expect(r.wattsWritten).toBeUndefined()
+    expect(relayPosts).toHaveLength(1)
+  })
+
+  for (const message of ['config attribute permission denied', 'config attribute write timeout',
+    'config attribute unauthorized', 'config attribute service offline',
+    'config attribute not exist; session expired']) {
+    it(`does not bypass a real failure: ${message}`, async () => {
+      store.set('sierro-config-missing-sierro 1000-sleepMode', '1')
+      h.fail['/remote/device/config/write'] = { code: 20101, message }
+      const r = await applySmartSchedule(DEVICE_ID, {
+        enabled: true, startTime: '23:00', endTime: '07:00', chargePowerW: 500, model: 'Sierro 1000',
+      })
+      expect(isMissingConfigAttribute(message)).toBe(false)
+      expect(r.ok).toBe(false)
+      expect(r.failedStep).toBe('config')
+      expect(h.calls).toHaveLength(1)
+      expect(relayPosts).toHaveLength(0)
+    })
+  }
+})
+
+describe('shared Sleep/Smart control ownership', () => {
+  it('Sleep uses the same missing-attribute fallback with its own watt table', async () => {
+    vi.useFakeTimers(); winAt(2)
+    h.fail['/remote/device/config/write'] = { code: 20101, message: 'config attribute not exist' }
+    const result = await applySleepSchedule(DEVICE_ID, {
+      enabled: true, startTime: '23:00', endTime: '07:00', model: 'Sierro 2000',
+    })
+    vi.useRealTimers()
+    expect(result.ok).toBe(true)
+    expect(result.wattsWritten).toBe(300)
+    expect(getActiveScheduleMode(DEVICE_ID)).toBe('sleep')
+    expect(relayPosts[0].body.schedule).toMatchObject({ sleepW: 300, wakeW: 800 })
+  })
+
+  it('Sleep refuses a failed power write and preserves the previous active mode', async () => {
+    setActiveScheduleMode(DEVICE_ID, 'smart')
+    h.fail['/remote/device/passthrough'] = { code: 1, message: 'offline' }
+    const result = await applySleepSchedule(DEVICE_ID, {
+      enabled: true, startTime: '23:00', endTime: '07:00', model: 'Sierro 1000',
+    })
+    expect(result.ok).toBe(false)
+    expect(result.instantPowerApplied).toBe(false)
+    expect(getActiveScheduleMode(DEVICE_ID)).toBe('smart')
+    expect(relayPosts).toHaveLength(0)
+  })
+
+  it('a stale off save cannot restore power or disable the other mode on the relay', async () => {
+    setActiveScheduleMode(DEVICE_ID, 'sleep')
+    const result = await applySmartSchedule(DEVICE_ID, {
+      enabled: false, startTime: '23:00', endTime: '07:00', chargePowerW: 500, model: 'Sierro 1000',
+    })
+    expect(result.ok).toBe(false)
+    expect(h.calls).toHaveLength(0)
+    expect(relayPosts).toHaveLength(0)
+    expect(getActiveScheduleMode(DEVICE_ID)).toBe('sleep')
+  })
+
+  it('claims the device before uploading the shared relay slot', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => {
+      expect(getActiveScheduleMode(DEVICE_ID)).toBe('smart')
+      return { ok: true }
+    }))
+    await applySmartSchedule(DEVICE_ID, {
+      enabled: true, startTime: '23:00', endTime: '07:00', chargePowerW: 500, model: 'Sierro 1000',
+    })
   })
 })

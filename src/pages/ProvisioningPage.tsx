@@ -71,6 +71,14 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   selectedIconRef.current = selectedIcon
 
   const [foundDevices, setFoundDevices] = useState<FoundDevice[]>([])
+  const [isConnecting, setIsConnecting] = useState(false)
+  const selectingRef = useRef(false)
+  const closedRef = useRef(false)
+  const qrDtuidRef = useRef<string | null>(null)
+  useEffect(() => {
+    closedRef.current = false
+    return () => { closedRef.current = true; void destroyProvisionManager() }
+  }, [])
   const [showNotifSheet, setShowNotifSheet] = useState(false)
   const [configStage, setConfigStage] = useState<ConfigStage>('Sending Wi-Fi details')
   const [failKind, setFailKind] = useState<FailKind>(null)
@@ -194,6 +202,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     try {
       const manager = getProvisionManager()
       const resp = await manager.getVersion()
+      if (closedRef.current) return
       if (resp.RC === 9000) {
         store.setNeedBleKey(true)
         return
@@ -206,9 +215,10 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
         store.setErrorMessage(`Verification failed: RC=${resp.RC}`)
       }
     } catch (err) {
+      if (closedRef.current) return
       store.setErrorMessage(err instanceof Error ? err.message : 'Verification failed')
     } finally {
-      store.setIsOperating(false)
+      if (!closedRef.current) store.setIsOperating(false)
     }
   }, [store])
 
@@ -279,16 +289,11 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     if (store.step !== 'password') setShowPassword(false)
   }, [store.step])
 
-  /**
-   * The verify screen's Wi-Fi button. It used to call handleScanWifi, which fills
-   * apList but leaves store.step on 'verify' — the network list only renders under
-   * step 'wifi', so the tap changed nothing on screen. Moving to the step is the
-   * action; the effect below scans on entry.
-   */
+  /** Failed verification must be retried, not bypassed to the Wi-Fi step. */
   const handleGoToWifi = useCallback(() => {
     if (!currentDtuid()) { store.setErrorMessage(NO_DEVICE_ID); toast.error(NO_DEVICE_ID); return }
-    store.setStep('wifi')
-  }, [store])
+    void handleVerify()
+  }, [store, handleVerify])
 
   const autoScannedRef = useRef(false)
   useEffect(() => {
@@ -303,6 +308,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   }, [store.step, store.apLoading, handleScanWifi])
 
   const handleClose = useCallback(() => {
+    closedRef.current = true
     cancelScan()
     void destroyProvisionManager()
     wifiConfiguredRef.current = false
@@ -317,40 +323,55 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   }, [store.deviceName])
 
   /** Bluetooth is done — run verify → Wi-Fi before asking for a name and icon. */
-  const startProvisioning = useCallback(() => {
+  const startProvisioning = useCallback(async () => {
+    if (!currentDtuid() || getProvisionManager().getDuid() !== currentDtuid()) {
+      store.setErrorMessage(NO_DEVICE_ID)
+      setUiScreen('scan')
+      return
+    }
     store.setStep('verify')
     setUiScreen('provisioning')
-    void handleVerify()
+    await handleVerify()
   }, [store, handleVerify])
 
   const handleSelectDevice = useCallback(async (device: FoundDevice) => {
-    if (device.deviceId && supportsDeviceListScan()) {
-      cancelScan()
-      store.setIsOperating(true)
-      store.setErrorMessage(null)
-      try {
-        const manager = getProvisionManager()
+    if (selectingRef.current || closedRef.current) return
+    selectingRef.current = true
+    setIsConnecting(true)
+    store.setIsOperating(true)
+    store.setErrorMessage(null)
+    try {
+      const manager = getProvisionManager()
+      if (device.deviceId && supportsDeviceListScan()) {
+        cancelScan()
         const bleName = device.bleName ?? device.name
         lastBleRef.current = { deviceId: device.deviceId, bleName }
         await manager.connectTo(device.deviceId, bleName)
+        if (closedRef.current) return
         bleGoneRef.current = false
-        const duid = manager.getDuid() || (isDtuid(device.serial) ? device.serial : null)
-        if (!duid) {
-          const msg = "Couldn't read this device's ID. Move closer to the device and try again."
-          store.setErrorMessage(msg); toast.error(msg)
-          return
-        }
-        store.setDeviceInfo(device.name || displayTitleFromDtuid(duid), duid)
-        setSelectedModel(modelFromScan(`${device.name ?? ''} ${device.serial ?? ''}`))
-        startProvisioning()
-      } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Connection failed'
-        store.setErrorMessage(msg); toast.error(msg)
-      } finally {
-        store.setIsOperating(false)
       }
-    } else {
-      startProvisioning()
+      const duid = manager.getDuid()
+      if (!duid || !isDtuid(duid)) throw new Error(NO_DEVICE_ID)
+      if (qrDtuidRef.current && qrDtuidRef.current !== duid) {
+        await manager.disconnect()
+        throw new Error('This is not the device identified by the QR code. Select the matching device or scan its QR code again.')
+      }
+      store.setVersionInfo(null, null)
+      store.setNeedBleKey(false)
+      store.setBleKeyVerified(false)
+      store.setApList([])
+      store.setSelectedSsid(null)
+      store.setWifiPassword('')
+      store.setDeviceInfo(device.name || displayTitleFromDtuid(duid), duid)
+      setSelectedModel(modelFromScan(`${device.name ?? ''} ${device.serial ?? ''}`))
+      await startProvisioning()
+    } catch (err) {
+      if (closedRef.current) return
+      const msg = err instanceof Error ? err.message : 'Connection failed'
+      store.setErrorMessage(msg); toast.error(msg)
+    } finally {
+      selectingRef.current = false
+      if (!closedRef.current) { setIsConnecting(false); store.setIsOperating(false) }
     }
   }, [store, startProvisioning, cancelScan])
 
@@ -378,6 +399,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
         handleClose={handleClose}
         handleScan={handleScan}
         handleSelectDevice={handleSelectDevice}
+        isConnecting={isConnecting}
         setUiScreen={setUiScreen}
       />
     )
@@ -387,7 +409,8 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     return <QrScanScreen
       onBack={() => setUiScreen('scan')}
       onScanned={(name, serial) => {
-        store.setDeviceInfo(name, serial)
+        qrDtuidRef.current = isDtuid(serial) ? serial : null
+        store.setDeviceInfo(name, null)
         setSelectedModel(modelFromScan(`${name} ${serial}`))
         setFoundDevices([{ name, serial }])
         setUiScreen('scanned')
@@ -402,7 +425,11 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
         serial={store.dtuid ?? foundDevices[0]?.serial ?? '--'}
         onBack={() => setUiScreen('scan')}
         onRescan={() => setUiScreen('qr')}
-        onConnect={startProvisioning}
+        onConnect={() => {
+          setFoundDevices([])
+          setUiScreen('scan')
+          toast.info('Select your device from the Bluetooth list to finish connecting. A QR code does not establish a Bluetooth connection.')
+        }}
       />
     )
   }

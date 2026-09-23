@@ -133,7 +133,7 @@ jobs:
           path: sierro-energy-v${{ steps.ver.outputs.version }}.aab
           retention-days: 30
 
-      # ── Auto-publish to Google Play (closed testing) ──────────────────────────
+      # Publish to the explicitly configured track (alpha is the fallback).
       # Only when the bundle is signed AND a Play service-account secret is present.
       - name: Check Play credentials
         id: play
@@ -146,7 +146,7 @@ jobs:
           printf 'Sierro Energy v%s. See in-app Settings for the full changelog.' \
             "${{ steps.ver.outputs.version }}" > distribution/whatsnew/whatsnew-en-US
 
-      - name: Publish to Google Play (closed testing)
+      - name: Publish to Google Play (${{ vars.PLAY_TRACK || 'alpha' }})
         if: steps.keystore.outputs.signed == 'true' && steps.play.outputs.has_sa == 'true'
         uses: r0adkll/upload-google-play@v1
         with:

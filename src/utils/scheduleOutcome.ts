@@ -8,7 +8,7 @@
  * looking at a clean save, believing the device would switch overnight.
  *
  * This returns the one notice that is owed when they disagree, or null when
- * there is nothing to say. Log-only: pages may console.warn this; do not toast (Jason B scrub / AC no new copy).
+ * there is nothing to say. Pages display this through their existing warning toast.
  */
 
 export interface ScheduleOutcome {

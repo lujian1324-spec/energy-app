@@ -341,8 +341,9 @@ export const api = {
     return request<T>(path, { method: 'GET', headers })
   },
 
-  post<T = unknown>(path: string, data?: unknown, headers?: Record<string, string>) {
+  post<T = unknown>(path: string, data?: unknown, headers?: Record<string, string>, options?: Pick<RequestOptions, 'maxRetries' | 'timeout' | 'requireAuth'>) {
     return request<T>(path, {
+      ...options,
       method: 'POST',
       body: data !== undefined ? compactStringify(data) : '',
       headers,

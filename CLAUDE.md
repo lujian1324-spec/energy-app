@@ -246,9 +246,9 @@ lives on independently and is still referenced elsewhere.)
     `sleepMode` key at all — A is **soft-failed**, not surfaced: the run continues to B and C, and the
     result carries `configSkipped`/`configSkippedDetail` so `ok` is never read as "all three landed"
     (`isMissingConfigAttribute()` is the matcher). Any other A failure still stops the run as before.
-    SW-12 keeps that behaviour and puts a per-model memo in front of the wording
-    (`isMissingSleepModeAttribute()` → `src/utils/configCapability.ts`), so a model only has to be
-    recognised once and a rephrased refusal keeps classifying the same way.
+    v4.14.4 classifies only the current response with explicit missing-attribute wording.
+    It does not use a per-model memo: an earlier missing key must never hide a later
+    authentication, permission, timeout, or offline failure.
   - **SW-12 (v4.14.3): one device has one active mode, and `ok` is not the whole story.**
     - *Active mode* — enabling Smart Schedule claims the device in `src/utils/activeScheduleMode.ts`
       and disarms Sleep Mode's saved window; enabling Sleep Mode does the reverse. Turning either off

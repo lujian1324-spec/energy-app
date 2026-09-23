@@ -44,7 +44,7 @@ export function bytesToHex(bytes: Uint8Array): string {
  * 输出: 多个 Uint8Array 包，每个包格式 [seqNo][seqNum][dataLen][data]
  */
 export function buildPackets(data: string, maxDataPerPacket = MAX_DATA_PER_PACKET): Uint8Array[] {
-  const chunkSize = Math.max(20, Math.min(MAX_DATA_PER_PACKET, maxDataPerPacket | 0 || MAX_DATA_PER_PACKET))
+  const chunkSize = Math.max(1, Math.min(MAX_DATA_PER_PACKET, maxDataPerPacket | 0 || MAX_DATA_PER_PACKET))
   const dataBytes = stringToBytes(data)
   const totalLen = dataBytes.length
   const totalPackets = Math.max(1, Math.ceil(totalLen / chunkSize))

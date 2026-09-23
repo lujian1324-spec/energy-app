@@ -857,14 +857,16 @@ export async function addDevice(
 ): Promise<ApiResponse<unknown>> {
   // stationId is a Java Long — always send it as an exact decimal string so a
   // big id can't be corrupted (JS number) into a backend "illegal argument".
-  return api.post<unknown>('/device/add/single', { ...data, stationId: String(data.stationId) })
+  return api.post<unknown>('/device/add/single', { ...data, stationId: String(data.stationId) }, undefined,
+    { maxRetries: 0, requireAuth: true })
 }
 
 /** 添加设备同时创建电站 */
 export async function addDeviceWithStation(
   data: AddDeviceWithStationRequest
 ): Promise<ApiResponse<unknown>> {
-  return api.post<unknown>('/device/add/single/addStationTogether', data)
+  return api.post<unknown>('/device/add/single/addStationTogether', data, undefined,
+    { maxRetries: 0, requireAuth: true })
 }
 
 
@@ -1348,7 +1350,7 @@ export async function fetchStationDetails(
 export async function addStation(
   data: StationAddRequest
 ): Promise<ApiResponse<unknown>> {
-  return api.post<unknown>('/station/add', data)
+  return api.post<unknown>('/station/add', data, undefined, { maxRetries: 0, requireAuth: true })
 }
 
 /**

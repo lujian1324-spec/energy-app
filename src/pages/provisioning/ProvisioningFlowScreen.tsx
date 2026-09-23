@@ -14,6 +14,7 @@ import { toast } from '../../components/Toast'
 import { useProvisionStore } from '../../stores/provisionStore'
 import { bindFailTitle, BIND_WIFI_HELPER, RESTART_HELP_COPY, type FailKind, type BindFailReasonKind } from '../../utils/provisionFailCopy'
 import DeviceLinkedScreen from './DeviceLinkedScreen'
+import { canConfigureWifi, wifiRequiresPassword } from '../../utils/provisionWifi'
 
 type FlowProps = {
   failKind: FailKind
@@ -74,7 +75,8 @@ export default function ProvisioningFlowScreen(p: FlowProps) {
       {/* Header */}
       <div className="px-4 pt-5 pb-4 flex items-center gap-3 safe-area-top">
         <button
-          onClick={() => setUiScreen('naming')}
+          onClick={() => setUiScreen('scan')}
+          disabled={store.isOperating}
           aria-label="Back"
           className="relative w-10 h-10 rounded-full bg-ink-9 flex items-center justify-center before:absolute before:content-[''] before:-inset-1"
         >
@@ -141,7 +143,7 @@ export default function ProvisioningFlowScreen(p: FlowProps) {
                 >
                   {store.isOperating || store.apLoading
                     ? <Loader2 size={18} className="animate-spin" />
-                    : 'Scan Wi-Fi Networks'}
+                    : 'Retry Verification'}
                 </button>
               )}
             </motion.div>
@@ -203,7 +205,9 @@ export default function ProvisioningFlowScreen(p: FlowProps) {
               </div>
 
               <div className="bg-ink-10 rounded-l px-4 py-4 mb-6">
-                <p className="text-caption text-ink-6 mb-2">Password</p>
+                <p className="text-caption text-ink-6 mb-2">
+                  {wifiRequiresPassword(store.apList, store.selectedSsid) ? 'Password' : 'Open network (no password required)'}
+                </p>
                 <div className="flex items-center gap-2">
                   <input
                     type={showPassword ? 'text' : 'password'}
@@ -230,7 +234,7 @@ export default function ProvisioningFlowScreen(p: FlowProps) {
 
               <button
                 onClick={handleConfig}
-                disabled={store.isOperating || !store.wifiPassword}
+                disabled={store.isOperating || !canConfigureWifi(store.apList, store.selectedSsid, store.wifiPassword)}
                 className="w-full h-14 rounded-l bg-primary text-black text-body-lg font-semibold
                   disabled:bg-primary-dark disabled:text-black/[0.4] transition-colors flex items-center justify-center gap-2"
               >

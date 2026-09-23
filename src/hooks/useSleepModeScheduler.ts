@@ -43,6 +43,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { buildWriteSingleFrame, toHexString, REG_CTRL } from '../protocols/modbusProtocol'
 import { passthroughDevice } from '../api/deviceApi'
+import { runScheduleCommand } from '../utils/scheduleCommandQueue'
 import { isApiSuccess } from '../utils/apiClient'
 import { ChargePhaseWriter } from '../utils/chargePhaseWriter'
 import {
@@ -186,14 +187,17 @@ export function useSleepModeScheduler(
   const writerRef = useRef<ChargePhaseWriter | null>(null)
   if (writerRef.current === null) {
     writerRef.current = new ChargePhaseWriter({
-      send: async (did, watts) => {
+      send: (did, watts) => runScheduleCommand(did, async () => {
+        if (!canExecuteScheduleMode(did, paramsRef.current.mode ?? 'sleep')) {
+          return { ok: false, detail: 'Schedule superseded by another mode' }
+        }
         // 写 AC 实时充电功率寄存器 0x0085（AC_CHARGE_POWER_RT），而非额定 0x0024
         const frame = toHexString(buildWriteSingleFrame(REG_CTRL.AC_CHARGE_POWER_RT, watts))
         const r = await passthroughDevice(did, { data: frame })
         return isApiSuccess(r?.code)
           ? { ok: true }
           : { ok: false, detail: String(r?.message ?? r?.msg ?? '') }
-      },
+      }),
       // A phase is recorded — in memory and in storage — only from here, i.e.
       // only once the device actually took the write (AC-12-1 / AC-12-2).
       onApplied: (did, phase, _watts, label) => {

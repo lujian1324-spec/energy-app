@@ -29,6 +29,7 @@ type Props = {
   handleClose: () => void
   handleScan: () => void
   handleSelectDevice: (d: FoundDevice) => void
+  isConnecting?: boolean
   setUiScreen: (s: 'scan' | 'qr' | 'naming' | 'icon' | 'provisioning') => void
 }
 
@@ -75,12 +76,12 @@ function RadarPulse() {
 
 export default function ScanDevicesScreen(p: Props) {
   const store = useProvisionStore()
-  const { bleStatus, foundDevices, handleClose, handleScan, handleSelectDevice, setUiScreen } = p
+  const { bleStatus, foundDevices, handleClose, handleScan, handleSelectDevice, setUiScreen, isConnecting = false } = p
   const isSearching = store.isOperating
   const hasDevices = foundDevices.length > 0
   const hasError = !isSearching && store.errorMessage && !hasDevices
   const isCheckingBle = bleStatus === 'checking'
-  const openQr = () => setUiScreen('qr')
+  const openQr = () => { if (!isConnecting) setUiScreen('qr') }
   const showWebPickerCta = !supportsDeviceListScan() && !isSearching && !hasDevices && !hasError
   const troubleshooting = !isSearching && !hasDevices
     ? <ScanTroubleshooting failures={store.consecutiveScanFailures} onScanQr={openQr} />
@@ -242,9 +243,10 @@ export default function ScanDevicesScreen(p: Props) {
                     </div>
                     <button
                       onClick={() => handleSelectDevice(device)}
+                      disabled={isConnecting}
                       className="w-16 h-[30px] shrink-0 rounded-m border-s border-primary text-primary text-label font-normal active:scale-[0.96] transition-transform"
                     >
-                      Connect
+                      {isConnecting ? 'Connecting' : 'Connect'}
                     </button>
                   </div>
                 ))}

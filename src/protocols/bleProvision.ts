@@ -67,6 +67,11 @@ abstract class BaseProvisionManager implements IBleProvisionManager {
   private responseReject: ((reason: Error) => void) | null = null
   private receivedPackets: Map<number, Uint8Array> = new Map()
   private responseTimeout: ReturnType<typeof setTimeout> | null = null
+  private expectedResponseCid: number | null = null
+  private commandQueue: Promise<unknown> = Promise.resolve()
+  private commandGeneration = 0
+  private commandId = 0
+  private connecting = false
 
   protected cb: ProvisionCallbacks
   constructor(callbacks: ProvisionCallbacks = {}) { this.cb = callbacks }
@@ -89,56 +94,78 @@ abstract class BaseProvisionManager implements IBleProvisionManager {
   protected async ensureReady(): Promise<void> {}
   protected getMaxDataPerPacket(): number { return 237 }
 
-  async sendCommand<T = BleProvisionResponse>(commandJson: object, dtuid?: string, timeout = 15000): Promise<T> {
+  sendCommand<T = BleProvisionResponse>(commandJson: object, dtuid?: string, timeout = 15000): Promise<T> {
+    const generation = this.commandGeneration
+    const command = this.commandQueue.then(() => {
+      if (generation !== this.commandGeneration) throw new Error('Bluetooth operation cancelled. Reconnect and try again.')
+      return this.executeCommand<T>(commandJson, dtuid, timeout, generation)
+    })
+    this.commandQueue = command.catch(() => {})
+    return command
+  }
+
+  protected async connectOnce(operation: () => Promise<void>): Promise<void> {
+    if (this.connecting) throw new Error('A Bluetooth connection is already in progress.')
+    this.connecting = true
+    this.cancelCommands('Bluetooth device changed. Please retry the operation.')
+    try { await operation() } finally { this.connecting = false }
+  }
+
+  protected cancelCommands(message: string): void {
+    this.commandGeneration++
+    const reject = this.responseReject
+    this.clearResponseTimeout()
+    this.cleanupResponse()
+    reject?.(new Error(message))
+  }
+
+  private async executeCommand<T>(commandJson: object, dtuid: string | undefined, timeout: number, generation: number): Promise<T> {
+    if (this.connecting) throw new Error('Bluetooth connection is still in progress. Please wait.')
+    const commandId = ++this.commandId
     const key = dtuid || this.dtuid
     if (!key) throw new Error('Bluetooth is not connected or the device ID is unknown.')
 
     await this.ensureReady()
+    if (generation !== this.commandGeneration) throw new Error('Bluetooth operation cancelled. Reconnect and try again.')
 
-    this.log(`Sending command: ${JSON.stringify(commandJson)}`)
+    const cid = (commandJson as { CID: number }).CID
+    this.log(`Sending command: CID=${cid}`)
     const encrypted = encrypt(commandJson, key)
     const packets = buildPackets(encrypted, this.getMaxDataPerPacket())
     this.log(`Split into ${packets.length} packets, payload ${encrypted.length}, max ${this.getMaxDataPerPacket()} per packet`)
 
     this.cleanupResponse()
     this.resetPackets()
+    this.expectedResponseCid = cid + 1
 
     const pending = new Promise<T>((resolve, reject) => {
       this.responseResolve = resolve as (v: BleProvisionResponse) => void
       this.responseReject = reject
       this.responseTimeout = setTimeout(() => {
-        this.cleanupResponse()
-        reject(new Error('Timed out waiting for the device.'))
+        this.cancelCommands('Timed out waiting for the device. Reconnect and try again.')
+        void this.disconnect().catch(() => {})
       }, timeout)
     })
 
-    try {
-      await this.writeAllPackets(packets)
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      if (/disconnect|GATT|not connected/i.test(msg)) {
-        this.log('Disconnected while writing; reconnecting and resending...')
-        try {
-          await this.ensureReady()
-          this.resetPackets()
-          await this.writeAllPackets(packets)
-        } catch (err2) {
-          this.clearResponseTimeout()
-          this.cleanupResponse()
-          throw err2
-        }
-      } else {
-        this.clearResponseTimeout()
-        this.cleanupResponse()
-        throw err
+    // Observe both promises immediately: a disconnect must settle the command
+    // even while the native write callback is still pending.
+    const sending = this.writeAllPackets(packets, generation, commandId).catch(err => {
+      if (generation === this.commandGeneration && commandId === this.commandId && this.responseReject) {
+        this.cancelCommands(err instanceof Error ? err.message : String(err))
       }
+    })
+    try {
+      return await Promise.race([pending, sending.then(() => pending)])
+    } finally {
+      this.clearResponseTimeout()
+      this.cleanupResponse()
     }
-
-    return pending
   }
 
-  private async writeAllPackets(packets: Uint8Array[]): Promise<void> {
+  private async writeAllPackets(packets: Uint8Array[], generation: number, commandId: number): Promise<void> {
     for (let i = 0; i < packets.length; i++) {
+      if (generation !== this.commandGeneration || commandId !== this.commandId) throw new Error('Bluetooth operation cancelled.')
+      if (!this.responseResolve) return
       this.log(`Sending packet ${i + 1}/${packets.length}...`)
       await this.writePacket(packets[i])
       if (i < packets.length - 1) await this.sleep(50)
@@ -153,6 +180,7 @@ abstract class BaseProvisionManager implements IBleProvisionManager {
     const seqNo = pkt[0]
     const seqNum = pkt[1]
     const dataLen = pkt[2]
+    if (seqNo < 1 || seqNum < 1 || seqNo > seqNum || dataLen !== pkt.length - BLE_PACKET_HEADER_SIZE) return
     this.log(`Received response packet ${seqNo}/${seqNum}, data length ${dataLen}`)
     this.receivedPackets.set(seqNo, pkt)
 
@@ -174,6 +202,11 @@ abstract class BaseProvisionManager implements IBleProvisionManager {
     try {
       const response = decrypt<BleProvisionResponse>(rawStr, this.dtuid!)
       this.log(`Response: CID=${response.CID}, RC=${response.RC}`)
+      if (response.CID !== this.expectedResponseCid) {
+        this.log(`Ignoring unrelated response CID=${response.CID}`)
+        this.resetPackets()
+        return
+      }
       this.clearResponseTimeout()
       const resolve = this.responseResolve
       this.cleanupResponse()
@@ -223,6 +256,7 @@ abstract class BaseProvisionManager implements IBleProvisionManager {
   protected cleanupResponse(): void {
     this.responseResolve = null
     this.responseReject = null
+    this.expectedResponseCid = null
     this.resetPackets()
   }
   private resetPackets(): void {
@@ -239,6 +273,10 @@ class WebBleProvisionManager extends BaseProvisionManager {
   private indicateChar: BluetoothRemoteGATTCharacteristic | null = null
 
   async connect(): Promise<void> {
+    return this.connectOnce(() => this.selectAndConnect())
+  }
+
+  private async selectAndConnect(): Promise<void> {
     if (!navigator.bluetooth) {
       throw new Error('Web Bluetooth is not supported in this browser. Use Chrome or Edge on Android/desktop.')
     }
@@ -291,8 +329,7 @@ class WebBleProvisionManager extends BaseProvisionManager {
   }
 
   async disconnect(): Promise<void> {
-    this.clearResponseTimeout()
-    this.cleanupResponse()
+    this.cancelCommands('Bluetooth disconnected. Reconnect the device and try again.')
     if (this.indicateChar) {
       try { await this.indicateChar.stopNotifications() } catch { /* ignore */ }
       this.indicateChar.removeEventListener('characteristicvaluechanged', this.handleIndication)
@@ -309,7 +346,7 @@ class WebBleProvisionManager extends BaseProvisionManager {
   }
   private handleDisconnect = (): void => {
     this.log('Device disconnected')
-    this.cleanupResponse(); this.clearResponseTimeout()
+    this.cancelCommands('Bluetooth disconnected. Reconnect the device and try again.')
     this.cb.onDisconnected?.()
   }
 }
@@ -382,6 +419,7 @@ class NativeBleProvisionManager extends BaseProvisionManager {
   private connected = false
   private maxDataPerPacket = 237
   private scanGeneration = 0
+  private linkGeneration = 0
   private scanCounts = { advertisements: 0, matched: new Set<string>() }
 
   private async ble() {
@@ -394,6 +432,10 @@ class NativeBleProvisionManager extends BaseProvisionManager {
   }
 
   async connect(): Promise<void> {
+    return this.connectOnce(() => this.selectAndConnect())
+  }
+
+  private async selectAndConnect(): Promise<void> {
     const BleClient = await this.ble()
     await BleClient.initialize({ androidNeverForLocation: true })
     await this.ensureBlePermission(BleClient)
@@ -410,12 +452,7 @@ class NativeBleProvisionManager extends BaseProvisionManager {
         services: [BLE_PROVISION_UUIDS.SERVICE],
       })
     }
-    this.deviceId = device.deviceId
-    this.log(`Connecting ${device.name}...`)
-    await this.openLink()
-    this.parseName(device.name)
-    await this.resolveDtuidViaGap()
-    this.log('GATT connected')
+    await this.connectSelected(device.deviceId, device.name)
   }
 
   async scanDevices(onFound: (d: ProvisionScanDevice) => void, onSignal?: (rssi: number) => void): Promise<void> {
@@ -470,24 +507,41 @@ class NativeBleProvisionManager extends BaseProvisionManager {
   }
 
   async connectTo(deviceId: string, name?: string): Promise<void> {
+    return this.connectOnce(() => this.connectSelected(deviceId, name))
+  }
+
+  private async connectSelected(deviceId: string, name?: string): Promise<void> {
+    const generation = ++this.linkGeneration
     await this.stopScan()
+    if (generation !== this.linkGeneration) throw new Error('Bluetooth connection cancelled.')
+    if (this.deviceId && this.deviceId !== deviceId) {
+      const BleClient = await this.ble()
+      await BleClient.disconnect(this.deviceId)
+    }
+    if (generation !== this.linkGeneration) throw new Error('Bluetooth connection cancelled.')
+    this.connected = false
     this.dtuid = null
     this._deviceName = undefined
     this.deviceId = deviceId
     this.log(`Connecting ${name ?? deviceId}...`)
     await this.openLink()
+    if (generation !== this.linkGeneration) throw new Error('Bluetooth connection cancelled.')
     this.parseName(name)
     await this.resolveDtuidViaGap()
+    if (generation !== this.linkGeneration) throw new Error('Bluetooth connection cancelled.')
     this.log('GATT connected')
   }
 
   private async resolveDtuidViaGap(): Promise<void> {
     if (this.dtuid || !this.deviceId) return
+    const deviceId = this.deviceId
+    const generation = this.linkGeneration
     const GENERIC_ACCESS = '00001800-0000-1000-8000-00805f9b34fb'
     const DEVICE_NAME = '00002a00-0000-1000-8000-00805f9b34fb'
     try {
       const BleClient = await this.ble()
-      const v = await BleClient.read(this.deviceId, GENERIC_ACCESS, DEVICE_NAME)
+      const v = await BleClient.read(deviceId, GENERIC_ACCESS, DEVICE_NAME)
+      if (generation !== this.linkGeneration || deviceId !== this.deviceId) return
       const name = new TextDecoder().decode(new Uint8Array(v.buffer, v.byteOffset, v.byteLength)).replace(/\0+$/, '')
       if (name) { this.log(`GAP device name: ${name}`); this.parseName(name) }
     } catch (e) {
@@ -496,53 +550,77 @@ class NativeBleProvisionManager extends BaseProvisionManager {
   }
 
   private async openLink(): Promise<void> {
+    const deviceId = this.deviceId
+    const generation = this.linkGeneration
+    if (!deviceId) throw new Error('Bluetooth is not connected. Reconnect the device.')
+    const assertCurrent = () => {
+      if (generation !== this.linkGeneration || deviceId !== this.deviceId) throw new Error('Bluetooth connection cancelled.')
+    }
     const BleClient = await this.ble()
-    await BleClient.connect(this.deviceId!, () => {
+    assertCurrent()
+    await BleClient.connect(deviceId, () => {
+      if (generation !== this.linkGeneration || deviceId !== this.deviceId) return
+      ++this.linkGeneration
       this.connected = false
       this.log('Device disconnected')
-      this.cleanupResponse(); this.clearResponseTimeout()
+      this.cancelCommands('Bluetooth disconnected. Reconnect the device and try again.')
       this.cb.onDisconnected?.()
     })
-    await this.waitForProvisionGatt(BleClient)
-    let lastErr: unknown
-    for (let attempt = 1; attempt <= 4; attempt++) {
-      try {
-        await BleClient.startNotifications(
-          this.deviceId!, BLE_PROVISION_UUIDS.SERVICE, BLE_PROVISION_UUIDS.INDICATE_RX,
-          (value) => {
-            const src = new Uint8Array(value.buffer, value.byteOffset, value.byteLength)
-            const copy = new Uint8Array(src.byteLength)
-            copy.set(src)
-            this.onIncoming(copy)
-          },
-        )
-        lastErr = null
-        break
-      } catch (e) {
-        lastErr = e
-        this.log(`startNotifications attempt ${attempt} failed: ${e instanceof Error ? e.message : String(e)}`)
-        try { await BleClient.discoverServices(this.deviceId!) } catch { /* ignore */ }
-        await this.sleep(400 * attempt)
+    try {
+      assertCurrent()
+      await this.waitForProvisionGatt(BleClient, deviceId, assertCurrent)
+      let lastErr: unknown
+      for (let attempt = 1; attempt <= 4; attempt++) {
+        try {
+          assertCurrent()
+          await BleClient.startNotifications(
+            deviceId, BLE_PROVISION_UUIDS.SERVICE, BLE_PROVISION_UUIDS.INDICATE_RX,
+            (value) => {
+              if (generation !== this.linkGeneration || deviceId !== this.deviceId) return
+              const src = new Uint8Array(value.buffer, value.byteOffset, value.byteLength)
+              const copy = new Uint8Array(src.byteLength)
+              copy.set(src)
+              this.onIncoming(copy)
+            },
+          )
+          lastErr = null
+          break
+        } catch (e) {
+          assertCurrent()
+          lastErr = e
+          this.log(`startNotifications attempt ${attempt} failed: ${e instanceof Error ? e.message : String(e)}`)
+          try { await BleClient.discoverServices(deviceId) } catch { /* ignore */ }
+          await this.sleep(400 * attempt)
+        }
       }
+      if (lastErr) throw lastErr
+      assertCurrent()
+      this.connected = true
+      if (Capacitor.getPlatform() === 'ios') {
+        await this.sleep(300)
+        assertCurrent()
+      }
+    } catch (err) {
+      if (generation === this.linkGeneration) this.connected = false
+      try { await BleClient.disconnect(deviceId) } catch { /* preserve the connection error */ }
+      throw err
     }
-    if (lastErr) throw lastErr
-    this.connected = true
-    if (Capacitor.getPlatform() === 'ios') await this.sleep(300)
   }
 
-  private async waitForProvisionGatt(BleClient: { getServices: (id: string) => Promise<Array<{ uuid: string }>>; discoverServices: (id: string) => Promise<unknown>; getMtu: (id: string) => Promise<number> }): Promise<void> {
+  private async waitForProvisionGatt(BleClient: { getServices: (id: string) => Promise<Array<{ uuid: string }>>; discoverServices: (id: string) => Promise<unknown>; getMtu: (id: string) => Promise<number> }, deviceId: string, assertCurrent: () => void): Promise<void> {
     const want = BLE_PROVISION_UUIDS.SERVICE.toLowerCase()
     const deadline = Date.now() + 5000
     let found = false
     while (Date.now() < deadline) {
+      assertCurrent()
       try {
-        const services = await BleClient.getServices(this.deviceId!)
+        const services = await BleClient.getServices(deviceId)
         if (services.some(s => (s.uuid || '').toLowerCase() === want || (s.uuid || '').toLowerCase().includes('fee7'))) {
           found = true
           break
         }
       } catch { /* services not ready yet */ }
-      try { await BleClient.discoverServices(this.deviceId!) } catch { /* ignore */ }
+      try { await BleClient.discoverServices(deviceId) } catch { /* ignore */ }
       await this.sleep(250)
     }
     if (!found) this.log('FEE7 not yet in GATT service list; retrying notifications')
@@ -550,57 +628,65 @@ class NativeBleProvisionManager extends BaseProvisionManager {
     if (ver === 12) await this.sleep(600)
     let mtu = 23
     try {
-      const n = await BleClient.getMtu(this.deviceId!)
+      const n = await BleClient.getMtu(deviceId)
       if (typeof n === 'number' && n > 0) mtu = n
     } catch { /* ignore */ }
     if (mtu < 50) {
       await this.sleep(300)
       try {
-        const n = await BleClient.getMtu(this.deviceId!)
+        const n = await BleClient.getMtu(deviceId)
         if (typeof n === 'number' && n > 0) mtu = n
       } catch { /* ignore */ }
     }
-    this.maxDataPerPacket = Math.max(20, Math.min(237, mtu - 6))
+    assertCurrent()
+    this.maxDataPerPacket = Math.max(1, Math.min(237, mtu - 6))
     this.log(`GATT ready MTU=${mtu}, payload per packet=${this.maxDataPerPacket}`)
   }
 
   protected getMaxDataPerPacket(): number { return this.maxDataPerPacket }
 
   protected async ensureReady(): Promise<void> {
-    if (this.connected || !this.deviceId) return
+    if (!this.deviceId) throw new Error('Bluetooth is not connected. Reconnect the device.')
+    if (this.connected) return
     this.log('GATT disconnected, reconnecting...')
     await this.openLink()
     this.log('GATT reconnected')
   }
 
   protected async writePacket(bytes: Uint8Array): Promise<void> {
+    const deviceId = this.deviceId
+    const generation = this.linkGeneration
+    if (!deviceId) throw new Error('Bluetooth is not connected.')
     const BleClient = await this.ble()
+    if (generation !== this.linkGeneration) throw new Error('Bluetooth disconnected.')
     const copy = new Uint8Array(bytes.byteLength)
     copy.set(bytes)
     const view = new DataView(copy.buffer)
     if (Capacitor.getPlatform() === 'ios') {
-      await BleClient.write(this.deviceId!, BLE_PROVISION_UUIDS.SERVICE, BLE_PROVISION_UUIDS.WRITE_TX, view)
+      await BleClient.write(deviceId, BLE_PROVISION_UUIDS.SERVICE, BLE_PROVISION_UUIDS.WRITE_TX, view)
       return
     }
     try {
-      await BleClient.writeWithoutResponse(this.deviceId!, BLE_PROVISION_UUIDS.SERVICE, BLE_PROVISION_UUIDS.WRITE_TX, view)
+      await BleClient.writeWithoutResponse(deviceId, BLE_PROVISION_UUIDS.SERVICE, BLE_PROVISION_UUIDS.WRITE_TX, view)
     } catch (e) {
+      if (generation !== this.linkGeneration) throw e
       this.log(`writeWithoutResponse failed, falling back to write: ${e instanceof Error ? e.message : String(e)}`)
-      await BleClient.write(this.deviceId!, BLE_PROVISION_UUIDS.SERVICE, BLE_PROVISION_UUIDS.WRITE_TX, view)
+      await BleClient.write(deviceId, BLE_PROVISION_UUIDS.SERVICE, BLE_PROVISION_UUIDS.WRITE_TX, view)
     }
   }
 
   async disconnect(): Promise<void> {
-    this.clearResponseTimeout()
-    this.cleanupResponse()
-    if (this.deviceId) {
+    ++this.linkGeneration
+    this.cancelCommands('Bluetooth disconnected. Reconnect the device and try again.')
+    const deviceId = this.deviceId
+    this.deviceId = null; this.dtuid = null; this.connected = false; this.maxDataPerPacket = 237
+    if (deviceId) {
       try {
         const BleClient = await this.ble()
-        try { await BleClient.stopNotifications(this.deviceId, BLE_PROVISION_UUIDS.SERVICE, BLE_PROVISION_UUIDS.INDICATE_RX) } catch { /* ignore */ }
-        await BleClient.disconnect(this.deviceId)
+        try { await BleClient.stopNotifications(deviceId, BLE_PROVISION_UUIDS.SERVICE, BLE_PROVISION_UUIDS.INDICATE_RX) } catch { /* ignore */ }
+        await BleClient.disconnect(deviceId)
       } catch { /* ignore */ }
     }
-    this.deviceId = null; this.dtuid = null; this.connected = false; this.maxDataPerPacket = 237
     this.log('Disconnected')
   }
 }
