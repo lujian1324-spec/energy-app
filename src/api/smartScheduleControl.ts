@@ -107,8 +107,11 @@ export interface SmartScheduleResult {
 export function isMissingConfigAttribute(detail: string): boolean {
   const t = detail.toLowerCase().replace(/\s+/g, ' ').trim()
   if (/\b(denied|forbidden|unauthori[sz]ed|expired|timeout|timed out|offline|network|unreachable|refused)\b/.test(t)) return false
-  return /\battribute(?:\s*\[\s*sleepmode\s*\]|\s+['"]?sleepmode['"]?)?\s+(?:(?:does\s+)?not\s+exist|(?:is\s+)?(?:missing|not\s+found|unsupported|not\s+supported))\b/.test(t)
-    || /\bsleepmode\b\s+(?:is\s+)?(?:unsupported|not\s+supported|missing|not\s+found|does\s+not\s+exist)\b/.test(t)
+  // Accept the reported "contribute" spelling only as a complete config error.
+  // Never broaden this to arbitrary "not exists" failures or cached capability.
+  if (/^(?:device )?config contribute (?:does )?not exists?[.!]?$/.test(t)) return true
+  return /\battribute(?:\s*\[\s*sleepmode\s*\]|\s+['"]?sleepmode['"]?)?\s+(?:(?:does\s+)?not\s+exists?|(?:is\s+)?(?:missing|not\s+found|unsupported|not\s+supported))\b/.test(t)
+    || /\bsleepmode\b\s+(?:is\s+)?(?:unsupported|not\s+supported|missing|not\s+found|does\s+not\s+exists?)\b/.test(t)
 }
 
 /**
