@@ -43,6 +43,18 @@ export function detectOutage(fields) {
  * while it is still firing — a processed or recovered one must not push.
  */
 const OUTAGE_TEXT = /mains|grid|utility|outage|power\s*fail|ac\s*input|市电|停电/i
+const PV_ALARM_MARKER = /(?:^|[^a-z0-9])(?:pv\d*|mppt\d*|solar|photovoltaic)(?=$|[^a-z0-9])|光伏|太阳能/i
+
+function isPvAlarm(a) {
+  return [a.key, a.alarmKey, a.code, a.alarmCode, a.alarmMessage, a.message, a.name, a.description, a.title]
+    .some((value) => {
+      if (typeof value !== 'string') return false
+      const spaced = value
+        .replace(/([A-Z])([A-Z][a-z])/g, '$1 $2')
+        .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+      return PV_ALARM_MARKER.test(spaced)
+    })
+}
 
 export function isAlarmActive(a) {
   if (!a) return false
@@ -56,6 +68,7 @@ export function detectOutageFromAlarms(alarms) {
   if (!Array.isArray(alarms)) return { outage: false }
   for (const a of alarms) {
     if (!isAlarmActive(a)) continue
+    if (isPvAlarm(a)) continue
     const key = String(a.key ?? a.alarmKey ?? a.code ?? '')
     if (POWER_OUTAGE_KEYS.has(key)) return { outage: true, reason: `alarm:${key}` }
     const text = [a.alarmMessage, a.message, a.name, a.description, a.title]

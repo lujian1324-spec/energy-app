@@ -65,6 +65,16 @@ test('detectOutageFromAlarms: does not fire on an unrelated alarm', () => {
   assert.equal(detectOutageFromAlarms([{ alarmMessage: 'Battery over temperature' }]).outage, false)
 })
 
+test('detectOutageFromAlarms: does not treat PV failures as grid outages', () => {
+  assert.equal(detectOutageFromAlarms([{ name: 'PV power failure' }]).outage, false)
+  assert.equal(detectOutageFromAlarms([{ key: 'gridFault', name: '光伏并网故障' }]).outage, false)
+  assert.equal(detectOutageFromAlarms([{ message: 'Solar grid power failure' }]).outage, false)
+  assert.equal(detectOutageFromAlarms([
+    { name: 'PV power failure' },
+    { key: 'lineLoss' },
+  ]).outage, true)
+})
+
 test('detectOutageFromAlarms: survives whatever the list turns out to be', () => {
   assert.equal(detectOutageFromAlarms(undefined).outage, false)
   assert.equal(detectOutageFromAlarms([]).outage, false)

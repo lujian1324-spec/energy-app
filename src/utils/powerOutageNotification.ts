@@ -26,6 +26,7 @@ export const POWER_OUTAGE_KEYS = new Set([
 ])
 
 import { showLocalNotification } from './pushNotification'
+import { isPvAlarm } from './alarmText'
 
 /** A device-state field value is "on" when truthy across the API's encodings. */
 function isFieldOn(value: unknown): boolean {
@@ -89,7 +90,7 @@ export async function checkAndNotifyPowerOutage(
 
   // Check both key and alarmCode fields
   const outageAlarms = firingAlarms.filter(a =>
-    isPowerOutageAlarm(a.key ?? '') || isPowerOutageAlarm(a.alarmCode ?? '')
+    !isPvAlarm(a) && (isPowerOutageAlarm(a.key ?? '') || isPowerOutageAlarm(a.alarmCode ?? ''))
   )
   if (!outageAlarms.length) return
 
