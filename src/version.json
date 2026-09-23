@@ -3,6 +3,7 @@
   "build": 2905,
   "date": "2026-09-23",
   "changelog": [
+    "Offline Smart Schedule saves are queued per account and device, with guarded replay and visible pending or background-failure feedback.",
     "Bluetooth setup now serializes connections and commands, respects small MTUs, cancels disconnected operations, supports open Wi-Fi and avoids replaying device creation requests.",
     "Schedule saves only bypass explicitly missing sleepMode attributes; cached capability results no longer hide permission or network failures.",
     "Power outage alerts now go only to the accounts a device is actually bound to. A push registration without a signed-in account is refused, and signing in on a device moves its push token off whichever account held it before, so an outage on someone else's battery can no longer reach you.",

@@ -36,6 +36,7 @@ import { uploadSleepScheduleResult } from './scheduleApi'
 import { buildWriteSingleFrame, toHexString, REG_CTRL } from '../protocols/modbusProtocol'
 import { isApiSuccess } from '../utils/apiClient'
 import { runScheduleCommand } from '../utils/scheduleCommandQueue'
+import { getScheduleAccount } from '../utils/smartScheduleQueue'
 import { getActiveScheduleMode, setActiveScheduleMode, clearActiveScheduleMode, type ScheduleMode } from '../utils/activeScheduleMode'
 import {
   phaseFor,
@@ -140,10 +141,13 @@ function errText(e: unknown): string {
  */
 export function applySmartSchedule(
   deviceId: string | number,
-  window: SmartScheduleWindow
+  window: SmartScheduleWindow,
+  canApply: () => boolean = () => true,
 ): Promise<SmartScheduleResult> {
+  const account = getScheduleAccount()
   return runScheduleCommand(String(deviceId), () => applyChargeSchedule(
     deviceId, window, smartSchedulePowers(window.model, window.chargePowerW), 'smart',
+    () => getScheduleAccount() === account && canApply(),
   ))
 }
 
@@ -151,8 +155,10 @@ export function applySleepSchedule(
   deviceId: string | number,
   window: Omit<SmartScheduleWindow, 'chargePowerW'>,
 ): Promise<SmartScheduleResult> {
+  const account = getScheduleAccount()
   return runScheduleCommand(String(deviceId), () => applyChargeSchedule(
     deviceId, window, sleepPowers(window.model), 'sleep',
+    () => getScheduleAccount() === account,
   ))
 }
 
@@ -161,6 +167,7 @@ async function applyChargeSchedule(
   window: Omit<SmartScheduleWindow, 'chargePowerW'>,
   powers: ChargePowers,
   mode: ScheduleMode,
+  canApply: () => boolean,
 ): Promise<SmartScheduleResult> {
   const { enabled, startTime, endTime, model } = window
   const phase = phaseFor(startTime, endTime)
@@ -169,6 +176,8 @@ async function applyChargeSchedule(
 
   /** Shared shape of a failure that never reached the device or the relay. */
   const noWrites = { instantPowerApplied: false, relayConfigured: false, relayAccepted: false }
+  const cancelled = (): SmartScheduleResult => ({ ok: false, failedStep: 'config', detail: 'Schedule superseded or account changed. Reopen its settings.', phase, ...noWrites })
+  if (!canApply()) return cancelled()
   const active = getActiveScheduleMode(String(deviceId))
   if (!enabled && active && active !== mode) {
     return { ok: false, failedStep: 'config', detail: 'Another schedule mode is active. Reopen its settings to turn it off.', phase, ...noWrites }
@@ -196,6 +205,7 @@ async function applyChargeSchedule(
     console.warn('[SmartSchedule] model has no sleepMode attribute, continuing:', detail)
   }
   const configSkipped = configSkippedDetail !== undefined
+  if (!canApply()) return cancelled()
 
   // B — /remote/device/passthrough, Modbus write-single 0x0085
   try {
@@ -225,6 +235,7 @@ async function applyChargeSchedule(
   }
 
   // Stop the other client executor before replacing the shared relay slot.
+  if (!canApply()) return { ...cancelled(), instantPowerApplied: true, wattsWritten: watts }
   if (enabled) setActiveScheduleMode(String(deviceId), mode)
   else clearActiveScheduleMode(String(deviceId), mode)
 

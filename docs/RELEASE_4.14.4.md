@@ -3,6 +3,7 @@
 ## Integrated Changes
 
 - Includes the merged SW-12 schedule phase retry and active-mode controls.
+- Integrates PR #122 offline saves, with additional review fixes: account-scoped durable queues, no false success on storage failure, revision-guarded replay/attempts, cancellation when Sleep takes ownership, periodic retry, and visible pending/replay-failure feedback.
 - Integrates PR #116: replaces the QA workbook containing plaintext credentials with a sanitized checklist. Historical credentials still require owner-assisted rotation.
 - Integrates PR #110: outage ownership checks and invalid unsigned power filtering. Retains main's stricter user validation and credential pruning.
 - BLE operations are serialized and fenced by connection generation. Disconnect/timeout rejects pending work; response CIDs are validated; MTU 23 uses at most 20 ATT value bytes.

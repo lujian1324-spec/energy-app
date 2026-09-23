@@ -18,6 +18,8 @@
  * all read the same claim.
  */
 
+import { clearPendingSmartScheduleSave } from './smartScheduleQueue'
+
 export type ScheduleMode = 'sleep' | 'smart'
 
 /** localStorage namespaces of the two modes' saved windows (see `useSleepModeScheduler`). */
@@ -62,6 +64,7 @@ export function canExecuteScheduleMode(deviceId: string, mode: ScheduleMode): bo
  */
 export function setActiveScheduleMode(deviceId: string, mode: ScheduleMode): void {
   if (!deviceId) return
+  if (mode === 'sleep') clearPendingSmartScheduleSave(deviceId)
   const other: ScheduleMode = mode === 'sleep' ? 'smart' : 'sleep'
   try {
     localStorage.setItem(claimKey(deviceId), mode)
