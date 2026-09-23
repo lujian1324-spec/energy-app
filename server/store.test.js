@@ -125,3 +125,13 @@ test('editing schedule watts clears the prior applied phase', () => {
   store.setUserSchedule('scheduler', 'device', { enabled: true, sleepW: 500 })
   assert.equal(store.getSchedulePhase('scheduler', 'device'), null)
 })
+
+test('expired credentials do not erase schedules and cannot prevent authenticated cancellation', () => {
+  store.setUserAuth('expired-schedule', { accessToken: 'test' })
+  store.setUserSchedule('expired-schedule', 'device', { enabled: true })
+  store.removeUserAuth('expired-schedule')
+  assert.equal(store.getUser('expired-schedule').schedules.device.enabled, true)
+  assert.equal(store.getUser('expired-schedule').accessToken, undefined)
+  assert.equal(store.setUserSchedule('expired-schedule', 'device', { enabled: false }), true)
+  assert.equal(store.getUser('expired-schedule').schedules.device.enabled, false)
+})

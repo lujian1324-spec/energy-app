@@ -1,8 +1,9 @@
 {
-  "version": "4.14.8",
-  "build": 2909,
-  "date": "2026-09-23",
+  "version": "4.14.9",
+  "build": 2910,
+  "date": "2026-09-24",
   "changelog": [
+    "Dedicated AWS Sleep Mode timer applies charge power through passthrough while the app is closed. Saves verify account/device ownership; scheduled writes support timezone-aware windows, retry, deduplication and serialized cancellation.",
     "Removed the background-save warning toast after Sleep Mode or Smart Schedule settings are accepted by the device. Unconfirmed background stops and device-write failures still show their existing messages.",
     "PV, solar, photovoltaic and MPPT alarms are hidden from Notifications, unread badges and foreground alarm pushes. Normal solar-charging status notifications and unrelated device alarms remain available; the relay no longer mistakes PV power failures for grid outages.",
     "Stopping an absent background schedule no longer requires a poller session. Relay failures retain the Sleep Mode editor for retry and explain missing-session or network errors; device settings no longer display the global Smart Schedule preference as this device's status.",

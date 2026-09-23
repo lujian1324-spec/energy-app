@@ -67,3 +67,4 @@ firebase-service-account.json
 
 # Per-ticket scratch space (AC docs, working copies, generated patches)
 _sw13/
+infra/sleep-scheduler/template.generated.json

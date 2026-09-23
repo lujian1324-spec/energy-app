@@ -14,6 +14,7 @@
  */
 import { POLLER_REFRESH_PENDING_KEY } from './authApi'
 import { RELAY_BASE_URL, SCHEDULE_PATH, isRelayConfigured } from '../config/scheduling'
+import { tokenStore } from '../utils/apiClient'
 
 export interface SleepScheduleUpload {
   enabled: boolean
@@ -93,7 +94,7 @@ export async function uploadSleepScheduleResult(
     const res = await fetch(`${RELAY_BASE_URL}${SCHEDULE_PATH}`, {
       method: 'POST',
       signal: AbortSignal.timeout(15_000),
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(tokenStore.get() ? { 'IOT-Token': tokenStore.get()! } : {}) },
       body: JSON.stringify({
         userId,
         deviceId: String(deviceId),

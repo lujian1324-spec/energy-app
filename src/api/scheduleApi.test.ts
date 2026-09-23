@@ -23,6 +23,15 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals())
 
 describe('relay acknowledgement', () => {
+  it('sends the current app token as proof without handing over its refresh token', async () => {
+    data.set('iot_access_token', 'app-token')
+    data.set('iot_refresh_token', 'private-app-refresh')
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({ code: 0 })))
+    await uploadSleepScheduleResult('device', schedule)
+    const init = fetchMock.mock.calls[0][1]
+    expect(init.headers['IOT-Token']).toBe('app-token')
+    expect(init.body).not.toContain('private-app-refresh')
+  })
   it('accepts a business acknowledgement and consumes exactly that bootstrap', async () => {
     data.set(key, JSON.stringify({ accessToken: 'test-only-token' }))
     fetchMock.mockResolvedValue(new Response(JSON.stringify({ code: 0 })))

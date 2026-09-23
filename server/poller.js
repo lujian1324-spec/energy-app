@@ -15,7 +15,7 @@
 // sendToUser is injected (from index.js) so this module stays decoupled and the
 // smoke script can pass a dry-run collector instead of really pushing.
 import {
-  getAllUsers, updateUserTokens, noteUserFailure, removeUserAuth,
+  getAllUsers, getUser, updateUserTokens, noteUserFailure, removeUserAuth,
   getNotifyTs, setNotifyTs, getSchedulePhase, setSchedulePhase,
 } from './store.js'
 import { refreshAccessToken, listDevices, getLatestState, listAlarms, writePassthrough } from './iotClient.js'
@@ -23,6 +23,7 @@ import { detectOutage, detectOutageFromAlarms, detectLowBattery, detectSolar } f
 import { phaseFor, chargePowerForPhase } from './sleepSchedule.js'
 import { acChargePowerBase64 } from './modbus.js'
 import { deviceBoundToUser } from './deviceBind.js'
+import { withUserLock } from './userLock.js'
 
 /**
  * Server-side Sleep Mode: apply the device's charge power for the current phase,
@@ -32,6 +33,7 @@ import { deviceBoundToUser } from './deviceBind.js'
  * @returns a log entry if it wrote, else null.
  */
 async function enforceSchedule(userId, deviceId, schedule, token, now, dryRun) {
+  if (process.env.SLEEP_SCHEDULER_EXTERNAL === 'true') return null
   if (!schedule || !schedule.enabled) return null
   const phase = phaseFor(schedule, now)
   if (phase === getSchedulePhase(userId, deviceId)) return null // already applied
@@ -158,6 +160,10 @@ async function processUser(u, now, sendToUser, dryRun) {
   const listDue = hasSchedule || !um || um.anyOnline || now - um.lastList >= IDLE_POLL_MS
   if (!listDue) return { fired, scheduled }
 
+  const auth = await withUserLock(u.userId, async () => {
+  u = getUser(u.userId)
+  if (!u?.accessToken) return null
+
   // Use the stored access token while it's still valid (~2h); only refresh when it's
   // missing or near expiry. Refresh needs the access+refresh PAIR and rotates it —
   // persist the rotation so we own the dedicated poller session.
@@ -169,8 +175,9 @@ async function processUser(u, now, sendToUser, dryRun) {
   const validExp = Number.isFinite(exp) && exp <= now + MAX_PLAUSIBLE_TTL_MS
   let refreshedThisTick = false
   const doRefresh = async () => {
+    if (dryRun) throw new Error('Dry run will not rotate credentials')
     const tokens = await refreshAccessToken({ accessToken: u.accessToken, refreshToken: u.refreshToken })
-    if (!dryRun) updateUserTokens(u.userId, tokens)
+    updateUserTokens(u.userId, tokens)
     token = tokens.accessToken
     refreshedThisTick = true
   }
@@ -180,10 +187,11 @@ async function processUser(u, now, sendToUser, dryRun) {
     try {
       await doRefresh()
     } catch (e) {
+      if (dryRun) return null
       const fails = noteUserFailure(u.userId)
       console.warn(`[poller] refresh failed for user ${u.userId} (${fails}/${MAX_REFRESH_FAILS}): ${e.message}`)
       if (fails >= MAX_REFRESH_FAILS) { removeUserAuth(u.userId); console.warn(`[poller] dropped stale auth for user ${u.userId}`) }
-      return { fired, scheduled }
+      return null
     }
   }
 
@@ -198,16 +206,22 @@ async function processUser(u, now, sendToUser, dryRun) {
         await doRefresh()
         devices = await listDevices(token)
       } catch (e2) {
+        if (dryRun) return null
         const fails = noteUserFailure(u.userId)
         console.warn(`[poller] user ${u.userId} refresh-on-expired failed (${fails}/${MAX_REFRESH_FAILS}): ${e2.message}`)
         if (fails >= MAX_REFRESH_FAILS) { removeUserAuth(u.userId); console.warn(`[poller] dropped stale auth for user ${u.userId}`) }
-        return { fired, scheduled }
+        return null
       }
     } else {
       console.warn(`[poller] user ${u.userId} listDevices error: ${e.message}`)
-      return { fired, scheduled }
+      return null
     }
   }
+
+  return { token, devices }
+  })
+  if (!auth) return { fired, scheduled }
+  const { token, devices } = auth
 
   let anyOnline = false
   for (const d of devices) {
