@@ -46,6 +46,18 @@ export function getActiveScheduleMode(deviceId: string): ScheduleMode | null {
   }
 }
 
+/** Per-device local status, never the global Smart Schedule editor preference. */
+export function getSavedScheduleEnabled(deviceId: string, mode: ScheduleMode): boolean {
+  if (!deviceId) return false
+  const active = getActiveScheduleMode(deviceId)
+  if (active) return active === mode
+  try {
+    return JSON.parse(localStorage.getItem(`${MODE_STORAGE_PREFIX[mode]}-${deviceId}`) ?? 'null')?.enabled === true
+  } catch {
+    return false
+  }
+}
+
 /**
  * May `mode` write charge power to this device right now?
  *

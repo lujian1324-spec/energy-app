@@ -137,6 +137,9 @@ export function getAllUsers() {
 export function setUserSchedule(userId, deviceId, schedule) {
   const k = requireUserId(userId)
   const u = db.users[k]
+  // No schedule to cancel: acknowledge a no-op without minting/retaining auth.
+  // Do not report success for an existing enabled schedule without a session.
+  if (schedule?.enabled === false && !u?.schedules?.[String(deviceId)]?.enabled) return true
   if (!u || (!u.accessToken && !u.refreshTokenEnc)) return false
   u.schedules ||= {}
   u.schedules[String(deviceId)] = schedule // { enabled, sleepFrom, sleepTo, model, tz, sleepW?, wakeW? }

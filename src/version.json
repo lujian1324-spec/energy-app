@@ -1,8 +1,9 @@
 {
-  "version": "4.14.5",
-  "build": 2906,
+  "version": "4.14.6",
+  "build": 2907,
   "date": "2026-09-23",
   "changelog": [
+    "Stopping an absent background schedule no longer requires a poller session. Relay failures retain the Sleep Mode editor for retry and explain missing-session or network errors; device settings no longer display the global Smart Schedule preference as this device's status.",
     "Sleep Mode and Smart Schedule now recognize additional explicit missing-config error spellings, including not exists and the reported config contribute wording, without bypassing power-write, permission or network failures.",
     "Offline Smart Schedule saves are queued per account and device, with guarded replay and visible pending or background-failure feedback.",
     "Bluetooth setup now serializes connections and commands, respects small MTUs, cancels disconnected operations, supports open Wi-Fi and avoids replaying device creation requests.",

@@ -32,6 +32,7 @@ import { SIERRO_MODELS, SIERRO_MODEL_LIST, DEVICE_NAME_MAX, generateSerial, type
 import sierro1000Img from '../assets/sierro-1000.webp'
 import { DEV_TOOLS_ENABLED } from '../config/devTools'
 import { backgroundScheduleNotice } from '../utils/scheduleOutcome'
+import { getSavedScheduleEnabled, subscribeActiveScheduleMode } from '../utils/activeScheduleMode'
 
 interface DeviceDetailPageProps {
   /** When rendered as an overlay (inside OverviewPage) a custom back handler is
@@ -220,13 +221,6 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     }
   }, [routeId, selectDevice, loadDeviceState])
 
-  useEffect(() => {
-    const val = selectedDeviceState?.fields?.sleepMode?.value
-    if (val !== undefined && val !== null) {
-      setSleepMode(val === true || val === 1 || val === '1' || val === 'true' ? 'On' : 'Off')
-    }
-  }, [selectedDeviceState])
-
   // ── Battery Priority (SW-04) ──
   // The device read-back is the source of truth; `pendingWorkModeRef` holds the
   // value of a write that has not been echoed back yet so the stale polls that
@@ -395,6 +389,15 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
   const deviceIdForScheduler = routeId ?? selectedDeviceId ?? ''
+  const [, setScheduleRevision] = useState(0)
+  useEffect(() => {
+    const refresh = () => setScheduleRevision(n => n + 1)
+    const unsubscribe = subscribeActiveScheduleMode(id => {
+      if (id === deviceIdForScheduler) refresh()
+    })
+    window.addEventListener('storage', refresh)
+    return () => { unsubscribe(); window.removeEventListener('storage', refresh) }
+  }, [deviceIdForScheduler])
   const model = ratedParams?.model ?? realDevice?.model ?? powerStation.model ?? 'Sierro 1000'
   /* B_1.2.3 never shows a blank row: until a model has been picked and its rated
      params saved, Device Info reads off the spec for `model`, which is the
@@ -413,6 +416,16 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     setSleepApplied({ ...saved, deviceId: deviceIdForScheduler })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deviceIdForScheduler])
+
+  useEffect(() => {
+    // The config flag is not the shared charge-window status and can be stale.
+    // Never overwrite an open draft or a locally saved schedule with polling.
+    if (screen === 'sleepMode' || loadSchedule(deviceIdForScheduler)) return
+    const val = selectedDeviceState?.fields?.sleepMode?.value
+    if (val !== undefined && val !== null) {
+      setSleepMode(val === true || val === 1 || val === '1' || val === 'true' ? 'On' : 'Off')
+    }
+  }, [selectedDeviceState, deviceIdForScheduler, screen])
 
   // Keeps sending the schedule; the new Sleep Mode frame shows only the toggle and
   // the two times, so none of what it reports back is rendered any more.
@@ -752,7 +765,11 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             relayAccepted: result.relayAccepted,
             relayDetail: result.relayDetail,
           })
-          if (notice) toast.warning(notice.title, notice.message)
+          if (notice) {
+            toast.warning(notice.title, notice.message)
+            // Keep the draft and its original baseline so Save stays retryable.
+            return
+          }
         }
         setScreen('main')
       } finally {
@@ -900,7 +917,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
         />
         <SettingsRow
           label="Smart Schedule"
-          value={peakShavingSettings?.enabled ? 'On' : 'Off'}
+          value={(isDemoMode ? peakShavingSettings?.enabled : getSavedScheduleEnabled(deviceIdForScheduler, 'smart')) ? 'On' : 'Off'}
           onPress={() => navigate('/smart-schedule')}
         />
         <button

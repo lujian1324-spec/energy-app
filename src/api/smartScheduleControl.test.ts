@@ -75,7 +75,7 @@ beforeEach(() => {
   store.set('iot_user_id', '491513787113766900')
   vi.stubGlobal('fetch', vi.fn(async (url: string, init: any) => {
     relayPosts.push({ url: String(url), body: JSON.parse(init.body) })
-    return { ok: true } as any
+    return new Response(JSON.stringify({ code: 0 }))
   }))
 })
 
@@ -83,7 +83,7 @@ beforeEach(() => {
 const relayRefuses = (status = 500) => {
   vi.stubGlobal('fetch', vi.fn(async (url: string, init: any) => {
     relayPosts.push({ url: String(url), body: JSON.parse(init.body) })
-    return { ok: false, status } as any
+    return new Response(JSON.stringify({ code: 1 }), { status })
   }))
 }
 
@@ -367,7 +367,7 @@ describe('applySmartSchedule — relay reported apart from the device (SW-12)', 
     expect(r.ok).toBe(true)
     expect(r.relayConfigured).toBe(true)
     expect(r.relayAccepted).toBe(false)
-    expect(r.relayDetail).toBe('network down')
+    expect(r.relayDetail).toBe('Schedule server could not be reached. Check your connection and retry Save.')
   })
 
   it('a failure before the relay reports no writes at all', async () => {
@@ -561,7 +561,7 @@ describe('shared Sleep/Smart control ownership', () => {
   it('claims the device before uploading the shared relay slot', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => {
       expect(getActiveScheduleMode(DEVICE_ID)).toBe('smart')
-      return { ok: true }
+      return new Response(JSON.stringify({ code: 0 }))
     }))
     await applySmartSchedule(DEVICE_ID, {
       enabled: true, startTime: '23:00', endTime: '07:00', chargePowerW: 500, model: 'Sierro 1000',
