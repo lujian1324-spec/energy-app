@@ -1,8 +1,9 @@
 {
-  "version": "4.14.4",
-  "build": 2905,
+  "version": "4.14.5",
+  "build": 2906,
   "date": "2026-09-23",
   "changelog": [
+    "Sleep Mode and Smart Schedule now recognize additional explicit missing-config error spellings, including not exists and the reported config contribute wording, without bypassing power-write, permission or network failures.",
     "Offline Smart Schedule saves are queued per account and device, with guarded replay and visible pending or background-failure feedback.",
     "Bluetooth setup now serializes connections and commands, respects small MTUs, cancels disconnected operations, supports open Wi-Fi and avoids replaying device creation requests.",
     "Schedule saves only bypass explicitly missing sleepMode attributes; cached capability results no longer hide permission or network failures.",

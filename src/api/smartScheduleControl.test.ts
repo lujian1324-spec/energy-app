@@ -218,6 +218,8 @@ describe('applySmartSchedule — missing sleepMode attribute (SW-11)', () => {
     'Config Attribute Not Exist',
     'attribute does not exist',
     'device config attribute [sleepMode] not exist',
+    'config attribute not exists',
+    'config contribute not exists',
   ]) {
     it(`soft-fails A and still writes B and C: "${message}"`, async () => {
       vi.useFakeTimers(); winAt(2)
@@ -435,7 +437,15 @@ describe('missing sleepMode attribute requires current-response evidence', () =>
 
   for (const message of ['config attribute permission denied', 'config attribute write timeout',
     'config attribute unauthorized', 'config attribute service offline',
-    'config attribute not exist; session expired']) {
+    'config attribute not exist; session expired',
+    'config attribute not exists; permission denied',
+    'config contribute not exists; token expired',
+    'config contribute not exists; device offline',
+    'config contribute not exists; request timeout',
+    'config contribute permission denied',
+    'config contribute not exists in account permissions',
+    'contribute not exists',
+    'device not exists']) {
     it(`does not bypass a real failure: ${message}`, async () => {
       store.set('sierro-config-missing-sierro 1000-sleepMode', '1')
       h.fail['/remote/device/config/write'] = { code: 20101, message }
@@ -452,6 +462,66 @@ describe('missing sleepMode attribute requires current-response evidence', () =>
 })
 
 describe('shared Sleep/Smart control ownership', () => {
+  it('never ignores a power-write failure even when its wording matches the config fallback', async () => {
+    h.fail['/remote/device/config/write'] = { code: 20101, message: 'config contribute not exists' }
+    h.fail['/remote/device/passthrough'] = { code: 20101, message: 'config contribute not exists' }
+    const result = await applySleepSchedule(DEVICE_ID, {
+      enabled: true, startTime: '23:00', endTime: '07:00', model: 'Sierro 1000',
+    })
+    expect(result.ok).toBe(false)
+    expect(result.configSkipped).toBe(true)
+    expect(result.failedStep).toBe('passthrough')
+    expect(result.instantPowerApplied).toBe(false)
+    expect(relayPosts).toHaveLength(0)
+  })
+
+  it('handles the reported wording when the API client throws it', async () => {
+    const original = h.api.post
+    h.api.post = ((path: string, body?: any) => {
+      if (path.startsWith('/remote/device/config/write')) {
+        return Promise.reject(new Error('config contribute not exists'))
+      }
+      return original(path, body)
+    }) as any
+    try {
+      const result = await applySleepSchedule(DEVICE_ID, {
+        enabled: true, startTime: '23:00', endTime: '07:00', model: 'Sierro 1000',
+      })
+      expect(result.ok).toBe(true)
+      expect(result.configSkipped).toBe(true)
+      expect(result.instantPowerApplied).toBe(true)
+      expect(relayPosts).toHaveLength(1)
+    } finally {
+      h.api.post = original
+    }
+  })
+
+  for (const message of [
+    'config attribute not exists',
+    'config contribute not exists',
+    '  Config   Contribute  Not Exists.  ',
+  ]) {
+    for (const enabled of [true, false]) {
+      it(`reported missing-attribute wording saves Sleep ${enabled ? 'on' : 'off'}: ${message}`, async () => {
+        vi.useFakeTimers(); winAt(2)
+        h.fail['/remote/device/config/write'] = { code: 20101, message }
+        const result = await applySleepSchedule(DEVICE_ID, {
+          enabled, startTime: '23:00', endTime: '07:00', model: 'Sierro 1000',
+        })
+        vi.useRealTimers()
+        expect(result.ok).toBe(true)
+        expect(result.configSkipped).toBe(true)
+        expect(result.configSkippedDetail).toBe(message)
+        expect(result.wattsWritten).toBe(enabled ? 150 : 400)
+        expect(h.calls).toHaveLength(2)
+        expect(frameOf(h.calls[1].body)).toBe(bare(chargePowerFrame(enabled ? 150 : 400)))
+        expect(relayPosts).toHaveLength(1)
+        expect(result.relayAccepted).toBe(true)
+        expect(relayPosts[0].body.schedule.enabled).toBe(enabled)
+      })
+    }
+  }
+
   it('Sleep uses the same missing-attribute fallback with its own watt table', async () => {
     vi.useFakeTimers(); winAt(2)
     h.fail['/remote/device/config/write'] = { code: 20101, message: 'config attribute not exist' }
