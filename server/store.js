@@ -26,7 +26,9 @@ const db = load()
 export function requireUserId(u) {
   const s = u == null ? '' : String(u).trim()
   if (!s || s === 'anon' || s === 'undefined' || s === 'null') {
-    throw new Error('userId required')
+    const err = new Error('userId required')
+    err.code = 'USER_ID_REQUIRED'
+    throw err
   }
   return s
 }
