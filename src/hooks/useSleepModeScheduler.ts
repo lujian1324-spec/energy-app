@@ -25,11 +25,31 @@
  * the last applied phase under `${storagePrefix}-phase-${deviceId}`. The prefix
  * defaults to `sierro-sleep`; Smart Schedule passes its own so the two features
  * never overwrite each other's locally remembered window.
+ *
+ * SW-12 changes two things about how it writes:
+ *
+ * 1. The write itself is owned by `ChargePhaseWriter`: a phase is recorded as
+ *    applied only once the passthrough comes back a business success, a refused
+ *    or thrown write stays pending on a bounded backoff ladder, only one write
+ *    is ever in flight, and a reply for a device the user has left is dropped.
+ *    Before this, the phase was recorded before the request resolved and
+ *    failures were swallowed, so every later re-check said "already applied"
+ *    and the window was never enforced.
+ * 2. It writes only while its `mode` owns the device (`activeScheduleMode`).
+ *    Sleep Mode and Smart Schedule drive the same register and the same relay
+ *    slot, so whichever one the user last enabled is the only one that runs.
  */
 
 import { useState, useEffect, useRef } from 'react'
 import { buildWriteSingleFrame, toHexString, REG_CTRL } from '../protocols/modbusProtocol'
 import { passthroughDevice } from '../api/deviceApi'
+import { isApiSuccess } from '../utils/apiClient'
+import { ChargePhaseWriter } from '../utils/chargePhaseWriter'
+import {
+  canExecuteScheduleMode,
+  subscribeActiveScheduleMode,
+  type ScheduleMode,
+} from '../utils/activeScheduleMode'
 import {
   getPowers,
   sleepPowers,
@@ -62,6 +82,11 @@ export interface UseSleepModeSchedulerParams {
   powers?: ChargePowers
   /** localStorage namespace for the window + applied phase. */
   storagePrefix?: string
+  /**
+   * Which feature this instance is. Only the mode that owns the device (see
+   * `activeScheduleMode`) writes charge power; the other one goes quiet.
+   */
+  mode?: ScheduleMode
 }
 
 export interface UseSleepModeSchedulerReturn {
@@ -156,8 +181,32 @@ export function useSleepModeScheduler(
   const paramsRef = useRef(params)
   paramsRef.current = params
 
-  // Last phase we actually applied (persisted, for catch-up after suspension)
-  const lastPhaseRef = useRef<SleepPhase | null>(null)
+  // The one thing that writes 0x0085 — see `chargePhaseWriter.ts`. Created once
+  // per hook instance so a re-render can never start a second writer.
+  const writerRef = useRef<ChargePhaseWriter | null>(null)
+  if (writerRef.current === null) {
+    writerRef.current = new ChargePhaseWriter({
+      send: async (did, watts) => {
+        // 写 AC 实时充电功率寄存器 0x0085（AC_CHARGE_POWER_RT），而非额定 0x0024
+        const frame = toHexString(buildWriteSingleFrame(REG_CTRL.AC_CHARGE_POWER_RT, watts))
+        const r = await passthroughDevice(did, { data: frame })
+        return isApiSuccess(r?.code)
+          ? { ok: true }
+          : { ok: false, detail: String(r?.message ?? r?.msg ?? '') }
+      },
+      // A phase is recorded — in memory and in storage — only from here, i.e.
+      // only once the device actually took the write (AC-12-1 / AC-12-2).
+      onApplied: (did, phase, _watts, label) => {
+        savePhase(did, phase, paramsRef.current.storagePrefix)
+        setLastSentAt(new Date())
+        setLastSentLabel(label)
+      },
+      onFailed: (did, phase, attempt, detail) => {
+        console.warn(`[schedule] 0x0085 ${phase} write failed for ${did} (attempt ${attempt}):`, detail)
+      },
+    })
+  }
+  const writer = writerRef.current
 
   // ── Compute next event ────────────────────────────────────────────────────
 
@@ -184,21 +233,14 @@ export function useSleepModeScheduler(
     }
   }
 
-  // ── Send power frame ──────────────────────────────────────────────────────
+  // ── Ask for a phase ───────────────────────────────────────────────────────
 
-  async function sendPower(watts: number, label: string) {
-    const { deviceId: did } = paramsRef.current
+  /** Queue a phase write, unless another mode currently owns this device. */
+  function requestPhase(phase: SleepPhase, watts: number, force = false) {
+    const { deviceId: did, mode = 'sleep' } = paramsRef.current
     if (!did) return
-    try {
-      // 写 AC 实时充电功率寄存器 0x0085（AC_CHARGE_POWER_RT），而非额定 0x0024
-      const frame = buildWriteSingleFrame(REG_CTRL.AC_CHARGE_POWER_RT, watts)
-      const hexFrame = toHexString(frame)
-      await passthroughDevice(did, { data: hexFrame })
-      setLastSentAt(new Date())
-      setLastSentLabel(label)
-    } catch {
-      // fire and forget — silently ignore errors
-    }
+    if (!canExecuteScheduleMode(did, mode)) return
+    writer.request(phase, watts, phase === 'sleep' ? `Sleep (${watts}W)` : `Wake (${watts}W)`, force)
   }
 
   // ── Persist schedule whenever params change ───────────────────────────────
@@ -208,11 +250,25 @@ export function useSleepModeScheduler(
     saveSchedule(deviceId, { enabled, sleepFrom, sleepTo }, storagePrefix)
   }, [deviceId, enabled, sleepFrom, sleepTo, storagePrefix])
 
-  // ── Load the last applied phase whenever the device changes ───────────────
+  // ── Point the writer at the device (drops anything owed to the previous one) ─
 
   useEffect(() => {
-    lastPhaseRef.current = deviceId ? loadPhase(deviceId, storagePrefix) : null
+    writer.setDevice(deviceId, deviceId ? loadPhase(deviceId, storagePrefix) : null)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deviceId, storagePrefix])
+
+  // ── Stop at once when the other mode claims this device (AC-12-4 / AC-12-5) ─
+
+  useEffect(() => {
+    return subscribeActiveScheduleMode((claimedDeviceId, claimedMode) => {
+      const { deviceId: did, mode = 'sleep', storagePrefix: sp } = paramsRef.current
+      if (!did || claimedDeviceId !== did) return
+      if (claimedMode === null || claimedMode === mode) return
+      // Cancel anything still owed; the new owner drives the register now.
+      writer.setDevice(did, loadPhase(did, sp))
+    })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // ── Apply immediately on enable / settings change (not just at time edges) ──
   //   切 Sleep Mode 开或改 sleepFrom/sleepTo 时，立刻按当前相位强制下发 0x85：
@@ -220,26 +276,30 @@ export function useSleepModeScheduler(
   //   关闭时恢复到 restoreW（正常充电功率）。此前只在时间边界"边沿"发送，导致切换开关
   //   看不到任何写入。
   const prevEnabledRef = useRef<boolean>(false)
+  /** The device this effect has already run for — anything after that is an edit. */
+  const appliedForDeviceRef = useRef<string>('')
   useEffect(() => {
     const cur = paramsRef.current
-    const { enabled: en, sleepFrom: sf, sleepTo: st, deviceId: did, storagePrefix: sp } = cur
+    const { enabled: en, sleepFrom: sf, sleepTo: st, deviceId: did } = cur
     if (!did) { prevEnabledRef.current = en; return }
     const p = resolvePowers(cur)
     const wasEnabled = prevEnabledRef.current
     prevEnabledRef.current = en
 
+    const firstRunForDevice = appliedForDeviceRef.current !== did
+    appliedForDeviceRef.current = did
+
     if (en) {
       // 开启 / 编辑时段 → 立即应用当前相位对应的充电功率
       const phase = phaseFor(sf, st)
-      const w = powerForPhase(p, phase)
-      sendPower(w, phase === 'sleep' ? `Sleep (${w}W)` : `Wake (${w}W)`)
-      lastPhaseRef.current = phase
-      savePhase(did, phase, sp)
+      // An edit is forced through even if the device is already in this phase —
+      // the watts inside it may be different now. Merely opening the screen is
+      // not an edit, so it goes through the ordinary skip-if-already-applied
+      // path instead of re-writing the register on every visit (AC-12-2).
+      requestPhase(phase, powerForPhase(p, phase), !firstRunForDevice)
     } else if (wasEnabled) {
       // 由开→关 → 恢复正常（restore）充电功率
-      sendPower(p.restoreW, `Wake (${p.restoreW}W)`)
-      lastPhaseRef.current = 'wake'
-      savePhase(did, 'wake', sp)
+      requestPhase('wake', p.restoreW, true)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, sleepFrom, sleepTo, model, deviceId, inWindowW, outWindowW, storagePrefix])
@@ -249,16 +309,13 @@ export function useSleepModeScheduler(
   useEffect(() => {
     const enforce = () => {
       const cur = paramsRef.current
-      const { enabled: en, sleepFrom: sf, sleepTo: st, deviceId: did, storagePrefix: sp } = cur
+      const { enabled: en, sleepFrom: sf, sleepTo: st, deviceId: did } = cur
       if (!en || !did) return
 
+      // The writer drops a repeat of the phase already on the device and
+      // rate-limits a retry of one still owed, so this can run every tick.
       const phase = phaseFor(sf, st)
-      if (phase === lastPhaseRef.current) return  // already in the right state
-
-      const w = powerForPhase(resolvePowers(cur), phase)
-      sendPower(w, phase === 'sleep' ? `Sleep (${w}W)` : `Wake (${w}W)`)
-      lastPhaseRef.current = phase
-      savePhase(did, phase, sp)
+      requestPhase(phase, powerForPhase(resolvePowers(cur), phase))
     }
 
     // Enforce immediately on mount (catches a transition missed while away)
@@ -278,6 +335,7 @@ export function useSleepModeScheduler(
       document.removeEventListener('visibilitychange', onResume)
       window.removeEventListener('focus', onResume)
       window.removeEventListener('online', onResume)
+      writer.cancelPending()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

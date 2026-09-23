@@ -30,7 +30,9 @@ import { loadRatedParams, saveRatedParams, type RatedParams } from '../db/powerf
 import { SIERRO_MODELS, SIERRO_MODEL_LIST, DEVICE_NAME_MAX, generateSerial, type SierroModel } from '../data/deviceModels'
 import sierro1000Img from '../assets/sierro-1000.webp'
 import { DEV_TOOLS_ENABLED } from '../config/devTools'
-import { uploadSleepSchedule } from '../api/scheduleApi'
+import { uploadSleepScheduleResult } from '../api/scheduleApi'
+import { setActiveScheduleMode, clearActiveScheduleMode } from '../utils/activeScheduleMode'
+import { backgroundScheduleNotice } from '../utils/scheduleOutcome'
 
 interface DeviceDetailPageProps {
   /** When rendered as an overlay (inside OverviewPage) a custom back handler is
@@ -419,6 +421,10 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     sleepTo,
     deviceId: deviceIdForScheduler,
     model,
+    // SW-12: this instance writes only while Sleep Mode owns the device. If the
+    // user has armed Smart Schedule on the same device, it owns 0x0085 and the
+    // relay slot, and this scheduler stays quiet (AC-12-4).
+    mode: 'sleep',
   })
 
   const editTargetOriginalName =
@@ -726,9 +732,29 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     const handleSaveSleepMode = async () => {
       const deviceId = routeId ?? selectedDeviceId
       if (deviceId) {
+        const id = String(deviceId)
         try { await toggleSleepMode(deviceId, enabled) } catch { /* noop */ }
         saveSchedule(deviceId, { enabled, sleepFrom, sleepTo })
-        void uploadSleepSchedule(String(deviceId), { enabled, sleepFrom, sleepTo, model })
+        // SW-12: Sleep Mode takes the device (or gives it back), which disarms
+        // Smart Schedule's stored window and stops its executor, before the relay
+        // slot is rewritten — client and relay end up naming the same owner.
+        if (enabled) setActiveScheduleMode(id, 'sleep')
+        else clearActiveScheduleMode(id, 'sleep')
+        // The charge power itself is the scheduler's job (and is retried there);
+        // what the user cannot otherwise see is whether the background schedule
+        // was taken, so a relay refusal is reported rather than swallowed.
+        const relay = await uploadSleepScheduleResult(id, { enabled, sleepFrom, sleepTo, model })
+        const notice = backgroundScheduleNotice({
+          enabling: enabled,
+          instantPowerApplied: true,
+          relayConfigured: relay.configured,
+          relayAccepted: relay.accepted,
+          relayDetail: relay.detail,
+        })
+        if (notice) {
+          console.warn('[SleepMode] relay did not take the window:', relay.detail)
+          toast.warning(notice.title, notice.message)
+        }
       }
       setScreen('main')
     }

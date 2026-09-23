@@ -32,9 +32,13 @@
  * to sharing the control path, not a bug to route around.
  */
 import { toggleSleepMode, passthroughDevice } from './deviceApi'
-import { uploadSleepSchedule } from './scheduleApi'
+import { uploadSleepScheduleResult } from './scheduleApi'
 import { buildWriteSingleFrame, toHexString, REG_CTRL } from '../protocols/modbusProtocol'
 import { isApiSuccess } from '../utils/apiClient'
+import {
+  isKnownMissingConfigAttribute,
+  rememberMissingConfigAttribute,
+} from '../utils/configCapability'
 import {
   phaseFor,
   powerForPhase,
@@ -59,14 +63,26 @@ export interface SmartScheduleWindow {
 export type SmartScheduleStep = 'config' | 'passthrough' | 'relay'
 
 export interface SmartScheduleResult {
+  /**
+   * Did the device take the settings? This is the **instant power** result —
+   * A/B. It says nothing about the background schedule: read `relayAccepted`
+   * (against `relayConfigured`) for that, and never present `ok: true` on its
+   * own as "saved everywhere" (SW-12, AC-12-7).
+   */
   ok: boolean
   failedStep?: SmartScheduleStep
   detail?: string
   /** Watts written to 0x0085 (undefined when we never got that far). */
   wattsWritten?: number
   phase: ChargePhase
+  /** Did the 0x0085 write land? The charge power at the plug right now. */
+  instantPowerApplied: boolean
+  /** Does this build have a relay? False means client-side timing only, by design. */
+  relayConfigured: boolean
   /** Did the relay accept the window? False just means closed-app timing is client-only. */
   relayAccepted: boolean
+  /** Why the relay did not take it, for the existing error channel. */
+  relayDetail?: string
   /**
    * A (`sleepMode`) was skipped because the model has no such config attribute.
    * `ok` then reports B/C only — the device took the charge power, but its own
@@ -83,6 +99,10 @@ export interface SmartScheduleResult {
  * "the device refused"? The cloud phrases it a few ways across deployments, so
  * match on the substrings they all share instead of a code — the code is the
  * generic illegal-argument one and cannot tell the two apart.
+ *
+ * SW-12: this is the fallback, not the first question.
+ * `isMissingSleepModeAttribute` asks the per-model capability memo first and
+ * only falls back to the wording.
  */
 export function isMissingConfigAttribute(detail: string): boolean {
   const t = detail.toLowerCase()
@@ -91,6 +111,20 @@ export function isMissingConfigAttribute(detail: string): boolean {
     t.includes('attribute not exist') ||
     t.includes('attribute does not exist')
   )
+}
+
+/**
+ * Is a failed `config/write` of `sleepMode` a missing attribute on this model?
+ *
+ * Capability metadata first (what this model already told us), English wording
+ * second — and a match is remembered, so the wording only has to be recognised
+ * once per model.
+ */
+export function isMissingSleepModeAttribute(model: string, detail: string): boolean {
+  if (isKnownMissingConfigAttribute(model, 'sleepMode')) return true
+  if (!isMissingConfigAttribute(detail)) return false
+  rememberMissingConfigAttribute(model, 'sleepMode')
+  return true
 }
 
 /** Frame for the realtime AC charge-power register (0x0085), space-separated hex. */
@@ -121,6 +155,9 @@ export async function applySmartSchedule(
   // Off → restore normal charging, so we never leave a device parked at 0W.
   const watts = enabled ? powerForPhase(powers, phase) : powers.restoreW
 
+  /** Shared shape of a failure that never reached the device or the relay. */
+  const noWrites = { instantPowerApplied: false, relayConfigured: false, relayAccepted: false }
+
   // A — /remote/device/config/write { key: 'sleepMode', value }
   // A missing attribute is soft-failed (SW-11); anything else stops the run.
   let configSkippedDetail: string | undefined
@@ -128,16 +165,16 @@ export async function applySmartSchedule(
     const r = await toggleSleepMode(deviceId, enabled)
     if (!isApiSuccess(r.code)) {
       const detail = String(r.message ?? r.msg ?? '')
-      if (!isMissingConfigAttribute(detail)) {
-        return { ok: false, failedStep: 'config', detail, phase, relayAccepted: false }
+      if (!isMissingSleepModeAttribute(model, detail)) {
+        return { ok: false, failedStep: 'config', detail, phase, ...noWrites }
       }
       configSkippedDetail = detail
       console.warn('[SmartSchedule] model has no sleepMode attribute, continuing:', detail)
     }
   } catch (e) {
     const detail = errText(e)
-    if (!isMissingConfigAttribute(detail)) {
-      return { ok: false, failedStep: 'config', detail, phase, relayAccepted: false }
+    if (!isMissingSleepModeAttribute(model, detail)) {
+      return { ok: false, failedStep: 'config', detail, phase, ...noWrites }
     }
     configSkippedDetail = detail
     console.warn('[SmartSchedule] model has no sleepMode attribute, continuing:', detail)
@@ -154,7 +191,7 @@ export async function applySmartSchedule(
         detail: String(r.message ?? r.msg ?? ''),
         wattsWritten: undefined,
         phase,
-        relayAccepted: false,
+        ...noWrites,
         configSkipped,
         configSkippedDetail,
       }
@@ -165,14 +202,16 @@ export async function applySmartSchedule(
       failedStep: 'passthrough',
       detail: errText(e),
       phase,
-      relayAccepted: false,
+      ...noWrites,
       configSkipped,
       configSkippedDetail,
     }
   }
 
-  // C — relay POST /schedule (never throws; false = relay off or unreachable)
-  const relayAccepted = await uploadSleepSchedule(String(deviceId), {
+  // C — relay POST /schedule (never throws). `configured` separates "this build
+  // has no relay" from "the relay refused the window", which the caller must
+  // report apart from the instant power write (AC-12-7 / AC-12-8).
+  const relay = await uploadSleepScheduleResult(String(deviceId), {
     enabled,
     sleepFrom: startTime,
     sleepTo: endTime,
@@ -183,5 +222,15 @@ export async function applySmartSchedule(
     wakeW: powers.outWindowW,
   })
 
-  return { ok: true, wattsWritten: watts, phase, relayAccepted, configSkipped, configSkippedDetail }
+  return {
+    ok: true,
+    wattsWritten: watts,
+    phase,
+    instantPowerApplied: true,
+    relayConfigured: relay.configured,
+    relayAccepted: relay.accepted,
+    relayDetail: relay.detail,
+    configSkipped,
+    configSkippedDetail,
+  }
 }

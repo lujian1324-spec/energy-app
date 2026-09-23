@@ -43,15 +43,44 @@ function deviceTimezone(): string {
 }
 
 /**
+ * What the relay did with an upload (SW-12).
+ *
+ * `uploadSleepSchedule` collapsed "no relay is configured" and "the relay
+ * refused the window" into one `false`, so callers could not tell a build
+ * without background scheduling from a background schedule that was rejected —
+ * and both were reported to the user as a clean save. `configured` separates
+ * them; `detail` carries the refusal for the existing error channel.
+ */
+export interface ScheduleUploadResult {
+  /** Does this build have a relay at all? False ⇒ client-side timing only, by design. */
+  configured: boolean
+  /** Did the relay take the window? Only meaningful when `configured`. */
+  accepted: boolean
+  status?: number
+  detail?: string
+}
+
+/**
  * Upload (or update/disable) a device's sleep schedule to the relay. Best-effort:
  * never throws, returns false when the relay is unconfigured or the call fails —
  * the client-side scheduler keeps working regardless.
+ *
+ * Prefer `uploadSleepScheduleResult` when the outcome is shown to the user: this
+ * boolean cannot distinguish "no relay in this build" from "the relay said no".
  */
 export async function uploadSleepSchedule(
   deviceId: string,
   schedule: SleepScheduleUpload
 ): Promise<boolean> {
-  if (!isRelayConfigured()) return false
+  return (await uploadSleepScheduleResult(deviceId, schedule)).accepted
+}
+
+/** As `uploadSleepSchedule`, but says *why* a window did not reach the relay. */
+export async function uploadSleepScheduleResult(
+  deviceId: string,
+  schedule: SleepScheduleUpload
+): Promise<ScheduleUploadResult> {
+  if (!isRelayConfigured()) return { configured: false, accepted: false }
   try {
     let boot: { accessToken?: string; refreshToken?: string; accessExpiresAt?: number } = {}
     const rawBoot = localStorage.getItem(POLLER_REFRESH_PENDING_KEY)
@@ -74,9 +103,18 @@ export async function uploadSleepSchedule(
     const ok = res.ok
     // Consume the bootstrap once the relay has it, so we never re-upload a stale pair.
     if (ok && rawBoot) localStorage.removeItem(POLLER_REFRESH_PENDING_KEY)
-    return ok
+    return {
+      configured: true,
+      accepted: ok,
+      status: typeof res.status === 'number' ? res.status : undefined,
+      detail: ok ? undefined : `relay HTTP ${res.status ?? '?'}`,
+    }
   } catch (e) {
     console.warn('[schedule] uploadSleepSchedule failed:', e)
-    return false
+    return {
+      configured: true,
+      accepted: false,
+      detail: e instanceof Error ? e.message : String(e),
+    }
   }
 }
