@@ -8,6 +8,7 @@ import StatsPage from './pages/StatsPage'
 import SettingPage from './pages/SettingPage'
 import LoginPage from './pages/LoginPage'
 import SmartSchedulePage from './pages/SmartSchedulePage'
+import HelpPage from './pages/HelpPage'
 import NotificationsPage from './pages/NotificationsPage'
 import OnboardingPage from './pages/OnboardingPage'
 import DeviceMonitorPage from './pages/DeviceMonitorPage'
@@ -184,6 +185,7 @@ function AppInner() {
                   <Route path="/device/:id/debug-params" element={<RequireAuth><DebugParamsPage /></RequireAuth>} />
                 )}
                 <Route path="/smart-schedule" element={<RequireAuth><SmartSchedulePage /></RequireAuth>} />
+                <Route path="/help" element={<RequireAuth><HelpPage /></RequireAuth>} />
                 <Route path="/notifications" element={<RequireAuth><NotificationsPage /></RequireAuth>} />
                 <Route path="/onboarding" element={<RequireAuth><OnboardingPage /></RequireAuth>} />
                 {DEV_TOOLS_ENABLED && (
