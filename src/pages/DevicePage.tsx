@@ -16,6 +16,7 @@ import Icon from '../components/Icon'
 import DeviceEmptyState from './device/DeviceEmptyState'
 import DeviceListCard from './device/DeviceListCard'
 import DeviceQrScanOverlay from './device/DeviceQrScanOverlay'
+import { QR_ENTRY_ENABLED } from '../config/qrEntry'
 import LowBatteryBanner from './device/LowBatteryBanner'
 import DeviceSignInGate from './device/DeviceSignInGate'
 import EnableNotiSheet, { ENABLE_NOTI_SEEN_KEY } from './device/EnableNotiSheet'
@@ -110,9 +111,10 @@ export default function DevicePage() {
   const animationFrameRef = useRef<number | null>(null)
 
   useEffect(() => {
-    if (showQrScan) {
-      startQrScan()
-    }
+    // SW-10: the legacy QR overlay has no entry point left. If anything still
+    // flips this on, it closes again without the camera ever being opened.
+    if (showQrScan && !QR_ENTRY_ENABLED) setShowQrScan(false)
+    else if (showQrScan) startQrScan()
     return () => { stopQrScan() }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showQrScan])
@@ -123,7 +125,7 @@ export default function DevicePage() {
     const setup = async () => {
       handle = await App.addListener('appStateChange', ({ isActive }) => {
         if (!isActive || removed) return
-        if (cameraDeniedRef.current && showQrScanRef.current) {
+        if (QR_ENTRY_ENABLED && cameraDeniedRef.current && showQrScanRef.current) {
           void startQrScan()
         }
       })
@@ -465,7 +467,7 @@ export default function DevicePage() {
       </PullToRefresh>
 
       <AnimatePresence>
-        {showQrScan && (
+        {QR_ENTRY_ENABLED && showQrScan && (
           <DeviceQrScanOverlay
             qrVideoReady={qrVideoReady}
             videoRef={videoRef}

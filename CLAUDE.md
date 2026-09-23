@@ -109,6 +109,16 @@ Test-only / CI-only changes that don't alter the shipped bundle do NOT bump.
 `VITE_ENABLE_DEV_TOOLS=true` is set at build time; absent entirely from consumer release builds.
 
 Also present but not routed standalone: `ProvisioningPage` (inside DevicePage add-flow).
+- **QR provisioning is hidden from users (v4.14.1, SW-10), not deleted.** `QR_ENTRY_ENABLED`
+  (`src/config/qrEntry.ts`, `false`) gates every entry point: the `Scan QR` action in
+  `AddDeviceHeader` (so `ScanDevicesScreen` and `DeviceLinkedScreen` lose it too), the
+  `Scan QR Code` link on a failed search, and the QR step + button in `ScanTroubleshooting`.
+  Nothing replaces them — no substitute CTA or "use Bluetooth instead" copy — so a device is
+  added over the BLE search flow only. `ProvisioningPage`'s `setUiScreen` folds `'qr'`/`'scanned'`
+  back to `'scan'` and the render normalises them as well, so the camera is never mounted, and
+  `DevicePage`'s legacy `showQrScan` overlay closes itself without starting the camera.
+  `QrScanScreen`, `DeviceQrScanOverlay`, `useQRScanner` and jsQR all stay wired: flipping the one
+  flag to `true` brings the path back.
 - Terms of Use / Privacy Policy (v4.1.2) are no longer in-app routes/local text — every link
   (`LoginPage`, `RegisterPage`, `SettingPage`, `DataExportPage`) opens the marketing site directly
   (`src/config/legalLinks.ts`: `TERMS_URL`/`PRIVACY_URL` → `sierro.us/pages/{terms,policy}`,

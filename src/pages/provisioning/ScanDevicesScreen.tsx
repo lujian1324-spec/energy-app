@@ -13,6 +13,7 @@ import { useProvisionStore } from '../../stores/provisionStore'
 import ErrorToast from '../../components/ErrorToast'
 import ScanTroubleshooting from './ScanTroubleshooting'
 import { WEAK_SCAN_COPY } from './scanDiscovery'
+import { QR_ENTRY_ENABLED } from '../../config/qrEntry'
 
 type FoundDevice = {
   name: string
@@ -206,7 +207,9 @@ export default function ScanDevicesScreen(p: Props) {
           </button>
         )}
 
-        {hasError && store.consecutiveScanFailures < 2 && (
+        {/* SW-10: the QR link is hidden; a failed search offers Search Again and
+            the troubleshooting steps only, with no substitute action in its place. */}
+        {QR_ENTRY_ENABLED && hasError && store.consecutiveScanFailures < 2 && (
           <button onClick={openQr} className="mt-2 shrink-0 min-h-10 text-primary text-label active:scale-[0.96] transition-transform">
             Scan QR Code
           </button>

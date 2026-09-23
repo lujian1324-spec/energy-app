@@ -50,7 +50,7 @@
 
 | ID | 用例 | P | 平台 | 步骤 | 预期 | 自动化 |
 |---|---|---|---|---|---|---|
-| B-01 | Add Device 弹窗 | P1 | W/A | 点 + | 4 项:Bluetooth Scan / Wi-Fi Setup / Manual / Scan QR | 手动 |
+| B-01 | Add Device 弹窗 | P1 | W/A | 点 + | Bluetooth Scan / Wi-Fi Setup / Manual;**无 Scan QR**(SW-10 已隐藏) | 手动 |
 | B-02 | **Wi-Fi Setup 有反应** | P0 | A | 点 Wi-Fi Setup | 进入配网/蓝牙扫描(非无反应,验证 v3.27.5) | 手动 |
 | B-03 | **BLE 权限弹窗** | P0 | A | 首次扫描 | 弹"允许访问附近设备";允许后开始扫描 | 手动(真机) |
 | B-04 | **权限被拒引导** | P0 | A | 拒绝权限后再扫 | 出现 Permission Required 屏 + Open Settings + Try Again(验证 v3.34.2) | 手动 |
@@ -59,7 +59,7 @@
 | B-07 | 选设备配 WiFi | P0 | A | 选设备→输 SSID/密码 | AES 加密下发,设备联网成功 | 手动(真机+设备) |
 | B-08 | 配网 GATT 断连恢复 | P1 | A | 配网中途 | 自动重连重试,不卡死 | 手动 |
 | B-09 | 关配网页停扫描 | P2 | A | 扫描中返回 | LE 扫描停止(不后台空转) | 手动/logcat |
-| B-10 | QR 扫码 | P1 | A | Scan QR | 相机开,识别后可 Rescan(相机重新拉流,不冻结,验证 v3.28.0) | 手动 |
+| B-10 | **QR 入口已隐藏** | P1 | W/A | 走完 Add Device 全流程(含搜索失败 ×2 的排障面板) | 任何界面都不出现 Scan QR / Scan QR Code,相机不启动;代码仍保留(SW-10, v4.14.1) | 手动 |
 | B-11 | 手动添加 | P2 | W/A | Manual Entry | 输设备码可添加 | 手动 |
 | B-12 | 选型号自动填参 | P1 | W/A | 添加选 Sierro 1000/2000 | 自动生成序列号 + 默认额定参数 | 手动 |
 

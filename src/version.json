@@ -1,8 +1,8 @@
 {
-  "version": "4.14.0",
-  "build": 2901,
+  "version": "4.14.1",
+  "build": 2902,
   "date": "2026-09-23",
   "changelog": [
-    "Battery Priority now writes Backup / Savings straight to the device, including the reserve percentage it keeps (100% for Backup, 60% for Savings), instead of only recording the choice in the cloud. A save that the device refuses now says so and puts the setting back."
+    "Adding a device now goes through the Bluetooth search only — the Scan QR actions have been taken out of the Add Device screens."
   ]
 }
