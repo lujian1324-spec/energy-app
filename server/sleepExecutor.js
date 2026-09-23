@@ -57,7 +57,13 @@ export function createSleepExecutor({ db = store, lock = withUserLock, session =
                 stage = 'persistence'
                 db.setSchedulePhase(userId, deviceId, target.key)
                 result.applied++
-              } catch { failure(stage) }
+              } catch (error) {
+                if (stage === 'passthrough') {
+                  if (error.name === 'TimeoutError' || error.name === 'AbortError') stage = 'passthroughTimeout'
+                  else if (/^\d{1,6}$/.test(String(error.upstreamCode))) stage = `passthroughCode${error.upstreamCode}`
+                }
+                failure(stage)
+              }
             }
           }, { deadline: deadline + 9000 }).catch(() => { failure('lockDeadline') })
         }

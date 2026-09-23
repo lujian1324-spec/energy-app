@@ -59,6 +59,16 @@ test('failed writes retry, without advancing phase', async () => {
   assert.equal((await f.executor.tick()).failed, 1)
   assert.equal((await f.executor.tick()).applied, 1)
 })
+test('safe failure diagnostics distinguish timeouts without exposing upstream text', async () => {
+  const f = fixture({ write: async () => {
+    const e = new Error('sensitive upstream response')
+    e.name = 'TimeoutError'
+    throw e
+  } })
+  const result = await f.executor.tick()
+  assert.deepEqual(result.failureReasons, { passthroughTimeout: 1 })
+  assert.equal(JSON.stringify(result).includes('sensitive'), false)
+})
 test('late retry computes CURRENT watts, never replays missed sleep command', async () => {
   const f = fixture({ session: async () => {
     f.setTime('2026-09-24T01:00:00Z')
