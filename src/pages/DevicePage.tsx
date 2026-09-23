@@ -40,6 +40,7 @@ import { getDemoDeviceState } from '../data/demoData'
 import { useBleLiveStatusStore, lookupBleLiveStatus } from '../stores/bleLiveStatusStore'
 import { useLivePassthroughStore, lookupLivePassthrough, resolveLiveValues } from '../stores/livePassthroughStore'
 import { useLivePassthrough } from '../hooks/useLivePassthrough'
+import { useSmartScheduleFlush } from '../hooks/useSmartScheduleFlush'
 
 interface DeviceRealtimeCache {
   [deviceId: string]: {
@@ -222,6 +223,15 @@ export default function DevicePage() {
    * at read time in getDeviceNum.
    */
   useLivePassthrough(deviceIds, isAuthenticated && !isDemoMode)
+
+  /* SW-13: this list is where a device coming back is noticed first — every
+     `loadDevices` (entering the page, pull-to-refresh) re-reads each device's
+     `isOnline`. A Smart Schedule save the user made while a device was
+     unreachable is replayed here as soon as that device answers, whether or not
+     the Smart Schedule screen is open (AC-13-4). Silent by design: a queued save
+     already showed as saved, and a refusal is reported on the screen that owns
+     the setting (AC-13-11). */
+  useSmartScheduleFlush({ devices, active: isAuthenticated && !isDemoMode })
 
   useEffect(() => {
     if (devices.length === 0 || !isAuthenticated) return

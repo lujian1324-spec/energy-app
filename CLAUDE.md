@@ -268,6 +268,28 @@ lives on independently and is still referenced elsewhere.)
       raise a warning toast from `backgroundScheduleNotice()` when the device took the write but the
       relay did not take the window — including the disable path, where the old background schedule
       may still fire.
+  - **SW-13 (v4.14.4): an offline device is not a refused save.**
+    Save goes through `saveSmartSchedule()` (`src/api/smartScheduleSave.ts`), which wraps
+    `applySmartSchedule` in one decision. **Offline is read from client connection state only** —
+    `navigator.onLine`, whether a token exists, and the device's cloud `isOnline`
+    (`src/utils/deviceConnectivity.ts`); never from a reply's wording, because `can not set charge
+    power` is exactly what a *true* firmware reject says and matching it would turn every reject
+    into a silent "queued". An unknown `isOnline` counts as connected, so a failure stays a failure.
+    - *Offline* → nothing is written, the window is stored as that device's **latest** pending save
+      (`src/utils/smartScheduleQueue.ts`, `sierro-smart-pending-{deviceId}`, newest overwrites
+      older) and the save is reported as a success — the existing success UX, **no new copy**, and
+      no "Could not set the charge power" toast. It still claims `activeScheduleMode`. Disables
+      queue the same way.
+    - *Reconnect* → `useSmartScheduleFlush` (mounted on `SmartSchedulePage` and `DevicePage`, so a
+      device coming back is caught with either screen open) replays the latest pending via
+      `flushPendingSmartSchedule()`: the same A→B→C run, SW-11 soft-fail and SW-12 relay split
+      intact, cleared against its own `queuedAt` so a save made mid-flush survives. One flush in
+      flight per device, ≥30s apart, and a save the device keeps refusing is dropped after
+      `MAX_FLUSH_ATTEMPTS`. Still-offline flushes report nothing; a refusal by a device that
+      answered uses the page's existing failure toast.
+    - This queue is **not** `ChargePhaseWriter`'s pending write and must not be merged with it: that
+      one owes a single register value for the current phase and dies with the screen, this owes a
+      whole save and outlives the process. They share only the online/focus trigger.
 
 **NotificationsPage** (`/notifications`)
 - *Active Now*: firing alarms (`alarmMessage`, severity, time). *History*: title, severity, device/station, dismiss (`isProcessed`), load-more.

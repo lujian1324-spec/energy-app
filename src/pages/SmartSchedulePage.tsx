@@ -23,9 +23,17 @@ import { sanitizeUiCopy } from '../utils/uiCopy'
 import { useKeyboardInset } from '../utils/useKeyboardInset'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useDeviceStore } from '../stores/deviceStore'
-import { applySmartSchedule, type SmartScheduleResult } from '../api/smartScheduleControl'
+import { type SmartScheduleResult } from '../api/smartScheduleControl'
+import { saveSmartSchedule } from '../api/smartScheduleSave'
 import { useSleepModeScheduler } from '../hooks/useSleepModeScheduler'
+import { useSmartScheduleFlush } from '../hooks/useSmartScheduleFlush'
 import { smartSchedulePowers, MAX_MANUAL_CHARGE_W } from '../utils/chargeWindow'
+import {
+  deviceOnlineFlag,
+  readClientOnline,
+  type SaveConnectivity,
+} from '../utils/deviceConnectivity'
+import { tokenStore } from '../utils/apiClient'
 import {
   getActiveScheduleMode,
   setActiveScheduleMode,
@@ -41,6 +49,21 @@ import type { PeakShavingSchedule } from '../types'
  * user set in Sleep Mode (they share the device, not the saved settings).
  */
 const SMART_STORAGE_PREFIX = 'sierro-smart'
+
+/**
+ * SW-13: the connection state a Save is judged by — the client's own view,
+ * read fresh at call time. Never the text of a failed write: a real firmware
+ * reject and a dead link say the same thing, and reading the message would turn
+ * every reject into a silent "queued" (see `utils/deviceConnectivity`).
+ */
+function readSaveConnectivity(deviceId: string): SaveConnectivity {
+  const s = useDeviceStore.getState()
+  return {
+    clientOnline: readClientOnline(),
+    hasSession: !!tokenStore.get(),
+    deviceOnline: deviceOnlineFlag(deviceId, s.selectedDeviceDetails, s.devices),
+  }
+}
 
 const scheduleTypeConfig = {
   charge: { label: 'Charge', color: '#01D6BE', icon: Battery, bgColor: 'rgba(1,214,190,0.15)' },
@@ -169,7 +192,7 @@ export default function SmartSchedulePage() {
     devices,
   } = usePowerStationStore()
 
-  const { selectedDeviceId } = useDeviceStore()
+  const { selectedDeviceId, selectedDeviceDetails, devices: apiDevices } = useDeviceStore()
 
   /* ── SW-08: Smart Schedule runs on Sleep Mode's control path ────────────────
      The old peakValley endpoints accepted everything and changed nothing at the
@@ -244,6 +267,33 @@ export default function SmartSchedulePage() {
     return enabling ? 'Could not turn Smart Schedule on' : 'Could not turn Smart Schedule off'
   }
 
+  /* SW-13: a Save made while this device was unreachable is still owed to it.
+     Watch this device's online flag and replay the latest queued save the moment
+     it answers — `selectDevice` reloads the details on entry and the list page
+     reloads them on refresh, so a reconnect arrives here as an ordinary state
+     change; the hook's own online/focus triggers cover the rest (AC-13-4). */
+  const watchedDevices = useMemo(
+    () => (selectedDeviceId
+      ? [{
+          id: String(selectedDeviceId),
+          isOnline: deviceOnlineFlag(String(selectedDeviceId), selectedDeviceDetails, apiDevices),
+        }]
+      : []),
+    [selectedDeviceId, selectedDeviceDetails, apiDevices]
+  )
+  useSmartScheduleFlush({
+    devices: watchedDevices,
+    // The device was reachable and refused it, so this is a real failure and it
+    // gets the copy the screen already has — no new pending/queued copy anywhere
+    // in this ticket (AC-13-6 / AC-13-11).
+    onRejected: (_id, result, pending) => {
+      toast.error(
+        stepFailureTitle(result, pending.window.enabled),
+        sanitizeUiCopy(result.detail ?? '', '') || undefined
+      )
+    },
+  })
+
   /**
    * Push the current window to the device over Sleep Mode's three writes:
    * `config/write` sleepMode → passthrough 0x0085 → relay `POST /schedule`.
@@ -267,25 +317,41 @@ export default function SmartSchedulePage() {
     }
     setSaving(true)
     try {
-      const r = await applySmartSchedule(selectedDeviceId, {
+      const deviceKey = String(selectedDeviceId)
+      /* SW-13: an unreachable device is not a refused save. Offline is settled
+         from the connection state below — before the write is attempted — so a
+         Save made while the device is asleep keeps the user's settings and is
+         replayed on reconnect, instead of reporting "Could not set the charge
+         power" and losing them (AC-13-1 / AC-13-3). */
+      const res = await saveSmartSchedule(selectedDeviceId, {
         enabled,
         startTime: win?.startTime ?? '00:00',
         endTime: win?.endTime ?? '00:00',
         chargePowerW: settings.maxChargePower,
         model,
+      }, {
+        connectivity: readSaveConnectivity(deviceKey),
+        recheck: () => readSaveConnectivity(deviceKey),
       })
-      if (!r.ok) {
-        toast.error(stepFailureTitle(r, enabled), sanitizeUiCopy(r.detail ?? '', '') || undefined)
+      const r = res.applied
+      if (!res.ok) {
+        // Only a device that answered and refused reaches here, so the existing
+        // failure copy is still exactly right (AC-13-0b / AC-13-8).
+        if (r) toast.error(stepFailureTitle(r, enabled), sanitizeUiCopy(r.detail ?? '', '') || undefined)
         return false
       }
       // SW-12: the device took it, so Smart Schedule owns this device's charge
       // power — Sleep Mode's stored window is disarmed and its executor stops.
+      // A queued save claims it too: the settings are live locally, and the
+      // client-side enforcer must not be racing Sleep Mode in the meantime.
       if (enabled) setActiveScheduleMode(String(selectedDeviceId), 'smart')
       else clearActiveScheduleMode(String(selectedDeviceId), 'smart')
       // The relay is the other half of the save. It failing is not the whole run
       // failing, but it must not disappear behind a clean toggle either: without
       // it the window only switches while the app is open (AC-12-7 / AC-12-8).
-      const notice = backgroundScheduleNotice({
+      // A queued save reached neither the device nor the relay, so there is
+      // nothing to compare yet — the flush reports on both.
+      const notice = r && backgroundScheduleNotice({
         enabling: enabled,
         instantPowerApplied: r.instantPowerApplied,
         relayConfigured: r.relayConfigured,
@@ -293,7 +359,10 @@ export default function SmartSchedulePage() {
         relayDetail: r.relayDetail,
       })
       if (notice) {
-        console.warn('[SmartSchedule] relay did not take the window:', r.relayDetail)
+        console.warn('[SmartSchedule] relay did not take the window:', r?.relayDetail)
+      }
+      if (res.queued) {
+        console.info('[SmartSchedule] device unreachable, save queued for reconnect:', res.offlineReason)
       }
       setCommitted({
         enabled,
