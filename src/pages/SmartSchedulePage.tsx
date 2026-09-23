@@ -294,7 +294,6 @@ export default function SmartSchedulePage() {
       })
       if (notice) {
         console.warn('[SmartSchedule] relay did not take the window:', r.relayDetail)
-        toast.warning(notice.title, notice.message)
       }
       setCommitted({
         enabled,

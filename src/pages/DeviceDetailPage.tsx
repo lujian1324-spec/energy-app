@@ -753,7 +753,6 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
         })
         if (notice) {
           console.warn('[SleepMode] relay did not take the window:', relay.detail)
-          toast.warning(notice.title, notice.message)
         }
       }
       setScreen('main')
