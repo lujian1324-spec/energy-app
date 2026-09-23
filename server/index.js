@@ -22,13 +22,16 @@ import cors from 'cors'
 import webpush from 'web-push'
 import {
   addWebPush, removeWebPush, addNative, removeNative, getWebPush, getNative,
-  setUserAuth, setUserSchedule, getUser, requireUserId,
+  setUserAuth, getUser, requireUserId,
 } from './store.js'
 import { startPoller } from './poller.js'
+import { installScheduleRoutes } from './scheduleRoutes.js'
+import { withUserLock } from './userLock.js'
 
 const app = express()
 app.use(cors())
-app.use(express.json())
+app.use(express.json({ limit: '32kb', verify: (req, _res, bytes) => { req.rawBody = bytes.toString('utf8') } }))
+const sleepExecutor = installScheduleRoutes(app)
 
 const ok = (res, data = {}) => res.json({ code: 0, message: 'ok', data })
 
@@ -81,7 +84,10 @@ function requireBodyUserId(req, res, next) {
   next()
 }
 
-app.post('/notification/webpush/subscribe', requireBodyUserId, (req, res) => {
+const lockedUser = handler => (req, res, next) =>
+  withUserLock(req.body.userId, () => handler(req, res)).catch(next)
+
+app.post('/notification/webpush/subscribe', requireBodyUserId, lockedUser((req, res) => {
   const { endpoint, p256dh, auth, userId, refreshToken, accessToken, accessExpiresAt, prefs } = req.body || {}
   if (!endpoint) return res.status(400).json({ code: 1, message: 'endpoint required' })
   if (!userId || !String(userId).trim() || String(userId).trim() === 'anon') {
@@ -94,12 +100,12 @@ app.post('/notification/webpush/subscribe', requireBodyUserId, (req, res) => {
   // needs to refresh (which requires the pair).
   if (refreshToken || accessToken || prefs) setUserAuth(userId, { refreshToken, accessToken, accessExpiresAt, prefs })
   ok(res)
-})
+}))
 app.post('/notification/webpush/unsubscribe', requireBodyUserId, (req, res) => {
   removeWebPush(req.body?.userId, req.body?.endpoint)
   ok(res)
 })
-app.post('/notification/nativepush/register', requireBodyUserId, (req, res) => {
+app.post('/notification/nativepush/register', requireBodyUserId, lockedUser((req, res) => {
   const { token, platform, userId, refreshToken, accessToken, accessExpiresAt, prefs } = req.body || {}
   if (!token) return res.status(400).json({ code: 1, message: 'token required' })
   if (!userId || !String(userId).trim() || String(userId).trim() === 'anon') {
@@ -111,24 +117,9 @@ app.post('/notification/nativepush/register', requireBodyUserId, (req, res) => {
   // Also lets a later prefs-only re-register update which alarms are watched.
   if (refreshToken || accessToken || prefs) setUserAuth(userId, { refreshToken, accessToken, accessExpiresAt, prefs })
   ok(res)
-})
+}))
 app.post('/notification/nativepush/unregister', requireBodyUserId, (req, res) => {
   removeNative(req.body?.userId, req.body?.token)
-  ok(res)
-})
-
-// ── Sleep Mode schedule (server-side charge-power switching) ──────────────────
-// The app uploads one device's sleep window when the user saves Sleep Mode. Like
-// subscribe, it may carry the one-time poller-session bootstrap (access+refresh
-// pair) so the poller can control this user's device while the app is closed.
-app.post('/schedule', requireBodyUserId, (req, res) => {
-  const { userId, deviceId, schedule, refreshToken, accessToken, accessExpiresAt, prefs } = req.body || {}
-  if (!deviceId || !schedule) return res.status(400).json({ code: 1, message: 'deviceId and schedule required' })
-  if (typeof schedule.enabled !== 'boolean') return res.status(400).json({ code: 1, message: 'schedule.enabled must be a boolean' })
-  if (refreshToken || accessToken || prefs) setUserAuth(userId, { refreshToken, accessToken, accessExpiresAt, prefs })
-  if (!setUserSchedule(userId, deviceId, schedule)) {
-    return res.status(409).json({ code: 1, reason: 'POLLER_SESSION_REQUIRED', message: 'A poller session is required for background scheduling. Sign in again.' })
-  }
   ok(res)
 })
 
@@ -215,6 +206,7 @@ function stringifyData(d) {
 app.get('/health', (_req, res) => ok(res, {
   up: true,
   poller: process.env.POLLER_ENABLED === 'true',
+  sleepScheduler: sleepExecutor.status(),
   channels: {
     webpush: !!(VAPID_PUBLIC && VAPID_PRIVATE),
     fcm: !!process.env.GOOGLE_APPLICATION_CREDENTIALS,

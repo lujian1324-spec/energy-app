@@ -7,7 +7,7 @@
 // `users` powers the server-side poller (multi-tenant): the app uploads each
 // user's refreshToken + push prefs on subscribe; the poller refreshes an access
 // token per user and polls their devices. refreshToken is encrypted at rest.
-import { readFileSync, writeFileSync, existsSync } from 'node:fs'
+import { readFileSync, writeFileSync, existsSync, renameSync } from 'node:fs'
 import { encryptToken, decryptToken } from './crypto.js'
 
 const FILE = process.env.STORE_FILE || './tokens.json'
@@ -18,14 +18,18 @@ function load() {
     const db = JSON.parse(readFileSync(FILE, 'utf8'))
     db.webpush ||= {}; db.native ||= {}; db.users ||= {}
     return db
-  } catch { return { webpush: {}, native: {}, users: {} } }
+  } catch { throw new Error('Cannot load relay store; refusing to overwrite persisted schedules') }
 }
-function save(db) { writeFileSync(FILE, JSON.stringify(db, null, 2)) }
+function save(db) {
+  const temp = `${FILE}.tmp`
+  writeFileSync(temp, JSON.stringify(db, null, 2), { mode: 0o600 })
+  renameSync(temp, FILE)
+}
 
 const db = load()
 export function requireUserId(u) {
   const s = u == null ? '' : String(u).trim()
-  if (!s || s === 'anon' || s === 'undefined' || s === 'null') {
+  if (!s || ['anon', 'undefined', 'null', '__proto__', 'constructor', 'prototype'].includes(s)) {
     const err = new Error('userId required')
     err.code = 'USER_ID_REQUIRED'
     throw err
@@ -113,7 +117,12 @@ export function noteUserFailure(userId) {
 }
 /** Drop a user's stored credentials (e.g. refresh permanently failing). */
 export function removeUserAuth(userId) {
-  delete db.users[requireUserId(userId)]
+  const u = db.users[requireUserId(userId)]
+  if (u) {
+    delete u.accessToken
+    delete u.refreshTokenEnc
+    delete u.accessExpiresAt
+  }
   save(db)
 }
 /** All users with stored auth, refreshToken decrypted for immediate use. */
@@ -138,9 +147,9 @@ export function setUserSchedule(userId, deviceId, schedule) {
   const k = requireUserId(userId)
   const u = db.users[k]
   // No schedule to cancel: acknowledge a no-op without minting/retaining auth.
-  // Do not report success for an existing enabled schedule without a session.
+  // Authenticated cancellation must still work after a session expires.
   if (schedule?.enabled === false && !u?.schedules?.[String(deviceId)]?.enabled) return true
-  if (!u || (!u.accessToken && !u.refreshTokenEnc)) return false
+  if (!u || (schedule?.enabled !== false && !u.accessToken && !u.refreshTokenEnc)) return false
   u.schedules ||= {}
   u.schedules[String(deviceId)] = schedule // { enabled, sleepFrom, sleepTo, model, tz, sleepW?, wakeW? }
   // An edited window/rate must be re-applied even if the phase name is unchanged.
@@ -163,7 +172,8 @@ export function setSchedulePhase(userId, deviceId, phase) {
 export function getUser(userId) {
   const u = db.users[requireUserId(userId)]
   if (!u) return null
-  return { userId: requireUserId(userId), refreshToken: decryptToken(u.refreshTokenEnc), accessToken: u.accessToken, prefs: u.prefs || {} }
+  return { userId: requireUserId(userId), refreshToken: decryptToken(u.refreshTokenEnc), accessToken: u.accessToken,
+    accessExpiresAt: u.accessExpiresAt, prefs: u.prefs || {}, schedules: u.schedules || {} }
 }
 
 // ── Per-(device,type) notify throttle state (mirrors client 30-min throttle) ──

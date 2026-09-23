@@ -1,0 +1,61 @@
+import * as store from './store.js'
+import { withUserLock } from './userLock.js'
+import { scheduleSession } from './scheduleSession.js'
+import { writePassthrough } from './iotClient.js'
+import { deviceBoundToUser } from './deviceBind.js'
+import { acChargePowerBase64 } from './modbus.js'
+import { validateSchedule, scheduleTarget } from './scheduleValidation.js'
+
+export function createSleepExecutor({ db = store, lock = withUserLock, session = scheduleSession,
+  write = writePassthrough, clock = Date.now } = {}) {
+  let running = false
+  let lastTickAt = null
+  let lastResult = null
+  async function tick({ dryRun = false } = {}) {
+    if (running) throw new Error('TICK_IN_PROGRESS')
+    running = true
+    const deadline = clock() + 30000
+    const result = { dryRun, checked: 0, applied: 0, unchanged: 0, failed: 0, deferred: 0 }
+    try {
+      const users = db.getAllUsers().filter(u => Object.values(u.schedules).some(s => s?.enabled))
+      let cursor = 0
+      const workers = Array.from({ length: Math.min(5, users.length) }, async () => {
+        while (cursor < users.length) {
+          const userId = users[cursor++].userId
+          if (clock() >= deadline) { result.deferred++; continue }
+          await lock(userId, async () => {
+            // Re-read after the lock: queued saves/cancellations always win.
+            const schedules = db.getUser(userId)?.schedules || {}
+            let auth
+            for (const [deviceId, raw] of Object.entries(schedules)) {
+              if (!raw?.enabled) continue
+              if (clock() >= deadline) { result.deferred++; continue }
+              result.checked++
+              try {
+                const schedule = validateSchedule(raw)
+                let target = scheduleTarget(schedule, clock())
+                if (db.getSchedulePhase(userId, deviceId) === target.key) { result.unchanged++; continue }
+                // Dry runs are genuinely read-only: no token refresh, no writes.
+                if (dryRun) continue
+                auth ||= await session(userId, { deadline })
+                const device = auth.devices.find(d => String(d.id) === deviceId)
+                if (!device || !deviceBoundToUser(device, userId)) throw new Error('DEVICE_NOT_OWNED')
+                if (!(device.isOnline === true || device.isOnline === 1 || device.isOnline === 'true')) throw new Error('DEVICE_OFFLINE')
+                if (clock() >= deadline) { result.deferred++; continue }
+                // A slow login/list may straddle a boundary. Never replay old watts.
+                target = scheduleTarget(schedule, clock())
+                await write(auth.token, deviceId, acChargePowerBase64(target.watts))
+                db.setSchedulePhase(userId, deviceId, target.key)
+                result.applied++
+              } catch { result.failed++ }
+            }
+          }, { deadline: deadline + 9000 }).catch(() => { result.failed++ })
+        }
+      })
+      await Promise.all(workers)
+      if (!dryRun) { lastTickAt = clock(); lastResult = result }
+      return result
+    } finally { running = false }
+  }
+  return { tick, status: () => ({ external: process.env.SLEEP_SCHEDULER_EXTERNAL === 'true', lastTickAt, lastResult }) }
+}

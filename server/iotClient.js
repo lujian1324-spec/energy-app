@@ -42,13 +42,33 @@ async function call(method, path, { data, token } = {}) {
     ...calcSign(method, parseQuery(path), body),
   }
   if (token) headers['IOT-Token'] = token
-  const res = await fetch(`${BASE}${path}`, { method, headers, body })
+  const res = await fetch(`${BASE}${path}`, { method, headers, body, signal: AbortSignal.timeout(8000) })
   const text = await res.text()
   let json; try { json = JSON.parse(text) } catch { json = { _raw: text.slice(0, 200) } }
   return { http: res.status, json }
 }
 
 const ok = (code) => code === 0 || code === '0'
+
+export async function getUserIdentity(token) {
+  const r = await call('POST', '/user/select/iotUserInfo', { token })
+  if (!ok(r.json.code)) throw new Error('Identity verification failed')
+  const id = r.json.data?.userId ?? r.json.data?.id ?? r.json.data?.uid
+  // Never authorize a rounded 64-bit numeric ID.
+  if (id == null || (typeof id === 'number' && !Number.isSafeInteger(id))) throw new Error('Invalid user identity')
+  return String(id)
+}
+
+export async function listAllDevices(token, { deadline = Infinity } = {}) {
+  const devices = []
+  for (let page = 1; page <= 100; page++) {
+    if (Date.now() >= deadline) throw new Error('TICK_DEADLINE')
+    const batch = await listDevices(token, { page, count: 50 })
+    devices.push(...batch)
+    if (batch.length < 50) return devices
+  }
+  throw new Error('Device list exceeds scheduling limit')
+}
 
 const DEFAULT_ACCESS_TTL_MS = 2 * 60 * 60 * 1000 // fallback if the API omits the field (~2h)
 const withExpiry = (data) => ({
@@ -138,7 +158,7 @@ export async function writeDeviceConfig(token, deviceId, key, value) {
  * Throws on a non-success business code (e.g. device offline) → retried next tick.
  */
 export async function writePassthrough(token, deviceId, base64Input, noOutput = false) {
-  const r = await call('POST', `/remote/device/passthrough?deviceId=${deviceId}`, {
+  const r = await call('POST', `/remote/device/passthrough?deviceId=${encodeURIComponent(deviceId)}`, {
     data: { base64Input, noOutput }, token,
   })
   if (!ok(r.json.code)) {
