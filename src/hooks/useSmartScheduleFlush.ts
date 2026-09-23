@@ -21,7 +21,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import { flushPendingSmartSchedule } from '../api/smartScheduleSave'
 import type { SmartScheduleResult } from '../api/smartScheduleControl'
 import { getScheduleAccount, hasPendingSmartScheduleSave, type PendingSmartSchedule } from '../utils/smartScheduleQueue'
-import { readClientOnline, type DeviceOnlineSource } from '../utils/deviceConnectivity'
+import { readClientOnline, type DeviceOnlineSource, type SaveConnectivity } from '../utils/deviceConnectivity'
 import { tokenStore } from '../utils/apiClient'
 import { toast } from '../components/Toast'
 import { backgroundScheduleNotice } from '../utils/scheduleOutcome'
@@ -61,6 +61,23 @@ export function shouldFlushDevice(device: DeviceOnlineSource, gate: FlushGate): 
   if (!gate.hasPending) return false
   if (gate.inFlight) return false
   return gate.msSinceLastAttempt >= MIN_FLUSH_GAP_MS
+}
+
+/**
+ * The connection state a flush is attempted under.
+ *
+ * Pure and exported for the same reason `shouldFlushDevice` is: this is what
+ * decides whether a failed replay reads as offline (keep the save, stay quiet)
+ * or as a refusal, and it has to be the live flags rather than a hardcoded
+ * `true`. Read from the client only — never from a reply's wording
+ * (`utils/deviceConnectivity`).
+ */
+export function flushConnectivity(
+  device: DeviceOnlineSource,
+  clientOnline: boolean,
+  hasSession: boolean
+): SaveConnectivity {
+  return { clientOnline, hasSession, deviceOnline: device.isOnline }
 }
 
 export interface UseSmartScheduleFlushParams {
@@ -111,9 +128,12 @@ export function useSmartScheduleFlush(params: UseSmartScheduleFlushParams): void
 
       inFlight.add(guardKey)
       lastAttemptAt.set(guardKey, Date.now())
-      const connectivity = { clientOnline: true, hasSession: true, deviceOnline: true }
       void flushPendingSmartSchedule(id, {
-        connectivity,
+        /* The state we actually hold, not `true` three times: an offline signal
+           that arrived while this pass was starting has to classify the run as
+           offline (keep the save, say nothing) rather than as a refusal that
+           spends an attempt and raises a toast (AC-13-0a / AC-13-6). */
+        connectivity: flushConnectivity(d, clientOnline, hasSession),
         // Re-read at failure time: the phone may have dropped off mid-flush.
         recheck: () => ({
           clientOnline: readClientOnline(),
@@ -134,8 +154,11 @@ export function useSmartScheduleFlush(params: UseSmartScheduleFlushParams): void
               `[SmartSchedule] queued save refused by ${id} (attempt ${r.attempts}):`,
               r.applied.detail
             )
+            /* No fallback toast: there is no approved copy for a background
+               replay, so the hook never writes one. Both mount points pass
+               `onRejected` and report it in the Save button's own words
+               (`utils/smartScheduleFlushCopy`) — AC-13-11. */
             onRejected?.(id, r.applied, r.pending, !!r.gaveUp)
-            if (!onRejected) toast.error('Could not apply the saved schedule', r.gaveUp ? 'Automatic retries stopped. Reopen Smart Schedule and save again.' : 'Open Smart Schedule to check the settings. The device refused the update.')
           }
         })
         .catch(e => { console.warn('[SmartSchedule] flush failed for', id, e) })

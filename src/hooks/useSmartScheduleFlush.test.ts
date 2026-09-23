@@ -22,7 +22,8 @@ const store = new Map<string, string>()
   clear: () => store.clear(),
 }
 
-import { MIN_FLUSH_GAP_MS, shouldFlushDevice } from './useSmartScheduleFlush'
+import { MIN_FLUSH_GAP_MS, flushConnectivity, shouldFlushDevice } from './useSmartScheduleFlush'
+import { isSaveOffline } from '../utils/deviceConnectivity'
 
 const due = { hasPending: true, inFlight: false, msSinceLastAttempt: MIN_FLUSH_GAP_MS }
 
@@ -69,5 +70,39 @@ describe('shouldFlushDevice', () => {
     // only 'a' is owed a save
     const flushed = list.filter(d => shouldFlushDevice(d, { ...due, hasPending: d.id === 'a' }))
     expect(flushed.map(d => d.id)).toEqual(['a'])
+  })
+})
+
+/*
+ * SW-13 follow-up — the connectivity a flush is attempted under.
+ *
+ * It used to be `{ clientOnline: true, hasSession: true, deviceOnline: true }`,
+ * so an offline signal that landed while the pass was starting was thrown away
+ * and a true unreachable failure was classified as a refusal: an attempt spent
+ * and a toast raised, instead of the save being kept quietly (AC-13-0a/0b/6).
+ */
+describe('flushConnectivity', () => {
+  it("carries the device's own online flag, not a hardcoded true", () => {
+    expect(flushConnectivity({ id: '1', isOnline: false }, true, true))
+      .toEqual({ clientOnline: true, hasSession: true, deviceOnline: false })
+    expect(flushConnectivity({ id: '1', isOnline: true }, true, true).deviceOnline).toBe(true)
+  })
+
+  it('leaves an unknown flag unknown — connected, so a failure stays a failure', () => {
+    expect(flushConnectivity({ id: '1' }, true, true).deviceOnline).toBeUndefined()
+    expect(isSaveOffline(flushConnectivity({ id: '1' }, true, true))).toBe(false)
+  })
+
+  it('carries the client flags through rather than re-asserting them', () => {
+    expect(flushConnectivity({ id: '1', isOnline: true }, false, true))
+      .toEqual({ clientOnline: false, hasSession: true, deviceOnline: true })
+    expect(flushConnectivity({ id: '1', isOnline: true }, true, false).hasSession).toBe(false)
+  })
+
+  it('reads as offline for exactly the states the queue exists for', () => {
+    expect(isSaveOffline(flushConnectivity({ id: '1', isOnline: false }, true, true))).toBe(true)
+    expect(isSaveOffline(flushConnectivity({ id: '1', isOnline: true }, false, true))).toBe(true)
+    expect(isSaveOffline(flushConnectivity({ id: '1', isOnline: true }, true, false))).toBe(true)
+    expect(isSaveOffline(flushConnectivity({ id: '1', isOnline: true }, true, true))).toBe(false)
   })
 })
