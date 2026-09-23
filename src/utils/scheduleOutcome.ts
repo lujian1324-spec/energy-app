@@ -1,14 +1,7 @@
 /**
- * SW-12 — telling the instant power write apart from the background schedule.
- *
- * A save touches two different things: the charge power the device takes right
- * now (Modbus 0x0085) and the window the relay keeps so the boundaries are
- * honoured with the app closed. They fail independently, and the screens used
- * to show only the first — a relay that refused the window still left the user
- * looking at a clean save, believing the device would switch overnight.
- *
- * This returns the one notice that is owed when they disagree, or null when
- * there is nothing to say. Pages display this through their existing warning toast.
+ * Shared background-schedule toast policy. Enabling or updating a window stays
+ * quiet after the device accepts the power command. An unconfirmed stop still
+ * warns because the earlier background schedule may continue to run.
  */
 
 export interface ScheduleOutcome {
@@ -31,28 +24,17 @@ export interface ScheduleNotice {
 }
 
 /**
- * The background-schedule half of the result, as a notice — null when the relay
- * agreed with the device, or when this build has no relay (client-side timing is
- * then the documented behaviour, not a failure to report).
- *
- * Turning a schedule **off** is the worse case of the two: the device is back on
- * its normal charge power, but a relay that never got the change can still act
- * on the old window later, so the user has to be told it may still fire.
+ * Toast visibility does not change the relay acknowledgement in the save result.
  */
 export function backgroundScheduleNotice(o: ScheduleOutcome): ScheduleNotice | null {
+  if (o.enabling) return null
   if (!o.instantPowerApplied) return null // the save already failed; that is the message
   if (!o.relayConfigured || o.relayAccepted) return null
 
   const detail = o.relayDetail ? ` ${o.relayDetail}` : ''
-  return o.enabling
-    ? {
-        severity: 'warning',
-        title: 'Saved on the device, not in the background',
-        message: 'The power command was accepted, but the background schedule was not confirmed. It will only switch while the app is open.' + detail,
-      }
-    : {
-        severity: 'warning',
-        title: 'Background schedule may still run',
-        message: 'The restore-power command was accepted, but the background stop was not confirmed. An earlier schedule may still switch this device.' + detail,
-      }
+  return {
+    severity: 'warning',
+    title: 'Background schedule may still run',
+    message: 'The restore-power command was accepted, but the background stop was not confirmed. An earlier schedule may still switch this device.' + detail,
+  }
 }
