@@ -27,6 +27,7 @@ const h = vi.hoisted(() => ({
     isLocationEnabled: vi.fn(),
     requestLEScan: vi.fn(),
     stopLEScan: vi.fn(),
+    disconnect: vi.fn(),
     read: vi.fn(),
   },
 }))

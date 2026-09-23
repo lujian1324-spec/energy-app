@@ -26,7 +26,9 @@ const db = load()
 export function requireUserId(u) {
   const s = u == null ? '' : String(u).trim()
   if (!s || s === 'anon' || s === 'undefined' || s === 'null') {
-    throw new Error('userId required')
+    const err = new Error('userId required')
+    err.code = 'USER_ID_REQUIRED'
+    throw err
   }
   return s
 }
@@ -135,11 +137,14 @@ export function getAllUsers() {
 export function setUserSchedule(userId, deviceId, schedule) {
   const k = requireUserId(userId)
   const u = db.users[k]
-  if (!u) return // schedule upload always carries the auth bootstrap, so setUserAuth ran first
+  if (!u || (!u.accessToken && !u.refreshTokenEnc)) return false
   u.schedules ||= {}
   u.schedules[String(deviceId)] = schedule // { enabled, sleepFrom, sleepTo, model, tz, sleepW?, wakeW? }
+  // An edited window/rate must be re-applied even if the phase name is unchanged.
+  if (u.phaseState) delete u.phaseState[String(deviceId)]
   u.updatedAt = Date.now()
   save(db)
+  return true
 }
 /** Last charge-power phase we actually applied for a (user,device): 'sleep' | 'wake'. */
 export function getSchedulePhase(userId, deviceId) {

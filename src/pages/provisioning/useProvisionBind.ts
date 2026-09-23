@@ -19,6 +19,7 @@ import {
   type FailKind,
 } from '../../utils/provisionFailCopy'
 import { sanitizeUiCopy } from '../../utils/uiCopy'
+import { canConfigureWifi, wifiRequiresPassword } from '../../utils/provisionWifi'
 
 export type ConfigStage = 'Sending Wi-Fi details' | 'Connecting device' | 'Adding to account'
 
@@ -26,9 +27,12 @@ export const DISCONNECT_COPY = 'The device disconnected during setup. Keep it po
 export const WIFI_TIMEOUT_COPY = 'Timed out sending Wi-Fi details. Stay close to the device and try again.'
 export const BIND_TIMEOUT_COPY = "Device connected to Wi-Fi, but adding it to your account timed out. Try adding again."
 
-export function withTimeout<T>(promise: Promise<T>, ms: number, timeoutMessage: string): Promise<T> {
+export function withTimeout<T>(promise: Promise<T>, ms: number, timeoutMessage: string, onTimeout?: () => void): Promise<T> {
   return new Promise((resolve, reject) => {
-    const t = setTimeout(() => reject(new Error(timeoutMessage)), ms)
+    const t = setTimeout(() => {
+      reject(new Error(timeoutMessage))
+      onTimeout?.()
+    }, ms)
     promise.then(
       v => { clearTimeout(t); resolve(v) },
       e => { clearTimeout(t); reject(e) },
@@ -74,6 +78,11 @@ export function useProvisionBind(opts: {
 
   const handleBindToCloud = useCallback(async () => {
     if (configGuardRef.current) return
+    if (!wifiConfiguredRef.current) {
+      store.setErrorMessage('Configure the device Wi-Fi before adding it to your account.')
+      store.setStep('wifi')
+      return
+    }
     configGuardRef.current = true
     const ds = useDeviceStore.getState()
     const deviceName = deviceNameInput.trim() || (store.deviceName ?? 'My Device')
@@ -153,6 +162,7 @@ export function useProvisionBind(opts: {
         return null
       })
       if (dtuInfo) diag.push(`dtu/info code=${String(dtuInfo.code)} msg=${String(dtuInfo.message ?? '')}`)
+      if (!dtuInfo || !isOk(dtuInfo.code)) throw new Error('Could not verify the device with the server. Check your connection and try again.')
       const toBeAdded = dtuInfo && isOk(dtuInfo.code) ? dtuInfo.data?.devicesToBeAdded ?? [] : []
       const alreadyAdded = dtuInfo && isOk(dtuInfo.code) ? dtuInfo.data?.devicesAlreadyAdded ?? [] : []
 
@@ -167,6 +177,7 @@ export function useProvisionBind(opts: {
       diag.push(`toBeAdded=${toBeAdded.length} alreadyAdded=${alreadyAdded.length} serial=${reportedSerial ? 'reported' : 'virtual'}:${serialNumber}`)
 
       const stationsFresh = await ds.loadStations()
+      if (!stationsFresh) throw new Error('Could not load your account stations. Check your connection and try again.')
       let stationId = stationsFresh ? useDeviceStore.getState().stations[0]?.id : undefined
       diag.push(`stationsFresh=${stationsFresh} stationId=${stationId ?? '(none)'}`)
 
@@ -252,11 +263,15 @@ export function useProvisionBind(opts: {
       }
       diag.push(`POST ${stationId != null ? '/device/add/single' : '/device/add/single/addStationTogether'}`)
       diag.push(`POST /device/add/single body=${JSON.stringify({ ...base, stationId: String(stationId) })}`)
-      const bindPromise = ds.addNewDevice({ ...base, stationId })
-      const devResult = await withTimeout(bindPromise, 25000, 'BIND_TIMEOUT')
+      // The API owns the request deadline. A second UI-only timer must not
+      // report failure while this non-idempotent request is still running.
+      const devResult = await ds.addNewDevice({ ...base, stationId })
 
       if (devResult && isOk(devResult.code)) {
         await ds.loadDevices()
+        if (useDeviceStore.getState().deviceError) {
+          toast.info('Device added, but the device list could not refresh. Refresh the list before adding again.')
+        }
         try {
           const added = useDeviceStore.getState().devices.find(
             d => d.serialNumber === serialNumber || String((d as { dtuDtuid?: string }).dtuDtuid ?? '') === dtuDtuid
@@ -317,7 +332,7 @@ export function useProvisionBind(opts: {
 
   const handleConfig = useCallback(async () => {
     // Live read: `store` here is a render snapshot too (see currentDtuid).
-    if (!useProvisionStore.getState().dtuid || !store.selectedSsid) return
+    if (!useProvisionStore.getState().dtuid || !canConfigureWifi(store.apList, store.selectedSsid, store.wifiPassword)) return
     if (configGuardRef.current) return
     configGuardRef.current = true
     store.setIsOperating(true)
@@ -328,9 +343,10 @@ export function useProvisionBind(opts: {
     try {
       const manager = getProvisionManager()
       const resp = await withTimeout(
-        manager.configWifi(store.selectedSsid, store.wifiPassword),
+        manager.configWifi(store.selectedSsid!, wifiRequiresPassword(store.apList, store.selectedSsid) ? store.wifiPassword : ''),
         25000,
         'WIFI_TIMEOUT',
+        () => { void manager.disconnect().catch(() => {}) },
       )
       if (provisionStepRef.current === 'result') return
       if (resp.RC !== 0) {
@@ -373,20 +389,22 @@ export function useProvisionBind(opts: {
     store.setIsOperating(true)
     store.setErrorMessage(null)
     const { deviceId, bleName } = lastBleRef.current
-    if (deviceId) {
-      try {
+    try {
+      if (deviceId && !wifiConfiguredRef.current) {
         const manager = getProvisionManager()
         await manager.connectTo(deviceId, bleName)
         store.addLog('Reconnected before retrying current stage')
-      } catch (e) {
-        store.addLog(`Reconnect before retry failed: ${e}`)
       }
-    }
-    configGuardRef.current = false
-    if (wifiConfiguredRef.current) {
-      await handleBindToCloud()
-    } else {
-      await handleConfig()
+      configGuardRef.current = false
+      if (wifiConfiguredRef.current) await handleBindToCloud()
+      else await handleConfig()
+    } catch (e) {
+      store.addLog(`Reconnect before retry failed: ${e}`)
+      store.setErrorMessage(DISCONNECT_COPY)
+      setFailKind('disconnect')
+    } finally {
+      configGuardRef.current = false
+      store.setIsOperating(false)
     }
   }, [store, handleBindToCloud, handleConfig, configGuardRef, lastBleRef, wifiConfiguredRef])
 

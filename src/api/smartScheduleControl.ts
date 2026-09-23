@@ -35,14 +35,15 @@ import { toggleSleepMode, passthroughDevice } from './deviceApi'
 import { uploadSleepScheduleResult } from './scheduleApi'
 import { buildWriteSingleFrame, toHexString, REG_CTRL } from '../protocols/modbusProtocol'
 import { isApiSuccess } from '../utils/apiClient'
-import {
-  isKnownMissingConfigAttribute,
-  rememberMissingConfigAttribute,
-} from '../utils/configCapability'
+import { runScheduleCommand } from '../utils/scheduleCommandQueue'
+import { getScheduleAccount } from '../utils/smartScheduleQueue'
+import { getActiveScheduleMode, setActiveScheduleMode, clearActiveScheduleMode, type ScheduleMode } from '../utils/activeScheduleMode'
 import {
   phaseFor,
   powerForPhase,
   smartSchedulePowers,
+  sleepPowers,
+  type ChargePowers,
   type ChargePhase,
 } from '../utils/chargeWindow'
 
@@ -100,31 +101,24 @@ export interface SmartScheduleResult {
  * match on the substrings they all share instead of a code — the code is the
  * generic illegal-argument one and cannot tell the two apart.
  *
- * SW-12: this is the fallback, not the first question.
- * `isMissingSleepModeAttribute` asks the per-model capability memo first and
- * only falls back to the wording.
+ * Require an explicit missing/unsupported statement in this response. A prior
+ * model capability guess must never reclassify a permission or transport error.
  */
 export function isMissingConfigAttribute(detail: string): boolean {
-  const t = detail.toLowerCase()
-  return (
-    t.includes('config attribute') ||
-    t.includes('attribute not exist') ||
-    t.includes('attribute does not exist')
-  )
+  const t = detail.toLowerCase().replace(/\s+/g, ' ').trim()
+  if (/\b(denied|forbidden|unauthori[sz]ed|expired|timeout|timed out|offline|network|unreachable|refused)\b/.test(t)) return false
+  return /\battribute(?:\s*\[\s*sleepmode\s*\]|\s+['"]?sleepmode['"]?)?\s+(?:(?:does\s+)?not\s+exist|(?:is\s+)?(?:missing|not\s+found|unsupported|not\s+supported))\b/.test(t)
+    || /\bsleepmode\b\s+(?:is\s+)?(?:unsupported|not\s+supported|missing|not\s+found|does\s+not\s+exist)\b/.test(t)
 }
 
 /**
  * Is a failed `config/write` of `sleepMode` a missing attribute on this model?
  *
- * Capability metadata first (what this model already told us), English wording
- * second — and a match is remembered, so the wording only has to be recognised
- * once per model.
+ * Model labels are not capability identities: different firmware/device product
+ * definitions may use the same label. Classify only the current response.
  */
-export function isMissingSleepModeAttribute(model: string, detail: string): boolean {
-  if (isKnownMissingConfigAttribute(model, 'sleepMode')) return true
-  if (!isMissingConfigAttribute(detail)) return false
-  rememberMissingConfigAttribute(model, 'sleepMode')
-  return true
+export function isMissingSleepModeAttribute(_model: string, detail: string): boolean {
+  return isMissingConfigAttribute(detail)
 }
 
 /** Frame for the realtime AC charge-power register (0x0085), space-separated hex. */
@@ -145,18 +139,49 @@ function errText(e: unknown): string {
  * except when the model simply has no `sleepMode` attribute — then it is
  * skipped and only flagged via `configSkipped` (SW-11).
  */
-export async function applySmartSchedule(
+export function applySmartSchedule(
   deviceId: string | number,
-  window: SmartScheduleWindow
+  window: SmartScheduleWindow,
+  canApply: () => boolean = () => true,
 ): Promise<SmartScheduleResult> {
-  const { enabled, startTime, endTime, chargePowerW, model } = window
-  const powers = smartSchedulePowers(model, chargePowerW)
+  const account = getScheduleAccount()
+  return runScheduleCommand(String(deviceId), () => applyChargeSchedule(
+    deviceId, window, smartSchedulePowers(window.model, window.chargePowerW), 'smart',
+    () => getScheduleAccount() === account && canApply(),
+  ))
+}
+
+export function applySleepSchedule(
+  deviceId: string | number,
+  window: Omit<SmartScheduleWindow, 'chargePowerW'>,
+): Promise<SmartScheduleResult> {
+  const account = getScheduleAccount()
+  return runScheduleCommand(String(deviceId), () => applyChargeSchedule(
+    deviceId, window, sleepPowers(window.model), 'sleep',
+    () => getScheduleAccount() === account,
+  ))
+}
+
+async function applyChargeSchedule(
+  deviceId: string | number,
+  window: Omit<SmartScheduleWindow, 'chargePowerW'>,
+  powers: ChargePowers,
+  mode: ScheduleMode,
+  canApply: () => boolean,
+): Promise<SmartScheduleResult> {
+  const { enabled, startTime, endTime, model } = window
   const phase = phaseFor(startTime, endTime)
   // Off → restore normal charging, so we never leave a device parked at 0W.
   const watts = enabled ? powerForPhase(powers, phase) : powers.restoreW
 
   /** Shared shape of a failure that never reached the device or the relay. */
   const noWrites = { instantPowerApplied: false, relayConfigured: false, relayAccepted: false }
+  const cancelled = (): SmartScheduleResult => ({ ok: false, failedStep: 'config', detail: 'Schedule superseded or account changed. Reopen its settings.', phase, ...noWrites })
+  if (!canApply()) return cancelled()
+  const active = getActiveScheduleMode(String(deviceId))
+  if (!enabled && active && active !== mode) {
+    return { ok: false, failedStep: 'config', detail: 'Another schedule mode is active. Reopen its settings to turn it off.', phase, ...noWrites }
+  }
 
   // A — /remote/device/config/write { key: 'sleepMode', value }
   // A missing attribute is soft-failed (SW-11); anything else stops the run.
@@ -180,6 +205,7 @@ export async function applySmartSchedule(
     console.warn('[SmartSchedule] model has no sleepMode attribute, continuing:', detail)
   }
   const configSkipped = configSkippedDetail !== undefined
+  if (!canApply()) return cancelled()
 
   // B — /remote/device/passthrough, Modbus write-single 0x0085
   try {
@@ -207,6 +233,11 @@ export async function applySmartSchedule(
       configSkippedDetail,
     }
   }
+
+  // Stop the other client executor before replacing the shared relay slot.
+  if (!canApply()) return { ...cancelled(), instantPowerApplied: true, wattsWritten: watts }
+  if (enabled) setActiveScheduleMode(String(deviceId), mode)
+  else clearActiveScheduleMode(String(deviceId), mode)
 
   // C — relay POST /schedule (never throws). `configured` separates "this build
   // has no relay" from "the relay refused the window", which the caller must

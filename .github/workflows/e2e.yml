@@ -31,6 +31,9 @@ jobs:
       - name: Unit tests (Vitest)
         run: npm run test:unit
 
+      - name: Relay unit tests
+        run: npm run test:server
+
       - name: Install Playwright browsers
         run: npx playwright install chromium --with-deps
 
@@ -41,14 +44,11 @@ jobs:
           VITE_PUSH_ENABLED: 'true'
         run: npm run build
 
-      - name: Serve build
-        run: |
-          npx vite preview --port 4173 &
-          npx wait-on http://localhost:4173 --timeout 60000
-
       - name: Run E2E tests against the built app
         env:
-          E2E_BASE_URL: http://localhost:4173
+          E2E_LOCAL: '1'
+          E2E_BASE_URL: http://127.0.0.1:4173
+          NO_PROXY: localhost,127.0.0.1
         # Exclude the real-account group: it needs live backend credentials that
         # must NOT live in the repo. Run those only in a protected manual
         # workflow with secrets, never on PRs.

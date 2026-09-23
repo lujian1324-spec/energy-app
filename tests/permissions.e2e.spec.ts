@@ -30,7 +30,8 @@ test.describe('权限按需化 (PG-01)', () => {
     // never appear; the app should fall straight through to the login page.
     await expect(page.getByText(GATE_HEADING, { exact: false })).toHaveCount(0)
     await expect(page.getByRole('button', { name: GATE_BUTTON })).toHaveCount(0)
-    await expect(page.locator('input[placeholder="Username"]')).toBeVisible({ timeout: 20000 })
+    await expect(page.getByRole('button', { name: 'Continue with Email' })).toBeVisible({ timeout: 20000 })
+    await expect(page.locator('input[type="password"]')).toHaveCount(0)
   }
 
   test('PG-01 全新首启不显示 App Permissions 页，直接进登录', async ({ page }) => {

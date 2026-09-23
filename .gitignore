@@ -64,3 +64,6 @@ key.properties
 android/app/google-services.json
 firebase-service-account.json
 *.p8
+
+# Per-ticket scratch space (AC docs, working copies, generated patches)
+_sw13/

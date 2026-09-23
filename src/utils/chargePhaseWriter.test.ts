@@ -266,6 +266,26 @@ describe('AC-12-3 — bounded retry, no concurrency, no cross-device leakage', (
     expect(s.calls).toHaveLength(1)
   })
 
+  it('flushes the new device immediately after a stale in-flight reply', async () => {
+    const applied: string[] = []
+    const w = newWriter({ onApplied: did => applied.push(did) })
+    w.setDevice(DEVICE_A)
+    s.setAuto(null)
+    w.request('sleep', 150, 'old')
+    await settle()
+    w.setDevice(DEVICE_B)
+    w.request('wake', 800, 'new')
+    expect(s.calls).toHaveLength(1)
+    s.release({ ok: true })
+    await settle()
+    expect(s.calls).toHaveLength(2)
+    expect(s.calls[1].deviceId).toBe(DEVICE_B)
+    expect(applied).toEqual([])
+    s.release({ ok: true })
+    await settle()
+    expect(applied).toEqual([DEVICE_B])
+  })
+
   it('cancelPending stops the ladder but leaves the writer usable (StrictMode)', async () => {
     const w = newWriter()
     w.setDevice(DEVICE_A)

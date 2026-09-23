@@ -1,7 +1,7 @@
 {
   "name": "powerflow-app",
   "private": true,
-  "version": "4.14.3",
+  "version": "4.14.4",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,6 +12,7 @@
     "test:e2e:report": "playwright show-report",
     "typecheck": "tsc --noEmit",
     "test:unit": "vitest run",
+    "test:server": "node --test server/*.test.js",
     "test:unit:watch": "vitest",
     "test:api:live": "node scripts/api-smoke.mjs"
   },

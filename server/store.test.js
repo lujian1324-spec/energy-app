@@ -76,3 +76,18 @@ test('token transfer prunes unused credentials but preserves active schedules', 
   assert.equal(store.getUser('unused'), null)
   assert.equal(store.getUser('scheduled').accessToken, 'session')
 })
+
+test('background schedules require an actual poller session', () => {
+  assert.equal(store.setUserSchedule('no-session', 'device', { enabled: true }), false)
+  store.setUserAuth('prefs-only', { prefs: {} })
+  assert.equal(store.setUserSchedule('prefs-only', 'device', { enabled: true }), false)
+})
+
+test('editing schedule watts clears the prior applied phase', () => {
+  store.setUserAuth('scheduler', { accessToken: 'session' })
+  assert.equal(store.setUserSchedule('scheduler', 'device', { enabled: true, sleepW: 150 }), true)
+  store.setSchedulePhase('scheduler', 'device', 'sleep')
+  assert.equal(store.getSchedulePhase('scheduler', 'device'), 'sleep')
+  store.setUserSchedule('scheduler', 'device', { enabled: true, sleepW: 500 })
+  assert.equal(store.getSchedulePhase('scheduler', 'device'), null)
+})

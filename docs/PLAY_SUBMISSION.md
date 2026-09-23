@@ -37,7 +37,7 @@ App:**Sierro Energy** · 包名:**com.sierro.energyapp** · 首个上传轨道�
 - 选 **All or some functionality is restricted**
 - 提供审核用说明 + 测试账号:
   - Instructions:`Tap "Continue as Guest" on the login screen to browse demo devices without an account. For full features, log in with the test account below.`
-  - ⚠️ 测试账号:填一个真实可登录账号(如 `jason1324` / 对应密码)。**不要**用你的主账号;建议单开一个测试账号。
+  - ⚠️ 测试账号:填一个真实可登录账号(如 `QA-Account-A` / 对应密码)。**不要**用你的主账号;建议单开一个测试账号。
 
 ### Ads
 - **No, my app does not contain ads**

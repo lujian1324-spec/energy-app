@@ -29,6 +29,7 @@
  */
 
 import { api } from '../utils/apiClient'
+import { decodePowerU16 } from '../protocols/powerU16'
 import { stationPlace, countryName, iso3, localIsoWithOffset, currencyFor } from '../utils/stationLocation'
 import type { ApiResponse } from '../utils/apiClient'
 
@@ -373,6 +374,16 @@ import type { DeviceRealtimeFields, DeviceAlert } from '../types'
 /** 将 API fields Record<string, DeviceStateField> 映射为 DeviceRealtimeFields
  *  字段 key 来自 /remote/device/state/latest 实测值
  */
+/** Charge-positive battery power, or undefined when a channel has no reading. */
+function batteryPowerFrom(
+  ac: number | undefined,
+  solar: number | undefined,
+  output: number | undefined,
+): number | undefined {
+  if (ac === undefined || solar === undefined || output === undefined) return undefined
+  return ac + solar - output
+}
+
 export function mapFieldsToRealtime(
   fields: Record<string, DeviceStateField>
 ): Partial<DeviceRealtimeFields> {
@@ -402,6 +413,17 @@ export function mapFieldsToRealtime(
     if (!f) return undefined
     return String(f.value ?? '')
   }
+  /*
+   * Power arrives from the cloud as the same U16 the device put on the wire, so
+   * the same unfilled-register values reach here that reach the pass-through
+   * decode — 65534 W with "0h1m remaining" was reported off this screen. One
+   * guard, shared with the Modbus path, so neither source can paint a reading
+   * the hardware cannot produce.
+   */
+  const getPower = (key: string): number | undefined => {
+    const v = getNum(key)
+    return v === undefined ? undefined : decodePowerU16(v)
+  }
 
   return {
     // 电量 — API: remainingBatteryCapacity
@@ -411,15 +433,17 @@ export function mapFieldsToRealtime(
     numberOfBatteryUsageCycles: getNum('numberOfBatteryUsageCycles'),
 
     // 功率 — API: exchangeChargingPower / generationPower / outputPower
-    acPower: getNum('exchangeChargingPower'),
-    solarPower: getNum('generationPower'),
-    outputPower: getNum('outputPower'),
+    acPower: getPower('exchangeChargingPower'),
+    solarPower: getPower('generationPower'),
+    outputPower: getPower('outputPower'),
     // 电池功率 = 交流充电 + 光伏充电 − 输出（充电为正，放电为负）
-    // 若 API 直接返回 batteryPower 字段则优先使用，否则用功率公式计算
-    batteryPower: getNum('batteryPower') ??
-      ((getNum('exchangeChargingPower') ?? 0) +
-        (getNum('generationPower') ?? 0) -
-        (getNum('outputPower') ?? 0)),
+    // 若 API 直接返回 batteryPower 字段则优先使用，否则用功率公式计算；
+    // 任一通道无读数时不计算，否则缺的那路会被当成 0 W 参与减法。
+    batteryPower: getNum('batteryPower') ?? batteryPowerFrom(
+      getPower('exchangeChargingPower'),
+      getPower('generationPower'),
+      getPower('outputPower'),
+    ),
 
     // 电压 / 频率
     acInputVoltage: getNum('l1AcInputVoltage'),
@@ -833,14 +857,16 @@ export async function addDevice(
 ): Promise<ApiResponse<unknown>> {
   // stationId is a Java Long — always send it as an exact decimal string so a
   // big id can't be corrupted (JS number) into a backend "illegal argument".
-  return api.post<unknown>('/device/add/single', { ...data, stationId: String(data.stationId) })
+  return api.post<unknown>('/device/add/single', { ...data, stationId: String(data.stationId) }, undefined,
+    { maxRetries: 0, requireAuth: true })
 }
 
 /** 添加设备同时创建电站 */
 export async function addDeviceWithStation(
   data: AddDeviceWithStationRequest
 ): Promise<ApiResponse<unknown>> {
-  return api.post<unknown>('/device/add/single/addStationTogether', data)
+  return api.post<unknown>('/device/add/single/addStationTogether', data, undefined,
+    { maxRetries: 0, requireAuth: true })
 }
 
 
@@ -1324,7 +1350,7 @@ export async function fetchStationDetails(
 export async function addStation(
   data: StationAddRequest
 ): Promise<ApiResponse<unknown>> {
-  return api.post<unknown>('/station/add', data)
+  return api.post<unknown>('/station/add', data, undefined, { maxRetries: 0, requireAuth: true })
 }
 
 /**

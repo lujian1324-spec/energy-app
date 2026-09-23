@@ -1,3 +1,5 @@
+import { MAX_PLAUSIBLE_POWER_W } from '../protocols/powerU16'
+
 /**
  * Unified battery time estimate — single source of truth for the
  * "time to full" / "time remaining" label shown on the battery ring across
@@ -21,6 +23,14 @@
 
 /** Default rated capacity (Wh) when the device's nameplate value is unknown. */
 const DEFAULT_CAPACITY_WH = 1000
+
+/**
+ * Largest net charge/discharge we will turn into a time, W. Past this the
+ * number is not a measurement, and an estimate built on it is worse than no
+ * estimate — it reads as authoritative and is off by orders of magnitude.
+ * Matches MAX_PLAUSIBLE_POWER_W, which guards each channel on its own.
+ */
+const MAX_PLAUSIBLE_NET_W = MAX_PLAUSIBLE_POWER_W
 
 /** Format minutes as "1h16m" — no inner space, negative values clamped to 0. */
 export function formatDuration(mins: number): string {
@@ -49,6 +59,14 @@ export function batteryTimeLabel({
   isCharging = false,
 }: BatteryTimeInput): string {
   const netChargeW = acPower + solarPower - outputPower
+  /*
+   * A reading the hardware cannot produce must not become an estimate. An
+   * unfilled output register read as 65534 W put "0h1m remaining" on a
+   * customer's ring at 98% — the arithmetic was right, its input was not.
+   * The channels are guarded where they are decoded now; this is the last
+   * line, and it covers whatever else the sum is ever handed.
+   */
+  if (!Number.isFinite(netChargeW) || Math.abs(netChargeW) > MAX_PLAUSIBLE_NET_W) return '--'
   const capacity = capacityWh && capacityWh > 0 ? capacityWh : DEFAULT_CAPACITY_WH
   const socFrac = Math.max(0, Math.min(100, soc)) / 100
 

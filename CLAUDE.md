@@ -246,9 +246,9 @@ lives on independently and is still referenced elsewhere.)
     `sleepMode` key at all — A is **soft-failed**, not surfaced: the run continues to B and C, and the
     result carries `configSkipped`/`configSkippedDetail` so `ok` is never read as "all three landed"
     (`isMissingConfigAttribute()` is the matcher). Any other A failure still stops the run as before.
-    SW-12 keeps that behaviour and puts a per-model memo in front of the wording
-    (`isMissingSleepModeAttribute()` → `src/utils/configCapability.ts`), so a model only has to be
-    recognised once and a rephrased refusal keeps classifying the same way.
+    v4.14.4 classifies only the current response with explicit missing-attribute wording.
+    It does not use a per-model memo: an earlier missing key must never hide a later
+    authentication, permission, timeout, or offline failure.
   - **SW-12 (v4.14.3): one device has one active mode, and `ok` is not the whole story.**
     - *Active mode* — enabling Smart Schedule claims the device in `src/utils/activeScheduleMode.ts`
       and disarms Sleep Mode's saved window; enabling Sleep Mode does the reverse. Turning either off
@@ -268,6 +268,29 @@ lives on independently and is still referenced elsewhere.)
       raise a warning toast from `backgroundScheduleNotice()` when the device took the write but the
       relay did not take the window — including the disable path, where the old background schedule
       may still fire.
+  - **SW-13 (v4.14.4): an offline device is not a refused save.**
+    Save goes through `saveSmartSchedule()` (`src/api/smartScheduleSave.ts`), which wraps
+    `applySmartSchedule` in one decision. **Offline is read from client connection state only** —
+    `navigator.onLine`, whether a token exists, and the device's cloud `isOnline`
+    (`src/utils/deviceConnectivity.ts`); never from a reply's wording, because `can not set charge
+    power` is exactly what a *true* firmware reject says and matching it would turn every reject
+    into a silent "queued". An unknown `isOnline` counts as connected, so a failure stays a failure.
+    - *Offline* → nothing is written, the window is stored as that device's **latest** pending save
+      (`src/utils/smartScheduleQueue.ts`, `sierro-smart-pending-{account}-{deviceId}`, newest
+      overwrites older). A warning distinguishes local persistence from device application;
+      storage failure is a failed save. It claims `activeScheduleMode`; a later Sleep claim
+      cancels the pending Smart intent. Disables queue with the same owner checks.
+    - *Reconnect* → `useSmartScheduleFlush` (mounted on `SmartSchedulePage` and `DevicePage`, so a
+      device coming back is caught with either screen open) replays the latest pending via
+      `flushPendingSmartSchedule()`: the same A→B→C run, SW-11 soft-fail and SW-12 relay split
+      intact, cleared against its own `queuedAt` so a save made mid-flush survives. One flush in
+      flight per account/device, at least 30s apart with a periodic wake. Refusals stop after
+      `MAX_FLUSH_ATTEMPTS`; the rejected intent stays parked until an explicit new Save so the
+      phase-only writer cannot bypass it. Account/revision guards also cover each write stage.
+      Device refusals and relay failures are visible on either screen.
+    - This queue is **not** `ChargePhaseWriter`'s pending write and must not be merged with it: that
+      one owes a single register value for the current phase and dies with the screen, this owes a
+      whole save and outlives the process. They share only the online/focus trigger.
 
 **NotificationsPage** (`/notifications`)
 - *Active Now*: firing alarms (`alarmMessage`, severity, time). *History*: title, severity, device/station, dismiss (`isProcessed`), load-more.
