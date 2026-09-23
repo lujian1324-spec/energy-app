@@ -13,6 +13,7 @@ import { App } from '@capacitor/app'
 import { checkBluetooth, resetBleInit, bleStatusFromCheck } from '../utils/permissions'
 import { type FailKind, type BindFailReasonKind } from '../utils/provisionFailCopy'
 import QrScanScreen from './provisioning/QrScanScreen'
+import { QR_ENTRY_ENABLED } from '../config/qrEntry'
 import { NameDeviceScreen, ChooseIconScreen } from './provisioning/NameIconScreens'
 import ProvisioningFlowScreen from './provisioning/ProvisioningFlowScreen'
 import ScanDevicesScreen from './provisioning/ScanDevicesScreen'
@@ -35,7 +36,25 @@ type UiScreen = 'scan' | 'qr' | 'scanned' | 'naming' | 'icon' | 'provisioning'
 export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   const store = useProvisionStore()
 
-  const [uiScreen, setUiScreen] = useState<UiScreen>('scan')
+  const [uiScreen, setScreenState] = useState<UiScreen>('scan')
+  /*
+   * SW-10: the QR entry points are hidden, so no user action may land on the
+   * camera. Every route into 'qr'/'scanned' goes through this setter, so
+   * folding them back onto the BLE search screen here is enough to keep the
+   * whole flow off them — including the paths that are themselves hidden
+   * (the header action, the search-fail link, DeviceScannedScreen's Rescan).
+   * The screens below stay wired, so flipping QR_ENTRY_ENABLED restores them.
+   */
+  const setUiScreen = useCallback((next: UiScreen) => {
+    setScreenState(!QR_ENTRY_ENABLED && (next === 'qr' || next === 'scanned') ? 'scan' : next)
+  }, [])
+  /*
+   * Belt and braces for that setter: should the state ever be forced to a hidden
+   * screen from somewhere else, everything below still behaves as the BLE search
+   * screen — the camera is not mounted for even one frame.
+   */
+  const screen: UiScreen =
+    !QR_ENTRY_ENABLED && (uiScreen === 'qr' || uiScreen === 'scanned') ? 'scan' : uiScreen
   const [deviceNameInput, setDeviceNameInput] = useState('')
   // A_1.3.3 has no model picker — `A_1.3.2_Device Scanned` shows the model it
   // read off the device, so derive it from the scanned name or serial.
@@ -67,8 +86,8 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   const [bleStatus, setBleStatus] = useState<BleStatus>('checking')
   const bleStatusRef = useRef<BleStatus>(bleStatus)
   bleStatusRef.current = bleStatus
-  const uiScreenRef = useRef(uiScreen)
-  uiScreenRef.current = uiScreen
+  const uiScreenRef = useRef(screen)
+  uiScreenRef.current = screen
   const provisionStepRef = useRef(store.step)
   provisionStepRef.current = store.step
   const lastBleRef = useRef<{ deviceId?: string; bleName?: string }>({})
@@ -133,11 +152,11 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   })
 
   useEffect(() => {
-    if (uiScreen !== 'scan') {
+    if (screen !== 'scan') {
       cancelScan()
-      if (uiScreen === 'qr') store.setIsOperating(false)
+      if (screen === 'qr') store.setIsOperating(false)
     }
-  }, [uiScreen, cancelScan])
+  }, [screen, cancelScan])
 
   useEffect(() => {
     let removed = false
@@ -246,15 +265,15 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
 
   const autoBleScanRef = useRef(false)
   useEffect(() => {
-    if (uiScreen === 'scan' && bleStatus === 'ready' && supportsDeviceListScan()) {
+    if (screen === 'scan' && bleStatus === 'ready' && supportsDeviceListScan()) {
       if (!autoBleScanRef.current && !store.isOperating) {
         autoBleScanRef.current = true
         handleScan()
       }
-    } else if (uiScreen !== 'scan') {
+    } else if (screen !== 'scan') {
       autoBleScanRef.current = false
     }
-  }, [uiScreen, bleStatus, store.isOperating, handleScan])
+  }, [screen, bleStatus, store.isOperating, handleScan])
 
   useEffect(() => {
     if (store.step !== 'password') setShowPassword(false)
@@ -351,7 +370,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     void handleBindToCloud()
   }, [handleBindToCloud])
 
-  if (uiScreen === 'scan') {
+  if (screen === 'scan') {
     return (
       <ScanDevicesScreen
         bleStatus={bleStatus}
@@ -364,7 +383,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     )
   }
 
-  if (uiScreen === 'qr') {
+  if (screen === 'qr') {
     return <QrScanScreen
       onBack={() => setUiScreen('scan')}
       onScanned={(name, serial) => {
@@ -376,7 +395,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     />
   }
 
-  if (uiScreen === 'scanned') {
+  if (screen === 'scanned') {
     return (
       <DeviceScannedScreen
         model={selectedModel}
@@ -388,7 +407,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     )
   }
 
-  if (uiScreen === 'naming') {
+  if (screen === 'naming') {
     return (
       <NameDeviceScreen
         deviceNameInput={deviceNameInput}
@@ -401,7 +420,7 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
     )
   }
 
-  if (uiScreen === 'icon') {
+  if (screen === 'icon') {
     return (
       <ChooseIconScreen
         selectedIcon={selectedIcon}

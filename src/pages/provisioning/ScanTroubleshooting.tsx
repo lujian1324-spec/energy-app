@@ -1,3 +1,5 @@
+import { QR_ENTRY_ENABLED } from '../../config/qrEntry'
+
 export default function ScanTroubleshooting({ failures, onScanQr }: { failures: number; onScanQr: () => void }) {
   if (failures < 2) return null
   return (
@@ -8,11 +10,15 @@ export default function ScanTroubleshooting({ failures, onScanQr }: { failures: 
         <li>Make sure the device's LED shows pairing mode.</li>
         <li>Turn on Bluetooth and allow Nearby devices permission. On older Android phones, also turn on Location.</li>
         <li>Move your phone closer to the device, then tap Search Again.</li>
-        <li>If your device has a QR code, scan it to continue.</li>
+        {/* SW-10: the QR step and its button are hidden. The list ends on Search
+            Again with nothing put in their place. */}
+        {QR_ENTRY_ENABLED && <li>If your device has a QR code, scan it to continue.</li>}
       </ol>
-      <button onClick={onScanQr} className="mt-2 min-h-10 text-primary text-label font-semibold active:scale-[0.96] transition-transform">
-        Scan QR Code
-      </button>
+      {QR_ENTRY_ENABLED && (
+        <button onClick={onScanQr} className="mt-2 min-h-10 text-primary text-label font-semibold active:scale-[0.96] transition-transform">
+          Scan QR Code
+        </button>
+      )}
     </section>
   )
 }

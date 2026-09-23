@@ -1,4 +1,5 @@
 import Icon from '../../components/Icon'
+import { QR_ENTRY_ENABLED } from '../../config/qrEntry'
 
 /**
  * The Add Device header, shared by every screen in the flow so they cannot
@@ -36,7 +37,7 @@ export default function AddDeviceHeader({
       >
         {title}
       </h1>
-      {onScanQr ? (
+      {QR_ENTRY_ENABLED && onScanQr ? (
         <button
           onClick={onScanQr}
           className="ml-auto text-body-lg font-normal text-primary active:opacity-70 px-1 flex-shrink-0"
@@ -44,7 +45,8 @@ export default function AddDeviceHeader({
           Scan QR
         </button>
       ) : (
-        // Keeps the row the same height as the branches that do have it.
+        // Keeps the row the same height as the branch that does have it — which
+        // is also every row while SW-10 holds the QR entry point hidden.
         <span className="ml-auto w-10" aria-hidden="true" />
       )}
     </div>
