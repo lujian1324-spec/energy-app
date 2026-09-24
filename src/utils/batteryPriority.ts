@@ -78,6 +78,14 @@ export interface PriorityResolution {
  * A write is `pending` from the moment it is sent until the device echoes it back:
  * device state keeps reporting the old value for a few polls, and letting those
  * land is what used to snap the row back to Backup a second after Save.
+ *
+ * v4.17.3 (after-sales R11): what this app last wrote to the device wins over the
+ * cloud `workMode`. Since SW-09 (v4.14.0) Save writes the device's registers
+ * (0x0086 + 0x0054) and never the cloud field, so `workMode` keeps whatever it
+ * held before — and letting it win on re-entry is exactly "set Savings, come
+ * back, it says Backup" (Jeff, Hieu). The cloud value is only a first guess on a
+ * phone that has never saved a priority for this device, and it is never
+ * remembered as if the device had confirmed it.
  */
 export function resolveBatteryPriority(opts: {
   deviceWorkMode: unknown
@@ -90,8 +98,8 @@ export function resolveBatteryPriority(opts: {
   if (opts.pending !== null) {
     return { priority: opts.pending, confirmed: fromDevice === opts.pending }
   }
-  if (fromDevice !== null) {
-    return { priority: fromDevice, confirmed: true }
+  if (opts.remembered !== null) {
+    return { priority: opts.remembered, confirmed: false }
   }
-  return { priority: opts.remembered ?? opts.current, confirmed: false }
+  return { priority: fromDevice ?? opts.current, confirmed: false }
 }

@@ -127,6 +127,9 @@ Also present but not routed standalone: `ProvisioningPage` (inside DevicePage ad
   never restart a search that is still running. The provision store is reset before the first
   frame of every visit, and the Bluetooth check draws as the search layout (radar moving), not a
   full-screen overlay.
+- **No "pairing mode" copy (v4.17.3, after-sales R08).** The search failure text, the troubleshooting
+  steps, `RESTART_HELP_COPY` and `DISCONNECT_COPY` no longer ask for a pairing mode / pairing light: the
+  app never said how to enter one (Trenton). Only steps a user can do are listed.
 - **BLE drop after Wi-Fi (v4.16.3, 0923-001).** Once `handleConfig` gets RC=0 the device leaves
   Bluetooth for Wi-Fi. `useProvisionScan`'s `onDisconnected` returns early when
   `wifiConfiguredRef` is set (marks `bleGoneRef` only): no reconnect loop, no
@@ -212,7 +215,7 @@ lives on independently and is still referenced elsewhere.)
 
 **DeviceDetailPage** (`/device/:id/settings` — Device Info)
 - *Name edit*, *icon picker*.
-- *Device Info*: model, **Serial Number** (v4.17.1: the device's Bluetooth ID — `dtuDtuid` from the record, else `RatedParams.bleId` saved at add time, else `--`; `deviceSerialNumber()` in `src/utils/deviceSerial.ts`. Never the record's generated `serialNumber` or a placeholder), **Rated Capacity** (`acInvOutputPower×2`, Wh→kWh), **Rated Output Power** W (`ratedPower`), **Rated Voltage** 120V (fixed), **Cycles** (`numberOfBatteryUsageCycles`), **Temperature** °F (`batteryTemp`), Wi-Fi (`isOnline`), firmware (`softwareVersion`).
+- *Device Info*: model, **Serial Number** (v4.17.3, after-sales R15: only a serial the device reported — the record's `serialNumber` unless `isVirtualSerialNumber` or the generated `SR1000-######` form, else `--`; `deviceSerialNumber()`), **Bluetooth ID** (its own row: `dtuDtuid`, else `RatedParams.bleId` saved at add time, else `--`; `deviceBluetoothId()`, both in `src/utils/deviceSerial.ts` — Marc: the module id is not the product SN and must not be labelled as one), **Rated Capacity** (`acInvOutputPower×2`, Wh→kWh), **Rated Output Power** W (`ratedPower`), **Rated Voltage** 120V (fixed), **Cycles** (`numberOfBatteryUsageCycles`), **Temperature** °F (`batteryTemp`), Wi-Fi (`isOnline`), firmware (`softwareVersion`).
 - *Sleep Mode editor* (`sleepFrom`/`sleepTo` + scheduler), *Battery Priority sheet* (Backup 100% / Savings 60%), *delete dialog*.
   Saving Sleep Mode claims the device for `sleep` (SW-12 — see Smart Schedule below), which disarms
   Smart Schedule's window, and reports a relay that refused the upload instead of dropping it.
@@ -225,8 +228,12 @@ lives on independently and is still referenced elsewhere.)
   rolls back and the sheet stays open. `setWorkMode()` in `deviceApi.ts` is untouched and simply no
   longer called from this sheet, so the cloud `workMode` field keeps whatever the backend already holds;
   there is therefore no cloud echo to poll, and after a successful save the row shows what was written
-  to 0x0086/0x0054 for the rest of the visit. (On re-entry `resolveBatteryPriority` still lets a
-  device-reported `workMode` of 1/2 win — SW-04's rule, deliberately left alone here.)
+  to 0x0086/0x0054 for the rest of the visit. **Re-entry (v4.17.3, after-sales R11):** the last value
+  this app wrote to the registers (`loadConfirmedPriority`) wins over the cloud `workMode`, which this
+  path never updates — letting the stale field win was "set Savings, come back, it says Backup". The
+  cloud value is only a first guess on a phone that never saved one, and is never stored as confirmed.
+  A refused save toasts "Could not change Battery Priority. Check the device is online and try again."
+  — the platform's own text ("illegal argument") goes to the log only.
 - **Fan Speed — NOT RELEASED (hidden since v4.15.3).** Rendered only when `FAN_CONTROL_ENABLED`
   (`src/config/fanControl.ts`) is true, which is `DEV_TOOLS_ENABLED`: Vite dev and QA builds made
   with `VITE_ENABLE_DEV_TOOLS=true` (`deploy-qa.yml`). Consumer builds (Pages root, APK, iOS, release
@@ -417,6 +424,7 @@ shows raw register names):
 | Nameplate voltage | **Rated Voltage** | V |
 | Battery usage cycles | **Cycles** | — |
 | Device serial | **Serial Number** | — |
+| Bluetooth module id | **Bluetooth ID** | — |
 
 ## Backend API parameter conventions (`src/api/`)
 Canonical names/types for request payloads & query params. Keep these consistent:

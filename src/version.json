@@ -1,8 +1,9 @@
 {
-  "version": "4.17.2",
-  "build": 2930,
+  "version": "4.17.3",
+  "build": 2931,
   "date": "2026-09-24",
   "changelog": [
+    "Battery Priority now stays on Savings when you come back to Device Settings, instead of showing Backup again. A save the device refuses now shows a plain message instead of the platform's \"illegal argument\". Device Info now shows the unit's own serial number only when the device reports one, and lists the Bluetooth ID separately, so the app no longer shows a number that looks like the serial number but does not match the sticker. Add Device no longer asks you to put the device in a pairing mode the app never explained, and the verification code screen now says what to do when no code arrives.",
     "The Real-Time Power chart now reads the day's Battery, AC input, Solar and AC output the same way the Solar of Things console does, up to 1,500 readings per request. If the platform refuses that request, the chart reads the day the previous way instead of going blank.",
     "Signing out and then signing in with another account no longer shows the previous account's Founding Member tag and number, push notification switches or low-battery threshold. Each account keeps its own settings and gets them back when it signs in again, and the Founding Member tag is checked against the member list at every sign-in. Device Info now shows the device's Bluetooth ID, read when the device was added, as its Serial Number. Switching quickly between devices no longer lets the previous device's details replace the current one's. On the verification code screen, the phone's own text cursor can no longer appear stuck in the first box; only the cursor in the box for the next digit shows.",
     "The Real-Time Power chart now loads today's Battery, AC, Solar and Output history in every time zone, including the US, where it used to fail and stay empty. It keeps updating every minute while the screen is open, starts a new day at midnight, and shows a gap where the device sent no reading or was off instead of a 0 W dip or a straight line across the missing hours. Each device's chart now shows only that device's data, and signing out clears the saved history, so switching devices or accounts no longer shows another device's or a previous session's readings. Continue as Guest has been removed from the sign-in screen.",

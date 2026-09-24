@@ -10,7 +10,7 @@ describe('scan troubleshooting', () => {
     }
     for (const failures of [2, 3]) {
       const html = renderToStaticMarkup(createElement(ScanTroubleshooting, { failures, onScanQr: () => {} }))
-      for (const text of ['Power on', 'pairing mode', 'Bluetooth', 'Location', 'Move your phone closer']) {
+      for (const text of ['Power on', 'Bluetooth', 'Location', 'Move your phone closer']) {
         expect(html).toContain(text)
       }
     }
@@ -21,6 +21,8 @@ describe('scan troubleshooting', () => {
   it('offers no QR step, no QR button and no action in their place', () => {
     const html = renderToStaticMarkup(createElement(ScanTroubleshooting, { failures: 3, onScanQr: () => {} }))
     expect(html).not.toMatch(/qr/i)
+    // After-sales R08: no step names a pairing mode the app never explains.
+    expect(html).not.toMatch(/pairing/i)
     expect(html).not.toContain('<button')
   })
 })

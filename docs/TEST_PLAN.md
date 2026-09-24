@@ -201,7 +201,7 @@ v4.4.3 修复 Android 扫不到设备(客户端过滤)与 PWA Open Settings 跳�
 ---
 
 ## 11. 自动化覆盖现状(全部可在 CLI 运行)
-- **单元 + 接口契约**(`src/**/*.test.ts`,Vitest,`npm run test:unit`,**84 个文件,810 项**,v4.17.2 时):
+- **单元 + 接口契约**(`src/**/*.test.ts`,Vitest,`npm run test:unit`,**84 个文件,812 项**,v4.17.3 时;中继 `npm run test:server` 68 项):
   - 纯逻辑:Modbus CRC/解码/0x0133 枚举、电池时间、isApiSuccess、速报探测。
   - **BLE 直连解码/控制**(`src/protocols/bleDirect.test.ts`,新增于 v3.36.0):用合成的 UART 透传
     响应验证 `readLiveStatusBle`(含 CRC 校验失败/RC!==0/传输异常三种失败路径均返回 null,不误信
@@ -220,7 +220,7 @@ v4.4.3 修复 Android 扫不到设备(客户端过滤)与 PWA Open Settings 跳�
   - **全接口契约**(`src/api/api-contract.test.ts`,38 项):mock 传输层,逐个断言
     77 个 API 函数的端点/payload/字段约定(deviceId String、密码 md5、captchaId、
     邮箱验证码 `address` 字段、国家码去 `+`、无 userId 规则、透传 hex→base64 等)。
-- **e2e**(Playwright,`tests/`,CI 对本次提交的构建跑,共 47 项;真账号组 5 项另计,仅手动带账号时跑):
+- **e2e**(Playwright,`tests/`,CI 对本次提交的构建跑,共 50 项;真账号组 5 项另计,仅手动带账号时跑):
   - `e2e.spec.ts`(22):认证页、邮箱验证码、游客导航(构建带 `VITE_ENABLE_GUEST=true` 才有入口)、PWA 健康。
   - `permissions.e2e.spec.ts`(2)、`schedule-save.e2e.spec.ts`(2):首启无权限页;Sleep Mode 保存。
   - **以下四个用模拟后端**(`tests/support/mockBackend.ts`:内存里的设备/状态/历史/告警/透传,
@@ -235,6 +235,9 @@ v4.4.3 修复 Android 扫不到设备(客户端过滤)与 PWA Open Settings 跳�
     - `account.e2e.spec.ts`(3):验证码光标落在下一位的格子里(退格、点前面的格子也对);A(会员名单上的
       团队账号 #666)设好推送开关和阈值后退出、B 登录看不到 A 的标签/开关/阈值,A 再登录全部恢复;
       Device Info 的 Serial Number 显示绑定时的蓝牙 ID(`dtuDtuid`)。
+    - `after-sales.e2e.spec.ts`(3,售后清单 2026-09-24):R11 存 Savings 后重进仍是 Savings(云端 workMode 仍为 Backup);
+      设备拒绝时提示不含 "illegal argument";R16 验证码页有"收不到"提示。R15 在 account(Serial Number 与 Bluetooth ID
+      分两行、生成的 SR1000-xxxxxx 显示 --),R08 在 provisioning(失败页不出现 pairing)。
     - `provisioning.e2e.spec.ts`(3):模拟 Android + `navigator.bluetooth`——打开即搜索、列出广播的设备、无扫码入口;
       失败后返回再进入不残留失败画面;系统弹窗关闭、搜索中切后台都不重启搜索、不清空列表。
 - **真实后端冒烟**(`scripts/api-smoke.mjs`,`E2E_USER=x E2E_PASS=y npm run test:api:live`):

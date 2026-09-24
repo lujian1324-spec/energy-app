@@ -465,6 +465,11 @@ export default function LoginPage() {
           >
             {cooldown > 0 ? `Resend Code (${cooldown})` : 'Resend Code'}
           </button>
+          {/* After-sales R16: "the app says it sent a code but none arrives" had no
+              next step on screen. */}
+          <p className="mt-2 text-label text-ink-6">
+            Didn't get it? Check your spam or junk folder for Solar of Things, then tap Resend Code.
+          </p>
         </div>
       </div>
       <BottomAction
