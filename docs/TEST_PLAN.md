@@ -201,7 +201,7 @@ v4.4.3 修复 Android 扫不到设备(客户端过滤)与 PWA Open Settings 跳�
 ---
 
 ## 11. 自动化覆盖现状(全部可在 CLI 运行)
-- **单元 + 接口契约**(`src/**/*.test.ts`,Vitest,`npm run test:unit`,**14 个文件,125 项**):
+- **单元 + 接口契约**(`src/**/*.test.ts`,Vitest,`npm run test:unit`,**81 个文件,789 项**,v4.17.0 时):
   - 纯逻辑:Modbus CRC/解码/0x0133 枚举、电池时间、isApiSuccess、速报探测。
   - **BLE 直连解码/控制**(`src/protocols/bleDirect.test.ts`,新增于 v3.36.0):用合成的 UART 透传
     响应验证 `readLiveStatusBle`(含 CRC 校验失败/RC!==0/传输异常三种失败路径均返回 null,不误信
@@ -220,11 +220,24 @@ v4.4.3 修复 Android 扫不到设备(客户端过滤)与 PWA Open Settings 跳�
   - **全接口契约**(`src/api/api-contract.test.ts`,38 项):mock 传输层,逐个断言
     77 个 API 函数的端点/payload/字段约定(deviceId String、密码 md5、captchaId、
     邮箱验证码 `address` 字段、国家码去 `+`、无 userId 规则、透传 hex→base64 等)。
-- **e2e**(`tests/e2e.spec.ts`,Playwright,CI 构建后跑):认证/导航/游客/PWA 健康,25 项。
+- **e2e**(Playwright,`tests/`,CI 对本次提交的构建跑,共 43 项;真账号组 5 项另计,仅手动带账号时跑):
+  - `e2e.spec.ts`(22):认证页、邮箱验证码、游客导航(构建带 `VITE_ENABLE_GUEST=true` 才有入口)、PWA 健康。
+  - `permissions.e2e.spec.ts`(2)、`schedule-save.e2e.spec.ts`(2):首启无权限页;Sleep Mode 保存。
+  - **以下四个用模拟后端**(`tests/support/mockBackend.ts`:内存里的设备/状态/历史/告警/透传,
+    Modbus 回包带 CRC;所有外部请求被拦截,不会碰真实账号或设备),浏览器时区为洛杉矶:
+    - `realtime-history.e2e.spec.ts`(6):Real-Time Power 当日历史——请求带 `-07:00`、每页 80 条翻页;
+      两台设备各画各的、缺字段/长时间无上报断线;缓存按设备隔离且每次进入都重新请求服务器、
+      旧版无 deviceId 的游客数据被清掉;页面停留每分钟增量刷新;过零点切到新的一天;退出登录清空缓存。
+    - `devices.e2e.spec.ts`(5):AC 开关显示设备上报状态、离线设备为关且不可点;点击发 0x0080 写入并等设备回包;
+      设备没切换时提示并回到真实状态;手机断网显示横幅并锁定开关;红点覆盖所有设备、通知列表每行标明设备、打开后红点消失。
+    - `insights.e2e.spec.ts`(3):某小时读数为 Wh 且输入拆成 Solar / AC;无数据的小时显示 No data;分页失败提示数据不完整。
+    - `provisioning.e2e.spec.ts`(3):模拟 Android + `navigator.bluetooth`——打开即搜索、列出广播的设备、无扫码入口;
+      失败后返回再进入不残留失败画面;系统弹窗关闭、搜索中切后台都不重启搜索、不清空列表。
 - **真实后端冒烟**(`scripts/api-smoke.mjs`,`E2E_USER=x E2E_PASS=y npm run test:api:live`):
   在**联网机器**上真连后端,走 登录→用户信息→设备列表→设备状态,逐步 PASS/FAIL。
   (沙箱/CI 出网受限时会 403,属正常;在本地/有网环境运行。)
-- **未自动化(必须真机手测)**:BLE/配网、透传控制、原生权限/返回键/触觉、真实设备实时数据、推送。
+- **未自动化(必须真机手测)**:BLE 连接后的配网(发 Wi-Fi、绑定)、真实设备的透传控制与实时数据、
+  原生权限/返回键/触觉、推送。E2E 里的蓝牙与后端都是模拟的,只证明 APP 自身逻辑。
 
 ### CLI 命令速查
 ```

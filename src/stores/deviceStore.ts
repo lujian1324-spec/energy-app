@@ -59,7 +59,7 @@ import { passthroughDevice } from '../api/deviceApi'
 import { clearLivePassthrough } from './livePassthroughStore'
 import { clearFiringAlarms, recordFiringAlarms } from './firingAlarmsStore'
 import { FRAMES, extractPassthroughRegisters } from '../protocols/modbusProtocol'
-import { saveRatedParams, loadRatedParams } from '../db/powerflowDB'
+import { saveRatedParams, loadRatedParams, clearDeviceHistory } from '../db/powerflowDB'
 import { sanitizeUiCopy, toUserFacingError } from '../utils/uiCopy'
 
 /** 透传读取设备额定参数并缓存到 IndexedDB（24h TTL，fire-and-forget）*/
@@ -684,6 +684,9 @@ export const useDeviceStore = create<DeviceStoreState>()(
         // battery percentage on first paint.
         clearLivePassthrough()
         clearFiringAlarms()
+        // The Real-Time Power history cache is per device and per account too:
+        // the next account opens on the server's history, never on this one's.
+        void clearDeviceHistory().catch(e => console.warn('[deviceStore] history cache clear failed:', e))
         set({
           isDemoMode: false,
           devicesListReady: false,
