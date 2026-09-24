@@ -1,13 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
+import { Loader2 } from 'lucide-react'
 import Icon from '../components/Icon'
 import EmptyState from '../components/EmptyState'
 import { SecondaryHeader } from '../components/PageHeader'
 import { useDeviceStore } from '../stores/deviceStore'
 import { useAlarmDismissStore, alarmKey } from '../stores/alarmDismissStore'
+import { useFiringAlarmsStore, refreshFiringAlarms, visibleAlarmEntries } from '../stores/firingAlarmsStore'
 import { dedupeAndFilterAlarms, knownAlarmText, describeAlarmCode } from '../utils/alarmText'
-import type { FiringAlarm } from '../utils/powerOutageNotification'
 
 /** Swipe panel width (4x export `A_1.2_Notifications -v Swiped`). */
 const SWIPE_W = 72
@@ -159,7 +160,7 @@ function NotificationRow({
 
 export default function NotificationsPage() {
   const navigate = useNavigate()
-  const { selectedDeviceId, selectedDeviceState, loadDeviceState, devices } = useDeviceStore()
+  const { devices, isDemoMode } = useDeviceStore()
   const dismissed = useAlarmDismissStore(s => s.dismissed)
   const dismiss = useAlarmDismissStore(s => s.dismiss)
   const syncActive = useAlarmDismissStore(s => s.syncActive)
@@ -167,55 +168,87 @@ export default function NotificationsPage() {
   const markSeen = useAlarmDismissStore(s => s.markSeen)
   const firstSeen = useAlarmDismissStore(s => s.firstSeen)
   const markFirstSeen = useAlarmDismissStore(s => s.markFirstSeen)
+  const byDevice = useFiringAlarmsStore(s => s.byDevice)
+  const failed = useFiringAlarmsStore(s => s.failed)
 
-  // Refresh live device state so firing alarms are current on entering the page.
-  // This is a side effect (a store fetch), so it belongs in useEffect, a useMemo
-  // must stay pure and React may skip/re-run it (e.g. StrictMode) without warning.
-  useEffect(() => {
-    if (selectedDeviceId) loadDeviceState(selectedDeviceId)
-  }, [selectedDeviceId]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Real-time firing alarms from the live device state, deduped by description and
-  // with a Mains power failure's correlated undervoltage symptoms suppressed.
-  const activeAlarms = useMemo(
-    () => dedupeAndFilterAlarms((selectedDeviceState?.firingAlarms ?? []) as FiringAlarm[]),
-    [selectedDeviceState?.firingAlarms]
-  )
+  /*
+   * EVERY device's alarms, not just the selected one's. The bell on the Device
+   * page counts across all devices; this list used to show — and mark read —
+   * only the selected device, so a second device's alarm lit a dot over "You're
+   * all caught up" that opening this page could never clear (APP-20260923-004).
+   * Both now read the same store through the same visibleAlarmEntries.
+   */
+  const deviceIds = useMemo(() => devices.map(d => String(d.id)), [devices])
+  const [refreshing, setRefreshing] = useState(true)
+  const refresh = useCallback(async () => {
+    setRefreshing(true)
+    try {
+      await refreshFiringAlarms(deviceIds, { demo: isDemoMode })
+    } finally {
+      setRefreshing(false)
+    }
+  }, [deviceIds, isDemoMode])
+  useEffect(() => { void refresh() }, [refresh])
 
   // Forget dismissals for alarms that are no longer firing (so a genuinely
-  // recurring alarm reappears instead of being permanently silenced).
+  // recurring alarm reappears instead of being permanently silenced). Only for
+  // devices this refresh actually heard from: a failed read is not "cleared".
   useEffect(() => {
-    syncActive(selectedDeviceId, activeAlarms.map(a => alarmKey(selectedDeviceId, a.title)))
-  }, [activeAlarms, selectedDeviceId, syncActive])
+    if (refreshing) return
+    for (const id of deviceIds) {
+      const entry = byDevice[id]
+      if (!entry || failed[id]) continue
+      syncActive(id, dedupeAndFilterAlarms(entry.alarms).map(a => alarmKey(id, a.title)))
+    }
+  }, [refreshing, deviceIds, byDevice, failed, syncActive])
 
-  // What the user actually sees: active alarms minus the ones they swiped away.
-  const visibleAlarms = useMemo(
-    () => activeAlarms.filter(a => !dismissed.includes(alarmKey(selectedDeviceId, a.title))),
-    [activeAlarms, dismissed, selectedDeviceId]
+  // What the user actually sees: every device's active alarms minus the dismissed.
+  const entries = useMemo(
+    () => visibleAlarmEntries(byDevice, deviceIds, dismissed),
+    [byDevice, deviceIds, dismissed],
   )
 
   // Unread = not seen before this visit. Snapshot on arrival so the dots stay put
   // while the page is open, then mark everything read for next time.
   const unreadSnapshot = useRef<Set<string> | null>(null)
   useEffect(() => {
-    if (visibleAlarms.length === 0) return
-    const keys = visibleAlarms.map(a => alarmKey(selectedDeviceId, a.title))
+    if (entries.length === 0) return
+    const keys = entries.map(e => e.key)
     if (unreadSnapshot.current === null) {
       unreadSnapshot.current = new Set(keys.filter(k => !seen.includes(k)))
     }
     markSeen(keys)
     markFirstSeen(keys)
-  }, [visibleAlarms, selectedDeviceId, seen, markSeen, markFirstSeen])
+  }, [entries, seen, markSeen, markFirstSeen])
 
-  const deviceName = devices.find(d => String(d.id) === String(selectedDeviceId))?.name ?? ''
+  const nameOf = (id: string) => devices.find(d => String(d.id) === id)?.name ?? ''
+  // A read that failed is not an empty inbox: say so and offer a retry rather
+  // than "You're all caught up".
+  const loadFailed = !refreshing && entries.length === 0 && deviceIds.some(id => failed[id] !== undefined)
 
   return (
     <div className="h-full flex flex-col bg-ink-12 overflow-hidden">
       <SecondaryHeader title="Notifications" onBack={() => navigate(-1)} />
 
       <div className="flex-1 overflow-y-auto scrollbar-hide">
+        {refreshing && entries.length === 0 && (
+          <div className="flex justify-center pt-16">
+            <Loader2 size={20} className="text-primary animate-spin" aria-label="Loading" />
+          </div>
+        )}
+
+        {loadFailed && (
+          <EmptyState
+            art={`${import.meta.env.BASE_URL}ds-noti-empty.png`}
+            title="Something went wrong"
+            subtitle="Check your network connection and try again."
+            action={{ label: 'Retry', onClick: () => { void refresh() } }}
+            topOffset={157}
+          />
+        )}
+
         {/* Empty state, handoff `A_1.2_Notifications -v Empty State` */}
-        {visibleAlarms.length === 0 && (
+        {!refreshing && !loadFailed && entries.length === 0 && (
           <EmptyState
             art={`${import.meta.env.BASE_URL}ds-noti-empty.png`}
             title={'You’re all caught up'}
@@ -225,16 +258,15 @@ export default function NotificationsPage() {
         )}
 
         <AnimatePresence initial={false}>
-          {visibleAlarms.map(a => {
-            const key = alarmKey(selectedDeviceId, a.title)
-            const row = splitAlarmForRow(a, deviceName)
+          {entries.map(({ key, deviceId, alarm }) => {
+            const row = splitAlarmForRow(alarm, nameOf(deviceId))
             return (
               <NotificationRow
-                key={`firing-${a.title}`}
+                key={`firing-${key}`}
                 title={row.title}
                 description={row.description}
                 time={formatNotificationTime(
-                  alarmStartedAt(a as unknown as Record<string, unknown>)
+                  alarmStartedAt(alarm as unknown as Record<string, unknown>)
                   ?? (firstSeen[key] ? new Date(firstSeen[key]).toISOString() : undefined)
                 )}
                 unread={unreadSnapshot.current?.has(key) ?? false}

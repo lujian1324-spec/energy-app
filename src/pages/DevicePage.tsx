@@ -25,20 +25,20 @@ import PullToRefresh from '../components/PullToRefresh'
 import ManualAddDeviceModal from '../components/ManualAddDeviceModal'
 import { useDeviceStore } from '../stores/deviceStore'
 import { useAuthStore } from '../stores/authStore'
-import { useAlarmDismissStore, alarmKey } from '../stores/alarmDismissStore'
+import { useAlarmDismissStore } from '../stores/alarmDismissStore'
+import { useFiringAlarmsStore, recordFiringAlarms, recordFiringAlarmsFailed, unreadAlarmCount } from '../stores/firingAlarmsStore'
 import { usePowerStationStore } from '../stores/powerStationStore'
-import { dedupeAndFilterAlarms } from '../utils/alarmText'
-import type { FiringAlarm } from '../utils/powerOutageNotification'
-import { mapFieldsToRealtime, fetchDeviceState, passthroughDevice } from '../api/deviceApi'
-import { FRAMES } from '../protocols/modbusProtocol'
-import { isApiSuccess } from '../utils/apiClient'
+import { mapFieldsToRealtime, fetchDeviceState } from '../api/deviceApi'
+import { setAcOutput } from '../api/acOutputControl'
+import { resolveAcOutput, commandSuperseded, type AcCommand, type AcSample } from '../utils/acOutputState'
+import { parseDeviceStateTime } from '../utils/deviceStateTime'
 import { batteryTimeLabel } from '../utils/batteryTime'
 import { hapticMedium } from '../utils/haptics'
 import { loadRatedParams } from '../db/powerflowDB'
 import type { DeviceListItem, DeviceStateField } from '../api/deviceApi'
 import { getDemoDeviceState } from '../data/demoData'
 import { useBleLiveStatusStore, lookupBleLiveStatus } from '../stores/bleLiveStatusStore'
-import { useLivePassthroughStore, lookupLivePassthrough, resolveLiveValues } from '../stores/livePassthroughStore'
+import { useLivePassthroughStore, lookupLivePassthrough, resolveLiveValues, saveLivePassthrough } from '../stores/livePassthroughStore'
 import { useLivePassthrough } from '../hooks/useLivePassthrough'
 import { useSmartScheduleFlush } from '../hooks/useSmartScheduleFlush'
 import { toUserFacingError } from '../utils/uiCopy'
@@ -50,6 +50,8 @@ interface DeviceRealtimeCache {
     firingAlarms?: unknown[]
     loading: boolean
     lastUpdated: number
+    /** When the device took this cloud sample (its `time`), not when we fetched it. */
+    sampleAt?: number
   }
 }
 
@@ -77,7 +79,9 @@ export default function DevicePage() {
   const [showProvisioning, setShowProvisioning] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [bannerDismissed, setBannerDismissed] = useState(false)
-  const [powerStates, setPowerStates] = useState<Record<string, boolean>>({})
+  // AC switch commands the user just flipped; what the switch shows is decided
+  // by resolveAcOutput from these and what the device reported.
+  const [acCommands, setAcCommands] = useState<Record<string, AcCommand>>({})
   const [realtimeCache, setRealtimeCache] = useState<DeviceRealtimeCache>(() => {
     const store = useDeviceStore.getState()
     if (!store.isDemoMode) return {}
@@ -90,6 +94,7 @@ export default function DevicePage() {
           raw: mapFieldsToRealtime(state.fields),
           loading: false,
           lastUpdated: Date.now(),
+          sampleAt: parseDeviceStateTime(state.time),
         }
       }
     }
@@ -164,8 +169,9 @@ export default function DevicePage() {
       if (state) {
         setRealtimeCache(prev => ({
           ...prev,
-          [idStr]: { fields: state.fields, raw: mapFieldsToRealtime(state.fields), firingAlarms: state.firingAlarms ?? [], loading: false, lastUpdated: Date.now() },
+          [idStr]: { fields: state.fields, raw: mapFieldsToRealtime(state.fields), firingAlarms: state.firingAlarms ?? [], loading: false, lastUpdated: Date.now(), sampleAt: parseDeviceStateTime(state.time) },
         }))
+        recordFiringAlarms(idStr, state.firingAlarms)
       }
       return
     }
@@ -184,16 +190,20 @@ export default function DevicePage() {
             firingAlarms: result.data!.firingAlarms ?? [],
             loading: false,
             lastUpdated: Date.now(),
+            sampleAt: parseDeviceStateTime(result.data!.time),
           },
         }))
+        recordFiringAlarms(idStr, result.data.firingAlarms)
       } else {
         setRealtimeCache(prev => ({ ...prev, [idStr]: { ...prev[idStr], loading: false } }))
+        recordFiringAlarmsFailed(idStr)
       }
     } catch {
       setRealtimeCache(prev => ({
         ...prev,
         [idStr]: { ...prev[idStr], loading: false },
       }))
+      recordFiringAlarmsFailed(idStr)
     }
   }, [])
 
@@ -209,6 +219,7 @@ export default function DevicePage() {
           firingAlarms: selectedDeviceState.firingAlarms ?? [],
           loading: false,
           lastUpdated: Date.now(),
+          sampleAt: parseDeviceStateTime(selectedDeviceState.time),
         },
       }))
     }
@@ -224,7 +235,7 @@ export default function DevicePage() {
    * minutes older, once a minute, forever. The two are layered now and merged
    * at read time in getDeviceNum.
    */
-  useLivePassthrough(deviceIds, isAuthenticated && !isDemoMode)
+  const { refresh: refreshLive } = useLivePassthrough(deviceIds, isAuthenticated && !isDemoMode)
 
   /* SW-13: this list is where a device coming back is noticed first — every
      `loadDevices` (entering the page, pull-to-refresh) re-reads each device's
@@ -239,8 +250,21 @@ export default function DevicePage() {
     const refreshAll = () => devices.forEach(d => fetchDeviceRealtime(d.id))
     refreshAll()
     const timer = setInterval(refreshAll, 60000)
-    return () => clearInterval(timer)
-  }, [devices, isAuthenticated, fetchDeviceRealtime])
+    // Back from the background (or another phone switched the outlets meanwhile):
+    // re-read now rather than showing up to a minute of stale state — the cloud
+    // sample, and the device itself, whose reading is timed on this phone's clock
+    // and so settles the AC switch without waiting on the cloud-skew allowance.
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return
+      refreshAll()
+      if (!useDeviceStore.getState().isDemoMode) void refreshLive()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [devices, isAuthenticated, fetchDeviceRealtime, refreshLive])
 
   const getDeviceNum = (deviceId: string | number, key: string): number | null => {
     void bleEpoch
@@ -295,31 +319,77 @@ export default function DevicePage() {
     return 'Sierro'
   }
 
-  const [togglingPower, setTogglingPower] = useState<Set<string>>(new Set())
+  /** Every report of this device's AC output state, for resolveAcOutput. */
+  const acSources = (device: DeviceListItem) => {
+    void bleEpoch
+    void passthroughEpoch
+    const idStr = String(device.id)
+    const cache = realtimeCache[idStr]
+    const cloudOn = cache?.raw?.acOutputs
+    const cloud: AcSample | null = typeof cloudOn === 'boolean' ? { on: cloudOn, at: cache?.sampleAt } : null
+    const pass = lookupLivePassthrough(idStr)
+    const ble = lookupBleLiveStatus({ deviceId: device.id, dtuDtuid: (device as { dtuDtuid?: string }).dtuDtuid })
+    const passLive: AcSample | null = pass?.live?.acOutput !== undefined ? { on: pass.live.acOutput, at: pass.updatedAt } : null
+    const bleLive: AcSample | null = ble?.live?.acOutput !== undefined ? { on: ble.live.acOutput, at: ble.updatedAt } : null
+    const live = passLive && bleLive ? ((bleLive.at ?? 0) > (passLive.at ?? 0) ? bleLive : passLive) : (passLive ?? bleLive)
+    return { connected: device.isOnline === true, cloud, live }
+  }
+
+  const acView = (device: DeviceListItem) =>
+    resolveAcOutput({ ...acSources(device), command: acCommands[String(device.id)] })
+
+  // Once the device has reported a sample taken after a command, the command has
+  // nothing left to say; drop it so an aged-out live sample can never bring it back.
+  useEffect(() => {
+    const stale = devices.filter(d => commandSuperseded(acCommands[String(d.id)], acSources(d)))
+    if (stale.length === 0) return
+    setAcCommands(prev => {
+      const next = { ...prev }
+      for (const d of stale) delete next[String(d.id)]
+      return next
+    })
+    // acSources reads the live stores through their epochs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [devices, realtimeCache, passthroughEpoch, bleEpoch, acCommands])
+
+  const dropAcCommand = (idStr: string) =>
+    setAcCommands(prev => {
+      const next = { ...prev }
+      delete next[idStr]
+      return next
+    })
 
   const togglePower = async (deviceId: string | number, e: React.MouseEvent) => {
     e.stopPropagation()
     const idStr = String(deviceId)
-    if (togglingPower.has(idStr)) return
+    const device = devices.find(d => String(d.id) === idStr)
+    if (!device) return
+    const view = acView(device)
+    if (view.pending) return
     hapticMedium()
-    const current = powerStates[idStr] ?? true
-    const next = !current
-    setPowerStates(prev => ({ ...prev, [idStr]: next }))
-    setTogglingPower(prev => new Set(prev).add(idStr))
-    try {
-      const res = await passthroughDevice(idStr, {
-        data: next ? FRAMES.AC_POWER_ON : FRAMES.AC_POWER_OFF,
-        noOutput: true,
-      })
-      if (!isApiSuccess(res.code)) {
-        throw new Error(res.message ?? res.msg ?? 'Power command rejected')
-      }
-    } catch (err) {
-      setPowerStates(prev => ({ ...prev, [idStr]: current }))
-      console.error('[DevicePage] power switch failed:', err)
-      setError(toUserFacingError(err, 'Failed to switch power'))
-    } finally {
-      setTogglingPower(prev => { const s = new Set(prev); s.delete(idStr); return s })
+    const next = !view.on
+    setAcCommands(prev => ({ ...prev, [idStr]: { on: next, at: Date.now(), status: 'sending' } }))
+
+    if (isDemoMode) {
+      setAcCommands(prev => ({ ...prev, [idStr]: { on: next, at: Date.now(), status: 'sent' } }))
+      return
+    }
+
+    const r = await setAcOutput(idStr, next)
+    if (r.live) saveLivePassthrough(idStr, r.live)
+    if (r.ok && r.confirmed) {
+      // The read-back just saved is the device saying so; nothing to hold on to.
+      dropAcCommand(idStr)
+    } else if (r.ok) {
+      // Sent, but no read-back decoded: show what was asked until the device
+      // reports a sample taken after this point.
+      setAcCommands(prev => ({ ...prev, [idStr]: { on: next, at: Date.now(), status: 'sent' } }))
+    } else {
+      dropAcCommand(idStr)
+      console.error('[DevicePage] AC output switch failed:', r.reason, r.detail)
+      setError(r.reason === 'not_switched'
+        ? "The device didn't switch its AC output. Try again."
+        : 'Failed to switch power')
     }
   }
 
@@ -350,20 +420,15 @@ export default function DevicePage() {
 
   const dismissedAlarms = useAlarmDismissStore(s => s.dismissed)
   const seenAlarms = useAlarmDismissStore(s => s.seen)
-  // Unread count: firing, minus dismissed, minus already-seen — so the dot clears
-  // once Notifications has been opened (which marks alerts seen) and only lights
-  // for genuinely new alerts. Matches useActiveAlarmCount on the monitor page.
-  const activeAlarmCount = useMemo(() => {
-    let count = 0
-    for (const [idStr, entry] of Object.entries(realtimeCache)) {
-      const firing = dedupeAndFilterAlarms((entry.firingAlarms ?? []) as FiringAlarm[])
-      for (const a of firing) {
-        const key = alarmKey(idStr, a.title)
-        if (!dismissedAlarms.includes(key) && !seenAlarms.includes(key)) count++
-      }
-    }
-    return count
-  }, [realtimeCache, dismissedAlarms, seenAlarms])
+  // Unread count: every device's firing alarms, minus dismissed, minus seen —
+  // the same rows Notifications lists (visibleAlarmEntries), from the same store,
+  // over the same devices. Opening Notifications marks those rows seen, so the dot
+  // clears once the user has looked and relights only for a genuinely new alert.
+  const alarmsByDevice = useFiringAlarmsStore(s => s.byDevice)
+  const activeAlarmCount = useMemo(
+    () => unreadAlarmCount(alarmsByDevice, deviceIds, dismissedAlarms, seenAlarms),
+    [alarmsByDevice, deviceIds, dismissedAlarms, seenAlarms],
+  )
 
   if (!isAuthenticated && !isGuest) {
     return <DeviceSignInGate onSignIn={() => navigate('/login')} />
@@ -449,7 +514,7 @@ export default function DevicePage() {
               const batteryPower = getDeviceNum(device.id, 'batteryPower')
               const isCharging = batteryPower !== null && batteryPower > 0
               const connected = device.isOnline
-              const powerOn = powerStates[String(device.id)] ?? device.isOnline
+              const ac = acView(device)
               return (
                 <DeviceListCard
                   key={device.id}
@@ -460,8 +525,8 @@ export default function DevicePage() {
                   remainingBatteryCapacityKnown={remainingBatteryCapacityKnown}
                   isCharging={isCharging}
                   connected={connected}
-                  powerOn={powerOn}
-                  toggling={togglingPower.has(String(device.id))}
+                  powerOn={ac.on}
+                  toggling={ac.pending}
                   onClick={() => handleDeviceClick(device)}
                   onTogglePower={togglePower}
                 />

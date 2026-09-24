@@ -16,22 +16,7 @@ import { SIERRO_MODELS, type SierroModel } from '../data/deviceModels'
 import { useBleLiveStatusStore, lookupBleLiveStatus } from '../stores/bleLiveStatusStore'
 import { useLivePassthroughStore, lookupLivePassthrough, resolveLiveValues } from '../stores/livePassthroughStore'
 import { useLivePassthrough, LIVE_PASSTHROUGH_FAST_INTERVAL_MS } from '../hooks/useLivePassthrough'
-
-/**
- * /state/latest 的 `time` 是「Unix 秒的字串」（见 demoData.getDemoDeviceState），
- * 直接丢给 `new Date('1755705600')` 会得到 Invalid Date → NaN。这里容错解析：
- * 纯数字按 epoch 处理（>=13 位当毫秒，否则当秒 *1000），其余按 ISO 字串解析。
- * 返回毫秒时间戳；无法解析时返回 undefined。
- */
-function parseDeviceStateTime(time: string | undefined): number | undefined {
-  if (!time) return undefined
-  if (/^\d+$/.test(time)) {
-    const n = Number(time)
-    return time.length >= 13 ? n : n * 1000
-  }
-  const ms = new Date(time).getTime()
-  return Number.isNaN(ms) ? undefined : ms
-}
+import { parseDeviceStateTime } from '../utils/deviceStateTime'
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function DeviceMonitorPage() {

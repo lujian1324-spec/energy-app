@@ -7,10 +7,11 @@ import type { FiringAlarm } from '../utils/powerOutageNotification'
 /**
  * How many UNREAD alerts the bell should badge for the selected device: what is
  * firing right now, deduped, minus anything already dismissed AND minus anything
- * already seen. Deliberately the same inputs Notifications uses, so a bell that
- * reads this cannot disagree with the list it opens — and because opening
- * Notifications marks every visible alert `seen`, the dot clears once the user has
- * looked, instead of staying lit for as long as the alarm keeps firing.
+ * already seen. Notifications lists every device's alarms (firingAlarmsStore),
+ * which loadDeviceState feeds from this same state read, so this device's rows are
+ * always among the list's — a dot here always has a row behind it — and because
+ * opening Notifications marks every visible alert `seen`, the dot clears once the
+ * user has looked, instead of staying lit for as long as the alarm keeps firing.
  *
  * Device Monitor used to light its dot from the device list's own `isAlarmed`
  * flag, which stays raised for a device that has an alarm on record — leaving a
