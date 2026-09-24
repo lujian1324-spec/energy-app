@@ -58,6 +58,11 @@ export default function SettingPage() {
   const [pushOutage, setPushOutage] = useState(settings.pushNotifications)
   const [pushLowBattery, setPushLowBattery] = useState(settings.pushLowBattery ?? false)
   const [lowBatteryThreshold, setLowBatteryThreshold] = useState(settings.lowBatteryThreshold ?? 30)
+  // This page stays mounted across sign-out / sign-in (APP-008), so the local
+  // copies above must follow the store when another account's settings arrive.
+  useEffect(() => { setPushOutage(settings.pushNotifications) }, [settings.pushNotifications])
+  useEffect(() => { setPushLowBattery(settings.pushLowBattery ?? false) }, [settings.pushLowBattery])
+  useEffect(() => { setLowBatteryThreshold(settings.lowBatteryThreshold ?? 30) }, [settings.lowBatteryThreshold])
 
   // 任一推送开关变化后，编排服务端推送：
   // - 打开任一开关 → 原生:接线 APNs/FCM 并上报 token;Web:VAPID 订阅 + 上报

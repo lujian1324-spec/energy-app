@@ -167,6 +167,21 @@ interface DeviceStoreState {
 
 // 竞态保护：请求序号
 let stateRequestSeq = 0
+let detailsRequestSeq = 0
+
+/**
+ * `selectedDeviceState` only when it is this device's. The store keeps the last
+ * state it loaded, and a reply for the device just left can land after the
+ * switch; a page showing one device must not read another's fields.
+ */
+export function stateForDevice(
+  state: DeviceStateResponse | null,
+  deviceId: string | number | null | undefined,
+): DeviceStateResponse | null {
+  if (!state) return null
+  if (deviceId != null && state.deviceId != null && String(state.deviceId) !== String(deviceId)) return null
+  return state
+}
 let alarmRequestSeq = 0
 let energyFlowRequestSeq = 0
 
@@ -248,8 +263,12 @@ export const useDeviceStore = create<DeviceStoreState>()(
       // ─── 设备详情 ───
 
       loadDeviceDetails: async (deviceId) => {
+        const seq = ++detailsRequestSeq
         try {
           const result = await fetchDeviceDetails(deviceId)
+          // A reply for the device the user has already left (switching fast)
+          // must not land on the one now selected.
+          if (seq !== detailsRequestSeq || String(get().selectedDeviceId) !== String(deviceId)) return
           if ((result.code === 0 || result.code === '0') && result.data) {
             set({ selectedDeviceDetails: result.data })
           }
@@ -282,7 +301,11 @@ export const useDeviceStore = create<DeviceStoreState>()(
             recordFiringAlarms(deviceId, result.data.firingAlarms)
             // Push notifications for firing alarms (Power Outage has its own toggle;
             // everything else is covered by the generic Device Alarms toggle)
-            const details = get().selectedDeviceDetails
+            // This device's own name and online flag — not the selected one's,
+            // which is a different device whenever this is a background read.
+            const selected = get().selectedDeviceDetails
+            const details = get().devices.find(d => String(d.id) === String(deviceId))
+              ?? (selected && String(selected.id) === String(deviceId) ? selected : null)
             if (details?.isOnline) {
               const { settings } = usePowerStationStore.getState()
               const firingAlarms = result.data.firingAlarms ?? []

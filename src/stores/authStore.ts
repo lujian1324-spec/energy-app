@@ -15,8 +15,10 @@ import {
 import { tokenStore } from '../utils/apiClient'
 import { sanitizeUiCopy, toUserFacingError } from '../utils/uiCopy'
 import { useDeviceStore } from './deviceStore'
+import { usePowerStationStore } from './powerStationStore'
 import { disableWebPush } from '../utils/pushNotification'
 import { teardownNativePush } from '../utils/nativePush'
+import { beginAccountSettings, endAccountSettings } from '../utils/accountSettings'
 
 interface AuthState {
   isAuthenticated: boolean
@@ -35,6 +37,15 @@ interface AuthState {
   restoreSession: () => Promise<void>
   /** 进入游客模式（跳过 API 登录） */
   setGuestMode: () => void
+}
+
+/**
+ * A session restored on launch keeps this account's settings. A set saved
+ * before settings had an owner is adopted by the account still signed in.
+ */
+function adoptRestoredSettings(): void {
+  const uid = localStorage.getItem('iot_user_id')
+  if (uid) usePowerStationStore.getState().switchSettingsAccount(uid, { adoptUnowned: true })
 }
 
 /** 判断业务响应码是否成功 */
@@ -74,6 +85,7 @@ export const useAuthStore = create<AuthState>()(
             // powerflow-device-store 里，如果用户之前用过 "Continue as Guest"，
             // 不清除的话真实登录后仍会显示上一次游客会话残留的假数据（RELEASE_PLAN P1-2）。
             useDeviceStore.getState().exitDemoMode()
+            beginAccountSettings(result.data.userId, result.data.email ?? result.data.account ?? username)
             set({ isAuthenticated: true, isGuest: false, user: result.data, loading: false, error: null })
             return true
           }
@@ -97,6 +109,8 @@ export const useAuthStore = create<AuthState>()(
         await apiLogout()
         // 清除 demo 模式
         useDeviceStore.getState().exitDemoMode()
+        // This account's settings are put away; whoever signs in next starts clean.
+        endAccountSettings()
         set({ isAuthenticated: false, isGuest: false, user: null, error: null, sessionReady: true })
       },
 
@@ -125,6 +139,7 @@ export const useAuthStore = create<AuthState>()(
         // Step 1: 用现有 token 验证
         const valid = await verifySession()
         if (valid) {
+          adoptRestoredSettings()
           set({ isAuthenticated: true, isGuest: false, sessionReady: true })
           return
         }
@@ -135,6 +150,7 @@ export const useAuthStore = create<AuthState>()(
           // 刷新成功，再验证一次
           const valid2 = await verifySession()
           if (valid2) {
+            adoptRestoredSettings()
             set({ isAuthenticated: true, isGuest: false, sessionReady: true })
             return
           }
@@ -143,6 +159,7 @@ export const useAuthStore = create<AuthState>()(
         // Step 3: 全部失败，清除会话
         tokenStore.clear()
         localStorage.removeItem('iot_user_id')
+        endAccountSettings()
         set({ isAuthenticated: false, user: null, sessionReady: true })
       },
     }),
@@ -168,6 +185,7 @@ if (typeof window !== 'undefined') {
     if (store.isAuthenticated) {
       tokenStore.clear()
       localStorage.removeItem('iot_user_id')
+      endAccountSettings()
       useAuthStore.setState({ isAuthenticated: false, user: null, sessionReady: true })
     }
   })

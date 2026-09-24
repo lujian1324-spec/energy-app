@@ -165,6 +165,11 @@ Use the label canon below; same metric = same label everywhere except DebugParam
   "The device didn't switch its AC output." and the switch shows the device's state. Cloud state is
   re-read on return to the foreground; the live layer already does.
 - *Bell dot*: `unreadAlarmCount()` over **every** device, from `firingAlarmsStore` (see NotificationsPage).
+- **Fast device switches (v4.17.1).** `loadDeviceDetails` drops a reply that is not the newest or not
+  for the selected device. `selectedDeviceState` is the last state loaded (the first-add BLE capture
+  relies on that), so pages read it through `stateForDevice(state, routeId)` — DeviceMonitorPage,
+  DeviceDetailPage and DebugParamsPage — and a background read's push notification uses that device's
+  own name/online flag, not the selected device's.
 - **Phone offline (v4.15.4, APP-20260923-002).** `useOnline()` (`src/hooks/useOnline.ts`, online/offline
   events) drives `OfflineBanner` ("No internet connection. Check your network and try again.") on this page
   and DeviceMonitorPage, locks the card's AC switch (`controlsLocked`) and makes the monitor header say
@@ -185,10 +190,15 @@ lives on independently and is still referenced elsewhere.)
   (badge in %, curve from `HistoryPoint.soc`); AC/Solar/Output tabs show power (W), auto-scaled.
   Driven by `RealTimePowerChart`'s `batteryAsSoc`/`batterySoc` props (the shared chart still defaults
   to the power view for the Battery tab).
-- **Today's history (v4.17.0).** `useHistoryFetcher(id, dayStart, dayEnd, { live: true })` reads
-  `POST /deviceState/attribute/record/list` the way the Siseli client's `doGetDeviceHistory` does
-  (`deviceId`, `fromTime`/`toTime` as local ISO **with offset** via `toIsoTz` in
-  `src/utils/historyPoints.ts`, `orderByTimeAsc: true`, `count: 80`, every page until a short one).
+- **Today's history (v4.17.0; source v4.17.2).** `useHistoryFetcher(id, dayStart, dayEnd, { live: true })`
+  reads the day the way the Solar of Things console does (`docs/siseli-api.md`):
+  `POST /deviceState/simple/attribute/keys/history/v1` with `keys` = the four fields below, `count: 1500`,
+  `orderByTimeAsc: true`, `fromTime`/`toTime` as local ISO **with offset** (`toIsoTz` in
+  `src/utils/historyPoints.ts`) and an `IOT-Time-Zone` header on this call only. The reply is columnar
+  (`payload.timeSeries` + one aligned array per key, `null` = absent) → `columnarToPoints()`; a frame with
+  none of the four keys is dropped; pages end on a short page or `page >= total`. If page 1 is refused
+  (not a success, or no columnar payload) the session falls back to `POST /deviceState/attribute/record/list`
+  (Siseli app `doGetDeviceHistory`, `count: 80`) — never a blank chart over it.
   Tabs → fields: Battery `remainingBatteryCapacity`, AC (input) `exchangeChargingPower`, Solar
   `generationPower`, Output (AC output) `outputPower`. A missing field is `null` and a silence longer
   than `maxGapMs()` (3× cadence, 15–60 min) breaks the line — never 0 W, never a bridge. The tail is
@@ -202,7 +212,7 @@ lives on independently and is still referenced elsewhere.)
 
 **DeviceDetailPage** (`/device/:id/settings` — Device Info)
 - *Name edit*, *icon picker*.
-- *Device Info*: model, **Serial Number** (`serialNumber`), **Rated Capacity** (`acInvOutputPower×2`, Wh→kWh), **Rated Output Power** W (`ratedPower`), **Rated Voltage** 120V (fixed), **Cycles** (`numberOfBatteryUsageCycles`), **Temperature** °F (`batteryTemp`), Wi-Fi (`isOnline`), firmware (`softwareVersion`).
+- *Device Info*: model, **Serial Number** (v4.17.1: the device's Bluetooth ID — `dtuDtuid` from the record, else `RatedParams.bleId` saved at add time, else `--`; `deviceSerialNumber()` in `src/utils/deviceSerial.ts`. Never the record's generated `serialNumber` or a placeholder), **Rated Capacity** (`acInvOutputPower×2`, Wh→kWh), **Rated Output Power** W (`ratedPower`), **Rated Voltage** 120V (fixed), **Cycles** (`numberOfBatteryUsageCycles`), **Temperature** °F (`batteryTemp`), Wi-Fi (`isOnline`), firmware (`softwareVersion`).
 - *Sleep Mode editor* (`sleepFrom`/`sleepTo` + scheduler), *Battery Priority sheet* (Backup 100% / Savings 60%), *delete dialog*.
   Saving Sleep Mode claims the device for `sleep` (SW-12 — see Smart Schedule below), which disarms
   Smart Schedule's window, and reports a relay that refused the upload instead of dropping it.
@@ -253,6 +263,15 @@ lives on independently and is still referenced elsewhere.)
   sheet were removed with `activateFounderBadge()`: it generated the number from the clock,
   could hand two people the same badge, and redeeming as a real member would overwrite their
   roster number with a made-up one. `applyFoundingMember()` is now the only writer.
+- **Settings follow the account (v4.17.1).** `settings` / `peakShavingSettings` in `powerflow-storage`
+  carry a `settingsOwner` (userId). `switchSettingsAccount()` (powerStationStore) puts the outgoing
+  account's set under `sierro-account-settings-{userId}` and loads the incoming one's (defaults when
+  none); `src/utils/accountSettings.ts` calls it on every sign-in (`LoginPage.finishSignIn`,
+  `authStore.login`), sign-out, failed restore and `auth:expired`, and re-reads the roster for the
+  Founding Member tag at sign-in (`syncFoundingMember`: on for a member, cleared otherwise). A restored
+  session adopts an unowned set from before this; a fresh sign-in never does. SettingPage stays mounted,
+  so its local toggle/threshold copies follow the store. Before this, B signing in after A saw A's tag,
+  number, push toggles and threshold.
 - *Push Notifications*: Power Outage (`pushNotifications`), Low Battery (`pushLowBattery`)+threshold slider (`lowBatteryThreshold`), Solar Status (`pushSolarStatus`). Toggles drive Web Push enable/disable. (The `pushDeviceAlarms` "Device Alarms" toggle was removed from the UI in v4.7.7 — the setting field and relay/notification plumbing remain, but it no longer surfaces so it stays at its default `false`; the Notifications alarm center still lists every alarm type regardless.)
   Section visibility is gated by `PUSH_ENABLED` (`src/config/webPush.ts`) — `true` in every production
   build since v3.35.5 (requests the OS notification permission; safe on its own). A **separate** flag,
@@ -451,6 +470,7 @@ don't let it happen again):
 |---|---|
 | `docs/PRODUCT_SPEC.md` | Deep implementation reference (store shapes, per-page `useState`/`useEffect`, IndexedDB schema) — CLAUDE.md wins on routes/pages if they ever disagree. |
 | `docs/RELEASE_PLAN.md` | P0–P4 issue tracker: what's fixed (✅ + version tag), what's still debt/pending. Update in place, don't leave stale "still TODO" claims once something ships. |
+| `docs/siseli-api.md` | Captured Solar of Things console call for a device's attribute history (`keys/history/v1`, columnar reply) — what Real-Time Power reads. |
 | `docs/TEST_PLAN.md` | The one canonical manual+automated test matrix (supersedes the deleted `TEST_CHECKLIST.md`). |
 | `API_REFERENCE.md` | Full backend API surface (all 41 groups/227 endpoints Sierro's own backend exposes), not just what this app calls — a superset reference. |
 | `docs/NATIVE_SETUP.md` | Capacitor native plugin/permission setup for Android/iOS builds. |

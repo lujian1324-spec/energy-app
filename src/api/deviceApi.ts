@@ -1104,6 +1104,49 @@ export async function fetchHistoryData(
   )
 }
 
+export interface KeysHistoryV1Request {
+  deviceId: string
+  keys: string[]
+  /** Local time with an explicit offset, e.g. 2026-09-24T00:00:00-07:00. */
+  fromTime: string
+  toTime: string
+  page: number
+  count: number
+  orderByTimeAsc: boolean
+}
+
+export interface KeysHistoryV1Response {
+  page?: number
+  /** Points in this page. */
+  count?: number
+  /** Seen as 1 for a one-page day; read as pages (unverified), never trusted alone. */
+  total?: number
+  payload?: {
+    timeSeries?: unknown[]
+    fields?: Record<string, unknown[] | null | undefined>
+    formatters?: unknown
+    fieldInfo?: unknown
+  } | null
+}
+
+/**
+ * A device's attribute history for chosen keys, as the Solar of Things console
+ * reads it (Device details → Data Analysis; docs: siseli-history-api-handoff).
+ * The reply is columnar: one `timeSeries` and an aligned array per key.
+ * The console sends its zone in `IOT-Time-Zone`; so does this call.
+ */
+export async function fetchKeysHistoryV1(
+  req: KeysHistoryV1Request
+): Promise<ApiResponse<KeysHistoryV1Response>> {
+  let zone = ''
+  try { zone = Intl.DateTimeFormat().resolvedOptions().timeZone ?? '' } catch { /* ignore */ }
+  return api.post<KeysHistoryV1Response>(
+    '/deviceState/simple/attribute/keys/history/v1',
+    { ...req, deviceId: String(req.deviceId) },
+    zone ? { 'IOT-Time-Zone': zone } : undefined,
+  )
+}
+
 /**
  * 获取设备当天全部属性历史记录（doGetDeviceHistory 模式）。
  * 对应 Dart 参考实现中的 POST /deviceState/attribute/record/list。

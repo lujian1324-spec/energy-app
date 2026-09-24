@@ -7,7 +7,7 @@ import { Check } from 'lucide-react'
 import BatteryRing from '../components/BatteryRing'
 import Icon from '../components/Icon'
 import RealTimePowerChart from '../components/RealTimePowerChart'
-import { useDeviceStore } from '../stores/deviceStore'
+import { useDeviceStore, stateForDevice } from '../stores/deviceStore'
 import { useActiveAlarmCount } from '../hooks/useActiveAlarmCount'
 import { mapFieldsToRealtime } from '../api/deviceApi'
 import { batteryTimeLabel } from '../utils/batteryTime'
@@ -351,7 +351,7 @@ export default function DeviceMonitorPage() {
             batteryAsSoc
             batterySoc={remainingBatteryCapacity}
             powerAxisMax={powerAxisMax}
-            lastSyncAt={parseDeviceStateTime(selectedDeviceState?.time)}
+            lastSyncAt={parseDeviceStateTime(stateForDevice(selectedDeviceState, id)?.time)}
           />
         </motion.div>
       </div>

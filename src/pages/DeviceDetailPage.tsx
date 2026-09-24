@@ -11,7 +11,8 @@ import {
 import Icon from '../components/Icon'
 import { useNavigate, useParams } from 'react-router-dom'
 import { usePowerStationStore } from '../stores/powerStationStore'
-import { useDeviceStore } from '../stores/deviceStore'
+import { useDeviceStore, stateForDevice } from '../stores/deviceStore'
+import { deviceSerialNumber } from '../utils/deviceSerial'
 import { mapFieldsToRealtime } from '../api/deviceApi'
 import { applySleepSchedule } from '../api/smartScheduleControl'
 import {
@@ -214,7 +215,9 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const { id: routeId } = useParams<{ id: string }>()
 
   // ── Real device data (useDeviceStore) — used when mounted as a route ──
-  const { devices, selectedDeviceId, selectedDeviceState, selectDevice, loadDeviceState, renameDeviceLocal, removeDevice, updateDeviceInfo, isDemoMode } = useDeviceStore()
+  const { devices, selectedDeviceId, selectedDeviceState: storeDeviceState, selectDevice, loadDeviceState, renameDeviceLocal, removeDevice, updateDeviceInfo, isDemoMode } = useDeviceStore()
+  // Only this device's state: a late reply for the previous device is ignored.
+  const selectedDeviceState = stateForDevice(storeDeviceState, routeId)
   const realDevice = devices.find(d => String(d.id) === routeId)
 
   useEffect(() => {
@@ -385,6 +388,8 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
       batteryType: spec.batteryType,
       batteryHealth: spec.batteryHealth,
       serialNumber,
+      // Keep the Bluetooth ID recorded at add time; a model change is not a new device.
+      bleId: ratedParams?.bleId,
     }
     try { await saveRatedParams(profile); setRatedParams(profile) } catch { /* ignore */ }
     setShowModelSheet(false)
@@ -627,7 +632,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             </button>
             <InfoRow
               label="Serial Number"
-              value={realDevice?.serialNumber || ratedParams?.serialNumber || (powerStation as any).serialNumber || 'SNXXXX'}
+              value={deviceSerialNumber(realDevice, ratedParams)}
             />
             <InfoRow
               label="Capacity"

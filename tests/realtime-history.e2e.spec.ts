@@ -13,9 +13,12 @@ test.use({ timezoneId: E2E_TZ })
 
 /** 2026-09-24 15:00 in Los Angeles. */
 const NOW = new Date('2026-09-24T15:00:00-07:00')
-const HISTORY = '/deviceState/attribute/record/list'
-/** The chart's requests (count 80); Insights stays mounted and reads the same endpoint with 300. */
-const chartCalls = (api: MockBackend, id: string) => api.callsTo(HISTORY, id).filter(c => c.body.count === 80)
+/** The console's call the chart makes (siseli-history-api-handoff). */
+const KEYS_V1 = '/deviceState/simple/attribute/keys/history/v1'
+/** The Siseli app's call it falls back to (count 80); Insights reads it too, with 300. */
+const RECORD_LIST = '/deviceState/attribute/record/list'
+const chartCalls = (api: MockBackend, id: string) => api.callsTo(KEYS_V1, id)
+const fallbackCalls = (api: MockBackend, id: string) => api.callsTo(RECORD_LIST, id).filter(c => c.body.count === 80)
 
 // Garage: Battery 60 %, AC 100 W, Solar 50 W, Output 120 W, silent 02:00–05:00.
 // Cabin: Battery 30 %, no AC reading at all, Solar 200 W, Output 400 W.
@@ -86,7 +89,7 @@ test.describe('Real-Time Power history', () => {
     await signIn(page)
   })
 
-  test('asks for today with the zone offset, every page, like doGetDeviceHistory', async ({ page }) => {
+  test('asks for today\'s four keys the way the Solar of Things console does', async ({ page }) => {
     const api = await mockBackend(page, devices)
     await page.goto('/#/device/1001')
     await expect.poll(async () => (await readChart(page)).segments).toBeGreaterThan(0)
@@ -94,15 +97,28 @@ test.describe('Real-Time Power history', () => {
     const calls = chartCalls(api, '1001')
     expect(calls[0].body).toEqual({
       deviceId: '1001',
+      keys: ['remainingBatteryCapacity', 'exchangeChargingPower', 'generationPower', 'outputPower'],
       fromTime: '2026-09-24T00:00:00-07:00',
       toTime: '2026-09-24T23:59:59-07:00',
       page: 1,
-      count: 80,
+      count: 1500,
       orderByTimeAsc: true,
     })
-    // 00:00–02:00 and 05:00–15:00 every 5 min = 144 samples → two pages of 80.
-    expect(calls.map(c => c.body.page)).toEqual([1, 2])
+    expect(calls[0].headers['iot-time-zone']).toBe(E2E_TZ)
+    // 00:00–02:00 and 05:00–15:00 every 5 min = 144 frames: one page.
+    expect(calls.map(c => c.body.page)).toEqual([1])
+    expect(fallbackCalls(api, '1001')).toHaveLength(0)
     expect((await readChart(page)).failedNote).toBe(false)
+  })
+
+  test('falls back to record/list where the platform refuses the console\'s call', async ({ page }) => {
+    devices[0].refuseKeysV1 = true
+    const api = await mockBackend(page, devices)
+    await page.goto('/#/device/1001')
+    await expect.poll(async () => (await readChart(page)).heights).toEqual(['27.0'])
+    expect((await readChart(page)).segments).toBe(2)
+    // 144 samples through record/list: two pages of 80.
+    expect(fallbackCalls(api, '1001').map(c => c.body.page)).toEqual([1, 2])
   })
 
   test('each device draws only its own readings, with gaps where nothing was reported', async ({ page }) => {

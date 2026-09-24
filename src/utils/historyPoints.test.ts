@@ -7,7 +7,7 @@ process.env.TZ = 'America/Los_Angeles'
 
 import { describe, it, expect } from 'vitest'
 import type { DeviceAttributeRecord } from '../api/deviceApi'
-import { maxGapMs, mergePoints, recordToPoint, seriesSegments, toIsoTz, type HistoryPoint } from './historyPoints'
+import { columnarToPoints, maxGapMs, mergePoints, recordToPoint, seriesSegments, toIsoTz, type HistoryPoint } from './historyPoints'
 
 const rec = (time: string, fields: Record<string, unknown>): DeviceAttributeRecord => ({
   time,
@@ -44,6 +44,37 @@ describe('recordToPoint', () => {
   it('skips a record without a usable time', () => {
     expect(recordToPoint(rec('', { outputPower: '1' }))).toBeNull()
     expect(recordToPoint(rec('not a time', { outputPower: '1' }))).toBeNull()
+  })
+})
+
+describe('columnarToPoints (keys/history/v1)', () => {
+  // The handoff's own example shape: shared timeSeries, one array per key, null = absent.
+  const payload = {
+    timeSeries: ['2026-09-24T08:07:54.860Z', '2026-09-24T08:09:07.502Z', '2026-09-24T08:10:00.000Z', 'bad'],
+    fields: {
+      remainingBatteryCapacity: [null, 93.8, null, 50],
+      outputPower: [null, 120, 65534, 10],
+      exchangeChargingPower: [null, 0, null, 0],
+      generationPower: [null, 40, null, 0],
+    },
+  }
+
+  it('zips each frame\'s values by index', () => {
+    const pts = columnarToPoints(payload)
+    expect(pts[0]).toMatchObject({ timestamp: Date.parse('2026-09-24T08:09:07.502Z'), soc: 93.8, output: 120, ac: 0, solar: 40, battery: -80 })
+  })
+
+  it('drops a frame that carries none of the four keys, and one without a usable time', () => {
+    const pts = columnarToPoints(payload)
+    // Frame 0 is all null, frame 3 has no time; frame 2 has only an unfilled register.
+    expect(pts.map(p => p.time)).toEqual(['2026-09-24T08:09:07.502Z', '2026-09-24T08:10:00.000Z'])
+    expect(pts[1]).toMatchObject({ output: null, soc: null })
+  })
+
+  it('treats a key the reply left out as absent', () => {
+    expect(columnarToPoints({ timeSeries: ['2026-09-24T08:00:00Z'], fields: { outputPower: [5] } })[0])
+      .toMatchObject({ output: 5, soc: null, ac: null, solar: null })
+    expect(columnarToPoints(null)).toEqual([])
   })
 })
 
