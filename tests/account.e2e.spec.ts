@@ -109,16 +109,27 @@ test.describe('Sign-in and per-account state', () => {
     await expect(thresholdValue(page)).toHaveText('10%')
   })
 
-  test('Device Info shows the Bluetooth ID the device was added with as its Serial Number', async ({ page }) => {
-    const devices: MockDevice[] = [{ id: '1001', name: 'Garage', dtuDtuid: '43767893781169874514' }]
+  test('Device Info: Serial Number is the device\'s own serial, the Bluetooth ID is its own row (R15)', async ({ page }) => {
+    const devices: MockDevice[] = [
+      { id: '1001', name: 'Garage', dtuDtuid: '43767893781169874514', serialNumber: 'SN26312510CN003146260849', isVirtualSerialNumber: false },
+      { id: '2002', name: 'Cabin', dtuDtuid: '00112233445566778899', serialNumber: 'SR1000-778899', isVirtualSerialNumber: true },
+    ]
     await signIn(page)
     await mockBackend(page, devices)
+    const rowOf = (label: string) => page.locator('div').filter({ has: page.getByText(label, { exact: true }) }).last()
+
     await page.goto('/#/device/1001/settings')
     await page.getByText('Device Info', { exact: true }).click()
-    const row = page.locator('div').filter({ has: page.getByText('Serial Number', { exact: true }) }).last()
-    await expect(row).toContainText('43767893781169874514')
-    // Not the record's virtual serial, and never a placeholder.
-    await expect(row).not.toContainText('SN1001')
+    await expect(rowOf('Serial Number')).toContainText('SN26312510CN003146260849')
+    await expect(rowOf('Bluetooth ID')).toContainText('43767893781169874514')
+    await expect(rowOf('Serial Number')).not.toContainText('43767893781169874514')
+
+    // A serial the app generated at bind time is never shown as the unit's.
+    await page.goto('/#/device/2002/settings')
+    await page.getByText('Device Info', { exact: true }).click()
+    await expect(rowOf('Serial Number')).toContainText('--')
+    await expect(rowOf('Serial Number')).not.toContainText('SR1000-778899')
+    await expect(rowOf('Bluetooth ID')).toContainText('00112233445566778899')
     await expect(page.getByText('SNXXXX')).toHaveCount(0)
   })
 })

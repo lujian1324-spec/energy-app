@@ -1,21 +1,35 @@
 /**
- * Device Info's Serial Number is the Bluetooth ID read when the device was added.
+ * Device Info: Serial Number is the device's own serial; the Bluetooth ID is a
+ * separate, labelled row (after-sales R15).
  */
 import { describe, it, expect } from 'vitest'
-import { deviceSerialNumber } from './deviceSerial'
+import { deviceBluetoothId, deviceSerialNumber } from './deviceSerial'
 
 describe('deviceSerialNumber', () => {
-  it('shows the DTU id the device was bound with', () => {
-    expect(deviceSerialNumber({ dtuDtuid: '43767893781169874514' }, { bleId: 'other' })).toBe('43767893781169874514')
+  it('shows a serial the device reported', () => {
+    expect(deviceSerialNumber({ serialNumber: 'SN26312510CN003146260849', isVirtualSerialNumber: false }))
+      .toBe('SN26312510CN003146260849')
   })
 
-  it('falls back to the id saved on this phone at add time', () => {
-    expect(deviceSerialNumber({ dtuDtuid: '' }, { bleId: '00112233445566778899' })).toBe('00112233445566778899')
-    expect(deviceSerialNumber(undefined, { bleId: ' 0011 ' })).toBe('0011')
+  it('never shows a virtual serial the app generated at bind time', () => {
+    expect(deviceSerialNumber({ serialNumber: 'SR1000-874514', isVirtualSerialNumber: true })).toBe('--')
+    // Even when the record does not say it is virtual, the generated form is recognised.
+    expect(deviceSerialNumber({ serialNumber: 'SR2000-123456' })).toBe('--')
   })
 
-  it('never shows a made-up serial: "--" when no Bluetooth ID is known', () => {
-    expect(deviceSerialNumber({ dtuDtuid: null } as never, null)).toBe('--')
-    expect(deviceSerialNumber(null, undefined)).toBe('--')
+  it('shows "--" rather than a placeholder when there is none', () => {
+    expect(deviceSerialNumber({ serialNumber: '' })).toBe('--')
+    expect(deviceSerialNumber(undefined)).toBe('--')
+  })
+})
+
+describe('deviceBluetoothId', () => {
+  it('is the DTU id the device was bound with', () => {
+    expect(deviceBluetoothId({ dtuDtuid: '43767893781169874514' }, { bleId: 'other' })).toBe('43767893781169874514')
+  })
+
+  it('falls back to the id saved on this phone at add time, then "--"', () => {
+    expect(deviceBluetoothId({ dtuDtuid: '' }, { bleId: ' 00112233445566778899 ' })).toBe('00112233445566778899')
+    expect(deviceBluetoothId(null, undefined)).toBe('--')
   })
 })

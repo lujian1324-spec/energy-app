@@ -60,11 +60,11 @@ describe('priorityFromWorkMode', () => {
 describe('resolveBatteryPriority', () => {
   const base = { deviceWorkMode: undefined as unknown, remembered: null, pending: null, current: 1 as const }
 
-  it('takes the device read-back when it reports a priority', () => {
+  it('uses the cloud workMode only as a first guess, never as a confirmation', () => {
     expect(resolveBatteryPriority({ ...base, deviceWorkMode: 2 }))
-      .toEqual({ priority: 2, confirmed: true })
+      .toEqual({ priority: 2, confirmed: false })
     expect(resolveBatteryPriority({ ...base, deviceWorkMode: '1', current: 2 }))
-      .toEqual({ priority: 1, confirmed: true })
+      .toEqual({ priority: 1, confirmed: false })
   })
 
   it('holds the pending write while the device still reports the old value', () => {
@@ -87,9 +87,12 @@ describe('resolveBatteryPriority', () => {
       .toEqual({ priority: 2, confirmed: false })
   })
 
-  it('lets a device that reports the other priority override what we remembered', () => {
-    expect(resolveBatteryPriority({ ...base, deviceWorkMode: 1, remembered: 2, current: 2 }))
-      .toEqual({ priority: 1, confirmed: true })
+  it('R11: Savings written to the device stays Savings on re-entry, whatever the stale cloud field says', () => {
+    // SW-09 never writes workMode, so the cloud still says Backup (1) after a Savings save.
+    expect(resolveBatteryPriority({ ...base, deviceWorkMode: 1, remembered: 2, current: 1 }))
+      .toEqual({ priority: 2, confirmed: false })
+    expect(resolveBatteryPriority({ ...base, deviceWorkMode: '2', remembered: 1, current: 2 }))
+      .toEqual({ priority: 1, confirmed: false })
   })
 })
 

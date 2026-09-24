@@ -34,6 +34,13 @@ export interface MockDevice {
   failHistoryPages?: number[]
   /** The DTU id the device was bound with (read over Bluetooth at add time). */
   dtuDtuid?: string
+  /** The record's serial; `isVirtualSerialNumber` marks one the app generated at bind time. */
+  serialNumber?: string
+  isVirtualSerialNumber?: boolean
+  /** The cloud `workMode` field (1 Backup / 2 Savings); nothing the app does changes it. */
+  workMode?: number
+  /** When true every passthrough register write answers 20101 "illegal argument". */
+  refuseRegisterWrites?: boolean
   /** When true the platform answers keys/history/v1 with 20101 (app falls back to record/list). */
   refuseKeysV1?: boolean
 }
@@ -157,7 +164,8 @@ export async function mockBackend(
           list: devices.map(d => ({
             id: d.id, name: d.name, model: d.model ?? 'Sierro 2000', isOnline: d.isOnline ?? true,
             createdAt: d.createdAt ?? '2026-01-01T00:00:00Z', installedAt: d.createdAt ?? '2026-01-01T00:00:00Z',
-            serialNumber: `SN${d.id}`, dtuDtuid: d.dtuDtuid ?? '',
+            serialNumber: d.serialNumber ?? `SN${d.id}`, isVirtualSerialNumber: d.isVirtualSerialNumber ?? false,
+            dtuDtuid: d.dtuDtuid ?? '',
           })),
           total: devices.length, page: 1, count: 20,
         })
@@ -178,6 +186,7 @@ export async function mockBackend(
             remainingBatteryCapacity: v(d.soc ?? 80),
             exchangeChargingPower: v(100), generationPower: v(50), outputPower: v(120),
             acOutputs: v(!!d.acOn),
+            ...(d.workMode !== undefined ? { workMode: v(d.workMode) } : {}),
           },
           firingAlarms: (d.alarms ?? []).map((key, i) => ({
             alarmId: `${d.id}-${i}`, alarmCode: key, key, alarmMessage: '', severity: 'warning',
@@ -193,6 +202,9 @@ export async function mockBackend(
         const fn = frame[1]
         const reg = (frame[2] << 8) | frame[3]
         const value = (frame[4] << 8) | frame[5]
+        if (d.refuseRegisterWrites && (fn === 0x06 || fn === 0x10)) {
+          return route.fulfill({ json: { code: 20101, message: 'illegal argument' } })
+        }
         if (fn === 0x06 && reg === 0x0080) {
           if (d.acObeys !== false) {
             if (value === 0x01aa) d.acOn = true

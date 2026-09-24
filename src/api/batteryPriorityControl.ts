@@ -115,6 +115,8 @@ export function batteryPriorityErrorMessage(res: BatteryPriorityResult): string 
     res.failedStep === 'minSoc'
       ? `Battery Priority: the device did not accept the ${res.minSoc}% reserve`
       : 'Could not change Battery Priority'
-  const detail = res.detail?.trim()
-  return detail ? `${base} — ${detail}` : base
+  // The platform's own wording ("illegal argument", or Chinese) is for the log
+  // only (SW-15); customers were shown it verbatim (after-sales R11).
+  if (res.detail?.trim()) console.warn('[batteryPriority] failed:', res.failedStep, res.detail)
+  return `${base}. Check the device is online and try again.`
 }

@@ -126,7 +126,7 @@ describe('sanitizeUiCopy — SW-15 exception blacklist (AC-15-6)', () => {
       'Incorrect BLE key, please retry',
       'Bluetooth disconnected. Please reconnect the device and try again.',
       'The device is offline. Keep it powered on and close to the router.',
-      'Power off the device, wait 10 seconds, then power on and wait for the pairing light.',
+      'Power off the device, wait 10 seconds, then power it on again and search once more.',
       'Camera access was denied. Please enable camera permission in Settings to scan QR codes.',
     ]) {
       expect(sanitizeUiCopy(ok)).toBe(ok)

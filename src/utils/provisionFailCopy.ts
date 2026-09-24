@@ -11,7 +11,7 @@ export const BIND_FAIL_COPY = "Device connected to Wi-Fi, but couldn't be added 
 export const BIND_WIFI_HELPER = "Wi-Fi is already connected. You don't need to re-enter the password."
 export const BIND_FAIL_TITLE = "Couldn't add device"
 export const SETUP_FAILED_TITLE = 'Setup Failed'
-export const RESTART_HELP_COPY = 'Power off the device, wait 10 seconds, then power on and wait for the pairing light.'
+export const RESTART_HELP_COPY = 'Power off the device, wait 10 seconds, then power it on again and search once more.'
 
 export function bindFailTitle(failKind: FailKind, wifiConfigured: boolean): string {
   if (failKind === 'bind' || wifiConfigured) return BIND_FAIL_TITLE

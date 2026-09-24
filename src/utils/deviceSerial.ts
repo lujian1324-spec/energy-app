@@ -1,26 +1,40 @@
 /**
- * Device Info's Serial Number is the device's Bluetooth ID — the DTU id the app
- * read from the device's advertised name ("SSL_" + base64) when it was added,
- * the same string the Add Device list showed under the device (v4.17.1).
+ * Device Info identifiers (v4.17.3, after-sales R15).
  *
- * It used to show the record's `serialNumber`, which for most devices is a
- * virtual one the app generated from the model and id at bind time, and fell
- * back to a literal "SNXXXX".
+ * Customers compared the app's "Serial Number" with the sticker on the unit and
+ * found nothing alike: the app showed either a virtual serial it generated at
+ * bind time ("SR1000-123456") or, in v4.17.1, the Bluetooth module's id. Marc
+ * confirmed that id is an internal module identifier, not the product SN. So:
  *
- * Source order:
- *  1. the device record's `dtuDtuid` — what the device was bound with, so it
- *     is right on any phone the account signs in on;
- *  2. the id saved on this phone when it was added (`RatedParams.bleId`), for a
- *     record that came back without it;
- *  3. "--": no Bluetooth ID is known, and a made-up serial is not shown.
+ *  - **Serial Number** is only ever a serial the device itself reported (the
+ *    record's `serialNumber` when `isVirtualSerialNumber` is not true and it is
+ *    not in the generated `SR1000-######` form); otherwise "--".
+ *  - **Bluetooth ID** is its own row: the DTU id read from the device's
+ *    advertised name when it was added (`dtuDtuid` on the record, else the id
+ *    saved on this phone at add time). Labelled for what it is, it can no longer
+ *    be mistaken for the sticker.
  */
+
+/** The form `generateSerial()` (src/data/deviceModels.ts) invents at bind time. */
+const GENERATED_SERIAL = /^SR\d{4}-\d{6}$/i
+
+function clean(v: unknown): string {
+  return v == null ? '' : String(v).trim()
+}
+
+/** The product serial the device reported, or "--" when only a virtual one exists. */
 export function deviceSerialNumber(
+  device: { serialNumber?: unknown; isVirtualSerialNumber?: unknown } | null | undefined,
+): string {
+  const sn = clean(device?.serialNumber)
+  if (!sn || device?.isVirtualSerialNumber === true || GENERATED_SERIAL.test(sn)) return '--'
+  return sn
+}
+
+/** The Bluetooth (DTU) id the device was added with, or "--". */
+export function deviceBluetoothId(
   device: { dtuDtuid?: unknown } | null | undefined,
   rated: { bleId?: unknown } | null | undefined,
 ): string {
-  for (const v of [device?.dtuDtuid, rated?.bleId]) {
-    const s = v == null ? '' : String(v).trim()
-    if (s) return s
-  }
-  return '--'
+  return clean(device?.dtuDtuid) || clean(rated?.bleId) || '--'
 }

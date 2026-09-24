@@ -25,7 +25,7 @@ import { canConfigureWifi, wifiRequiresPassword } from '../../utils/provisionWif
 export type ConfigStage = 'Sending Wi-Fi details' | 'Connecting device' | 'Adding to account'
   | ReturnType<typeof reconnectingStage>
 
-export const DISCONNECT_COPY = 'The device disconnected during setup. Keep it powered on, stay close, and check the pairing light.'
+export const DISCONNECT_COPY = 'The device disconnected during setup. Keep it powered on, stay close, and try again.'
 export const WIFI_TIMEOUT_COPY = 'Timed out sending Wi-Fi details. Stay close to the device and try again.'
 export const BIND_TIMEOUT_COPY = "Device connected to Wi-Fi, but adding it to your account timed out. Try adding again."
 

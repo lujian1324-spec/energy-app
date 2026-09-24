@@ -136,7 +136,9 @@ describe('applyBatteryPriority — failures', () => {
     expect(res.ok).toBe(false)
     expect(res.failedStep).toBe('priority')
     expect(passthroughs()).toHaveLength(1)
-    expect(batteryPriorityErrorMessage(res)).toContain('illegal argument')
+    expect(batteryPriorityErrorMessage(res)).toBe('Could not change Battery Priority. Check the device is online and try again.')
+    // The backend's wording is never shown (after-sales R11).
+    expect(batteryPriorityErrorMessage(res)).not.toMatch(/illegal argument/i)
   })
 
   it('reports a rejected 0x0054 as its own step', async () => {
@@ -157,7 +159,8 @@ describe('applyBatteryPriority — failures', () => {
 
     expect(res.ok).toBe(false)
     expect(res.failedStep).toBe('priority')
-    expect(batteryPriorityErrorMessage(res)).toContain('network down')
+    expect(res.detail).toContain('network down')
+    expect(batteryPriorityErrorMessage(res)).not.toContain('network down')
     boom.mockRestore()
   })
 })

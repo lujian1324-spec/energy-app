@@ -103,6 +103,8 @@ test.describe('Add Device search', () => {
     await page.evaluate(() => { (window as any).__failNextScan = true })
     await page.getByRole('button', { name: 'Add device' }).click()
     await expect(page.getByRole('heading', { name: NO_DEVICES })).toBeVisible()
+    // After-sales R08: the failure copy asks for nothing the app never explains.
+    await expect(page.getByText(/pairing/i)).toHaveCount(0)
     await page.getByRole('button', { name: 'Back' }).click()
     await expect(page.getByRole('heading', { name: NO_DEVICES })).toHaveCount(0)
 

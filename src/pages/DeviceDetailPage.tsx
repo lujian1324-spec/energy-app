@@ -12,7 +12,7 @@ import Icon from '../components/Icon'
 import { useNavigate, useParams } from 'react-router-dom'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useDeviceStore, stateForDevice } from '../stores/deviceStore'
-import { deviceSerialNumber } from '../utils/deviceSerial'
+import { deviceBluetoothId, deviceSerialNumber } from '../utils/deviceSerial'
 import { mapFieldsToRealtime } from '../api/deviceApi'
 import { applySleepSchedule } from '../api/smartScheduleControl'
 import {
@@ -630,9 +630,15 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               {/* B_1.2.3 draws Model like every other row — the value alone, no chevron. */}
               <span className="text-body-md text-ink-6">{ratedParams?.model || realDevice?.model || powerStation.model || 'Sierro 1000'}</span>
             </button>
+            {/* R15: the sticker's serial only — a generated one reads "--" — and the
+                Bluetooth module id on its own, labelled row. */}
             <InfoRow
               label="Serial Number"
-              value={deviceSerialNumber(realDevice, ratedParams)}
+              value={deviceSerialNumber(realDevice)}
+            />
+            <InfoRow
+              label="Bluetooth ID"
+              value={deviceBluetoothId(realDevice, ratedParams)}
             />
             <InfoRow
               label="Capacity"
