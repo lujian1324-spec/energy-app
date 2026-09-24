@@ -106,3 +106,34 @@ it('stops a Wi-Fi retry and clears busy state if BLE reconnection fails', async 
   expect(useProvisionStore.getState().isOperating).toBe(false)
   expect(opts.configGuardRef.current).toBe(false)
 })
+
+// APP-20260826-003: a Bluetooth drop while sending Wi-Fi is retried before it fails.
+it('reconnects after a Bluetooth drop and resends the Wi-Fi details without re-entry', async () => {
+  const { hook, opts } = setup()
+  opts.wifiConfiguredRef.current = false
+  h.configWifi.mockRejectedValueOnce(new Error('Device disconnected')).mockResolvedValueOnce({ RC: 0 })
+  h.connectTo.mockRejectedValueOnce(new Error('GATT 133')).mockResolvedValueOnce(undefined)
+  const run = hook.handleConfig()
+  await vi.runAllTimersAsync()
+  await run
+  expect(h.connectTo).toHaveBeenCalledTimes(2)
+  expect(h.configWifi).toHaveBeenCalledTimes(2)
+  expect(opts.setConfigStage).toHaveBeenCalledWith('Reconnecting to device (1/3)')
+  expect(opts.setConfigStage).toHaveBeenCalledWith('Reconnecting to device (2/3)')
+  expect(opts.onWifiConfigured).toHaveBeenCalledTimes(1)
+  expect(opts.setFailKind).not.toHaveBeenCalledWith('disconnect')
+})
+
+it('reports the drop only after every reconnect attempt fails', async () => {
+  const { hook, opts } = setup()
+  opts.wifiConfiguredRef.current = false
+  h.configWifi.mockRejectedValue(new Error('Device disconnected'))
+  h.connectTo.mockRejectedValue(new Error('GATT 133'))
+  const run = hook.handleConfig()
+  await vi.runAllTimersAsync()
+  await run
+  expect(h.connectTo).toHaveBeenCalledTimes(3)
+  expect(h.configWifi).toHaveBeenCalledTimes(1)
+  expect(opts.setFailKind).toHaveBeenCalledWith('disconnect')
+  expect(opts.onWifiConfigured).not.toHaveBeenCalled()
+})

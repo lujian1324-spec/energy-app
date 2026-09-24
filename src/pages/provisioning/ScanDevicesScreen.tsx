@@ -1,7 +1,6 @@
 /**
  * BLE scan / permission / radar list screens (design p26 searching, p27 BT off).
  */
-import { Loader2 } from 'lucide-react'
 import Icon from '../../components/Icon'
 import AddDeviceHeader from './AddDeviceHeader'
 import { toast } from '../../components/Toast'
@@ -169,14 +168,14 @@ export default function ScanDevicesScreen(p: Props) {
       : `${store.errorMessage} Keep the device powered on and close by, with its LED in pairing mode. Enable Bluetooth and, on older Android phones, Location, then try again.`)
     : "Keep your phone near the Sierro device and make sure it's powered on."
 
+  /* The Bluetooth check that opens every visit (and follows a return from
+     Settings) is drawn as the search it leads into: same headline, same art,
+     rings already moving. It used to cover the page with a centred "Checking
+     Bluetooth…" overlay that vanished a moment later — the jump on entry
+     (APP-002). */
   return (
     <div className="fixed inset-0 z-50 bg-ink-12 flex flex-col">
-      {isCheckingBle && (
-        <div className="absolute inset-0 z-20 bg-ink-12/85 flex flex-col items-center justify-center">
-          <Loader2 size={32} className="text-primary animate-spin mb-4" />
-          <p className="text-body-lg text-white">Checking Bluetooth…</p>
-        </div>
-      )}
+      {isCheckingBle && <span role="status" className="sr-only">Checking Bluetooth…</span>}
       <AddDeviceHeader onBack={handleClose} onScanQr={openQr} />
 
       <div className="flex-1 min-h-0 overflow-y-auto flex flex-col px-4 safe-area-bottom">
@@ -194,7 +193,7 @@ export default function ScanDevicesScreen(p: Props) {
               className="w-full h-auto select-none"
               draggable={false}
             />
-            {isSearching && <RadarPulse />}
+            {(isSearching || isCheckingBle) && <RadarPulse />}
           </div>
         </div>
 

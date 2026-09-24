@@ -119,6 +119,19 @@ Also present but not routed standalone: `ProvisioningPage` (inside DevicePage ad
   `DevicePage`'s legacy `showQrScan` overlay closes itself without starting the camera.
   `QrScanScreen`, `DeviceQrScanOverlay`, `useQRScanner` and jsQR all stay wired: flipping the one
   flag to `true` brings the path back.
+- **Search screen resume (v4.16.2, APP-002).** Capacitor fires `appStateChange {isActive:true}` on
+  every Android `onResume` — a permission prompt or any system dialog closing counts — but
+  `{isActive:false}` only on `onStop`. `ProvisioningPage` routes each resume through
+  `resumeAction()` (`src/pages/provisioning/resumePolicy.ts`): re-check + search only when the
+  screen was blocked (permission / Bluetooth off) or the app really went to the background, and
+  never restart a search that is still running. The provision store is reset before the first
+  frame of every visit, and the Bluetooth check draws as the search layout (radar moving), not a
+  full-screen overlay.
+- **BLE drop after Wi-Fi (v4.16.3, 0923-001).** Once `handleConfig` gets RC=0 the device leaves
+  Bluetooth for Wi-Fi. `useProvisionScan`'s `onDisconnected` returns early when
+  `wifiConfiguredRef` is set (marks `bleGoneRef` only): no reconnect loop, no
+  `failKind: 'disconnect'`. Naming, icon and the cloud bind never need the link, and the step
+  still reads `'configuring'` through them, which is what used to fail a successful add.
 - Terms of Use / Privacy Policy (v4.1.2) are no longer in-app routes/local text — every link
   (`LoginPage`, `RegisterPage`, `SettingPage`, `DataExportPage`) opens the marketing site directly
   (`src/config/legalLinks.ts`: `TERMS_URL`/`PRIVACY_URL` → `sierro.us/pages/{terms,policy}`,
@@ -134,7 +147,7 @@ Also present but not routed standalone: `ProvisioningPage` (inside DevicePage ad
 Use the label canon below; same metric = same label everywhere except DebugParamsPage.
 
 **DevicePage** (`/devices`)
-- *Device card* (per device): name, model (`gatherProtocolName`/`model`), **Battery** % (`remainingBatteryCapacity`), charging dot (`batteryPower>0`), online badge (`isOnline`), AC switch.
+- *Device card* (per device): name, model (`gatherProtocolName`/`model`), **Battery** % (`remainingBatteryCapacity`), charging dot (`batteryPower>0`) plus a **Charging** label under the battery tag, online badge (`isOnline`), AC switch labelled **AC Output** (v4.15.8, APP-20260922-004: accessible name "AC Output", described by `AC_OUTPUT_HELP` — it switches the outlets, not the unit).
 - **AC switch (v4.15.1): shows what the device reports, never `isOnline`.** `resolveAcOutput()`
   (`src/utils/acOutputState.ts`) picks the newest of: the live read (Modbus run-state **0x0126 bit 2**,
   decoded as `LiveStatus.acOutput` from the passthrough/BLE `READ_ALL_STATUS`) and the cloud
@@ -147,6 +160,11 @@ Use the label canon below; same metric = same label everywhere except DebugParam
   "The device didn't switch its AC output." and the switch shows the device's state. Cloud state is
   re-read on return to the foreground; the live layer already does.
 - *Bell dot*: `unreadAlarmCount()` over **every** device, from `firingAlarmsStore` (see NotificationsPage).
+- **Phone offline (v4.15.4, APP-20260923-002).** `useOnline()` (`src/hooks/useOnline.ts`, online/offline
+  events) drives `OfflineBanner` ("No internet connection. Check your network and try again.") on this page
+  and DeviceMonitorPage, locks the card's AC switch (`controlsLocked`) and makes the monitor header say
+  "No internet" instead of "Connected". It never marks the **device** offline — the phone's network says
+  nothing about the device. The network coming back re-reads the list, cloud state and live layer.
 - *Low Battery banner*: name, `Battery below {lowBatteryThreshold}%`, remaining time (`batteryTimeLabel`).
 - *Device params modal*: **Battery** % (`remainingBatteryCapacity`), **Battery Power** W (`batteryPower`), **AC** W (`acPower`), **Solar** W (`solarPower`), **Output** W (`outputPower`), **Temperature** °F (`batteryTemp`); port states (`acOut1/2Enable`,`usbOut1Enable`,`sleepMode`,`workMode`).
 
@@ -198,7 +216,15 @@ lives on independently and is still referenced elsewhere.)
 - *Header*: days-in-service (from `installedAt`).
 - *Period selector* (Day/Week/Month/Range) + *date navigator*.
 - *CO₂ card*: CO₂ reduced Kg + eco insight + formula.
-- *Input vs. Output chart*: insight text; Week=bar pairs, Day/Month/Range=line w/ scrub tooltip (input/output kWh).
+- *Input vs. Output chart* (v4.16.0): one line chart for every period (Week was bars), shared scale for both
+  series, tap/drag to read a bucket (the reading stays). Built by `buildInsightsFrame()`
+  (`src/utils/insightsFrame.ts`): per-bucket **energy in Wh**, integrating each sample's power until the next
+  (held at most `sampleHoldCapMs` = 3× the device's typical gap, 15–60 min, so silence is not credited);
+  **input = Solar (`generationPower`) + AC (`exchangeChargingPower`)** — AC used to be ignored — and the
+  tooltip lists Solar / AC only for a bucket where that source delivered. Buckets with no samples (and
+  future ones) are `null` → gaps, never 0. CO₂ counts **solar only**. Insight: "Highest daily output this
+  week/month: {date}". History is paged until a short page (cap 200 × 300); a failed later page or the cap
+  shows "Some history … couldn't be loaded" instead of silently short totals (APP-20260923-006/007/008/009).
 - (Battery Health card removed.)
 
 **SettingPage** (`/setting`)

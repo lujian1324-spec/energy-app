@@ -48,23 +48,35 @@ export function BatteryTag({ level, connected, charging, unknown }: { level: num
   )
 }
 
+/** APP-20260922-004: what the card switch does, for anyone who reads it as whole-unit power. */
+export const AC_OUTPUT_HELP = 'Controls power to the AC outlets. Turning this off does not stop the battery from charging.'
+
 export function PowerToggle({ deviceId, on, disabled, onToggle }: {
   deviceId: string | number
   on: boolean
   disabled: boolean
   onToggle: (deviceId: string | number, e: React.MouseEvent) => void
 }) {
+  const helpId = `ac-output-help-${deviceId}`
   // Shared correctly-centered track with Settings ToggleSwitch (ui-fix-toggle).
+  // Labelled "AC Output" beside it: an unlabelled switch read as whole-unit
+  // power, so a battery still charging (lights on) after "off" looked like a
+  // failed command (APP-20260922-004). It only switches the AC outlets.
   return (
-    <ToggleSwitch
-      isOn={on}
-      disabled={disabled}
-      haptic={false}
-      ariaLabel="Power toggle"
-      onToggle={() => {
-        // Synthetic event: DeviceListCard already stopPropagations on the wrapper.
-        onToggle(deviceId, { stopPropagation() {}, preventDefault() {} } as React.MouseEvent)
-      }}
-    />
+    <span className="flex items-center gap-2">
+      <span className="text-label text-ink-5" aria-hidden>AC Output</span>
+      <span id={helpId} className="sr-only">{AC_OUTPUT_HELP}</span>
+      <ToggleSwitch
+        isOn={on}
+        disabled={disabled}
+        haptic={false}
+        ariaLabel="AC Output"
+        ariaDescribedBy={helpId}
+        onToggle={() => {
+          // Synthetic event: DeviceListCard already stopPropagations on the wrapper.
+          onToggle(deviceId, { stopPropagation() {}, preventDefault() {} } as React.MouseEvent)
+        }}
+      />
+    </span>
   )
 }

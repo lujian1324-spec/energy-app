@@ -6,6 +6,8 @@ interface ToggleSwitchProps {
   onToggle: () => void
   size?: 'sm' | 'md'
   ariaLabel?: string
+  /** id of an element that describes what the switch does. */
+  ariaDescribedBy?: string
   disabled?: boolean
   /** When false, skip the built-in light haptic (caller provides its own). */
   haptic?: boolean
@@ -18,6 +20,7 @@ export default function ToggleSwitch({
   onToggle,
   size = 'md',
   ariaLabel,
+  ariaDescribedBy,
   disabled = false,
   haptic = true,
 }: ToggleSwitchProps) {
@@ -33,6 +36,7 @@ export default function ToggleSwitch({
       role="switch"
       aria-checked={isOn}
       aria-label={ariaLabel}
+      aria-describedby={ariaDescribedBy}
       className={`
         relative rounded-full transition-colors duration-300 ease-out flex-shrink-0
         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-ink-12

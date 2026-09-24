@@ -19,9 +19,11 @@ import {
   type FailKind,
 } from '../../utils/provisionFailCopy'
 import { sanitizeUiCopy } from '../../utils/uiCopy'
+import { reconnectWithRetry, reconnectingStage, isDisconnectError } from '../../utils/bleReconnect'
 import { canConfigureWifi, wifiRequiresPassword } from '../../utils/provisionWifi'
 
 export type ConfigStage = 'Sending Wi-Fi details' | 'Connecting device' | 'Adding to account'
+  | ReturnType<typeof reconnectingStage>
 
 export const DISCONNECT_COPY = 'The device disconnected during setup. Keep it powered on, stay close, and check the pairing light.'
 export const WIFI_TIMEOUT_COPY = 'Timed out sending Wi-Fi details. Stay close to the device and try again.'
@@ -342,12 +344,33 @@ export function useProvisionBind(opts: {
     setFailKind(null)
     try {
       const manager = getProvisionManager()
-      const resp = await withTimeout(
+      const sendWifi = () => withTimeout(
         manager.configWifi(store.selectedSsid!, wifiRequiresPassword(store.apList, store.selectedSsid) ? store.wifiPassword : ''),
         25000,
         'WIFI_TIMEOUT',
         () => { void manager.disconnect().catch(() => {}) },
       )
+      let resp: Awaited<ReturnType<typeof sendWifi>>
+      try {
+        resp = await sendWifi()
+      } catch (first) {
+        // APP-20260826-003: a Bluetooth drop is retried before it is a failure.
+        // Reconnect a few times, showing each attempt, then resend the Wi-Fi
+        // details this flow still holds — nothing to type again. One recovery
+        // per attempt; if it does not come back, the drop is reported as before.
+        const m1 = first instanceof Error ? first.message : ''
+        const { deviceId, bleName } = lastBleRef.current
+        if (!isDisconnectError(m1) || !deviceId || provisionStepRef.current === 'result') throw first
+        store.addLog(`configWifi dropped (${m1}); reconnecting`)
+        const back = await reconnectWithRetry(() => manager.connectTo(deviceId, bleName), {
+          onAttempt: (i, n) => setConfigStage(reconnectingStage(i, n)),
+          shouldStop: () => provisionStepRef.current === 'result',
+        })
+        if (!back) throw first
+        store.addLog('Reconnected; resending Wi-Fi details')
+        setConfigStage('Sending Wi-Fi details')
+        resp = await sendWifi()
+      }
       if (provisionStepRef.current === 'result') return
       if (resp.RC !== 0) {
         setFailKind('wifi')
@@ -369,7 +392,7 @@ export function useProvisionBind(opts: {
       if (m === 'WIFI_TIMEOUT') {
         setFailKind('timeout')
         store.setErrorMessage(WIFI_TIMEOUT_COPY)
-      } else if (/disconnect|GATT/i.test(m)) {
+      } else if (isDisconnectError(m)) {
         setFailKind('disconnect')
         store.setErrorMessage(DISCONNECT_COPY)
       } else {
@@ -381,7 +404,7 @@ export function useProvisionBind(opts: {
       store.setIsOperating(false)
       configGuardRef.current = false
     }
-  }, [store, onWifiConfigured, configGuardRef, wifiConfiguredRef, provisionStepRef, setConfigStage, setFailKind])
+  }, [store, onWifiConfigured, configGuardRef, wifiConfiguredRef, provisionStepRef, lastBleRef, setConfigStage, setFailKind])
 
   const handleRetryCurrentStage = useCallback(async () => {
     if (configGuardRef.current) return

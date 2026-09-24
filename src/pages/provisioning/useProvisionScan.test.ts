@@ -5,7 +5,8 @@ import { PROVISION_SCAN_MS, WEAK_SCAN_COPY } from './scanDiscovery'
 import { useProvisionStore } from '../../stores/provisionStore'
 
 const h = vi.hoisted(() => ({
-  scanDevices: vi.fn(), stopScan: vi.fn(), destroy: vi.fn(), cleanup: () => {},
+  scanDevices: vi.fn(), stopScan: vi.fn(), destroy: vi.fn(), connectTo: vi.fn(), cleanup: () => {},
+  callbacks: undefined as undefined | { onDisconnected?: () => void },
 }))
 // Exercise the hook's async scan lifecycle without a browser renderer.
 vi.mock('react', () => ({
@@ -14,7 +15,7 @@ vi.mock('react', () => ({
   useEffect: (fn: () => () => void) => { h.cleanup = fn() },
 }))
 vi.mock('../../protocols/bleProvision', () => ({
-  getProvisionManager: () => h,
+  getProvisionManager: (cb?: { onDisconnected?: () => void }) => { if (cb) h.callbacks = cb; return h },
   destroyProvisionManager: h.destroy,
   stopProvisionScan: () => h.stopScan(),
   supportsDeviceListScan: () => true,
@@ -22,21 +23,27 @@ vi.mock('../../protocols/bleProvision', () => ({
 vi.mock('./useProvisionBind', () => ({ DISCONNECT_COPY: 'Disconnected' }))
 vi.mock('../../components/Toast', () => ({ toast: { error: vi.fn(), info: vi.fn() } }))
 
-function setup() {
+function setup(o: { wifiConfigured?: boolean; step?: string } = {}) {
   let found: FoundDevice[] = []
   useProvisionStore.getState().reset()
-  const store = { ...useProvisionStore.getState(), setIsOperating: vi.fn(), setErrorMessage: vi.fn(), addLog: vi.fn() }
+  const store = {
+    ...useProvisionStore.getState(), setIsOperating: vi.fn(), setErrorMessage: vi.fn(), addLog: vi.fn(),
+    setConfigResult: vi.fn(), setStep: vi.fn(),
+  }
   const setBleStatus = vi.fn()
+  const setFailKind = vi.fn()
+  const bleGoneRef = { current: false }
+  const wifiConfiguredRef = { current: o.wifiConfigured ?? false }
   const hook = useProvisionScan({
     store: store as any,
     setFoundDevices: next => { found = typeof next === 'function' ? next(found) : next },
-    setFailKind: vi.fn(), setBleStatus,
-    wifiConfiguredRef: { current: false }, lastBleRef: { current: {} },
-    bleGoneRef: { current: false }, provisionStepRef: { current: 'scan' } as any,
+    setFailKind, setBleStatus,
+    wifiConfiguredRef, lastBleRef: { current: { deviceId: 'AA:BB' } },
+    bleGoneRef, provisionStepRef: { current: o.step ?? 'scan' } as any,
     reconnectingRef: { current: false }, configGuardRef: { current: false },
     scanStopRef: { current: null },
   })
-  return { ...hook, store, setBleStatus, found: () => found }
+  return { ...hook, store, setBleStatus, setFailKind, bleGoneRef, wifiConfiguredRef, found: () => found }
 }
 
 beforeEach(() => {
@@ -158,5 +165,33 @@ describe('provisioning scan lifecycle', () => {
     await scan.handleScan()
     expect(scan.setBleStatus).not.toHaveBeenCalled()
     expect(scan.store.setErrorMessage).toHaveBeenLastCalledWith(expect.stringContaining('Location services are off'))
+  })
+
+  it('a Bluetooth drop after Wi-Fi was configured is the hand-off, not a failed add (0923-001)', async () => {
+    // Naming, icon or the cloud bind: the step still reads 'configuring'.
+    const scan = setup({ step: 'configuring' })
+    await scan.handleScan()
+    scan.wifiConfiguredRef.current = true // handleConfig, after the device answered RC=0
+    h.connectTo.mockRejectedValue(new Error('not connected'))
+    h.callbacks?.onDisconnected?.()
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(h.connectTo).not.toHaveBeenCalled()
+    expect(scan.setFailKind).not.toHaveBeenCalledWith('disconnect')
+    expect(scan.store.setConfigResult).not.toHaveBeenCalled()
+    expect(scan.store.setStep).not.toHaveBeenCalled()
+    expect(scan.store.setErrorMessage).not.toHaveBeenCalledWith('Disconnected')
+    expect(scan.bleGoneRef.current).toBe(true)
+  })
+
+  it('a drop while the Wi-Fi details are still being sent is still retried, then reported', async () => {
+    const scan = setup({ wifiConfigured: false, step: 'configuring' })
+    await scan.handleScan()
+    h.connectTo.mockRejectedValue(new Error('not connected'))
+    h.callbacks?.onDisconnected?.()
+    await vi.advanceTimersByTimeAsync(5000)
+    expect(h.connectTo).toHaveBeenCalledTimes(3)
+    expect(scan.setFailKind).toHaveBeenCalledWith('disconnect')
+    expect(scan.store.setConfigResult).toHaveBeenCalledWith('fail')
+    expect(scan.store.setErrorMessage).toHaveBeenLastCalledWith('Disconnected')
   })
 })

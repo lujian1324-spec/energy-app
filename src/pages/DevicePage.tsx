@@ -42,6 +42,8 @@ import { useLivePassthroughStore, lookupLivePassthrough, resolveLiveValues, save
 import { useLivePassthrough } from '../hooks/useLivePassthrough'
 import { useSmartScheduleFlush } from '../hooks/useSmartScheduleFlush'
 import { toUserFacingError } from '../utils/uiCopy'
+import { useOnline } from '../hooks/useOnline'
+import OfflineBanner from '../components/OfflineBanner'
 
 interface DeviceRealtimeCache {
   [deviceId: string]: {
@@ -245,6 +247,16 @@ export default function DevicePage() {
      and relay failures here as well, rather than silently discarding them. */
   useSmartScheduleFlush({ devices, active: isAuthenticated && !isDemoMode })
 
+  // The phone's network (APP-20260923-002). Losing it locks the AC switches and
+  // says so; getting it back re-reads everything rather than trusting what was
+  // on screen when it dropped.
+  const online = useOnline(() => {
+    if (!isAuthenticated || useDeviceStore.getState().isDemoMode) return
+    void fetchDevices()
+    devices.forEach(d => fetchDeviceRealtime(d.id))
+    void refreshLive()
+  })
+
   useEffect(() => {
     if (devices.length === 0 || !isAuthenticated) return
     const refreshAll = () => devices.forEach(d => fetchDeviceRealtime(d.id))
@@ -365,7 +377,7 @@ export default function DevicePage() {
     const device = devices.find(d => String(d.id) === idStr)
     if (!device) return
     const view = acView(device)
-    if (view.pending) return
+    if (view.pending || !online) return
     hapticMedium()
     const next = !view.on
     setAcCommands(prev => ({ ...prev, [idStr]: { on: next, at: Date.now(), status: 'sending' } }))
@@ -467,6 +479,7 @@ export default function DevicePage() {
       </motion.div>
 
       <div className="px-4">
+        <OfflineBanner show={!online && !isDemoMode} className="mb-1" />
         <AnimatePresence>
           {error && (
             <motion.div
@@ -527,6 +540,7 @@ export default function DevicePage() {
                   connected={connected}
                   powerOn={ac.on}
                   toggling={ac.pending}
+                  controlsLocked={!online && !isDemoMode}
                   onClick={() => handleDeviceClick(device)}
                   onTogglePower={togglePower}
                 />

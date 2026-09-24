@@ -72,6 +72,20 @@ export function useProvisionScan(opts: {
       onLog: (msg) => store.addLog(msg),
       onDisconnected: () => {
         store.addLog('BLE disconnected')
+        /*
+         * APP-20260923-001: once the device has taken the Wi-Fi details it leaves
+         * Bluetooth for Wi-Fi — the drop is the hand-off, not a fault. Nothing
+         * after that point (naming, icon, the cloud bind) needs the link, yet the
+         * step still read 'configuring', so a drop ran three reconnects and then
+         * failed the add with "The device disconnected during setup" over a
+         * pairing that had succeeded — sometimes mid-bind, before the bind's own
+         * result arrived.
+         */
+        if (wifiConfiguredRef.current) {
+          bleGoneRef.current = true
+          store.addLog('BLE dropped after Wi-Fi was configured (device switched to Wi-Fi)')
+          return
+        }
         const step = provisionStepRef.current
         if (step === 'configuring') {
           if (reconnectingRef.current) return

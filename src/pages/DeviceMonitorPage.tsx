@@ -17,6 +17,8 @@ import { useBleLiveStatusStore, lookupBleLiveStatus } from '../stores/bleLiveSta
 import { useLivePassthroughStore, lookupLivePassthrough, resolveLiveValues } from '../stores/livePassthroughStore'
 import { useLivePassthrough, LIVE_PASSTHROUGH_FAST_INTERVAL_MS } from '../hooks/useLivePassthrough'
 import { parseDeviceStateTime } from '../utils/deviceStateTime'
+import { useOnline } from '../hooks/useOnline'
+import OfflineBanner from '../components/OfflineBanner'
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function DeviceMonitorPage() {
@@ -97,6 +99,10 @@ export default function DeviceMonitorPage() {
     ])
   }, [refreshPassthrough, id, loadDeviceState])
 
+  // APP-20260923-002: the phone's own network. Without it the header must not
+  // claim "Connected"; when it returns, read the device again straight away.
+  const online = useOnline(() => { if (!isDemoMode) void handleRefresh() })
+
   // Map realtime fields —— 仅当 store 里的实时状态确实属于「当前」设备时才用它。
   // 切换设备时 store 可能仍短暂持有上一台设备的状态，此时返回 null，卡片显示占位
   // 而非上一台设备的数据，直到本设备(id)的状态加载完成。
@@ -147,6 +153,14 @@ export default function DeviceMonitorPage() {
    */
   const isCharging = acPower + solarPower > outputPower
   const isOnline = device?.isOnline ?? true
+  /*
+   * APP-20260923-003: no real telemetry — the device is offline, nothing has
+   * been read for it, or what was read carries no battery reading. Then every
+   * figure is unknown and shows --, never 0 W: a missing reading must not pass
+   * for "no power". (A sample that has SOC but simply lacks the AC or Solar
+   * field still reads 0 W for that field, as before.)
+   */
+  const noTelemetry = !isOnline || !rt || rt.remainingBatteryCapacity == null
 
   // 额定容量（Wh）= acInvOutputPower × 2，与 Device Info 页 Rated Capacity 同源
   const [batteryCapacityWh, setBatteryCapacityWh] = useState<number | undefined>(undefined)
@@ -170,7 +184,7 @@ export default function DeviceMonitorPage() {
   }, [ratedModel, device?.model])
 
   // 统一口径：电池剩余/充满时间（见 utils/batteryTime）
-  const timeStr = batteryTimeLabel({
+  const timeStr = noTelemetry ? undefined : batteryTimeLabel({
     acPower, solarPower, outputPower,
     soc: remainingBatteryCapacity ?? 0,
     capacityWh: batteryCapacityWh,
@@ -179,7 +193,7 @@ export default function DeviceMonitorPage() {
 
   const fmtW = (w: number) => Math.abs(Math.round(w))
   /** -- until the first live read lands, so no figure has to be taken back. */
-  const fmtWatts = (w: number) => (awaitingFirstLiveRead ? '--' : fmtW(w))
+  const fmtWatts = (w: number) => (awaitingFirstLiveRead || noTelemetry ? '--' : fmtW(w))
 
   return (
     <div
@@ -217,7 +231,7 @@ export default function DeviceMonitorPage() {
               )}
             </div>
             <span className="text-tiny text-ink-5">
-              {isOnline ? 'Connected' : 'Disconnected'}
+              {!online && !isDemoMode ? 'No internet' : isOnline ? 'Connected' : 'Disconnected'}
             </span>
           </button>
           {showDeviceDropdown && devices.length > 1 && (
@@ -267,6 +281,7 @@ export default function DeviceMonitorPage() {
       {/* Scrollable body — pull down to force an immediate live read + cloud refresh */}
       <PullToRefresh onRefresh={handleRefresh}>
       <div className="px-4 pt-4 pb-6 space-y-4">
+        <OfflineBanner show={!online && !isDemoMode} />
         {/* ─── SoC Card ─────────────────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -330,7 +345,9 @@ export default function DeviceMonitorPage() {
           <RealTimePowerChart
             deviceId={id ?? null}
             isOnline={isOnline}
-            values={{ battery: batteryPower, ac: acPower, solar: solarPower, output: outputPower }}
+            values={noTelemetry
+              ? { battery: null, ac: null, solar: null, output: null }
+              : { battery: batteryPower, ac: acPower, solar: solarPower, output: outputPower }}
             batteryAsSoc
             batterySoc={remainingBatteryCapacity}
             powerAxisMax={powerAxisMax}

@@ -718,6 +718,13 @@ export const useDeviceStore = create<DeviceStoreState>()(
         // 也避免在网络请求完成前误显示“No devices yet / Add Device”空状态。
         devices: state.devices,
         deviceTotal: state.deviceTotal,
+        // APP-008: persisted with the list it describes. An account with no
+        // devices caches `[]`, which on its own cannot tell "never loaded" from
+        // "loaded, none", so every cold start painted three device-card skeletons
+        // before the empty state. Knowing the cached list is a real answer, the
+        // page opens straight on it (cards or empty state) and refreshes in place.
+        // exitDemoMode — sign-in, sign-out, demo switch — resets both together.
+        devicesListReady: state.devicesListReady,
         isDemoMode: state.isDemoMode,
       }),
     }
