@@ -254,6 +254,9 @@ async function applyChargeSchedule(
     // quietly ignore the rate the user typed.
     sleepW: powers.inWindowW,
     wakeW: powers.outWindowW,
+    // SW-14: tells the relay whose window this is, so its tick can pause Smart
+    // Schedule's without touching Sleep Mode's.
+    mode,
   })
 
   return {

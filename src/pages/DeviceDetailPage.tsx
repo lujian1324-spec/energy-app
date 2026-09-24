@@ -31,6 +31,7 @@ import { loadRatedParams, saveRatedParams, type RatedParams } from '../db/powerf
 import { SIERRO_MODELS, SIERRO_MODEL_LIST, DEVICE_NAME_MAX, generateSerial, type SierroModel } from '../data/deviceModels'
 import sierro1000Img from '../assets/sierro-1000.webp'
 import { DEV_TOOLS_ENABLED } from '../config/devTools'
+import { SMART_SCHEDULE_PAUSED } from '../config/smartSchedule'
 import { backgroundScheduleNotice } from '../utils/scheduleOutcome'
 import { getSavedScheduleEnabled, subscribeActiveScheduleMode } from '../utils/activeScheduleMode'
 
@@ -915,11 +916,18 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             setShowWorkModeMenu(true)
           }}
         />
-        <SettingsRow
-          label="Smart Schedule"
-          value={(isDemoMode ? peakShavingSettings?.enabled : getSavedScheduleEnabled(deviceIdForScheduler, 'smart')) ? 'On' : 'Off'}
-          onPress={() => navigate('/smart-schedule')}
-        />
+        {/* SW-14: Smart Schedule is paused, so its only entry point is not
+            rendered. Nothing replaces it — the row is silently absent, and the
+            rows around it are unaffected. Any other link to `/smart-schedule`
+            added later (the Help page's CTA on #131, for one) has to be hidden
+            the same way. */}
+        {!SMART_SCHEDULE_PAUSED && (
+          <SettingsRow
+            label="Smart Schedule"
+            value={(isDemoMode ? peakShavingSettings?.enabled : getSavedScheduleEnabled(deviceIdForScheduler, 'smart')) ? 'On' : 'Off'}
+            onPress={() => navigate('/smart-schedule')}
+          />
+        )}
         <button
           onClick={() => setShowDeleteConfirm(true)}
           className="w-full rounded-l bg-ink-10 h-[52px] text-body-lg font-semibold text-danger active:opacity-70 transition-opacity"

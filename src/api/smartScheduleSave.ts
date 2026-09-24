@@ -47,6 +47,7 @@ import {
   setActiveScheduleMode,
 } from '../utils/activeScheduleMode'
 import { phaseFor } from '../utils/chargeWindow'
+import { SMART_SCHEDULE_PAUSED } from '../config/smartSchedule'
 
 function saveFailure(window: SmartScheduleWindow, detail: string): SmartScheduleSaveResult {
   return { ok: false, queued: false, applied: {
@@ -147,6 +148,12 @@ export type FlushStatus =
   | 'flushed'
   /** The device is there and said no. */
   | 'rejected'
+  /**
+   * SW-14 — the service is paused, so nothing was replayed. Distinct from
+   * `none` on purpose: something *is* owed to this device, it is just frozen
+   * until the service resumes.
+   */
+  | 'paused'
 
 export interface FlushPendingResult {
   status: FlushStatus
@@ -177,6 +184,12 @@ export async function flushPendingSmartSchedule(
   deviceId: string | number,
   opts: FlushPendingOptions
 ): Promise<FlushPendingResult> {
+  // SW-14 — paused: the queue is frozen where it is. Checked before anything
+  // is read or spent, so no attempt is charged against an entry that was never
+  // sent, and the entry itself is left untouched for whenever it resumes. This
+  // backs up `useSmartScheduleFlush`'s own gate, so a later caller cannot
+  // reintroduce a replay by mounting a different hook (AC-14-7 / AC-14-8).
+  if (SMART_SCHEDULE_PAUSED) return { status: 'paused' }
   const pending = getPendingSmartScheduleSave(deviceId)
   if (!pending) return { status: 'none' }
   if (pending.attempts >= MAX_FLUSH_ATTEMPTS) return { status: 'none' }

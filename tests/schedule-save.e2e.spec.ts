@@ -20,7 +20,8 @@ test.describe('schedule save acknowledgement', () => {
     })
   })
 
-  test('uses device-specific Smart state, retains failed Sleep draft and retries Save', async ({ page }) => {
+  // SW-14: Smart Schedule row is hidden while SMART_SCHEDULE_PAUSED; Sleep Save path is the real intent.
+  test('hides Smart Schedule row, retains failed Sleep draft and retries Save', async ({ page }) => {
     let uploads = 0
     await page.route('**/schedule', route => {
       uploads++
@@ -29,8 +30,7 @@ test.describe('schedule save acknowledgement', () => {
         : { json: { code: 0 } })
     })
     await page.goto('/#/device/e2e-device/settings')
-    const smart = page.getByText('Smart Schedule', { exact: true }).locator('..')
-    await expect(smart).toContainText('Off')
+    await expect(page.getByText('Smart Schedule', { exact: true })).toHaveCount(0)
     await page.getByText('Sleep Mode', { exact: true }).click()
     // The only unnamed button with a rounded toggle track on this screen.
     await page.locator('button.w-12.h-7').click()

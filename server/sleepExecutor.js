@@ -5,6 +5,7 @@ import { writePassthrough } from './iotClient.js'
 import { deviceBoundToUser } from './deviceBind.js'
 import { acChargePowerBase64 } from './modbus.js'
 import { validateSchedule, scheduleTarget } from './scheduleValidation.js'
+import { isPausedSmartSchedule } from './smartSchedulePause.js'
 
 export function createSleepExecutor({ db = store, lock = withUserLock, session = scheduleSession,
   write = writePassthrough, clock = Date.now } = {}) {
@@ -15,7 +16,7 @@ export function createSleepExecutor({ db = store, lock = withUserLock, session =
     if (running) throw new Error('TICK_IN_PROGRESS')
     running = true
     const deadline = clock() + 30000
-    const result = { dryRun, checked: 0, applied: 0, unchanged: 0, failed: 0, deferred: 0, failureReasons: {} }
+    const result = { dryRun, checked: 0, applied: 0, unchanged: 0, failed: 0, deferred: 0, paused: 0, failureReasons: {} }
     const failure = reason => {
       result.failed++
       result.failureReasons[reason] = (result.failureReasons[reason] || 0) + 1
@@ -33,6 +34,13 @@ export function createSleepExecutor({ db = store, lock = withUserLock, session =
             let auth
             for (const [deviceId, raw] of Object.entries(schedules)) {
               if (!raw?.enabled) continue
+              // SW-14: the Smart Schedule service is paused, so its windows are
+              // not dispatched. Counted rather than dropped, and checked before
+              // `checked++` so a paused window is not reported as examined and
+              // left unapplied. Sleep Mode's windows — tagged `sleep`, or
+              // untagged from a client older than the tag — fall through and
+              // run exactly as before.
+              if (isPausedSmartSchedule(raw)) { result.paused++; continue }
               if (clock() >= deadline) { result.deferred++; continue }
               result.checked++
               let stage = 'invalidSchedule'
