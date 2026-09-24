@@ -147,6 +147,11 @@ Use the label canon below; same metric = same label everywhere except DebugParam
   "The device didn't switch its AC output." and the switch shows the device's state. Cloud state is
   re-read on return to the foreground; the live layer already does.
 - *Bell dot*: `unreadAlarmCount()` over **every** device, from `firingAlarmsStore` (see NotificationsPage).
+- **Phone offline (v4.15.4, APP-20260923-002).** `useOnline()` (`src/hooks/useOnline.ts`, online/offline
+  events) drives `OfflineBanner` ("No internet connection. Check your network and try again.") on this page
+  and DeviceMonitorPage, locks the card's AC switch (`controlsLocked`) and makes the monitor header say
+  "No internet" instead of "Connected". It never marks the **device** offline — the phone's network says
+  nothing about the device. The network coming back re-reads the list, cloud state and live layer.
 - *Low Battery banner*: name, `Battery below {lowBatteryThreshold}%`, remaining time (`batteryTimeLabel`).
 - *Device params modal*: **Battery** % (`remainingBatteryCapacity`), **Battery Power** W (`batteryPower`), **AC** W (`acPower`), **Solar** W (`solarPower`), **Output** W (`outputPower`), **Temperature** °F (`batteryTemp`); port states (`acOut1/2Enable`,`usbOut1Enable`,`sleepMode`,`workMode`).
 

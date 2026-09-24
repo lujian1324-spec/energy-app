@@ -1,8 +1,9 @@
 {
-  "version": "4.15.3",
-  "build": 2916,
+  "version": "4.15.4",
+  "build": 2917,
   "date": "2026-09-24",
   "changelog": [
+    "With no internet connection (Bluetooth, Wi-Fi and mobile data all off), the Device list and device page now say so instead of showing Connected, and the AC switch is locked until the network is back. The device itself is not marked offline, and its state is read again as soon as the connection returns.",
     "Fan Speed is no longer shown in Device Settings. It remains available in internal QA builds only while it is verified on hardware.",
     "On the verification code screen the cursor now moves to the box the next digit goes into, instead of staying in the first box while you type. Tapping a box no longer lets a digit be inserted in the middle of the code.",
     "The AC switch on each device card now shows what the device reports. It no longer turns itself back on a few minutes after being switched off, a switch made on another phone shows up when you return to the app, and an offline or powered-off device shows its switch off. After switching, the app checks with the device and says so if the outlets did not change.",

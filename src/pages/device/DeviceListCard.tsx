@@ -90,6 +90,7 @@ export default function DeviceListCard({
   connected,
   powerOn,
   toggling,
+  controlsLocked = false,
   onClick,
   onTogglePower,
 }: {
@@ -102,6 +103,8 @@ export default function DeviceListCard({
   connected: boolean
   powerOn: boolean
   toggling: boolean
+  /** The phone has no network: the switch cannot act, though the device may be fine. */
+  controlsLocked?: boolean
   onClick: () => void
   onTogglePower: (deviceId: string | number, e: React.MouseEvent) => void
 }) {
@@ -134,7 +137,7 @@ export default function DeviceListCard({
             <PowerToggle
               deviceId={device.id}
               on={powerOn}
-              disabled={!connected || toggling}
+              disabled={!connected || toggling || controlsLocked}
               onToggle={onTogglePower}
             />
           </div>

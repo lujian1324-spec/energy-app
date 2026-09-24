@@ -17,6 +17,8 @@ import { useBleLiveStatusStore, lookupBleLiveStatus } from '../stores/bleLiveSta
 import { useLivePassthroughStore, lookupLivePassthrough, resolveLiveValues } from '../stores/livePassthroughStore'
 import { useLivePassthrough, LIVE_PASSTHROUGH_FAST_INTERVAL_MS } from '../hooks/useLivePassthrough'
 import { parseDeviceStateTime } from '../utils/deviceStateTime'
+import { useOnline } from '../hooks/useOnline'
+import OfflineBanner from '../components/OfflineBanner'
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function DeviceMonitorPage() {
@@ -96,6 +98,10 @@ export default function DeviceMonitorPage() {
       id ? loadDeviceState(id) : Promise.resolve(),
     ])
   }, [refreshPassthrough, id, loadDeviceState])
+
+  // APP-20260923-002: the phone's own network. Without it the header must not
+  // claim "Connected"; when it returns, read the device again straight away.
+  const online = useOnline(() => { if (!isDemoMode) void handleRefresh() })
 
   // Map realtime fields —— 仅当 store 里的实时状态确实属于「当前」设备时才用它。
   // 切换设备时 store 可能仍短暂持有上一台设备的状态，此时返回 null，卡片显示占位
@@ -217,7 +223,7 @@ export default function DeviceMonitorPage() {
               )}
             </div>
             <span className="text-tiny text-ink-5">
-              {isOnline ? 'Connected' : 'Disconnected'}
+              {!online && !isDemoMode ? 'No internet' : isOnline ? 'Connected' : 'Disconnected'}
             </span>
           </button>
           {showDeviceDropdown && devices.length > 1 && (
@@ -267,6 +273,7 @@ export default function DeviceMonitorPage() {
       {/* Scrollable body — pull down to force an immediate live read + cloud refresh */}
       <PullToRefresh onRefresh={handleRefresh}>
       <div className="px-4 pt-4 pb-6 space-y-4">
+        <OfflineBanner show={!online && !isDemoMode} />
         {/* ─── SoC Card ─────────────────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
