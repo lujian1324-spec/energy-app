@@ -203,7 +203,15 @@ lives on independently and is still referenced elsewhere.)
 - *Header*: days-in-service (from `installedAt`).
 - *Period selector* (Day/Week/Month/Range) + *date navigator*.
 - *CO₂ card*: CO₂ reduced Kg + eco insight + formula.
-- *Input vs. Output chart*: insight text; Week=bar pairs, Day/Month/Range=line w/ scrub tooltip (input/output kWh).
+- *Input vs. Output chart* (v4.16.0): one line chart for every period (Week was bars), shared scale for both
+  series, tap/drag to read a bucket (the reading stays). Built by `buildInsightsFrame()`
+  (`src/utils/insightsFrame.ts`): per-bucket **energy in Wh**, integrating each sample's power until the next
+  (held at most `sampleHoldCapMs` = 3× the device's typical gap, 15–60 min, so silence is not credited);
+  **input = Solar (`generationPower`) + AC (`exchangeChargingPower`)** — AC used to be ignored — and the
+  tooltip lists Solar / AC only for a bucket where that source delivered. Buckets with no samples (and
+  future ones) are `null` → gaps, never 0. CO₂ counts **solar only**. Insight: "Highest daily output this
+  week/month: {date}". History is paged until a short page (cap 200 × 300); a failed later page or the cap
+  shows "Some history … couldn't be loaded" instead of silently short totals (APP-20260923-006/007/008/009).
 - (Battery Health card removed.)
 
 **SettingPage** (`/setting`)

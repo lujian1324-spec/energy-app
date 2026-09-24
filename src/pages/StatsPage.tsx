@@ -13,20 +13,12 @@ import { fetchDeviceRecordHistory, type DeviceAttributeRecord } from '../api/dev
 import { isApiSuccess } from '../utils/apiClient'
 import { useCountUp } from '../hooks/useCountUp'
 import { toUserFacingError } from '../utils/uiCopy'
+import { buildInsightsFrame, formatWh, weekStart } from '../utils/insightsFrame'
 
 const periods = ['Day', 'Week', 'Month', 'Range'] as const
 type Period = typeof periods[number]
 
 // ─── Helpers ───
-
-function weekStart(d: Date): Date {
-  const day = d.getDay()
-  const diff = day === 0 ? -6 : 1 - day
-  const s = new Date(d)
-  s.setDate(d.getDate() + diff)
-  s.setHours(0, 0, 0, 0)
-  return s
-}
 
 // ISO 8601 字符串（带本地时区偏移），供 record/list 接口的 fromTime/toTime 使用
 function toIsoTz(d: Date): string {
@@ -35,15 +27,6 @@ function toIsoTz(d: Date): string {
   const tz = sign + String(Math.floor(Math.abs(off) / 60)).padStart(2, '0') + ':' + String(Math.abs(off) % 60).padStart(2, '0')
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') +
     'T' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ':' + String(d.getSeconds()).padStart(2, '0') + tz
-}
-
-// 从一条历史记录里取某个属性值（真实后端把值嵌套在 fields[key].value 里）。缺失/非数返回 0。
-function fieldVal(rec: DeviceAttributeRecord, key: string): number {
-  const f = rec.fields?.[key]
-  if (f === undefined || f === null) return 0
-  const raw = typeof f === 'object' && f !== null && 'value' in f ? (f as { value?: unknown }).value : f
-  const n = Number(raw)
-  return Number.isFinite(n) ? n : 0
 }
 
 // ─── DayCalendar component ───
@@ -201,139 +184,6 @@ function MonthGridPicker({ selectedDate, onSelect }: { selectedDate: Date; onSel
   )
 }
 
-// ─── 图表数据结构（从 API 历史记录聚合而来） ───
-
-interface ChartFrame {
-  input: number[]
-  output: number[]
-  remainingBatteryCapacity: number[]
-  labels: string[]
-  co2Kg: number
-  /** Any solar generation in this period — the CO2 card only exists when true. */
-  hasSolar: boolean
-  trees: number
-  totalInputKwh: number
-  totalOutputKwh: number
-  insight: string
-  ecoInsight: string
-  hasData: boolean
-}
-
-// ─── 把 record/list 历史记录按所选时间段聚合成图表帧 ───
-// 无数据时返回一条全 0 的曲线（保持坐标轴/标签完整），而不是回退到任何模拟数据。
-
-function buildFrameFromRecords(
-  records: DeviceAttributeRecord[],
-  period: Period,
-  selectedDate: Date,
-  rangeStart: Date | null,
-  rangeEnd: Date | null,
-): ChartFrame {
-  let labels: string[]
-  let bucketCount: number
-  let bucketOf: (d: Date) => number
-  let hoursPerBucket: number
-
-  if (period === 'Day') {
-    labels = Array.from({ length: 24 }, (_, h) => `${String(h).padStart(2, '0')}:00`)
-    bucketCount = 24
-    hoursPerBucket = 1
-    const sel = new Date(selectedDate); sel.setHours(0, 0, 0, 0)
-    bucketOf = (d) => {
-      const dd = new Date(d); dd.setHours(0, 0, 0, 0)
-      return dd.getTime() === sel.getTime() ? d.getHours() : -1
-    }
-  } else if (period === 'Week') {
-    const ws = weekStart(selectedDate)
-    labels = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(ws); d.setDate(ws.getDate() + i)
-      return `${d.getMonth() + 1}/${d.getDate()}`
-    })
-    bucketCount = 7
-    hoursPerBucket = 24
-    const we = new Date(ws); we.setDate(ws.getDate() + 6); we.setHours(23, 59, 59, 999)
-    bucketOf = (d) => (d >= ws && d <= we ? (d.getDay() + 6) % 7 : -1)
-  } else if (period === 'Month') {
-    const y = selectedDate.getFullYear(), m = selectedDate.getMonth()
-    const days = new Date(y, m + 1, 0).getDate()
-    labels = Array.from({ length: days }, (_, i) => `${m + 1}/${i + 1}`)
-    bucketCount = days
-    hoursPerBucket = 24
-    bucketOf = (d) => (d.getFullYear() === y && d.getMonth() === m ? d.getDate() - 1 : -1)
-  } else {
-    const start = rangeStart ? new Date(rangeStart) : new Date(Date.now() - 30 * 86400000)
-    start.setHours(0, 0, 0, 0)
-    const end = rangeEnd ? new Date(rangeEnd) : new Date()
-    end.setHours(0, 0, 0, 0)
-    const days = Math.max(1, Math.floor((end.getTime() - start.getTime()) / 86400000) + 1)
-    labels = Array.from({ length: days }, (_, i) => {
-      const d = new Date(start); d.setDate(start.getDate() + i)
-      return `${d.getMonth() + 1}/${d.getDate()}`
-    })
-    bucketCount = days
-    hoursPerBucket = 24
-    bucketOf = (d) => {
-      const dd = new Date(d); dd.setHours(0, 0, 0, 0)
-      const idx = Math.floor((dd.getTime() - start.getTime()) / 86400000)
-      return idx >= 0 && idx < days ? idx : -1
-    }
-  }
-
-  const solarSum = new Array(bucketCount).fill(0)
-  const outSum = new Array(bucketCount).fill(0)
-  const socSum = new Array(bucketCount).fill(0)
-  const cnt = new Array(bucketCount).fill(0)
-
-  for (const rec of records) {
-    const t = rec.time ? new Date(rec.time) : null
-    if (!t || isNaN(t.getTime())) continue
-    const b = bucketOf(t)
-    if (b < 0 || b >= bucketCount) continue
-    solarSum[b] += fieldVal(rec, 'generationPower')
-    outSum[b] += fieldVal(rec, 'outputPower')
-    socSum[b] += fieldVal(rec, 'remainingBatteryCapacity')
-    cnt[b] += 1
-  }
-
-  const input = solarSum.map((s, i) => (cnt[i] ? s / cnt[i] : 0))
-  const output = outSum.map((s, i) => (cnt[i] ? s / cnt[i] : 0))
-  const remainingBatteryCapacity = socSum.map((s, i) => (cnt[i] ? s / cnt[i] : 0))
-
-  const round1 = (n: number) => Math.round(n * 10) / 10
-  const totalInputKwh = round1(input.reduce((s, v) => s + (v * hoursPerBucket) / 1000, 0))
-  const totalOutputKwh = round1(output.reduce((s, v) => s + (v * hoursPerBucket) / 1000, 0))
-  const co2Kg = round1(totalInputKwh * 0.5)
-
-  const hasData = input.some(v => v > 0) || output.some(v => v > 0)
-
-  let insight = 'No power data for this period'
-  if (hasData) {
-    const maxOutput = Math.max(...output)
-    const idx = output.indexOf(maxOutput)
-    if (idx >= 0) {
-      if (period === 'Day') insight = `Peak output around ${labels[idx]}`
-      else if (period === 'Week') insight = `Highest output on ${labels[idx]}`
-      else insight = `Output peaked on ${labels[idx]}`
-    } else insight = 'Power usage data from device'
-  }
-
-  // A mature tree takes up about 21.8 kg of CO2 a year (US EPA). The deck writes
-  // this as "Equal to planting XX trees" without fixing the factor.
-  const KG_CO2_PER_TREE_YEAR = 21.8
-  const trees = Math.round((co2Kg / KG_CO2_PER_TREE_YEAR) * 10) / 10
-
-  // The deck splits the audience three ways, but nothing in the app says whether
-  // solar is fitted — every inverter reports 0 W without panels — so the third
-  // group (fitted, but nothing generated this period) is out of scope for now.
-  // Generation in the period is the signal: without it the card is not drawn.
-  const hasSolar = input.some(v => v > 0)
-
-  const ecoInsight = `Equal to planting ${trees} ${trees === 1 ? 'tree' : 'trees'}`
-
-  return { input, output, remainingBatteryCapacity, labels, co2Kg, totalInputKwh, totalOutputKwh, insight, ecoInsight, hasData, hasSolar, trees }
-}
-
-
 /** Insights CO2 ? -> bottom sheet (Smart Schedule info pattern; ui-fix-co2-sheet). */
 function Co2InfoSheet({
   onClose,
@@ -450,6 +300,8 @@ export default function StatsPage() {
   const { devices, loadDevices } = useDeviceStore()
 
   const [records, setRecords] = useState<DeviceAttributeRecord[] | null>(null)
+  /** Some pages of the period failed or ran past the cap: totals are short. */
+  const [historyPartial, setHistoryPartial] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showCo2Info, setShowCo2Info] = useState(false)
@@ -527,7 +379,13 @@ export default function StatsPage() {
     try {
       const all: DeviceAttributeRecord[] = []
       const PAGE = 300
-      for (let page = 1; page <= 20; page++) {
+      // APP-20260923-009: this used to stop at 20 pages (6,000 samples) and read
+      // `total` as a page count, while the endpoint reports records — a month
+      // at a few-minute cadence lost its later days, so the same date summed
+      // differently in Week and Month. A short page is the one sure end.
+      const MAX_PAGES = 200
+      let partial = false
+      for (let page = 1; page <= MAX_PAGES; page++) {
         const res = await fetchDeviceRecordHistory({
           deviceId: String(deviceId),
           fromTime: toIsoTz(from),
@@ -538,14 +396,16 @@ export default function StatsPage() {
         })
         if (!isApiSuccess(res.code)) {
           if (page === 1) throw new Error(res.message || 'Failed to load history')
+          partial = true
           break
         }
         const listPage = res.data?.list ?? []
         all.push(...listPage)
-        const totalPages = res.data?.total ?? 1
-        if (page >= totalPages || listPage.length === 0) break
+        if (listPage.length < PAGE) break
+        if (page === MAX_PAGES) partial = true
       }
       setRecords(all)
+      setHistoryPartial(partial)
     } catch (e: unknown) {
       console.error('[StatsPage] stats load failed:', e)
       setError(toUserFacingError(e, 'Something went wrong'))
@@ -558,43 +418,45 @@ export default function StatsPage() {
   useEffect(() => { loadHistory() }, [loadHistory])
 
   const chartFrame = useMemo(
-    () => buildFrameFromRecords(records ?? [], period, selectedDate, rangeStart, rangeEnd),
+    () => buildInsightsFrame(records ?? [], period, selectedDate, rangeStart, rangeEnd),
     [records, period, selectedDate, rangeStart, rangeEnd],
   )
 
-  const generateAreaPath = (data: number[], width: number, height: number) => {
-    const max = Math.max(...data, 1)
-    const padding = 4
-    const usableWidth = width - padding * 2
-    const usableHeight = height - padding * 2
-    const points = data.map((val, i) => ({
-      x: padding + (i / (data.length - 1)) * usableWidth,
-      y: padding + usableHeight - (val / max) * usableHeight,
-    }))
-    const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
-    const areaPath = `${linePath} L ${points[points.length - 1].x} ${height} L ${points[0].x} ${height} Z`
-    return { linePath, areaPath }
+  /*
+   * One scale for both series — input and output used to be normalised each
+   * against its own maximum, so the two lines could not be compared — and gaps
+   * left as gaps: a null bucket ends a segment instead of dropping to 0.
+   */
+  const CHART_W = 340, CHART_H = 160, CHART_PAD = 4
+  const chartMax = Math.max(1, ...chartFrame.inputWh.map(v => v ?? 0), ...chartFrame.outputWh.map(v => v ?? 0))
+  const pointAt = (i: number, v: number) => ({
+    x: CHART_PAD + (chartFrame.labels.length > 1 ? i / (chartFrame.labels.length - 1) : 0.5) * (CHART_W - CHART_PAD * 2),
+    y: CHART_PAD + (CHART_H - CHART_PAD * 2) * (1 - v / chartMax),
+  })
+  const seriesSegments = (data: (number | null)[]) => {
+    const segs: { x: number; y: number }[][] = []
+    let cur: { x: number; y: number }[] = []
+    data.forEach((v, i) => {
+      if (v === null) { if (cur.length) segs.push(cur); cur = [] }
+      else cur.push(pointAt(i, v))
+    })
+    if (cur.length) segs.push(cur)
+    return segs
   }
-
-  const generateAreaPathWithPoints = (data: number[], width: number, height: number) => {
-    const max = Math.max(...data, 1)
-    const padding = 4
-    const usableWidth = width - padding * 2
-    const usableHeight = height - padding * 2
-    const points = data.map((val, i) => ({
-      x: padding + (i / (data.length - 1)) * usableWidth,
-      y: padding + usableHeight - (val / max) * usableHeight,
-    }))
-    return { points }
-  }
+  const segLine = (seg: { x: number; y: number }[]) => seg.map((p, i) => `${i ? 'L' : 'M'} ${p.x} ${p.y}`).join(' ')
+  const segArea = (seg: { x: number; y: number }[]) =>
+    `${segLine(seg)} L ${seg[seg.length - 1].x} ${CHART_H} L ${seg[0].x} ${CHART_H} Z`
 
   const updateScrubFromClientX = (clientX: number) => {
     const svg = chartSvgRef.current
     if (!svg || !chartFrame) return
     const rect = svg.getBoundingClientRect()
     const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
-    setScrubIndex(Math.round(ratio * (chartFrame.input.length - 1)))
+    setScrubIndex(Math.round(ratio * (chartFrame.labels.length - 1)))
   }
+
+  // A reading belongs to the frame it was taken on.
+  useEffect(() => { setScrubIndex(null) }, [chartFrame])
 
   const hasDevice = deviceId !== null
 
@@ -851,84 +713,82 @@ export default function StatsPage() {
                     </div>
                   </div>
 
-                  {period === 'Week' ? (
-                    <div>
-                      <div className="flex items-end gap-2 h-[160px]">
-                        {chartFrame.input.map((input, i) => {
-                          const maxVal = Math.max(...chartFrame.input, ...chartFrame.output, 1)
-                          return (
-                            <div key={i} className="flex-1 flex items-end justify-center gap-1 h-full">
-                              <div className="flex-1 max-w-[12px] rounded-t-s bg-primary min-h-[2px] transition-[height] duration-500"
-                                style={{ height: `${(input / maxVal) * 100}%` }} />
-                              <div className="flex-1 max-w-[12px] rounded-t-s bg-warning min-h-[2px] transition-[height] duration-500"
-                                style={{ height: `${(chartFrame.output[i] / maxVal) * 100}%` }} />
-                            </div>
-                          )
-                        })}
-                      </div>
-                      <div className="h-px bg-white/[0.08] my-2" />
-                      <div className="flex gap-2">
-                        {chartFrame.labels.map((day) => (
-                          <div key={day} className="flex-1 text-center text-tiny text-ink-6">{day}</div>
-                        ))}
-                      </div>
+                  {/* APP-20260923-006: Week is a line with selectable points like the
+                      other periods (it was bars with no values). Tap or drag to read a
+                      bucket; the reading stays until another point is chosen. */}
+                  <div>
+                    <svg ref={chartSvgRef} viewBox={`0 0 ${CHART_W} ${CHART_H}`} className="w-full h-[160px] touch-none select-none"
+                      role="img" aria-label="Input and output energy"
+                      onPointerDown={e => { e.currentTarget.setPointerCapture(e.pointerId); updateScrubFromClientX(e.clientX) }}
+                      onPointerMove={e => { if (e.buttons || e.pointerType !== 'mouse') updateScrubFromClientX(e.clientX) }}
+                    >
+                      {[0, 1, 2, 3, 4].map((g) => (
+                        <line key={g} x1="0" x2={CHART_W} y1={CHART_PAD + (g / 4) * (CHART_H - CHART_PAD * 2)} y2={CHART_PAD + (g / 4) * (CHART_H - CHART_PAD * 2)}
+                          stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+                      ))}
+                      {seriesSegments(chartFrame.outputWh).map((seg, k) => seg.length > 1 ? (
+                        <g key={`o${k}`}>
+                          <path d={segArea(seg)} fill="rgba(255,149,0,0.18)" />
+                          <path d={segLine(seg)} fill="none" stroke="#FF9500" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </g>
+                      ) : <circle key={`o${k}`} cx={seg[0].x} cy={seg[0].y} r={2.5} fill="#FF9500" />)}
+                      {seriesSegments(chartFrame.inputWh).map((seg, k) => seg.length > 1 ? (
+                        <path key={`i${k}`} d={segLine(seg)} fill="none" stroke="#01D6BE" strokeWidth="2.5" strokeDasharray="6 5" strokeLinecap="round" strokeLinejoin="round" />
+                      ) : <circle key={`i${k}`} cx={seg[0].x} cy={seg[0].y} r={2.5} fill="#01D6BE" />)}
+                      {/* Week has seven buckets: mark each so the days read as points to pick. */}
+                      {period === 'Week' && chartFrame.labels.map((_, i) => (
+                        <g key={`m${i}`}>
+                          {chartFrame.outputWh[i] !== null && (() => { const p = pointAt(i, chartFrame.outputWh[i]!); return <circle cx={p.x} cy={p.y} r={3} fill="#FF9500" /> })()}
+                          {chartFrame.inputWh[i] !== null && (() => { const p = pointAt(i, chartFrame.inputWh[i]!); return <circle cx={p.x} cy={p.y} r={3} fill="#01D6BE" /> })()}
+                        </g>
+                      ))}
+                      {scrubIndex !== null && scrubIndex < chartFrame.labels.length && (() => {
+                        const i = scrubIndex
+                        const inV = chartFrame.inputWh[i], outV = chartFrame.outputWh[i]
+                        const sol = chartFrame.solarWh[i], acv = chartFrame.acWh[i]
+                        // APP-20260923-007/008: energy in Wh, input split by source, and a
+                        // source only listed on a bucket where it actually delivered.
+                        const lines: { text: string; color: string }[] = [{ text: chartFrame.labels[i], color: '#FFFFFF' }]
+                        if (inV === null && outV === null) {
+                          lines.push({ text: 'No data', color: '#BFBFBF' })
+                        } else {
+                          lines.push({ text: `In ${formatWh(inV ?? 0)}`, color: '#01D6BE' })
+                          if ((sol ?? 0) > 0) lines.push({ text: `Solar ${formatWh(sol!)}`, color: '#BFBFBF' })
+                          if ((acv ?? 0) > 0) lines.push({ text: `AC ${formatWh(acv!)}`, color: '#BFBFBF' })
+                          lines.push({ text: `Out ${formatWh(outV ?? 0)}`, color: '#FF9500' })
+                        }
+                        const x = pointAt(i, 0).x
+                        const boxW = Math.max(...lines.map(l => l.text.length)) * 5.6 + 14
+                        const boxH = lines.length * 12 + 8
+                        const boxX = Math.min(Math.max(x - boxW / 2, 2), CHART_W - boxW - 2)
+                        return (
+                          <g>
+                            <line x1={x} x2={x} y1={CHART_PAD} y2={CHART_H - CHART_PAD} stroke="#FFFFFF" strokeWidth="1" strokeDasharray="3,3" opacity={0.4} />
+                            {inV !== null && (() => { const p = pointAt(i, inV); return <circle cx={p.x} cy={p.y} r={4} fill="#01D6BE" stroke="#141414" strokeWidth="1.5" /> })()}
+                            {outV !== null && (() => { const p = pointAt(i, outV); return <circle cx={p.x} cy={p.y} r={4} fill="#FF9500" stroke="#141414" strokeWidth="1.5" /> })()}
+                            <rect x={boxX} y={4} width={boxW} height={boxH} rx={5} fill="#000000" opacity={0.85} />
+                            {lines.map((l, k) => (
+                              <text key={k} x={boxX + boxW / 2} y={16 + k * 12} textAnchor="middle" fontSize="9" fontWeight="600" fill={l.color}>{l.text}</text>
+                            ))}
+                          </g>
+                        )
+                      })()}
+                    </svg>
+                    <div className="flex justify-between px-1 mt-1">
+                      {chartFrame.labels.filter((_, i) => i % Math.max(1, Math.floor(chartFrame.labels.length / 6)) === 0).map((label) => (
+                        <span key={label} className="text-tiny text-ink-6">{label}</span>
+                      ))}
                     </div>
-                  ) : (
-                    <div>
-                      <svg ref={chartSvgRef} viewBox="0 0 340 160" className="w-full h-[160px] touch-none select-none"
-                        onPointerDown={e => { e.currentTarget.setPointerCapture(e.pointerId); updateScrubFromClientX(e.clientX) }}
-                        onPointerMove={e => { if (e.buttons || e.pointerType !== 'mouse') updateScrubFromClientX(e.clientX) }}
-                        onPointerUp={() => setScrubIndex(null)}
-                        onPointerLeave={() => setScrubIndex(null)}
-                        onPointerCancel={() => setScrubIndex(null)}
-                      >
-                        {[0, 1, 2, 3, 4].map((g) => (
-                          <line key={g} x1="0" x2="340" y1={4 + (g / 4) * 152} y2={4 + (g / 4) * 152}
-                            stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
-                        ))}
-                        {(() => {
-                          const { linePath, areaPath } = generateAreaPath(chartFrame.output, 340, 160)
-                          return <g><path d={areaPath} fill="rgba(255,149,0,0.18)" /><path d={linePath} fill="none" stroke="#FF9500" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></g>
-                        })()}
-                        {(() => {
-                          const { linePath } = generateAreaPath(chartFrame.input, 340, 160)
-                          return <path d={linePath} fill="none" stroke="#01D6BE" strokeWidth="2.5" strokeDasharray="6 5" strokeLinecap="round" strokeLinejoin="round" />
-                        })()}
-                        {scrubIndex !== null && (() => {
-                          const { points: inputPts } = generateAreaPathWithPoints(chartFrame.input, 340, 160)
-                          const { points: outputPts } = generateAreaPathWithPoints(chartFrame.output, 340, 160)
-                          const inPt = inputPts[scrubIndex]
-                          const outPt = outputPts[scrubIndex]
-                          if (!inPt || !outPt) return null
-                          const inVal = chartFrame.input[scrubIndex] ?? 0
-                          const outVal = chartFrame.output[scrubIndex] ?? 0
-                          const text1 = `In ${Math.round(inVal)} W`
-                          const text2 = `Out ${Math.round(outVal)} W`
-                          const boxW = Math.max(text1.length, text2.length) * 5.6 + 14
-                          const boxX = Math.min(Math.max(inPt.x - boxW / 2, 2), 340 - boxW - 2)
-                          return (
-                            <g>
-                              <line x1={inPt.x} x2={inPt.x} y1={4} y2={156} stroke="#FFFFFF" strokeWidth="1" strokeDasharray="3,3" opacity={0.4} />
-                              <circle cx={inPt.x} cy={inPt.y} r={4} fill="#01D6BE" stroke="#141414" strokeWidth="1.5" />
-                              <circle cx={outPt.x} cy={outPt.y} r={4} fill="#FF9500" stroke="#141414" strokeWidth="1.5" />
-                              <rect x={boxX} y={4} width={boxW} height={32} rx={5} fill="#000000" opacity={0.85} />
-                              <text x={boxX + boxW / 2} y={16} textAnchor="middle" fontSize="9" fontWeight="600" fill="#01D6BE">{text1}</text>
-                              <text x={boxX + boxW / 2} y={28} textAnchor="middle" fontSize="9" fontWeight="600" fill="#FF9500">{text2}</text>
-                            </g>
-                          )
-                        })()}
-                      </svg>
-                      <div className="flex justify-between px-1 mt-1">
-                        {chartFrame.labels.filter((_, i) => i % Math.max(1, Math.floor(chartFrame.labels.length / 6)) === 0).map((label) => (
-                          <span key={label} className="text-tiny text-ink-6">{label}</span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  </div>
 
                   {!chartFrame.hasData && (
                     <p className="text-label text-ink-7 text-center mt-3">
                       No power history for this period yet.
+                    </p>
+                  )}
+                  {historyPartial && (
+                    <p className="text-label text-warning text-center mt-2">
+                      Some history for this period couldn't be loaded, so totals may be low.
                     </p>
                   )}
                 </motion.div>
@@ -969,7 +829,7 @@ export default function StatsPage() {
         {showCo2Info && chartFrame && (
           <Co2InfoSheet
             onClose={() => setShowCo2Info(false)}
-            solarKwh={chartFrame.totalInputKwh}
+            solarKwh={chartFrame.totalSolarKwh}
             co2Kg={chartFrame.co2Kg}
           />
         )}
