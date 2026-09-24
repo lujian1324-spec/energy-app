@@ -180,7 +180,12 @@ lives on independently and is still referenced elsewhere.)
   there is therefore no cloud echo to poll, and after a successful save the row shows what was written
   to 0x0086/0x0054 for the rest of the visit. (On re-entry `resolveBatteryPriority` still lets a
   device-reported `workMode` of 1/2 win — SW-04's rule, deliberately left alone here.)
-- **Fan Speed (v4.15.0): one Modbus write, slider 0–100 %.** `FanSpeedCard`
+- **Fan Speed — NOT RELEASED (hidden since v4.15.3).** Rendered only when `FAN_CONTROL_ENABLED`
+  (`src/config/fanControl.ts`) is true, which is `DEV_TOOLS_ENABLED`: Vite dev and QA builds made
+  with `VITE_ENABLE_DEV_TOOLS=true` (`deploy-qa.yml`). Consumer builds (Pages root, APK, iOS, release
+  AAB) have no card, and the build-time constant drops it from their bundle. It stays wired so
+  releasing it is that one line — only after hardware verification (0 % behaviour, firmware handback).
+  Implementation (v4.15.0): one Modbus write, slider 0–100 %. `FanSpeedCard`
   (`src/pages/device/FanSpeedCard.tsx`) → `applyFanSpeed()` (`src/api/fanControl.ts`) sends one FC16
   passthrough to **0x0081** (`FAN_CTRL`) with value `0x01SS`: high byte `0x01` = fan enabled, low
   byte = the percentage in hex (`0x00`–`0x64`), e.g. 23 % → `01 10 00 81 00 01 02 01 17 F9 DF`. The
