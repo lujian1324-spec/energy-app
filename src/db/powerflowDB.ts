@@ -9,6 +9,7 @@
  * - connection_logs  连接历史 (自增 id)
  * - commands 命令审计 (自增 id)
  * - user_profile 用户资料 (key: 'account:<account>')
+ * - device_history 云端历史缓存 (key: [deviceId, timestamp], v5)
  */
 
 import { openDB, type IDBPDatabase } from 'idb'
@@ -22,9 +23,10 @@ import type {
   UserProfile,
 } from '../types/protocol'
 import type { PeakShavingSettings } from '../types'
+import type { HistoryPoint } from '../utils/historyPoints'
 
 const DB_NAME = 'powerflow-db'
-const DB_VERSION = 4   // v4: add rated_params store
+const DB_VERSION = 5   // v5: device_history (per-device cloud history cache)
 
 export interface RatedParams {
   deviceId: string
@@ -39,7 +41,16 @@ export interface RatedParams {
   serialNumber?: string       // 自动生成的序列号
 }
 
+/**
+ * One cached cloud sample. Keyed by [deviceId, timestamp], so a device can
+ * never read another's rows and re-writing a sample replaces it.
+ */
+export interface DeviceHistoryRow extends HistoryPoint {
+  deviceId: string
+}
+
 /** 最大保留条数（避免无限增长） */
+const MAX_DEVICE_HISTORY = 20_000
 const MAX_POWER_HISTORY = 8640 // ~24h @ 10s interval
 const MAX_ALERTS = 500
 const MAX_COMMANDS = 200
@@ -76,6 +87,11 @@ type PowerFlowDB = IDBPDatabase<{
   rated_params: {
     key: string
     value: RatedParams
+  }
+  device_history: {
+    key: [string, number]
+    value: DeviceHistoryRow
+    indexes: { timestamp: number }
   }
 }>
 
@@ -117,8 +133,13 @@ async function getDB(): Promise<PowerFlowDB> {
       key: string
       value: RatedParams
     }
+    device_history: {
+      key: [string, number]
+      value: DeviceHistoryRow
+      indexes: { timestamp: number }
+    }
   }>(DB_NAME, DB_VERSION, {
-    upgrade(db, oldVersion) {
+    upgrade(db, oldVersion, _newVersion, transaction) {
       // ---- power_history ----
       if (!db.objectStoreNames.contains('power_history')) {
         const store = db.createObjectStore('power_history', {
@@ -169,6 +190,19 @@ async function getDB(): Promise<PowerFlowDB> {
       // ---- rated_params (added in v4) ----
       if (!db.objectStoreNames.contains('rated_params')) {
         db.createObjectStore('rated_params')
+      }
+
+      // ---- device_history (added in v5) ----
+      if (!db.objectStoreNames.contains('device_history')) {
+        const store = db.createObjectStore('device_history', { keyPath: ['deviceId', 'timestamp'] })
+        store.createIndex('timestamp', 'timestamp')
+      }
+      // The Real-Time Power chart used to cache into power_history, where rows
+      // without a deviceId (guest-mode simulator) were read as every device's
+      // and AC / battery were stored as 0. Nothing reads it for charts any
+      // more; drop what it holds so none of it can surface again.
+      if (oldVersion > 0 && oldVersion < 5) {
+        void transaction.objectStore('power_history').clear()
       }
     },
   })
@@ -403,57 +437,58 @@ export async function clearOldAlerts(): Promise<number> {
 // ================================================================
 
 /**
- * 按设备 ID + 时间段读取本地缓存的历史数据
+ * The cached cloud samples of ONE device in [fromTime, toTime], ascending.
+ * Only rows written for this deviceId can come back.
  */
-export async function getHistoryByDeviceAndRange(
+export async function readDeviceHistory(
   deviceId: string,
   fromTime: number,
-  toTime: number
-): Promise<PowerHistoryRecord[]> {
+  toTime: number,
+): Promise<HistoryPoint[]> {
   const db = await getDB()
-  const index = db.transaction('power_history').store.index('timestamp')
-  const range = IDBKeyRange.bound(fromTime, toTime)
-
-  const results: PowerHistoryRecord[] = []
-  let cursor = await index.openCursor(range, 'next')
-  while (cursor) {
-    if (!cursor.value.deviceId || cursor.value.deviceId === deviceId) {
-      results.push(cursor.value)
-    }
-    cursor = await cursor.continue()
-  }
-  return results
+  const rows = await db.getAll('device_history', IDBKeyRange.bound([deviceId, fromTime], [deviceId, toTime]))
+  return rows.map(({ deviceId: _d, ...p }) => p)
 }
 
 /**
- * 批量写入历史记录，跳过已存在的时间戳（按 deviceId+timestamp 去重）
+ * Make the cache for this device over [fromTime, toTime] exactly `points`:
+ * what the server returned for that window replaces whatever was there.
  */
-export async function saveHistoryBatch(
-  records: Omit<PowerHistoryRecord, 'id'>[],
-  existingTimestamps: Set<number>
-): Promise<number> {
-  if (records.length === 0) return 0
+export async function replaceDeviceHistory(
+  deviceId: string,
+  fromTime: number,
+  toTime: number,
+  points: HistoryPoint[],
+): Promise<void> {
   const db = await getDB()
-  const tx = db.transaction('power_history', 'readwrite')
-  let saved = 0
-  for (const r of records) {
-    if (!existingTimestamps.has(r.timestamp)) {
-      await tx.store.add(r as PowerHistoryRecord)
-      existingTimestamps.add(r.timestamp)
-      saved++
-    }
+  const tx = db.transaction('device_history', 'readwrite')
+  await tx.store.delete(IDBKeyRange.bound([deviceId, fromTime], [deviceId, toTime]))
+  for (const p of points) {
+    if (p.timestamp >= fromTime && p.timestamp <= toTime) await tx.store.put({ ...p, deviceId })
   }
   await tx.done
+  await trimDeviceHistory()
+}
 
-  // 裁剪超出上限
-  const count = await db.count('power_history')
-  if (count > MAX_POWER_HISTORY) {
-    const trimTx = db.transaction('power_history', 'readwrite')
-    const cursor = await trimTx.store.openCursor()
-    if (cursor) await cursor.delete()
-    await trimTx.done
+/** Keep the newest MAX_DEVICE_HISTORY samples across all devices. */
+async function trimDeviceHistory(): Promise<void> {
+  const db = await getDB()
+  const excess = (await db.count('device_history')) - MAX_DEVICE_HISTORY
+  if (excess <= 0) return
+  const tx = db.transaction('device_history', 'readwrite')
+  let cursor = await tx.store.index('timestamp').openCursor()
+  for (let n = 0; cursor && n < excess; n++) {
+    await cursor.delete()
+    cursor = await cursor.continue()
   }
-  return saved
+  await tx.done
+}
+
+/** Sign-in / sign-out: no account may open on another's cached history. */
+export async function clearDeviceHistory(): Promise<void> {
+  const db = await getDB()
+  await db.clear('device_history')
+  await db.clear('power_history')
 }
 
 // ================================================================

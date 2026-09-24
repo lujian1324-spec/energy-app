@@ -149,12 +149,17 @@ export default function DebugParamsPage() {
 
   const history = useMemo(() => {
     if (historyPoints.length === 0) return null
-    const stat = (arr: number[]) => ({
-      min: Math.min(...arr),
-      max: Math.max(...arr),
-      avg: arr.reduce((a, b) => a + b, 0) / arr.length,
-      total: arr.reduce((a, b) => a + b, 0),
-    })
+    // Missing readings are null, not 0; they are left out of the stats.
+    const stat = (raw: Array<number | null>) => {
+      const arr = raw.filter((v): v is number => v !== null)
+      if (arr.length === 0) return { min: 0, max: 0, avg: 0, total: 0 }
+      return {
+        min: Math.min(...arr),
+        max: Math.max(...arr),
+        avg: arr.reduce((a, b) => a + b, 0) / arr.length,
+        total: arr.reduce((a, b) => a + b, 0),
+      }
+    }
     return {
       solar:  stat(historyPoints.map(p => p.solar)),
       output: stat(historyPoints.map(p => p.output)),
@@ -429,9 +434,9 @@ export default function DebugParamsPage() {
                   {historyPoints.map((p, i) => (
                     <div key={i} className="grid grid-cols-4 px-3 py-1.5 border-b border-white/[0.03]">
                       <span className="text-tiny font-mono text-ink-8">{p.time.slice(11, 16)}</span>
-                      <span className="text-tiny text-warning text-center">{Math.round(p.solar)}</span>
-                      <span className="text-tiny text-ink-6 text-center">{Math.round(p.output)}</span>
-                      <span className="text-tiny text-success text-center">{Math.round(p.soc)}</span>
+                      <span className="text-tiny text-warning text-center">{p.solar === null ? '--' : Math.round(p.solar)}</span>
+                      <span className="text-tiny text-ink-6 text-center">{p.output === null ? '--' : Math.round(p.output)}</span>
+                      <span className="text-tiny text-success text-center">{p.soc === null ? '--' : Math.round(p.soc)}</span>
                     </div>
                   ))}
                 </div>

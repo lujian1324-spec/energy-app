@@ -132,6 +132,11 @@ Also present but not routed standalone: `ProvisioningPage` (inside DevicePage ad
   `wifiConfiguredRef` is set (marks `bleGoneRef` only): no reconnect loop, no
   `failKind: 'disconnect'`. Naming, icon and the cloud bind never need the link, and the step
   still reads `'configuring'` through them, which is what used to fail a successful add.
+- **Guest mode is hidden from users (v4.17.0), not deleted.** `GUEST_ENTRY_ENABLED`
+  (`src/config/guestEntry.ts`) gates the sign-in screen's "Continue as Guest"; it is `true` only in a
+  build made with `VITE_ENABLE_GUEST=true`, which only the E2E workflow sets (its `[Guest]` specs).
+  Consumer, QA, APK and iOS builds have no way in. `setGuestMode`, the demo devices and the simulator
+  stay wired.
 - Terms of Use / Privacy Policy (v4.1.2) are no longer in-app routes/local text — every link
   (`LoginPage`, `RegisterPage`, `SettingPage`, `DataExportPage`) opens the marketing site directly
   (`src/config/legalLinks.ts`: `TERMS_URL`/`PRIVACY_URL` → `sierro.us/pages/{terms,policy}`,
@@ -180,6 +185,20 @@ lives on independently and is still referenced elsewhere.)
   (badge in %, curve from `HistoryPoint.soc`); AC/Solar/Output tabs show power (W), auto-scaled.
   Driven by `RealTimePowerChart`'s `batteryAsSoc`/`batterySoc` props (the shared chart still defaults
   to the power view for the Battery tab).
+- **Today's history (v4.17.0).** `useHistoryFetcher(id, dayStart, dayEnd, { live: true })` reads
+  `POST /deviceState/attribute/record/list` the way the Siseli client's `doGetDeviceHistory` does
+  (`deviceId`, `fromTime`/`toTime` as local ISO **with offset** via `toIsoTz` in
+  `src/utils/historyPoints.ts`, `orderByTimeAsc: true`, `count: 80`, every page until a short one).
+  Tabs → fields: Battery `remainingBatteryCapacity`, AC (input) `exchangeChargingPower`, Solar
+  `generationPower`, Output (AC output) `outputPower`. A missing field is `null` and a silence longer
+  than `maxGapMs()` (3× cadence, 15–60 min) breaks the line — never 0 W, never a bridge. The tail is
+  re-read every 60 s while visible; the day rolls over at midnight. The old formatter dropped the `-`
+  west of UTC (`…T00:00:0007:00`), so every US user got 20101 and an empty chart.
+  **Cache:** IndexedDB `device_history` (DB v5), keyed `[deviceId, timestamp]`, paints first only —
+  the full day is re-read from the server on every visit and replaces it. It used to end the fetch
+  (curve frozen at the first visit) and to read guest-simulator rows with no `deviceId` as every
+  device's; v5 clears that legacy `power_history`. `deviceStore.exitDemoMode` (sign-in and
+  sign-out) clears the cache.
 
 **DeviceDetailPage** (`/device/:id/settings` — Device Info)
 - *Name edit*, *icon picker*.

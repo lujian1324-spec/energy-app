@@ -2,6 +2,7 @@ import { useState, useEffect, useLayoutEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from '../components/Icon'
 import { useAuthStore } from '../stores/authStore'
+import { GUEST_ENTRY_ENABLED } from '../config/guestEntry'
 import { useDeviceStore } from '../stores/deviceStore'
 import {
   sendEmailCaptcha,
@@ -328,12 +329,14 @@ export default function LoginPage() {
             <a href={PRIVACY_URL} target="_blank" rel="noopener noreferrer" className="text-primary">Privacy Policy</a>
           </p>
 
-          {/* Not in the handoff, kept because guest mode is a shipped feature. */}
-          <div className="mt-6 flex flex-col items-center">
-            <button onClick={continueAsGuest} disabled={loading} className="text-body-md text-ink-7">
-              Continue as Guest
-            </button>
-          </div>
+          {/* Hidden from users (v4.17.0): see config/guestEntry. */}
+          {GUEST_ENTRY_ENABLED && (
+            <div className="mt-6 flex flex-col items-center">
+              <button onClick={continueAsGuest} disabled={loading} className="text-body-md text-ink-7">
+                Continue as Guest
+              </button>
+            </div>
+          )}
         </div>
       </div>
     )

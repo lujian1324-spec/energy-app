@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { Loader2 } from 'lucide-react'
 import Glyph from './Icon'
 import { useHistoryFetcher } from '../hooks/useHistoryFetcher'
+import { maxGapMs, seriesSegments, type HistorySeries } from '../utils/historyPoints'
 
 type PowerTab = 'battery' | 'ac' | 'solar' | 'output'
 
@@ -47,7 +48,20 @@ export interface RealTimePowerChartProps {
  * day has data yet, and pinch/wheel zoom down to a 1-hour window. Rendered by
  * DeviceMonitorPage; the Battery tab can plot SOC (%) instead of power via the
  * batteryAsSoc prop.
+ *
+ * Tabs → history fields: Battery = `remainingBatteryCapacity` (%), AC = AC input
+ * `exchangeChargingPower`, Solar = `generationPower`, Output = AC output
+ * `outputPower`. A sample without the tab's field, or a silence longer than
+ * three reporting intervals, breaks the line: no reading is drawn as a gap,
+ * never as 0 W and never as a straight line bridging the hours the device was
+ * off. The day's history keeps refreshing while the screen is open and rolls
+ * over at midnight.
  */
+function startOfDay(ms: number): number {
+  const d = new Date(ms)
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+}
+
 export default function RealTimePowerChart({ deviceId, isOnline, values, batteryAsSoc = false, batterySoc, powerAxisMax = 1000, className }: RealTimePowerChartProps) {
   const [powerDataSource, setPowerDataSource] = useState<PowerTab>('battery')
 
@@ -64,19 +78,26 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
 
   const currentChartData = powerChartData[powerDataSource]
 
-  // ─── Today's time window for chart history ───
-  const [todayFrom, todayTo] = useMemo(() => {
-    const now = new Date()
-    const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
-    const end   = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
-    return [start.getTime(), end.getTime()]
+  // ─── Today's time window for chart history (rolls over at midnight) ───
+  const [dayStart, setDayStart] = useState(() => startOfDay(Date.now()))
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const today = startOfDay(Date.now())
+      setDayStart(prev => (prev === today ? prev : today))
+    }, 60_000)
+    return () => clearInterval(timer)
   }, [])
+  const [todayFrom, todayTo] = useMemo(() => {
+    const d = new Date(dayStart)
+    const end = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999)
+    return [dayStart, end.getTime()]
+  }, [dayStart])
 
   const {
     points: rawHistoryPoints,
     loading: historyLoading,
     error: historyError,
-  } = useHistoryFetcher(deviceId, todayFrom, todayTo)
+  } = useHistoryFetcher(deviceId, todayFrom, todayTo, { live: true })
 
   // ─── Chart zoom / pan state (unix ms within today) ───
   const [viewStart, setViewStart] = useState(todayFrom)
@@ -186,22 +207,6 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
     setViewEnd(ce)
   }, [viewStart, viewEnd, clampView, todayFrom, todayTo])
 
-  // ─── Build SVG path from history points, mapped onto viewStart..viewEnd ───
-  const chartPoints = useMemo(() => {
-    const win = viewEnd - viewStart
-    if (win <= 0) return []
-    return rawHistoryPoints
-      .filter(p => p.timestamp >= viewStart - win * 0.05 && p.timestamp <= viewEnd + win * 0.05)
-      .map(p => {
-        const x = ((p.timestamp - viewStart) / win) * 300
-        const val = powerDataSource === 'battery' ? (batteryAsSoc ? p.soc : p.battery)
-                  : powerDataSource === 'ac'      ? p.ac
-                  : powerDataSource === 'solar'   ? p.solar
-                  :                                 p.output
-        return { x, val }
-      })
-  }, [rawHistoryPoints, viewStart, viewEnd, powerDataSource, batteryAsSoc])
-
   /*
    * Both axes are FIXED, and neither is fitted to the data.
    *
@@ -217,18 +222,32 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
   const isSocView = batteryAsSoc && powerDataSource === 'battery'
   const chartMax = isSocView ? 100 : powerAxisMax
 
-  const chartSvgPts = useMemo(() => {
-    return chartPoints
-      .filter(p => p.x >= -10 && p.x <= 310)
-      .map(p => {
-        // Clamped, not |val|: the axis starts at zero, so a negative reading
-        // belongs on the baseline. Mirroring it drew a discharge as if it were
-        // the same size of charge.
-        const v = Math.min(Math.max(p.val, 0), chartMax)
-        const y = 60 - (v / chartMax) * 55
-        return [p.x, y] as const
-      })
-  }, [chartPoints, chartMax])
+  const series: HistorySeries = powerDataSource === 'battery' ? (batteryAsSoc ? 'soc' : 'battery')
+    : powerDataSource === 'ac' ? 'ac'
+    : powerDataSource === 'solar' ? 'solar'
+    : 'output'
+
+  // One line per unbroken run of readings, mapped onto viewStart..viewEnd.
+  const gapMs = useMemo(() => maxGapMs(rawHistoryPoints), [rawHistoryPoints])
+  const chartSegments = useMemo(() => {
+    const win = viewEnd - viewStart
+    if (win <= 0) return []
+    const lo = viewStart - win * 0.05
+    const hi = viewEnd + win * 0.05
+    return seriesSegments(rawHistoryPoints, series, gapMs)
+      .map(seg => seg
+        .filter(p => p.timestamp >= lo && p.timestamp <= hi)
+        .map(p => {
+          const x = ((p.timestamp - viewStart) / win) * 300
+          // Clamped, not |val|: the axis starts at zero, so a negative reading
+          // belongs on the baseline. Mirroring it drew a discharge as if it were
+          // the same size of charge.
+          const v = Math.min(Math.max(p.value, 0), chartMax)
+          return [x, 60 - (v / chartMax) * 55] as const
+        }))
+      .filter(seg => seg.length > 0)
+  }, [rawHistoryPoints, series, gapMs, viewStart, viewEnd, chartMax])
+  const hasSeriesData = chartSegments.length > 0
 
   // ─── Y-axis scale labels (2 levels: max at top, 0 at bottom) ───
   // Rendered as an HTML overlay (like the X-axis labels) because the SVG uses
@@ -246,12 +265,15 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
     ].map(t => ({ label: t.label, py: t.vy * (SVG_PX_H / 70) }))
   }, [chartMax, currentChartData.unit])
 
-  const chartLinePoints = chartSvgPts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ')
-  // Closes on the zero baseline (y=60), not on the bottom of the viewBox (y=70)
-  // — the fill used to hang ten units below the line the axis calls zero.
-  const chartAreaPoints = chartSvgPts.length >= 2
-    ? `${chartLinePoints} ${chartSvgPts[chartSvgPts.length-1][0].toFixed(1)},60 ${chartSvgPts[0][0].toFixed(1)},60`
-    : ''
+  const chartPaths = chartSegments.map(seg => {
+    const line = seg.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ')
+    // Closes on the zero baseline (y=60), not on the bottom of the viewBox (y=70)
+    // — the fill used to hang ten units below the line the axis calls zero.
+    const area = seg.length >= 2
+      ? `${line} ${seg[seg.length - 1][0].toFixed(1)},60 ${seg[0][0].toFixed(1)},60`
+      : ''
+    return { line, area, single: seg.length === 1 ? seg[0] : null }
+  })
 
   // ─── X-axis tick labels at 0/4/8/12/16/20/24 hours ───
   const X_TICKS = useMemo(() => {
@@ -322,18 +344,18 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
             <p className="text-label text-ink-7 mt-1">Reconnect the device to view chart data.</p>
           </div>
         )}
-        {isOnline && historyLoading && rawHistoryPoints.length === 0 && (
+        {isOnline && historyLoading && !hasSeriesData && (
           <div className="absolute inset-0 flex items-center justify-center z-10">
             <Loader2 size={20} className="text-primary animate-spin" />
           </div>
         )}
         {/* A dashed line said both "nothing recorded yet" and "the request
             failed", which are not the same thing to anyone looking at it. */}
-        {isOnline && !historyLoading && rawHistoryPoints.length === 0 && (
+        {isOnline && !historyLoading && !hasSeriesData && (
           <div className="absolute inset-0 flex items-center justify-center z-10 px-4 text-center">
             <p className="text-label text-ink-7">
               {/* SW-15: the reason never reaches the user; it is logged instead. */}
-              {historyError
+              {historyError && rawHistoryPoints.length === 0
                 ? "Couldn't load today's history"
                 : 'No readings recorded yet today'}
             </p>
@@ -360,34 +382,27 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
               stroke="rgba(255,255,255,0.06)" strokeWidth="0.8" />
           ) : null)}
 
-          {/* Chart fill */}
-          {chartAreaPoints && (
-            <motion.polygon
-              key={`fill-${powerDataSource}-${rawHistoryPoints.length}`}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3 }}
-              points={chartAreaPoints}
-              fill={currentChartData.color}
-              fillOpacity="0.12"
-            />
-          )}
-
-          {/* Chart line */}
-          {chartSvgPts.length >= 2 ? (
-            <motion.polyline
-              key={`line-${powerDataSource}-${rawHistoryPoints.length}-${viewStart}`}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.4 }}
-              points={chartLinePoints}
-              fill="none"
-              stroke={currentChartData.color}
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          ) : !historyLoading && (
+          {/* One fill + line per unbroken run; a lone sample is a dot. */}
+          {chartPaths.map((path, i) => (
+            <g key={`${powerDataSource}-${i}`}>
+              {path.area && (
+                <polygon points={path.area} fill={currentChartData.color} fillOpacity="0.12" />
+              )}
+              {path.single ? (
+                <circle cx={path.single[0]} cy={path.single[1]} r="1.5" fill={currentChartData.color} />
+              ) : (
+                <polyline
+                  points={path.line}
+                  fill="none"
+                  stroke={currentChartData.color}
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              )}
+            </g>
+          ))}
+          {!hasSeriesData && !historyLoading && (
             <line x1="0" y1="60" x2="300" y2="60"
               stroke={currentChartData.color} strokeWidth="1.5"
               strokeOpacity="0.3" strokeLinecap="round" strokeDasharray="4 4" />

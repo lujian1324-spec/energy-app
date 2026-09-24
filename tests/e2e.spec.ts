@@ -3,7 +3,9 @@
  *
  * Target: https://lujian1324-spec.github.io/energy-app
  * Accounts:
- *   Guest mode  (demo data, no login required)
+ *   Guest mode  (demo data, no login required). Hidden from users since
+ *     v4.17.0: the entry only exists in a build made with VITE_ENABLE_GUEST=true
+ *     (the E2E workflow's local build), so the [Guest] groups skip elsewhere.
  *   Real-account creds come from E2E_USER / E2E_PASS env vars (never committed).
  *
  * Run: PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers npx playwright test --reporter=list
@@ -172,6 +174,7 @@ test.describe('Email OTP Flow', () => {
 // ─── Guest Mode Tests ────────────────────────────────────────────────────────
 
 test.describe('[Guest] Core Navigation', () => {
+  test.skip(!process.env.E2E_LOCAL, 'Guest entry exists only in the E2E build (VITE_ENABLE_GUEST=true)')
   test('can enter as guest', async ({ page }) => {
     await loginAsGuest(page)
     await expect(page).toHaveURL(/\/(devices|device)/, { timeout: 5000 })
@@ -244,6 +247,7 @@ test.describe('[Guest] Core Navigation', () => {
 })
 
 test.describe('[Guest] Device Dashboard', () => {
+  test.skip(!process.env.E2E_LOCAL, 'Guest entry exists only in the E2E build (VITE_ENABLE_GUEST=true)')
   test('clicking demo device navigates to device page', async ({ page }) => {
     await loginAsGuest(page)
     await page.goto(`${BASE}/#/devices`)

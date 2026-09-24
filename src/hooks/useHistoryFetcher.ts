@@ -1,30 +1,32 @@
 /**
- * 分页拉取设备当天历史数据 hook（doGetDeviceHistory 模式）。
- * - 调用 POST /deviceState/attribute/record/list（参考 Dart doGetDeviceHistory）
- * - 每页 80 条（匹配参考实现 count:80），逐页请求直到无更多数据
- * - 每页到达后立即写入 IndexedDB（去重）
- * - 首次挂载时先检查本地缓存，有则直接返回
+ * A device's history over [fromTime, toTime] for the Real-Time Power chart,
+ * from `POST /deviceState/attribute/record/list` (Siseli `doGetDeviceHistory`:
+ * deviceId, fromTime, toTime, orderByTimeAsc, count 80, page).
+ *
+ * The server is the source of truth; the on-phone cache only paints first.
+ *  1. The cache for THIS device and window paints at once (keyed by
+ *     [deviceId, timestamp] — no other device's rows can come back).
+ *  2. The whole window is then read from the server, every visit, and replaces
+ *     the cache for it. The cache used to end the run: once any of today was
+ *     stored the request was never made again, so the curve froze at the first
+ *     visit, a half-finished fetch stayed half-finished all day, and rows the
+ *     guest-mode simulator had written without a deviceId were read as every
+ *     device's.
+ *  3. With `live`, the tail is re-read every minute while the screen is visible,
+ *     so today's curve keeps growing.
+ *
+ * fromTime/toTime go out as local time with the zone offset. The old formatter
+ * dropped the minus sign west of UTC ("…T00:00:0007:00"), so every US user got
+ * 20101 "illegal argument" and an empty chart; `toIsoTz` is shared now.
  */
 import { useState, useEffect, useRef } from 'react'
 import { fetchDeviceRecordHistory } from '../api/deviceApi'
-import type { DeviceAttributeRecord } from '../api/deviceApi'
 import { isApiSuccess } from '../utils/apiClient'
-import { sanitizeUiCopy, toUserFacingError } from '../utils/uiCopy'
-import {
-  getHistoryByDeviceAndRange,
-  saveHistoryBatch,
-} from '../db/powerflowDB'
-import type { PowerHistoryRecord } from '../types/protocol'
+import { toUserFacingError } from '../utils/uiCopy'
+import { readDeviceHistory, replaceDeviceHistory } from '../db/powerflowDB'
+import { mergePoints, recordsToPoints, toIsoTz, type HistoryPoint } from '../utils/historyPoints'
 
-export interface HistoryPoint {
-  time: string       // ISO 时间字符串
-  timestamp: number  // Unix ms
-  solar: number      // generationPower W
-  output: number     // outputPower W
-  soc: number        // remainingBatteryCapacity %
-  battery: number    // batteryPower W (charge positive, discharge negative)
-  ac: number         // exchangeChargingPower W
-}
+export type { HistoryPoint } from '../utils/historyPoints'
 
 export interface UseHistoryFetcherResult {
   points: HistoryPoint[]
@@ -36,50 +38,59 @@ export interface UseHistoryFetcherResult {
   error: string | null
 }
 
+/** Page size of the Siseli reference client (doGetDeviceHistory, count 80). */
 const PAGE_SIZE = 80
-const HISTORY_KEYS = [
-  'generationPower',
-  'outputPower',
-  'remainingBatteryCapacity',
-  'batteryPower',
-  'exchangeChargingPower',
-] as const
+/** Safety stop: 80 × 60 = 4,800 samples, a day at 18 s cadence. */
+const MAX_PAGES = 60
+/** How often the tail of a live window is re-read. */
+export const LIVE_REFRESH_MS = 60_000
+/** Re-read this much before the newest sample, for late uploads. */
+const LIVE_OVERLAP_MS = 10 * 60_000
 
-/** 将毫秒时间戳转为 ISO 8601 字符串（带时区偏移） */
-function toIsoTz(ms: number): string {
-  const d = new Date(ms)
-  const tzOffset = -d.getTimezoneOffset()
-  const tzStr = (tzOffset >= 0 ? '+' : '') +
-    String(Math.floor(Math.abs(tzOffset) / 60)).padStart(2, '0') +
-    ':' +
-    String(Math.abs(tzOffset) % 60).padStart(2, '0')
-  return d.getFullYear() + '-' +
-    String(d.getMonth() + 1).padStart(2, '0') + '-' +
-    String(d.getDate()).padStart(2, '0') + 'T' +
-    String(d.getHours()).padStart(2, '0') + ':' +
-    String(d.getMinutes()).padStart(2, '0') + ':' +
-    String(d.getSeconds()).padStart(2, '0') +
-    tzStr
-}
+type PageResult = { points: HistoryPoint[]; complete: boolean; error: string | null; pages: number }
 
 /**
- * 从 DeviceAttributeRecord 提取某属性的数值。经真实后端验证，值嵌套在
- * `record.fields[key].value`（非记录顶层）。缺失返回 undefined，便于上层区分
- * 「字段不存在」与「值为 0」。
+ * Every page of [from, to]. A failed page stops the run: what came before it
+ * is returned with `complete: false` and the reason.
  */
-function fieldVal(rec: DeviceAttributeRecord, key: string): number | undefined {
-  const f = rec.fields?.[key]
-  if (f === undefined || f === null) return undefined
-  const raw = typeof f === 'object' && 'value' in f ? (f as { value?: unknown }).value : f
-  const n = Number(raw)
-  return Number.isNaN(n) ? undefined : n
+export async function fetchWindow(
+  deviceId: string,
+  from: number,
+  to: number,
+  isCancelled: () => boolean,
+  onPage?: (sofar: HistoryPoint[], page: number) => void,
+): Promise<PageResult> {
+  const all: HistoryPoint[] = []
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    const res = await fetchDeviceRecordHistory({
+      deviceId,
+      fromTime: toIsoTz(from),
+      toTime: toIsoTz(to),
+      page,
+      count: PAGE_SIZE,
+      orderByTimeAsc: true,
+    })
+    if (isCancelled()) return { points: all, complete: false, error: null, pages: page }
+    if (!isApiSuccess(res.code) || !res.data) {
+      const raw = res.message ?? res.msg ?? ''
+      console.warn('[history] page failed:', page, res.code, raw)
+      return { points: all, complete: false, error: raw || "Couldn't load history", pages: page }
+    }
+    const list = res.data.list ?? []
+    all.push(...recordsToPoints(list))
+    onPage?.(all, page)
+    if (list.length < PAGE_SIZE) return { points: all, complete: true, error: null, pages: page }
+  }
+  return { points: all, complete: false, error: null, pages: MAX_PAGES }
 }
 
 export function useHistoryFetcher(
   deviceId: string | null,
   fromTime: number,
-  toTime: number
+  toTime: number,
+  options: { live?: boolean } = {},
 ): UseHistoryFetcherResult {
+  const live = !!options.live
   const [points, setPoints] = useState<HistoryPoint[]>([])
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
@@ -87,163 +98,113 @@ export function useHistoryFetcher(
   const [savedCount, setSavedCount] = useState(0)
   const [fromCache, setFromCache] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const cancelRef = useRef(false)
+  // The points of the run in flight, so the live tick merges into what is on screen.
+  const pointsRef = useRef<HistoryPoint[]>([])
 
   useEffect(() => {
-    if (!deviceId) return
-    cancelRef.current = false
+    pointsRef.current = []
     setPoints([])
     setDone(false)
     setCurrentPage(0)
     setSavedCount(0)
     setFromCache(false)
     setError(null)
+    if (!deviceId) { setLoading(false); return }
 
-    async function run() {
-      setLoading(true)
+    let cancelled = false
+    const isCancelled = () => cancelled
+    const show = (next: HistoryPoint[]) => {
+      pointsRef.current = next
+      setPoints(next)
+    }
+    const store = (from: number, to: number, pts: HistoryPoint[]) =>
+      replaceDeviceHistory(deviceId, from, to, pts)
+        .then(() => { if (!cancelled) setSavedCount(pointsRef.current.length) })
+        .catch(e => console.warn('[history] cache write failed:', e))
+
+    let tailInFlight = false
+    let fullDone = false
+    const refreshTail = async () => {
+      if (cancelled || tailInFlight || !fullDone) return
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
+      tailInFlight = true
       try {
-        /*
-         * The cache is an optimisation and must never be able to stop the data
-         * reaching the chart. Both halves of it used to sit bare inside the one
-         * try that wraps the whole fetch, so a failing read jumped straight to
-         * the catch and the request was never made at all — and a failing write
-         * skipped the setPoints on the line after it. Either way the chart drew
-         * its no-data placeholder while the records sat on the server, and the
-         * error went to a field nothing rendered.
-         *
-         * Insights reads the same endpoint and touches none of this, which is
-         * why it kept working while this did not.
-         */
-        // 1. 先读本地缓存
-        let cached: PowerHistoryRecord[] = []
-        try {
-          cached = await getHistoryByDeviceAndRange(deviceId!, fromTime, toTime)
-        } catch (e) {
-          console.warn('[history] cache read failed, fetching instead:', e)
-        }
-        if (cancelRef.current) return
-
-        if (cached.length > 0) {
-          const pts = toHistoryPoints(cached)
-          setPoints(pts)
-          setFromCache(true)
-          setDone(true)
-          setSavedCount(cached.length)
-          return
-        }
-
-        // 2. 无缓存 → 分页从 POST /deviceState/attribute/record/list 拉取
-        const existingTs = new Set<number>()
-        const allPoints: HistoryPoint[] = []
-        let page = 1
-        const fromTimeIso = toIsoTz(fromTime)
-        const toTimeIso = toIsoTz(toTime)
-
-        while (!cancelRef.current) {
-          const res = await fetchDeviceRecordHistory({
-            deviceId: deviceId!,
-            fromTime: fromTimeIso,
-            toTime: toTimeIso,
-            page,
-            count: PAGE_SIZE,
-            orderByTimeAsc: true,
-          })
-
-          if (cancelRef.current) break
-
-          if (!isApiSuccess(res.code) || !res.data) {
-            const rawMsg = res.message ?? res.msg ?? ''
-            console.warn('[useHistoryFetcher] history page failed:', res.code, rawMsg)
-            setError(sanitizeUiCopy(rawMsg, "Couldn't load history"))
-            break
-          }
-
-          const list = res.data.list ?? []
-          if (list.length === 0) break
-
-          const pageRecords: Omit<PowerHistoryRecord, 'id'>[] = []
-          const pagePoints: HistoryPoint[] = []
-
-          for (const rec of list) {
-            const timeStr = (rec.time as string) ?? ''
-            const ts = timeStr ? new Date(timeStr).getTime() : 0
-            if (!ts) continue
-
-            const gen = fieldVal(rec, 'generationPower') ?? 0
-            const out = fieldVal(rec, 'outputPower') ?? 0
-            const soc = fieldVal(rec, 'remainingBatteryCapacity') ?? 0
-            const ac = fieldVal(rec, 'exchangeChargingPower') ?? 0
-            // 该接口的记录里没有 batteryPower 字段（真实后端已确认），按与实时链路
-            // 相同的公式推导：电池功率 = AC + Solar − Output（充电为正，放电为负）。
-            const bat = fieldVal(rec, 'batteryPower') ?? (ac + gen - out)
-
-            pageRecords.push({
-              timestamp: ts,
-              inputPower: gen,
-              outputPower: out,
-              batteryLevel: soc,
-              solarPower: gen,
-              remainingBatteryCapacity: soc,
-              temperature: 0,
-              mode: 'normal',
-              deviceId: deviceId!,
-            })
-            pagePoints.push({
-              time: timeStr,
-              timestamp: ts,
-              solar: gen,
-              output: out,
-              soc,
-              battery: bat,
-              ac,
-            })
-          }
-
-          // Points first: what was fetched is on screen whether or not it can
-          // also be written down.
-          allPoints.push(...pagePoints)
-          setPoints([...allPoints])
-          setCurrentPage(page)
-
-          try {
-            const saved = await saveHistoryBatch(pageRecords, existingTs)
-            setSavedCount(prev => prev + saved)
-          } catch (e) {
-            console.warn('[history] cache write failed, continuing:', e)
-          }
-
-          if (list.length < PAGE_SIZE) break
-          page++
-        }
-
-        if (!cancelRef.current) setDone(true)
+        const newest = pointsRef.current[pointsRef.current.length - 1]?.timestamp
+        const from = Math.max(fromTime, (newest ?? fromTime) - LIVE_OVERLAP_MS)
+        const to = Math.min(toTime, Date.now())
+        if (to <= from) return
+        const res = await fetchWindow(deviceId, from, to, isCancelled)
+        if (cancelled || !res.complete) return
+        // The server's answer for [from, to] replaces ours for that span.
+        const kept = pointsRef.current.filter(p => p.timestamp < from || p.timestamp > to)
+        show(mergePoints(kept, res.points))
+        setError(null)
+        void store(from, to, res.points)
       } catch (e) {
-        console.warn('[useHistoryFetcher] history fetch threw:', e)
-        if (!cancelRef.current) setError(toUserFacingError(e, "Couldn't load history"))
+        console.warn('[history] live refresh failed:', e)
       } finally {
-        if (!cancelRef.current) setLoading(false)
+        tailInFlight = false
       }
     }
 
-    run()
-    return () => { cancelRef.current = true }
-  }, [deviceId, fromTime, toTime])
+    const run = async () => {
+      setLoading(true)
+      // 1. Paint what this device has cached. The cache can only ever speed
+      //    this up: a failing read goes straight on to the request.
+      let cached: HistoryPoint[] = []
+      try {
+        cached = await readDeviceHistory(deviceId, fromTime, toTime)
+      } catch (e) {
+        console.warn('[history] cache read failed, fetching instead:', e)
+      }
+      if (cancelled) return
+      if (cached.length > 0) {
+        show(cached)
+        setFromCache(true)
+      }
+
+      // 2. The whole window from the server, every visit.
+      try {
+        const res = await fetchWindow(deviceId, fromTime, toTime, isCancelled, (sofar, page) => {
+          if (cancelled) return
+          setCurrentPage(page)
+          // Until the server has answered past it, a cached sample still stands.
+          const last = sofar[sofar.length - 1]?.timestamp ?? fromTime
+          show(mergePoints(cached.filter(p => p.timestamp > last), sofar))
+        })
+        if (cancelled) return
+        if (res.complete) {
+          show(res.points)
+          setFromCache(false)
+          void store(fromTime, toTime, res.points)
+        } else {
+          show(mergePoints(cached, res.points))
+          if (res.error) setError(res.error)
+        }
+      } catch (e) {
+        console.warn('[history] fetch threw:', e)
+        if (!cancelled) setError(toUserFacingError(e, "Couldn't load history"))
+      } finally {
+        if (!cancelled) {
+          fullDone = true
+          setDone(true)
+          setLoading(false)
+        }
+      }
+    }
+
+    void run()
+    const timer = live ? setInterval(() => { void refreshTail() }, LIVE_REFRESH_MS) : null
+    const onVisible = () => {
+      if (live && document.visibilityState === 'visible') void refreshTail()
+    }
+    if (live) document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      cancelled = true
+      if (timer) clearInterval(timer)
+      if (live) document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [deviceId, fromTime, toTime, live])
 
   return { points, loading, done, currentPage, savedCount, fromCache, error }
-}
-
-// ─── 将 PowerHistoryRecord[] 转为 HistoryPoint[] ──────────────────────────────
-function toHistoryPoints(records: PowerHistoryRecord[]): HistoryPoint[] {
-  return records
-    .slice()
-    .sort((a, b) => a.timestamp - b.timestamp)
-    .map(r => ({
-      time: new Date(r.timestamp).toISOString(),
-      timestamp: r.timestamp,
-      solar: r.solarPower ?? r.inputPower,
-      output: r.outputPower,
-      soc: r.remainingBatteryCapacity ?? r.batteryLevel,
-      battery: 0,
-      ac: 0,
-    }))
 }
