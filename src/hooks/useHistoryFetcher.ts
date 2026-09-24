@@ -1,7 +1,12 @@
 /**
- * A device's history over [fromTime, toTime] for the Real-Time Power chart,
- * from `POST /deviceState/attribute/record/list` (Siseli `doGetDeviceHistory`:
- * deviceId, fromTime, toTime, orderByTimeAsc, count 80, page).
+ * A device's history over [fromTime, toTime] for the Real-Time Power chart.
+ *
+ * Read the way the Solar of Things console reads a device's day
+ * (siseli-history-api-handoff): `POST /deviceState/simple/attribute/keys/history/v1`
+ * with the four keys the tabs plot, 1,500 frames a page, columnar reply. If the
+ * platform refuses that call, the session falls back to the Siseli app's
+ * `POST /deviceState/attribute/record/list` (`doGetDeviceHistory`, 80 a page),
+ * which is what this read before — so the chart never goes blank over it.
  *
  * The server is the source of truth; the on-phone cache only paints first.
  *  1. The cache for THIS device and window paints at once (keyed by
@@ -20,11 +25,11 @@
  * 20101 "illegal argument" and an empty chart; `toIsoTz` is shared now.
  */
 import { useState, useEffect, useRef } from 'react'
-import { fetchDeviceRecordHistory } from '../api/deviceApi'
+import { fetchDeviceRecordHistory, fetchKeysHistoryV1 } from '../api/deviceApi'
 import { isApiSuccess } from '../utils/apiClient'
 import { toUserFacingError } from '../utils/uiCopy'
 import { readDeviceHistory, replaceDeviceHistory } from '../db/powerflowDB'
-import { mergePoints, recordsToPoints, toIsoTz, type HistoryPoint } from '../utils/historyPoints'
+import { HISTORY_KEYS, columnarToPoints, mergePoints, recordsToPoints, toIsoTz, type HistoryPoint } from '../utils/historyPoints'
 
 export type { HistoryPoint } from '../utils/historyPoints'
 
@@ -38,10 +43,13 @@ export interface UseHistoryFetcherResult {
   error: string | null
 }
 
+/** Page size the console uses for keys/history/v1. */
+export const KEYS_V1_PAGE_SIZE = 1500
 /** Page size of the Siseli reference client (doGetDeviceHistory, count 80). */
 const PAGE_SIZE = 80
 /** Safety stop: 80 × 60 = 4,800 samples, a day at 18 s cadence. */
 const MAX_PAGES = 60
+const KEYS_V1_MAX_PAGES = 10
 /** How often the tail of a live window is re-read. */
 export const LIVE_REFRESH_MS = 60_000
 /** Re-read this much before the newest sample, for late uploads. */
@@ -49,11 +57,74 @@ const LIVE_OVERLAP_MS = 10 * 60_000
 
 type PageResult = { points: HistoryPoint[]; complete: boolean; error: string | null; pages: number }
 
+/** Set once the platform refuses keys/history/v1; the session then uses record/list. */
+let keysV1Refused = false
+/** For tests. */
+export function resetHistorySource(): void { keysV1Refused = false }
+
 /**
  * Every page of [from, to]. A failed page stops the run: what came before it
  * is returned with `complete: false` and the reason.
  */
 export async function fetchWindow(
+  deviceId: string,
+  from: number,
+  to: number,
+  isCancelled: () => boolean,
+  onPage?: (sofar: HistoryPoint[], page: number) => void,
+): Promise<PageResult> {
+  if (!keysV1Refused) {
+    const res = await fetchWindowKeysV1(deviceId, from, to, isCancelled, onPage)
+    if (res !== 'refused') return res
+    keysV1Refused = true
+    console.warn('[history] keys/history/v1 refused; using record/list for this session')
+  }
+  return fetchWindowRecordList(deviceId, from, to, isCancelled, onPage)
+}
+
+/**
+ * The console's call. 'refused' when the first page is not a success with a
+ * columnar payload — the caller then falls back rather than show nothing.
+ */
+async function fetchWindowKeysV1(
+  deviceId: string,
+  from: number,
+  to: number,
+  isCancelled: () => boolean,
+  onPage?: (sofar: HistoryPoint[], page: number) => void,
+): Promise<PageResult | 'refused'> {
+  const all: HistoryPoint[] = []
+  for (let page = 1; page <= KEYS_V1_MAX_PAGES; page++) {
+    const res = await fetchKeysHistoryV1({
+      deviceId,
+      keys: [...HISTORY_KEYS],
+      fromTime: toIsoTz(from),
+      toTime: toIsoTz(to),
+      page,
+      count: KEYS_V1_PAGE_SIZE,
+      orderByTimeAsc: true,
+    })
+    if (isCancelled()) return { points: all, complete: false, error: null, pages: page }
+    const times = res.data?.payload?.timeSeries
+    if (!isApiSuccess(res.code) || !Array.isArray(times)) {
+      const raw = res.message ?? res.msg ?? ''
+      console.warn('[history] keys/history/v1 page failed:', page, res.code, raw)
+      if (page === 1) return 'refused'
+      return { points: all, complete: false, error: raw || "Couldn't load history", pages: page }
+    }
+    all.push(...columnarToPoints(res.data!.payload))
+    onPage?.(all, page)
+    // A short page is the end; so is the last page when `total` counts pages.
+    const total = Number(res.data?.total)
+    if (times.length < KEYS_V1_PAGE_SIZE || (Number.isFinite(total) && total > 0 && page >= total)) {
+      return { points: all, complete: true, error: null, pages: page }
+    }
+  }
+  return { points: all, complete: false, error: null, pages: KEYS_V1_MAX_PAGES }
+}
+
+/** The Siseli app's call (doGetDeviceHistory): one record per frame, 80 a page. */
+async function fetchWindowRecordList(
   deviceId: string,
   from: number,
   to: number,

@@ -34,12 +34,15 @@ export interface MockDevice {
   failHistoryPages?: number[]
   /** The DTU id the device was bound with (read over Bluetooth at add time). */
   dtuDtuid?: string
+  /** When true the platform answers keys/history/v1 with 20101 (app falls back to record/list). */
+  refuseKeysV1?: boolean
 }
 
 export interface ApiCall {
   path: string
   query: Record<string, string>
   body: any
+  headers: Record<string, string>
 }
 
 export interface MockBackend {
@@ -130,7 +133,7 @@ export async function mockBackend(
     const query = Object.fromEntries(url.searchParams)
     let body: any = null
     try { body = req.postDataJSON() } catch { body = req.postData() }
-    calls.push({ path, query, body })
+    calls.push({ path, query, body, headers: req.headers() })
     const ok = (data: unknown) => route.fulfill({ json: { code: 0, message: 'success', data } })
 
     switch (path) {
@@ -202,6 +205,30 @@ export async function mockBackend(
         return ok({ base64Output: Buffer.from(frame).toString('base64') })
       }
 
+      case '/deviceState/simple/attribute/keys/history/v1': {
+        // The console's call: columnar reply (siseli-history-api-handoff).
+        const d = byId(body?.deviceId)
+        const offset = /[+-]\d{2}:\d{2}$|Z$/
+        if (!d || d.refuseKeysV1 || !offset.test(body.fromTime) || !offset.test(body.toTime)) {
+          return route.fulfill({ json: { code: 20101, message: 'illegal argument' } })
+        }
+        if (d.failHistoryPages?.includes(body.page)) {
+          return route.fulfill({ json: { code: 500, message: 'server busy' } })
+        }
+        const keys: string[] = body.keys ?? []
+        const frames = frameTimes(d, Date.parse(body.fromTime), Date.parse(body.toTime))
+        const pages = Math.max(1, Math.ceil(frames.length / body.count))
+        const slice = frames.slice((body.page - 1) * body.count, body.page * body.count)
+        return ok({
+          page: body.page, count: slice.length, total: pages,
+          payload: {
+            timeSeries: slice.map(f => new Date(f.t).toISOString()),
+            fields: Object.fromEntries(keys.map(k => [k, slice.map(f => f.fields[k] ?? null)])),
+            formatters: {}, fieldInfo: null,
+          },
+        })
+      }
+
       case '/deviceState/attribute/record/list': {
         const d = byId(body?.deviceId)
         const offset = /[+-]\d{2}:\d{2}$|Z$/
@@ -235,6 +262,16 @@ export async function mockBackend(
         return ok({ list: [], total: 0 })
     }
   })
+
+  function frameTimes(d: MockDevice, from: number, to: number) {
+    const out: Array<{ t: number; fields: Record<string, number> }> = []
+    const step = 60_000
+    for (let t = Math.ceil(from / step) * step; t <= to && d.history; t += step) {
+      const fields = d.history(t)
+      if (fields) out.push({ t, fields })
+    }
+    return out
+  }
 
   return {
     devices,

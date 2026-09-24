@@ -190,10 +190,15 @@ lives on independently and is still referenced elsewhere.)
   (badge in %, curve from `HistoryPoint.soc`); AC/Solar/Output tabs show power (W), auto-scaled.
   Driven by `RealTimePowerChart`'s `batteryAsSoc`/`batterySoc` props (the shared chart still defaults
   to the power view for the Battery tab).
-- **Today's history (v4.17.0).** `useHistoryFetcher(id, dayStart, dayEnd, { live: true })` reads
-  `POST /deviceState/attribute/record/list` the way the Siseli client's `doGetDeviceHistory` does
-  (`deviceId`, `fromTime`/`toTime` as local ISO **with offset** via `toIsoTz` in
-  `src/utils/historyPoints.ts`, `orderByTimeAsc: true`, `count: 80`, every page until a short one).
+- **Today's history (v4.17.0; source v4.17.2).** `useHistoryFetcher(id, dayStart, dayEnd, { live: true })`
+  reads the day the way the Solar of Things console does (`docs/siseli-api.md`):
+  `POST /deviceState/simple/attribute/keys/history/v1` with `keys` = the four fields below, `count: 1500`,
+  `orderByTimeAsc: true`, `fromTime`/`toTime` as local ISO **with offset** (`toIsoTz` in
+  `src/utils/historyPoints.ts`) and an `IOT-Time-Zone` header on this call only. The reply is columnar
+  (`payload.timeSeries` + one aligned array per key, `null` = absent) → `columnarToPoints()`; a frame with
+  none of the four keys is dropped; pages end on a short page or `page >= total`. If page 1 is refused
+  (not a success, or no columnar payload) the session falls back to `POST /deviceState/attribute/record/list`
+  (Siseli app `doGetDeviceHistory`, `count: 80`) — never a blank chart over it.
   Tabs → fields: Battery `remainingBatteryCapacity`, AC (input) `exchangeChargingPower`, Solar
   `generationPower`, Output (AC output) `outputPower`. A missing field is `null` and a silence longer
   than `maxGapMs()` (3× cadence, 15–60 min) breaks the line — never 0 W, never a bridge. The tail is
@@ -465,6 +470,7 @@ don't let it happen again):
 |---|---|
 | `docs/PRODUCT_SPEC.md` | Deep implementation reference (store shapes, per-page `useState`/`useEffect`, IndexedDB schema) — CLAUDE.md wins on routes/pages if they ever disagree. |
 | `docs/RELEASE_PLAN.md` | P0–P4 issue tracker: what's fixed (✅ + version tag), what's still debt/pending. Update in place, don't leave stale "still TODO" claims once something ships. |
+| `docs/siseli-api.md` | Captured Solar of Things console call for a device's attribute history (`keys/history/v1`, columnar reply) — what Real-Time Power reads. |
 | `docs/TEST_PLAN.md` | The one canonical manual+automated test matrix (supersedes the deleted `TEST_CHECKLIST.md`). |
 | `API_REFERENCE.md` | Full backend API surface (all 41 groups/227 endpoints Sierro's own backend exposes), not just what this app calls — a superset reference. |
 | `docs/NATIVE_SETUP.md` | Capacitor native plugin/permission setup for Android/iOS builds. |
