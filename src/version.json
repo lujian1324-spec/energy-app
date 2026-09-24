@@ -1,8 +1,9 @@
 {
-  "version": "4.15.4",
-  "build": 2917,
+  "version": "4.15.5",
+  "build": 2918,
   "date": "2026-09-24",
   "changelog": [
+    "When a device has no readings (for example it is powered off), its page shows -- for AC, Solar and Output instead of 0 W, and no runtime estimate, so a missing reading no longer looks like zero power.",
     "With no internet connection (Bluetooth, Wi-Fi and mobile data all off), the Device list and device page now say so instead of showing Connected, and the AC switch is locked until the network is back. The device itself is not marked offline, and its state is read again as soon as the connection returns.",
     "Fan Speed is no longer shown in Device Settings. It remains available in internal QA builds only while it is verified on hardware.",
     "On the verification code screen the cursor now moves to the box the next digit goes into, instead of staying in the first box while you type. Tapping a box no longer lets a digit be inserted in the middle of the code.",

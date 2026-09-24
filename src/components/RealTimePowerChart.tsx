@@ -20,7 +20,7 @@ export interface RealTimePowerChartProps {
   deviceId: string | null
   isOnline: boolean
   /** Current live readings for the top-right badge: battery is charge/discharge power (W). */
-  values: { battery: number; ac: number; solar: number; output: number }
+  values: { battery: number | null; ac: number | null; solar: number | null; output: number | null }
   /**
    * When true, the Battery tab plots battery state-of-charge (SOC %,
    * `remainingBatteryCapacity`) on a fixed 0–100% axis instead of charge/discharge

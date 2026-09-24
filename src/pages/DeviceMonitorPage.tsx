@@ -153,6 +153,14 @@ export default function DeviceMonitorPage() {
    */
   const isCharging = acPower + solarPower > outputPower
   const isOnline = device?.isOnline ?? true
+  /*
+   * APP-20260923-003: no real telemetry — the device is offline, nothing has
+   * been read for it, or what was read carries no battery reading. Then every
+   * figure is unknown and shows --, never 0 W: a missing reading must not pass
+   * for "no power". (A sample that has SOC but simply lacks the AC or Solar
+   * field still reads 0 W for that field, as before.)
+   */
+  const noTelemetry = !isOnline || !rt || rt.remainingBatteryCapacity == null
 
   // 额定容量（Wh）= acInvOutputPower × 2，与 Device Info 页 Rated Capacity 同源
   const [batteryCapacityWh, setBatteryCapacityWh] = useState<number | undefined>(undefined)
@@ -176,7 +184,7 @@ export default function DeviceMonitorPage() {
   }, [ratedModel, device?.model])
 
   // 统一口径：电池剩余/充满时间（见 utils/batteryTime）
-  const timeStr = batteryTimeLabel({
+  const timeStr = noTelemetry ? undefined : batteryTimeLabel({
     acPower, solarPower, outputPower,
     soc: remainingBatteryCapacity ?? 0,
     capacityWh: batteryCapacityWh,
@@ -185,7 +193,7 @@ export default function DeviceMonitorPage() {
 
   const fmtW = (w: number) => Math.abs(Math.round(w))
   /** -- until the first live read lands, so no figure has to be taken back. */
-  const fmtWatts = (w: number) => (awaitingFirstLiveRead ? '--' : fmtW(w))
+  const fmtWatts = (w: number) => (awaitingFirstLiveRead || noTelemetry ? '--' : fmtW(w))
 
   return (
     <div
@@ -337,7 +345,9 @@ export default function DeviceMonitorPage() {
           <RealTimePowerChart
             deviceId={id ?? null}
             isOnline={isOnline}
-            values={{ battery: batteryPower, ac: acPower, solar: solarPower, output: outputPower }}
+            values={noTelemetry
+              ? { battery: null, ac: null, solar: null, output: null }
+              : { battery: batteryPower, ac: acPower, solar: solarPower, output: outputPower }}
             batteryAsSoc
             batterySoc={remainingBatteryCapacity}
             powerAxisMax={powerAxisMax}
