@@ -310,6 +310,20 @@ export default function SettingPage() {
               <div className="text-tiny text-ink-4 mt-0.5">Send feedback to the Sierro team</div>
             </div>
           </button>
+          {/* SW-07: Help / 功能说明 — same list row as Feedback, opens /help.
+              Its title and subtitle are Jason's copy, so they ship as the
+              [PENDING_JASON] placeholder (see HelpPage). */}
+          <button
+            onClick={() => navigate('/help')}
+            className="w-full mt-3 flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 active:scale-[0.99] transition-transform text-left">
+            <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
+              <Icon name="question-outined" size={24} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-body-md font-semibold text-ink-2">[PENDING_JASON]</div>
+              <div className="text-tiny text-ink-4 mt-0.5">[PENDING_JASON]</div>
+            </div>
+          </button>
         </motion.div>
 
         {/* Legal + Version */}
