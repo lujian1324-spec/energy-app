@@ -134,7 +134,7 @@ Also present but not routed standalone: `ProvisioningPage` (inside DevicePage ad
 Use the label canon below; same metric = same label everywhere except DebugParamsPage.
 
 **DevicePage** (`/devices`)
-- *Device card* (per device): name, model (`gatherProtocolName`/`model`), **Battery** % (`remainingBatteryCapacity`), charging dot (`batteryPower>0`), online badge (`isOnline`), AC switch.
+- *Device card* (per device): name, model (`gatherProtocolName`/`model`), **Battery** % (`remainingBatteryCapacity`), charging dot (`batteryPower>0`) plus a **Charging** label under the battery tag, online badge (`isOnline`), AC switch labelled **AC Output** (v4.15.8, APP-20260922-004: accessible name "AC Output", described by `AC_OUTPUT_HELP` — it switches the outlets, not the unit).
 - **AC switch (v4.15.1): shows what the device reports, never `isOnline`.** `resolveAcOutput()`
   (`src/utils/acOutputState.ts`) picks the newest of: the live read (Modbus run-state **0x0126 bit 2**,
   decoded as `LiveStatus.acOutput` from the passthrough/BLE `READ_ALL_STATUS`) and the cloud

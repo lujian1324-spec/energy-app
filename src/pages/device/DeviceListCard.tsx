@@ -127,12 +127,19 @@ export default function DeviceListCard({
           <p className="text-tiny text-ink-3 mt-1">{model}</p>
         </div>
         <div className="flex flex-col items-end justify-between flex-shrink-0">
-          <BatteryTag
-            level={remainingBatteryCapacity}
-            unknown={!remainingBatteryCapacityKnown}
-            connected={connected}
-            charging={isCharging}
-          />
+          <div className="flex flex-col items-end gap-1">
+            <BatteryTag
+              level={remainingBatteryCapacity}
+              unknown={!remainingBatteryCapacityKnown}
+              connected={connected}
+              charging={isCharging}
+            />
+            {/* APP-20260922-004: charging is its own state, shown by the battery,
+                independent of the AC Output switch below. */}
+            {connected && isCharging && (
+              <span className="text-tiny font-semibold text-primary">Charging</span>
+            )}
+          </div>
           <div className="flex" onClick={(e) => e.stopPropagation()}>
             <PowerToggle
               deviceId={device.id}
