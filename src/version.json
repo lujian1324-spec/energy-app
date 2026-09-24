@@ -1,8 +1,9 @@
 {
-  "version": "4.15.9",
-  "build": 2922,
+  "version": "4.15.10",
+  "build": 2923,
   "date": "2026-09-24",
   "changelog": [
+    "Opening the app with no devices goes straight to the empty Device page instead of briefly showing three placeholder device cards first.",
     "The Insights page header is now exactly the same height as the Device page header when you have no devices, so the page titles no longer shift when switching tabs.",
     "The switch on each device card is now labelled AC Output, and a charging device shows Charging under its battery level, so switching the AC outlets off is no longer mistaken for turning the whole unit off.",
     "The QR scanner's camera view no longer shows a large stretched play button while the camera permission is being asked for, while the camera starts, or when the scanner closes.",
