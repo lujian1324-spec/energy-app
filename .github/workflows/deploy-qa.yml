@@ -1,0 +1,51 @@
+name: Deploy Web QA / DEV_TOOLS
+
+# SW-16: internal Web QA build with DEV_TOOLS enabled.
+# Independent of formal Pages deploy at /energy-app/ (deploy.yml).
+# Trigger: workflow_dispatch only. Do not set force_orphan (would wipe formal root).
+# Caveat: formal deploy.yml uses force_orphan on main push, which wipes qa/; re-run this workflow after every formal Pages deploy.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages-qa"
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy-qa:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4.4.0
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (QA / DEV_TOOLS)
+        env:
+          VITE_BASE_PATH: /energy-app/qa/
+          VITE_ENABLE_DEV_TOOLS: 'true'
+          VITE_PUSH_ENABLED: 'true'
+          VITE_RELAY_URL: 'https://d1qw91oh1yc80u.cloudfront.net'
+        run: npm run build
+
+      - name: Deploy to GitHub Pages (qa/ subpath)
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
+          destination_dir: qa
+          keep_files: true
