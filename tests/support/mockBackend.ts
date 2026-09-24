@@ -10,8 +10,13 @@
  * real backend and cannot be signed in without credentials.
  */
 import type { Page, Route } from '@playwright/test'
+import { createHash } from 'node:crypto'
 
 export const API_HOST = 'solar.siseli.com'
+
+/** The one password `/login/account` accepts; the app must send its MD5, never the text. */
+export const MOCK_PASSWORD = 'Sierro-e2e-123'
+const MOCK_PASSWORD_MD5 = createHash('md5').update(MOCK_PASSWORD).digest('hex')
 
 /** Fields the device reports at time `t` (ms), or null when it sent nothing. */
 export type HistoryModel = (t: number) => Record<string, number> | null
@@ -146,6 +151,19 @@ export async function mockBackend(
     switch (path) {
       case '/user/send/email/captcha':
         return ok({ iotCaptchaId: 'E2E-CAPTCHA' })
+
+      case '/login/account': {
+        const acct = String(body?.account ?? '')
+        if (body?.password !== MOCK_PASSWORD_MD5) {
+          return route.fulfill({ json: { code: 10002, message: 'Account or password error' } })
+        }
+        signedInEmail = acct.includes('@') ? acct : `${acct}@example.com`
+        const userId = accounts[acct.toLowerCase()] ?? '491513787113760001'
+        return ok({
+          accessToken: `E2E-ACCESS-${userId}`, refreshToken: `E2E-REFRESH-${userId}`,
+          accessTokenWillExpiredInMillis: 86_400_000, userId, account: acct,
+        })
+      }
 
       case '/login/email': {
         signedInEmail = String(body?.email ?? '')

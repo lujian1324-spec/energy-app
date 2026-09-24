@@ -22,7 +22,8 @@ import { accountFromEmail } from '../utils/accountName'
 import { correctedIntent, saysNoSuchAccount, type Intent } from '../utils/captchaIntent'
 import { isFirstRunAccount } from '../utils/firstRunAccount'
 import { TERMS_URL, PRIVACY_URL } from '../config/legalLinks'
-import { sanitizeUiCopy } from '../utils/uiCopy'
+import { sanitizeUiCopy, toUserFacingError } from '../utils/uiCopy'
+import { NO_TAPS, registerTap } from '../utils/secretTaps'
 import TextField from '../components/TextField'
 import BottomAction from '../components/BottomAction'
 import otpNotificationBannerDark from '../assets/otp-notification-banner-dark.png'
@@ -47,7 +48,11 @@ import otpNotificationBannerDark from '../assets/otp-notification-banner-dark.pn
  * so an unknown one is registered behind the scenes once its code checks out — that is
  * what makes the single flow cover both "sign up" and "log in", as the title says.
  */
-type Step = 'landing' | 'email' | 'code'
+/**
+ * 'password' is hidden (v4.17.4): tap the SIERRO wordmark 10 times on the landing
+ * screen to sign in with an account name and password instead of an email code.
+ */
+type Step = 'landing' | 'email' | 'code' | 'password'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -91,6 +96,16 @@ export default function LoginPage() {
 
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+
+  // Hidden account + password sign-in (v4.17.4).
+  const [account, setAccount] = useState('')
+  const [password, setPassword] = useState('')
+  const wordmarkTaps = useRef(NO_TAPS)
+  const onWordmarkTap = () => {
+    const { state, unlocked } = registerTap(wordmarkTaps.current, Date.now())
+    wordmarkTaps.current = state
+    if (unlocked) { setError(null); setStep('password') }
+  }
 
   const emailValid = EMAIL_RE.test(email.trim())
 
@@ -282,6 +297,35 @@ export default function LoginPage() {
     void verifyRef.current()
   }, [step, otpCode, captchaId, busy])
 
+  /**
+   * The hidden password sign-in: `/login/account` with the MD5 of the password
+   * (loginByAccount), then the same finishSignIn as the email code — so the
+   * account's own settings, the roster check and onboarding all behave the same.
+   */
+  const handlePasswordSignIn = async () => {
+    const acct = account.trim()
+    if (!acct || !password || busy) return
+    setError(null)
+    setBusy(true)
+    try {
+      const result = await loginByAccount(acct, password)
+      if (isApiSuccess(result.code) && result.data) {
+        let firstRun = false
+        try {
+          const me = await fetchUserInfo()
+          if (isApiSuccess(me.code)) firstRun = isFirstRunAccount(me.data)
+        } catch { /* ordinary sign-in */ }
+        finishSignIn(result.data, { firstRun })
+        return
+      }
+      setError(sanitizeUiCopy(result.message || result.msg, 'Wrong account or password.'))
+    } catch (e) {
+      setError(toUserFacingError(e, 'Could not sign in. Check your connection and try again.'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const continueAsGuest = () => {
     useAuthStore.getState().setGuestMode()
     navigate('/', { replace: true })
@@ -308,7 +352,12 @@ export default function LoginPage() {
         <div className="flex-1 flex flex-col items-center justify-center px-4">
           {/* Not the Anton display face: `.text-display` forces Anton and zero
               tracking, and the frame sets the wordmark in the body face, spaced out. */}
-          <h1 className="font-sans text-[32px] leading-none font-semibold text-white tracking-[0.22em] pl-[0.22em]">
+          {/* Hidden: 10 quick taps open the account + password sign-in. No role,
+              no feedback — it is not offered to users. */}
+          <h1
+            onClick={onWordmarkTap}
+            className="font-sans text-[32px] leading-none font-semibold text-white tracking-[0.22em] pl-[0.22em] select-none"
+          >
             SIERRO
           </h1>
           <p className="mt-3 text-body-lg text-ink-4">Protect What Matters Most</p>
@@ -340,6 +389,52 @@ export default function LoginPage() {
             </div>
           )}
         </div>
+      </div>
+    )
+  }
+
+  // ─── Hidden: account + password sign-in (v4.17.4) ────────────────────────
+  if (step === 'password') {
+    return (
+      <div className="h-full flex flex-col bg-ink-12">
+        <div className="px-4 pb-5 safe-area-top-header">
+          <BackButton to="landing" />
+        </div>
+        <div className="flex-1 min-h-0 overflow-y-auto px-4">
+          <h1 className="mt-[18px] text-headline-md font-semibold text-white text-center">Sign in with password</h1>
+          <p className="mt-2 text-body-md text-ink-5 text-center">
+            Enter your account name and password.
+          </p>
+          <div className="mt-[19px]">
+            <TextField
+              ariaLabel="Account"
+              value={account}
+              onChange={(next) => { setAccount(next); setError(null) }}
+              onClear={() => setAccount('')}
+              placeholder="Username"
+              autoComplete="username"
+              autoFocus
+            />
+          </div>
+          <div className="mt-3">
+            <TextField
+              type="password"
+              ariaLabel="Password"
+              value={password}
+              onChange={(next) => { setPassword(next); setError(null) }}
+              onEnter={() => { void handlePasswordSignIn() }}
+              placeholder="Password"
+              autoComplete="current-password"
+              error={error}
+            />
+          </div>
+        </div>
+        <BottomAction
+          label="Sign In"
+          onPress={handlePasswordSignIn}
+          disabled={!account.trim() || !password}
+          busy={busy}
+        />
       </div>
     )
   }

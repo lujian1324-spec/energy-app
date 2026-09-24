@@ -44,12 +44,13 @@ export default function TextField({
   onEnter,
   outlined,
   dense,
+  autoComplete,
 }: {
   value: string
   onChange: (next: string) => void
   placeholder?: string
   label?: string
-  type?: 'text' | 'email'
+  type?: 'text' | 'email' | 'password'
   rows?: number
   error?: string | null
   leading?: ReactNode
@@ -63,6 +64,8 @@ export default function TextField({
   outlined?: boolean
   /** Tighten the below-field padding from 24 to 12 (Feedback email row). */
   dense?: boolean
+  /** Overrides the default ('email' for email fields, else 'off'), e.g. 'current-password'. */
+  autoComplete?: string
 }) {
   const id = useId()
   const shared =
@@ -122,7 +125,7 @@ export default function TextField({
                 maxLength={maxLength}
                 aria-label={ariaLabel}
                 autoFocus={autoFocus}
-                autoComplete={type === 'email' ? 'email' : 'off'}
+                autoComplete={autoComplete ?? (type === 'email' ? 'email' : 'off')}
                 autoCapitalize="none"
                 autoCorrect="off"
                 className={shared}

@@ -478,21 +478,31 @@ export default function DevicePage() {
         </div>
       </motion.div>
 
+      {/* Banners under the header ("Failed to switch power", "The device didn't
+          switch…", offline). Each carries its own 16px top gap — the same gutter
+          the card list keeps below — inside the wrapper that animates its height.
+          They sat flush against the header with a 4px gap below, so the banner
+          read as overlapping the header's lower edge (v4.17.4). */}
       <div className="px-4">
-        <OfflineBanner show={!online && !isDemoMode} className="mb-1" />
+        <OfflineBanner show={!online && !isDemoMode} className="pt-4" />
         <AnimatePresence>
           {error && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="bg-danger/[0.08] border border-danger/[0.15] rounded-l px-4 py-2.5 flex items-center gap-2 mb-1"
+              className="overflow-hidden pt-4"
             >
-              <AlertTriangle size={14} className="text-danger flex-shrink-0" />
-              <span className="text-label text-danger flex-1">{error}</span>
-              <button onClick={() => setError(null)} className="text-danger">
-                <X size={14} />
-              </button>
+              <div
+                role="alert"
+                className="bg-danger/[0.08] border border-danger/[0.15] rounded-l px-4 py-2.5 flex items-center gap-2"
+              >
+                <AlertTriangle size={14} className="text-danger flex-shrink-0" />
+                <span className="text-label text-danger flex-1">{error}</span>
+                <button onClick={() => setError(null)} aria-label="Dismiss" className="text-danger">
+                  <X size={14} />
+                </button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

@@ -9,7 +9,7 @@
  * address is the team account the roster script lists in plain text (#666).
  */
 import { test, expect, type Page } from '@playwright/test'
-import { mockBackend, signIn, type MockDevice } from './support/mockBackend'
+import { MOCK_PASSWORD, mockBackend, signIn, type MockDevice } from './support/mockBackend'
 
 const MEMBER = 'jason@sierro.us'   // roster #666 (scripts/build_founding_roster.py EXTRA)
 const OTHER = 'someone@example.com'
@@ -131,5 +131,64 @@ test.describe('Sign-in and per-account state', () => {
     await expect(rowOf('Serial Number')).not.toContainText('SR1000-778899')
     await expect(rowOf('Bluetooth ID')).toContainText('00112233445566778899')
     await expect(page.getByText('SNXXXX')).toHaveCount(0)
+  })
+})
+
+test.describe('Hidden account + password sign-in', () => {
+  test.skip(!process.env.E2E_LOCAL, 'Uses a local build and a mocked backend')
+
+  const tapWordmark = async (page: Page, times: number) => {
+    const mark = page.getByRole('heading', { name: 'SIERRO', exact: true })
+    for (let i = 0; i < times; i++) await mark.click()
+  }
+
+  test('ten quick taps on SIERRO open it; nine do not, and a pause starts over', async ({ page }) => {
+    await mockBackend(page, [])
+    await page.goto('/#/login')
+    await expect(page.getByRole('button', { name: 'Continue with Email' })).toBeVisible()
+    await expect(page.locator('input[type="password"]')).toHaveCount(0)
+
+    await tapWordmark(page, 9)
+    await expect(page.locator('input[type="password"]')).toHaveCount(0)
+    await page.waitForTimeout(1800) // longer than the 1.5 s gap: the count starts over
+    await tapWordmark(page, 1)
+    await expect(page.locator('input[type="password"]')).toHaveCount(0)
+
+    // A fresh screen, then ten quick taps.
+    await page.reload()
+    await tapWordmark(page, 10)
+    await expect(page.getByRole('heading', { name: 'Sign in with password' })).toBeVisible()
+    await expect(page.getByPlaceholder('Username')).toBeVisible()
+    await expect(page.locator('input[type="password"]')).toBeVisible()
+    await page.getByRole('button', { name: 'Back' }).click()
+    await expect(page.getByRole('button', { name: 'Continue with Email' })).toBeVisible()
+  })
+
+  test('signs in with the account and password, sending only the MD5', async ({ page }) => {
+    const api = await mockBackend(page, [{ id: '1001', name: 'Garage' }], { tester: '491513787113766003' })
+    await page.goto('/#/login')
+    await tapWordmark(page, 10)
+    await page.getByPlaceholder('Username').fill('tester')
+
+    await page.locator('input[type="password"]').fill('wrong-password')
+    await page.getByRole('button', { name: 'Sign In', exact: true }).click()
+    await expect(page.getByText(/password/i).filter({ hasNotText: 'Sign in with password' }).first()).toBeVisible()
+    await expect(page).toHaveURL(/#\/login/)
+
+    await page.locator('input[type="password"]').fill(MOCK_PASSWORD)
+    await page.getByRole('button', { name: 'Sign In', exact: true }).click()
+    await expect(page).toHaveURL(/#\/(devices)?$/)
+    await expect(page.getByText('Garage', { exact: true }).first()).toBeVisible()
+
+    // The wrong try, the right one, and the relay's own session minted after a
+    // successful sign-in (provisionPollerSession) — all as MD5.
+    const logins = api.callsTo('/login/account')
+    expect(logins.length).toBeGreaterThanOrEqual(2)
+    for (const c of logins) {
+      expect(c.body.account).toBe('tester')
+      expect(c.body.password).toMatch(/^[0-9a-f]{32}$/)
+      expect(JSON.stringify(c.body)).not.toContain(MOCK_PASSWORD)
+    }
+    expect(await page.evaluate(() => localStorage.getItem('iot_user_id'))).toBe('491513787113766003')
   })
 })
