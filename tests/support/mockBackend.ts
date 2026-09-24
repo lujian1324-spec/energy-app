@@ -32,6 +32,8 @@ export interface MockDevice {
   history?: HistoryModel
   /** 1-based page numbers of the history endpoint that answer an error. */
   failHistoryPages?: number[]
+  /** The DTU id the device was bound with (read over Bluetooth at add time). */
+  dtuDtuid?: string
 }
 
 export interface ApiCall {
@@ -101,8 +103,17 @@ export async function signIn(page: Page, userId = '491513787113766912'): Promise
 
 // ─── Routes ─────────────────────────────────────────────────────────────────
 
-export async function mockBackend(page: Page, devices: MockDevice[]): Promise<MockBackend> {
+/**
+ * `accounts` maps a sign-in address to its userId for the email-code sign-in
+ * (`/login/email`); any code is accepted.
+ */
+export async function mockBackend(
+  page: Page,
+  devices: MockDevice[],
+  accounts: Record<string, string> = {},
+): Promise<MockBackend> {
   const calls: ApiCall[] = []
+  let signedInEmail = 'e2e@example.com'
   const byId = (id: unknown) => devices.find(d => d.id === String(id))
 
   // Anything that is not the local build or the API is stubbed: fonts, the
@@ -123,15 +134,27 @@ export async function mockBackend(page: Page, devices: MockDevice[]): Promise<Mo
     const ok = (data: unknown) => route.fulfill({ json: { code: 0, message: 'success', data } })
 
     switch (path) {
+      case '/user/send/email/captcha':
+        return ok({ iotCaptchaId: 'E2E-CAPTCHA' })
+
+      case '/login/email': {
+        signedInEmail = String(body?.email ?? '')
+        const userId = accounts[signedInEmail.toLowerCase()] ?? '491513787113760000'
+        return ok({
+          accessToken: `E2E-ACCESS-${userId}`, refreshToken: `E2E-REFRESH-${userId}`,
+          accessTokenWillExpiredInMillis: 86_400_000, userId, account: signedInEmail.split('@')[0], email: signedInEmail,
+        })
+      }
+
       case '/user/select/iotUserInfo':
-        return ok({ id: '1', name: 'E2E User', email: 'e2e@example.com', createdAt: '2025-01-01 00:00:00', lastLoginTime: '2026-01-01 00:00:00' })
+        return ok({ id: '1', name: 'E2E User', email: signedInEmail, createdAt: '2025-01-01 00:00:00', lastLoginTime: '2026-01-01 00:00:00' })
 
       case '/device/list':
         return ok({
           list: devices.map(d => ({
             id: d.id, name: d.name, model: d.model ?? 'Sierro 2000', isOnline: d.isOnline ?? true,
             createdAt: d.createdAt ?? '2026-01-01T00:00:00Z', installedAt: d.createdAt ?? '2026-01-01T00:00:00Z',
-            serialNumber: `SN${d.id}`,
+            serialNumber: `SN${d.id}`, dtuDtuid: d.dtuDtuid ?? '',
           })),
           total: devices.length, page: 1, count: 20,
         })

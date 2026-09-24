@@ -289,6 +289,8 @@ export function useProvisionBind(opts: {
               batteryType: spec.batteryType,
               batteryHealth: spec.batteryHealth,
               serialNumber,
+              // What was read from the device over Bluetooth: Device Info's Serial Number.
+              bleId: dtuDtuid || undefined,
             })
             // Persist the icon chosen on the Choose Icon step now that we finally
             // have the device id. Same key Device Info and the home card read, so

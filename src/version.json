@@ -1,8 +1,9 @@
 {
-  "version": "4.17.0",
-  "build": 2928,
+  "version": "4.17.1",
+  "build": 2929,
   "date": "2026-09-24",
   "changelog": [
+    "Signing out and then signing in with another account no longer shows the previous account's Founding Member tag and number, push notification switches or low-battery threshold. Each account keeps its own settings and gets them back when it signs in again, and the Founding Member tag is checked against the member list at every sign-in. Device Info now shows the device's Bluetooth ID, read when the device was added, as its Serial Number. Switching quickly between devices no longer lets the previous device's details replace the current one's. On the verification code screen, the phone's own text cursor can no longer appear stuck in the first box; only the cursor in the box for the next digit shows.",
     "The Real-Time Power chart now loads today's Battery, AC, Solar and Output history in every time zone, including the US, where it used to fail and stay empty. It keeps updating every minute while the screen is open, starts a new day at midnight, and shows a gap where the device sent no reading or was off instead of a 0 W dip or a straight line across the missing hours. Each device's chart now shows only that device's data, and signing out clears the saved history, so switching devices or accounts no longer shows another device's or a previous session's readings. Continue as Guest has been removed from the sign-in screen.",
     "Adding a device no longer reports The device disconnected during setup after the Wi-Fi details were accepted. Once the device has taken the Wi-Fi details it leaves Bluetooth to join Wi-Fi, and the app now treats that as the expected hand-off instead of a failed setup while you name the device or it is being added to your account.",
     "The Add Device search screen no longer jumps when it opens or a few seconds later. It opens straight on the search with the radar already moving, instead of flashing a Checking Bluetooth overlay or the previous attempt's No Devices Found message. Allowing the Bluetooth permission, or closing any other system prompt, no longer restarts the search and empties the list of devices already found.",

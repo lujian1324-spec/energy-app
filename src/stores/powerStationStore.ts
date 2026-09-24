@@ -8,6 +8,11 @@ interface PowerStationState {
   devices: Device[];
   settings: AppSettings;
   selectedDeviceId: string | null;
+  /**
+   * The account `settings` and `peakShavingSettings` belong to (its userId), or
+   * null when nobody is signed in. See switchSettingsAccount.
+   */
+  settingsOwner: string | null;
   
   // 削峰填谷
   peakShavingSettings: PeakShavingSettings;
@@ -26,6 +31,22 @@ interface PowerStationState {
   updateDeviceName: (name: string) => void;
   /** Award the badge from the roster, with the member's real number. */
   applyFoundingMember: (memberNumber: number) => void;
+  /** Take the badge off an account the roster does not list. */
+  clearFoundingMember: () => void;
+  /**
+   * Make `settings` / `peakShavingSettings` the given account's.
+   *
+   * They used to be one set per phone, persisted across sign-outs, so the next
+   * account opened on the last one's Founding Member tag and number, push
+   * toggles and low-battery threshold. Now the outgoing account's set is kept
+   * under its own key and the incoming account gets its own back — or the
+   * defaults when it has none. `null` (signed out) always means the defaults.
+   *
+   * `adoptUnowned` is for a restored session only: a set saved before this
+   * existed has no owner, and the account still signed in on this phone is the
+   * one that made it. A fresh sign-in never adopts it — it may be anyone's.
+   */
+  switchSettingsAccount: (userId: string | null, opts?: { adoptUnowned?: boolean }) => void;
   selectDevice: (deviceId: string) => void;
   updateDeviceNameById: (deviceId: string, name: string) => void;
   updateDeviceSpecs: (specs: Partial<PowerStation['specs']>) => void;
@@ -248,12 +269,31 @@ const initialPeakShavingStatus: PeakShavingStatus = {
   monthlySavings: 0,
 }
 
+/** Where an account's settings wait while someone else is signed in. */
+export const accountSettingsKey = (userId: string) => `sierro-account-settings-${userId}`
+
+type AccountSettingsSnapshot = { settings?: AppSettings; peakShavingSettings?: PeakShavingSettings }
+
+function readAccountSettings(userId: string): AccountSettingsSnapshot | null {
+  try {
+    const raw = localStorage.getItem(accountSettingsKey(userId))
+    return raw ? (JSON.parse(raw) as AccountSettingsSnapshot) : null
+  } catch {
+    return null
+  }
+}
+
+function writeAccountSettings(userId: string, snapshot: AccountSettingsSnapshot): void {
+  try { localStorage.setItem(accountSettingsKey(userId), JSON.stringify(snapshot)) } catch { /* ignore */ }
+}
+
 export const usePowerStationStore = create<PowerStationState>()(
   persist(
  (set) => ({
 powerStation: initialPowerStation,
 devices: initialDevices,
 settings: initialSettings,
+settingsOwner: null,
 selectedDeviceId: '3', // 默认选中 Sierro 1000
 peakShavingSettings: initialPeakShavingSettings,
 peakShavingStatus: initialPeakShavingStatus,
@@ -342,6 +382,32 @@ applyFoundingMember: (memberNumber: number) => {
       founderBadgeNumber: memberNumber,
     }
   }));
+},
+
+clearFoundingMember: () => {
+  set((state) => {
+    if (!state.settings.founderBadge && state.settings.founderBadgeNumber == null) return state
+    const { founderBadgeActivatedAt: _a, founderBadgeNumber: _n, ...rest } = state.settings
+    return { settings: { ...rest, founderBadge: false } }
+  });
+},
+
+switchSettingsAccount: (userId, opts = {}) => {
+  const next = userId ? String(userId) : null
+  const state = usePowerStationStore.getState()
+  const owner = state.settingsOwner
+  if (owner === next) return
+  if (owner === null && next && opts.adoptUnowned) {
+    set({ settingsOwner: next })
+    return
+  }
+  if (owner) writeAccountSettings(owner, { settings: state.settings, peakShavingSettings: state.peakShavingSettings })
+  const saved = next ? readAccountSettings(next) : null
+  set({
+    settingsOwner: next,
+    settings: saved?.settings ? { ...initialSettings, ...saved.settings } : initialSettings,
+    peakShavingSettings: saved?.peakShavingSettings ?? initialPeakShavingSettings,
+  })
 },
 
 selectDevice: (deviceId: string) => {
@@ -498,6 +564,7 @@ resetAll: () => {
 name: 'powerflow-storage',
 partialize: (state) => ({ 
   settings: state.settings, 
+  settingsOwner: state.settingsOwner,
   selectedDeviceId: state.selectedDeviceId,
   devices: state.devices,
   peakShavingSettings: state.peakShavingSettings,

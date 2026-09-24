@@ -165,6 +165,11 @@ Use the label canon below; same metric = same label everywhere except DebugParam
   "The device didn't switch its AC output." and the switch shows the device's state. Cloud state is
   re-read on return to the foreground; the live layer already does.
 - *Bell dot*: `unreadAlarmCount()` over **every** device, from `firingAlarmsStore` (see NotificationsPage).
+- **Fast device switches (v4.17.1).** `loadDeviceDetails` drops a reply that is not the newest or not
+  for the selected device. `selectedDeviceState` is the last state loaded (the first-add BLE capture
+  relies on that), so pages read it through `stateForDevice(state, routeId)` — DeviceMonitorPage,
+  DeviceDetailPage and DebugParamsPage — and a background read's push notification uses that device's
+  own name/online flag, not the selected device's.
 - **Phone offline (v4.15.4, APP-20260923-002).** `useOnline()` (`src/hooks/useOnline.ts`, online/offline
   events) drives `OfflineBanner` ("No internet connection. Check your network and try again.") on this page
   and DeviceMonitorPage, locks the card's AC switch (`controlsLocked`) and makes the monitor header say
@@ -202,7 +207,7 @@ lives on independently and is still referenced elsewhere.)
 
 **DeviceDetailPage** (`/device/:id/settings` — Device Info)
 - *Name edit*, *icon picker*.
-- *Device Info*: model, **Serial Number** (`serialNumber`), **Rated Capacity** (`acInvOutputPower×2`, Wh→kWh), **Rated Output Power** W (`ratedPower`), **Rated Voltage** 120V (fixed), **Cycles** (`numberOfBatteryUsageCycles`), **Temperature** °F (`batteryTemp`), Wi-Fi (`isOnline`), firmware (`softwareVersion`).
+- *Device Info*: model, **Serial Number** (v4.17.1: the device's Bluetooth ID — `dtuDtuid` from the record, else `RatedParams.bleId` saved at add time, else `--`; `deviceSerialNumber()` in `src/utils/deviceSerial.ts`. Never the record's generated `serialNumber` or a placeholder), **Rated Capacity** (`acInvOutputPower×2`, Wh→kWh), **Rated Output Power** W (`ratedPower`), **Rated Voltage** 120V (fixed), **Cycles** (`numberOfBatteryUsageCycles`), **Temperature** °F (`batteryTemp`), Wi-Fi (`isOnline`), firmware (`softwareVersion`).
 - *Sleep Mode editor* (`sleepFrom`/`sleepTo` + scheduler), *Battery Priority sheet* (Backup 100% / Savings 60%), *delete dialog*.
   Saving Sleep Mode claims the device for `sleep` (SW-12 — see Smart Schedule below), which disarms
   Smart Schedule's window, and reports a relay that refused the upload instead of dropping it.
@@ -253,6 +258,15 @@ lives on independently and is still referenced elsewhere.)
   sheet were removed with `activateFounderBadge()`: it generated the number from the clock,
   could hand two people the same badge, and redeeming as a real member would overwrite their
   roster number with a made-up one. `applyFoundingMember()` is now the only writer.
+- **Settings follow the account (v4.17.1).** `settings` / `peakShavingSettings` in `powerflow-storage`
+  carry a `settingsOwner` (userId). `switchSettingsAccount()` (powerStationStore) puts the outgoing
+  account's set under `sierro-account-settings-{userId}` and loads the incoming one's (defaults when
+  none); `src/utils/accountSettings.ts` calls it on every sign-in (`LoginPage.finishSignIn`,
+  `authStore.login`), sign-out, failed restore and `auth:expired`, and re-reads the roster for the
+  Founding Member tag at sign-in (`syncFoundingMember`: on for a member, cleared otherwise). A restored
+  session adopts an unowned set from before this; a fresh sign-in never does. SettingPage stays mounted,
+  so its local toggle/threshold copies follow the store. Before this, B signing in after A saw A's tag,
+  number, push toggles and threshold.
 - *Push Notifications*: Power Outage (`pushNotifications`), Low Battery (`pushLowBattery`)+threshold slider (`lowBatteryThreshold`), Solar Status (`pushSolarStatus`). Toggles drive Web Push enable/disable. (The `pushDeviceAlarms` "Device Alarms" toggle was removed from the UI in v4.7.7 — the setting field and relay/notification plumbing remain, but it no longer surfaces so it stays at its default `false`; the Notifications alarm center still lists every alarm type regardless.)
   Section visibility is gated by `PUSH_ENABLED` (`src/config/webPush.ts`) — `true` in every production
   build since v3.35.5 (requests the OS notification permission; safe on its own). A **separate** flag,

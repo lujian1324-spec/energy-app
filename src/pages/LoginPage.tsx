@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Icon from '../components/Icon'
 import { useAuthStore } from '../stores/authStore'
 import { GUEST_ENTRY_ENABLED } from '../config/guestEntry'
+import { beginAccountSettings } from '../utils/accountSettings'
 import { useDeviceStore } from '../stores/deviceStore'
 import {
   sendEmailCaptcha,
@@ -186,6 +187,7 @@ export default function LoginPage() {
     persistSession(user)
     signedInHere.current = true
     useDeviceStore.getState().exitDemoMode()
+    beginAccountSettings(user?.userId ?? localStorage.getItem('iot_user_id'), user?.email ?? (email.trim() || user?.account))
     useAuthStore.setState({ isAuthenticated: true, isGuest: false, user: (user as never) ?? null })
     navigate(firstRun ? '/onboarding' : '/', { replace: true })
   }
@@ -400,11 +402,17 @@ export default function LoginPage() {
           draggable={false}
         />
 
-        {/* One bordered row split into six cells; transparent input for OTP autofill.
-            The caret is drawn in the cell the next digit goes into. The input's own
-            caret is hidden: its text is transparent and laid out at the input's
-            font size from the left edge, not spread across the cells, so the native
-            caret crept a few pixels per digit and seemed to stay in the first cell. */}
+        {/* One bordered row split into six cells; an invisible input on top takes
+            the typing and OTP autofill. The caret is drawn in the cell the next digit
+            goes into. The input's own caret must never show: its text is laid out at
+            the input's font size from the left edge, not spread across the cells, so
+            the native caret crept a few pixels per digit and seemed to stay in the
+            first cell. `caret-color: transparent` alone did not hide it everywhere
+            (reported again on a phone after 4.15.2), so the input is fully
+            transparent (opacity 0): nothing of it, caret included, can paint, and
+            it still takes focus, taps, the keyboard and autofill. `user-select:
+            none` is gone from it — some iOS versions misplace the caret or refuse
+            input on an unselectable text field. */}
         <div className="relative mt-6 h-[62px]">
           <div
             className={`absolute inset-0 flex rounded-m border-s overflow-hidden ${
@@ -442,8 +450,8 @@ export default function LoginPage() {
             maxLength={OTP_LEN}
             autoFocus
             aria-label="Verification code"
-            className="absolute inset-0 w-full h-full bg-transparent text-transparent caret-transparent
-              outline-none select-none"
+            className="absolute inset-0 w-full h-full opacity-0 bg-transparent text-transparent caret-transparent
+              outline-none"
           />
         </div>
 

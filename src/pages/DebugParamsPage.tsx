@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { RefreshCw, Loader2, History } from 'lucide-react'
 import Icon from '../components/Icon'
-import { useDeviceStore } from '../stores/deviceStore'
+import { useDeviceStore, stateForDevice } from '../stores/deviceStore'
 import { mapFieldsToRealtime } from '../api/deviceApi'
 import { useHistoryFetcher } from '../hooks/useHistoryFetcher'
 import { batteryTimeLabel } from '../utils/batteryTime'
@@ -118,7 +118,8 @@ const JUN25_TO   = new Date('2026-06-25T23:59:59+08:00').getTime()
 export default function DebugParamsPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { devices, selectedDeviceState, loadDeviceState, isDemoMode } = useDeviceStore()
+  const { devices, selectedDeviceState: storeDeviceState, loadDeviceState, isDemoMode } = useDeviceStore()
+  const selectedDeviceState = stateForDevice(storeDeviceState, id)
   const device = devices.find(d => String(d.id) === id)
 
   // 额定容量（Wh）= acInvOutputPower × 2，与 batteryTime.ts / Device Info 页同源
