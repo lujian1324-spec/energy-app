@@ -1,8 +1,9 @@
 {
-  "version": "4.15.1",
-  "build": 2914,
+  "version": "4.15.2",
+  "build": 2915,
   "date": "2026-09-24",
   "changelog": [
+    "On the verification code screen the cursor now moves to the box the next digit goes into, instead of staying in the first box while you type. Tapping a box no longer lets a digit be inserted in the middle of the code.",
     "The AC switch on each device card now shows what the device reports. It no longer turns itself back on a few minutes after being switched off, a switch made on another phone shows up when you return to the app, and an offline or powered-off device shows its switch off. After switching, the app checks with the device and says so if the outlets did not change.",
     "The notification bell and the Notifications list now cover the same alerts from all your devices. An alert on a device other than the one last opened is listed with that device's name, opening the list clears the bell, and a list that could not load says so with Retry instead of \"You're all caught up\".",
     "Device Settings has a Fan Speed slider (0–100 %). Letting go of the slider sets the fan speed on the device; if the device refuses, the slider returns to the last speed it accepted. It is unavailable while the device is offline.",

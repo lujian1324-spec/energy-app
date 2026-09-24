@@ -78,6 +78,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
 
   const [otpCode, setOtpCode] = useState('')
+  const [otpFocused, setOtpFocused] = useState(false)
   const [captchaId, setCaptchaId] = useState<string | null>(null)
   // Whether this address needs registering — decided before the code is sent so the
   // captcha carries the right intent.
@@ -396,7 +397,11 @@ export default function LoginPage() {
           draggable={false}
         />
 
-        {/* One bordered row split into six cells; transparent input for OTP autofill. */}
+        {/* One bordered row split into six cells; transparent input for OTP autofill.
+            The caret is drawn in the cell the next digit goes into. The input's own
+            caret is hidden: its text is transparent and laid out at the input's
+            font size from the left edge, not spread across the cells, so the native
+            caret crept a few pixels per digit and seemed to stay in the first cell. */}
         <div className="relative mt-6 h-[62px]">
           <div
             className={`absolute inset-0 flex rounded-m border-s overflow-hidden ${
@@ -409,7 +414,9 @@ export default function LoginPage() {
                 className={`flex-1 flex items-center justify-center text-headline-md font-semibold text-ink-2
                   ${i > 0 ? (error ? 'border-l border-danger' : 'border-l border-ink-7') : ''}`}
               >
-                {otpCode[i] ?? ''}
+                {otpCode[i] ?? (otpFocused && i === otpCode.length && (
+                  <span aria-hidden className="w-[2px] h-7 rounded-pill bg-white animate-caret-blink" />
+                ))}
               </div>
             ))}
           </div>
@@ -418,11 +425,21 @@ export default function LoginPage() {
             inputMode="numeric"
             value={otpCode}
             onChange={e => { setOtpCode(e.target.value.replace(/\D/g, '').slice(0, OTP_LEN)); setError(null) }}
+            onFocus={() => setOtpFocused(true)}
+            onBlur={() => setOtpFocused(false)}
+            // Digits only ever go on the end, where the drawn caret is: a tap lands
+            // the native caret wherever the finger was, invisibly, and typing would
+            // then insert mid-code while the drawn caret said otherwise.
+            onSelect={e => {
+              const el = e.currentTarget
+              const end = el.value.length
+              if (el.selectionStart !== end || el.selectionEnd !== end) el.setSelectionRange(end, end)
+            }}
             autoComplete="one-time-code"
             maxLength={OTP_LEN}
             autoFocus
             aria-label="Verification code"
-            className="absolute inset-0 w-full h-full bg-transparent text-transparent caret-white
+            className="absolute inset-0 w-full h-full bg-transparent text-transparent caret-transparent
               outline-none select-none"
           />
         </div>

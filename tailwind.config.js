@@ -161,6 +161,8 @@ export default {
         'pulse-glow': 'pulse-glow 3s ease-in-out infinite',
         'wave': 'wave 4s linear infinite',
         'shimmer': 'shimmer 2s ease-in-out infinite',
+        // Text-caret blink: on for half a second, off for half, no fade.
+        'caret-blink': 'caret-blink 1s step-end infinite',
       },
       keyframes: {
         'pulse-glow': {
@@ -174,6 +176,10 @@ export default {
         'shimmer': {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
+        },
+        'caret-blink': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0' },
         },
       },
     },
