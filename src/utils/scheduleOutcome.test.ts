@@ -70,5 +70,13 @@ describe('backgroundScheduleNotice — SW-15 relay detail (AC-15-2)', () => {
     const n = backgroundScheduleNotice({ ...stop, relayDetail: 'config attribute not exist' })
     expect(n?.message).not.toContain('config attribute')
   })
+  it('keeps the reviewed POLLER_SESSION_REQUIRED detail (E2E schedule-save)', () => {
+    const detail =
+      'Background session is missing. Sign in again and retry Save. If it still fails, contact support.'
+    const n = backgroundScheduleNotice({ ...stop, relayDetail: detail })
+    expect(n?.message).toContain('Background session is missing')
+    expect(n?.message).toContain(detail)
+  })
+
 })
 

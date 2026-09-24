@@ -64,8 +64,8 @@ const UNSAFE_UI_COPY_PATTERNS: RegExp[] = [
   /\n/,
 ]
 
-/** Reviewed strings in this app top out around 135 characters. */
-const MAX_UI_COPY_LENGTH = 180
+/** Reviewed strings top out ~135; scheduleOutcome may append a reviewed relayDetail (~230 combined). */
+const MAX_UI_COPY_LENGTH = 280
 
 export function containsCjk(text: string | undefined | null): boolean {
   if (!text) return false

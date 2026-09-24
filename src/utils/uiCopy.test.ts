@@ -169,3 +169,16 @@ describe('toUserFacingError (AC-15-5)', () => {
       .toBe('Timed out waiting for the device.')
   })
 })
+
+describe('sanitizeUiCopy — length gate headroom (SW-15)', () => {
+  it('keeps scheduleOutcome body+relayDetail under the raised gate', () => {
+    const body =
+      'The restore-power command was accepted, but the background stop was not confirmed. An earlier schedule may still switch this device.'
+    const detail =
+      'Background session is missing. Sign in again and retry Save. If it still fails, contact support.'
+    const combined = `${body} ${detail}`
+    expect(combined.length).toBeGreaterThan(180)
+    expect(combined.length).toBeLessThanOrEqual(280)
+    expect(sanitizeUiCopy(combined, '')).toBe(combined)
+  })
+})

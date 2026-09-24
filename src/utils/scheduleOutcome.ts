@@ -4,7 +4,7 @@
  * warns because the earlier background schedule may continue to run.
  */
 
-import { isUnsafeUiCopy, sanitizeUiCopy } from './uiCopy'
+import { sanitizeUiCopy } from './uiCopy'
 
 export interface ScheduleOutcome {
   /** Was the user turning the schedule on (or re-saving it) rather than off? */
@@ -33,15 +33,13 @@ export function backgroundScheduleNotice(o: ScheduleOutcome): ScheduleNotice | n
   if (!o.instantPowerApplied) return null // the save already failed; that is the message
   if (!o.relayConfigured || o.relayAccepted) return null
 
-  // SW-15: the relay's own wording is only appended when it is safe to show,
-  // and only while the combined line stays inside the sanitizer's length gate —
-  // otherwise the Toast layer would drop the whole body, not just the detail.
+  // SW-15: append relay wording only when it is safe. Empty sanitize fallback
+  // means "no secondary detail". Length gate allows body+reviewed detail (~230).
   const body = 'The restore-power command was accepted, but the background stop was not confirmed. An earlier schedule may still switch this device.'
   const safeDetail = sanitizeUiCopy(o.relayDetail, '')
-  const combined = safeDetail ? `${body} ${safeDetail}` : body
   return {
     severity: 'warning',
     title: 'Background schedule may still run',
-    message: isUnsafeUiCopy(combined) ? body : combined,
+    message: safeDetail ? `${body} ${safeDetail}` : body,
   }
 }
