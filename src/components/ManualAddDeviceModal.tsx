@@ -10,7 +10,7 @@ import { useToast } from '../components/Toast'
 import { DEVICE_NAME_MAX } from '../data/deviceModels'
 import { defaultStationPayload } from '../api/deviceApi'
 import { useKeyboardInset } from '../utils/useKeyboardInset'
-import { toUserFacingError } from '../utils/uiCopy'
+import { sanitizeUiCopy, toUserFacingError } from '../utils/uiCopy'
 
 interface Props {
   onClose: () => void
@@ -65,7 +65,7 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
           loadDevices()
           onClose()
         } else {
-          setError(result.message ?? 'Failed to add device')
+          setError(sanitizeUiCopy(result.message, 'Failed to add device'))
         }
       } else {
         // 有电站，添加到选中电站
@@ -82,7 +82,7 @@ export default function ManualAddDeviceModal({ onClose, initialSerialNumber = ''
           loadDevices()
           onClose()
         } else {
-          setError(result.message ?? 'Failed to add device')
+          setError(sanitizeUiCopy(result.message, 'Failed to add device'))
         }
       }
     } catch (err) {
