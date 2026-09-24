@@ -20,6 +20,7 @@ import ScanDevicesScreen from './provisioning/ScanDevicesScreen'
 import DeviceScannedScreen from './provisioning/DeviceScannedScreen'
 import { useProvisionBind, type ConfigStage } from './provisioning/useProvisionBind'
 import { useProvisionScan, displayTitleFromDtuid, type FoundDevice } from './provisioning/useProvisionScan'
+import { resumeAction } from './provisioning/resumePolicy'
 import { toUserFacingError } from '../utils/uiCopy'
 
 /**
@@ -35,6 +36,11 @@ const NO_DEVICE_ID = "Couldn't read this device's ID. Reconnect the device and t
 type UiScreen = 'scan' | 'qr' | 'scanned' | 'naming' | 'icon' | 'provisioning'
 
 export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
+  // Start every visit from a clean store, before the first frame. Only the Back
+  // button reset it, so any other way out (a finished add, onboarding) left the
+  // last error behind and the page opened on "No Devices Found" with its longer
+  // copy, then snapped to the search layout once the scan cleared it (APP-002).
+  useState(() => { useProvisionStore.getState().reset(); return null })
   const store = useProvisionStore()
 
   const [uiScreen, setScreenState] = useState<UiScreen>('scan')
@@ -97,6 +103,8 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
   bleStatusRef.current = bleStatus
   const uiScreenRef = useRef(screen)
   uiScreenRef.current = screen
+  /** Set by an onStop (`isActive:false`); a bare onResume after a dialog leaves it false. */
+  const wentBackgroundRef = useRef(false)
   const provisionStepRef = useRef(store.step)
   provisionStepRef.current = store.step
   const lastBleRef = useRef<{ deviceId?: string; bleName?: string }>({})
@@ -174,17 +182,23 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
       handle = await App.addListener('appStateChange', async ({ isActive }) => {
         if (!isActive) {
           setShowPassword(false)
-          if (removed) return
+          wentBackgroundRef.current = true
           return
         }
         if (removed) return
-        const wasBlocked = bleStatusRef.current === 'no_permission' || bleStatusRef.current === 'bt_off'
-        const onScan = uiScreenRef.current === 'scan'
+        const action = resumeAction({
+          wentBackground: wentBackgroundRef.current,
+          wasBlocked: bleStatusRef.current === 'no_permission' || bleStatusRef.current === 'bt_off',
+          onScan: uiScreenRef.current === 'scan',
+          scanning: useProvisionStore.getState().isOperating,
+        })
+        wentBackgroundRef.current = false
+        if (!action.recheck) return
         resetBleInit()
-        if (onScan) setBleStatus('checking')
+        if (action.showChecking) setBleStatus('checking')
         const status = await recheckBle()
         if (removed) return
-        if (status === 'ready' && (onScan || wasBlocked) && uiScreenRef.current === 'scan') {
+        if (status === 'ready' && action.scanWhenReady && uiScreenRef.current === 'scan') {
           void handleScan()
         }
       })

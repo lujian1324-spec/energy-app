@@ -1,8 +1,9 @@
 {
-  "version": "4.16.1",
-  "build": 2925,
+  "version": "4.16.2",
+  "build": 2926,
   "date": "2026-09-24",
   "changelog": [
+    "The Add Device search screen no longer jumps when it opens or a few seconds later. It opens straight on the search with the radar already moving, instead of flashing a Checking Bluetooth overlay or the previous attempt's No Devices Found message. Allowing the Bluetooth permission, or closing any other system prompt, no longer restarts the search and empties the list of devices already found.",
     "The app no longer shows a long black screen when it opens or comes back while Google's font service is slow or unreachable. The SIERRO start screen appears at once, and the app finishes loading in the system font if the web fonts never arrive.",
     "Insights now reports energy in Wh. Week is a line chart you can tap to read each day. Input is split into Solar and AC, and AC charging now counts toward input. Days with no records show as gaps instead of 0, and long periods such as a month no longer drop their later days.",
     "Opening the app with no devices goes straight to the empty Device page instead of briefly showing three placeholder device cards first.",

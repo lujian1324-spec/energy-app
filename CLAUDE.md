@@ -119,6 +119,14 @@ Also present but not routed standalone: `ProvisioningPage` (inside DevicePage ad
   `DevicePage`'s legacy `showQrScan` overlay closes itself without starting the camera.
   `QrScanScreen`, `DeviceQrScanOverlay`, `useQRScanner` and jsQR all stay wired: flipping the one
   flag to `true` brings the path back.
+- **Search screen resume (v4.16.2, APP-002).** Capacitor fires `appStateChange {isActive:true}` on
+  every Android `onResume` — a permission prompt or any system dialog closing counts — but
+  `{isActive:false}` only on `onStop`. `ProvisioningPage` routes each resume through
+  `resumeAction()` (`src/pages/provisioning/resumePolicy.ts`): re-check + search only when the
+  screen was blocked (permission / Bluetooth off) or the app really went to the background, and
+  never restart a search that is still running. The provision store is reset before the first
+  frame of every visit, and the Bluetooth check draws as the search layout (radar moving), not a
+  full-screen overlay.
 - Terms of Use / Privacy Policy (v4.1.2) are no longer in-app routes/local text — every link
   (`LoginPage`, `RegisterPage`, `SettingPage`, `DataExportPage`) opens the marketing site directly
   (`src/config/legalLinks.ts`: `TERMS_URL`/`PRIVACY_URL` → `sierro.us/pages/{terms,policy}`,
