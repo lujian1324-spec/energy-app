@@ -12,6 +12,7 @@ import { useDeviceStore } from '../stores/deviceStore'
 import { fetchDeviceRecordHistory, type DeviceAttributeRecord } from '../api/deviceApi'
 import { isApiSuccess } from '../utils/apiClient'
 import { useCountUp } from '../hooks/useCountUp'
+import { toUserFacingError } from '../utils/uiCopy'
 
 const periods = ['Day', 'Week', 'Month', 'Range'] as const
 type Period = typeof periods[number]
@@ -546,7 +547,8 @@ export default function StatsPage() {
       }
       setRecords(all)
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : String(e))
+      console.error('[StatsPage] stats load failed:', e)
+      setError(toUserFacingError(e, 'Something went wrong'))
       setRecords([])
     } finally {
       setLoading(false)

@@ -11,6 +11,7 @@ import { classifyBleError } from '../../utils/permissions'
 import { DISCONNECT_COPY } from './useProvisionBind'
 import { scanDeviceToFound, PROVISION_SCAN_MS, emptyScanMessage } from './scanDiscovery'
 import type { FailKind } from '../../utils/provisionFailCopy'
+import { toUserFacingError } from '../../utils/uiCopy'
 
 export type FoundDevice = {
   name: string
@@ -197,7 +198,7 @@ export function useProvisionScan(opts: {
     } catch (err) {
       if (!isCurrent()) return
       store.recordScanFailure()
-      const msg = err instanceof Error ? err.message : 'Scan failed'
+      const msg = toUserFacingError(err, 'Scan failed')
       store.setErrorMessage(msg)
       store.addLog(`Scan failed: ${err}`)
       toast.error(msg)

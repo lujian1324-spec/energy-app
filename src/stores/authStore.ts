@@ -13,7 +13,7 @@ import {
   LoginData,
 } from '../api/authApi'
 import { tokenStore } from '../utils/apiClient'
-import { sanitizeUiCopy } from '../utils/uiCopy'
+import { sanitizeUiCopy, toUserFacingError } from '../utils/uiCopy'
 import { useDeviceStore } from './deviceStore'
 import { disableWebPush } from '../utils/pushNotification'
 import { teardownNativePush } from '../utils/nativePush'
@@ -83,8 +83,8 @@ export const useAuthStore = create<AuthState>()(
           set({ loading: false, error: msg, isAuthenticated: false })
           return false
         } catch (err: unknown) {
-          const raw = err instanceof Error ? err.message : 'Network error — please try again'
-          const msg = err instanceof Error ? sanitizeUiCopy(raw, 'Network error — please try again') : raw
+          console.error('[authStore] login failed:', err)
+          const msg = toUserFacingError(err, 'Network error — please try again')
           set({ loading: false, error: msg, isAuthenticated: false })
           return false
         }

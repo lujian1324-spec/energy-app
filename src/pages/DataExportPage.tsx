@@ -18,6 +18,7 @@ import { useDeviceStore } from '../stores/deviceStore'
 import { toast } from '../components/Toast'
 import appVersion from '../version.json'
 import { TERMS_URL, PRIVACY_URL } from '../config/legalLinks'
+import { toUserFacingError } from '../utils/uiCopy'
 
 /**
  * PRD v1.1 §8.3: Data Sovereignty - 数据主权页
@@ -63,7 +64,8 @@ export default function DataExportPage() {
       URL.revokeObjectURL(url)
       toast.success('Export complete', 'JSON file downloaded')
     } catch (e) {
-      toast.error('Export failed', e instanceof Error ? e.message : 'Unknown')
+      console.error('[DataExport] export failed:', e)
+      toast.error('Export failed', toUserFacingError(e, '') || undefined)
     } finally {
       setExportLoading(null)
     }
@@ -95,7 +97,8 @@ export default function DataExportPage() {
       URL.revokeObjectURL(url)
       toast.success('Export complete', 'CSV file downloaded')
     } catch (e) {
-      toast.error('Export failed', e instanceof Error ? e.message : 'Unknown')
+      console.error('[DataExport] export failed:', e)
+      toast.error('Export failed', toUserFacingError(e, '') || undefined)
     } finally {
       setExportLoading(null)
     }

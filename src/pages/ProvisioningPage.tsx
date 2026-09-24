@@ -20,6 +20,7 @@ import ScanDevicesScreen from './provisioning/ScanDevicesScreen'
 import DeviceScannedScreen from './provisioning/DeviceScannedScreen'
 import { useProvisionBind, type ConfigStage } from './provisioning/useProvisionBind'
 import { useProvisionScan, displayTitleFromDtuid, type FoundDevice } from './provisioning/useProvisionScan'
+import { toUserFacingError } from '../utils/uiCopy'
 
 /**
  * The device id, read live rather than off the render snapshot. `handleSelectDevice`
@@ -212,11 +213,13 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
         store.setVersionInfo(pl.SV, pl.HV)
         store.setStep('wifi')
       } else {
-        store.setErrorMessage(`Verification failed: RC=${resp.RC}`)
+        console.warn('[Provisioning] verify failed: RC=', resp.RC)
+        store.setErrorMessage('Verification failed')
       }
     } catch (err) {
       if (closedRef.current) return
-      store.setErrorMessage(err instanceof Error ? err.message : 'Verification failed')
+      console.error('[Provisioning] verify threw:', err)
+      store.setErrorMessage(toUserFacingError(err, 'Verification failed'))
     } finally {
       if (!closedRef.current) store.setIsOperating(false)
     }
@@ -234,10 +237,12 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
         store.setNeedBleKey(false)
         await handleVerify()
       } else {
-        store.setErrorMessage(resp.RC === 9001 ? 'Incorrect BLE key, please retry' : `Key error: RC=${resp.RC}`)
+        console.warn('[Provisioning] key verify failed: RC=', resp.RC)
+        store.setErrorMessage(resp.RC === 9001 ? 'Incorrect BLE key, please retry' : 'Key verification failed')
       }
     } catch (err) {
-      store.setErrorMessage(err instanceof Error ? err.message : 'Key verification failed')
+      console.error('[Provisioning] key verify threw:', err)
+      store.setErrorMessage(toUserFacingError(err, 'Key verification failed'))
     } finally {
       store.setIsOperating(false)
     }
@@ -261,13 +266,16 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
         const cleaned = list.filter(ap => ap.SSID && !seen.has(ap.SSID) && seen.add(ap.SSID))
         store.setApList(cleaned)
       } else {
-        store.setErrorMessage(`WiFi scan failed: RC=${resp.RC}`)
+        console.warn('[Provisioning] wifi scan failed: RC=', resp.RC)
+        store.setErrorMessage('WiFi scan failed')
       }
     } catch (err) {
+      // The raw message still classifies the failure; only the copy is mapped.
       const m = err instanceof Error ? err.message : 'WiFi scan failed'
+      console.error('[Provisioning] wifi scan threw:', err)
       store.setErrorMessage(/disconnect|GATT/i.test(m)
         ? 'Bluetooth disconnected. Please reconnect the device and try again.'
-        : m)
+        : toUserFacingError(err, 'WiFi scan failed'))
     } finally {
       store.setApLoading(false)
     }
@@ -367,7 +375,8 @@ export default function ProvisioningPage({ onClose }: { onClose: () => void }) {
       await startProvisioning()
     } catch (err) {
       if (closedRef.current) return
-      const msg = err instanceof Error ? err.message : 'Connection failed'
+      console.error('[Provisioning] connect failed:', err)
+      const msg = toUserFacingError(err, 'Connection failed')
       store.setErrorMessage(msg); toast.error(msg)
     } finally {
       selectingRef.current = false

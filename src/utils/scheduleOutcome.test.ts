@@ -46,3 +46,37 @@ describe('AC-12-8 — turning a schedule off with the relay down', () => {
     expect(backgroundScheduleNotice({ ...base, enabling: false })).toBeNull()
   })
 })
+
+describe('backgroundScheduleNotice — SW-15 relay detail (AC-15-2)', () => {
+  const stop = {
+    enabling: false,
+    instantPowerApplied: true,
+    relayConfigured: true,
+    relayAccepted: false,
+  }
+
+  it('drops a relay refusal that is raw exception text', () => {
+    const n = backgroundScheduleNotice({
+      ...stop,
+      relayDetail: 'java.lang.IllegalArgumentException: deviceId',
+    })
+    expect(n?.message).not.toContain('IllegalArgument')
+    expect(n?.message).not.toContain('java.lang')
+    // The warning itself still fires; only the reason is withheld.
+    expect(n?.title).toBe('Background schedule may still run')
+  })
+
+  it('drops the SW-11 config wording too', () => {
+    const n = backgroundScheduleNotice({ ...stop, relayDetail: 'config attribute not exist' })
+    expect(n?.message).not.toContain('config attribute')
+  })
+  it('keeps the reviewed POLLER_SESSION_REQUIRED detail (E2E schedule-save)', () => {
+    const detail =
+      'Background session is missing. Sign in again and retry Save. If it still fails, contact support.'
+    const n = backgroundScheduleNotice({ ...stop, relayDetail: detail })
+    expect(n?.message).toContain('Background session is missing')
+    expect(n?.message).toContain(detail)
+  })
+
+})
+

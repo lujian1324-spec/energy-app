@@ -9,6 +9,7 @@ import { useState, useEffect, useRef } from 'react'
 import { fetchDeviceRecordHistory } from '../api/deviceApi'
 import type { DeviceAttributeRecord } from '../api/deviceApi'
 import { isApiSuccess } from '../utils/apiClient'
+import { sanitizeUiCopy, toUserFacingError } from '../utils/uiCopy'
 import {
   getHistoryByDeviceAndRange,
   saveHistoryBatch,
@@ -151,7 +152,9 @@ export function useHistoryFetcher(
           if (cancelRef.current) break
 
           if (!isApiSuccess(res.code) || !res.data) {
-            setError(res.message ?? res.msg ?? 'API error')
+            const rawMsg = res.message ?? res.msg ?? ''
+            console.warn('[useHistoryFetcher] history page failed:', res.code, rawMsg)
+            setError(sanitizeUiCopy(rawMsg, "Couldn't load history"))
             break
           }
 
@@ -215,7 +218,8 @@ export function useHistoryFetcher(
 
         if (!cancelRef.current) setDone(true)
       } catch (e) {
-        if (!cancelRef.current) setError(String(e))
+        console.warn('[useHistoryFetcher] history fetch threw:', e)
+        if (!cancelRef.current) setError(toUserFacingError(e, "Couldn't load history"))
       } finally {
         if (!cancelRef.current) setLoading(false)
       }

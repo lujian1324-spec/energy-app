@@ -2,6 +2,7 @@
  * BLE 配网状态管理
  */
 import { create } from 'zustand'
+import { sanitizeUiCopy } from '../utils/uiCopy'
 import type { BleWifiAp, BleProvisionResponse, BleWifiStatus } from '../types/protocol'
 
 export type ProvisionStep = 'scan' | 'verify' | 'wifi' | 'password' | 'configuring' | 'result'
@@ -98,7 +99,10 @@ export const useProvisionStore = create<ProvisionStoreState>()((set) => ({
 
   setConfigResult: (configResult) => set({ configResult }),
   setWifiStatus: (wifiStatus) => set({ wifiStatus }),
-  setErrorMessage: (errorMessage) => set({ errorMessage }),
+  setErrorMessage: (errorMessage) => set({
+    // SW-15: BLE provisioning screens render this string directly.
+    errorMessage: errorMessage == null ? null : sanitizeUiCopy(errorMessage, 'Something went wrong'),
+  }),
 
   setNeedBleKey: (needBleKey) => set({ needBleKey }),
   setBleKeyVerified: (bleKeyVerified) => set({ bleKeyVerified }),

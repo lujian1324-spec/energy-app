@@ -15,6 +15,7 @@
  */
 
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { toUserFacingError } from '../utils/uiCopy'
 
 // ----------------------------------------------------------------
 // 二维码结果类型
@@ -232,7 +233,8 @@ export function useQRScanner(opts: UseQRScannerOptions = {}): UseQRScannerReturn
 
       setStatus('scanning')
     } catch (err) {
-      const msg = err instanceof Error ? err.message : '无法访问摄像头'
+      console.error('[useQRScanner] camera failed:', err)
+      const msg = toUserFacingError(err, 'Camera error')
       if (mountedRef.current) {
         setError(msg)
         setStatus('error')
