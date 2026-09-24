@@ -16,11 +16,23 @@
     <!-- Sierro Design System fonts: Anton (display/page-title) + Inter (content) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <!--
+      Non-blocking on purpose (APP-002). As a plain rel="stylesheet" this held back
+      the FIRST PAINT until Google answered: with fonts.googleapis.com slow or
+      unreachable the WebView drew nothing at all — measured: no paint within 8 s,
+      against 140 ms when it answers — which is the multi-second black screen on
+      opening or returning to the app. Text renders at once in the fallback faces
+      (tailwind fontFamily) and swaps to Anton/Inter when they arrive.
+    -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap" /></noscript>
     <title>Sierro</title>
   </head>
-  <body>
-    <div id="root"></div>
+  <body style="margin:0;background:#141414">
+    <!-- Painted by the HTML alone, before the JS bundle has loaded: the same
+         wordmark the session-restore screen shows, so the first frame is the
+         app, not a black window. React replaces it on mount. -->
+    <div id="root"><div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#141414"><span style="font:600 32px/1 -apple-system,'Helvetica Neue',Arial,sans-serif;letter-spacing:.22em;padding-left:.22em;color:#fff">SIERRO</span></div></div>
 
     <script type="module" src="/src/main.tsx"></script>
   </body>

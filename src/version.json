@@ -1,8 +1,9 @@
 {
-  "version": "4.16.0",
-  "build": 2924,
+  "version": "4.16.1",
+  "build": 2925,
   "date": "2026-09-24",
   "changelog": [
+    "The app no longer shows a long black screen when it opens or comes back while Google's font service is slow or unreachable. The SIERRO start screen appears at once, and the app finishes loading in the system font if the web fonts never arrive.",
     "Insights now reports energy in Wh. Week is a line chart you can tap to read each day. Input is split into Solar and AC, and AC charging now counts toward input. Days with no records show as gaps instead of 0, and long periods such as a month no longer drop their later days.",
     "Opening the app with no devices goes straight to the empty Device page instead of briefly showing three placeholder device cards first.",
     "The Insights page header is now exactly the same height as the Device page header when you have no devices, so the page titles no longer shift when switching tabs.",
