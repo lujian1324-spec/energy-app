@@ -127,6 +127,11 @@ Also present but not routed standalone: `ProvisioningPage` (inside DevicePage ad
   never restart a search that is still running. The provision store is reset before the first
   frame of every visit, and the Bluetooth check draws as the search layout (radar moving), not a
   full-screen overlay.
+- **BLE drop after Wi-Fi (v4.16.3, 0923-001).** Once `handleConfig` gets RC=0 the device leaves
+  Bluetooth for Wi-Fi. `useProvisionScan`'s `onDisconnected` returns early when
+  `wifiConfiguredRef` is set (marks `bleGoneRef` only): no reconnect loop, no
+  `failKind: 'disconnect'`. Naming, icon and the cloud bind never need the link, and the step
+  still reads `'configuring'` through them, which is what used to fail a successful add.
 - Terms of Use / Privacy Policy (v4.1.2) are no longer in-app routes/local text — every link
   (`LoginPage`, `RegisterPage`, `SettingPage`, `DataExportPage`) opens the marketing site directly
   (`src/config/legalLinks.ts`: `TERMS_URL`/`PRIVACY_URL` → `sierro.us/pages/{terms,policy}`,
