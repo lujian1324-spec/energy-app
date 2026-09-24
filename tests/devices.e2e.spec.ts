@@ -114,3 +114,24 @@ test.describe('Device list', () => {
     await expect(dot).toHaveCount(0)
   })
 })
+
+test.describe('Device list banners', () => {
+  test.skip(!process.env.E2E_LOCAL, 'Uses a local build and a mocked backend')
+
+  test('"Failed to switch power" sits 16px below the header and 16px above the cards, not on the header', async ({ page }) => {
+    await signIn(page)
+    await mockBackend(page, [
+      { id: '1001', name: 'Garage', acOn: false, refuseRegisterWrites: true },
+      { id: '2002', name: 'Cabin', acOn: true },
+    ])
+    await page.goto('/#/devices')
+    await acSwitch(page, 'Garage').click()
+    await expect(page.getByRole('alert')).toContainText('Failed to switch power')
+    await page.waitForTimeout(500) // the height animation settles
+    const header = await page.locator('.safe-area-top-header').first().boundingBox()
+    const banner = await page.getByRole('alert').boundingBox()
+    const card = await page.locator('div.rounded-l').filter({ has: page.getByText('Garage', { exact: true }) }).last().boundingBox()
+    expect(Math.round(banner!.y - (header!.y + header!.height))).toBe(16)
+    expect(Math.round(card!.y - (banner!.y + banner!.height))).toBe(16)
+  })
+})

@@ -140,6 +140,13 @@ Also present but not routed standalone: `ProvisioningPage` (inside DevicePage ad
   build made with `VITE_ENABLE_GUEST=true`, which only the E2E workflow sets (its `[Guest]` specs).
   Consumer, QA, APK and iOS builds have no way in. `setGuestMode`, the demo devices and the simulator
   stay wired.
+- **Hidden account + password sign-in (v4.17.4).** Ten quick taps on the landing screen's SIERRO
+  wordmark (each within 1.5 s of the last — `registerTap()` in `src/utils/secretTaps.ts`; a longer
+  pause starts over, nothing reacts before the tenth) open `LoginPage`'s `'password'` step: Username +
+  Password → `loginByAccount()` (`/login/account`, MD5 via `md5Password`) → the same `finishSignIn` as
+  the email code, so account settings, the roster check and onboarding behave identically. Not offered
+  to users: no hint, no role on the wordmark, and the changelog (which ships in the bundle) does not
+  describe the gesture. The real-account E2E group (`E2E_USER`/`E2E_PASS`) signs in through it.
 - Terms of Use / Privacy Policy (v4.1.2) are no longer in-app routes/local text — every link
   (`LoginPage`, `RegisterPage`, `SettingPage`, `DataExportPage`) opens the marketing site directly
   (`src/config/legalLinks.ts`: `TERMS_URL`/`PRIVACY_URL` → `sierro.us/pages/{terms,policy}`,
@@ -168,6 +175,9 @@ Use the label canon below; same metric = same label everywhere except DebugParam
   "The device didn't switch its AC output." and the switch shows the device's state. Cloud state is
   re-read on return to the foreground; the live layer already does.
 - *Bell dot*: `unreadAlarmCount()` over **every** device, from `firingAlarmsStore` (see NotificationsPage).
+- *Banners under the header* (v4.17.4): the offline banner and the error banner ("Failed to switch power",
+  "The device didn't switch its AC output…") each carry a 16px top gap inside the wrapper that animates
+  their height (`OfflineBanner`'s `className` is that wrapper). They used to sit flush on the header.
 - **Fast device switches (v4.17.1).** `loadDeviceDetails` drops a reply that is not the newest or not
   for the selected device. `selectedDeviceState` is the last state loaded (the first-add BLE capture
   relies on that), so pages read it through `stateForDevice(state, routeId)` — DeviceMonitorPage,

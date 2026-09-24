@@ -36,9 +36,13 @@ async function skipPermissionsGate(page: Page) {
   await page.waitForTimeout(500)
 }
 
+/** Account + password sign-in is hidden (v4.17.4): 10 quick taps on the SIERRO wordmark. */
 async function loginReal(page: Page, username: string, password: string) {
   await skipPermissionsGate(page)
   await page.goto(`${BASE}/#/login`)
+  const mark = page.getByRole('heading', { name: 'SIERRO', exact: true })
+  await mark.waitFor({ timeout: 20000 })
+  for (let i = 0; i < 10; i++) await mark.click()
   await page.waitForSelector('input[placeholder="Username"]', { timeout: 20000 })
   await page.locator('input[placeholder="Username"]').fill(username)
   await page.locator('input[type="password"]').fill(password)

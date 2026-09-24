@@ -201,7 +201,7 @@ v4.4.3 修复 Android 扫不到设备(客户端过滤)与 PWA Open Settings 跳�
 ---
 
 ## 11. 自动化覆盖现状(全部可在 CLI 运行)
-- **单元 + 接口契约**(`src/**/*.test.ts`,Vitest,`npm run test:unit`,**84 个文件,812 项**,v4.17.3 时;中继 `npm run test:server` 68 项):
+- **单元 + 接口契约**(`src/**/*.test.ts`,Vitest,`npm run test:unit`,**85 个文件,815 项**,v4.17.4 时;中继 `npm run test:server` 68 项):
   - 纯逻辑:Modbus CRC/解码/0x0133 枚举、电池时间、isApiSuccess、速报探测。
   - **BLE 直连解码/控制**(`src/protocols/bleDirect.test.ts`,新增于 v3.36.0):用合成的 UART 透传
     响应验证 `readLiveStatusBle`(含 CRC 校验失败/RC!==0/传输异常三种失败路径均返回 null,不误信
@@ -220,7 +220,7 @@ v4.4.3 修复 Android 扫不到设备(客户端过滤)与 PWA Open Settings 跳�
   - **全接口契约**(`src/api/api-contract.test.ts`,38 项):mock 传输层,逐个断言
     77 个 API 函数的端点/payload/字段约定(deviceId String、密码 md5、captchaId、
     邮箱验证码 `address` 字段、国家码去 `+`、无 userId 规则、透传 hex→base64 等)。
-- **e2e**(Playwright,`tests/`,CI 对本次提交的构建跑,共 50 项;真账号组 5 项另计,仅手动带账号时跑):
+- **e2e**(Playwright,`tests/`,CI 对本次提交的构建跑,共 53 项;真账号组 5 项另计,仅手动带账号时跑):
   - `e2e.spec.ts`(22):认证页、邮箱验证码、游客导航(构建带 `VITE_ENABLE_GUEST=true` 才有入口)、PWA 健康。
   - `permissions.e2e.spec.ts`(2)、`schedule-save.e2e.spec.ts`(2):首启无权限页;Sleep Mode 保存。
   - **以下四个用模拟后端**(`tests/support/mockBackend.ts`:内存里的设备/状态/历史/告警/透传,
@@ -229,10 +229,10 @@ v4.4.3 修复 Android 扫不到设备(客户端过滤)与 PWA Open Settings 跳�
       每页 1500、带 `-07:00` 和 `IOT-Time-Zone`;平台拒绝时回退 `record/list`(每页 80 翻页);
       两台设备各画各的、缺字段/长时间无上报断线;缓存按设备隔离且每次进入都重新请求服务器、
       旧版无 deviceId 的游客数据被清掉;页面停留每分钟增量刷新;过零点切到新的一天;退出登录清空缓存。
-    - `devices.e2e.spec.ts`(5):AC 开关显示设备上报状态、离线设备为关且不可点;点击发 0x0080 写入并等设备回包;
+    - `devices.e2e.spec.ts`(6,含顶部提示条与标题栏/卡片各 16px):AC 开关显示设备上报状态、离线设备为关且不可点;点击发 0x0080 写入并等设备回包;
       设备没切换时提示并回到真实状态;手机断网显示横幅并锁定开关;红点覆盖所有设备、通知列表每行标明设备、打开后红点消失。
     - `insights.e2e.spec.ts`(3):某小时读数为 Wh 且输入拆成 Solar / AC;无数据的小时显示 No data;分页失败提示数据不完整。
-    - `account.e2e.spec.ts`(3):验证码光标落在下一位的格子里(退格、点前面的格子也对);A(会员名单上的
+    - `account.e2e.spec.ts`(5,含隐藏的账号密码登录 2 项:连点 SIERRO 10 下才进入、停顿重新计数;登录只发 MD5):验证码光标落在下一位的格子里(退格、点前面的格子也对);A(会员名单上的
       团队账号 #666)设好推送开关和阈值后退出、B 登录看不到 A 的标签/开关/阈值,A 再登录全部恢复;
       Device Info 的 Serial Number 显示绑定时的蓝牙 ID(`dtuDtuid`)。
     - `after-sales.e2e.spec.ts`(3,售后清单 2026-09-24):R11 存 Savings 后重进仍是 Savings(云端 workMode 仍为 Backup);
