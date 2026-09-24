@@ -168,6 +168,14 @@ lives on independently and is still referenced elsewhere.)
   there is therefore no cloud echo to poll, and after a successful save the row shows what was written
   to 0x0086/0x0054 for the rest of the visit. (On re-entry `resolveBatteryPriority` still lets a
   device-reported `workMode` of 1/2 win — SW-04's rule, deliberately left alone here.)
+- **Fan Speed (v4.15.0): one Modbus write, slider 0–100 %.** `FanSpeedCard`
+  (`src/pages/device/FanSpeedCard.tsx`) → `applyFanSpeed()` (`src/api/fanControl.ts`) sends one FC16
+  passthrough to **0x0081** (`FAN_CTRL`) with value `0x01SS`: high byte `0x01` = fan enabled, low
+  byte = the percentage in hex (`0x00`–`0x64`), e.g. 23 % → `01 10 00 81 00 01 02 01 17 F9 DF`. The
+  enable byte stays `0x01` at 0 %. The write goes out when the slider is released, not on every
+  step; writes are serialised (newest queued value wins); a refusal snaps the slider back to the last
+  accepted speed. 0x0081 is volatile and never read back — the slider reopens at the last speed this
+  app set for the device (`localStorage['sierro-fan-speed-{deviceId}']`). Disabled while offline.
 
 **StatsPage** (`/insights`)
 - *Header*: days-in-service (from `installedAt`).

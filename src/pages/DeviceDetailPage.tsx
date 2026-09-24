@@ -34,6 +34,7 @@ import { DEV_TOOLS_ENABLED } from '../config/devTools'
 import { SMART_SCHEDULE_PAUSED } from '../config/smartSchedule'
 import { backgroundScheduleNotice } from '../utils/scheduleOutcome'
 import { getSavedScheduleEnabled, subscribeActiveScheduleMode } from '../utils/activeScheduleMode'
+import FanSpeedCard from './device/FanSpeedCard'
 
 interface DeviceDetailPageProps {
   /** When rendered as an overlay (inside OverviewPage) a custom back handler is
@@ -918,6 +919,13 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             setShowWorkModeMenu(true)
           }}
         />
+        {deviceIdForScheduler && (
+          <FanSpeedCard
+            deviceId={deviceIdForScheduler}
+            disabled={!!realDevice && !realDevice.isOnline}
+            demo={isDemoMode}
+          />
+        )}
         {/* SW-14: Smart Schedule is paused, so its only entry point is not
             rendered. Nothing replaces it — the row is silently absent, and the
             rows around it are unaffected. Any other link to `/smart-schedule`
