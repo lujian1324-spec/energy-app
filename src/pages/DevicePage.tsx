@@ -41,6 +41,7 @@ import { useBleLiveStatusStore, lookupBleLiveStatus } from '../stores/bleLiveSta
 import { useLivePassthroughStore, lookupLivePassthrough, resolveLiveValues } from '../stores/livePassthroughStore'
 import { useLivePassthrough } from '../hooks/useLivePassthrough'
 import { useSmartScheduleFlush } from '../hooks/useSmartScheduleFlush'
+import { toUserFacingError } from '../utils/uiCopy'
 
 interface DeviceRealtimeCache {
   [deviceId: string]: {
@@ -147,7 +148,8 @@ export default function DevicePage() {
       if (loadError) throw new Error(loadError)
       await loadStations(1, 50)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load devices')
+      console.error('[DevicePage] load failed:', err)
+      setError(toUserFacingError(err, 'Failed to load devices'))
     }
   }, [loadDevices, loadStations])
 
@@ -314,7 +316,8 @@ export default function DevicePage() {
       }
     } catch (err) {
       setPowerStates(prev => ({ ...prev, [idStr]: current }))
-      setError(err instanceof Error ? err.message : 'Failed to switch power')
+      console.error('[DevicePage] power switch failed:', err)
+      setError(toUserFacingError(err, 'Failed to switch power'))
     } finally {
       setTogglingPower(prev => { const s = new Set(prev); s.delete(idStr); return s })
     }
@@ -623,12 +626,14 @@ export default function DevicePage() {
         animationFrameRef.current = requestAnimationFrame(tickQrDecode)
       }
     } catch (err) {
+      // SW-15: the raw getUserMedia message is classified, never displayed.
       const msg = err instanceof Error ? err.message : String(err)
+      console.error('[DevicePage] camera start failed:', err)
       if (/denied|permission|notallowed/i.test(msg)) {
         setCameraDenied(true)
         setQrError('Camera access was denied. Please enable camera permission in Settings to scan QR codes.')
       } else {
-        setQrError(`Camera error: ${msg}`)
+        setQrError('Camera error')
       }
       setQrScanning(false)
       setQrVideoReady(false)

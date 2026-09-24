@@ -59,6 +59,7 @@ import { passthroughDevice } from '../api/deviceApi'
 import { clearLivePassthrough } from './livePassthroughStore'
 import { FRAMES, extractPassthroughRegisters } from '../protocols/modbusProtocol'
 import { saveRatedParams, loadRatedParams } from '../db/powerflowDB'
+import { sanitizeUiCopy, toUserFacingError } from '../utils/uiCopy'
 
 /** 透传读取设备额定参数并缓存到 IndexedDB（24h TTL，fire-and-forget）*/
 async function fetchAndCacheRatedParams(deviceId: string): Promise<void> {
@@ -236,7 +237,8 @@ export const useDeviceStore = create<DeviceStoreState>()(
             set({ deviceLoading: false, deviceError: result.message || 'Failed to load devices' })
           }
         } catch (err) {
-          set({ deviceLoading: false, deviceError: err instanceof Error ? err.message : 'Failed to load devices' })
+          console.error('[deviceStore] loadDevices failed:', err)
+          set({ deviceLoading: false, deviceError: toUserFacingError(err, 'Failed to load devices') })
         } finally {
           set({ devicesListReady: true })
         }
@@ -507,11 +509,11 @@ export const useDeviceStore = create<DeviceStoreState>()(
             set({ peakValleyConfig: result.data, peakValleyLoading: false })
             return result.data
           }
-          set({ peakValleyLoading: false, peakValleyError: result.message || 'Failed to load peak/valley config' })
+          set({ peakValleyLoading: false, peakValleyError: sanitizeUiCopy(result.message, 'Failed to load peak/valley config') })
           return null
         } catch (e: unknown) {
-          const msg = e instanceof Error ? e.message : String(e)
-          set({ peakValleyLoading: false, peakValleyError: msg })
+          console.error('[deviceStore] loadPeakValleyConfig failed:', e)
+          set({ peakValleyLoading: false, peakValleyError: toUserFacingError(e, 'Failed to load peak/valley config') })
           return null
         }
       },
@@ -527,7 +529,8 @@ export const useDeviceStore = create<DeviceStoreState>()(
           set({ peakValleySaving: false })
           return result
         } catch (e: unknown) {
-          set({ peakValleySaving: false, peakValleyError: String(e) })
+          console.error('[deviceStore] enablePeakValley failed:', e)
+          set({ peakValleySaving: false, peakValleyError: toUserFacingError(e, 'Failed to save peak/valley config') })
           throw e
         }
       },
@@ -550,8 +553,8 @@ export const useDeviceStore = create<DeviceStoreState>()(
           set({ peakValleySaving: false })
           return result
         } catch (e: unknown) {
-          const msg = e instanceof Error ? e.message : String(e)
-          set({ peakValleySaving: false, peakValleyError: msg })
+          console.error('[deviceStore] savePeakValley failed:', e)
+          set({ peakValleySaving: false, peakValleyError: toUserFacingError(e, 'Failed to save peak/valley config') })
           throw e
         }
       },
@@ -584,8 +587,8 @@ export const useDeviceStore = create<DeviceStoreState>()(
           }
         } catch (e: unknown) {
           if (seq !== energyFlowRequestSeq) return
-          const msg = e instanceof Error ? e.message : String(e)
-          set({ energyFlowLoading: false, energyFlowError: msg })
+          console.error('[deviceStore] loadEnergyFlow failed:', e)
+          set({ energyFlowLoading: false, energyFlowError: toUserFacingError(e, 'Failed to load energy flow') })
         }
       },
 
@@ -619,11 +622,11 @@ export const useDeviceStore = create<DeviceStoreState>()(
           if ((result.code === 0 || result.code === '0') && result.data) {
             set({ historyData: result.data, historyLoading: false })
           } else {
-            set({ historyLoading: false, historyError: result.message || 'Failed to load history data' })
+            set({ historyLoading: false, historyError: sanitizeUiCopy(result.message, 'Failed to load history data') })
           }
         } catch (e: unknown) {
-          const msg = e instanceof Error ? e.message : String(e)
-          set({ historyLoading: false, historyError: msg })
+          console.error('[deviceStore] loadHistory failed:', e)
+          set({ historyLoading: false, historyError: toUserFacingError(e, 'Failed to load history data') })
         }
       },
 

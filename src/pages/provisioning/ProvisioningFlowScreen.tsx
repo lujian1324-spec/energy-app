@@ -15,6 +15,7 @@ import { useProvisionStore } from '../../stores/provisionStore'
 import { bindFailTitle, BIND_WIFI_HELPER, RESTART_HELP_COPY, type FailKind, type BindFailReasonKind } from '../../utils/provisionFailCopy'
 import DeviceLinkedScreen from './DeviceLinkedScreen'
 import { canConfigureWifi, wifiRequiresPassword } from '../../utils/provisionWifi'
+import { DEV_TOOLS_ENABLED } from '../../config/devTools'
 
 type FlowProps = {
   failKind: FailKind
@@ -300,7 +301,9 @@ export default function ProvisioningFlowScreen(p: FlowProps) {
                     Three theories about this failure were argued from the
                     source and each was wrong, because the raw reply went to a
                     log nobody can open while the screen showed only a code. */}
-                {store.configResult === 'fail' && bindDetails && (
+                {/* SW-15: a consumer build must not expose the raw reply at
+                    all, even behind a disclosure. Dev/QA builds keep it. */}
+                {DEV_TOOLS_ENABLED && store.configResult === 'fail' && bindDetails && (
                   <details className="mt-3 w-full text-left">
                     <summary className="text-caption text-ink-6 cursor-pointer">Technical details</summary>
                     <pre className="mt-2 p-2 rounded-m bg-ink-11 text-[10px] leading-relaxed text-ink-6 whitespace-pre-wrap break-all">{bindDetails}</pre>

@@ -18,6 +18,7 @@ import {
   sendEmailCaptcha,
 } from '../api/authApi'
 import type { UserProfile } from '../types/protocol'
+import { toUserFacingError } from '../utils/uiCopy'
 
 interface ProfileEditPageProps {
   onBack: () => void
@@ -121,7 +122,8 @@ export default function ProfileEditPage({ onBack }: ProfileEditPageProps) {
       setEditingField(null)
       setTempValue('')
     } catch (err: unknown) {
-      setFieldError(err instanceof Error ? err.message : 'Update failed')
+      console.error('[ProfileEdit] update failed:', err)
+      setFieldError(toUserFacingError(err, 'Update failed'))
     } finally {
       setIsSaving(false)
     }

@@ -3,6 +3,8 @@
  * Kept separate so vitest can cover titles without loading the BLE page.
  */
 
+import { isUnsafeUiCopy } from './uiCopy'
+
 export type FailKind = 'wifi' | 'bind' | 'disconnect' | 'timeout' | null
 
 export const BIND_FAIL_COPY = "Device connected to Wi-Fi, but couldn't be added to your account"
@@ -16,9 +18,15 @@ export function bindFailTitle(failKind: FailKind, wifiConfigured: boolean): stri
   return SETUP_FAILED_TITLE
 }
 
+/**
+ * SW-15: the blacklist now lives in `uiCopy.isUnsafeUiCopy` so the bind screen
+ * and every other surface agree on what counts as raw exception text. The extra
+ * terms here are the ones only this flow has seen.
+ */
 export function isJunkError(msg?: string | null): boolean {
   if (!msg) return true
-  return /illegal argument|internal error|internal\/validation|validation|null pointer|stack trace|exception|sql|constraint|undefined|econn|status code|rc=/i.test(msg)
+  if (isUnsafeUiCopy(msg)) return true
+  return /internal\/validation|validation|constraint/i.test(msg)
 }
 
 export type BindFailReasonKind = 'already_bound' | 'device_offline' | 'timeout' | 'invalid'

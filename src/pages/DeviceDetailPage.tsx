@@ -26,7 +26,7 @@ import {
   type BatteryPriority,
 } from '../utils/batteryPriority'
 import { formatTemp } from '../utils/localization'
-import { sanitizeUiCopy } from '../utils/uiCopy'
+import { sanitizeUiCopy, toUserFacingError } from '../utils/uiCopy'
 import { loadRatedParams, saveRatedParams, type RatedParams } from '../db/powerflowDB'
 import { SIERRO_MODELS, SIERRO_MODEL_LIST, DEVICE_NAME_MAX, generateSerial, type SierroModel } from '../data/deviceModels'
 import sierro1000Img from '../assets/sierro-1000.webp'
@@ -471,7 +471,8 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
       } catch (err) {
         renameDeviceLocal(targetId, editTargetOriginalName)
         updateDeviceNameById(targetId, editTargetOriginalName)
-        setNameError(err instanceof Error ? err.message : 'Network error')
+        console.error('[DeviceDetail] rename failed:', err)
+        setNameError(toUserFacingError(err, 'Network error'))
         setSavingName(false)
         return
       }
@@ -503,7 +504,8 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
         return
       }
     } catch (err) {
-      setDeleteError(err instanceof Error ? err.message : 'Network error')
+      console.error('[DeviceDetail] delete failed:', err)
+      setDeleteError(toUserFacingError(err, 'Network error'))
       setDeleting(false)
       return
     }

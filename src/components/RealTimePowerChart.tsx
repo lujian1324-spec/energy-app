@@ -332,8 +332,9 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
         {isOnline && !historyLoading && rawHistoryPoints.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center z-10 px-4 text-center">
             <p className="text-label text-ink-7">
+              {/* SW-15: the reason never reaches the user; it is logged instead. */}
               {historyError
-                ? `Couldn't load today's history — ${historyError}`
+                ? "Couldn't load today's history"
                 : 'No readings recorded yet today'}
             </p>
           </div>

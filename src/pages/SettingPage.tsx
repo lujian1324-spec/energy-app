@@ -32,6 +32,7 @@ import { PUSH_ENABLED } from '../config/webPush'
 import { TERMS_URL, PRIVACY_URL } from '../config/legalLinks'
 import { initNativePush, teardownNativePush, reuploadNativePushPrefs } from '../utils/nativePush'
 import { Capacitor } from '@capacitor/core'
+import { toUserFacingError } from '../utils/uiCopy'
 
 export default function SettingPage() {
   const navigate = useNavigate()
@@ -110,7 +111,8 @@ export default function SettingPage() {
           setSupportSending(false)
         }, 1500)
       } catch (err) {
-        setSupportError(err instanceof Error ? err.message : 'Failed to send feedback. Please try again.')
+        console.error('[SettingPage] feedback send failed:', err)
+        setSupportError(toUserFacingError(err, 'Failed to send feedback. Please try again.'))
         setSupportSending(false)
       }
       return
