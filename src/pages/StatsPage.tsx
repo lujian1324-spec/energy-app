@@ -698,6 +698,11 @@ export default function StatsPage() {
           {sharing ? <Loader2 size={24} className="animate-spin" /> : <Icon name="share" size={24} />}
         </button>
         )}
+        {/* APP-004: the Device header always carries 40px buttons, so its title
+            row is 40px tall. Without Share this row fell to the title's own line
+            box (38.4px) and the empty-state header sat 1.6px shorter, the title
+            0.8px higher, than Device's. Hold the button's place instead. */}
+        {!hasDevice && <span className="w-10 h-10 flex-shrink-0" aria-hidden />}
       </PageHeaderShell>
 
       <div ref={shareRef} className="flex-1 overflow-y-auto scrollbar-hide px-4 pb-4">
