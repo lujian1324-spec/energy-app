@@ -48,6 +48,10 @@ export interface MockDevice {
   refuseRegisterWrites?: boolean
   /** When true the platform answers keys/history/v1 with 20101 (app falls back to record/list). */
   refuseKeysV1?: boolean
+  /** Register 0x000A (rated AC inverter output power, W); 1000 marks a Sierro 2000. Default 0 (unread). */
+  acInvOutputW?: number
+  /** When true `/remote/device/state/latest` fails for this device. */
+  failState?: boolean
 }
 
 export interface ApiCall {
@@ -57,9 +61,14 @@ export interface ApiCall {
   headers: Record<string, string>
 }
 
+/** The relay host the E2E build is made with (VITE_RELAY_URL). */
+export const RELAY_HOST = 'relay.example.test'
+
 export interface MockBackend {
   devices: MockDevice[]
   calls: ApiCall[]
+  /** POST /schedule bodies the app sent to the relay (the AWS schedule server). */
+  relaySchedules: any[]
   /** Calls to one path, optionally for one device. */
   callsTo(path: string, deviceId?: string): ApiCall[]
 }
@@ -128,6 +137,7 @@ export async function mockBackend(
   accounts: Record<string, string> = {},
 ): Promise<MockBackend> {
   const calls: ApiCall[] = []
+  const relaySchedules: any[] = []
   let signedInEmail = 'e2e@example.com'
   const byId = (id: unknown) => devices.find(d => d.id === String(id))
 
@@ -136,7 +146,16 @@ export async function mockBackend(
   await page.route(url => {
     const u = new URL(url)
     return u.hostname !== '127.0.0.1' && u.hostname !== 'localhost' && u.hostname !== API_HOST
-  }, route => route.fulfill({ status: 200, body: '', contentType: 'text/plain' }))
+  }, route => {
+    const req = route.request()
+    const u = new URL(req.url())
+    // The relay's schedule endpoint: record what the app uploaded and accept it.
+    if (u.hostname === RELAY_HOST && u.pathname === '/schedule' && req.method() === 'POST') {
+      relaySchedules.push(req.postDataJSON())
+      return route.fulfill({ json: { code: 0, message: 'success' } })
+    }
+    return route.fulfill({ status: 200, body: '', contentType: 'text/plain' })
+  })
 
   await page.route(url => new URL(url).hostname === API_HOST, async (route: Route) => {
     const req = route.request()
@@ -195,7 +214,7 @@ export async function mockBackend(
 
       case '/remote/device/state/latest': {
         const d = byId(query.deviceId)
-        if (!d) return route.fulfill({ json: { code: 1, message: 'no such device' } })
+        if (!d || d.failState) return route.fulfill({ json: { code: 1, message: 'no such device' } })
         const v = (n: number | boolean) => ({ value: typeof n === 'boolean' ? (n ? '1' : '0') : String(n) })
         return ok({
           deviceId: d.id,
@@ -231,6 +250,11 @@ export async function mockBackend(
           return ok({ base64Output: Buffer.from(frame).toString('base64') })
         }
         if (fn === 0x03 && reg === 0x0100) return ok({ base64Output: readReply(statusRegisters(d)) })
+        if (fn === 0x03 && reg === 0x0000) {
+          const regs = new Array((frame[4] << 8) | frame[5]).fill(0)
+          if (regs.length > 0x0a) regs[0x0a] = d.acInvOutputW ?? 0
+          return ok({ base64Output: readReply(regs) })
+        }
         if (fn === 0x03) return ok({ base64Output: readReply(new Array((frame[4] << 8) | frame[5]).fill(0)) })
         return ok({ base64Output: Buffer.from(frame).toString('base64') })
       }
@@ -306,6 +330,7 @@ export async function mockBackend(
   return {
     devices,
     calls,
+    relaySchedules,
     callsTo: (path, deviceId) => calls.filter(c => c.path === path &&
       (deviceId === undefined || String(c.query.deviceId ?? c.body?.deviceId) === deviceId)),
   }

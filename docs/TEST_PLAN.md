@@ -197,11 +197,14 @@ v4.4.3 修复 Android 扫不到设备(客户端过滤)与 PWA Open Settings 跳�
 - [ ] PWA Open Settings 不再跳 `app-settings:` 坏网址(v4.4.3)→ PG-06 / 单测
 - [ ] classifyBleError 分类正确导向 UI(v4.4.2/4.4.3)→ PG-10 / 单测
 - [ ] 首启无 App Permissions 页 + 权限纯按需(v4.4.4)→ PG-01/02/07/08 / 单测
+- [ ] Sleep Mode 设备离线也能设置、滑杆功率上传中继并在设备上线后下发(v4.18.0)→ device-settings E2E / sleepExecutor.test.js;真机:关机设置→开机后 `/debug/user/:userId` 的 `lastAppliedPhase` 出现 `|sleep|<W>` 或 `|wake|<W>`
+- [ ] 添加设备后按 0x000A 自动识别 Sierro 2000(v4.18.0)→ ratedModelRead.test.ts / device-settings E2E;真机:加一台 2000 看 Device Info 型号
+- [ ] 失败页无 Restart Device 按钮(v4.18.0)→ 真机:配网失败时只剩一个重试按钮
 
 ---
 
 ## 11. 自动化覆盖现状(全部可在 CLI 运行)
-- **单元 + 接口契约**(`src/**/*.test.ts`,Vitest,`npm run test:unit`,**85 个文件,815 项**,v4.17.4 时;中继 `npm run test:server` 68 项):
+- **单元 + 接口契约**(`src/**/*.test.ts`,Vitest,`npm run test:unit`,**87 个文件,833 项**,v4.18.0 时;中继 `npm run test:server` 69 项,含"设备离线时存的 Sleep 窗口在设备上线后按滑杆功率下发"):
   - 纯逻辑:Modbus CRC/解码/0x0133 枚举、电池时间、isApiSuccess、速报探测。
   - **BLE 直连解码/控制**(`src/protocols/bleDirect.test.ts`,新增于 v3.36.0):用合成的 UART 透传
     响应验证 `readLiveStatusBle`(含 CRC 校验失败/RC!==0/传输异常三种失败路径均返回 null,不误信
@@ -220,24 +223,27 @@ v4.4.3 修复 Android 扫不到设备(客户端过滤)与 PWA Open Settings 跳�
   - **全接口契约**(`src/api/api-contract.test.ts`,38 项):mock 传输层,逐个断言
     77 个 API 函数的端点/payload/字段约定(deviceId String、密码 md5、captchaId、
     邮箱验证码 `address` 字段、国家码去 `+`、无 userId 规则、透传 hex→base64 等)。
-- **e2e**(Playwright,`tests/`,CI 对本次提交的构建跑,共 53 项;真账号组 5 项另计,仅手动带账号时跑):
+- **e2e**(Playwright,`tests/`,CI 对本次提交的构建跑,共 62 项,其中 2 项 R11 在 Battery Priority 隐藏期间跳过;真账号组 5 项另计,仅手动带账号时跑):
   - `e2e.spec.ts`(22):认证页、邮箱验证码、游客导航(构建带 `VITE_ENABLE_GUEST=true` 才有入口)、PWA 健康。
   - `permissions.e2e.spec.ts`(2)、`schedule-save.e2e.spec.ts`(2):首启无权限页;Sleep Mode 保存。
   - **以下四个用模拟后端**(`tests/support/mockBackend.ts`:内存里的设备/状态/历史/告警/透传,
     Modbus 回包带 CRC;所有外部请求被拦截,不会碰真实账号或设备),浏览器时区为洛杉矶:
-    - `realtime-history.e2e.spec.ts`(7):Real-Time Power 当日历史——按控制台的 `keys/history/v1` 请求 4 个字段、
+    - `realtime-history.e2e.spec.ts`(8,含 v4.18.0 按住/拖动图表显示该时刻的时间和数值、跨 Tab 保持、空档显示 No data):Real-Time Power 当日历史——按控制台的 `keys/history/v1` 请求 4 个字段、
       每页 1500、带 `-07:00` 和 `IOT-Time-Zone`;平台拒绝时回退 `record/list`(每页 80 翻页);
       两台设备各画各的、缺字段/长时间无上报断线;缓存按设备隔离且每次进入都重新请求服务器、
       旧版无 deviceId 的游客数据被清掉;页面停留每分钟增量刷新;过零点切到新的一天;退出登录清空缓存。
-    - `devices.e2e.spec.ts`(6,含顶部提示条与标题栏/卡片各 16px):AC 开关显示设备上报状态、离线设备为关且不可点;点击发 0x0080 写入并等设备回包;
+    - `devices.e2e.spec.ts`(8,含顶部提示条与标题栏/卡片各 16px;v4.18.0:读取失败时通知页照常显示、无 Something went wrong/Retry;长设备名省略号、下拉箭头不被设置按钮遮挡):AC 开关显示设备上报状态、离线设备为关且不可点;点击发 0x0080 写入并等设备回包;
       设备没切换时提示并回到真实状态;手机断网显示横幅并锁定开关;红点覆盖所有设备、通知列表每行标明设备、打开后红点消失。
     - `insights.e2e.spec.ts`(3):某小时读数为 Wh 且输入拆成 Solar / AC;无数据的小时显示 No data;分页失败提示数据不完整。
     - `account.e2e.spec.ts`(5,含隐藏的账号密码登录 2 项:连点 SIERRO 10 下才进入、停顿重新计数;登录只发 MD5):验证码光标落在下一位的格子里(退格、点前面的格子也对);A(会员名单上的
       团队账号 #666)设好推送开关和阈值后退出、B 登录看不到 A 的标签/开关/阈值,A 再登录全部恢复;
-      Device Info 的 Serial Number 显示绑定时的蓝牙 ID(`dtuDtuid`)。
-    - `after-sales.e2e.spec.ts`(3,售后清单 2026-09-24):R11 存 Savings 后重进仍是 Savings(云端 workMode 仍为 Backup);
+      Device Info 只显示绑定时的蓝牙 ID(`dtuDtuid`),v4.18.0 起没有 Serial Number 行。
+    - `after-sales.e2e.spec.ts`(3,售后清单 2026-09-24;R11 两项仅在 `BATTERY_PRIORITY_ENABLED` 打开时运行):R11 存 Savings 后重进仍是 Savings(云端 workMode 仍为 Backup);
       设备拒绝时提示不含 "illegal argument";R16 验证码页有"收不到"提示。R15 在 account(Serial Number 与 Bluetooth ID
       分两行、生成的 SR1000-xxxxxx 显示 --),R08 在 provisioning(失败页不出现 pairing)。
+    - `device-settings.e2e.spec.ts`(6,v4.18.0):Sleep Mode 两个滑杆 50W 一档(Sierro 1000 为 0–400W、Sierro 2000 为 0–800W),
+      保存时对设备写 0x0085(窗口内为睡眠功率)并把窗口+两个功率上传中继,重启后滑杆保持;设备离线也能保存,只上传中继并提示上线后生效;
+      Battery Priority 不显示、Device Info 无 Serial Number;0x000A=1000W 识别为 Sierro 2000、500W 为 Sierro 1000。
     - `provisioning.e2e.spec.ts`(3):模拟 Android + `navigator.bluetooth`——打开即搜索、列出广播的设备、无扫码入口;
       失败后返回再进入不残留失败画面;系统弹窗关闭、搜索中切后台都不重启搜索、不清空列表。
 - **真实后端冒烟**(`scripts/api-smoke.mjs`,`E2E_USER=x E2E_PASS=y npm run test:api:live`):

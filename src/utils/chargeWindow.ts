@@ -35,10 +35,48 @@ export function getPowers(model: string): { sleepW: number; wakeW: number } {
   return { sleepW: 150, wakeW: 400 } // default = Sierro 1000
 }
 
-/** Sleep Mode: quiet power inside the window, normal power outside and on exit. */
-export function sleepPowers(model: string): ChargePowers {
-  const { sleepW, wakeW } = getPowers(model)
-  return { inWindowW: sleepW, outWindowW: wakeW, restoreW: wakeW }
+/** Sleep Mode's power sliders move in 50W steps. */
+export const SLEEP_POWER_STEP_W = 50
+
+/** Highest charge power (W) a Sleep Mode slider offers: 400W Sierro 1000, 800W Sierro 2000. */
+export function sleepPowerMaxW(model: string): number {
+  return String(model || '').includes('2000') ? 800 : 400
+}
+
+/** A slider value clamped to 0…max for the model and snapped to the 50W grid. */
+export function snapSleepPower(model: string, watts: unknown, fallback: number): number {
+  const w = typeof watts === 'number' && Number.isFinite(watts) ? watts : fallback
+  const max = sleepPowerMaxW(model)
+  return Math.max(0, Math.min(max, Math.round(w / SLEEP_POWER_STEP_W) * SLEEP_POWER_STEP_W))
+}
+
+/** The user's Sleep Mode powers (either may be absent → the model default). */
+export interface SleepPowerChoice {
+  sleepW?: number
+  wakeW?: number
+}
+
+/**
+ * Sleep Mode's two powers for a model: what the user picked on the sliders
+ * (v4.18.0), else the model defaults — both snapped to the model's 50W grid.
+ */
+export function sleepWatts(model: string, choice?: SleepPowerChoice): { sleepW: number; wakeW: number } {
+  const d = getPowers(model)
+  return {
+    sleepW: snapSleepPower(model, choice?.sleepW, d.sleepW),
+    wakeW: snapSleepPower(model, choice?.wakeW, d.wakeW),
+  }
+}
+
+/**
+ * Sleep Mode: the sleep power inside the window, the non-sleep power outside it.
+ * Switching Sleep Mode off restores the model's normal charge power, not the
+ * non-sleep slider, so a device is never left at a reduced rate by a feature
+ * that is off.
+ */
+export function sleepPowers(model: string, choice?: SleepPowerChoice): ChargePowers {
+  const { sleepW, wakeW } = sleepWatts(model, choice)
+  return { inWindowW: sleepW, outWindowW: wakeW, restoreW: getPowers(model).wakeW }
 }
 
 /** Upper bound for a hand-entered charge power (W) — the largest rated charge rate we ship. */

@@ -135,3 +135,46 @@ test.describe('Device list banners', () => {
     expect(Math.round(card!.y - (banner!.y + banner!.height))).toBe(16)
   })
 })
+
+test.describe('Notifications and the monitor header (v4.18.0)', () => {
+  test.skip(!process.env.E2E_LOCAL, 'Uses a local build and a mocked backend')
+
+  test('a failed alarm read shows the normal page, never "Something went wrong" / Retry', async ({ page }) => {
+    await signIn(page)
+    await mockBackend(page, [
+      { id: '1001', name: 'Garage', failState: true },
+      { id: '2002', name: 'Cabin', failState: true },
+    ])
+    await page.goto('/#/notifications')
+    await expect(page.getByText('You’re all caught up')).toBeVisible()
+    await expect(page.getByText('Something went wrong')).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Retry' })).toHaveCount(0)
+  })
+
+  test('a long device name is cut short and the switcher arrow stays clear of the settings button', async ({ page }) => {
+    await signIn(page)
+    await mockBackend(page, [
+      { id: '1001', name: 'Sierro · 0562 Closet' },
+      { id: '2002', name: 'Cabin' },
+    ])
+    await page.goto('/#/device/1001')
+    const name = page.getByText('Sierro · 0562 Closet', { exact: true }).last()
+    await expect(name).toBeVisible()
+    const settings = page.getByRole('button', { name: 'Device settings' })
+    const back = page.getByRole('button', { name: 'Back' })
+    const n = (await name.boundingBox())!
+    const s = (await settings.boundingBox())!
+    const b = (await back.boundingBox())!
+    // One line, and the whole name block — chevron included — between the two sides.
+    expect(n.height).toBeLessThan(30)
+    const block = (await name.locator('xpath=..').boundingBox())!
+    expect(block.x).toBeGreaterThanOrEqual(b.x + b.width)
+    expect(block.x + block.width).toBeLessThanOrEqual(s.x)
+    // The chevron is the name row's last child and fully inside the block.
+    const arrow = (await name.locator('xpath=following-sibling::*[1]').boundingBox())!
+    expect(arrow.width).toBeGreaterThan(10)
+    expect(arrow.x + arrow.width).toBeLessThanOrEqual(s.x)
+    // The name is truncated with an ellipsis rather than wrapping.
+    expect(await name.evaluate(el => el.scrollWidth > el.clientWidth)).toBe(true)
+  })
+})

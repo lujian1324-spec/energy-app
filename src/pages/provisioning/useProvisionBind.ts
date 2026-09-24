@@ -7,6 +7,7 @@ import { useProvisionStore } from '../../stores/provisionStore'
 import type { ProvisionStoreState, ProvisionStep } from '../../stores/provisionStore'
 import { getProvisionManager } from '../../protocols/bleProvision'
 import { SIERRO_MODELS, generateSerial, type SierroModel } from '../../data/deviceModels'
+import { detectAndSaveModel } from '../../api/ratedModelRead'
 import { saveRatedParams } from '../../db/powerflowDB'
 import { fetchDtuInfo, newStationRequest, ratedPowerKw, addStation, reverseGisRegion, type RegionCodes } from '../../api/deviceApi'
 import { stationPlace } from '../../utils/stationLocation'
@@ -289,9 +290,13 @@ export function useProvisionBind(opts: {
               batteryType: spec.batteryType,
               batteryHealth: spec.batteryHealth,
               serialNumber,
-              // What was read from the device over Bluetooth: Device Info's Serial Number.
+              // What was read from the device over Bluetooth: Device Info's Bluetooth ID.
               bleId: dtuDtuid || undefined,
+              modelSource: 'default',
             })
+            // v4.18.0: the device says which model it is — 0x000A over passthrough,
+            // 1000 W → Sierro 2000. In the background: the add has already succeeded.
+            void detectAndSaveModel(String(added.id))
             // Persist the icon chosen on the Choose Icon step now that we finally
             // have the device id. Same key Device Info and the home card read, so
             // the pick (fridge, router, …) shows straight away instead of falling

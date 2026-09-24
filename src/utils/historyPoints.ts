@@ -176,3 +176,33 @@ export function toIsoTz(ms: number): string {
   return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' +
     pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()) + tzStr
 }
+
+/**
+ * The reading a chart scrub at time `t` shows (v4.18.0): the nearest sample of
+ * `series`, but only when it lies within half a gap of `t`. Inside a drawn run
+ * consecutive samples are at most `gapMs` apart, so a scrub over the line always
+ * finds one; over a gap (the device was silent or off) it finds none, and the
+ * chart says "No data" there instead of borrowing a value from hours away.
+ */
+export function readingAt(
+  points: HistoryPoint[],
+  series: HistorySeries,
+  t: number,
+  gapMs: number,
+): { timestamp: number; value: number } | null {
+  let best: { timestamp: number; value: number } | null = null
+  for (const p of points) {
+    const v = p[series]
+    if (v === null) continue
+    if (!best || Math.abs(p.timestamp - t) < Math.abs(best.timestamp - t)) best = { timestamp: p.timestamp, value: v }
+  }
+  return best && Math.abs(best.timestamp - t) <= gapMs / 2 ? best : null
+}
+
+/** "3:45pm" / "12:05am" — the chart's own axis style ("12am", "4pm"), with minutes. */
+export function clockLabel(ms: number): string {
+  const d = new Date(ms)
+  const h = d.getHours()
+  const m = String(d.getMinutes()).padStart(2, '0')
+  return `${h % 12 === 0 ? 12 : h % 12}:${m}${h < 12 ? 'am' : 'pm'}`
+}

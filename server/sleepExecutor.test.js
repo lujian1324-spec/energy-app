@@ -158,3 +158,19 @@ test('Lambda signs only configured URL, validates business result, and preserves
     request: async () => new Response(JSON.stringify({ code: 1 })) })
   await assert.rejects(failing(), /not acknowledged/)
 })
+test('v4.18.0: a Sleep Mode window saved while the device is off is written once it is back, with the slider watts', async () => {
+  let online = false
+  const f = fixture({ session: async () => ({ token: 'test', devices: [{ id: 'device', ownerUserId: 'user', isOnline: online }] }) })
+  Object.assign(f.schedules.device, { mode: 'sleep', sleepW: 250, wakeW: 350 })
+  // Device off: nothing is written and the phase is not recorded, so it stays owed.
+  const off = await f.executor.tick()
+  assert.equal(off.failed, 1)
+  assert.deepEqual(off.failureReasons, { deviceOffline: 1 })
+  assert.equal(f.writes.length, 0)
+  // The device comes back: the next tick writes the sleep power the user chose.
+  online = true
+  assert.equal((await f.executor.tick()).applied, 1)
+  f.setTime('2026-09-24T01:00:00Z')
+  assert.equal((await f.executor.tick()).applied, 1)
+  assert.deepEqual(f.writes, [{ deviceId: 'device', watts: 250 }, { deviceId: 'device', watts: 350 }])
+})

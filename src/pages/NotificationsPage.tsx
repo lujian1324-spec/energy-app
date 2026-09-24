@@ -222,10 +222,6 @@ export default function NotificationsPage() {
   }, [entries, seen, markSeen, markFirstSeen])
 
   const nameOf = (id: string) => devices.find(d => String(d.id) === id)?.name ?? ''
-  // A read that failed is not an empty inbox: say so and offer a retry rather
-  // than "You're all caught up".
-  const loadFailed = !refreshing && entries.length === 0 && deviceIds.some(id => failed[id] !== undefined)
-
   return (
     <div className="h-full flex flex-col bg-ink-12 overflow-hidden">
       <SecondaryHeader title="Notifications" onBack={() => navigate(-1)} />
@@ -237,18 +233,10 @@ export default function NotificationsPage() {
           </div>
         )}
 
-        {loadFailed && (
-          <EmptyState
-            art={`${import.meta.env.BASE_URL}ds-noti-empty.png`}
-            title="Something went wrong"
-            subtitle="Check your network connection and try again."
-            action={{ label: 'Retry', onClick: () => { void refresh() } }}
-            topOffset={157}
-          />
-        )}
-
         {/* Empty state, handoff `A_1.2_Notifications -v Empty State` */}
-        {!refreshing && !loadFailed && entries.length === 0 && (
+        {/* A failed read shows this same page (v4.18.0): no error screen or Retry.
+            The next refresh (entering the page, the Device page poll) fills it. */}
+        {!refreshing && entries.length === 0 && (
           <EmptyState
             art={`${import.meta.env.BASE_URL}ds-noti-empty.png`}
             title={'You’re all caught up'}

@@ -209,14 +209,17 @@ export default function DeviceMonitorPage() {
 
         {/* Device name + dropdown. Absolutely centred: the back button on one side
             and the settings + bell pair on the other leave an off-centre gap, and
-            B_1.1 centres the name on the frame. */}
-        <div className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center">
+            B_1.1 centres the name on the frame. It may use the width left between
+            the two sides (the right-hand pair is 16 + 40 + 12 + 40, plus an 8px gap,
+            mirrored so the name stays centred); a longer name is cut with an
+            ellipsis and the chevron always stays visible (v4.18.0). */}
+        <div className="absolute left-1/2 -translate-x-1/2 max-w-[calc(100%-232px)] flex flex-col items-center">
           <button
             onClick={() => setShowDeviceDropdown(v => !v)}
-            className="flex flex-col items-center active:opacity-70 transition-opacity"
+            className="max-w-full flex flex-col items-center active:opacity-70 transition-opacity"
           >
-            <div className="flex items-center gap-1">
-              <span className="text-title-md font-semibold text-white">
+            <div className="max-w-full min-w-0 flex items-center gap-1">
+              <span className="min-w-0 truncate text-title-md font-semibold text-white">
                 {device?.name ?? 'Device'}
               </span>
               {/* The switcher chevron only earns its place when there is more than
@@ -226,7 +229,7 @@ export default function DeviceMonitorPage() {
                 <Icon
                   name="chevron-down"
                   size={20}
-                  className={`transition-transform duration-200 ${showDeviceDropdown ? 'rotate-180' : ''}`}
+                  className={`flex-shrink-0 transition-transform duration-200 ${showDeviceDropdown ? 'rotate-180' : ''}`}
                 />
               )}
             </div>

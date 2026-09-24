@@ -111,6 +111,13 @@ h1, h2, h3, h4,
 p {
   text-wrap: pretty;
 }
+/* `text-wrap: balance` above is a shorthand that sets the wrap mode back to
+   "wrap", which undid `.truncate`'s white-space: nowrap on any title: a long
+   device name broke onto two lines under the header buttons instead of ending
+   in an ellipsis (v4.18.0). A truncated line stays one line. */
+.truncate {
+  text-wrap: nowrap;
+}
 
 /* 动态数字：等宽数字防止跳动（电量/功率/计时等实时刷新值） */
 .tnum {

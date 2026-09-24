@@ -10,6 +10,7 @@
  */
 import { test, expect, type Page } from '@playwright/test'
 import { mockBackend, signIn, type MockDevice } from './support/mockBackend'
+import { BATTERY_PRIORITY_ENABLED } from '../src/config/batteryPriority'
 
 const PASSTHROUGH = '/remote/device/passthrough'
 
@@ -25,6 +26,9 @@ test.describe('After-sales fixes', () => {
   test.skip(!process.env.E2E_LOCAL, 'Uses a local build and a mocked backend')
 
   test('R11: Savings stays Savings on re-entry although the cloud still says Backup', async ({ page }) => {
+    // v4.18.0 hides Battery Priority (device-settings.e2e.spec.ts checks the row
+    // is gone); these run again as soon as the flag brings it back.
+    test.skip(!BATTERY_PRIORITY_ENABLED, 'Battery Priority is hidden (src/config/batteryPriority.ts)')
     const devices: MockDevice[] = [{ id: '1001', name: 'Garage', workMode: 1 }]
     await signIn(page)
     const api = await mockBackend(page, devices)
@@ -48,6 +52,7 @@ test.describe('After-sales fixes', () => {
   })
 
   test('R11: a refused save says so plainly, without the platform\'s "illegal argument"', async ({ page }) => {
+    test.skip(!BATTERY_PRIORITY_ENABLED, 'Battery Priority is hidden (src/config/batteryPriority.ts)')
     const devices: MockDevice[] = [{ id: '1001', name: 'Garage', workMode: 1, refuseRegisterWrites: true }]
     await signIn(page)
     await mockBackend(page, devices)
