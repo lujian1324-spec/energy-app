@@ -19,6 +19,7 @@
  */
 
 import { clearPendingSmartScheduleSave } from './smartScheduleQueue'
+import { SMART_SCHEDULE_PAUSED } from '../config/smartSchedule'
 
 export type ScheduleMode = 'sleep' | 'smart'
 
@@ -64,8 +65,16 @@ export function getSavedScheduleEnabled(deviceId: string, mode: ScheduleMode): b
  * An unclaimed device is open to either mode — accounts upgrading from before
  * SW-12 have a Sleep window armed and no claim, and must keep working until the
  * next save claims the device for them.
+ *
+ * SW-14 adds one more rule ahead of the claim: while the Smart Schedule service
+ * is paused, `smart` never executes, claim or no claim. It is asked here rather
+ * than in the scheduler because this is the single gate both the phase writer
+ * and its send path already go through — so a paused build makes no Smart
+ * Schedule charge-power write at all, while `sleep` is judged exactly as before
+ * (AC-14-6 / AC-14-10).
  */
 export function canExecuteScheduleMode(deviceId: string, mode: ScheduleMode): boolean {
+  if (mode === 'smart' && SMART_SCHEDULE_PAUSED) return false
   const active = getActiveScheduleMode(deviceId)
   return active === null || active === mode
 }

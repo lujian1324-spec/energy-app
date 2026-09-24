@@ -25,6 +25,7 @@ import { readClientOnline, type DeviceOnlineSource } from '../utils/deviceConnec
 import { tokenStore } from '../utils/apiClient'
 import { toast } from '../components/Toast'
 import { backgroundScheduleNotice } from '../utils/scheduleOutcome'
+import { SMART_SCHEDULE_PAUSED } from '../config/smartSchedule'
 
 /** Floor between flush attempts for one device, so a flapping device cannot spin. */
 export const MIN_FLUSH_GAP_MS = 30_000
@@ -90,6 +91,11 @@ export function useSmartScheduleFlush(params: UseSmartScheduleFlushParams): void
   paramsRef.current = params
 
   const run = useCallback(() => {
+    // SW-14 — the service is paused: queued saves are frozen, not replayed.
+    // Before the account/online checks so no wake signal can start a flush, and
+    // deliberately without touching the queue: the entries are the user's
+    // settings and are kept for whenever the service resumes (AC-14-7).
+    if (SMART_SCHEDULE_PAUSED) return
     const { devices: list, active: on = true, onRejected, onFlushed } = paramsRef.current
     if (!on) return
     const hasSession = !!tokenStore.get()
@@ -153,12 +159,14 @@ export function useSmartScheduleFlush(params: UseSmartScheduleFlushParams): void
     .join(',')
 
   useEffect(() => {
-    if (!active) return
+    if (SMART_SCHEDULE_PAUSED || !active) return
     run()
   }, [onlineKey, active, run])
 
   useEffect(() => {
-    if (!active) return
+    // Paused: no listeners and no 60s timer either, so a paused build does not
+    // even wake up to decide it has nothing to do.
+    if (SMART_SCHEDULE_PAUSED || !active) return
     const onWake = () => run()
     const timer = window.setInterval(onWake, MIN_FLUSH_GAP_MS)
     window.addEventListener('online', onWake)

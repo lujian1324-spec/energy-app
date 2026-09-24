@@ -37,6 +37,11 @@ vi.mock('../utils/apiClient', () => ({
   isApiSuccess: (c: unknown) => c === 0 || c === '0',
 }))
 
+/* SW-14 added a service-wide pause that freezes the flush. These cases are
+   about the unpaused behaviour, which has to keep working for when it resumes;
+   the pause itself is covered in `smartScheduleSave.paused.test.ts`. */
+vi.mock('../config/smartSchedule', () => ({ SMART_SCHEDULE_PAUSED: false }))
+
 // A configured relay, so step C really issues its POST /schedule.
 vi.mock('../config/scheduling', () => ({
   RELAY_BASE_URL: 'https://relay.test',

@@ -9,6 +9,13 @@ export function validateSchedule(value) {
   new Intl.DateTimeFormat('en', { timeZone: value.tz }).format()
   if (typeof value.model !== 'string' || value.model.length > 80) throw new Error('Device model required')
   const clean = { enabled: value.enabled, sleepFrom: value.sleepFrom, sleepTo: value.sleepTo, tz: value.tz, model: value.model }
+  // SW-14: which feature owns this window, so the tick can pause Smart Schedule
+  // without pausing Sleep Mode. Optional — an upload from a client older than
+  // this carries no tag and is executed as before (see smartSchedulePause.js).
+  if (value.mode !== undefined) {
+    if (value.mode !== 'sleep' && value.mode !== 'smart') throw new Error('Mode must be sleep or smart')
+    clean.mode = value.mode
+  }
   for (const key of ['sleepW', 'wakeW']) {
     if (value[key] !== undefined) {
       if (!Number.isInteger(value[key]) || value[key] < 0 || value[key] > 1000) throw new Error('Power must be 0-1000 whole watts')

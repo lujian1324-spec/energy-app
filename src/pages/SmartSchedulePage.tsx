@@ -38,6 +38,7 @@ import {
   getActiveScheduleMode,
 } from '../utils/activeScheduleMode'
 import { backgroundScheduleNotice } from '../utils/scheduleOutcome'
+import { SMART_SCHEDULE_PAUSED } from '../config/smartSchedule'
 import { loadRatedParams } from '../db/powerflowDB'
 import type { PeakShavingSchedule } from '../types'
 
@@ -540,6 +541,21 @@ export default function SmartSchedulePage() {
   const peakSchedule = peakShavingSettings.schedules.find(s => s.type === 'discharge' && s.enabled)
   // The charge window IS what gets written to the device — one source of truth.
   const offPeakSchedule = chargeWindow
+
+  /* SW-14 — the service is paused. The route still resolves, because a deep
+     link, a restored tab or a back-stack entry can land here, but nothing
+     operable is rendered: no enable toggle, no Save, no period rows or editor.
+     The header stays so the screen has a way out. Deliberately silent — there
+     is no "paused" toast and no new copy; the title is the page's existing one.
+     Every hook above has already run, so the pause cannot change hook order. */
+  if (SMART_SCHEDULE_PAUSED) {
+    return (
+      <div className="h-full flex flex-col bg-ink-12 overflow-hidden">
+        <SecondaryHeader title="Smart Schedule" onBack={() => navigate(-1)} />
+        <div className="flex-1 overflow-y-auto scrollbar-hide px-4 pb-24" />
+      </div>
+    )
+  }
 
   return (
     <div className="h-full flex flex-col bg-ink-12 overflow-hidden">

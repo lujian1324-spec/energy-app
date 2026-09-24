@@ -15,6 +15,7 @@
 import { POLLER_REFRESH_PENDING_KEY } from './authApi'
 import { RELAY_BASE_URL, SCHEDULE_PATH, isRelayConfigured } from '../config/scheduling'
 import { tokenStore } from '../utils/apiClient'
+import type { ScheduleMode } from '../utils/activeScheduleMode'
 
 export interface SleepScheduleUpload {
   enabled: boolean
@@ -29,6 +30,18 @@ export interface SleepScheduleUpload {
    */
   sleepW?: number
   wakeW?: number
+  /**
+   * SW-14 — which feature this window belongs to. The relay holds one schedule
+   * slot per device and ticks it with the app closed, so pausing Smart Schedule
+   * on the client alone would leave the background writes running. Tagging the
+   * upload is what lets `server/sleepExecutor.js` skip the Smart Schedule ones
+   * and keep firing Sleep Mode's.
+   *
+   * Optional because a relay entry saved before this has no tag; the relay
+   * treats an untagged window as Sleep Mode's and keeps executing it, which is
+   * the safe default for the feature that is not paused.
+   */
+  mode?: ScheduleMode
 }
 
 function getUserId(): string | null {

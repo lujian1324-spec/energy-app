@@ -7,7 +7,13 @@
  * relay held whichever window was saved last. Enabling one must take the device
  * from the other, in storage as well as at runtime.
  */
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+
+/* SW-14 pauses the `smart` side of this gate service-wide. The SW-12 rule below
+   is what has to keep holding underneath that, so these cases run unpaused; the
+   pause itself is covered in `activeScheduleMode.paused.test.ts`. */
+vi.mock('../config/smartSchedule', () => ({ SMART_SCHEDULE_PAUSED: false }))
+
 import {
   getActiveScheduleMode,
   setActiveScheduleMode,
