@@ -1,8 +1,9 @@
 {
-  "version": "4.15.6",
-  "build": 2919,
+  "version": "4.15.7",
+  "build": 2920,
   "date": "2026-09-24",
   "changelog": [
+    "The QR scanner's camera view no longer shows a large stretched play button while the camera permission is being asked for, while the camera starts, or when the scanner closes.",
     "If Bluetooth drops while the Wi-Fi details are being sent during setup, the app now reconnects on its own up to three times, showing Reconnecting to device (1/3), and resends the Wi-Fi details without asking for the password again. The Device disconnected screen only appears if every attempt fails.",
     "When a device has no readings (for example it is powered off), its page shows -- for AC, Solar and Output instead of 0 W, and no runtime estimate, so a missing reading no longer looks like zero power.",
     "With no internet connection (Bluetooth, Wi-Fi and mobile data all off), the Device list and device page now say so instead of showing Connected, and the AC switch is locked until the network is back. The device itself is not marked offline, and its state is read again as soon as the connection returns.",

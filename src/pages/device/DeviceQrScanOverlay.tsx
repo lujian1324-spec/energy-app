@@ -1,4 +1,5 @@
 import type { RefObject } from 'react'
+import { TRANSPARENT_VIDEO_POSTER } from '../../utils/videoPoster'
 import { motion } from 'framer-motion'
 import Icon from '../../components/Icon'
 import { openAppSettings } from '../../utils/openAppSettings'
@@ -56,6 +57,7 @@ export default function DeviceQrScanOverlay({
                 <video
                   ref={videoRef as RefObject<HTMLVideoElement>}
                   className="absolute inset-0 w-full h-full object-cover rounded-l qr-scan-video"
+                  poster={TRANSPARENT_VIDEO_POSTER}
                   playsInline
                   muted
                   controls={false}

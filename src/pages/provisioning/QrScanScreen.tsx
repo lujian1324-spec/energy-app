@@ -9,6 +9,7 @@ import jsQR from 'jsqr'
 import { Capacitor } from '@capacitor/core'
 import { requestCamera } from '../../utils/permissions'
 import { formatScanDisplayName } from '../../utils/scanDisplayName'
+import { TRANSPARENT_VIDEO_POSTER } from '../../utils/videoPoster'
 
 function QrScanScreen({ onBack, onScanned }: {
   onBack: () => void
@@ -122,6 +123,7 @@ function QrScanScreen({ onBack, onScanned }: {
         <video
           ref={videoRef}
           className="qr-scan-video absolute inset-0 w-full h-full object-cover"
+          poster={TRANSPARENT_VIDEO_POSTER}
           playsInline
           muted
           controls={false}
