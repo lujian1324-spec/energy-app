@@ -134,7 +134,19 @@ Also present but not routed standalone: `ProvisioningPage` (inside DevicePage ad
 Use the label canon below; same metric = same label everywhere except DebugParamsPage.
 
 **DevicePage** (`/devices`)
-- *Device card* (per device): name, model (`gatherProtocolName`/`model`), **Battery** % (`remainingBatteryCapacity`), charging dot (`batteryPower>0`), online badge (`isOnline`), power toggle.
+- *Device card* (per device): name, model (`gatherProtocolName`/`model`), **Battery** % (`remainingBatteryCapacity`), charging dot (`batteryPower>0`), online badge (`isOnline`), AC switch.
+- **AC switch (v4.15.1): shows what the device reports, never `isOnline`.** `resolveAcOutput()`
+  (`src/utils/acOutputState.ts`) picks the newest of: the live read (Modbus run-state **0x0126 bit 2**,
+  decoded as `LiveStatus.acOutput` from the passthrough/BLE `READ_ALL_STATUS`) and the cloud
+  **`acOutputs`** field (sample time from `/state/latest` `time`). Not `inversionState`/`acOut1Enable` —
+  that is the inverter, which idles while AC input feeds the outlets through bypass. An offline device,
+  or one with no report, shows **off**. A flip is held as a command until the device reports a sample
+  taken after it, so a stale cloud sample cannot bounce it back. `setAcOutput()`
+  (`src/api/acOutputControl.ts`) writes 0x0080 **without** `noOutput`, then reads 0x0126 back (3 tries,
+  1.5 s apart, intermediate reads not shown); still the old state after all three →
+  "The device didn't switch its AC output." and the switch shows the device's state. Cloud state is
+  re-read on return to the foreground; the live layer already does.
+- *Bell dot*: `unreadAlarmCount()` over **every** device, from `firingAlarmsStore` (see NotificationsPage).
 - *Low Battery banner*: name, `Battery below {lowBatteryThreshold}%`, remaining time (`batteryTimeLabel`).
 - *Device params modal*: **Battery** % (`remainingBatteryCapacity`), **Battery Power** W (`batteryPower`), **AC** W (`acPower`), **Solar** W (`solarPower`), **Output** W (`outputPower`), **Temperature** °F (`batteryTemp`); port states (`acOut1/2Enable`,`usbOut1Enable`,`sleepMode`,`workMode`).
 
@@ -168,7 +180,12 @@ lives on independently and is still referenced elsewhere.)
   there is therefore no cloud echo to poll, and after a successful save the row shows what was written
   to 0x0086/0x0054 for the rest of the visit. (On re-entry `resolveBatteryPriority` still lets a
   device-reported `workMode` of 1/2 win — SW-04's rule, deliberately left alone here.)
-- **Fan Speed (v4.15.0): one Modbus write, slider 0–100 %.** `FanSpeedCard`
+- **Fan Speed — NOT RELEASED (hidden since v4.15.3).** Rendered only when `FAN_CONTROL_ENABLED`
+  (`src/config/fanControl.ts`) is true, which is `DEV_TOOLS_ENABLED`: Vite dev and QA builds made
+  with `VITE_ENABLE_DEV_TOOLS=true` (`deploy-qa.yml`). Consumer builds (Pages root, APK, iOS, release
+  AAB) have no card, and the build-time constant drops it from their bundle. It stays wired so
+  releasing it is that one line — only after hardware verification (0 % behaviour, firmware handback).
+  Implementation (v4.15.0): one Modbus write, slider 0–100 %. `FanSpeedCard`
   (`src/pages/device/FanSpeedCard.tsx`) → `applyFanSpeed()` (`src/api/fanControl.ts`) sends one FC16
   passthrough to **0x0081** (`FAN_CTRL`) with value `0x01SS`: high byte `0x01` = fan enabled, low
   byte = the percentage in hex (`0x00`–`0x64`), e.g. 23 % → `01 10 00 81 00 01 02 01 17 F9 DF`. The
@@ -302,6 +319,14 @@ lives on independently and is still referenced elsewhere.)
 
 **NotificationsPage** (`/notifications`)
 - *Active Now*: firing alarms (`alarmMessage`, severity, time). *History*: title, severity, device/station, dismiss (`isProcessed`), load-more.
+- **One source with the bell (v4.15.1).** Every device's firing alarms live in `firingAlarmsStore`
+  (`src/stores/firingAlarmsStore.ts`), fed by each `/state/latest` read (`deviceStore.loadDeviceState`,
+  DevicePage's poll) and refreshed for all devices on entering this page (`refreshFiringAlarms`). The
+  list renders `visibleAlarmEntries()` and the Device page bell counts `unreadAlarmCount()` over the same
+  entries, so a lit dot always has a row, each row names its device, and opening the list marks them all
+  seen. It used to list only the selected device, which left the dot lit over "You're all caught up".
+  Dismissals are synced only for devices this refresh heard from; if reads failed and nothing is listed,
+  the page shows "Something went wrong" + Retry, never "all caught up".
 
 **DataExportPage** (`/data-export`)
 - *Privacy notice*, *JSON/CSV export*, *recycle bin*, *analytics toggle*, legal links.

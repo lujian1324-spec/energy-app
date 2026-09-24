@@ -35,6 +35,7 @@ import { SMART_SCHEDULE_PAUSED } from '../config/smartSchedule'
 import { backgroundScheduleNotice } from '../utils/scheduleOutcome'
 import { getSavedScheduleEnabled, subscribeActiveScheduleMode } from '../utils/activeScheduleMode'
 import FanSpeedCard from './device/FanSpeedCard'
+import { FAN_CONTROL_ENABLED } from '../config/fanControl'
 
 interface DeviceDetailPageProps {
   /** When rendered as an overlay (inside OverviewPage) a custom back handler is
@@ -919,7 +920,8 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             setShowWorkModeMenu(true)
           }}
         />
-        {deviceIdForScheduler && (
+        {/* Not released: dev / QA builds only (config/fanControl.ts). */}
+        {FAN_CONTROL_ENABLED && deviceIdForScheduler && (
           <FanSpeedCard
             deviceId={deviceIdForScheduler}
             disabled={!!realDevice && !realDevice.isOnline}

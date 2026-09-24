@@ -1,8 +1,12 @@
 {
-  "version": "4.15.0",
-  "build": 2913,
+  "version": "4.15.3",
+  "build": 2916,
   "date": "2026-09-24",
   "changelog": [
+    "Fan Speed is no longer shown in Device Settings. It remains available in internal QA builds only while it is verified on hardware.",
+    "On the verification code screen the cursor now moves to the box the next digit goes into, instead of staying in the first box while you type. Tapping a box no longer lets a digit be inserted in the middle of the code.",
+    "The AC switch on each device card now shows what the device reports. It no longer turns itself back on a few minutes after being switched off, a switch made on another phone shows up when you return to the app, and an offline or powered-off device shows its switch off. After switching, the app checks with the device and says so if the outlets did not change.",
+    "The notification bell and the Notifications list now cover the same alerts from all your devices. An alert on a device other than the one last opened is listed with that device's name, opening the list clears the bell, and a list that could not load says so with Retry instead of \"You're all caught up\".",
     "Device Settings has a Fan Speed slider (0–100 %). Letting go of the slider sets the fan speed on the device; if the device refuses, the slider returns to the last speed it accepted. It is unavailable while the device is offline.",
     "Error messages shown to users no longer contain raw exception text. IllegalArgument, exception class names, stack traces, JVM package paths and unmapped backend strings are replaced with the existing reviewed message for that screen, or a generic one. The full text is still written to the console for diagnosis.",
     "Smart Schedule is paused. Its settings entry is no longer shown, no new charge-window writes are made for it on the device or in the background, and a schedule saved while a device was offline is kept rather than sent. Sleep Mode, including its background timer, is unaffected.",

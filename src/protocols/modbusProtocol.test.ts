@@ -198,3 +198,32 @@ describe('0x0133 System State Machine enum decode (bug guard v3.27.6)', () => {
     expect(decodeState(12)).toMatch(/^State 0x/)
   })
 })
+
+describe('decodeLiveStatus — AC output (run state 0x0126 bit 2)', () => {
+  // READ_ALL_STATUS returns 0x38 registers from 0x0100, so 0x0126 is offset 0x26.
+  const full = (runState: number) => {
+    const r = new Array(0x38).fill(0)
+    r[0x1a] = 500
+    r[0x26] = runState
+    return r
+  }
+
+  it('reads bit 2 as the AC outlets, through a real frame and CRC', () => {
+    const on = decodePassthroughBase64(toB64(buildResponse(full(0b0000_0100))), 8)
+    expect(decodeLiveStatus(on!).acOutput).toBe(true)
+    const off = decodePassthroughBase64(toB64(buildResponse(full(0))), 8)
+    expect(decodeLiveStatus(off!).acOutput).toBe(false)
+  })
+
+  it('is the outlets, not the inverter: bypass with the inverter idle is still ON', () => {
+    // bit 3 bypass + bit 2 AC output, bit 4 inverter clear
+    expect(decodeLiveStatus(full(0b0000_1100)).acOutput).toBe(true)
+    // inverter running but outlets off
+    expect(decodeLiveStatus(full(0b0001_0000)).acOutput).toBe(false)
+  })
+
+  it('is omitted, not false, when the reply stops short of 0x0126', () => {
+    const short = new Array(0x26).fill(0)
+    expect('acOutput' in decodeLiveStatus(short)).toBe(false)
+  })
+})

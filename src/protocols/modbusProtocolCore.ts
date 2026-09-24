@@ -272,7 +272,19 @@ export interface LiveStatus {
   batteryTemp: number   // 电芯温度 ℃ (0x0123, Int16 ×0.1)
   /** 电池功率 W = AC + Solar − Output（充电为正）; omitted if any power input is invalid */
   batteryPower?: number
+  /**
+   * AC outlets on — run-state word 0x0126, bit 2 L ("交流输出开启"), the state the
+   * 0x0080 AC on/off write changes. Not the inverter bit (bit 4): with AC input
+   * connected the outlets are fed through bypass while the inverter idles.
+   * Omitted when the reply stops short of 0x0126, so a short frame never reads
+   * as "off".
+   */
+  acOutput?: boolean
 }
+
+/** 0x0126 relative to READ_ALL_STATUS's 0x0100 base, and its AC-output bit. */
+const RUN_STATE_OFFSET = 0x26
+const RUN_STATE_AC_OUTPUT = 1 << 2
 
 /**
  * 将 READ_ALL_STATUS 的寄存器数组（基址 0x0100）解析为实时参数子集。
@@ -290,8 +302,10 @@ export function decodeLiveStatus(registers: number[]): LiveStatus {
     outputPower !== undefined && solarPower !== undefined && acPower !== undefined
       ? acPower + solarPower - outputPower
       : undefined
+  const runState = registers.length > RUN_STATE_OFFSET ? registers[RUN_STATE_OFFSET] : undefined
   return {
     acPower, solarPower, outputPower, soc, batteryTemp, batteryPower,
+    ...(runState !== undefined ? { acOutput: (runState & RUN_STATE_AC_OUTPUT) !== 0 } : {}),
   }
 }
 

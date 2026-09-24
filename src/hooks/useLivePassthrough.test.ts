@@ -53,6 +53,8 @@ describe('readLivePassthroughOnce', () => {
     expect(got).toEqual({
       soc: 72.4, acPower: 210, solarPower: 35, outputPower: 90,
       batteryPower: 155, batteryTemp: 24.6,
+      // A full reply reaches the run-state word at 0x0126; 0 there = outlets off.
+      acOutput: false,
     })
     // The same decode the BLE path uses — one definition of LiveStatus.
     const regs = new Array(0x38).fill(0); live(regs)

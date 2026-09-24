@@ -57,6 +57,7 @@ import {
 } from '../data/demoData'
 import { passthroughDevice } from '../api/deviceApi'
 import { clearLivePassthrough } from './livePassthroughStore'
+import { clearFiringAlarms, recordFiringAlarms } from './firingAlarmsStore'
 import { FRAMES, extractPassthroughRegisters } from '../protocols/modbusProtocol'
 import { saveRatedParams, loadRatedParams } from '../db/powerflowDB'
 import { sanitizeUiCopy, toUserFacingError } from '../utils/uiCopy'
@@ -265,6 +266,7 @@ export const useDeviceStore = create<DeviceStoreState>()(
           const state = getDemoDeviceState(deviceId)
           if (state) {
             set({ selectedDeviceState: state, stateLoading: false })
+            recordFiringAlarms(deviceId, state.firingAlarms)
           }
           return
         }
@@ -276,6 +278,8 @@ export const useDeviceStore = create<DeviceStoreState>()(
           if (seq !== stateRequestSeq) return
           if ((result.code === 0 || result.code === '0') && result.data) {
             set({ selectedDeviceState: result.data, stateLoading: false })
+            // The bell and Notifications read every device's alarms from here.
+            recordFiringAlarms(deviceId, result.data.firingAlarms)
             // Push notifications for firing alarms (Power Outage has its own toggle;
             // everything else is covered by the generic Device Alarms toggle)
             const details = get().selectedDeviceDetails
@@ -649,6 +653,7 @@ export const useDeviceStore = create<DeviceStoreState>()(
         // Demo never polls passthrough, so anything still in the live layer is
         // a real device's. Nothing may survive into a session showing mock data.
         clearLivePassthrough()
+        clearFiringAlarms()
         set({
           isDemoMode: true,
           devices: demoDevices,
@@ -678,6 +683,7 @@ export const useDeviceStore = create<DeviceStoreState>()(
         // stations below: the next account must not inherit the last one's
         // battery percentage on first paint.
         clearLivePassthrough()
+        clearFiringAlarms()
         set({
           isDemoMode: false,
           devicesListReady: false,
