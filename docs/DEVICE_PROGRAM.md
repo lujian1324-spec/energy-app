@@ -132,8 +132,13 @@ password:
 So the gap is an account **created outside this app, or whose password was changed**. For
 those, a program with an enabled task or a scheduled Silent Mode is refused with
 `409 POLLER_SESSION_REQUIRED`, and an untimed one is written to the device and kept on the
-phone (`stored: false`). A way to close it without sharing the app's tokens: ask for the
-account password once when that refusal comes back, and mint the relay's session with it.
+phone (`stored: false`). Since v4.23.3 the app handles the refusal itself: `remintRelaySession()`
+signs in once more in the background with the app-registered password for the account the
+last email-code sign-in reported (at most once a day) and resends the save — no prompt. This
+recovers a relay session that was lost (a failed mint at sign-in, a session the relay
+dropped), but it cannot help an account made elsewhere or whose password was changed: the
+app never knows that password, and storing a user's password on the phone is not an option.
+Those accounts still see "Schedules can't run in the background for this account yet".
 
 Rules changed in v4.23.2: `chargeBaseline` + the `savedAt` cutoff (see CLAUDE.md), the
 relay's per-device retry pause, and `stored` in the `POST /program` reply.

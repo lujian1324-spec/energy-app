@@ -226,7 +226,7 @@ test.describe('Device program', () => {
     await page.getByRole('radio', { name: '100 W' }).click()
     await page.getByRole('button', { name: 'Save', exact: true }).click()
     await expect(page.getByText("Couldn't save Charging Settings")).toBeVisible()
-    await expect(page.getByText(/Background session is missing/)).toBeVisible()
+    await expect(page.getByText(/Schedules can't run in the background for this account yet/)).toBeVisible()
     expect(chargeWrites(api, '1001')).toEqual([])
     await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeEnabled()
   })

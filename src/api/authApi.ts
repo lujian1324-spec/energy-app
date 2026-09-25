@@ -178,7 +178,7 @@ export const CaptchaIntent = {
 export const POLLER_REFRESH_PENDING_KEY = 'iot_poller_refresh_pending'
 
 /** 铸造一条专供 poller 的独立会话并暂存其令牌(best-effort,失败静默)。 */
-async function provisionPollerSession(username: string, plainPassword: string): Promise<void> {
+async function provisionPollerSession(username: string, plainPassword: string): Promise<boolean> {
   try {
     // 独立再登一次,拿到一条与 App 自己会话互不影响的新会话;不写 tokenStore。
     const res = await api.postSkipAuth<LoginData>('/login/account', {
@@ -197,10 +197,43 @@ async function provisionPollerSession(username: string, plainPassword: string): 
         // the future" → it never refreshes → permanent "Token expired".
         accessExpiresAt: Date.now() + (Number(res.data.accessTokenWillExpiredInMillis) || 2 * 60 * 60 * 1000),
       }))
+      return true
     }
   } catch {
     /* poller 仅在下次登录时再尝试补铸;不影响正常登录 */
   }
+  return false
+}
+
+/**
+ * The account an email-code sign-in reported, so the relay's session can be minted
+ * again later without the user (v4.23.3). Only the password this app gives the
+ * accounts it registers (`defaultPasswordForAccount`) can be used — the app never
+ * has any other one — so an account made elsewhere, or whose password was changed,
+ * cannot get one this way.
+ */
+const RELAY_ACCOUNT_KEY = 'iot_relay_account'
+/** At most one background attempt per account per day: a wrong password must not pile up failed sign-ins. */
+export const RELAY_REMINT_INTERVAL_MS = 24 * 60 * 60 * 1000
+
+function rememberRelayAccount(userId: unknown, account: string): void {
+  if (userId == null || userId === '' || !account) return
+  try { localStorage.setItem(RELAY_ACCOUNT_KEY, JSON.stringify({ userId: String(userId), account })) } catch { /* ignore */ }
+}
+
+/**
+ * The relay has no background session for this account (it refused a timed schedule
+ * with POLLER_SESSION_REQUIRED): mint one again in the background, as the email-code
+ * sign-in does, and leave it for the next upload to hand over. Nothing is asked of the
+ * user and the app's own session is untouched. Resolves true when a session was minted.
+ */
+export async function remintRelaySession(now = Date.now()): Promise<boolean> {
+  let saved: { userId?: string; account?: string; triedAt?: number } | null = null
+  try { saved = JSON.parse(localStorage.getItem(RELAY_ACCOUNT_KEY) ?? 'null') } catch { saved = null }
+  if (!saved?.account || !saved.userId || saved.userId !== localStorage.getItem('iot_user_id')) return false
+  if (saved.triedAt && now - saved.triedAt < RELAY_REMINT_INTERVAL_MS) return false
+  try { localStorage.setItem(RELAY_ACCOUNT_KEY, JSON.stringify({ ...saved, triedAt: now })) } catch { /* ignore */ }
+  return provisionPollerSession(saved.account, defaultPasswordForAccount(saved.account))
 }
 
 /** Persist account ownership without losing precision on large user IDs. */
@@ -275,7 +308,10 @@ export async function loginByEmail(
      * fails this extra login the way it already did — silently, no regression.
      */
     const account = typeof result.data.account === 'string' ? result.data.account : ''
-    if (account) void provisionPollerSession(account, defaultPasswordForAccount(account))
+    if (account) {
+      rememberRelayAccount(result.data.userId, account)
+      void provisionPollerSession(account, defaultPasswordForAccount(account))
+    }
   }
   return result
 }
@@ -412,6 +448,7 @@ export async function logout(): Promise<void> {
   } finally {
     tokenStore.clear()
     localStorage.removeItem('iot_user_id')
+    localStorage.removeItem(RELAY_ACCOUNT_KEY)
   }
 }
 

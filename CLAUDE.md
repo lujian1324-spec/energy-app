@@ -487,7 +487,12 @@ backend/firmware handoff: **`docs/DEVICE_PROGRAM.md`**.
   and says `stored: false`; the app then relies on its own copy (`loadProgram` falls back to it when the relay has
   none). **Known gap:** the relay's own session is minted by `provisionPollerSession` (password sign-in, and email-code
   sign-in for accounts this app registered, via `defaultPasswordForAccount`); an account created elsewhere or with a
-  changed password has none, so its timed programs are refused with `POLLER_SESSION_REQUIRED`. Never hand the relay
+  changed password has none, so its timed programs are refused with `POLLER_SESSION_REQUIRED`. On that refusal
+  (v4.23.3) `saveProgram` calls `remintRelaySession()` (`authApi.ts`): for the account the last email-code sign-in
+  reported (`iot_relay_account`, same `iot_user_id` only, cleared by `logout`), sign in once more in the background
+  with `defaultPasswordForAccount`, **at most once per 24 h** (a wrong password must not pile up failed sign-ins),
+  and resend — the user is never asked. The app never has any other password, so an account made elsewhere or with a
+  changed password still ends in "Schedules can't run in the background for this account yet". Never hand the relay
   the app's own token pair — refresh tokens are single-use. See `docs/DEVICE_PROGRAM.md` §6.
 - **Charge & Discharge Limits are hidden** (`CHARGE_LIMITS_ENABLED`: dev, QA, `VITE_ENABLE_CHARGE_LIMITS=true` — the E2E
   build): no firmware register exists yet; values are saved and uploaded but not applied.

@@ -1,8 +1,9 @@
 {
-  "version": "4.23.2",
-  "build": 2941,
+  "version": "4.23.3",
+  "build": 2942,
   "date": "2026-09-25",
   "changelog": [
+    "Schedules that run while the app is closed now set themselves up again on their own when Sierro's server has lost their connection to your account, so saving a schedule no longer asks you to sign in again.",
     "Fixes: editing a Charging schedule, or saving from a phone in another time zone, no longer starts or stops charging by itself; the change takes effect at the schedule's next time. Saving a setting no longer repeats an AC Output schedule that already ran. Charging Settings and Silent Mode keep what you saved on this phone when your account has no background schedule service yet. On Insights, a day that loads only partly no longer hides the readings already saved for it.",
     "Fixes: when two phones change the same device's schedules or charging settings, a save no longer wipes out what the other phone saved in the meantime; both changes are kept. Device Settings shows your Smart Schedule and charging power on every phone signed in to the account, not only the one that set them. A brief server hiccup no longer slows down the power charts for the rest of the session, a chart that loaded only part of the day fills in the rest by itself while it is open, and Insights keeps today's figures up to date while you stay on it. Schedules saved on this phone are no longer shown to another account that signs in on it.",
     "After each app update, the data the app keeps on your phone (power history, the device list, the latest readings) is cleared once and fetched fresh, so nothing saved by the previous version can mix with the new one. You stay signed in, and your settings, schedules and device icons are kept. The Smart Schedule, Charging Settings and Silent Mode screens now match the design's sizes.",

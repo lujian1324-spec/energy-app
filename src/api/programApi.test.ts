@@ -10,6 +10,8 @@ const h = vi.hoisted(() => ({
   passthrough: [] as string[],
   passthroughOk: true,
   locked: false,
+  remint: false,
+  remints: 0,
 }))
 
 const store = new Map<string, string>()
@@ -30,6 +32,14 @@ vi.mock('./deviceApi', () => ({
   }),
 }))
 vi.mock('../utils/firmwareLock', () => ({ isFirmwareUpdateLocked: () => h.locked }))
+vi.mock('./authApi', () => ({
+  POLLER_REFRESH_PENDING_KEY: 'iot_poller_refresh_pending',
+  remintRelaySession: vi.fn(async () => {
+    h.remints++
+    if (h.remint) store.set('iot_poller_refresh_pending', JSON.stringify({ accessToken: 'RA', refreshToken: 'RR', accessExpiresAt: 1 }))
+    return h.remint
+  }),
+}))
 
 ;(globalThis as any).fetch = vi.fn(async (url: string, init?: RequestInit) => {
   h.fetches.push({ url, init })
@@ -57,6 +67,7 @@ beforeEach(() => {
   h.relayReply = { status: 200, body: { code: 0 } }
   h.relayQueue = []
   h.relayProgram = null
+  h.remint = false; h.remints = 0
 })
 
 describe('labels', () => {
@@ -123,7 +134,8 @@ describe('saving a program', () => {
     h.relayReply = { status: 409, body: { code: 1, reason: 'POLLER_SESSION_REQUIRED' } }
     const r = await saveProgram('1001', prog({ tasks: [newTask('charge')] }))
     expect(r.ok).toBe(false)
-    expect(r.detail).toMatch(/Sign in again/)
+    expect(r.detail).toMatch(/can't run in the background for this account/)
+    expect(h.remints).toBe(1)
     expect(store.get('sierro-program-1001')).toBeUndefined()
     expect(h.passthrough).toEqual([])
   })
@@ -251,5 +263,20 @@ describe('a relay with no background session for the account (v4.23.2)', () => {
     const r = await saveProgram('1001', prog({ chargePowerW: 200 }), { deviceOnline: false })
     expect(r.ok).toBe(true)
     expect(r.detail).toMatch(/this phone only/)
+  })
+})
+
+describe('no background session on the relay (v4.23.3)', () => {
+  it('mints one in the background and saves again, with no one asked', async () => {
+    h.remint = true
+    h.relayQueue = [{ status: 409, body: { code: 1, reason: 'POLLER_SESSION_REQUIRED' } }]
+    const r = await saveProgram('1001', prog({ tasks: [newTask('charge')] }))
+    expect(r).toMatchObject({ ok: true, background: true })
+    const posts = h.fetches.filter(f => f.init?.method === 'POST').map(f => JSON.parse(String(f.init!.body)))
+    expect(posts).toHaveLength(2)
+    expect(posts[0].refreshToken).toBeUndefined()
+    expect(posts[1]).toMatchObject({ accessToken: 'RA', refreshToken: 'RR' })
+    // Handed over: the one-time copy is gone from the phone.
+    expect(store.get('iot_poller_refresh_pending')).toBeUndefined()
   })
 })
