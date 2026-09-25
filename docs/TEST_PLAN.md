@@ -252,6 +252,11 @@ v4.4.3 修复 Android 扫不到设备(客户端过滤)与 PWA Open Settings 跳�
 - **真实后端冒烟**(`scripts/api-smoke.mjs`,`E2E_USER=x E2E_PASS=y npm run test:api:live`):
   在**联网机器**上真连后端,走 登录→用户信息→设备列表→设备状态,逐步 PASS/FAIL。
   (沙箱/CI 出网受限时会 403,属正常;在本地/有网环境运行。)
+- **固件远程升级接口探测**(`scripts/firmware-api-probe.mjs`,工作流 `firmware-api-probe.yml`,用仓库密钥 `E2E_USER`/`E2E_PASS`):
+  默认只读——登录后读 `upgrade/permission/get`、每台设备的 `device/details`、升级协议、`firmware/list/fromManufacturer`、
+  固件详情、升级脚本信息和已有升级任务,打印返回码与字段名(令牌、联系方式、URL 参数已打码),最后列出 APP 会给出的判断。
+  真正升级只能手动触发:`start_upgrade` + `device_id` + `firmware_id` + `confirm` 填 `UPGRADE <device_id> <firmware_id>`;
+  设备不在线/升级中/不允许升级/固件不在该设备列表里都会拒绝;`upgrade/create` 只发一次,之后每 5 秒轮询最多 45 分钟。
 - **未自动化(必须真机手测)**:BLE 连接后的配网(发 Wi-Fi、绑定)、真实设备的透传控制与实时数据、
   原生权限/返回键/触觉、推送。E2E 里的蓝牙与后端都是模拟的,只证明 APP 自身逻辑。
 

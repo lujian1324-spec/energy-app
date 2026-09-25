@@ -91,6 +91,15 @@ What this tells us:
    version and upgrade state, and upgrades stay a manufacturer/after-sales action.
 5. **Download** endpoint (read-only), for completeness.
 
+## 4b. Probing the real API
+
+`scripts/firmware-api-probe.mjs` (run by `.github/workflows/firmware-api-probe.yml` with the
+`E2E_USER`/`E2E_PASS` secrets — the sandbox cannot reach the backend) reads every endpoint above for
+each device on the account and prints the reply codes and field names, plus what the app would decide.
+Read-only unless started by hand with `start_upgrade`, a `device_id`, a `firmware_id` and the exact
+confirmation `UPGRADE <device_id> <firmware_id>`; then it sends `upgrade/create` once with the app's
+body and polls `upgrade/details` / `device/details` until the task ends.
+
 ## 5. App behaviour — built in v4.20.0, released once §4 is answered
 
 Implemented behind `FIRMWARE_UPDATE_ENABLED` (see CLAUDE.md, SettingPage → Firmware Update). Still to do after §4:
