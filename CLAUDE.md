@@ -130,6 +130,15 @@ Also present but not routed standalone: `ProvisioningPage` (inside DevicePage ad
 - **No "pairing mode" copy (v4.17.3, after-sales R08).** The search failure text, the troubleshooting
   steps, `RESTART_HELP_COPY` and `DISCONNECT_COPY` no longer ask for a pairing mode / pairing light: the
   app never said how to enter one (Trenton). Only steps a user can do are listed.
+- **No Restart Device on a failed add (v4.18.0).** The "Couldn't add device" result offers the one retry
+  button only. `handleRestart` stays wired (the already-bound screen still uses it).
+- **Model from the device (v4.18.0).** After `/device/add/single` succeeds, rated params are saved with the
+  scan-name guess (`modelSource: 'default'`) and `detectAndSaveModel()` (`src/api/ratedModelRead.ts`) reads
+  register **0x000A** (额定交流逆变输出功率, Uint16, 1 W/unit, via `FRAMES.READ_ALL_PARAMS` over passthrough,
+  3 tries 2 s apart) in the background: **1000 W → Sierro 2000**, any other reading → Sierro 1000, no
+  reading → the default stays. `deviceStore.fetchAndCacheRatedParams` applies the same rule on list loads
+  (`withDetectedModel`, `src/utils/ratedModel.ts`), never over a model the user picked in Device Info
+  (`modelSource: 'user'`).
 - **BLE drop after Wi-Fi (v4.16.3, 0923-001).** Once `handleConfig` gets RC=0 the device leaves
   Bluetooth for Wi-Fi. `useProvisionScan`'s `onDisconnected` returns early when
   `wifiConfiguredRef` is set (marks `bleGoneRef` only): no reconnect loop, no
@@ -203,6 +212,14 @@ lives on independently and is still referenced elsewhere.)
   (badge in %, curve from `HistoryPoint.soc`); AC/Solar/Output tabs show power (W), auto-scaled.
   Driven by `RealTimePowerChart`'s `batteryAsSoc`/`batterySoc` props (the shared chart still defaults
   to the power view for the Battery tab).
+  **Scrub (v4.18.0):** one finger (or a held mouse) on the plot shows a guide line, the point and a label
+  with the time (`clockLabel`, "3:45pm") and the tab's value; the reading stays after release and follows
+  tab switches. `readingAt()` takes the nearest sample within half a gap, so over a gap it says "No data".
+  Two fingers pinch-zoom and pan (one-finger pan was dropped for the scrub); the wheel still zooms.
+- *Header* (v4.18.0): the device name is centred with `max-w-[calc(100%-232px)]` and truncates with an
+  ellipsis; the switcher chevron never shrinks, so a long name cannot push it under the settings button.
+  `index.css` sets `.truncate { text-wrap: nowrap }` after the titles' `text-wrap: balance`, which had
+  been resetting `.truncate`'s nowrap on every title.
 - **Today's history (v4.17.0; source v4.17.2).** `useHistoryFetcher(id, dayStart, dayEnd, { live: true })`
   reads the day the way the Solar of Things console does (`docs/siseli-api.md`):
   `POST /deviceState/simple/attribute/keys/history/v1` with `keys` = the four fields below, `count: 1500`,
@@ -225,10 +242,25 @@ lives on independently and is still referenced elsewhere.)
 
 **DeviceDetailPage** (`/device/:id/settings` — Device Info)
 - *Name edit*, *icon picker*.
-- *Device Info*: model, **Serial Number** (v4.17.3, after-sales R15: only a serial the device reported — the record's `serialNumber` unless `isVirtualSerialNumber` or the generated `SR1000-######` form, else `--`; `deviceSerialNumber()`), **Bluetooth ID** (its own row: `dtuDtuid`, else `RatedParams.bleId` saved at add time, else `--`; `deviceBluetoothId()`, both in `src/utils/deviceSerial.ts` — Marc: the module id is not the product SN and must not be labelled as one), **Rated Capacity** (`acInvOutputPower×2`, Wh→kWh), **Rated Output Power** W (`ratedPower`), **Rated Voltage** 120V (fixed), **Cycles** (`numberOfBatteryUsageCycles`), **Temperature** °F (`batteryTemp`), Wi-Fi (`isOnline`), firmware (`softwareVersion`).
+- *Device Info*: model, **no Serial Number row** (removed v4.18.0; `deviceSerialNumber()` stays in `src/utils/deviceSerial.ts`), **Bluetooth ID** (its own row: `dtuDtuid`, else `RatedParams.bleId` saved at add time, else `--`; `deviceBluetoothId()`, both in `src/utils/deviceSerial.ts` — Marc: the module id is not the product SN and must not be labelled as one), **Rated Capacity** (`acInvOutputPower×2`, Wh→kWh), **Rated Output Power** W (`ratedPower`), **Rated Voltage** 120V (fixed), **Cycles** (`numberOfBatteryUsageCycles`), **Temperature** °F (`batteryTemp`), Wi-Fi (`isOnline`), firmware (`softwareVersion`).
 - *Sleep Mode editor* (`sleepFrom`/`sleepTo` + scheduler), *Battery Priority sheet* (Backup 100% / Savings 60%), *delete dialog*.
   Saving Sleep Mode claims the device for `sleep` (SW-12 — see Smart Schedule below), which disarms
   Smart Schedule's window, and reports a relay that refused the upload instead of dropping it.
+- **Sleep Mode powers + offline set (v4.18.0).** Two sliders — *During sleep* / *Outside sleep* — set the
+  0x0085 AC charge power, **50 W steps, 0–400 W on a Sierro 1000, 0–800 W on a Sierro 2000**
+  (`sleepPowerMaxW`/`snapSleepPower`/`sleepWatts` in `src/utils/chargeWindow.ts`; defaults 150/400 and
+  300/800). They are stored with the window (`sierro-sleep-{id}`: `sleepW`/`wakeW`; the scheduler hook
+  merges rather than overwrites), passed to `applySleepSchedule`, the client scheduler and the relay
+  upload. Switching Sleep Mode off restores the model power, not the non-sleep slider.
+  A device the cloud reports **offline** (`offlineReason(...) === 'device-offline'`, connection state only)
+  is still set: `applySleepSchedule({ deviceOffline: true })` skips A/B and uploads to the relay alone;
+  `ok` only if the relay accepted (then `queued: true`, "Sleep Mode saved — will switch when back online").
+  The relay tick skips an offline device and writes 0x0085 once it is online again
+  (`server/sleepExecutor.test.js`). The relay's `GET /debug/user/:userId` (X-Internal-Key) lists each
+  device's stored window, watts and `lastAppliedPhase` (`date|sleep|250`) to check both hops on AWS.
+- **Battery Priority is hidden (v4.18.0), not deleted.** `BATTERY_PRIORITY_ENABLED`
+  (`src/config/batteryPriority.ts`, `false`) gates the row and the sheet; the path below stays wired, and
+  the R11 E2E specs run again when the flag is flipped.
 - **Battery Priority control path (v4.14.0, SW-09): Modbus passthrough only, no `workMode` write.**
   Save goes through `applyBatteryPriority()` (`src/api/batteryPriorityControl.ts`) and makes exactly two
   `POST /remote/device/passthrough` writes, in order: **0x0086** (`PV_BATT_PRIORITY`) then **0x0054**
@@ -406,8 +438,8 @@ lives on independently and is still referenced elsewhere.)
   list renders `visibleAlarmEntries()` and the Device page bell counts `unreadAlarmCount()` over the same
   entries, so a lit dot always has a row, each row names its device, and opening the list marks them all
   seen. It used to list only the selected device, which left the dot lit over "You're all caught up".
-  Dismissals are synced only for devices this refresh heard from; if reads failed and nothing is listed,
-  the page shows "Something went wrong" + Retry, never "all caught up".
+  Dismissals are synced only for devices this refresh heard from. A failed read shows the normal page
+  (v4.18.0: no "Something went wrong" / Retry screen); the next refresh fills it.
 
 **DataExportPage** (`/data-export`)
 - *Privacy notice*, *JSON/CSV export*, *recycle bin*, *analytics toggle*, legal links.
@@ -433,7 +465,7 @@ shows raw register names):
 | Nameplate output power | **Rated Output Power** | W |
 | Nameplate voltage | **Rated Voltage** | V |
 | Battery usage cycles | **Cycles** | — |
-| Device serial | **Serial Number** | — |
+| Device serial | **Serial Number** (no row rendered since v4.18.0) | — |
 | Bluetooth module id | **Bluetooth ID** | — |
 
 ## Backend API parameter conventions (`src/api/`)

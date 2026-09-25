@@ -12,7 +12,7 @@ import Icon from '../components/Icon'
 import { useNavigate, useParams } from 'react-router-dom'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useDeviceStore, stateForDevice } from '../stores/deviceStore'
-import { deviceBluetoothId, deviceSerialNumber } from '../utils/deviceSerial'
+import { deviceBluetoothId } from '../utils/deviceSerial'
 import { mapFieldsToRealtime } from '../api/deviceApi'
 import { applySleepSchedule } from '../api/smartScheduleControl'
 import {
@@ -37,6 +37,10 @@ import { backgroundScheduleNotice } from '../utils/scheduleOutcome'
 import { getSavedScheduleEnabled, subscribeActiveScheduleMode } from '../utils/activeScheduleMode'
 import FanSpeedCard from './device/FanSpeedCard'
 import { FAN_CONTROL_ENABLED } from '../config/fanControl'
+import { BATTERY_PRIORITY_ENABLED } from '../config/batteryPriority'
+import { SLEEP_POWER_STEP_W, sleepPowerMaxW, sleepPowers, sleepWatts } from '../utils/chargeWindow'
+import { offlineReason } from '../utils/deviceConnectivity'
+import { tokenStore } from '../utils/apiClient'
 
 interface DeviceDetailPageProps {
   /** When rendered as an overlay (inside OverviewPage) a custom back handler is
@@ -208,6 +212,45 @@ function InlineTimePicker({ value, onChange, onDone }: {
   )
 }
 
+/**
+ * One Sleep Mode charge-power slider: 0…max W in 50W steps (v4.18.0) — max is
+ * 400W for a Sierro 1000 and 800W for a Sierro 2000 (`sleepPowerMaxW`).
+ */
+function PowerSlider({ label, value, max, disabled, onChange }: {
+  label: string
+  value: number
+  max: number
+  disabled?: boolean
+  onChange: (watts: number) => void
+}) {
+  const pct = max > 0 ? (value / max) * 100 : 0
+  return (
+    <div className="rounded-l bg-ink-10 px-4 py-4">
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-body-lg text-white">{label}</span>
+        <span className="text-body-lg font-semibold text-primary">{value}W</span>
+      </div>
+      <input
+        type="range"
+        min={0}
+        max={max}
+        step={SLEEP_POWER_STEP_W}
+        value={value}
+        disabled={disabled}
+        aria-label={`AC charging power ${label.toLowerCase()}`}
+        aria-valuetext={`${value} watts`}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-full h-1.5 rounded-pill appearance-none cursor-pointer accent-primary disabled:opacity-50"
+        style={{ background: `linear-gradient(to right, #01D6BE 0%, #01D6BE ${pct}%, #454545 ${pct}%, #454545 100%)` }}
+      />
+      <div className="flex justify-between mt-2 text-tiny text-ink-7">
+        <span>0W</span>
+        <span>{max}W</span>
+      </div>
+    </div>
+  )
+}
+
 export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const { powerStation, updateDeviceNameById, peakShavingSettings } =
     usePowerStationStore()
@@ -292,16 +335,21 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   const [sleepMode, setSleepMode] = useState<'Off' | 'On'>('Off')
   const [sleepFrom, setSleepFrom] = useState('22:00')
   const [sleepTo, setSleepTo] = useState('09:00')
+  // Slider powers (W); null = not chosen yet → the model default (v4.18.0).
+  const [sleepPowerW, setSleepPowerW] = useState<number | null>(null)
+  const [wakePowerW, setWakePowerW] = useState<number | null>(null)
   const [savingSleep, setSavingSleep] = useState(false)
   const savingSleepRef = useRef(false)
-  const [sleepApplied, setSleepApplied] = useState({ deviceId: '', enabled: false, sleepFrom: '22:00', sleepTo: '09:00' })
+  const [sleepApplied, setSleepApplied] = useState<{
+    deviceId: string; enabled: boolean; sleepFrom: string; sleepTo: string; sleepW?: number; wakeW?: number
+  }>({ deviceId: '', enabled: false, sleepFrom: '22:00', sleepTo: '09:00' })
   // Which row's inline time picker is open (`ui-fix-doc-20260911/02`); null = none.
   const [openTimePicker, setOpenTimePicker] = useState<'from' | 'to' | null>(null)
   // Snapshot taken when the Sleep Mode screen opens; the design keeps Save dim until
   // one of these actually changes.
-  const sleepBaseline = useRef({ sleepMode, sleepFrom, sleepTo })
+  const sleepBaseline = useRef({ sleepMode, sleepFrom, sleepTo, sleepPowerW, wakePowerW })
   useEffect(() => {
-    if (screen === 'sleepMode') sleepBaseline.current = { sleepMode, sleepFrom, sleepTo }
+    if (screen === 'sleepMode') sleepBaseline.current = { sleepMode, sleepFrom, sleepTo, sleepPowerW, wakePowerW }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screen])
   const [showWorkModeMenu, setShowWorkModeMenu] = useState(false)
@@ -390,6 +438,8 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
       serialNumber,
       // Keep the Bluetooth ID recorded at add time; a model change is not a new device.
       bleId: ratedParams?.bleId,
+      // The user's pick: a later 0x000A read never overrides it (utils/ratedModel.ts).
+      modelSource: 'user',
     }
     try { await saveRatedParams(profile); setRatedParams(profile) } catch { /* ignore */ }
     setShowModelSheet(false)
@@ -411,9 +461,8 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
      params saved, Device Info reads off the spec for `model`, which is the
      Sierro 1000 by default. */
   const modelSpec = SIERRO_MODELS[model as SierroModel] ?? SIERRO_MODELS['Sierro 1000']
-  const schedulerPowers = model.includes('2000')
-    ? { sleepW: 300, wakeW: 800 }
-    : { sleepW: 150, wakeW: 400 }
+  // What the sliders show: the draft, else the model default, on the model's 50W grid.
+  const sleepDraftWatts = sleepWatts(model, { sleepW: sleepPowerW ?? undefined, wakeW: wakePowerW ?? undefined })
 
   useEffect(() => {
     if (!deviceIdForScheduler) return
@@ -421,6 +470,8 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     setSleepMode(saved.enabled ? 'On' : 'Off')
     setSleepFrom(saved.sleepFrom)
     setSleepTo(saved.sleepTo)
+    setSleepPowerW(typeof saved.sleepW === 'number' ? saved.sleepW : null)
+    setWakePowerW(typeof saved.wakeW === 'number' ? saved.wakeW : null)
     setSleepApplied({ ...saved, deviceId: deviceIdForScheduler })
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deviceIdForScheduler])
@@ -443,6 +494,8 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     sleepTo: sleepApplied.sleepTo,
     deviceId: sleepApplied.deviceId === deviceIdForScheduler ? deviceIdForScheduler : '',
     model,
+    // The saved slider powers (model defaults for a schedule from before v4.18.0).
+    powers: sleepPowers(model, { sleepW: sleepApplied.sleepW, wakeW: sleepApplied.wakeW }),
     // SW-12: this instance writes only while Sleep Mode owns the device. If the
     // user has armed Smart Schedule on the same device, it owns 0x0085 and the
     // relay slot, and this scheduler stays quiet (AC-12-4).
@@ -630,12 +683,8 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               {/* B_1.2.3 draws Model like every other row — the value alone, no chevron. */}
               <span className="text-body-md text-ink-6">{ratedParams?.model || realDevice?.model || powerStation.model || 'Sierro 1000'}</span>
             </button>
-            {/* R15: the sticker's serial only — a generated one reads "--" — and the
-                Bluetooth module id on its own, labelled row. */}
-            <InfoRow
-              label="Serial Number"
-              value={deviceSerialNumber(realDevice)}
-            />
+            {/* No Serial Number row (v4.18.0): the platform has no reliable product
+                SN for a unit. The Bluetooth module id keeps its own, labelled row. */}
             <InfoRow
               label="Bluetooth ID"
               value={deviceBluetoothId(realDevice, ratedParams)}
@@ -759,6 +808,8 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     const enabled = sleepMode === 'On'
     const b = sleepBaseline.current
     const sleepChanged = b.sleepMode !== sleepMode || b.sleepFrom !== sleepFrom || b.sleepTo !== sleepTo
+      || b.sleepPowerW !== sleepPowerW || b.wakePowerW !== wakePowerW
+    const maxSleepPowerW = sleepPowerMaxW(model)
     const handleSaveSleepMode = async () => {
       if (savingSleepRef.current) return
       const deviceId = routeId ?? selectedDeviceId
@@ -767,13 +818,26 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
       try {
         if (deviceId) {
           const id = String(deviceId)
-          const result = await applySleepSchedule(id, { enabled, startTime: sleepFrom, endTime: sleepTo, model })
+          const { sleepW, wakeW } = sleepDraftWatts
+          // An offline device is still set: the relay holds the window and
+          // writes it when the device is back (read from connection state only).
+          const deviceOffline = offlineReason({
+            clientOnline: typeof navigator === 'undefined' || navigator.onLine !== false,
+            hasSession: !!tokenStore.get(),
+            deviceOnline: realDevice ? !!realDevice.isOnline : undefined,
+          }) === 'device-offline'
+          const result = await applySleepSchedule(id, {
+            enabled, startTime: sleepFrom, endTime: sleepTo, model, sleepW, wakeW, deviceOffline,
+          })
           if (!result.ok) {
             toast.error('Could not save Sleep Mode', sanitizeUiCopy(result.detail ?? '', '') || undefined)
             return
           }
-          saveSchedule(deviceId, { enabled, sleepFrom, sleepTo })
-          setSleepApplied({ deviceId: id, enabled, sleepFrom, sleepTo })
+          saveSchedule(deviceId, { enabled, sleepFrom, sleepTo, sleepW, wakeW })
+          setSleepApplied({ deviceId: id, enabled, sleepFrom, sleepTo, sleepW, wakeW })
+          if (result.queued) {
+            toast.success('Sleep Mode saved', 'The device is offline. It will switch to these settings when it is back online.')
+          }
           const notice = backgroundScheduleNotice({
             enabling: enabled,
             instantPowerApplied: result.instantPowerApplied,
@@ -818,7 +882,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               <div>
                 <p className="text-body-lg text-white">Sleep Mode</p>
                 <p className="text-caption text-ink-6 mt-0.5">
-                  Low-noise charging · {schedulerPowers.sleepW}W AC charging limit
+                  Low-noise charging · {sleepDraftWatts.sleepW}W AC charging limit
                 </p>
               </div>
               <button
@@ -873,6 +937,27 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               </div>
             </div>
           )}
+          {enabled && (
+            <div>
+              <p className="text-body-md font-semibold text-white mb-3">AC Charging Power</p>
+              <div className="space-y-3">
+                <PowerSlider
+                  label="During sleep"
+                  value={sleepDraftWatts.sleepW}
+                  max={maxSleepPowerW}
+                  disabled={savingSleep}
+                  onChange={setSleepPowerW}
+                />
+                <PowerSlider
+                  label="Outside sleep"
+                  value={sleepDraftWatts.wakeW}
+                  max={maxSleepPowerW}
+                  disabled={savingSleep}
+                  onChange={setWakePowerW}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     )
@@ -923,14 +1008,17 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           value={sleepMode}
           onPress={() => setScreen('sleepMode')}
         />
-        <SettingsRow
-          label="Battery Priority"
-          value={workModeRowLabel(workMode)}
-          onPress={() => {
-            setWorkModeDraft(workMode)
-            setShowWorkModeMenu(true)
-          }}
-        />
+        {/* Hidden (v4.18.0) — config/batteryPriority.ts; the control path stays wired. */}
+        {BATTERY_PRIORITY_ENABLED && (
+          <SettingsRow
+            label="Battery Priority"
+            value={workModeRowLabel(workMode)}
+            onPress={() => {
+              setWorkModeDraft(workMode)
+              setShowWorkModeMenu(true)
+            }}
+          />
+        )}
         {/* Not released: dev / QA builds only (config/fanControl.ts). */}
         {FAN_CONTROL_ENABLED && deviceIdForScheduler && (
           <FanSpeedCard
@@ -959,7 +1047,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
         </button>
       </div>
 
-      {showWorkModeMenu && (
+      {BATTERY_PRIORITY_ENABLED && showWorkModeMenu && (
         <BottomSheet
           title="Select Battery Priority"
           labelledBy="battery-priority-title"

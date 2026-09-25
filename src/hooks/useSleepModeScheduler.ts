@@ -72,6 +72,9 @@ export interface SleepSchedule {
   enabled: boolean
   sleepFrom: string  // "HH:MM"
   sleepTo: string    // "HH:MM"
+  /** Sleep Mode's slider powers (W); absent in a schedule saved before v4.18.0 → model defaults. */
+  sleepW?: number
+  wakeW?: number
 }
 
 export interface UseSleepModeSchedulerParams {
@@ -253,7 +256,9 @@ export function useSleepModeScheduler(
 
   useEffect(() => {
     if (!deviceId) return
-    saveSchedule(deviceId, { enabled, sleepFrom, sleepTo }, storagePrefix)
+    // Merge: the page stores Sleep Mode's slider watts (v4.18.0) beside the window,
+    // and re-persisting only the window here used to drop them.
+    saveSchedule(deviceId, { ...(loadSchedule(deviceId, storagePrefix) ?? {}), enabled, sleepFrom, sleepTo }, storagePrefix)
   }, [deviceId, enabled, sleepFrom, sleepTo, storagePrefix])
 
   // ── Point the writer at the device (drops anything owed to the previous one) ─

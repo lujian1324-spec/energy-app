@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { Loader2 } from 'lucide-react'
 import Glyph from './Icon'
 import { useHistoryFetcher } from '../hooks/useHistoryFetcher'
-import { maxGapMs, seriesSegments, type HistorySeries } from '../utils/historyPoints'
+import { clockLabel, maxGapMs, readingAt, seriesSegments, type HistorySeries } from '../utils/historyPoints'
 
 type PowerTab = 'battery' | 'ac' | 'solar' | 'output'
 
@@ -111,15 +111,29 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
     return [cs, ce]
   }, [todayFrom, todayTo])
 
+  // ─── Scrub: the time a finger (or held mouse) points at; the reading stays ───
+  // after release, like Insights, until another point is picked (v4.18.0).
+  const [scrubTime, setScrubTime] = useState<number | null>(null)
+  const plotRef = useRef<HTMLDivElement>(null)
+
   // Reset zoom when device changes or day changes
   useEffect(() => {
     setViewStart(todayFrom)
     setViewEnd(todayTo)
+    setScrubTime(null)
   }, [deviceId, todayFrom, todayTo])
 
+  const scrubAt = useCallback((clientX: number) => {
+    const rect = plotRef.current?.getBoundingClientRect()
+    if (!rect || rect.width <= 0) return
+    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
+    setScrubTime(viewStart + ratio * (viewEnd - viewStart))
+  }, [viewStart, viewEnd])
+
   // ─── Gesture state for pinch-to-zoom and pan on chart ───
+  // One finger reads the chart (scrub); two fingers zoom, and moving them pans.
   const chartTouchRef = useRef<{
-    mode: 'pan' | 'pinch' | null
+    mode: 'scrub' | 'pinch' | null
     lastX: number
     lastDist: number
     viewAtStart: [number, number]
@@ -128,11 +142,12 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
   const onChartTouchStart = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
     if (e.touches.length === 1) {
       chartTouchRef.current = {
-        mode: 'pan',
+        mode: 'scrub',
         lastX: e.touches[0].clientX,
         lastDist: 0,
         viewAtStart: [viewStart, viewEnd],
       }
+      scrubAt(e.touches[0].clientX)
     } else if (e.touches.length === 2) {
       const dx = e.touches[1].clientX - e.touches[0].clientX
       const dy = e.touches[1].clientY - e.touches[0].clientY
@@ -144,7 +159,7 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
       }
     }
     e.stopPropagation()
-  }, [viewStart, viewEnd])
+  }, [viewStart, viewEnd, scrubAt])
 
   const onChartTouchMove = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
     const ref = chartTouchRef.current
@@ -152,17 +167,8 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
     const svgEl = e.currentTarget
     const svgWidth = svgEl.getBoundingClientRect().width || 300
 
-    if (ref.mode === 'pan' && e.touches.length === 1) {
-      const dx = e.touches[0].clientX - ref.lastX
-      ref.lastX = e.touches[0].clientX
-      const [s, e2] = ref.viewAtStart
-      const winMs = e2 - s
-      const msPerPx = winMs / svgWidth
-      const delta = -dx * msPerPx
-      const [ns, ne] = clampView(viewStart + delta, viewEnd + delta)
-      setViewStart(ns)
-      setViewEnd(ne)
-      ref.viewAtStart = [ns, ne]
+    if (ref.mode === 'scrub' && e.touches.length === 1) {
+      scrubAt(e.touches[0].clientX)
     } else if (ref.mode === 'pinch' && e.touches.length === 2) {
       const dx = e.touches[1].clientX - e.touches[0].clientX
       const dy = e.touches[1].clientY - e.touches[0].clientY
@@ -170,20 +176,23 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
       const scale = ref.lastDist > 0 ? ref.lastDist / dist : 1
       ref.lastDist = dist
       const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2
+      // Moving both fingers pans (one finger now reads the chart instead).
+      const panPx = cx - ref.lastX
+      ref.lastX = cx
       const [s, e2] = [viewStart, viewEnd]
       const winMs = e2 - s
       const msPerPx = winMs / svgWidth
       const pivotMs = s + (cx - svgEl.getBoundingClientRect().left) * msPerPx
       const newWin = Math.max(MIN_WINDOW, winMs * scale)
       const ratio = (pivotMs - s) / winMs
-      const ns = pivotMs - ratio * newWin
+      const ns = pivotMs - ratio * newWin - panPx * msPerPx
       const ne = ns + newWin
       const [cs, ce] = clampView(ns, ne)
       setViewStart(cs)
       setViewEnd(ce)
     }
     e.stopPropagation()
-  }, [viewStart, viewEnd, clampView])
+  }, [viewStart, viewEnd, clampView, scrubAt])
 
   const onChartTouchEnd = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
     if (e.touches.length === 0) {
@@ -248,6 +257,24 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
       .filter(seg => seg.length > 0)
   }, [rawHistoryPoints, series, gapMs, viewStart, viewEnd, chartMax])
   const hasSeriesData = chartSegments.length > 0
+
+  // What the scrub reads on the current tab: the nearest sample, or none over a gap.
+  const scrub = useMemo(() => {
+    if (scrubTime === null || !hasSeriesData) return null
+    const win = viewEnd - viewStart
+    if (win <= 0 || scrubTime < viewStart || scrubTime > viewEnd) return null
+    const hit = readingAt(rawHistoryPoints, series, scrubTime, gapMs)
+    const t = hit ? hit.timestamp : scrubTime
+    const pct = Math.max(0, Math.min(100, ((t - viewStart) / win) * 100))
+    const v = hit ? Math.min(Math.max(hit.value, 0), chartMax) : null
+    return {
+      pct,
+      // Same 0..70 viewBox mapping as the line, in the SVG's 136px height.
+      dotPy: v === null ? null : (60 - (v / chartMax) * 55) * (136 / 70),
+      time: clockLabel(t),
+      value: hit ? `${Math.round(hit.value)}${currentChartData.unit}` : 'No data',
+    }
+  }, [scrubTime, hasSeriesData, rawHistoryPoints, series, gapMs, viewStart, viewEnd, chartMax, currentChartData.unit])
 
   // ─── Y-axis scale labels (2 levels: max at top, 0 at bottom) ───
   // Rendered as an HTML overlay (like the X-axis labels) because the SVG uses
@@ -330,12 +357,16 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
 
         {/* Plot region — gestures captured here */}
         <div
-          className="relative flex-1 self-stretch"
+          ref={plotRef}
+          className="relative flex-1 self-stretch select-none"
           style={{ touchAction: 'none' }}
           onTouchStart={onChartTouchStart}
           onTouchMove={onChartTouchMove}
           onTouchEnd={onChartTouchEnd}
           onWheel={onChartWheel}
+          // Mouse: press or drag to read. Touch is handled by the touch handlers.
+          onPointerDown={e => { if (e.pointerType === 'mouse') scrubAt(e.clientX) }}
+          onPointerMove={e => { if (e.pointerType === 'mouse' && e.buttons) scrubAt(e.clientX) }}
         >
         {/* Loading spinner overlay */}
         {!isOnline && (
@@ -408,6 +439,39 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
               strokeOpacity="0.3" strokeLinecap="round" strokeDasharray="4 4" />
           )}
         </svg>
+
+        {/* Scrub reading: a guide line, the point on the curve and a label with
+            the time and value. HTML, not SVG <text>: the SVG is stretched. */}
+        {scrub && (
+          <div className="absolute inset-x-0 top-0 pointer-events-none z-20" style={{ height: 136 }} data-testid="rtp-scrub">
+            <div
+              className="absolute top-0 bottom-0 border-l border-dashed border-white/40"
+              style={{ left: `${scrub.pct}%` }}
+            />
+            {scrub.dotPy !== null && (
+              <div
+                className="absolute w-2.5 h-2.5 rounded-full border-s border-ink-12"
+                style={{ left: `${scrub.pct}%`, top: scrub.dotPy, transform: 'translate(-50%, -50%)', backgroundColor: currentChartData.color }}
+              />
+            )}
+            <div
+              className="absolute top-0.5 rounded-s bg-black/85 px-2 py-1 text-center whitespace-nowrap"
+              style={{
+                left: `${scrub.pct}%`,
+                transform: `translateX(${scrub.pct < 18 ? '0%' : scrub.pct > 82 ? '-100%' : '-50%'})`,
+              }}
+            >
+              <p className="text-tiny text-white font-semibold tnum" data-testid="rtp-scrub-time">{scrub.time}</p>
+              <p
+                className="text-tiny font-semibold tnum"
+                style={{ color: scrub.dotPy === null ? '#BFBFBF' : (powerDataSource === 'battery' ? '#FFFFFF' : currentChartData.color) }}
+                data-testid="rtp-scrub-value"
+              >
+                {scrub.value}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* X-axis tick labels — rendered outside SVG so they don't scale with preserveAspectRatio:none */}
         <div className="relative" style={{ height: 18 }}>

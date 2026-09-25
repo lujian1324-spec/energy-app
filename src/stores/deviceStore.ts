@@ -60,6 +60,7 @@ import { clearLivePassthrough } from './livePassthroughStore'
 import { clearFiringAlarms, recordFiringAlarms } from './firingAlarmsStore'
 import { FRAMES, extractPassthroughRegisters } from '../protocols/modbusProtocol'
 import { saveRatedParams, loadRatedParams, clearDeviceHistory } from '../db/powerflowDB'
+import { withDetectedModel } from '../utils/ratedModel'
 import { sanitizeUiCopy, toUserFacingError } from '../utils/uiCopy'
 
 /** 透传读取设备额定参数并缓存到 IndexedDB（24h TTL，fire-and-forget）*/
@@ -72,8 +73,10 @@ async function fetchAndCacheRatedParams(deviceId: string): Promise<void> {
     if (!registers) return
     const acInvOutputPower = registers[10]  // offset 10 = register 0x000A
     if (acInvOutputPower === undefined || acInvOutputPower === 0) return
-    // 合并保存：保留新增设备时写入的型号默认参数（model/ratedPower/等），仅更新实测容量
-    await saveRatedParams({ ...(cached ?? {}), deviceId, acInvOutputPower, fetchedAt: Date.now() })
+    // Merge onto what is saved NOW (the add flow may have written meanwhile): the
+    // measured power, and the model it implies unless the user picked one (v4.18.0).
+    const latest = await loadRatedParams(deviceId)
+    await saveRatedParams(withDetectedModel(latest, deviceId, acInvOutputPower))
   } catch {
     // non-critical — silently ignore
   }

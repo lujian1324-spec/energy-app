@@ -7,7 +7,7 @@ process.env.TZ = 'America/Los_Angeles'
 
 import { describe, it, expect } from 'vitest'
 import type { DeviceAttributeRecord } from '../api/deviceApi'
-import { columnarToPoints, maxGapMs, mergePoints, recordToPoint, seriesSegments, toIsoTz, type HistoryPoint } from './historyPoints'
+import { clockLabel, columnarToPoints, maxGapMs, mergePoints, readingAt, recordToPoint, seriesSegments, toIsoTz, type HistoryPoint } from './historyPoints'
 
 const rec = (time: string, fields: Record<string, unknown>): DeviceAttributeRecord => ({
   time,
@@ -113,5 +113,28 @@ describe('toIsoTz', () => {
     const ms = new Date(2026, 8, 24, 0, 0, 0).getTime()
     expect(toIsoTz(ms)).toBe('2026-09-24T00:00:00-07:00')
     expect(new Date(toIsoTz(ms)).getTime()).toBe(ms)
+  })
+})
+
+describe('readingAt / clockLabel — the Real-Time Power scrub (v4.18.0)', () => {
+  const at = (h: number, m: number) => new Date(2026, 8, 24, h, m).getTime()
+  const pt = (t: number, output: number | null) =>
+    ({ time: new Date(t).toISOString(), timestamp: t, solar: null, output, soc: null, battery: null, ac: null })
+  const pts = [pt(at(9, 0), 100), pt(at(9, 5), 140), pt(at(9, 10), null), pt(at(12, 0), 300)]
+  const gap = 15 * 60_000
+
+  it('reads the nearest sample on the line', () => {
+    expect(readingAt(pts, 'output', at(9, 4), gap)).toEqual({ timestamp: at(9, 5), value: 140 })
+  })
+
+  it('finds nothing over a gap instead of borrowing a value hours away', () => {
+    expect(readingAt(pts, 'output', at(10, 30), gap)).toBeNull()
+    expect(readingAt(pts, 'solar', at(9, 0), gap)).toBeNull()
+  })
+
+  it('labels the time like the axis, with minutes', () => {
+    expect(clockLabel(at(15, 45))).toBe('3:45pm')
+    expect(clockLabel(at(0, 5))).toBe('12:05am')
+    expect(clockLabel(at(12, 0))).toBe('12:00pm')
   })
 })

@@ -22,7 +22,7 @@ import cors from 'cors'
 import webpush from 'web-push'
 import {
   addWebPush, removeWebPush, addNative, removeNative, getWebPush, getNative,
-  setUserAuth, getUser, requireUserId,
+  setUserAuth, getUser, requireUserId, getSchedulePhase,
 } from './store.js'
 import { startPoller } from './poller.js'
 import { installScheduleRoutes } from './scheduleRoutes.js'
@@ -244,6 +244,14 @@ app.get('/debug/user/:userId', (req, res) => {
       ios: natives.filter((t) => t.platform === 'ios').length,
       webpush: getWebPush(userId).length,
     },
+    // Each device's stored Sleep / Smart window (what the app uploaded) and the
+    // last phase the tick wrote to it ("date|sleep|250"): the answer to "did the
+    // save reach the relay, and has it been sent down to the device?".
+    schedules: Object.fromEntries(Object.entries(u?.schedules || {}).map(([deviceId, s]) => [deviceId, {
+      enabled: s?.enabled, sleepFrom: s?.sleepFrom, sleepTo: s?.sleepTo, tz: s?.tz, model: s?.model,
+      sleepW: s?.sleepW, wakeW: s?.wakeW, mode: s?.mode,
+      lastAppliedPhase: getSchedulePhase(userId, deviceId) ?? null,
+    }])),
   })
 })
 

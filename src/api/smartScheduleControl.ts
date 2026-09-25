@@ -44,6 +44,7 @@ import {
   smartSchedulePowers,
   sleepPowers,
   type ChargePowers,
+  type SleepPowerChoice,
   type ChargePhase,
 } from '../utils/chargeWindow'
 
@@ -93,6 +94,22 @@ export interface SmartScheduleResult {
   configSkipped?: boolean
   /** The cloud's wording for the skipped A, kept for logs/diagnostics. */
   configSkippedDetail?: string
+  /**
+   * The device was offline, so nothing was written to it: the relay took the
+   * window and writes it once the device is back online (v4.18.0).
+   */
+  queued?: boolean
+}
+
+/** A Sleep Mode save: the window, the two slider powers, and whether the device is offline. */
+export interface SleepScheduleWindow extends Omit<SmartScheduleWindow, 'chargePowerW'>, SleepPowerChoice {
+  /**
+   * The cloud reports the device offline (decided from connection state only —
+   * `deviceConnectivity.ts`, never from a reply's wording). Nothing is written
+   * to the device; the window goes to the relay, which applies it when the
+   * device comes back.
+   */
+  deviceOffline?: boolean
 }
 
 /**
@@ -156,13 +173,68 @@ export function applySmartSchedule(
 
 export function applySleepSchedule(
   deviceId: string | number,
-  window: Omit<SmartScheduleWindow, 'chargePowerW'>,
+  window: SleepScheduleWindow,
 ): Promise<SmartScheduleResult> {
   const account = getScheduleAccount()
-  return runScheduleCommand(String(deviceId), () => applyChargeSchedule(
-    deviceId, window, sleepPowers(window.model), 'sleep',
-    () => getScheduleAccount() === account,
-  ))
+  const powers = sleepPowers(window.model, { sleepW: window.sleepW, wakeW: window.wakeW })
+  const canApply = () => getScheduleAccount() === account
+  return runScheduleCommand(String(deviceId), () => window.deviceOffline
+    ? queueChargeScheduleOnRelay(deviceId, window, powers, 'sleep', canApply)
+    : applyChargeSchedule(deviceId, window, powers, 'sleep', canApply))
+}
+
+/**
+ * An offline device cannot take A or B, but it does not need to: the relay
+ * holds the window and its tick writes 0x0085 as soon as the cloud reports the
+ * device online again (`server/sleepExecutor.js` skips an offline device and
+ * retries next tick). So the save is the relay upload alone, and it is a save
+ * only if the relay took it — with no relay there is nothing that will ever
+ * reach the device, and that is reported as a failure.
+ *
+ * The device is claimed for `mode` only after the relay accepted, so a refused
+ * upload leaves the other feature's claim as it was.
+ */
+async function queueChargeScheduleOnRelay(
+  deviceId: string | number,
+  window: Omit<SmartScheduleWindow, 'chargePowerW'>,
+  powers: ChargePowers,
+  mode: ScheduleMode,
+  canApply: () => boolean,
+): Promise<SmartScheduleResult> {
+  const { enabled, startTime, endTime, model } = window
+  const phase = phaseFor(startTime, endTime)
+  const noWrites = { instantPowerApplied: false, relayConfigured: false, relayAccepted: false }
+  if (!canApply()) return { ok: false, failedStep: 'config', detail: 'Schedule superseded or account changed. Reopen its settings.', phase, ...noWrites }
+  const active = getActiveScheduleMode(String(deviceId))
+  if (!enabled && active && active !== mode) {
+    return { ok: false, failedStep: 'config', detail: 'Another schedule mode is active. Reopen its settings to turn it off.', phase, ...noWrites }
+  }
+  const relay = await uploadSleepScheduleResult(String(deviceId), {
+    enabled,
+    sleepFrom: startTime,
+    sleepTo: endTime,
+    model,
+    sleepW: powers.inWindowW,
+    wakeW: powers.outWindowW,
+    mode,
+  })
+  const relayFields = { relayConfigured: relay.configured, relayAccepted: relay.accepted, relayDetail: relay.detail }
+  if (!relay.configured || !relay.accepted) {
+    return {
+      ok: false,
+      failedStep: 'relay',
+      detail: relay.configured
+        ? relay.detail ?? 'The schedule server did not take the window.'
+        : 'The device is offline. Try again when it is back online.',
+      phase,
+      instantPowerApplied: false,
+      ...relayFields,
+    }
+  }
+  if (!canApply()) return { ok: false, failedStep: 'config', detail: 'Schedule superseded or account changed. Reopen its settings.', phase, instantPowerApplied: false, ...relayFields }
+  if (enabled) setActiveScheduleMode(String(deviceId), mode)
+  else clearActiveScheduleMode(String(deviceId), mode)
+  return { ok: true, queued: true, phase, instantPowerApplied: false, ...relayFields }
 }
 
 async function applyChargeSchedule(

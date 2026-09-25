@@ -397,14 +397,7 @@ export default function ProvisioningFlowScreen(p: FlowProps) {
                           ? 'Try adding again'
                           : 'Try Again'}
                     </button>
-                    <button
-                      onClick={handleRestart}
-                      disabled={bindRetrying || restarting}
-                      className="w-full h-12 rounded-l bg-ink-10 text-warning text-body-md font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                      {restarting ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                      {showRestartHelp ? 'How to restart device' : 'Restart Device'}
-                    </button>
+                    {/* No Restart Device button here (v4.18.0): Try again is the one action. */}
                   </>
                 )}
               </div>

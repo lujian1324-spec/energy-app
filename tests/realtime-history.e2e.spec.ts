@@ -218,4 +218,35 @@ test.describe('Real-Time Power history', () => {
     await expect(page).toHaveURL(/#\/login/)
     await expect.poll(() => idbCounts(page)).toEqual({ legacy: 0, byDevice: {} })
   })
+  test('pressing or dragging on the chart shows the time and value there (v4.18.0)', async ({ page }) => {
+    await mockBackend(page, devices)
+    await page.goto('/#/device/1001')
+    await expect.poll(async () => (await readChart(page)).heights).toEqual(['27.0'])
+    const plot = page.locator('svg[viewBox="0 0 300 70"]').locator('xpath=..')
+    const box = (await plot.boundingBox())!
+    const xAt = (h: number, m = 0) => box.x + box.width * ((h * 60 + m) / (24 * 60))
+    const time = page.getByTestId('rtp-scrub-time')
+    const value = page.getByTestId('rtp-scrub-value')
+
+    // Battery at about 10:00 — a reading on the line.
+    await page.mouse.click(xAt(10), box.y + 60)
+    await expect(time).toHaveText(/^(9:55|10:00|10:05)am$/)
+    await expect(value).toHaveText('60%')
+    // The reading stays after release; another tab reads the same moment.
+    await openTab(page, 'Output')
+    await expect(value).toHaveText('120W')
+    await openTab(page, 'AC')
+    await expect(value).toHaveText('100W')
+
+    // Dragging moves it; over the silent 02:00–05:00 hours there is no value.
+    await page.mouse.move(xAt(13), box.y + 60)
+    await page.mouse.down()
+    await page.mouse.move(xAt(3, 30), box.y + 60, { steps: 5 })
+    await expect(time).toHaveText(/^3:\d\dam$/)
+    await expect(value).toHaveText('No data')
+    await page.mouse.move(xAt(1), box.y + 60, { steps: 5 })
+    await page.mouse.up()
+    await expect(time).toHaveText(/^(12:55|1:00|1:05)am$/)
+    await expect(value).toHaveText('100W')
+  })
 })

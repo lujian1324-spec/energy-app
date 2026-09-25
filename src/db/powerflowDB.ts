@@ -39,8 +39,10 @@ export interface RatedParams {
   batteryType?: string        // 电池类型，如 LFP
   batteryHealth?: number      // 电池健康度 %
   serialNumber?: string       // 自动生成的序列号
-  /** The DTU id read over Bluetooth when this device was added (Device Info's Serial Number). */
+  /** The DTU id read over Bluetooth when this device was added (Device Info's Bluetooth ID). */
   bleId?: string
+  /** Where `model` came from: 0x000A at add time, the default, or the user's pick (v4.18.0). */
+  modelSource?: 'detected' | 'default' | 'user'
 }
 
 /**

@@ -568,3 +568,78 @@ describe('shared Sleep/Smart control ownership', () => {
     })
   })
 })
+
+describe('Sleep Mode powers and an offline device (v4.18.0)', () => {
+  it('writes the sleep slider power inside the window and sends both to the relay', async () => {
+    vi.useFakeTimers(); winAt(2)
+    const result = await applySleepSchedule(DEVICE_ID, {
+      enabled: true, startTime: '23:00', endTime: '07:00', model: 'Sierro 1000', sleepW: 250, wakeW: 350,
+    })
+    vi.useRealTimers()
+    expect(result.ok).toBe(true)
+    expect(result.wattsWritten).toBe(250)
+    const pt = h.calls.find(c => c.path.startsWith('/remote/device/passthrough'))!
+    expect(frameOf(pt.body)).toBe(bare(chargePowerFrame(250)))
+    expect(relayPosts[0].body.schedule).toMatchObject({ enabled: true, sleepW: 250, wakeW: 350, mode: 'sleep' })
+  })
+
+  it('outside the window it writes the non-sleep slider power', async () => {
+    vi.useFakeTimers(); winAt(12)
+    const result = await applySleepSchedule(DEVICE_ID, {
+      enabled: true, startTime: '23:00', endTime: '07:00', model: 'Sierro 2000', sleepW: 100, wakeW: 650,
+    })
+    vi.useRealTimers()
+    expect(result.wattsWritten).toBe(650)
+  })
+
+  it('clamps to the model range and snaps to 50W', async () => {
+    vi.useFakeTimers(); winAt(2)
+    await applySleepSchedule(DEVICE_ID, {
+      enabled: true, startTime: '23:00', endTime: '07:00', model: 'Sierro 1000', sleepW: 790, wakeW: 124,
+    })
+    vi.useRealTimers()
+    expect(relayPosts[0].body.schedule).toMatchObject({ sleepW: 400, wakeW: 100 })
+  })
+
+  it('turning it off restores the model power, not the non-sleep slider', async () => {
+    setActiveScheduleMode(DEVICE_ID, 'sleep')
+    const result = await applySleepSchedule(DEVICE_ID, {
+      enabled: false, startTime: '23:00', endTime: '07:00', model: 'Sierro 2000', sleepW: 100, wakeW: 300,
+    })
+    expect(result.wattsWritten).toBe(800)
+  })
+
+  it('an offline device is set through the relay alone: nothing is written to it', async () => {
+    const result = await applySleepSchedule(DEVICE_ID, {
+      enabled: true, startTime: '23:00', endTime: '07:00', model: 'Sierro 2000', sleepW: 200, wakeW: 600, deviceOffline: true,
+    })
+    expect(result).toMatchObject({ ok: true, queued: true, instantPowerApplied: false, relayAccepted: true })
+    expect(h.calls).toHaveLength(0)
+    expect(relayPosts).toHaveLength(1)
+    expect(relayPosts[0].body.deviceId).toBe(DEVICE_ID)
+    expect(relayPosts[0].body.schedule).toMatchObject({ enabled: true, sleepFrom: '23:00', sleepTo: '07:00', sleepW: 200, wakeW: 600, mode: 'sleep' })
+    expect(getActiveScheduleMode(DEVICE_ID)).toBe('sleep')
+  })
+
+  it('offline and the relay refuses: a failure, and the other mode keeps the device', async () => {
+    setActiveScheduleMode(DEVICE_ID, 'smart')
+    relayRefuses(503)
+    const result = await applySleepSchedule(DEVICE_ID, {
+      enabled: true, startTime: '23:00', endTime: '07:00', model: 'Sierro 1000', deviceOffline: true,
+    })
+    expect(result.ok).toBe(false)
+    expect(result.failedStep).toBe('relay')
+    expect(h.calls).toHaveLength(0)
+    expect(getActiveScheduleMode(DEVICE_ID)).toBe('smart')
+  })
+
+  it('offline switch-off is sent to the relay too', async () => {
+    setActiveScheduleMode(DEVICE_ID, 'sleep')
+    const result = await applySleepSchedule(DEVICE_ID, {
+      enabled: false, startTime: '23:00', endTime: '07:00', model: 'Sierro 1000', deviceOffline: true,
+    })
+    expect(result).toMatchObject({ ok: true, queued: true })
+    expect(relayPosts[0].body.schedule.enabled).toBe(false)
+    expect(getActiveScheduleMode(DEVICE_ID)).toBe(null)
+  })
+})
