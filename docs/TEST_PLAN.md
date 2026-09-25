@@ -200,11 +200,12 @@ v4.4.3 修复 Android 扫不到设备(客户端过滤)与 PWA Open Settings 跳�
 - [ ] Sleep Mode 设备离线也能设置、滑杆功率上传中继并在设备上线后下发(v4.18.0)→ device-settings E2E / sleepExecutor.test.js;真机:关机设置→开机后 `/debug/user/:userId` 的 `lastAppliedPhase` 出现 `|sleep|<W>` 或 `|wake|<W>`
 - [ ] 添加设备后按 0x000A 自动识别 Sierro 2000(v4.18.0)→ ratedModelRead.test.ts / device-settings E2E;真机:加一台 2000 看 Device Info 型号
 - [ ] 失败页无 Restart Device 按钮(v4.18.0)→ 真机:配网失败时只剩一个重试按钮
+- [ ] 安卓应用内自动更新(v4.19.0)→ appUpdate.test.ts;真机(必须从 Play 安装,侧载 APK 不生效):用 Play Console「内部应用分享」或内部测试轨道先装旧版,再发布新版 → 打开 App 出现 Play 更新提示,同意后后台下载,切到后台再回来已是新版本;以 update_priority=4 发布 → 打开即全屏更新
 
 ---
 
 ## 11. 自动化覆盖现状(全部可在 CLI 运行)
-- **单元 + 接口契约**(`src/**/*.test.ts`,Vitest,`npm run test:unit`,**87 个文件,833 项**,v4.18.0 时;中继 `npm run test:server` 69 项,含"设备离线时存的 Sleep 窗口在设备上线后按滑杆功率下发"):
+- **单元 + 接口契约**(`src/**/*.test.ts`,Vitest,`npm run test:unit`,**88 个文件,847 项**,v4.19.0 时;中继 `npm run test:server` 69 项,含"设备离线时存的 Sleep 窗口在设备上线后按滑杆功率下发"):
   - 纯逻辑:Modbus CRC/解码/0x0133 枚举、电池时间、isApiSuccess、速报探测。
   - **BLE 直连解码/控制**(`src/protocols/bleDirect.test.ts`,新增于 v3.36.0):用合成的 UART 透传
     响应验证 `readLiveStatusBle`(含 CRC 校验失败/RC!==0/传输异常三种失败路径均返回 null,不误信

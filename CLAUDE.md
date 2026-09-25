@@ -139,6 +139,15 @@ Also present but not routed standalone: `ProvisioningPage` (inside DevicePage ad
   reading → the default stays. `deviceStore.fetchAndCacheRatedParams` applies the same rule on list loads
   (`withDetectedModel`, `src/utils/ratedModel.ts`), never over a model the user picked in Device Info
   (`modelSource: 'user'`).
+- **Android in-app updates (v4.19.0).** `startAppUpdates()` (`src/utils/appUpdate.ts`, started in
+  `App.tsx`, signed in or not) asks Google Play (`@capawesome/capacitor-app-update`, the Play In-App
+  Updates API) at launch and on each return to the foreground, at most every 6 h. A newer build →
+  **flexible** update (Play asks once, downloads in the background); a finished download is installed
+  when the app goes to the background (Play installs silently then) or straight away at the next launch.
+  Priority ≥ 4 (release input `update_priority` / repo variable `PLAY_IN_APP_UPDATE_PRIORITY` in
+  `android-release.yml`) or 14+ days ignored → **immediate** (full-screen) update; one the user left
+  half-way is resumed. A declined prompt waits 3 days. The decision is `decideUpdateAction()`. Android
+  native only; iOS, web and sideloaded builds do nothing, and every failure is swallowed.
 - **BLE drop after Wi-Fi (v4.16.3, 0923-001).** Once `handleConfig` gets RC=0 the device leaves
   Bluetooth for Wi-Fi. `useProvisionScan`'s `onDisconnected` returns early when
   `wifiConfiguredRef` is set (marks `bleGoneRef` only): no reconnect loop, no

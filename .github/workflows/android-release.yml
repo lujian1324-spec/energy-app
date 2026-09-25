@@ -17,12 +17,19 @@ name: Android Release AAB
 #                               When absent, the publish step is skipped (build-only).
 # Optional repo Variables (Settings → Secrets and variables → Actions → Variables):
 #   PLAY_TRACK                - Play track name to release to (default: alpha).
+#   PLAY_IN_APP_UPDATE_PRIORITY - default in-app update priority 0-5 (4+ = full-screen
+#                               update in the app). The manual run's input overrides it.
 #   PLAY_VERSION_CODE_OFFSET  - added to github.run_number for versionCode, to clear
 #                               any higher versionCode used by past manual uploads
 #                               (default: 0).
 
 on:
   workflow_dispatch:
+    inputs:
+      update_priority:
+        description: 'In-app update priority 0-5 (4-5 = full-screen update in the app; 0-3 = background download)'
+        required: false
+        default: ''
   push:
     tags:
       - 'v*'
@@ -156,6 +163,9 @@ jobs:
           track: ${{ vars.PLAY_TRACK || 'alpha' }}
           status: completed
           whatsNewDirectory: distribution/whatsnew
+          # Read by the app's in-app update (src/utils/appUpdate.ts): 4-5 update
+          # full screen at once, lower ones download in the background.
+          inAppUpdatePriority: ${{ inputs.update_priority || vars.PLAY_IN_APP_UPDATE_PRIORITY || 0 }}
 
       - name: Publish skipped notice
         if: steps.keystore.outputs.signed != 'true' || steps.play.outputs.has_sa != 'true'

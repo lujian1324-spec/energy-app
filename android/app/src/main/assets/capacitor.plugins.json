@@ -32,6 +32,10 @@
 		"classpath": "com.capacitorjs.plugins.statusbar.StatusBarPlugin"
 	},
 	{
+		"pkg": "@capawesome/capacitor-app-update",
+		"classpath": "io.capawesome.capacitorjs.plugins.appupdate.AppUpdatePlugin"
+	},
+	{
 		"pkg": "capacitor-native-settings",
 		"classpath": "nl.raphael.settings.NativeSettingsPlugin"
 	}
