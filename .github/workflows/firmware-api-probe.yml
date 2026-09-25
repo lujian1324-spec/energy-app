@@ -1,0 +1,56 @@
+# Probes the Solar of Things firmware / remote-upgrade API with a real account
+# (scripts/firmware-api-probe.mjs). Read-only unless "start_upgrade" is chosen
+# by hand with a matching confirmation — that flashes the device.
+# Needs repository secrets E2E_USER / E2E_PASS.
+name: Firmware API probe
+
+on:
+  push:
+    branches: ['claude/**']
+    paths:
+      - scripts/firmware-api-probe.mjs
+      - .github/workflows/firmware-api-probe.yml
+  workflow_dispatch:
+    inputs:
+      device_id:
+        description: 'Probe only this device id (empty = every device on the account)'
+        required: false
+        default: ''
+      start_upgrade:
+        description: 'START A REAL UPGRADE on device_id (flashes the device)'
+        type: boolean
+        default: false
+      firmware_id:
+        description: 'Firmware id to install (only with start_upgrade)'
+        required: false
+        default: ''
+      confirm:
+        description: 'Type exactly: UPGRADE <device_id> <firmware_id>'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: firmware-api-probe
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Probe firmware / upgrade endpoints
+        env:
+          E2E_USER: ${{ secrets.E2E_USER }}
+          E2E_PASS: ${{ secrets.E2E_PASS }}
+          DEVICE_ID: ${{ inputs.device_id }}
+          FW_CREATE: ${{ inputs.start_upgrade && '1' || '0' }}
+          FIRMWARE_ID: ${{ inputs.firmware_id }}
+          CONFIRM: ${{ inputs.confirm }}
+        run: node scripts/firmware-api-probe.mjs

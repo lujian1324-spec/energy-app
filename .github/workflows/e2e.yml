@@ -45,6 +45,8 @@ jobs:
           # Guest mode is hidden from users; only this build shows the entry
           # so the [Guest] specs can drive the app without a live account.
           VITE_ENABLE_GUEST: 'true'
+          VITE_ENABLE_FIRMWARE_UPDATE: 'true'
+          VITE_ENABLE_CHARGE_LIMITS: 'true'
           VITE_RELAY_URL: 'https://relay.example.test'
         run: npm run build
 

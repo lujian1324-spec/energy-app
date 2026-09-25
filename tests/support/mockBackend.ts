@@ -9,6 +9,7 @@
  * Only runs against a local build (E2E_LOCAL=1): the live site talks to the
  * real backend and cannot be signed in without credentials.
  */
+import { validateProgram } from '../../server/deviceProgram.js'
 import type { Page, Route } from '@playwright/test'
 import { createHash } from 'node:crypto'
 
@@ -52,6 +53,18 @@ export interface MockDevice {
   acInvOutputW?: number
   /** When true `/remote/device/state/latest` fails for this device. */
   failState?: boolean
+  /** Battery % the cloud state reports, when it should differ from the device's own (`soc`). */
+  cloudSoc?: number
+  /** The cloud state's sample time, epoch ms (default: now on the test runner's clock). */
+  stateAt?: number
+  /** When true the passthrough live read (READ_ALL_STATUS) fails. */
+  failLiveReads?: boolean
+  /** Firmware: the version the device reports, and the files published for it. */
+  softwareVersion?: string
+  firmware?: Array<{ id: string; name: string; version?: string; description?: string; createdAt?: string; fileSize?: number }>
+  /** Upgrade task polls before the mock reports success (default 2); `'fail'` reports failure. */
+  upgradeOutcome?: number | 'fail'
+  isUpgrading?: boolean
 }
 
 export interface ApiCall {
@@ -69,6 +82,11 @@ export interface MockBackend {
   calls: ApiCall[]
   /** POST /schedule bodies the app sent to the relay (the AWS schedule server). */
   relaySchedules: any[]
+  /** POST /program bodies (v4.22.0), and the relay's stored program per device. */
+  relayProgramPosts: any[]
+  relayPrograms: Record<string, any>
+  /** Set to an HTTP status to make the relay refuse the next /program saves. */
+  relayProgramRefusal: { status: number | null }
   /** Calls to one path, optionally for one device. */
   callsTo(path: string, deviceId?: string): ApiCall[]
 }
@@ -138,6 +156,10 @@ export async function mockBackend(
 ): Promise<MockBackend> {
   const calls: ApiCall[] = []
   const relaySchedules: any[] = []
+  const relayProgramPosts: any[] = []
+  const relayPrograms: Record<string, any> = {}
+  const relayProgramRefusal: { status: number | null } = { status: null }
+  const upgrades = new Map<string, { deviceId: string; firmwareId: string; polls: number }>()
   let signedInEmail = 'e2e@example.com'
   const byId = (id: unknown) => devices.find(d => d.id === String(id))
 
@@ -153,6 +175,23 @@ export async function mockBackend(
     if (u.hostname === RELAY_HOST && u.pathname === '/schedule' && req.method() === 'POST') {
       relaySchedules.push(req.postDataJSON())
       return route.fulfill({ json: { code: 0, message: 'success' } })
+    }
+    // The relay's program endpoints (v4.22.0), validated with the relay's own rules.
+    if (u.hostname === RELAY_HOST && u.pathname === '/program') {
+      if (req.method() === 'GET') {
+        return route.fulfill({ json: { code: 0, data: { program: relayPrograms[u.searchParams.get('deviceId') ?? ''] ?? null } } })
+      }
+      if (req.method() === 'POST') {
+        const body = req.postDataJSON()
+        relayProgramPosts.push(body)
+        if (relayProgramRefusal.status) {
+          return route.fulfill({ status: relayProgramRefusal.status, json: { code: 1, reason: 'POLLER_SESSION_REQUIRED' } })
+        }
+        try { relayPrograms[body.deviceId] = validateProgram(body.program) } catch (e) {
+          return route.fulfill({ status: 400, json: { code: 1, message: (e as Error).message } })
+        }
+        return route.fulfill({ json: { code: 0, data: { executor: 'aws-scheduler' } } })
+      }
     }
     return route.fulfill({ status: 200, body: '', contentType: 'text/plain' })
   })
@@ -209,7 +248,47 @@ export async function mockBackend(
 
       case '/device/details': {
         const d = byId(query.deviceId)
-        return ok(d ? { id: d.id, name: d.name, model: d.model ?? 'Sierro 2000', isOnline: d.isOnline ?? true } : null)
+        return ok(d ? {
+          id: d.id, name: d.name, model: d.model ?? 'Sierro 2000', isOnline: d.isOnline ?? true,
+          softwareVersion: d.softwareVersion ?? 'V1.0.0', isFirmwareUpgradeEnabled: true,
+          isUpgrading: !!d.isUpgrading, dtuDtuid: d.dtuDtuid ?? '',
+        } : null)
+      }
+
+      case '/device/upgrade/permission/get':
+        return ok(true)
+
+      case '/device/firmware/list/fromManufacturer': {
+        const d = byId(query.deviceId)
+        return ok({ list: d?.firmware ?? [], total: d?.firmware?.length ?? 0 })
+      }
+
+      case '/device/firmware/details': {
+        const fw = devices.flatMap(d => d.firmware ?? []).find(f => f.id === query.id)
+        return fw ? ok(fw) : route.fulfill({ json: { code: 1, message: 'no such firmware' } })
+      }
+
+      case '/device/upgrade/create': {
+        const d = byId(body?.deviceId)
+        if (!d) return route.fulfill({ json: { code: 20101, message: 'illegal argument' } })
+        d.isUpgrading = true
+        upgrades.set(`up-${d.id}`, { deviceId: d.id, firmwareId: String(body?.deviceFirmwareId), polls: 0 })
+        return ok(`up-${d.id}`)
+      }
+
+      case '/device/upgrade/details': {
+        const up = upgrades.get(String(query.id))
+        const d = up && byId(up.deviceId)
+        if (!up || !d) return route.fulfill({ json: { code: 1, message: 'no such upgrade' } })
+        up.polls++
+        if (d.upgradeOutcome === 'fail' && up.polls >= 2) { d.isUpgrading = false; return ok({ id: query.id, status: 'FAILED', progress: 40 }) }
+        if (d.upgradeOutcome !== 'fail' && up.polls >= (d.upgradeOutcome ?? 2)) {
+          const fw = d.firmware?.find(f => f.id === up.firmwareId)
+          d.isUpgrading = false
+          d.softwareVersion = fw?.version ?? fw?.name ?? d.softwareVersion
+          return ok({ id: query.id, status: 'SUCCESS', progress: 100 })
+        }
+        return ok({ id: query.id, status: 'UPGRADING', progress: up.polls * 30 })
       }
 
       case '/remote/device/state/latest': {
@@ -218,9 +297,9 @@ export async function mockBackend(
         const v = (n: number | boolean) => ({ value: typeof n === 'boolean' ? (n ? '1' : '0') : String(n) })
         return ok({
           deviceId: d.id,
-          time: String(Math.floor(Date.now() / 1000)),
+          time: String(Math.floor((d.stateAt ?? Date.now()) / 1000)),
           fields: {
-            remainingBatteryCapacity: v(d.soc ?? 80),
+            remainingBatteryCapacity: v(d.cloudSoc ?? d.soc ?? 80),
             exchangeChargingPower: v(100), generationPower: v(50), outputPower: v(120),
             acOutputs: v(!!d.acOn),
             ...(d.workMode !== undefined ? { workMode: v(d.workMode) } : {}),
@@ -249,7 +328,10 @@ export async function mockBackend(
           }
           return ok({ base64Output: Buffer.from(frame).toString('base64') })
         }
-        if (fn === 0x03 && reg === 0x0100) return ok({ base64Output: readReply(statusRegisters(d)) })
+        if (fn === 0x03 && reg === 0x0100) {
+          if (d.failLiveReads) return route.fulfill({ json: { code: 500, message: 'device timeout' } })
+          return ok({ base64Output: readReply(statusRegisters(d)) })
+        }
         if (fn === 0x03 && reg === 0x0000) {
           const regs = new Array((frame[4] << 8) | frame[5]).fill(0)
           if (regs.length > 0x0a) regs[0x0a] = d.acInvOutputW ?? 0
@@ -338,6 +420,9 @@ export async function mockBackend(
     devices,
     calls,
     relaySchedules,
+    relayProgramPosts,
+    relayPrograms,
+    relayProgramRefusal,
     callsTo: (path, deviceId) => calls.filter(c => c.path === path &&
       (deviceId === undefined || String(c.query.deviceId ?? c.body?.deviceId) === deviceId)),
   }

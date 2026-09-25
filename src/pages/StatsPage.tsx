@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Loader2, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
 import Icon from '../components/Icon'
@@ -9,25 +9,16 @@ import html2canvas from 'html2canvas'
 import { toast } from '../components/Toast'
 import BottomSheet from '../components/BottomSheet'
 import { useDeviceStore } from '../stores/deviceStore'
-import { fetchDeviceRecordHistory, type DeviceAttributeRecord } from '../api/deviceApi'
-import { isApiSuccess } from '../utils/apiClient'
+import type { DeviceAttributeRecord } from '../api/deviceApi'
+import { insightsDeviceId, loadInsightsRange, pointsToRecords } from '../utils/insightsCache'
 import { useCountUp } from '../hooks/useCountUp'
 import { toUserFacingError } from '../utils/uiCopy'
-import { buildInsightsFrame, formatWh, weekStart } from '../utils/insightsFrame'
+import { axisLabelIndexes, bucketAtX, buildInsightsFrame, formatWh, weekStart } from '../utils/insightsFrame'
 
 const periods = ['Day', 'Week', 'Month', 'Range'] as const
 type Period = typeof periods[number]
 
 // ─── Helpers ───
-
-// ISO 8601 字符串（带本地时区偏移），供 record/list 接口的 fromTime/toTime 使用
-function toIsoTz(d: Date): string {
-  const off = -d.getTimezoneOffset()
-  const sign = off >= 0 ? '+' : '-'
-  const tz = sign + String(Math.floor(Math.abs(off) / 60)).padStart(2, '0') + ':' + String(Math.abs(off) % 60).padStart(2, '0')
-  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') +
-    'T' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ':' + String(d.getSeconds()).padStart(2, '0') + tz
-}
 
 // ─── DayCalendar component ───
 
@@ -295,6 +286,20 @@ export default function StatsPage() {
   }, [period])
 
   const chartSvgRef = useRef<SVGSVGElement>(null)
+  // The chart box's real width (0 while this tab is hidden — then the last width stays).
+  const [chartW, setChartW] = useState(340)
+  const chartBoxObserver = useRef<ResizeObserver | null>(null)
+  const chartBoxRef = useCallback((el: HTMLDivElement | null) => {
+    chartBoxObserver.current?.disconnect()
+    chartBoxObserver.current = null
+    if (!el) return
+    const update = () => { const w = Math.round(el.clientWidth); if (w > 0) setChartW(w) }
+    update()
+    if (typeof ResizeObserver !== 'undefined') {
+      chartBoxObserver.current = new ResizeObserver(update)
+      chartBoxObserver.current.observe(el)
+    }
+  }, [])
   const [scrubIndex, setScrubIndex] = useState<number | null>(null)
 
   const { devices, loadDevices } = useDeviceStore()
@@ -306,14 +311,9 @@ export default function StatsPage() {
   const [error, setError] = useState<string | null>(null)
   const [showCo2Info, setShowCo2Info] = useState(false)
 
-  const deviceId = useMemo(() => {
-    if (devices.length === 0) return null
-    const sorted = [...devices].sort((a, b) => {
-      if (a.createdAt && b.createdAt) return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-      return 0
-    })
-    return String(sorted[0].id)
-  }, [devices])
+  const deviceId = useMemo(() => insightsDeviceId(devices), [devices])
+  /** Only the newest load may set the page (a quick period switch would otherwise flash an older one). */
+  const loadSeq = useRef(0)
 
   useEffect(() => {
     if (devices.length === 0) loadDevices(1, 50, { orderByCreatedAtAsc: true })
@@ -351,8 +351,8 @@ export default function StatsPage() {
   }, [period, selectedDate, rangeStart, rangeEnd])
 
   const loadHistory = useCallback(async () => {
-    if (!deviceId) { setRecords([]); return }
-    if (period === 'Range' && (!rangeStart || !rangeEnd)) { setRecords([]); return }
+    if (!deviceId) { loadSeq.current++; setRecords([]); return }
+    if (period === 'Range' && (!rangeStart || !rangeEnd)) { loadSeq.current++; setRecords([]); return }
 
     let from: Date, to: Date
     const now = new Date(); now.setHours(23, 59, 59, 999)
@@ -375,47 +375,46 @@ export default function StatsPage() {
         break
     }
 
+    /*
+     * v4.21.0: the history comes from the on-phone cache (utils/insightsCache.ts),
+     * which the app fills in the background on every open. A period whose days
+     * are all cached paints at once; only the days that are not final (today,
+     * or read before they settled) are then re-read and the chart updates.
+     * A day that could not be read whole still says totals may be low
+     * (APP-20260923-009) instead of showing short totals silently.
+     */
+    const seq = ++loadSeq.current
     setLoading(true); setError(null)
+    let painted = false
     try {
-      const all: DeviceAttributeRecord[] = []
-      const PAGE = 300
-      // APP-20260923-009: this used to stop at 20 pages (6,000 samples) and read
-      // `total` as a page count, while the endpoint reports records — a month
-      // at a few-minute cadence lost its later days, so the same date summed
-      // differently in Week and Month. A short page is the one sure end.
-      const MAX_PAGES = 200
-      let partial = false
-      for (let page = 1; page <= MAX_PAGES; page++) {
-        const res = await fetchDeviceRecordHistory({
-          deviceId: String(deviceId),
-          fromTime: toIsoTz(from),
-          toTime: toIsoTz(to),
-          page,
-          count: PAGE,
-          orderByTimeAsc: true,
-        })
-        if (!isApiSuccess(res.code)) {
-          if (page === 1) throw new Error(res.message || 'Failed to load history')
-          partial = true
-          break
-        }
-        const listPage = res.data?.list ?? []
-        all.push(...listPage)
-        if (listPage.length < PAGE) break
-        if (page === MAX_PAGES) partial = true
-      }
-      setRecords(all)
-      setHistoryPartial(partial)
+      const res = await loadInsightsRange(deviceId, from.getTime(), to.getTime(), cached => {
+        if (seq !== loadSeq.current) return
+        painted = true
+        setRecords(pointsToRecords(cached))
+        setHistoryPartial(false)
+        setLoading(false)
+      })
+      if (seq !== loadSeq.current) return
+      if (res.failed && !painted) throw new Error('Failed to load history')
+      if (!res.failed) setRecords(pointsToRecords(res.points))
+      setHistoryPartial(res.partial || res.failed)
     } catch (e: unknown) {
+      if (seq !== loadSeq.current) return
       console.error('[StatsPage] stats load failed:', e)
+      // Already drawn from the cache: keep it, and say it may be short.
+      if (painted) { setHistoryPartial(true); return }
       setError(toUserFacingError(e, 'Something went wrong'))
       setRecords([])
     } finally {
-      setLoading(false)
+      if (seq === loadSeq.current) setLoading(false)
     }
   }, [deviceId, period, selectedDate, rangeStart, rangeEnd])
 
-  useEffect(() => { loadHistory() }, [loadHistory])
+  // This page stays mounted behind the other tabs (App.tsx). It reads only while
+  // it is on screen, so it never competes with the page the user is on; the
+  // background cache (utils/insightsPrefetch.ts) has the month ready by then.
+  const insightsVisible = useLocation().pathname === '/insights'
+  useEffect(() => { if (insightsVisible) loadHistory() }, [loadHistory, insightsVisible])
 
   const chartFrame = useMemo(
     () => buildInsightsFrame(records ?? [], period, selectedDate, rangeStart, rangeEnd),
@@ -427,7 +426,16 @@ export default function StatsPage() {
    * against its own maximum, so the two lines could not be compared — and gaps
    * left as gaps: a null bucket ends a segment instead of dropping to 0.
    */
-  const CHART_W = 340, CHART_H = 160, CHART_PAD = 4
+  /*
+   * v4.21.1: the chart is drawn at its real width. It used a fixed 340-wide
+   * viewBox in a full-width SVG, so on any screen that was not 340 px the drawing
+   * sat letterboxed in the middle while a tap was read against the whole width,
+   * and the axis labels were spread with justify-between rather than placed under
+   * their points — the selected point and its time on the axis could be a bucket
+   * or more apart. Now one pixel is one unit, the tap is read in the same units
+   * the points are drawn in, and every axis label sits under its own point.
+   */
+  const CHART_W = chartW, CHART_H = 160, CHART_PAD = 4
   const chartMax = Math.max(1, ...chartFrame.inputWh.map(v => v ?? 0), ...chartFrame.outputWh.map(v => v ?? 0))
   const pointAt = (i: number, v: number) => ({
     x: CHART_PAD + (chartFrame.labels.length > 1 ? i / (chartFrame.labels.length - 1) : 0.5) * (CHART_W - CHART_PAD * 2),
@@ -451,8 +459,8 @@ export default function StatsPage() {
     const svg = chartSvgRef.current
     if (!svg || !chartFrame) return
     const rect = svg.getBoundingClientRect()
-    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
-    setScrubIndex(Math.round(ratio * (chartFrame.labels.length - 1)))
+    if (rect.width <= 0) return
+    setScrubIndex(bucketAtX((clientX - rect.left) * (CHART_W / rect.width), CHART_W, CHART_PAD, chartFrame.labels.length))
   }
 
   // A reading belongs to the frame it was taken on.
@@ -716,7 +724,7 @@ export default function StatsPage() {
                   {/* APP-20260923-006: Week is a line with selectable points like the
                       other periods (it was bars with no values). Tap or drag to read a
                       bucket; the reading stays until another point is chosen. */}
-                  <div>
+                  <div ref={chartBoxRef}>
                     <svg ref={chartSvgRef} viewBox={`0 0 ${CHART_W} ${CHART_H}`} className="w-full h-[160px] touch-none select-none"
                       role="img" aria-label="Input and output energy"
                       onPointerDown={e => { e.currentTarget.setPointerCapture(e.pointerId); updateScrubFromClientX(e.clientX) }}
@@ -774,10 +782,20 @@ export default function StatsPage() {
                         )
                       })()}
                     </svg>
-                    <div className="flex justify-between px-1 mt-1">
-                      {chartFrame.labels.filter((_, i) => i % Math.max(1, Math.floor(chartFrame.labels.length / 6)) === 0).map((label) => (
-                        <span key={label} className="text-tiny text-ink-6">{label}</span>
-                      ))}
+                    {/* Each label under its own point (same x as the line), the edge ones
+                        kept inside the card; the selected bucket's label is lit. */}
+                    <div className="relative h-4 mt-1" data-testid="insights-axis">
+                      {axisLabelIndexes(chartFrame.labels.length).map(i => {
+                        const x = pointAt(i, 0).x
+                        const shift = x < 16 ? '0%' : x > CHART_W - 16 ? '-100%' : '-50%'
+                        return (
+                          <span key={i} data-index={i}
+                            className={`absolute top-0 text-tiny whitespace-nowrap ${scrubIndex === i ? 'text-white font-semibold' : 'text-ink-6'}`}
+                            style={{ left: x, transform: `translateX(${shift})` }}>
+                            {chartFrame.labels[i]}
+                          </span>
+                        )
+                      })}
                     </div>
                   </div>
 

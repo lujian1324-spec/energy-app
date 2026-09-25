@@ -2,7 +2,7 @@
  * Insights energy maths (APP-20260923-006/007/008/009).
  */
 import { describe, it, expect } from 'vitest'
-import { buildInsightsFrame, formatWh, powerField, sampleHoldCapMs, MIN_SAMPLE_HOLD_MS, MAX_SAMPLE_HOLD_MS } from './insightsFrame'
+import { buildInsightsFrame, formatWh, powerField, sampleHoldCapMs, MIN_SAMPLE_HOLD_MS, MAX_SAMPLE_HOLD_MS, bucketAtX, axisLabelIndexes } from './insightsFrame'
 import type { DeviceAttributeRecord } from '../api/deviceApi'
 
 const rec = (iso: string, f: { solar?: number; ac?: number; out?: number }): DeviceAttributeRecord => ({
@@ -107,3 +107,26 @@ describe('powerField', () => {
     expect(powerField(rec(at(22, 1), { out: 120 }), 'outputPower')).toBe(120)
   })
 })
+
+describe('chart x mapping (v4.21.1)', () => {
+  it('a tap picks the point drawn nearest to it, across the whole width', () => {
+    // 24 hourly points spread over 4..396 on a 400-wide chart (16.96 apart).
+    expect(bucketAtX(4, 400, 4, 24)).toBe(0)
+    expect(bucketAtX(396, 400, 4, 24)).toBe(23)
+    const x9 = 4 + (9 / 23) * 392
+    expect(bucketAtX(x9, 400, 4, 24)).toBe(9)
+    expect(bucketAtX(x9 + 8, 400, 4, 24)).toBe(9)
+    expect(bucketAtX(x9 + 9, 400, 4, 24)).toBe(10)
+    // Off the ends clamps to the first / last point.
+    expect(bucketAtX(-20, 400, 4, 24)).toBe(0)
+    expect(bucketAtX(999, 400, 4, 24)).toBe(23)
+    expect(bucketAtX(200, 400, 4, 1)).toBe(0)
+  })
+
+  it('labels about six buckets, the first one included', () => {
+    expect(axisLabelIndexes(24)).toEqual([0, 4, 8, 12, 16, 20])
+    expect(axisLabelIndexes(7)).toEqual([0, 1, 2, 3, 4, 5, 6])
+    expect(axisLabelIndexes(30)).toEqual([0, 5, 10, 15, 20, 25])
+  })
+})
+

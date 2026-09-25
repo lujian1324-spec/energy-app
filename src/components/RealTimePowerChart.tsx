@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { Loader2 } from 'lucide-react'
 import Glyph from './Icon'
 import { useHistoryFetcher } from '../hooks/useHistoryFetcher'
-import { clockLabel, maxGapMs, readingAt, seriesSegments, type HistorySeries } from '../utils/historyPoints'
+import { clockLabelSeconds, maxGapMs, readingAt, scrubValueLabel, seriesSegments, type HistorySeries } from '../utils/historyPoints'
 
 type PowerTab = 'battery' | 'ac' | 'solar' | 'output'
 
@@ -57,6 +57,9 @@ export interface RealTimePowerChartProps {
  * off. The day's history keeps refreshing while the screen is open and rolls
  * over at midnight.
  */
+/** The label canon's name for each tab, shown with a scrub reading. */
+const TAB_NAMES = { battery: 'Battery', ac: 'AC', solar: 'Solar', output: 'Output' } as const
+
 function startOfDay(ms: number): number {
   const d = new Date(ms)
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
@@ -271,10 +274,13 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
       pct,
       // Same 0..70 viewBox mapping as the line, in the SVG's 136px height.
       dotPy: v === null ? null : (60 - (v / chartMax) * 55) * (136 / 70),
-      time: clockLabel(t),
-      value: hit ? `${Math.round(hit.value)}${currentChartData.unit}` : 'No data',
+      // v4.21.1: the sample's own time to the second, and its value as reported
+      // (it read only minutes and a bare number).
+      time: clockLabelSeconds(t),
+      name: TAB_NAMES[powerDataSource],
+      value: hit ? scrubValueLabel(hit.value, currentChartData.unit) : 'No data',
     }
-  }, [scrubTime, hasSeriesData, rawHistoryPoints, series, gapMs, viewStart, viewEnd, chartMax, currentChartData.unit])
+  }, [scrubTime, hasSeriesData, rawHistoryPoints, series, gapMs, viewStart, viewEnd, chartMax, currentChartData.unit, powerDataSource])
 
   // ─── Y-axis scale labels (2 levels: max at top, 0 at bottom) ───
   // Rendered as an HTML overlay (like the X-axis labels) because the SVG uses
@@ -465,9 +471,9 @@ export default function RealTimePowerChart({ deviceId, isOnline, values, battery
               <p
                 className="text-tiny font-semibold tnum"
                 style={{ color: scrub.dotPy === null ? '#BFBFBF' : (powerDataSource === 'battery' ? '#FFFFFF' : currentChartData.color) }}
-                data-testid="rtp-scrub-value"
               >
-                {scrub.value}
+                <span className="text-ink-5 font-medium" data-testid="rtp-scrub-name">{scrub.name}</span>{' '}
+                <span data-testid="rtp-scrub-value">{scrub.value}</span>
               </p>
             </div>
           </div>

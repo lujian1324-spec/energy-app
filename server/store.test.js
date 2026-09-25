@@ -135,3 +135,28 @@ test('expired credentials do not erase schedules and cannot prevent authenticate
   assert.equal(store.setUserSchedule('expired-schedule', 'device', { enabled: false }), true)
   assert.equal(store.getUser('expired-schedule').schedules.device.enabled, false)
 })
+
+test('a device program replaces that device\'s legacy Sleep window and keeps the user', () => {
+  store.setUserAuth('P', { accessToken: 'session', refreshToken: 'refresh' })
+  store.setUserSchedule('P', 'dev', { enabled: true, sleepFrom: '22:00', sleepTo: '07:00', tz: 'UTC', model: 'Sierro 1000' })
+  store.setSchedulePhase('P', 'dev', '2026-09-24|sleep|150')
+  store.setUserSchedule('P', 'other', { enabled: true, sleepFrom: '22:00', sleepTo: '07:00', tz: 'UTC', model: 'Sierro 1000' })
+  assert.equal(store.setUserProgram('P', 'dev', { chargePowerW: 400 }), true)
+  const u = store.getUser('P')
+  assert.equal(u.schedules.dev, undefined)
+  assert.ok(u.schedules.other)
+  assert.equal(store.getSchedulePhase('P', 'dev'), null)
+  assert.deepEqual(store.getUserProgram('P', 'dev'), { chargePowerW: 400 })
+  store.setProgramState('P', 'dev', { chargeKey: 'k1' })
+  store.setProgramState('P', 'dev', { acKey: 'a1' })
+  assert.deepEqual(store.getProgramState('P', 'dev'), { chargeKey: 'k1', acKey: 'a1' })
+  // Saving again resets what was applied, so the new program is written afresh.
+  store.setUserProgram('P', 'dev', { chargePowerW: 200 })
+  assert.deepEqual(store.getProgramState('P', 'dev'), {})
+})
+
+test('a timed program needs a background session; an untimed one for an unknown user is a no-op', () => {
+  assert.equal(store.setUserProgram('Q', 'dev', { chargePowerW: 400 }), false)
+  assert.equal(store.setUserProgram('Q', 'dev', { chargePowerW: 400 }, { needsSession: false }), true)
+  assert.equal(store.getUser('Q'), null)
+})

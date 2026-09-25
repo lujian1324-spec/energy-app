@@ -9,7 +9,7 @@ import { E2E_TZ, mockBackend, reportsBetween, signIn, type MockDevice } from './
 test.use({ timezoneId: E2E_TZ })
 
 const NOW = new Date('2026-09-24T15:00:00-07:00')
-const HISTORY = '/deviceState/attribute/record/list'
+const HISTORY = '/deviceState/simple/attribute/keys/history/v1'
 const PARTIAL_COPY = "Some history for this period couldn't be loaded, so totals may be low."
 
 /** Tap hour `h` of the Day chart and return the reading it shows. */
@@ -51,8 +51,9 @@ test.describe('Insights', () => {
     // An hour the device never reported is a gap, not 0 Wh.
     expect(await readHour(page, 14)).toEqual(['14:00', 'No data'])
 
-    // The oldest device, for the whole local day, with the zone offset.
-    const day = api.callsTo(HISTORY).filter(c => c.body.count === 300 && c.body.fromTime.startsWith('2026-09-23'))
+    // The oldest device, one whole local day per request, with the zone offset
+    // (v4.21.0: history is read and cached a day at a time).
+    const day = api.callsTo(HISTORY).filter(c => c.body.fromTime.startsWith('2026-09-23'))
     expect(day.length).toBeGreaterThan(0)
     expect(day.every(c => c.body.deviceId === '1001')).toBe(true)
     expect(day[0].body.fromTime).toBe('2026-09-23T00:00:00-07:00')
@@ -60,9 +61,10 @@ test.describe('Insights', () => {
   })
 
   test('a page that fails is reported instead of silently short totals', async ({ page }) => {
-    // One sample a minute from 08:00 to 14:00 is 360 samples: two pages of 300.
+    // One sample a minute from 08:00 to 14:00 is 360 samples. On the fallback
+    // call (record/list, 80 a page) that is five pages; page 2 fails.
     const devices: MockDevice[] = [
-      { id: '1001', name: 'Garage', failHistoryPages: [2],
+      { id: '1001', name: 'Garage', refuseKeysV1: true, failHistoryPages: [2],
         history: reportsBetween(8, 14, { generationPower: 100, outputPower: 120 }, 1) },
     ]
     await mockBackend(page, devices)
@@ -79,4 +81,47 @@ test.describe('Insights', () => {
     await expect.poll(() => readHour(page, 10)).toContain('Out 120 Wh')
     await expect(page.getByText(PARTIAL_COPY)).toHaveCount(0)
   })
+
+  test('the tapped point, its guide line and its axis label line up (v4.21.1)', async ({ page }) => {
+    await mockBackend(page, [
+      { id: '1001', name: 'Garage', history: reportsBetween(0, 24, { generationPower: 100, outputPower: 120 }) },
+    ])
+    await openYesterday(page)
+    const chart = page.getByRole('img', { name: 'Input and output energy' })
+    await expect.poll(() => readHour(page, 10)).toContain('Out 120 Wh')
+    const axis = page.getByTestId('insights-axis')
+    for (const i of [0, 4, 8, 12, 16, 20]) {
+      const label = axis.locator(`[data-index="${i}"]`)
+      const text = (await label.textContent())!
+      const lb = (await label.boundingBox())!
+      const cb = (await chart.boundingBox())!
+      // Tap straight above the label's centre (the edge label is left-aligned: tap its left edge).
+      const tapX = i === 0 ? lb.x : lb.x + lb.width / 2
+      await chart.click({ position: { x: tapX - cb.x, y: cb.height / 2 } })
+      await expect(chart.locator('text').first()).toHaveText(text)
+      // The guide line is drawn at the point's x — the same x the label is centred on.
+      const guideX = Number(await chart.locator('line[stroke-dasharray="3,3"]').getAttribute('x1'))
+      expect(Math.abs(cb.x + guideX - tapX)).toBeLessThan(2)
+      await expect(label).toHaveClass(/text-white/)
+    }
+  })
+
+  test('page and chart text cannot be selected by a long press (v4.21.1)', async ({ page }) => {
+    await mockBackend(page, [
+      { id: '1001', name: 'Garage', history: reportsBetween(8, 12, { generationPower: 100, outputPower: 120 }) },
+    ])
+    await openYesterday(page)
+    await readHour(page, 9)
+    const style = (sel: string) => page.locator(sel).first().evaluate(el => {
+      const cs = getComputedStyle(el)
+      return { select: cs.userSelect || cs.webkitUserSelect, callout: (cs as unknown as Record<string, string>).webkitTouchCallout }
+    })
+    expect((await style('body')).select).toBe('none')
+    expect((await style('[role="img"] text')).select).toBe('none')
+    expect((await style('text=Input vs. Output')).select).toBe('none')
+    // Something to try: select everything; nothing on the page may come out.
+    await page.evaluate(() => { const r = document.createRange(); r.selectNodeContents(document.body); getSelection()!.removeAllRanges(); getSelection()!.addRange(r) })
+    expect(await page.evaluate(() => getSelection()!.toString().trim())).toBe('')
+  })
 })
+

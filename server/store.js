@@ -137,6 +137,7 @@ export function getAllUsers() {
     accessExpiresAt: u.accessExpiresAt,
     prefs: u.prefs || {},
     schedules: u.schedules || {},
+    programs: u.programs || {},
     failCount: u.failCount || 0,
   }))
 }
@@ -173,7 +174,46 @@ export function getUser(userId) {
   const u = db.users[requireUserId(userId)]
   if (!u) return null
   return { userId: requireUserId(userId), refreshToken: decryptToken(u.refreshTokenEnc), accessToken: u.accessToken,
-    accessExpiresAt: u.accessExpiresAt, prefs: u.prefs || {}, schedules: u.schedules || {} }
+    accessExpiresAt: u.accessExpiresAt, prefs: u.prefs || {}, schedules: u.schedules || {}, programs: u.programs || {} }
+}
+
+// ── Per-device programs (v4.22.0: Smart Schedule, Charging Settings, limits) ──
+/**
+ * Store/replace one device's program. It supersedes that device's legacy Sleep /
+ * Smart Schedule window: the two drive the same register, so the old slot is
+ * removed here rather than left to fight the program.
+ * Returns false when the program needs the background tick but the relay holds
+ * no session to run it with.
+ */
+export function setUserProgram(userId, deviceId, program, { needsSession = true } = {}) {
+  const k = requireUserId(userId)
+  const d = String(deviceId)
+  const u = db.users[k]
+  if (needsSession && (!u || (!u.accessToken && !u.refreshTokenEnc))) return false
+  if (!u) return true // nothing to run and nothing stored: an acknowledged no-op
+  u.programs ||= {}
+  u.programs[d] = program
+  if (u.schedules?.[d]) delete u.schedules[d]
+  if (u.phaseState?.[d]) delete u.phaseState[d]
+  // A new program is applied afresh (the relay writes what it now implies).
+  if (u.programState?.[d]) delete u.programState[d]
+  u.updatedAt = Date.now()
+  save(db)
+  return true
+}
+export function getUserProgram(userId, deviceId) {
+  return db.users[requireUserId(userId)]?.programs?.[String(deviceId)] ?? null
+}
+/** What the relay last applied for a device's program: { chargeKey, acKey }. */
+export function getProgramState(userId, deviceId) {
+  return db.users[requireUserId(userId)]?.programState?.[String(deviceId)] ?? {}
+}
+export function setProgramState(userId, deviceId, patch) {
+  const u = db.users[requireUserId(userId)]
+  if (!u) return
+  u.programState ||= {}
+  u.programState[String(deviceId)] = { ...(u.programState[String(deviceId)] || {}), ...patch }
+  save(db)
 }
 
 // ── Per-(device,type) notify throttle state (mirrors client 30-min throttle) ──
@@ -198,5 +238,6 @@ function pruneUserIfNoSubs(k) {
   const noNative = !(db.native[k] && db.native[k].length)
   const schedules = db.users[k]?.schedules || {}
   const noSchedule = !Object.values(schedules).some((s) => s && s.enabled)
-  if (noWeb && noNative && noSchedule) delete db.users[k]
+  const noProgram = Object.keys(db.users[k]?.programs || {}).length === 0
+  if (noWeb && noNative && noSchedule && noProgram) delete db.users[k]
 }

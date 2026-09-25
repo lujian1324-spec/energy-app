@@ -70,6 +70,16 @@ Dark-first, iOS-native feel, rounded-card layout, teal accent on dark bg.
 
 ## Conventions
 - Dark theme only (light mode is future work).
+- No long-press text selection (v4.21.1): `body` is `user-select: none` + `-webkit-touch-callout: none`
+  (`index.css`); inputs, textareas, `contenteditable` and `.select-text` stay selectable.
+- **Cache cleared on every app update (v4.23.0).** `src/utils/appVersionReset.ts` is `main.tsx`'s first import
+  (before any persisted store reads localStorage). When `sierro-app-version` (`{version}+{build}`) differs from the
+  running build — a first launch counts — it drops the copies of server data: `powerflow-live-passthrough`,
+  `sierro-config-missing*`, and `devices`/`deviceTotal`/`devicesListReady` inside `powerflow-device-store`; then sets
+  `sierro-cache-reset-pending`. `powerflowDB.getDB()` (one shared open promise) sees the flag and, before handing the
+  DB to anyone, clears `device_history`, `history_days`, `power_history` and sets every `rated_params.fetchedAt` to 0
+  (model, `modelSource`, `bleId` kept). Kept: session/tokens, settings, programs/schedules, icons, dismissals.
+  A new cache that only copies server data must be added to that list.
 - All primary interactive elements ≥ 48×48dp; focus ring `#01D6BE` (WCAG).
 - Toggle/button micro-interaction: scale 0.95 → 1. Ring color transition 1s ease-in-out.
 - Reference the PRD (Sierro Energy App PRD v1.1) for per-page behavior.
@@ -100,9 +110,14 @@ Test-only / CI-only changes that don't alter the shipped bundle do NOT bump.
 | `/device/:id/settings` | `DeviceDetailPage` | no | Device Info (live) |
 | `/device/:id/passthrough` | `PassthroughPage` | no | Modbus passthrough |
 | `/device/:id/debug-params` | `DebugParamsPage` | no | Developer debug view (raw register names — exempt from label canon) |
-| `/smart-schedule` | `SmartSchedulePage` | no | Peak-shaving UI |
+| `/device/:id/schedule` | `DeviceSchedulePage` (`pages/program/`) | no | Smart Schedule (v4.22.0): AC Output / Charging tasks |
+| `/device/:id/charging` | `ChargingSettingsPage` | no | AC charging power + Silent Mode row (v4.22.0) |
+| `/device/:id/charging/silent` | `SilentModePage` | no | Silent Mode switch + schedule — replaces Sleep Mode (v4.22.0) |
+| `/device/:id/limits` | `ChargeLimitsPage` | no | Only when `CHARGE_LIMITS_ENABLED` (no firmware register yet) |
+| `/smart-schedule` | `SmartSchedulePage` | no | Old peak-shaving UI — paused (SW-14), no entry point |
 | `/notifications` | `NotificationsPage` | no | Alarm center |
 | `/onboarding` `/ble-debug` `/data-export` | `OnboardingPage` `BleDebugPage` `DataExportPage` | no | |
+| `/firmware-update` | `FirmwareUpdatePage` | no | Only when `FIRMWARE_UPDATE_ENABLED` (not in consumer builds yet) |
 
 `/device/:id/passthrough`, `/device/:id/debug-params`, and `/ble-debug` are gated by
 `DEV_TOOLS_ENABLED` (`src/config/devTools.ts`) — only registered in Vite dev mode or when
@@ -222,9 +237,18 @@ lives on independently and is still referenced elsewhere.)
   Driven by `RealTimePowerChart`'s `batteryAsSoc`/`batterySoc` props (the shared chart still defaults
   to the power view for the Battery tab).
   **Scrub (v4.18.0):** one finger (or a held mouse) on the plot shows a guide line, the point and a label
-  with the time (`clockLabel`, "3:45pm") and the tab's value; the reading stays after release and follows
+  with the sample's own time **to the second** (`clockLabelSeconds`, "3:47:23pm" — v4.21.1) and the tab's
+  name + value (`scrubValueLabel`: whole W, SOC to 0.1 %, e.g. "Solar 180W"); the reading stays after release and follows
   tab switches. `readingAt()` takes the nearest sample within half a gap, so over a gap it says "No data".
   Two fingers pinch-zoom and pan (one-finger pan was dropped for the scrub); the wheel still zooms.
+- **Newest sample wins (v4.21.1).** `resolveLiveValues(cloud, ble, pass, { cloudAt, bleAt })`
+  (`livePassthroughStore`): a passthrough sample older than `LIVE_SAMPLE_FRESH_MS` (2 min — its reads have
+  been failing) gives way to a cloud sample (`/state/latest` `time`, `parseDeviceStateTime`) taken after
+  it; before, it sat on top for up to 15 min and the screen froze under "Connected". A BLE sample older
+  than `LIVE_SAMPLE_MAX_AGE_MS` is ignored. DevicePage passes the same times. The monitor also re-reads
+  the cloud state on a return to the foreground, and its header says `Last update 2:15pm` instead of
+  "Connected" once the newest reading on screen is over `STALE_DATA_MS` (10 min) old
+  (`connectedLabel`, `src/utils/dataFreshness.ts`).
 - *Header* (v4.18.0): the device name is centred with `max-w-[calc(100%-232px)]` and truncates with an
   ellipsis; the switcher chevron never shrinks, so a long name cannot push it under the settings button.
   `index.css` sets `.truncate { text-wrap: nowrap }` after the titles' `text-wrap: balance`, which had
@@ -243,16 +267,22 @@ lives on independently and is still referenced elsewhere.)
   than `maxGapMs()` (3× cadence, 15–60 min) breaks the line — never 0 W, never a bridge. The tail is
   re-read every 60 s while visible; the day rolls over at midnight. The old formatter dropped the `-`
   west of UTC (`…T00:00:0007:00`), so every US user got 20101 and an empty chart.
-  **Cache:** IndexedDB `device_history` (DB v5), keyed `[deviceId, timestamp]`, paints first only —
+  **Cache:** IndexedDB `device_history` (DB v5; v6 adds `history_days`), keyed `[deviceId, timestamp]`, paints first only —
   the full day is re-read from the server on every visit and replaces it. It used to end the fetch
   (curve frozen at the first visit) and to read guest-simulator rows with no `deviceId` as every
   device's; v5 clears that legacy `power_history`. `deviceStore.exitDemoMode` (sign-in and
-  sign-out) clears the cache.
+  sign-out) clears the cache. A complete read of the whole day also records that day in `history_days`
+  (`markHistoryDay`), so the Insights background cache does not read it again (v4.21.0).
 
 **DeviceDetailPage** (`/device/:id/settings` — Device Info)
 - *Name edit*, *icon picker*.
-- *Device Info*: model, **no Serial Number row** (removed v4.18.0; `deviceSerialNumber()` stays in `src/utils/deviceSerial.ts`), **Bluetooth ID** (its own row: `dtuDtuid`, else `RatedParams.bleId` saved at add time, else `--`; `deviceBluetoothId()`, both in `src/utils/deviceSerial.ts` — Marc: the module id is not the product SN and must not be labelled as one), **Rated Capacity** (the model's: 1 kWh Sierro 1000 / 2 kWh Sierro 2000, `ratedCapacityWh()` in `src/data/deviceModels.ts` — v4.19.0; it was `acInvOutputPower×2`, but 0x000A is the inverter output power, so a unit reading 300 W showed 0.6 kWh and every battery-time estimate was off; the ring, the low-battery banner and DebugParams use the same helper), **Rated Output Power** W (`ratedPower`), **Rated Voltage** 120V (fixed), **Cycles** (`numberOfBatteryUsageCycles`), **Temperature** °F (`batteryTemp`), Wi-Fi (`isOnline`), firmware (`softwareVersion`).
-- *Sleep Mode editor* (`sleepFrom`/`sleepTo` + scheduler), *Battery Priority sheet* (Backup 100% / Savings 60%), *delete dialog*.
+- *Device Info*: model, **no Serial Number row** (removed v4.18.0; `deviceSerialNumber()` stays in `src/utils/deviceSerial.ts`), **Bluetooth ID** (its own row: `dtuDtuid`, else `RatedParams.bleId` saved at add time, else `--`; `deviceBluetoothId()`, both in `src/utils/deviceSerial.ts` — Marc: the module id is not the product SN and must not be labelled as one), **Rated Capacity** (the model's: 1 kWh Sierro 1000 / 2 kWh Sierro 2000, `ratedCapacityWh()` in `src/data/deviceModels.ts` — v4.19.0; it was `acInvOutputPower×2`, but 0x000A is the inverter output power, so a unit reading 300 W showed 0.6 kWh and every battery-time estimate was off; the ring, the low-battery banner and DebugParams use the same helper), **Rated Output Power** W (`ratedPower`), **Rated Voltage** 120V (fixed), **Cycles** (`numberOfBatteryUsageCycles`), **Temperature** °F (`batteryTemp`), Wi-Fi (`isOnline`). **No firmware version row** yet (`softwareVersion` is typed but not rendered — see `docs/siseli-firmware-api.md`).
+- **Rows (v4.22.0):** Device Name, Display Icon, Device Info, **Smart Schedule** (On/Off), **Charging Settings**
+  (`{power} W`), **Charge & Discharge Limits** (only when `CHARGE_LIMITS_ENABLED`), Delete Device. **Sleep Mode is
+  replaced by Silent Mode** (`LEGACY_SLEEP_MODE_ENABLED = false`, `src/config/sleepMode.ts`): its row, editor and
+  client scheduler stay in the code but do not render or run; its E2E specs are skipped until the flag flips. The
+  row values come from this phone's program copy (`peekProgram`). See **Device program** below.
+- *Sleep Mode editor* (legacy, hidden) (`sleepFrom`/`sleepTo` + scheduler), *Battery Priority sheet* (Backup 100% / Savings 60%), *delete dialog*.
   Saving Sleep Mode claims the device for `sleep` (SW-12 — see Smart Schedule below), which disarms
   Smart Schedule's window, and reports a relay that refused the upload instead of dropping it.
 - **Sleep Mode powers + offline set (v4.18.0).** Two sliders — *During sleep* / *Outside sleep* — set the
@@ -304,7 +334,10 @@ lives on independently and is still referenced elsewhere.)
 - *Period selector* (Day/Week/Month/Range) + *date navigator*.
 - *CO₂ card*: CO₂ reduced Kg + eco insight + formula.
 - *Input vs. Output chart* (v4.16.0): one line chart for every period (Week was bars), shared scale for both
-  series, tap/drag to read a bucket (the reading stays). Built by `buildInsightsFrame()`
+  series, tap/drag to read a bucket (the reading stays). **v4.21.1:** drawn 1:1 at the box's measured width
+  (ResizeObserver, `chartW`) instead of a fixed 340-wide letterboxed viewBox; a tap picks the nearest
+  drawn point (`bucketAtX`), and the axis labels (`axisLabelIndexes`, about six) sit under their own
+  points (the selected one lit) — they were spread with `justify-between`, a bucket or more off. Built by `buildInsightsFrame()`
   (`src/utils/insightsFrame.ts`): per-bucket **energy in Wh**, integrating each sample's power until the next
   (held at most `sampleHoldCapMs` = 3× the device's typical gap, 15–60 min, so silence is not credited);
   **input = Solar (`generationPower`) + AC (`exchangeChargingPower`)** — AC used to be ignored — and the
@@ -313,6 +346,30 @@ lives on independently and is still referenced elsewhere.)
   week/month: {date}". History is paged until a short page (cap 200 × 300); a failed later page or the cap
   shows "Some history … couldn't be loaded" instead of silently short totals (APP-20260923-006/007/008/009).
 - (Battery Health card removed.)
+- **History cache (v4.21.0).** Insights reads its device's history from the phone
+  (`src/utils/insightsCache.ts`), one **local day** at a time: `fetchDay()` reads a day with the Real-Time
+  Power call (`fetchWindow`: keys/history/v1, falling back to record/list), and only a day that came back
+  whole is stored — `saveHistoryDay()` replaces that day's `device_history` rows and writes its
+  `history_days` row (`[deviceId, dayStart]`, powerflowDB **v6**) in one transaction. A day read ≥ 2 h
+  (`SETTLE_MS`) after it ended is **final** and never read again; today is never final.
+  - *Every app open* (`startInsightsPrefetch()`, `src/utils/insightsPrefetch.ts`, started in `App.tsx`):
+    3 s after the device list is in, and again on a return to the foreground ≥ 30 min after the last
+    finished run, `prefetchInsightsHistory()` caches the Insights device (oldest, `insightsDeviceId`) from
+    30 days back (or the 1st of the month if earlier) to today, **newest day first, one request at a time**,
+    waiting for `requestIdleCallback` + 300 ms before each day. It skips final days and a day read in the last
+    2 min (`FRESH_MS` — the chart just read today), touches no React state, and stops when the app is hidden,
+    offline, signed out, a guest/demo, or under the firmware lock (`isActive`), or after two failed days; the
+    next open resumes. Days older than 62 days are pruned at the end. `MAX_DEVICE_HISTORY` is 150,000 rows; a
+    trim also drops the `history_days` rows of days it cut into.
+  - *The page*: `loadInsightsRange()` paints straight from the cache when every day of the period (up to
+    today) has a `history_days` row, then re-reads only the days that are not final (3 at a time) and
+    replaces the chart; an uncached period is read the same way, with the skeleton. A day that did not come
+    back whole still shows the "Some history … couldn't be loaded" note; nothing at all → the error state.
+    StatsPage stays mounted behind the other tabs, so it **reads only while `/insights` is on screen**.
+  - Page and background share one request per device-day (`fetchDay` in-flight map; a thrown request is a
+    failed day). A `FIRMWARE_UPDATING` reply never switches the session from keys/history/v1 to record/list.
+    `resetInsightsCache()` (from `deviceStore.exitDemoMode`, sign-in/out) drops requests in flight so none
+    writes into the next account's cache; `clearDeviceHistory()` clears `history_days` too.
 
 **SettingPage** (`/setting`)
 - *Profile card*: avatar, name, account action, Founding Member tag. The tag and the matching
@@ -343,6 +400,23 @@ lives on independently and is still referenced elsewhere.)
   the account is touched and is shown to the user; never sign out on a failed delete, which is
   what made a refused deletion look successful. The confirmation copy must say devices and
   stations go too.
+- **Firmware Update — NOT RELEASED (v4.20.0).** A row under Feedback → `/firmware-update`, both only when
+  `FIRMWARE_UPDATE_ENABLED` (`src/config/firmwareUpdate.ts`: dev, QA `VITE_ENABLE_DEV_TOOLS=true`, and
+  `VITE_ENABLE_FIRMWARE_UPDATE=true` — the E2E build). Consumer builds have neither: `/device/upgrade/create`'s
+  body is a best reading of `DeviceUpgradeCreateDtio` (`{ deviceId, deviceFirmwareId }`) until it is captured on
+  a test unit (`docs/siseli-firmware-api.md` §4), and a wrong flash can leave a unit unusable.
+  Flow (`src/stores/firmwareUpdateStore.ts`, rules in `src/utils/firmwareUpdate.ts`, calls in
+  `src/api/firmwareApi.ts`): `upgrade/permission/get` + `device/details` (version, `isFirmwareUpgradeEnabled`,
+  `isOnline`) + `firmware/list/fromManufacturer` → newest enabled file → **update offered only when its version
+  differs** from the device's `softwareVersion` (and it is not the file this phone already installed there) →
+  sheet with the release notes (firmware `description`: what is new / fixed) → confirm → `upgrade/create`
+  (never retried) → poll `upgrade/details` + `device/details` every 5 s → success / failed / "status unknown".
+  **Lock (`src/utils/firmwareLock.ts`):** taken *before* `create`, persisted (a restart resumes it via
+  `App.tsx`), released on success, failure or after 45 min. While held, `apiClient.request()` answers every
+  call that is not firmware, `/device/details` or session upkeep with code `FIRMWARE_UPDATING` (no network),
+  BLE reads/writes in `bleDirect.ts` do nothing, and no schedule is uploaded to the relay; `FirmwareLockBanner`
+  on the device list and monitor says so. The relay likewise skips `isUpgrading` devices
+  (`server/sleepExecutor.js`, `poller.js` — needs a relay redeploy).
 - *Feedback modal* (EmailJS), legal links + version. (The inline "Export My Data" button was removed in v4.7.7; full export lives on `/data-export`.) `ProfileEditPage`'s "Link Accounts" (Google/Apple placeholder rows) was also removed in v4.7.7.
 
 **OnboardingPage** (`/onboarding`) — runs once after a first sign-up
@@ -364,7 +438,40 @@ lives on independently and is still referenced elsewhere.)
   that answers the question, so an endpoint later replaces only that function.
 - *Device step* (A_2.2.2): add the first device, or skip.
 
-**SmartSchedulePage** (`/smart-schedule`)
+**Device program (v4.22.0)** — Smart Schedule (`/device/:id/schedule`), Charging Settings (`/device/:id/charging`),
+Silent Mode (`/device/:id/charging/silent`), Charge & Discharge Limits (`/device/:id/limits`, hidden). Full spec and
+backend/firmware handoff: **`docs/DEVICE_PROGRAM.md`**.
+- **One rulebook for app and relay:** `server/deviceProgram.js` (typed by `server/deviceProgram.d.ts`, re-exported with
+  UI helpers from `src/utils/deviceProgram.ts`). Program per device: `model`, `tz` (phone's IANA zone at save),
+  `chargePowerW`, `silent {enabled, scheduled, from, to, days, updatedAt}`, `tasks[] {id, kind 'ac'|'charge',
+  action on/off|start/stop, time HH:MM, days 0–6, enabled, updatedAt}` (≤ 20), `limits {chargeMax 100|80|60,
+  dischargeMin 0|10|20}`. Power choices: Sierro 1000 50/100/150/200/300/400 W, Sierro 2000 100/200/300/400/600/800 W;
+  Silent limit 150 / 300 W.
+- **Rules:** tasks are point events, acting only at occurrences after their `updatedAt` (never retroactively); charging
+  follows the latest charge event (none → charging); an AC event missed by more than 30 min is dropped; Silent Mode
+  is off / always / inside the window (crosses midnight when `to <= from`; `days` = start days) and is a **cap** —
+  a power picked at or under it stays after the window; 0x0085 = 0 while paused, so changing the power never starts
+  a charge. Two enabled tasks of one kind at the same time on a shared day are refused (`findClash`).
+- **Saving** (`saveProgram`, `src/api/programApi.ts`; screens via `useDeviceProgram`, each saving only its own part
+  merged onto the latest saved copy): stamp changes (`stampChanges`) → validate → relay `POST /program` (a refusal
+  is a failed save; nothing written) → local copy `sierro-program-{id}` → disarm the old `sierro-sleep-{id}` window →
+  write the current 0x0085 value when the device is online (offline: the relay does it when it is back). Loading:
+  relay `GET /program`, else local copy, else `initialProgram()` which turns a saved Sleep Mode window into the Silent
+  schedule. The Header Save stays dim until something changed.
+- **Relay:** `server/programRoutes.js` (auth + device ownership on every call; saving a program deletes that device's
+  legacy `/schedule` window), `server/programExecutor.js` run inside the minute tick (`sleepExecutor.tick`, also
+  in-process when `SLEEP_SCHEDULER_EXTERNAL` ≠ true): compares `chargeTarget`/`acTarget` keys with what it last
+  applied, and only on a difference opens the session, checks owned + online + not upgrading, writes 0x0080 / 0x0085.
+  **Needs a relay redeploy**; an old relay answers 404 and the app reports the save as failed.
+- **Charge & Discharge Limits are hidden** (`CHARGE_LIMITS_ENABLED`: dev, QA, `VITE_ENABLE_CHARGE_LIMITS=true` — the E2E
+  build): no firmware register exists yet; values are saved and uploaded but not applied.
+- **Sizes as drawn (v4.23.0):** task/Silent switches are `ToggleSwitch size="lg"` (56×32); Smart Schedule tabs 40 tall,
+  task time `text-headline-md`, Add Schedule 40 tall; `OptionGrid` md = 48 tall (charge power), sm = 40 tall bold
+  (limits); Silent Mode's From/To/Repeat are `ChevronRow compact` (44). Keep these when editing the pages.
+- The wheel time picker is shared (`src/components/TimeWheel.tsx`); since v4.22.0 its own scrolls (line-up, a tap) and a
+  settle timer outliving the picker no longer change the value.
+
+**SmartSchedulePage** (`/smart-schedule`) — old peak-shaving page, paused since SW-14 (no entry point)
 - *Enable toggle*, *24h clock donut* (charge/discharge/idle arcs).
 - *Peak/Off-peak cards*, *periods list* (`startTime–endTime`,`type`).
 - *Prices*: peak/off-peak/part-peak $/kWh. *Params*: max charge/discharge W, min/max SOC %. *Estimated savings* daily/monthly/yearly.
@@ -530,6 +637,8 @@ don't let it happen again):
 | `docs/PRODUCT_SPEC.md` | Deep implementation reference (store shapes, per-page `useState`/`useEffect`, IndexedDB schema) — CLAUDE.md wins on routes/pages if they ever disagree. |
 | `docs/RELEASE_PLAN.md` | P0–P4 issue tracker: what's fixed (✅ + version tag), what's still debt/pending. Update in place, don't leave stale "still TODO" claims once something ships. |
 | `docs/siseli-api.md` | Captured Solar of Things console call for a device's attribute history (`keys/history/v1`, columnar reply) — what Real-Time Power reads. |
+| `docs/siseli-firmware-api.md` | Captured firmware / upgrade endpoints (firmware list & details, upgrade tasks, logs, batch upgrades, permission, the console's upgrade wizard) and what is still needed before the app's Firmware Update (v4.20.0, flag-gated) can be released. |
+| `docs/DEVICE_PROGRAM.md` | Smart Schedule / Charging Settings / Silent Mode / Limits (v4.22.0): data model, rules, relay API and tick, and what still needs the firmware team. |
 | `docs/TEST_PLAN.md` | The one canonical manual+automated test matrix (supersedes the deleted `TEST_CHECKLIST.md`). |
 | `API_REFERENCE.md` | Full backend API surface (all 41 groups/227 endpoints Sierro's own backend exposes), not just what this app calls — a superset reference. |
 | `docs/NATIVE_SETUP.md` | Capacitor native plugin/permission setup for Android/iOS builds. |

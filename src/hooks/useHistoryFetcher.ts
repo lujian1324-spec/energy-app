@@ -27,8 +27,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { fetchDeviceRecordHistory, fetchKeysHistoryV1 } from '../api/deviceApi'
 import { isApiSuccess } from '../utils/apiClient'
+import { FIRMWARE_LOCK_CODE } from '../utils/firmwareLock'
 import { toUserFacingError } from '../utils/uiCopy'
-import { readDeviceHistory, replaceDeviceHistory } from '../db/powerflowDB'
+import { markHistoryDay, readDeviceHistory, replaceDeviceHistory } from '../db/powerflowDB'
+import { isFinalFetch, isWholeLocalDay } from '../utils/localDays'
 import { HISTORY_KEYS, columnarToPoints, mergePoints, recordsToPoints, toIsoTz, type HistoryPoint } from '../utils/historyPoints'
 
 export type { HistoryPoint } from '../utils/historyPoints'
@@ -105,6 +107,9 @@ async function fetchWindowKeysV1(
       orderByTimeAsc: true,
     })
     if (isCancelled()) return { points: all, complete: false, error: null, pages: page }
+    // Held back by a firmware update (utils/firmwareLock): not the platform
+    // refusing this call, so it must not switch the session to record/list.
+    if (res.code === FIRMWARE_LOCK_CODE) return { points: all, complete: false, error: res.message ?? null, pages: page }
     const times = res.data?.payload?.timeSeries
     if (!isApiSuccess(res.code) || !Array.isArray(times)) {
       const raw = res.message ?? res.msg ?? ''
@@ -235,6 +240,7 @@ export function useHistoryFetcher(
       }
 
       // 2. The whole window from the server, every visit.
+      const startedAt = Date.now()
       try {
         const res = await fetchWindow(deviceId, fromTime, toTime, isCancelled, (sofar, page) => {
           if (cancelled) return
@@ -247,7 +253,13 @@ export function useHistoryFetcher(
         if (res.complete) {
           show(res.points)
           setFromCache(false)
-          void store(fromTime, toTime, res.points)
+          // A whole local day just read counts as cached for Insights too, so the
+          // background cache does not read it again (utils/insightsCache.ts).
+          void store(fromTime, toTime, res.points).then(() => {
+            if (!cancelled && isWholeLocalDay(fromTime, toTime)) {
+              return markHistoryDay(deviceId, fromTime, startedAt, isFinalFetch(fromTime, startedAt))
+            }
+          }).catch(e => console.warn('[history] day mark failed:', e))
         } else {
           show(mergePoints(cached, res.points))
           if (res.error) setError(res.error)

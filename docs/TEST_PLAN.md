@@ -201,6 +201,7 @@ v4.4.3 修复 Android 扫不到设备(客户端过滤)与 PWA Open Settings 跳�
 - [ ] 添加设备后按 0x000A 自动识别 Sierro 2000(v4.18.0)→ ratedModelRead.test.ts / device-settings E2E;真机:加一台 2000 看 Device Info 型号
 - [ ] 失败页无 Restart Device 按钮(v4.18.0)→ 真机:配网失败时只剩一个重试按钮
 - [ ] Device Info 显示 Rated Capacity / Rated Output Power / Rated Voltage,容量按型号(1000→1 kWh、2000→2 kWh),不再是 0x000A×2(v4.19.0)→ device-settings E2E;真机:Sierro 1000 显示 1 kWh,电池环"xx to full"与估算一致
+- [ ] 固件升级(v4.20.0,仅 dev/QA/E2E 构建可见)→ firmware-update E2E(入口在 Feedback 下方、版本不同才提示、说明内容、升级中除固件/会话外无任何请求、成功/失败都解锁)+ firmwareUpdate/firmwareUpdateStore 单测;真机(QA 构建、测试机、固件确认匹配):升级全过程、App 重启后恢复进度、45 分钟超时
 - [ ] 安卓应用内自动更新(v4.19.0)→ appUpdate.test.ts;真机(必须从 Play 安装,侧载 APK 不生效):用 Play Console「内部应用分享」或内部测试轨道先装旧版,再发布新版 → 打开 App 出现 Play 更新提示,同意后后台下载,切到后台再回来已是新版本;以 update_priority=4 发布 → 打开即全屏更新
 
 ---
@@ -246,11 +247,35 @@ v4.4.3 修复 Android 扫不到设备(客户端过滤)与 PWA Open Settings 跳�
     - `device-settings.e2e.spec.ts`(7,v4.18.0/v4.19.0):Sleep Mode 两个滑杆 50W 一档(Sierro 1000 为 0–400W、Sierro 2000 为 0–800W),
       保存时对设备写 0x0085(窗口内为睡眠功率)并把窗口+两个功率上传中继,重启后滑杆保持;设备离线也能保存,只上传中继并提示上线后生效;
       Battery Priority 不显示、Device Info 无 Serial Number;0x000A=1000W 识别为 Sierro 2000、500W 为 Sierro 1000。
+    - v4.23.0:`app-update-reset.e2e.spec.ts`(2)新版本首次启动清空历史缓存、Insights 日表、实时读数、设备列表缓存,
+      保留登录、排程、图标、用户选的型号和 Bluetooth ID;同版本重启不清。单测 `src/utils/appVersionReset.test.ts`(5)。
+    - v4.22.0:`device-program.e2e.spec.ts`(11)设备设置出现 Smart Schedule / Charging Settings、没有 Sleep Mode;
+      Smart Schedule 新增/编辑/关闭/删除任务并上传中继(时区、重复日),重开后从中继读回;同一时间同类任务冲突时不上传;
+      Charging Settings 的 Sierro 1000/2000 档位、保存后上传并写 0x0085;Silent Mode 开关+定时(20:00–09:00 跨日)保存后
+      窗口内立即写 150W、Charging Settings 中高于上限的档位不可选;停充期间改功率只写 0;中继拒绝时报错不写设备;
+      设备离线只存中继;旧 Sleep Mode 时段迁移为 Silent 定时;Charge & Discharge Limits(隐藏)保存。
+      旧 Sleep Mode 的 `device-settings`(3)与 `schedule-save`(2)用例随 `LEGACY_SLEEP_MODE_ENABLED` 跳过。
+      中继:`server/deviceProgram.test.js`(14,时区/夏令时/重复日/跨日窗口/停充/冲突/校验)、`server/program.test.js`
+      (9,接口鉴权与会话、到点停充复充只写一次、AC 事件超时不补、Silent 限流恢复、离线重试、升级中不写)、store 2 个。
+    - v4.21.1:`device-freshness.e2e.spec.ts`(3)透传读失败 2 分钟后显示更新的云端读数、较旧的云端数据不覆盖新的实时读数、
+      最新读数超过 10 分钟时标题显示 "Last update 2:15pm";`insights.e2e.spec.ts` 新增:点选的点、虚线和横坐标标签对齐,
+      页面与图表文字不可长按选中;`realtime-history.e2e.spec.ts` 选中点显示到秒的时间和 "Battery 60%" 名称+数值。
+    - `insights-cache.e2e.spec.ts`(4,v4.21.0):打开 APP 后台逐天缓存最近一个月(31 天,最新的一天先拉,每次一天,只拉 Insights 那台设备),
+      过程中切换 Devices/Insights 标签照常响应、主线程无 ≥250ms 长任务;之后打开 Insights 月视图直接用缓存画图,只重新拉今天;
+      几分钟后再次打开 APP 只重拉今天(已结算的天不再拉);Real-Time Power 刚读过的今天后台不重复拉。
+      `insights.e2e.spec.ts` 同步改为按天请求(keys/history/v1),分页失败用例走 record/list 回退。
+      单测 `src/utils/insightsCache.test.ts`(16):按天/夏令时、窗口、结算判定、跳过已结算和刚读过的天、失败两天即停、切换账号不写入、请求抛错只算这一天失败、
+      页面先缓存后补拉、部分失败提示、页面与后台同一天只发一次请求、缓存点换算的 Wh 与原记录一致。
     - `provisioning.e2e.spec.ts`(3):模拟 Android + `navigator.bluetooth`——打开即搜索、列出广播的设备、无扫码入口;
       失败后返回再进入不残留失败画面;系统弹窗关闭、搜索中切后台都不重启搜索、不清空列表。
 - **真实后端冒烟**(`scripts/api-smoke.mjs`,`E2E_USER=x E2E_PASS=y npm run test:api:live`):
   在**联网机器**上真连后端,走 登录→用户信息→设备列表→设备状态,逐步 PASS/FAIL。
   (沙箱/CI 出网受限时会 403,属正常;在本地/有网环境运行。)
+- **固件远程升级接口探测**(`scripts/firmware-api-probe.mjs`,工作流 `firmware-api-probe.yml`,用仓库密钥 `E2E_USER`/`E2E_PASS`):
+  默认只读——登录后读 `upgrade/permission/get`、每台设备的 `device/details`、升级协议、`firmware/list/fromManufacturer`、
+  固件详情、升级脚本信息和已有升级任务,打印返回码与字段名(令牌、联系方式、URL 参数已打码),最后列出 APP 会给出的判断。
+  真正升级只能手动触发:`start_upgrade` + `device_id` + `firmware_id` + `confirm` 填 `UPGRADE <device_id> <firmware_id>`;
+  设备不在线/升级中/不允许升级/固件不在该设备列表里都会拒绝;`upgrade/create` 只发一次,之后每 5 秒轮询最多 45 分钟。
 - **未自动化(必须真机手测)**:BLE 连接后的配网(发 Wi-Fi、绑定)、真实设备的透传控制与实时数据、
   原生权限/返回键/触觉、推送。E2E 里的蓝牙与后端都是模拟的,只证明 APP 自身逻辑。
 

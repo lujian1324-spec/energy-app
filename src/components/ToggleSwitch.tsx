@@ -4,7 +4,8 @@ import { hapticLight } from '../utils/haptics'
 interface ToggleSwitchProps {
   isOn: boolean
   onToggle: () => void
-  size?: 'sm' | 'md'
+  /** lg = the schedule / Silent Mode rows of the v4.22.0 design (56×32). */
+  size?: 'sm' | 'md' | 'lg'
   ariaLabel?: string
   /** id of an element that describes what the switch does. */
   ariaDescribedBy?: string
@@ -26,7 +27,9 @@ export default function ToggleSwitch({
 }: ToggleSwitchProps) {
   const dimensions = size === 'sm'
     ? { width: 44, height: 26, thumb: 20 }
-    : { width: 50, height: 28, thumb: 24 }
+    : size === 'lg'
+      ? { width: 56, height: 32, thumb: 28 }
+      : { width: 50, height: 28, thumb: 24 }
   const inset = 2
 
   return (

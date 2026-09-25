@@ -8,8 +8,10 @@ import {
   Gem,
   LogOut,
   RotateCcw,
+  Cpu,
 } from 'lucide-react'
 import Icon from '../components/Icon'
+import { FIRMWARE_UPDATE_ENABLED } from '../config/firmwareUpdate'
 import { useKeyboardInset } from '../utils/useKeyboardInset'
 import { FEEDBACK_TO_EMAIL, isEmailJsConfigured } from '../config/emailjs'
 import { sendFeedbackEmail } from '../utils/sendFeedbackEmail'
@@ -315,6 +317,20 @@ export default function SettingPage() {
               <div className="text-tiny text-ink-4 mt-0.5">Send feedback to the Sierro team</div>
             </div>
           </button>
+          {/* v4.20.0: below Feedback. Not released yet — config/firmwareUpdate.ts. */}
+          {FIRMWARE_UPDATE_ENABLED && (
+            <button
+              onClick={() => navigate('/firmware-update')}
+              className="mt-3 w-full flex items-center gap-3 bg-ink-10 rounded-l px-4 py-3.5 active:scale-[0.99] transition-transform text-left">
+              <div className="w-9 h-9 rounded-full bg-ink-9 flex items-center justify-center flex-shrink-0">
+                <Cpu size={20} className="text-white" aria-hidden />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-body-md font-semibold text-ink-2">Firmware Update</div>
+                <div className="text-tiny text-ink-4 mt-0.5">Check your devices for new firmware</div>
+              </div>
+            </button>
+          )}
         </motion.div>
 
         {/* Legal + Version */}

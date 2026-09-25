@@ -17,8 +17,11 @@ const NOW = new Date('2026-09-24T15:00:00-07:00')
 const KEYS_V1 = '/deviceState/simple/attribute/keys/history/v1'
 /** The Siseli app's call it falls back to (count 80); Insights reads it too, with 300. */
 const RECORD_LIST = '/deviceState/attribute/record/list'
-const chartCalls = (api: MockBackend, id: string) => api.callsTo(KEYS_V1, id)
-const fallbackCalls = (api: MockBackend, id: string) => api.callsTo(RECORD_LIST, id).filter(c => c.body.count === 80)
+// Since v4.21.0 the app also caches past days for Insights in the background;
+// the chart only ever reads today (2026-09-24 here, or the day after midnight).
+const isChartDay = (c: { body: { fromTime?: unknown } }) => String(c.body.fromTime) >= '2026-09-24T00:00:00'
+const chartCalls = (api: MockBackend, id: string) => api.callsTo(KEYS_V1, id).filter(isChartDay)
+const fallbackCalls = (api: MockBackend, id: string) => api.callsTo(RECORD_LIST, id).filter(c => c.body.count === 80).filter(isChartDay)
 
 // Garage: Battery 60 %, AC 100 W, Solar 50 W, Output 120 W, silent 02:00–05:00.
 // Cabin: Battery 30 %, no AC reading at all, Solar 200 W, Output 400 W.
@@ -230,11 +233,13 @@ test.describe('Real-Time Power history', () => {
 
     // Battery at about 10:00 — a reading on the line.
     await page.mouse.click(xAt(10), box.y + 60)
-    await expect(time).toHaveText(/^(9:55|10:00|10:05)am$/)
+    await expect(time).toHaveText(/^(9:55|10:00|10:05):00am$/)
     await expect(value).toHaveText('60%')
+    await expect(page.getByTestId('rtp-scrub-name')).toHaveText('Battery')
     // The reading stays after release; another tab reads the same moment.
     await openTab(page, 'Output')
     await expect(value).toHaveText('120W')
+    await expect(page.getByTestId('rtp-scrub-name')).toHaveText('Output')
     await openTab(page, 'AC')
     await expect(value).toHaveText('100W')
 
@@ -242,11 +247,11 @@ test.describe('Real-Time Power history', () => {
     await page.mouse.move(xAt(13), box.y + 60)
     await page.mouse.down()
     await page.mouse.move(xAt(3, 30), box.y + 60, { steps: 5 })
-    await expect(time).toHaveText(/^3:\d\dam$/)
+    await expect(time).toHaveText(/^3:\d\d:\d\dam$/)
     await expect(value).toHaveText('No data')
     await page.mouse.move(xAt(1), box.y + 60, { steps: 5 })
     await page.mouse.up()
-    await expect(time).toHaveText(/^(12:55|1:00|1:05)am$/)
+    await expect(time).toHaveText(/^(12:55|1:00|1:05):00am$/)
     await expect(value).toHaveText('100W')
   })
 })

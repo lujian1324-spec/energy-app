@@ -174,3 +174,13 @@ test('v4.18.0: a Sleep Mode window saved while the device is off is written once
   assert.equal((await f.executor.tick()).applied, 1)
   assert.deepEqual(f.writes, [{ deviceId: 'device', watts: 250 }, { deviceId: 'device', watts: 350 }])
 })
+test('v4.20.0: a device taking a firmware update gets no write; the phase is applied after it', async () => {
+  let upgrading = true
+  const f = fixture({ session: async () => ({ token: 'test', devices: [{ id: 'device', ownerUserId: 'user', isOnline: true, isUpgrading: upgrading }] }) })
+  const during = await f.executor.tick()
+  assert.deepEqual(during.failureReasons, { deviceUpgrading: 1 })
+  assert.equal(f.writes.length, 0)
+  upgrading = false
+  assert.equal((await f.executor.tick()).applied, 1)
+  assert.deepEqual(f.writes.map(w => w.watts), [150])
+})

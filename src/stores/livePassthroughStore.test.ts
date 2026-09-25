@@ -199,3 +199,28 @@ describe('the live layer', () => {
     expect(lookupLivePassthrough(DEV)).toBeNull()
   })
 })
+
+describe('the newest sample wins (v4.21.1)', () => {
+  const at = (live: typeof pass, updatedAt: number) => ({ live, phase: 'ready' as const, source: 'passthrough' as const, updatedAt })
+  const now = 1_000_000_000
+
+  it('a passthrough sample that went stale gives way to a newer cloud sample', () => {
+    // Reads failing for 3 minutes; the cloud poll brought a sample from 20 s ago.
+    const v = resolveLiveValues(cloud, null, at(pass, now - 3 * 60_000), { cloudAt: now - 20_000, now })
+    expect(v.remainingBatteryCapacity).toBe(61)
+  })
+
+  it('a fresh passthrough sample stays on top, and so does a stale one over an older cloud sample', () => {
+    expect(resolveLiveValues(cloud, null, at(pass, now - 30_000), { cloudAt: now - 5_000, now }).remainingBatteryCapacity).toBe(72.4)
+    expect(resolveLiveValues(cloud, null, at(pass, now - 3 * 60_000), { cloudAt: now - 10 * 60_000, now }).remainingBatteryCapacity).toBe(72.4)
+    // No cloud time known: nothing says the cloud is newer.
+    expect(resolveLiveValues(cloud, null, at(pass, now - 3 * 60_000), { now }).remainingBatteryCapacity).toBe(72.4)
+  })
+
+  it('an old BLE reading no longer stands in for the device', () => {
+    const empty = { ...cloud, remainingBatteryCapacity: 0 }
+    expect(resolveLiveValues(empty, ble, null, { bleAt: now - 60_000, now }).remainingBatteryCapacity).toBe(ble.soc)
+    expect(resolveLiveValues(empty, ble, null, { bleAt: now - 20 * 60_000, now }).remainingBatteryCapacity).toBe(0)
+  })
+})
+

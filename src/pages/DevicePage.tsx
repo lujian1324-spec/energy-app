@@ -45,6 +45,7 @@ import { useSmartScheduleFlush } from '../hooks/useSmartScheduleFlush'
 import { toUserFacingError } from '../utils/uiCopy'
 import { useOnline } from '../hooks/useOnline'
 import OfflineBanner from '../components/OfflineBanner'
+import FirmwareLockBanner from '../components/FirmwareLockBanner'
 
 interface DeviceRealtimeCache {
   [deviceId: string]: {
@@ -283,9 +284,13 @@ export default function DevicePage() {
     void bleEpoch
     void passthroughEpoch
     const cache = realtimeCache[String(deviceId)]
-    const ble = lookupBleLiveStatus({ deviceId, dtuDtuid: (devices.find(d => String(d.id) === String(deviceId)) as { dtuDtuid?: string } | undefined)?.dtuDtuid })?.live
-    // cloud → BLE → passthrough, the same order the monitor page reads in.
-    const merged = resolveLiveValues(cache?.raw, ble, lookupLivePassthrough(deviceId))
+    const bleEntry = lookupBleLiveStatus({ deviceId, dtuDtuid: (devices.find(d => String(d.id) === String(deviceId)) as { dtuDtuid?: string } | undefined)?.dtuDtuid })
+    // cloud → BLE → passthrough, the same order the monitor page reads in; the
+    // newest sample wins once the passthrough one has gone stale (v4.21.1).
+    const merged = resolveLiveValues(cache?.raw, bleEntry?.live, lookupLivePassthrough(deviceId), {
+      cloudAt: cache?.sampleAt ?? null,
+      bleAt: bleEntry?.updatedAt ?? null,
+    })
     const val = merged[key as keyof typeof merged]
     return val !== undefined && val !== null ? Number(val) : null
   }
@@ -487,6 +492,7 @@ export default function DevicePage() {
           read as overlapping the header's lower edge (v4.17.4). */}
       <div className="px-4">
         <OfflineBanner show={!online && !isDemoMode} className="pt-4" />
+        <FirmwareLockBanner className="pt-4" />
         <AnimatePresence>
           {error && (
             <motion.div

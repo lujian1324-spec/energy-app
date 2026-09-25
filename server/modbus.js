@@ -45,3 +45,11 @@ export function buildWriteSingleFrame(addr, value) {
 export function acChargePowerBase64(watts) {
   return buildWriteSingleFrame(REG_AC_CHARGE_POWER_RT, watts & 0xffff).toString('base64')
 }
+
+/** AC output switch register (0x0080): 0x01AA turns the outlets on, 0xAA01 off. */
+export const REG_AC_DC_POWER = 0x0080
+
+/** base64 of the FC06 frame switching AC output on or off (v4.22.0 Smart Schedule). */
+export function acOutputBase64(on) {
+  return buildWriteSingleFrame(REG_AC_DC_POWER, on ? 0x01aa : 0xaa01).toString('base64')
+}

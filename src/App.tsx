@@ -16,6 +16,14 @@ import BleDebugPage from './pages/BleDebugPage'
 import PassthroughPage from './pages/PassthroughPage'
 import DebugParamsPage from './pages/DebugParamsPage'
 import DataExportPage from './pages/DataExportPage'
+import FirmwareUpdatePage from './pages/FirmwareUpdatePage'
+import DeviceSchedulePage from './pages/program/DeviceSchedulePage'
+import ChargingSettingsPage from './pages/program/ChargingSettingsPage'
+import SilentModePage from './pages/program/SilentModePage'
+import ChargeLimitsPage from './pages/program/ChargeLimitsPage'
+import { CHARGE_LIMITS_ENABLED } from './config/chargeLimits'
+import { FIRMWARE_UPDATE_ENABLED } from './config/firmwareUpdate'
+import { useFirmwareUpdateStore } from './stores/firmwareUpdateStore'
 import { useRealtimeSimulator } from './hooks/useRealtimeSimulator'
 import { DEV_TOOLS_ENABLED } from './config/devTools'
 import { useLowBatteryMonitor } from './hooks/useLowBatteryMonitor'
@@ -26,6 +34,7 @@ import { syncWebPushSubscription, refreshNotificationPermission } from './utils/
 import { PUSH_ENABLED } from './config/webPush'
 import { initNativePush } from './utils/nativePush'
 import { startAppUpdates } from './utils/appUpdate'
+import { startInsightsPrefetch } from './utils/insightsPrefetch'
 import { Capacitor } from '@capacitor/core'
 import { ToastContainer, useToast } from './components/Toast'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -89,6 +98,12 @@ function AppInner() {
     refreshNotificationPermission()
   }, [restoreSession])
 
+  // A firmware update interrupted by a restart keeps its lock and is followed
+  // again (utils/firmwareLock.ts) until it finishes or lapses.
+  useEffect(() => {
+    if (FIRMWARE_UPDATE_ENABLED) useFirmwareUpdateStore.getState().resume()
+  }, [])
+
   // Android: keep the app on the newest Play build (utils/appUpdate.ts). Runs
   // signed in or not — an old build should not wait for a sign-in to update.
   useEffect(() => {
@@ -97,6 +112,10 @@ function AppInner() {
     void startAppUpdates().then(fn => { if (cancelled) fn(); else stop = fn })
     return () => { cancelled = true; stop() }
   }, [])
+
+  // Every app open caches the last month of Insights history in the background,
+  // in idle time, so Insights opens without waiting (utils/insightsPrefetch.ts).
+  useEffect(() => startInsightsPrefetch(), [])
 
   // 登录后幂等同步 Web Push 订阅（覆盖订阅过期 / 换设备登录；已开启推送才执行）
   useEffect(() => {
@@ -187,6 +206,13 @@ function AppInner() {
                 {/* 二级页面（无底部导航） */}
                 <Route path="/device/:id" element={<RequireAuth><DeviceMonitorPage /></RequireAuth>} />
                 <Route path="/device/:id/settings" element={<RequireAuth><DeviceDetailPage /></RequireAuth>} />
+                {/* v4.22.0 device program: Smart Schedule, Charging Settings (+ Silent Mode), limits */}
+                <Route path="/device/:id/schedule" element={<RequireAuth><DeviceSchedulePage /></RequireAuth>} />
+                <Route path="/device/:id/charging" element={<RequireAuth><ChargingSettingsPage /></RequireAuth>} />
+                <Route path="/device/:id/charging/silent" element={<RequireAuth><SilentModePage /></RequireAuth>} />
+                {CHARGE_LIMITS_ENABLED && (
+                  <Route path="/device/:id/limits" element={<RequireAuth><ChargeLimitsPage /></RequireAuth>} />
+                )}
                 {DEV_TOOLS_ENABLED && (
                   <Route path="/device/:id/passthrough" element={<RequireAuth><PassthroughPage /></RequireAuth>} />
                 )}
@@ -200,6 +226,9 @@ function AppInner() {
                   <Route path="/ble-debug" element={<RequireAuth><BleDebugPage /></RequireAuth>} />
                 )}
                 <Route path="/data-export" element={<RequireAuth><DataExportPage /></RequireAuth>} />
+                {FIRMWARE_UPDATE_ENABLED && (
+                  <Route path="/firmware-update" element={<RequireAuth><FirmwareUpdatePage /></RequireAuth>} />
+                )}
                 {/* 首次进入默认登录页，已登录/游客模式则进入 devices */}
                 <Route
                   path="/"

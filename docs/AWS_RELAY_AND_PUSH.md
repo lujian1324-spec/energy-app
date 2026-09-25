@@ -285,3 +285,15 @@ same "one device, one charge‑power window" rule the app follows on the device 
 *See also:* `server/README.md` (relay reference), `docs/NATIVE_SETUP.md` (Capacitor native
 setup), `API_REFERENCE.md` §40 (retired `/instruction/*` findings), and `src/version.json`
 changelog for the push/scheduling history.
+
+---
+
+## Device programs (v4.22.0)
+
+The relay also stores each device's program (Smart Schedule tasks, Charging Settings power,
+Silent Mode, the unreleased limits) at `POST /program` / `GET /program` and runs it in the
+same minute tick as the Sleep windows it replaces — see `docs/DEVICE_PROGRAM.md`. Deploy
+the relay (§7) before shipping an app build that saves programs: an older relay answers
+404 and every save in the new screens fails. `GET /debug/user/:userId` shows each device's
+program, `wattsNow` and `lastApplied`.
+

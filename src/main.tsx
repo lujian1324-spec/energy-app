@@ -1,3 +1,6 @@
+// v4.23.0: must run before any store module reads localStorage — drops cached
+// server data once per app update (see utils/appVersionReset.ts).
+import './utils/appVersionReset'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { HashRouter } from 'react-router-dom'

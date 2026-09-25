@@ -13,6 +13,7 @@
  *   - Sleep Mode 是"立即下发一次目标功率"，不是完整的时间窗口调度（那依赖云端保存的排程
  *     和持续在线的巡检，不适合一次性直连会话）。
  */
+import { isFirmwareUpdateLocked } from '../utils/firmwareLock'
 import {
   FRAMES,
   fromHexString,
@@ -64,6 +65,8 @@ export async function disconnectDirect(): Promise<void> {
 
 /** 发送一个只关心 RC===0 的控制帧（端口/睡眠功率等一次性写入） */
 async function applyFrame(mgr: IBleProvisionManager, hex: string): Promise<boolean> {
+  // v4.20.0: nothing but the firmware update talks to a device while one runs.
+  if (isFirmwareUpdateLocked()) return false
   try {
     const rpl = await mgr.uartPassthrough(hex)
     return rpl.RC === 0
@@ -74,6 +77,7 @@ async function applyFrame(mgr: IBleProvisionManager, hex: string): Promise<boole
 
 /** 读取实时状态（电量/AC/Solar/Output/温度）——与云端 LiveStatus 同形，可直接喂给 UI */
 export async function readLiveStatusBle(mgr: IBleProvisionManager): Promise<LiveStatus | null> {
+  if (isFirmwareUpdateLocked()) return null
   try {
     const rpl = await mgr.uartPassthrough(FRAMES.READ_ALL_STATUS)
     if (rpl.RC !== 0 || !rpl.PL?.Rsp) return null

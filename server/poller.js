@@ -32,9 +32,11 @@ import { withUserLock } from './userLock.js'
  * advance the stored phase, so the next tick retries until it lands.
  * @returns a log entry if it wrote, else null.
  */
-async function enforceSchedule(userId, deviceId, schedule, token, now, dryRun) {
+async function enforceSchedule(userId, deviceId, schedule, token, now, dryRun, upgrading = false) {
   if (process.env.SLEEP_SCHEDULER_EXTERNAL === 'true') return null
   if (!schedule || !schedule.enabled) return null
+  // Never write to a unit mid firmware update; the phase stays owed for the next tick.
+  if (upgrading) return null
   const phase = phaseFor(schedule, now)
   if (phase === getSchedulePhase(userId, deviceId)) return null // already applied
   const watts = chargePowerForPhase(schedule.model, phase, schedule)
@@ -262,7 +264,8 @@ async function processUser(u, now, sendToUser, dryRun) {
       // Server-side Sleep Mode runs every tick — it only calls the backend on a phase
       // edge (rare), so it's near-free and keeps sleep/wake timing tight.
       try {
-        const w = await enforceSchedule(u.userId, deviceId, u.schedules?.[deviceId], token, now, dryRun)
+        const upgrading = d.isUpgrading === true || d.isUpgrading === 'true' || d.isUpgrading === 1
+        const w = await enforceSchedule(u.userId, deviceId, u.schedules?.[deviceId], token, now, dryRun, upgrading)
         if (w) { scheduled.push(w); console.log(`[poller] sleep-schedule ${w.userId}/${w.deviceId} → ${w.phase} (${w.watts}W)`) }
       } catch (e) { console.warn(`[poller] schedule ${deviceId} write failed (will retry): ${e.message}`) }
     } catch (e) { console.warn(`[poller] device ${deviceId} error: ${e.message}`) }

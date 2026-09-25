@@ -39,6 +39,9 @@ async function openSleepMode(page: Page, id: string) {
 
 test.describe('Sleep Mode', () => {
   test.skip(!process.env.E2E_LOCAL, 'Uses a local build and a mocked backend')
+  // v4.22.0: Sleep Mode is replaced by Silent Mode (device-program.e2e.spec.ts).
+  // The editor stays in the code behind LEGACY_SLEEP_MODE_ENABLED; these run again if it is flipped.
+  test.skip(true, 'Sleep Mode replaced by Silent Mode (LEGACY_SLEEP_MODE_ENABLED = false)')
 
   test.beforeEach(async ({ page }) => {
     await page.clock.install({ time: NOW })
@@ -123,7 +126,9 @@ test.describe('Device Settings rows', () => {
     await signIn(page)
     await mockBackend(page, [{ id: '1001', name: 'Garage', dtuDtuid: '43767893781169874514', serialNumber: 'SN26312510CN003146260849' }])
     await page.goto('/#/device/1001/settings')
-    await expect(page.getByText('Sleep Mode', { exact: true })).toBeVisible()
+    // v4.22.0: Charging Settings (with Silent Mode) replaces the Sleep Mode row.
+    await expect(page.getByText('Charging Settings', { exact: true })).toBeVisible()
+    await expect(page.getByText('Sleep Mode', { exact: true })).toHaveCount(0)
     await expect(page.getByText('Battery Priority')).toHaveCount(0)
     await page.getByText('Device Info', { exact: true }).click()
     await expect(page.getByText('Bluetooth ID', { exact: true })).toBeVisible()
@@ -150,10 +155,9 @@ test.describe('Device Settings rows', () => {
         }
       }))).toBe(model)
 
-      await page.goto('/#/device/1001/settings')
-      await page.getByText('Sleep Mode', { exact: true }).click()
-      await page.locator('button.w-12.h-7').click()
-      await expect(sleepSlider(page)).toHaveAttribute('max', model === 'Sierro 2000' ? '800' : '400')
+      // The model's AC charging power choices (v4.22.0 Charging Settings).
+      await page.goto('/#/device/1001/charging')
+      await expect(page.getByRole('radio').last()).toHaveText(model === 'Sierro 2000' ? '800 W' : '400 W')
     })
   }
 
