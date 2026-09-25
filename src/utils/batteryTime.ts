@@ -7,8 +7,9 @@ import { MAX_PLAUSIBLE_POWER_W } from '../protocols/powerU16'
  *
  * Physics (energy ÷ power, dimensionally consistent):
  *   netChargeW       = acPower + solarPower - outputPower   (charge +, discharge -)
- *   capacityWh       = acInvOutputPower × 2  (rated capacity, Wh — same basis as
- *                      the Device Info "Rated Capacity" row); defaults to 1000 Wh.
+ *   capacityWh       = the model's rated capacity, Wh (`ratedCapacityWh` in
+ *                      data/deviceModels.ts — the Device Info "Rated Capacity" row);
+ *                      defaults to 1000 Wh.
  *   remainingEnergyWh = (soc% / 100) × capacityWh
  *   neededEnergyWh    = (1 - soc% / 100) × capacityWh
  *
@@ -44,7 +45,7 @@ export interface BatteryTimeInput {
   outputPower: number
   /** remainingBatteryCapacity (state of charge, %) */
   soc: number
-  /** Rated battery capacity in Wh (acInvOutputPower × 2). Defaults to 1000 Wh. */
+  /** Rated battery capacity in Wh (the model's, `ratedCapacityWh`). Defaults to 1000 Wh. */
   capacityWh?: number
   /** batteryPower > 0 (used only for the idle "Charging" fallback) */
   isCharging?: boolean

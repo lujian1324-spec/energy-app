@@ -156,4 +156,43 @@ test.describe('Device Settings rows', () => {
       await expect(sleepSlider(page)).toHaveAttribute('max', model === 'Sierro 2000' ? '800' : '400')
     })
   }
+
+  test('Device Info reads Rated Capacity / Output Power / Voltage from the model, not 0x000A (v4.19.0)', async ({ page }) => {
+    await signIn(page)
+    // A Sierro 1000 whose 0x000A reads 300 W: 300 × 2 used to show 0.6 kWh.
+    await mockBackend(page, [
+      { id: '1001', name: 'Garage', model: 'Sierro 1000', acInvOutputW: 300, soc: 80 },
+      { id: '2002', name: 'Cabin', model: 'Sierro 1000', acInvOutputW: 1000 },
+    ])
+    await page.goto('/#/devices')
+    await expect(page.getByText('Garage', { exact: true }).first()).toBeVisible()
+    const savedModel = (id: string) => page.evaluate((deviceId) => new Promise<string | null>(resolve => {
+      const open = indexedDB.open('powerflow-db')
+      open.onsuccess = () => {
+        const req = open.result.transaction('rated_params').objectStore('rated_params').get(deviceId)
+        req.onsuccess = () => { resolve(req.result?.model ?? null); open.result.close() }
+      }
+    }), id)
+    await expect.poll(() => savedModel('1001')).toBe('Sierro 1000')
+    await expect.poll(() => savedModel('2002')).toBe('Sierro 2000')
+
+    const rowOf = (label: string) => page.locator('div').filter({ has: page.getByText(label, { exact: true }) }).last()
+    await page.goto('/#/device/1001/settings')
+    await page.getByText('Device Info', { exact: true }).click()
+    await expect(rowOf('Rated Capacity')).toContainText('1 kWh')
+    await expect(rowOf('Rated Output Power')).toContainText('500W')
+    await expect(rowOf('Rated Voltage')).toContainText('120V')
+    await expect(page.getByText('0.6 kWh')).toHaveCount(0)
+    for (const old of ['Capacity', 'Output Power', 'Voltage']) await expect(page.getByText(old, { exact: true })).toHaveCount(0)
+
+    await page.goto('/#/device/2002/settings')
+    await page.getByText('Device Info', { exact: true }).click()
+    await expect(rowOf('Rated Capacity')).toContainText('2 kWh')
+
+    // The runtime estimate uses the same 1 kWh: 80 % SOC, +30 W net → 200 Wh / 30 W = 6h40m
+    // (with 0.6 kWh it read 4h0m).
+    await page.goto('/#/device/1001')
+    await expect(page.getByText('6h40m to full')).toBeVisible()
+  })
 })
+

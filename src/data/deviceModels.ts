@@ -42,6 +42,20 @@ export const SIERRO_MODELS: Record<SierroModel, ModelSpec> = {
   },
 }
 
+/**
+ * Rated battery capacity (Wh) for a model: 1000 Wh Sierro 1000, 2000 Wh Sierro 2000,
+ * the Sierro 1000's when the model is unknown (v4.19.0).
+ *
+ * Capacity is a property of the model, never of register 0x000A: that register is
+ * the rated AC inverter output power, and doubling it showed a Sierro 1000 that
+ * reports 300 W as 0.6 kWh and threw every "time to full / remaining" estimate off.
+ */
+export function ratedCapacityWh(model: string | null | undefined): number {
+  return String(model ?? '').includes('2000')
+    ? SIERRO_MODELS['Sierro 2000'].ratedCapacityWh
+    : SIERRO_MODELS['Sierro 1000'].ratedCapacityWh
+}
+
 export const SIERRO_MODEL_LIST: ModelSpec[] = [
   SIERRO_MODELS['Sierro 1000'],
   SIERRO_MODELS['Sierro 2000'],

@@ -29,7 +29,7 @@ import {
 import { formatTemp } from '../utils/localization'
 import { sanitizeUiCopy, toUserFacingError } from '../utils/uiCopy'
 import { loadRatedParams, saveRatedParams, type RatedParams } from '../db/powerflowDB'
-import { SIERRO_MODELS, SIERRO_MODEL_LIST, DEVICE_NAME_MAX, generateSerial, type SierroModel } from '../data/deviceModels'
+import { SIERRO_MODELS, SIERRO_MODEL_LIST, DEVICE_NAME_MAX, generateSerial, ratedCapacityWh, type SierroModel } from '../data/deviceModels'
 import sierro1000Img from '../assets/sierro-1000.webp'
 import { DEV_TOOLS_ENABLED } from '../config/devTools'
 import { SMART_SCHEDULE_PAUSED } from '../config/smartSchedule'
@@ -689,19 +689,13 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               label="Bluetooth ID"
               value={deviceBluetoothId(realDevice, ratedParams)}
             />
+            {/* v4.19.0: the model's capacity (1 / 2 kWh). It used to be register
+                0x000A × 2 — that is the inverter output power, so a Sierro 1000
+                reading 300 W showed 0.6 kWh — or, with nothing saved, the record's
+                ratedPower in kW (0.5 "kWh"). */}
             <InfoRow
-              label="Capacity"
-              value={(() => {
-                const kwh = ratedParams
-                  ? (ratedParams.acInvOutputPower * 2) / 1000
-                  : realDevice?.ratedPower ?? modelSpec.ratedCapacityWh / 1000
-                if (kwh == null || Number.isNaN(Number(kwh))) return '--'
-                const n = Number(kwh)
-                const label = Number.isInteger(n) || Math.abs(n - Math.round(n)) < 1e-6
-                  ? `${Math.round(n)}`
-                  : n.toFixed(1)
-                return `${label} kWh`
-              })()}
+              label="Rated Capacity"
+              value={`${ratedCapacityWh(model) / 1000} kWh`}
             />
             <InfoRow label="Battery Type" value={ratedParams?.batteryType || modelSpec.batteryType} />
             <InfoRow
@@ -709,10 +703,10 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
               value={`${ratedParams?.ratedChargePower ?? modelSpec.ratedChargePower}W`}
             />
             <InfoRow
-              label="Output Power"
+              label="Rated Output Power"
               value={`${ratedParams?.ratedPower ?? realDevice?.ratedPower ?? modelSpec.ratedPower}W`}
             />
-            <InfoRow label="Voltage" value="120V" />
+            <InfoRow label="Rated Voltage" value="120V" />
             <InfoRow label="Frequency" value="60Hz" />
             <InfoRow
               label="Battery health"
