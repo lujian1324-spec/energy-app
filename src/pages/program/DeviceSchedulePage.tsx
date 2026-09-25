@@ -57,25 +57,27 @@ export default function DeviceSchedulePage() {
     <div className="h-full flex flex-col bg-ink-12 overflow-hidden">
       <SecondaryHeader title="Smart Schedule" onBack={() => navigate(-1)}
         right={<SaveButton dirty={dirty} saving={saving} onSave={onSave} />} />
-      <div className="flex-1 overflow-y-auto px-4 pt-2 pb-8 space-y-3">
+      {/* Sizes as drawn (v4.22.0 reference): tabs 40 tall, cards ~94 with a 24 time,
+          10 between cards, a 56×32 switch, Add Schedule 40 tall. */}
+      <div className="flex-1 overflow-y-auto px-4 pt-2 pb-8 space-y-2.5">
         {/* Tabs */}
-        <div role="tablist" className="grid grid-cols-2 rounded-l bg-ink-10 border-s border-ink-9 p-1">
+        <div role="tablist" className="grid grid-cols-2 h-10 rounded-l bg-ink-10 border-s border-ink-9 p-1 mb-1">
           {([['ac', 'AC Output'], ['charge', 'Charging']] as const).map(([k, label]) => (
             <button key={k} role="tab" aria-selected={tab === k} type="button" onClick={() => setTab(k)}
-              className={`h-11 rounded-m text-body-lg transition-colors ${tab === k ? 'bg-ink-8 text-white font-semibold' : 'text-ink-4'}`}>
+              className={`h-full rounded-m text-body-lg transition-colors ${tab === k ? 'bg-ink-8 text-white font-semibold' : 'text-ink-4'}`}>
               {label}
             </button>
           ))}
         </div>
 
         {shown.map(t => (
-          <div key={t.id} data-testid={`task-${t.id}`} className="rounded-l bg-ink-10 pl-4 pr-2 py-4 flex items-center gap-3">
+          <div key={t.id} data-testid={`task-${t.id}`} className="rounded-l bg-ink-10 pl-5 pr-2 py-3 flex items-center gap-3">
             <button type="button" className="flex-1 min-w-0 text-left" onClick={() => setEditing({ task: t, isNew: false })}>
               <p className="text-body-lg text-white">{taskTitle(t)}</p>
-              <p className={`text-headline-lg tnum mt-1 ${t.enabled ? 'text-white' : 'text-ink-7'}`}>{time12(t.time)}</p>
+              <p className={`text-headline-md tnum mt-1 ${t.enabled ? 'text-white' : 'text-ink-7'}`}>{time12(t.time)}</p>
               <p className="text-body-md text-ink-6 mt-1">{repeatLabel(t.days)}</p>
             </button>
-            <ToggleSwitch isOn={t.enabled} ariaLabel={`${taskTitle(t)} at ${time12(t.time)}`}
+            <ToggleSwitch size="lg" isOn={t.enabled} ariaLabel={`${taskTitle(t)} at ${time12(t.time)}`}
               onToggle={() => update(tasks.map(x => x.id === t.id ? { ...x, enabled: !x.enabled } : x))} />
             <button type="button" aria-label={`Edit ${taskTitle(t)}`} onClick={() => setEditing({ task: t, isNew: false })}
               className="w-10 h-12 flex items-center justify-center text-ink-4">
@@ -92,7 +94,7 @@ export default function DeviceSchedulePage() {
 
         <button type="button" disabled={tasks.length >= MAX_TASKS}
           onClick={() => setEditing({ task: newTask(tab), isNew: true })}
-          className="w-full h-12 rounded-l border-m border-primary text-primary text-body-lg font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-30">
+          className="w-full h-10 rounded-m border-m border-primary text-primary text-body-lg font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-30">
           <Plus size={20} aria-hidden /> Add Schedule
         </button>
 

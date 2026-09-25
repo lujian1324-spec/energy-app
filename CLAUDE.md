@@ -72,6 +72,14 @@ Dark-first, iOS-native feel, rounded-card layout, teal accent on dark bg.
 - Dark theme only (light mode is future work).
 - No long-press text selection (v4.21.1): `body` is `user-select: none` + `-webkit-touch-callout: none`
   (`index.css`); inputs, textareas, `contenteditable` and `.select-text` stay selectable.
+- **Cache cleared on every app update (v4.23.0).** `src/utils/appVersionReset.ts` is `main.tsx`'s first import
+  (before any persisted store reads localStorage). When `sierro-app-version` (`{version}+{build}`) differs from the
+  running build — a first launch counts — it drops the copies of server data: `powerflow-live-passthrough`,
+  `sierro-config-missing*`, and `devices`/`deviceTotal`/`devicesListReady` inside `powerflow-device-store`; then sets
+  `sierro-cache-reset-pending`. `powerflowDB.getDB()` (one shared open promise) sees the flag and, before handing the
+  DB to anyone, clears `device_history`, `history_days`, `power_history` and sets every `rated_params.fetchedAt` to 0
+  (model, `modelSource`, `bleId` kept). Kept: session/tokens, settings, programs/schedules, icons, dismissals.
+  A new cache that only copies server data must be added to that list.
 - All primary interactive elements ≥ 48×48dp; focus ring `#01D6BE` (WCAG).
 - Toggle/button micro-interaction: scale 0.95 → 1. Ring color transition 1s ease-in-out.
 - Reference the PRD (Sierro Energy App PRD v1.1) for per-page behavior.
@@ -457,6 +465,9 @@ backend/firmware handoff: **`docs/DEVICE_PROGRAM.md`**.
   **Needs a relay redeploy**; an old relay answers 404 and the app reports the save as failed.
 - **Charge & Discharge Limits are hidden** (`CHARGE_LIMITS_ENABLED`: dev, QA, `VITE_ENABLE_CHARGE_LIMITS=true` — the E2E
   build): no firmware register exists yet; values are saved and uploaded but not applied.
+- **Sizes as drawn (v4.23.0):** task/Silent switches are `ToggleSwitch size="lg"` (56×32); Smart Schedule tabs 40 tall,
+  task time `text-headline-md`, Add Schedule 40 tall; `OptionGrid` md = 48 tall (charge power), sm = 40 tall bold
+  (limits); Silent Mode's From/To/Repeat are `ChevronRow compact` (44). Keep these when editing the pages.
 - The wheel time picker is shared (`src/components/TimeWheel.tsx`); since v4.22.0 its own scrolls (line-up, a tap) and a
   settle timer outliving the picker no longer change the value.
 

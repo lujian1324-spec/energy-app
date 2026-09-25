@@ -35,15 +35,15 @@ export default function ChargeLimitsPage() {
         onBack={() => navigate(-1)}
         right={<SaveButton dirty={dirty} saving={saving} onSave={onSave} />}
       />
-      <div className="flex-1 overflow-y-auto px-4 pt-2 pb-8 space-y-4">
+      <div className="flex-1 overflow-y-auto px-4 pt-2 pb-8 space-y-3">
         <div className="rounded-l bg-ink-10 p-4">
-          <p id="charge-limit-label" className="text-body-lg text-white mb-3">Charge Limit</p>
-          <OptionGrid labelledBy="charge-limit-label" options={CHARGE_LIMIT_OPTIONS} value={draft.chargeMax}
+          <p id="charge-limit-label" className="text-title-md text-white mb-3">Charge Limit</p>
+          <OptionGrid size="sm" labelledBy="charge-limit-label" options={CHARGE_LIMIT_OPTIONS} value={draft.chargeMax}
             onChange={chargeMax => set({ chargeMax })} format={v => `${v}%`} />
         </div>
         <div className="rounded-l bg-ink-10 p-4">
-          <p id="discharge-limit-label" className="text-body-lg text-white mb-3">Discharge Limit</p>
-          <OptionGrid labelledBy="discharge-limit-label" options={DISCHARGE_LIMIT_OPTIONS} value={draft.dischargeMin}
+          <p id="discharge-limit-label" className="text-title-md text-white mb-3">Discharge Limit</p>
+          <OptionGrid size="sm" labelledBy="discharge-limit-label" options={DISCHARGE_LIMIT_OPTIONS} value={draft.dischargeMin}
             onChange={dischargeMin => set({ dischargeMin })} format={v => `${v}%`} />
         </div>
         <p className="text-label text-ink-6 px-1">

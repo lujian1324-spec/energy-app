@@ -25,6 +25,7 @@ import type {
 } from '../types/protocol'
 import type { PeakShavingSettings } from '../types'
 import type { HistoryPoint } from '../utils/historyPoints'
+import { CACHE_RESET_PENDING_KEY } from '../utils/appVersionReset'
 
 const DB_NAME = 'powerflow-db'
 const DB_VERSION = 6   // v5: device_history (per-device cloud history cache); v6: history_days
@@ -64,6 +65,33 @@ export interface HistoryDayRow {
   dayStart: number
   fetchedAt: number
   final: boolean
+}
+
+/**
+ * After an app update: drop what is only a copy of server data (history, the
+ * Insights day list, the legacy power_history) and mark rated params stale so the
+ * device is read again — keeping the model the user picked and the Bluetooth ID
+ * read at add time, which cannot be fetched again.
+ */
+async function clearCachesAfterUpdate(db: IDBPDatabase<any>): Promise<void> {
+  let pending: string | null = null
+  try { pending = localStorage.getItem(CACHE_RESET_PENDING_KEY) } catch { return }
+  if (!pending) return
+  try {
+    await db.clear('device_history')
+    await db.clear('history_days')
+    await db.clear('power_history')
+    const tx = db.transaction('rated_params', 'readwrite')
+    let cursor = await tx.store.openCursor()
+    while (cursor) {
+      await cursor.update({ ...cursor.value, fetchedAt: 0 })
+      cursor = await cursor.continue()
+    }
+    await tx.done
+  } catch (e) {
+    console.warn('[powerflowDB] cache clear after update failed:', e)
+  }
+  try { localStorage.removeItem(CACHE_RESET_PENDING_KEY) } catch { /* ignore */ }
 }
 
 /** 最大保留条数（避免无限增长） */
@@ -119,7 +147,16 @@ type PowerFlowDB = IDBPDatabase<{
 
 let _db: PowerFlowDB | null = null
 
-async function getDB(): Promise<PowerFlowDB> {
+/** One open for everyone, resolved only once the post-update cache clear is done. */
+let _dbReady: Promise<PowerFlowDB> | null = null
+function getDB(): Promise<PowerFlowDB> {
+  if (!_dbReady) {
+    _dbReady = openPowerFlowDB().catch(e => { _dbReady = null; throw e })
+  }
+  return _dbReady
+}
+
+async function openPowerFlowDB(): Promise<PowerFlowDB> {
   if (_db) return _db
 
   _db = await openDB<{
@@ -237,6 +274,9 @@ async function getDB(): Promise<PowerFlowDB> {
     },
   })
 
+  // v4.23.0: the first open after an app update drops the cached server data
+  // (utils/appVersionReset.ts) before anyone can read it.
+  await clearCachesAfterUpdate(_db)
   return _db
 }
 

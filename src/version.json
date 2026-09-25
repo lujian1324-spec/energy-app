@@ -1,8 +1,9 @@
 {
-  "version": "4.22.0",
-  "build": 2938,
+  "version": "4.23.0",
+  "build": 2939,
   "date": "2026-09-25",
   "changelog": [
+    "After each app update, the data the app keeps on your phone (power history, the device list, the latest readings) is cleared once and fetched fresh, so nothing saved by the previous version can mix with the new one. You stay signed in, and your settings, schedules and device icons are kept. The Smart Schedule, Charging Settings and Silent Mode screens now match the design's sizes.",
     "New in Device Settings: Smart Schedule and Charging Settings. Smart Schedule turns the AC output on or off and starts or stops charging at set times, on the days you choose. Charging Settings sets the AC charging power, and Silent Mode (replacing Sleep Mode) limits charging to 150 W on a Sierro 1000 or 300 W on a Sierro 2000, all the time or only during the hours you set, even overnight. Your Sleep Mode hours carry over. Schedules keep running on Sierro's server when the app is closed, and changing the charging power never starts a charge that a schedule has stopped.",
     "Fixes: text on the Device and Insights screens, including chart labels, no longer gets selected when you press and hold. The device screen no longer freezes on an old reading while it says Connected: the newest reading is always shown, and if no new reading has arrived for over ten minutes the header shows when the last one was taken. Pressing the Real-Time Power chart now shows the exact time of the reading, to the second, with its name and value. On Insights, the point you tap is the one under your finger, and the time labels sit exactly under their points.",
     "Insights opens faster. Every time you open the app, the last month of your device's history is saved on your phone in the background, a little at a time and only while the phone is idle, so it never slows down the screen you are on. Insights then shows the day, week or month straight away and only fetches today's latest readings.",

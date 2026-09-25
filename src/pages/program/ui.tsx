@@ -21,7 +21,7 @@ export function SaveButton({ dirty, saving, onSave }: { dirty: boolean; saving: 
 }
 
 /** A grid of choices; the chosen one is filled teal. */
-export function OptionGrid<T extends string | number>({ options, value, onChange, format, disabled, columns = 3, labelledBy }: {
+export function OptionGrid<T extends string | number>({ options, value, onChange, format, disabled, columns = 3, labelledBy, size = 'md' }: {
   options: T[]
   value: T | null
   onChange: (v: T) => void
@@ -29,9 +29,11 @@ export function OptionGrid<T extends string | number>({ options, value, onChange
   disabled?: (v: T) => boolean
   columns?: number
   labelledBy?: string
+  /** md: 48 tall (AC Charging Power); sm: 40 tall, bold (Charge / Discharge Limit) — as drawn. */
+  size?: 'md' | 'sm'
 }) {
   return (
-    <div role="radiogroup" aria-labelledby={labelledBy} className="grid gap-3" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
+    <div role="radiogroup" aria-labelledby={labelledBy} className="grid gap-x-2.5 gap-y-2" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
       {options.map(o => {
         const selected = o === value
         const off = disabled?.(o) ?? false
@@ -43,7 +45,7 @@ export function OptionGrid<T extends string | number>({ options, value, onChange
             aria-checked={selected}
             disabled={off}
             onClick={() => onChange(o)}
-            className={`h-14 rounded-m text-body-lg transition-colors active:scale-95 ${
+            className={`${size === 'sm' ? 'h-10 text-title-md font-semibold' : 'h-12 text-body-lg'} rounded-m transition-colors active:scale-95 ${
               selected
                 ? 'bg-primary text-primary-darker font-semibold'
                 : off
@@ -105,25 +107,27 @@ export function DayPicker({ days, onChange }: { days: number[]; onChange: (days:
 }
 
 /** A tappable row: label on the left, value + chevron on the right. */
-export function ChevronRow({ label, value, sub, onPress, ariaLabel }: {
+export function ChevronRow({ label, value, sub, onPress, ariaLabel, compact = false }: {
   label: ReactNode
   value?: ReactNode
   sub?: ReactNode
   onPress: () => void
   ariaLabel?: string
+  /** A row inside a grouped card (Silent Mode's From / To / Repeat): 44 tall, as drawn. */
+  compact?: boolean
 }) {
   return (
     <button
       type="button"
       onClick={onPress}
       aria-label={ariaLabel}
-      className="w-full min-h-[56px] px-4 py-3 flex items-center justify-between gap-3 text-left active:bg-white/5"
+      className={`w-full ${compact ? 'min-h-[44px] py-2' : 'min-h-[48px] py-3'} px-4 flex items-center justify-between gap-3 text-left active:bg-white/5`}
     >
       <span className="text-body-lg text-white">{label}</span>
       <span className="flex items-center gap-2 text-right">
         <span className="flex flex-col items-end">
           {value !== undefined && <span className="text-body-lg text-white tnum">{value}</span>}
-          {sub && <span className="text-label text-ink-6">{sub}</span>}
+          {sub && <span className="text-body-md text-ink-6">{sub}</span>}
         </span>
         <Icon name="chevron-right" size={20} className="text-ink-5 flex-shrink-0" />
       </span>

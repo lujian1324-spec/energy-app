@@ -247,6 +247,8 @@ v4.4.3 修复 Android 扫不到设备(客户端过滤)与 PWA Open Settings 跳�
     - `device-settings.e2e.spec.ts`(7,v4.18.0/v4.19.0):Sleep Mode 两个滑杆 50W 一档(Sierro 1000 为 0–400W、Sierro 2000 为 0–800W),
       保存时对设备写 0x0085(窗口内为睡眠功率)并把窗口+两个功率上传中继,重启后滑杆保持;设备离线也能保存,只上传中继并提示上线后生效;
       Battery Priority 不显示、Device Info 无 Serial Number;0x000A=1000W 识别为 Sierro 2000、500W 为 Sierro 1000。
+    - v4.23.0:`app-update-reset.e2e.spec.ts`(2)新版本首次启动清空历史缓存、Insights 日表、实时读数、设备列表缓存,
+      保留登录、排程、图标、用户选的型号和 Bluetooth ID;同版本重启不清。单测 `src/utils/appVersionReset.test.ts`(5)。
     - v4.22.0:`device-program.e2e.spec.ts`(11)设备设置出现 Smart Schedule / Charging Settings、没有 Sleep Mode;
       Smart Schedule 新增/编辑/关闭/删除任务并上传中继(时区、重复日),重开后从中继读回;同一时间同类任务冲突时不上传;
       Charging Settings 的 Sierro 1000/2000 档位、保存后上传并写 0x0085;Silent Mode 开关+定时(20:00–09:00 跨日)保存后

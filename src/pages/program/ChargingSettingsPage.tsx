@@ -47,7 +47,7 @@ export default function ChargingSettingsPage() {
         right={<SaveButton dirty={power !== program.chargePowerW} saving={saving} onSave={onSave} />} />
       <div className="flex-1 overflow-y-auto px-4 pt-2 pb-8 space-y-4">
         <div className="rounded-l bg-ink-10 p-4">
-          <p id="ac-power-label" className="text-body-lg text-white">AC Charging Power</p>
+          <p id="ac-power-label" className="text-title-md text-white">AC Charging Power</p>
           <p className="text-headline-xl font-semibold text-white tnum mt-1 mb-4" data-testid="ac-power-value">{shownPower} W</p>
           <OptionGrid
             labelledBy="ac-power-label"

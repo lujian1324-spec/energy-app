@@ -50,38 +50,38 @@ export default function SilentModePage() {
     <div className="h-full flex flex-col bg-ink-12 overflow-hidden">
       <SecondaryHeader title="Silent Mode" onBack={() => navigate(-1)}
         right={<SaveButton dirty={!sameSilent(draft, program.silent)} saving={saving} onSave={onSave} />} />
-      <div className="flex-1 overflow-y-auto px-4 pt-2 pb-8 space-y-4">
-        <div className="rounded-l bg-ink-10 px-4 py-4 flex items-start justify-between gap-4">
+      <div className="flex-1 overflow-y-auto px-4 pt-2 pb-8">
+        <div className="rounded-l bg-ink-10 px-4 py-3.5 flex items-center justify-between gap-4">
           <div>
             <p className="text-body-lg text-white">Silent Mode</p>
             <p className="text-body-md text-ink-6 mt-1" data-testid="silent-sub">
               {draft.enabled ? `AC charging limit: ${cap} W` : `Turn on to limit AC charging power to ${cap} W or less.`}
             </p>
           </div>
-          <ToggleSwitch isOn={draft.enabled} ariaLabel="Silent Mode" onToggle={() => set({ enabled: !draft.enabled })} />
+          <ToggleSwitch size="lg" isOn={draft.enabled} ariaLabel="Silent Mode" onToggle={() => set({ enabled: !draft.enabled })} />
         </div>
 
         {draft.enabled && (
           <div>
-            <p className="text-body-lg text-ink-4 mb-2 px-1">Schedule</p>
+            <p className="text-body-lg text-ink-4 mt-5 mb-3 px-1">Schedule</p>
             <div className="rounded-l bg-ink-10 overflow-hidden divide-y divide-ink-9">
-              <div className="min-h-[56px] px-4 flex items-center justify-between">
+              <div className="min-h-[48px] py-2 px-4 flex items-center justify-between">
                 <span className="text-body-lg text-white">Scheduled Silent Mode</span>
-                <ToggleSwitch isOn={draft.scheduled} ariaLabel="Scheduled Silent Mode" onToggle={() => set({ scheduled: !draft.scheduled })} />
+                <ToggleSwitch size="lg" isOn={draft.scheduled} ariaLabel="Scheduled Silent Mode" onToggle={() => set({ scheduled: !draft.scheduled })} />
               </div>
               {draft.scheduled && (
                 <>
-                  <ChevronRow label="From" value={time12(draft.from)} ariaLabel={`From ${time12(draft.from)}`}
+                  <ChevronRow compact label="From" value={time12(draft.from)} ariaLabel={`From ${time12(draft.from)}`}
                     onPress={() => setOpen(o => (o === 'from' ? null : 'from'))} />
                   {open === 'from' && (
                     <div className="px-2 pb-2"><InlineTimePicker value={draft.from} onChange={from => set({ from })} onDone={() => setOpen(null)} /></div>
                   )}
-                  <ChevronRow label="To" value={to.time} sub={to.nextDay ? 'Next day' : undefined} ariaLabel={`To ${to.time}${to.nextDay ? ' next day' : ''}`}
+                  <ChevronRow compact label="To" value={to.time} sub={to.nextDay ? 'Next day' : undefined} ariaLabel={`To ${to.time}${to.nextDay ? ' next day' : ''}`}
                     onPress={() => setOpen(o => (o === 'to' ? null : 'to'))} />
                   {open === 'to' && (
                     <div className="px-2 pb-2"><InlineTimePicker value={draft.to} onChange={value => set({ to: value })} onDone={() => setOpen(null)} /></div>
                   )}
-                  <ChevronRow label="Repeat" value={repeatLabel(draft.days)} onPress={() => setOpen(o => (o === 'repeat' ? null : 'repeat'))} />
+                  <ChevronRow compact label="Repeat" value={repeatLabel(draft.days)} onPress={() => setOpen(o => (o === 'repeat' ? null : 'repeat'))} />
                   {open === 'repeat' && (
                     <div className="px-4 pb-4 pt-1"><DayPicker days={draft.days} onChange={days => set({ days })} /></div>
                   )}
