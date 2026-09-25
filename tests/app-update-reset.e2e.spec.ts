@@ -69,6 +69,8 @@ test.describe('App update', () => {
 
     await page.reload()
     await expect(page.getByText('Garage', { exact: true }).first()).toBeVisible()
+    // The clear runs on the app's first database open, before any read.
+    await settled(page)
     const after = await counts(page)
     expect(after.history).toBe(0)
     expect(after.days).toBe(0)

@@ -12,6 +12,8 @@ export function createSleepExecutor({ db = store, lock = withUserLock, session =
   write = writePassthrough, clock = Date.now } = {}) {
   let running = false
   let lastTickAt = null
+  // Devices whose program write failed, and when to try them again (programExecutor.js).
+  const programRetry = new Map()
   let lastResult = null
   // `legacy: false` runs device programs only (the in-process tick, where the
   // poller already enforces legacy windows itself).
@@ -86,7 +88,7 @@ export function createSleepExecutor({ db = store, lock = withUserLock, session =
             // lock, same deadline, same session rules. A device with a program has
             // no legacy window left (store.setUserProgram removes it).
             if (db.getProgramState) {
-              await runUserPrograms({ userId, programs: fresh?.programs, db, session, write, clock, deadline, dryRun, result, failure })
+              await runUserPrograms({ userId, programs: fresh?.programs, db, session, write, clock, deadline, dryRun, result, failure, retry: programRetry })
             }
           }, { deadline: deadline + 9000 }).catch(() => { failure('lockDeadline') })
         }

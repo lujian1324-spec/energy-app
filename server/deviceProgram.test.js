@@ -137,3 +137,34 @@ test('two enabled tasks of one kind at the same time on a shared day clash', () 
   assert.equal(findClash([task({ id: 'a' }), task({ id: 'b', kind: 'ac', action: 'on' })]), null)
   assert.equal(findClash([task({ id: 'a' }), task({ id: 'b', action: 'start', enabled: false })]), null)
 })
+
+test('a save never changes what already happened (v4.23.2)', () => {
+  const stop = task({ id: 'stop', action: 'stop', time: '07:00' })
+  const start = task({ id: 'start', action: 'start', time: '23:00' })
+  const tenAm = at('2026-09-24T17:00:00Z') // 10:00 LA
+  const before = prog({ tasks: [stop, start] })
+  assert.equal(chargeState(before, tenAm).charging, false)
+  // Only the Stop task's days are edited at 10:00: it is restamped, so today's 07:00
+  // no longer counts. The baseline carries the pause until the next event.
+  const edited = prog({
+    tasks: [{ ...stop, days: [1, 2, 3, 4, 5], updatedAt: tenAm }, start],
+    savedAt: tenAm, chargeBaseline: chargeState(before, tenAm).charging,
+  })
+  assert.equal(chargeState(edited, tenAm + 60_000).charging, false)
+  assert.equal(effectiveChargeW(edited, tenAm + 60_000), 0)
+  // 23:00 Start fires after the save: charging again.
+  assert.equal(chargeState(edited, at('2026-09-25T06:30:00Z')).charging, true)
+
+  // Without a baseline (saved before v4.23.2) the old rule stands.
+  const legacy = { ...edited }
+  delete legacy.chargeBaseline
+  assert.equal(chargeState(legacy, tenAm + 60_000).charging, true)
+
+  // An AC event before the save is not owed any more, even inside the grace period.
+  const acOff = task({ id: 'ac', kind: 'ac', action: 'off', time: '07:00' })
+  const sevenTen = at('2026-09-24T14:10:00Z')
+  assert.ok(acTarget(prog({ tasks: [acOff] }), sevenTen))
+  assert.equal(acTarget(prog({ tasks: [acOff], savedAt: sevenTen - 60_000 }), sevenTen), null)
+  // validateProgram keeps the baseline.
+  assert.equal(validateProgram(edited).chargeBaseline, false)
+})

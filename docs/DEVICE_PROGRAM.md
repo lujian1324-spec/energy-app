@@ -116,3 +116,26 @@ so a change shows at once; offline, it leaves that to the relay.
   "device restarted" signal, or non-volatile equivalents, would let it re-assert at once.
 - **On-device schedules** — the relay needs the cloud and the home network. If the firmware
   can hold the task list itself, the same data model (§1) can be sent to it.
+
+## 6. Known gap: background session for email-code accounts (v4.23.2 review)
+
+The relay can only act with the app closed if it holds a background session for the
+account (its own access/refresh pair, so its token rotation never signs the app out).
+That pair is minted by `provisionPollerSession()` (`src/api/authApi.ts`), which signs in
+a second time **with the password** — only the hidden account + password sign-in has one.
+Consumers sign in with an email code, so for them:
+
+- a program with an enabled task or a scheduled Silent Mode is refused with
+  `409 POLLER_SESSION_REQUIRED` ("Background session is missing. Sign in again.") — and
+  signing in again with a code does not help;
+- an untimed program (power, always-on Silent Mode) is written to the device at once and
+  kept on the phone; the relay answers `stored: false`.
+
+Options (need a decision / backend): a server-to-server credential for the relay from the
+Solar of Things Open API; a second email-code sign-in at setup that mints the relay's own
+session; or letting the relay share the app's pair, which only works if the platform does
+not invalidate a refresh token when the other holder refreshes.
+
+Rules changed in v4.23.2: `chargeBaseline` + the `savedAt` cutoff (§ rules in CLAUDE.md),
+the relay's per-device retry pause, and `stored` in the `POST /program` reply.
+

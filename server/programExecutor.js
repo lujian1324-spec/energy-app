@@ -5,22 +5,32 @@
 // 0x0080) and compares it with what it last applied. Only a difference costs
 // anything: then — and only then — it opens the background session, checks the
 // device is still this user's, online and not mid firmware update, and writes.
-// A failed write leaves the state unchanged, so the next tick tries again.
+// A failed write leaves the state unchanged, so it is tried again — after a
+// growing pause (v4.23.2): a device unplugged for a week, or no longer on the
+// account, used to reopen the background session every minute. A new save of
+// that device's program is tried at once.
 import { chargeTarget, acTarget } from './deviceProgram.js'
 import { acChargePowerBase64, acOutputBase64 } from './modbus.js'
 import { deviceBoundToUser } from './deviceBind.js'
 
 const truthy = v => v === true || v === 1 || v === 'true'
 
+/** First pause after a failure, doubled on each further one, up to the cap. */
+export const RETRY_FIRST_MS = 2 * 60_000
+export const RETRY_MAX_MS = 30 * 60_000
+
 /**
  * Run every program of one user (the caller holds the user lock).
  * @returns nothing; counts go into `result`
  */
-export async function runUserPrograms({ userId, programs, db, session, write, clock, deadline, dryRun, result, failure }) {
+export async function runUserPrograms({ userId, programs, db, session, write, clock, deadline, dryRun, result, failure, retry = new Map() }) {
   let auth
   for (const [deviceId, program] of Object.entries(programs || {})) {
     if (!program) continue
     if (clock() >= deadline) { result.deferred++; continue }
+    const retryKey = `${userId}|${deviceId}`
+    const wait = retry.get(retryKey)
+    if (wait && wait.savedAt === program.savedAt && clock() < wait.at) { result.retryWait = (result.retryWait || 0) + 1; continue }
     result.checked++
     let stage = 'invalidProgram'
     try {
@@ -61,7 +71,10 @@ export async function runUserPrograms({ userId, programs, db, session, write, cl
         db.setProgramState(userId, deviceId, { chargeKey: target.key })
       }
       result.applied++
+      retry.delete(retryKey)
     } catch (error) {
+      const delay = wait && wait.savedAt === program.savedAt ? Math.min(wait.delay * 2, RETRY_MAX_MS) : RETRY_FIRST_MS
+      retry.set(retryKey, { at: clock() + delay, delay, savedAt: program.savedAt })
       if (stage === 'passthrough') {
         if (error.name === 'TimeoutError' || error.name === 'AbortError') stage = 'passthroughTimeout'
         else if (/^\d{1,6}$/.test(String(error.upstreamCode))) stage = `passthroughCode${error.upstreamCode}`

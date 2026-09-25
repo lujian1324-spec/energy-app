@@ -65,11 +65,14 @@ export function installProgramRoutes(app, dependencies = {}) {
         // A program with nothing timed still gets stored when the relay knows the
         // user (so its power is applied once the device is back online); one that
         // needs the tick requires the background session.
-        if (!store.setUserProgram(id, deviceId, clean, { needsSession: programNeedsTick(clean) })) {
+        const stored = store.setUserProgram(id, deviceId, clean, { needsSession: programNeedsTick(clean) })
+        if (stored === false) {
           res.status(409).json({ code: 1, reason: 'POLLER_SESSION_REQUIRED', message: 'Background session required. Sign in again.' })
           return
         }
-        res.json({ code: 0, data: { executor: process.env.SLEEP_SCHEDULER_EXTERNAL === 'true' ? 'aws-scheduler' : 'relay' } })
+        // stored: false — an untimed program for a user the relay has no session for
+        // was accepted but not kept; the app keeps its own copy and says so.
+        res.json({ code: 0, data: { executor: process.env.SLEEP_SCHEDULER_EXTERNAL === 'true' ? 'aws-scheduler' : 'relay', stored: stored === true } })
       })
     } catch { if (!res.headersSent) res.status(503).json({ code: 1, message: 'Could not verify or save the schedule. Retry Save.' }) }
   })

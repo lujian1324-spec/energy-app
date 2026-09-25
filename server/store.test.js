@@ -157,6 +157,7 @@ test('a device program replaces that device\'s legacy Sleep window and keeps the
 
 test('a timed program needs a background session; an untimed one for an unknown user is a no-op', () => {
   assert.equal(store.setUserProgram('Q', 'dev', { chargePowerW: 400 }), false)
-  assert.equal(store.setUserProgram('Q', 'dev', { chargePowerW: 400 }, { needsSession: false }), true)
+  assert.equal(store.setUserProgram('Q', 'dev', { chargePowerW: 400 }, { needsSession: false }), null)
+  assert.equal(store.getUserProgram('Q', 'dev'), null)
   assert.equal(store.getUser('Q'), null)
 })

@@ -190,7 +190,10 @@ export function setUserProgram(userId, deviceId, program, { needsSession = true 
   const d = String(deviceId)
   const u = db.users[k]
   if (needsSession && (!u || (!u.accessToken && !u.refreshTokenEnc))) return false
-  if (!u) return true // nothing to run and nothing stored: an acknowledged no-op
+  // No relay record for this user (no background session was ever sent): nothing
+  // could run it, and nothing is stored. null — not true — so the route can say so
+  // instead of reporting a program it will never serve back or apply (v4.23.2).
+  if (!u) return null
   u.programs ||= {}
   u.programs[d] = program
   if (u.schedules?.[d]) delete u.schedules[d]

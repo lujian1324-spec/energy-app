@@ -90,6 +90,16 @@ describe('upgrade progress', () => {
     expect(upgradeProgress(null, { isUpgrading: false, softwareVersion: 'V1.0.0' }, 'V1.0.0').phase).toBe('running')
     expect(upgradeProgress(null, { isUpgrading: false, softwareVersion: 'V1.1.0' }, 'V1.0.0').phase).toBe('success')
   })
+
+  it('reads "not upgrading" in the forms the platform sends, and 1 on a 0–100 scale as 1 % (v4.23.2)', () => {
+    for (const v of [0, '0', 'false']) {
+      expect(upgradeProgress(null, { isUpgrading: v, softwareVersion: 'V1.1.0' }, 'V1.0.0').phase).toBe('success')
+    }
+    expect(upgradeProgress(null, { softwareVersion: 'V1.1.0' }, 'V1.0.0').phase).toBe('running')
+    expect(upgradeProgress(null, { isUpgrading: 1, softwareVersion: 'V1.1.0' }, 'V1.0.0').phase).toBe('running')
+    expect(upgradeProgress({ progress: 1 }, null).percent).toBe(1)
+    expect(upgradeProgress({ progress: 0.25 }, null).percent).toBe(25)
+  })
 })
 
 describe('firmware records', () => {
