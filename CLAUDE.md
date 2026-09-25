@@ -103,6 +103,7 @@ Test-only / CI-only changes that don't alter the shipped bundle do NOT bump.
 | `/smart-schedule` | `SmartSchedulePage` | no | Peak-shaving UI |
 | `/notifications` | `NotificationsPage` | no | Alarm center |
 | `/onboarding` `/ble-debug` `/data-export` | `OnboardingPage` `BleDebugPage` `DataExportPage` | no | |
+| `/firmware-update` | `FirmwareUpdatePage` | no | Only when `FIRMWARE_UPDATE_ENABLED` (not in consumer builds yet) |
 
 `/device/:id/passthrough`, `/device/:id/debug-params`, and `/ble-debug` are gated by
 `DEV_TOOLS_ENABLED` (`src/config/devTools.ts`) — only registered in Vite dev mode or when
@@ -343,6 +344,23 @@ lives on independently and is still referenced elsewhere.)
   the account is touched and is shown to the user; never sign out on a failed delete, which is
   what made a refused deletion look successful. The confirmation copy must say devices and
   stations go too.
+- **Firmware Update — NOT RELEASED (v4.20.0).** A row under Feedback → `/firmware-update`, both only when
+  `FIRMWARE_UPDATE_ENABLED` (`src/config/firmwareUpdate.ts`: dev, QA `VITE_ENABLE_DEV_TOOLS=true`, and
+  `VITE_ENABLE_FIRMWARE_UPDATE=true` — the E2E build). Consumer builds have neither: `/device/upgrade/create`'s
+  body is a best reading of `DeviceUpgradeCreateDtio` (`{ deviceId, deviceFirmwareId }`) until it is captured on
+  a test unit (`docs/siseli-firmware-api.md` §4), and a wrong flash can leave a unit unusable.
+  Flow (`src/stores/firmwareUpdateStore.ts`, rules in `src/utils/firmwareUpdate.ts`, calls in
+  `src/api/firmwareApi.ts`): `upgrade/permission/get` + `device/details` (version, `isFirmwareUpgradeEnabled`,
+  `isOnline`) + `firmware/list/fromManufacturer` → newest enabled file → **update offered only when its version
+  differs** from the device's `softwareVersion` (and it is not the file this phone already installed there) →
+  sheet with the release notes (firmware `description`: what is new / fixed) → confirm → `upgrade/create`
+  (never retried) → poll `upgrade/details` + `device/details` every 5 s → success / failed / "status unknown".
+  **Lock (`src/utils/firmwareLock.ts`):** taken *before* `create`, persisted (a restart resumes it via
+  `App.tsx`), released on success, failure or after 45 min. While held, `apiClient.request()` answers every
+  call that is not firmware, `/device/details` or session upkeep with code `FIRMWARE_UPDATING` (no network),
+  BLE reads/writes in `bleDirect.ts` do nothing, and no schedule is uploaded to the relay; `FirmwareLockBanner`
+  on the device list and monitor says so. The relay likewise skips `isUpgrading` devices
+  (`server/sleepExecutor.js`, `poller.js` — needs a relay redeploy).
 - *Feedback modal* (EmailJS), legal links + version. (The inline "Export My Data" button was removed in v4.7.7; full export lives on `/data-export`.) `ProfileEditPage`'s "Link Accounts" (Google/Apple placeholder rows) was also removed in v4.7.7.
 
 **OnboardingPage** (`/onboarding`) — runs once after a first sign-up
@@ -530,7 +548,7 @@ don't let it happen again):
 | `docs/PRODUCT_SPEC.md` | Deep implementation reference (store shapes, per-page `useState`/`useEffect`, IndexedDB schema) — CLAUDE.md wins on routes/pages if they ever disagree. |
 | `docs/RELEASE_PLAN.md` | P0–P4 issue tracker: what's fixed (✅ + version tag), what's still debt/pending. Update in place, don't leave stale "still TODO" claims once something ships. |
 | `docs/siseli-api.md` | Captured Solar of Things console call for a device's attribute history (`keys/history/v1`, columnar reply) — what Real-Time Power reads. |
-| `docs/siseli-firmware-api.md` | Captured firmware / upgrade endpoints (firmware list & details, upgrade tasks, logs, batch upgrades, permission), what the app already has for it, and what is still needed before an in-app upgrade. Not wired into the app yet. |
+| `docs/siseli-firmware-api.md` | Captured firmware / upgrade endpoints (firmware list & details, upgrade tasks, logs, batch upgrades, permission, the console's upgrade wizard) and what is still needed before the app's Firmware Update (v4.20.0, flag-gated) can be released. |
 | `docs/TEST_PLAN.md` | The one canonical manual+automated test matrix (supersedes the deleted `TEST_CHECKLIST.md`). |
 | `API_REFERENCE.md` | Full backend API surface (all 41 groups/227 endpoints Sierro's own backend exposes), not just what this app calls — a superset reference. |
 | `docs/NATIVE_SETUP.md` | Capacitor native plugin/permission setup for Android/iOS builds. |

@@ -57,6 +57,10 @@ export function createSleepExecutor({ db = store, lock = withUserLock, session =
                 if (!device || !deviceBoundToUser(device, userId)) throw new Error('DEVICE_NOT_OWNED')
                 stage = 'deviceOffline'
                 if (!(device.isOnline === true || device.isOnline === 1 || device.isOnline === 'true')) throw new Error('DEVICE_OFFLINE')
+                // A unit taking a firmware update gets no register writes; the phase
+                // stays owed, so the next tick after the update applies it.
+                stage = 'deviceUpgrading'
+                if (device.isUpgrading === true || device.isUpgrading === 'true' || device.isUpgrading === 1) throw new Error('DEVICE_UPGRADING')
                 if (clock() >= deadline) { result.deferred++; continue }
                 // A slow login/list may straddle a boundary. Never replay old watts.
                 target = scheduleTarget(schedule, clock())

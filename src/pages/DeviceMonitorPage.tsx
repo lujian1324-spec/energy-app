@@ -19,6 +19,7 @@ import { useLivePassthrough, LIVE_PASSTHROUGH_FAST_INTERVAL_MS } from '../hooks/
 import { parseDeviceStateTime } from '../utils/deviceStateTime'
 import { useOnline } from '../hooks/useOnline'
 import OfflineBanner from '../components/OfflineBanner'
+import FirmwareLockBanner from '../components/FirmwareLockBanner'
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function DeviceMonitorPage() {
@@ -286,6 +287,7 @@ export default function DeviceMonitorPage() {
       <PullToRefresh onRefresh={handleRefresh}>
       <div className="px-4 pt-4 pb-6 space-y-4">
         <OfflineBanner show={!online && !isDemoMode} />
+        <FirmwareLockBanner />
         {/* ─── SoC Card ─────────────────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}

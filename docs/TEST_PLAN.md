@@ -201,6 +201,7 @@ v4.4.3 修复 Android 扫不到设备(客户端过滤)与 PWA Open Settings 跳�
 - [ ] 添加设备后按 0x000A 自动识别 Sierro 2000(v4.18.0)→ ratedModelRead.test.ts / device-settings E2E;真机:加一台 2000 看 Device Info 型号
 - [ ] 失败页无 Restart Device 按钮(v4.18.0)→ 真机:配网失败时只剩一个重试按钮
 - [ ] Device Info 显示 Rated Capacity / Rated Output Power / Rated Voltage,容量按型号(1000→1 kWh、2000→2 kWh),不再是 0x000A×2(v4.19.0)→ device-settings E2E;真机:Sierro 1000 显示 1 kWh,电池环"xx to full"与估算一致
+- [ ] 固件升级(v4.20.0,仅 dev/QA/E2E 构建可见)→ firmware-update E2E(入口在 Feedback 下方、版本不同才提示、说明内容、升级中除固件/会话外无任何请求、成功/失败都解锁)+ firmwareUpdate/firmwareUpdateStore 单测;真机(QA 构建、测试机、固件确认匹配):升级全过程、App 重启后恢复进度、45 分钟超时
 - [ ] 安卓应用内自动更新(v4.19.0)→ appUpdate.test.ts;真机(必须从 Play 安装,侧载 APK 不生效):用 Play Console「内部应用分享」或内部测试轨道先装旧版,再发布新版 → 打开 App 出现 Play 更新提示,同意后后台下载,切到后台再回来已是新版本;以 update_priority=4 发布 → 打开即全屏更新
 
 ---

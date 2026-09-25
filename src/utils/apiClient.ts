@@ -8,6 +8,7 @@
 import { calcSign, parseUrlParams } from './iotSign'
 import { parseLossless } from './losslessJson'
 import { overlayBleOnLatestApiResponse } from '../stores/bleLiveStatusStore'
+import { FIRMWARE_LOCK_CODE, FIRMWARE_LOCK_MESSAGE, isFirmwareTraffic, isFirmwareUpdateLocked } from './firmwareLock'
 
 // ─── 平台 Base URL ───
 export const BASE_URL = 'https://solar.siseli.com/apis'
@@ -276,6 +277,12 @@ export async function request<T = unknown>(
   path: string,
   options: RequestOptions = {}
 ): Promise<ApiResponse<T>> {
+  // v4.20.0: while firmware is being written to a device, nothing but the
+  // update (and session upkeep) goes out. A blocked call answers like a refused
+  // one, so every caller already handles it without signing anyone out.
+  if (isFirmwareUpdateLocked() && !isFirmwareTraffic(path)) {
+    return { code: FIRMWARE_LOCK_CODE, message: FIRMWARE_LOCK_MESSAGE } as ApiResponse<T>
+  }
   // Session-only endpoints: recover the token first, never send without one.
   if (options.requireAuth && !options.skipAuth && !options._isRefresh && !tokenStore.get()) {
     const recovered = await getOrCreateRefreshPromise()

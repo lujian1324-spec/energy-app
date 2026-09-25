@@ -16,6 +16,9 @@ import BleDebugPage from './pages/BleDebugPage'
 import PassthroughPage from './pages/PassthroughPage'
 import DebugParamsPage from './pages/DebugParamsPage'
 import DataExportPage from './pages/DataExportPage'
+import FirmwareUpdatePage from './pages/FirmwareUpdatePage'
+import { FIRMWARE_UPDATE_ENABLED } from './config/firmwareUpdate'
+import { useFirmwareUpdateStore } from './stores/firmwareUpdateStore'
 import { useRealtimeSimulator } from './hooks/useRealtimeSimulator'
 import { DEV_TOOLS_ENABLED } from './config/devTools'
 import { useLowBatteryMonitor } from './hooks/useLowBatteryMonitor'
@@ -88,6 +91,12 @@ function AppInner() {
     restoreSession()
     refreshNotificationPermission()
   }, [restoreSession])
+
+  // A firmware update interrupted by a restart keeps its lock and is followed
+  // again (utils/firmwareLock.ts) until it finishes or lapses.
+  useEffect(() => {
+    if (FIRMWARE_UPDATE_ENABLED) useFirmwareUpdateStore.getState().resume()
+  }, [])
 
   // Android: keep the app on the newest Play build (utils/appUpdate.ts). Runs
   // signed in or not — an old build should not wait for a sign-in to update.
@@ -200,6 +209,9 @@ function AppInner() {
                   <Route path="/ble-debug" element={<RequireAuth><BleDebugPage /></RequireAuth>} />
                 )}
                 <Route path="/data-export" element={<RequireAuth><DataExportPage /></RequireAuth>} />
+                {FIRMWARE_UPDATE_ENABLED && (
+                  <Route path="/firmware-update" element={<RequireAuth><FirmwareUpdatePage /></RequireAuth>} />
+                )}
                 {/* 首次进入默认登录页，已登录/游客模式则进入 devices */}
                 <Route
                   path="/"

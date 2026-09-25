@@ -16,6 +16,7 @@ import { POLLER_REFRESH_PENDING_KEY } from './authApi'
 import { RELAY_BASE_URL, SCHEDULE_PATH, isRelayConfigured } from '../config/scheduling'
 import { tokenStore } from '../utils/apiClient'
 import type { ScheduleMode } from '../utils/activeScheduleMode'
+import { isFirmwareUpdateLocked } from '../utils/firmwareLock'
 
 export interface SleepScheduleUpload {
   enabled: boolean
@@ -95,6 +96,10 @@ export async function uploadSleepScheduleResult(
   schedule: SleepScheduleUpload
 ): Promise<ScheduleUploadResult> {
   if (!isRelayConfigured()) return { configured: false, accepted: false }
+  // v4.20.0: no schedule reaches the relay (and so the device) mid firmware update.
+  if (isFirmwareUpdateLocked()) {
+    return { configured: true, accepted: false, detail: 'Paused while a firmware update is in progress. Try again when it finishes.' }
+  }
   try {
     const userId = getUserId()?.trim()
     if (!userId || ['anon', 'null', 'undefined'].includes(userId)) {

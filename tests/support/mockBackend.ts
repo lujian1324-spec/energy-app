@@ -52,6 +52,12 @@ export interface MockDevice {
   acInvOutputW?: number
   /** When true `/remote/device/state/latest` fails for this device. */
   failState?: boolean
+  /** Firmware: the version the device reports, and the files published for it. */
+  softwareVersion?: string
+  firmware?: Array<{ id: string; name: string; version?: string; description?: string; createdAt?: string; fileSize?: number }>
+  /** Upgrade task polls before the mock reports success (default 2); `'fail'` reports failure. */
+  upgradeOutcome?: number | 'fail'
+  isUpgrading?: boolean
 }
 
 export interface ApiCall {
@@ -138,6 +144,7 @@ export async function mockBackend(
 ): Promise<MockBackend> {
   const calls: ApiCall[] = []
   const relaySchedules: any[] = []
+  const upgrades = new Map<string, { deviceId: string; firmwareId: string; polls: number }>()
   let signedInEmail = 'e2e@example.com'
   const byId = (id: unknown) => devices.find(d => d.id === String(id))
 
@@ -209,7 +216,47 @@ export async function mockBackend(
 
       case '/device/details': {
         const d = byId(query.deviceId)
-        return ok(d ? { id: d.id, name: d.name, model: d.model ?? 'Sierro 2000', isOnline: d.isOnline ?? true } : null)
+        return ok(d ? {
+          id: d.id, name: d.name, model: d.model ?? 'Sierro 2000', isOnline: d.isOnline ?? true,
+          softwareVersion: d.softwareVersion ?? 'V1.0.0', isFirmwareUpgradeEnabled: true,
+          isUpgrading: !!d.isUpgrading, dtuDtuid: d.dtuDtuid ?? '',
+        } : null)
+      }
+
+      case '/device/upgrade/permission/get':
+        return ok(true)
+
+      case '/device/firmware/list/fromManufacturer': {
+        const d = byId(query.deviceId)
+        return ok({ list: d?.firmware ?? [], total: d?.firmware?.length ?? 0 })
+      }
+
+      case '/device/firmware/details': {
+        const fw = devices.flatMap(d => d.firmware ?? []).find(f => f.id === query.id)
+        return fw ? ok(fw) : route.fulfill({ json: { code: 1, message: 'no such firmware' } })
+      }
+
+      case '/device/upgrade/create': {
+        const d = byId(body?.deviceId)
+        if (!d) return route.fulfill({ json: { code: 20101, message: 'illegal argument' } })
+        d.isUpgrading = true
+        upgrades.set(`up-${d.id}`, { deviceId: d.id, firmwareId: String(body?.deviceFirmwareId), polls: 0 })
+        return ok(`up-${d.id}`)
+      }
+
+      case '/device/upgrade/details': {
+        const up = upgrades.get(String(query.id))
+        const d = up && byId(up.deviceId)
+        if (!up || !d) return route.fulfill({ json: { code: 1, message: 'no such upgrade' } })
+        up.polls++
+        if (d.upgradeOutcome === 'fail' && up.polls >= 2) { d.isUpgrading = false; return ok({ id: query.id, status: 'FAILED', progress: 40 }) }
+        if (d.upgradeOutcome !== 'fail' && up.polls >= (d.upgradeOutcome ?? 2)) {
+          const fw = d.firmware?.find(f => f.id === up.firmwareId)
+          d.isUpgrading = false
+          d.softwareVersion = fw?.version ?? fw?.name ?? d.softwareVersion
+          return ok({ id: query.id, status: 'SUCCESS', progress: 100 })
+        }
+        return ok({ id: query.id, status: 'UPGRADING', progress: up.polls * 30 })
       }
 
       case '/remote/device/state/latest': {

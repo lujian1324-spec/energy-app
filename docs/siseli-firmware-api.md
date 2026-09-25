@@ -2,8 +2,7 @@
 
 Context: captured from the Solar of Things web console on 2026-09-25 ("Device Firmware List"
 page and the related upgrade pages), read-only — no Download / Disable / Delete / upgrade action
-was triggered. The app does **not** call any of these yet; this file is the reference for adding
-firmware upgrades. Compare `API_REFERENCE.md` §14–15 and §35.
+was triggered. The app's Firmware Update (v4.20.0) uses them behind a flag that is off in consumer builds (§5). Compare `API_REFERENCE.md` §14–15 and §35.
 
 > `docs/API_INTERFACES.txt` / `docs/API_STATUS_REPORT.txt` list `/firmware/latest`,
 > `/firmware/upgrade` and `/firmware/upgrade/progress`. Those were placeholders written before
@@ -92,7 +91,11 @@ What this tells us:
    version and upgrade state, and upgrades stay a manufacturer/after-sales action.
 5. **Download** endpoint (read-only), for completeness.
 
-## 5. Planned app behaviour (once §4 is answered)
+## 5. App behaviour — built in v4.20.0, released once §4 is answered
+
+Implemented behind `FIRMWARE_UPDATE_ENABLED` (see CLAUDE.md, SettingPage → Firmware Update). Still to do after §4:
+confirm the `upgrade/create` body and the `upgrade/details` status/progress fields against the capture, then
+flip the flag. Planned / built:
 
 - Device Info: firmware version row (`softwareVersion`, else 0x0204/0x0208).
 - "Check for update": `permission/get` → `firmware/list/fromManufacturer` for the device;

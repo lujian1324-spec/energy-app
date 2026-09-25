@@ -1,8 +1,9 @@
 {
-  "version": "4.19.0",
-  "build": 2934,
+  "version": "4.20.0",
+  "build": 2935,
   "date": "2026-09-25",
   "changelog": [
+    "Groundwork for updating your device's firmware from the app. It will be switched on in a later update, once it has been verified on real devices.",
     "The Android app now keeps itself up to date. When a new version is on Google Play, the app downloads it in the background after you agree once, and installs it the next time you leave the app, so you come back to the latest version. An urgent update opens Google Play's update screen straight away. Device Info now shows Rated Capacity, Rated Output Power and Rated Voltage, and the rated capacity is the model's own (1 kWh for a Sierro 1000, 2 kWh for a Sierro 2000); it could read 0.6 kWh or 0.5 kWh before, which also made the time to full or empty on the battery ring and the low battery banner wrong.",
     "Sleep Mode now has two sliders for the AC charging power, one for the sleep hours and one for the rest of the day, in 50 W steps from 0 to 400 W on a Sierro 1000 and 0 to 800 W on a Sierro 2000. Sleep Mode can also be set while the device is off or offline: the schedule is kept on Sierro's server and sent to the device when it is back online. On the Real-Time Power chart, press or drag to read the value and time at any point, as on Insights. When a device is added, the app reads its rated output from the device and sets it up as a Sierro 2000 or Sierro 1000 automatically. A long device name at the top of the device screen now ends in … instead of pushing the switch-device arrow under the settings button. Notifications no longer shows Something went wrong; Battery Priority, the Serial Number row in Device Info and the Restart Device button on a failed add have been removed.",
     "The Failed to switch power message, and the other notices at the top of the Device page, no longer overlap the page header. They now sit with even spacing between the header and your devices. Added a sign-in option for internal use.",

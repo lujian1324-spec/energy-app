@@ -45,6 +45,7 @@ import { useSmartScheduleFlush } from '../hooks/useSmartScheduleFlush'
 import { toUserFacingError } from '../utils/uiCopy'
 import { useOnline } from '../hooks/useOnline'
 import OfflineBanner from '../components/OfflineBanner'
+import FirmwareLockBanner from '../components/FirmwareLockBanner'
 
 interface DeviceRealtimeCache {
   [deviceId: string]: {
@@ -487,6 +488,7 @@ export default function DevicePage() {
           read as overlapping the header's lower edge (v4.17.4). */}
       <div className="px-4">
         <OfflineBanner show={!online && !isDemoMode} className="pt-4" />
+        <FirmwareLockBanner className="pt-4" />
         <AnimatePresence>
           {error && (
             <motion.div
