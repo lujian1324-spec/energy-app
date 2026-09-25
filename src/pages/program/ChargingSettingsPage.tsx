@@ -1,11 +1,12 @@
 /**
  * Charging Settings (`/device/:id/charging`, v4.22.0).
  *
- * The AC charging power (Sierro 1000: 50–400 W; Sierro 2000: 100–800 W) and the
+ * The AC charging power — a slider since v4.24.0 (Sierro 1000: 50, 100, 200, 300,
+ * 400 W; Sierro 2000: 100–800 W every 100 W) — and the
  * way into Silent Mode. Save stores it with the rest of the program and writes the
  * power the program implies now to register 0x0085:
- *  - while Silent Mode is limiting, choices above its limit are unavailable and a
- *    choice at or under it is the user's own setting (kept after a window ends);
+ *  - while Silent Mode is limiting, the slider stays at or under its limit, and a
+ *    power picked there is the user's own setting (kept after a window ends);
  *  - while a Stop Charging schedule is in effect the new power is kept for when
  *    charging starts again — changing it never starts a charge.
  */
@@ -17,7 +18,7 @@ import { useDeviceProgram } from '../../hooks/useDeviceProgram'
 import {
   chargePowerOptions, chargeState, nextOccurrence, silentCapW, silentState, time12,
 } from '../../utils/deviceProgram'
-import { ChevronRow, OptionGrid, SaveButton, saveToast } from './ui'
+import { ChevronRow, PowerSlider, SaveButton, saveToast } from './ui'
 
 export default function ChargingSettingsPage() {
   const { id = '' } = useParams<{ id: string }>()
@@ -49,13 +50,12 @@ export default function ChargingSettingsPage() {
         <div className="rounded-l bg-ink-10 p-4">
           <p id="ac-power-label" className="text-title-md text-white">AC Charging Power</p>
           <p className="text-headline-xl font-semibold text-white tnum mt-1 mb-4" data-testid="ac-power-value">{shownPower} W</p>
-          <OptionGrid
+          <PowerSlider
             labelledBy="ac-power-label"
-            options={chargePowerOptions(model)}
+            stops={chargePowerOptions(model)}
             value={shownPower}
+            maxAllowed={silentOn ? cap : undefined}
             onChange={w => { setTouched(true); setPower(w) }}
-            format={w => `${w} W`}
-            disabled={w => silentOn && w > cap}
           />
           {silentOn && (
             <p className="text-label text-ink-6 mt-3">Silent Mode is limiting AC charging to {cap} W.</p>

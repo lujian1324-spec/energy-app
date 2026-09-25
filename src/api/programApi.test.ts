@@ -84,7 +84,8 @@ describe('labels', () => {
 
   it('snaps a power to the model\'s choices', () => {
     expect(snapChargePower('Sierro 1000', 250)).toBe(200)
-    expect(snapChargePower('Sierro 2000', 700)).toBe(600)
+    expect(snapChargePower('Sierro 2000', 750)).toBe(700)
+    expect(snapChargePower('Sierro 1000', 150)).toBe(100)
     expect(snapChargePower('Sierro 1000', 10)).toBe(50)
   })
 })
@@ -141,7 +142,7 @@ describe('saving a program', () => {
   })
 
   it('an invalid program never leaves the phone', async () => {
-    const r = await saveProgram('1001', prog({ chargePowerW: 250 }))
+    const r = await saveProgram('1001', prog({ tasks: [newTask('charge'), { ...newTask('charge'), id: 'dup', action: 'stop' as const }] }))
     expect(r.ok).toBe(false)
     expect(h.fetches).toEqual([])
   })

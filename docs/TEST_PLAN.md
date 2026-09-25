@@ -247,6 +247,8 @@ v4.4.3 修复 Android 扫不到设备(客户端过滤)与 PWA Open Settings 跳�
     - `device-settings.e2e.spec.ts`(7,v4.18.0/v4.19.0):Sleep Mode 两个滑杆 50W 一档(Sierro 1000 为 0–400W、Sierro 2000 为 0–800W),
       保存时对设备写 0x0085(窗口内为睡眠功率)并把窗口+两个功率上传中继,重启后滑杆保持;设备离线也能保存,只上传中继并提示上线后生效;
       Battery Priority 不显示、Device Info 无 Serial Number;0x000A=1000W 识别为 Sierro 2000、500W 为 Sierro 1000。
+    - v4.24.0:`device-program.e2e.spec.ts` AC Charging Power 改为滑块:Sierro 1000 刻度 50/100/200/300/400、拖到 150 落在 100;
+      Sierro 2000 刻度 100–800 每 100W;Silent Mode 限流时拖到 400 仍停在 100。中继 `deviceProgram.test.js` 旧功率(150/250/800)落到最近刻度。
     - v4.23.3:`src/api/relaySession.test.ts`(3,后台用 App 注册密码重建中继会话、一天最多一次、别的账号/退出后不做)、
       `programApi.test.ts` +1(被拒后自动重建并重发,首次不带、第二次带会话令牌)。
     - v4.23.2(逐行审查修复):中继 `deviceProgram.test.js` +1(编辑停充任务不恢复充电、保存前的 AC 事件不重放、旧格式照旧)、

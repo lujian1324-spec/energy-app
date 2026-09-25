@@ -452,7 +452,9 @@ backend/firmware handoff: **`docs/DEVICE_PROGRAM.md`**.
   UI helpers from `src/utils/deviceProgram.ts`). Program per device: `model`, `tz` (phone's IANA zone at save),
   `chargePowerW`, `silent {enabled, scheduled, from, to, days, updatedAt}`, `tasks[] {id, kind 'ac'|'charge',
   action on/off|start/stop, time HH:MM, days 0–6, enabled, updatedAt}` (≤ 20), `limits {chargeMax 100|80|60,
-  dischargeMin 0|10|20}`. Power choices: Sierro 1000 50/100/150/200/300/400 W, Sierro 2000 100/200/300/400/600/800 W;
+  dischargeMin 0|10|20}`. Power (v4.24.0, a slider — `PowerSlider` in `pages/program/ui.tsx`, running in watts and settling on the nearest
+  stop): Sierro 1000 50/100/200/300/400 W, Sierro 2000 100–800 W every 100 W; a stored power that is not a stop moves to
+  the nearest (`nearestChargePower`, lower on a tie) instead of invalidating the program;
   Silent limit 150 / 300 W.
 - **Rules:** tasks are point events, acting only at occurrences after their `updatedAt` (never retroactively); charging
   follows the latest charge event (none → charging); an AC event missed by more than 30 min is dropped; Silent Mode
@@ -497,7 +499,7 @@ backend/firmware handoff: **`docs/DEVICE_PROGRAM.md`**.
 - **Charge & Discharge Limits are hidden** (`CHARGE_LIMITS_ENABLED`: dev, QA, `VITE_ENABLE_CHARGE_LIMITS=true` — the E2E
   build): no firmware register exists yet; values are saved and uploaded but not applied.
 - **Sizes as drawn (v4.23.0):** task/Silent switches are `ToggleSwitch size="lg"` (56×32); Smart Schedule tabs 40 tall,
-  task time `text-headline-md`, Add Schedule 40 tall; `OptionGrid` md = 48 tall (charge power), sm = 40 tall bold
+  task time `text-headline-md`, Add Schedule 40 tall; AC Charging Power is `PowerSlider` (v4.24.0; stop labels under the track); `OptionGrid` sm = 40 tall bold
   (limits); Silent Mode's From/To/Repeat are `ChevronRow compact` (44). Keep these when editing the pages.
 - The wheel time picker is shared (`src/components/TimeWheel.tsx`); since v4.22.0 its own scrolls (line-up, a tap) and a
   settle timer outliving the picker no longer change the value.

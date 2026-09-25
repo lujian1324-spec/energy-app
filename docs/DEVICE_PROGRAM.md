@@ -39,8 +39,13 @@ disagree about what the device should be doing.
 }
 ```
 
-Validation (`validateProgram`) refuses: an unknown zone, a power that is not one of the
-model's choices, `HH:MM` that is not 24-hour, a task with no days, duplicate task ids,
+AC Charging Power stops (v4.24.0, a slider): Sierro 1000 **50, 100, 200, 300, 400 W**;
+Sierro 2000 **100–800 W every 100 W**. A stored power that is not a stop (150 W, 600 W from
+before) is moved to the nearest stop, the lower one on a tie (`nearestChargePower`) — never a
+reason to refuse the whole program.
+
+Validation (`validateProgram`) refuses: an unknown zone, a power that is not a number,
+`HH:MM` that is not 24-hour, a task with no days, duplicate task ids,
 more than 20 tasks, an empty Silent window, and two enabled tasks of the same kind at the
 same time on a shared day (start and stop at once).
 
@@ -57,7 +62,8 @@ same time on a shared day (start and stop at once).
   scheduled → limit inside the window (switching it on inside a window applies at once).
   Limit = 150 W (Sierro 1000) / 300 W (Sierro 2000). It is a **cap**: a power the user
   picks at or under it — also during a window — is their setting and stays after the
-  window ends; choices above it are unavailable while it limits.
+  window ends; the slider stays at or under it while it limits (on a Sierro 1000 the limit,
+150 W, sits between stops: the screen shows 150 W, and a power picked then is 50 or 100 W).
 - **0x0085 value** = 0 while charging is paused, else `chargePowerW`, capped while Silent
   Mode limits. **Changing the power never starts a paused charge** (it writes 0 again).
 

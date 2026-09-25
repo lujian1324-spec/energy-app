@@ -50,7 +50,7 @@ test('program save checks the caller and the device before storing', async () =>
   }
   const f = routesFixture()
   assert.equal((await f.post({}, null)).statusCode, 401)
-  assert.equal((await f.post({ program: { ...program(), chargePowerW: 250 } })).statusCode, 400)
+  assert.equal((await f.post({ program: { ...program(), chargePowerW: 'x' } })).statusCode, 400)
   assert.deepEqual(f.events, [])
 })
 
