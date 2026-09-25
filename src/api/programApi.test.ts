@@ -234,3 +234,22 @@ describe('this phone\'s copy belongs to the account that saved it (v4.23.1)', ()
     expect(loadLocalProgram('1001')?.chargePowerW).toBe(300)
   })
 })
+
+describe('a relay with no background session for the account (v4.23.2)', () => {
+  it('an untimed save it did not keep is this phone\'s copy, and loads back from it', async () => {
+    h.relayReply = { status: 200, body: { code: 0, data: { stored: false } } }
+    const r = await saveProgram('1001', prog({ chargePowerW: 200 }))
+    expect(r).toMatchObject({ ok: true, background: false, applied: true })
+    expect(r.detail).toBeUndefined()
+    // The relay answers "none"; the screens still open on what was saved here.
+    h.relayProgram = null
+    expect(await loadProgram('1001', 'Sierro 1000')).toMatchObject({ source: 'local', program: { chargePowerW: 200 } })
+  })
+
+  it('says so when the device did not take it either', async () => {
+    h.relayReply = { status: 200, body: { code: 0, data: { stored: false } } }
+    const r = await saveProgram('1001', prog({ chargePowerW: 200 }), { deviceOnline: false })
+    expect(r.ok).toBe(true)
+    expect(r.detail).toMatch(/this phone only/)
+  })
+})

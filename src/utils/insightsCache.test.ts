@@ -205,6 +205,19 @@ describe('Insights page reads', () => {
     expect(none.failed).toBe(true)
   })
 
+  it('a re-read that fails part-way keeps the cached day whole (v4.23.2)', async () => {
+    // Today is cached whole (and, like every today, not final).
+    const day = DAY('2026-09-24T00:00:00')
+    h.samplesPerDay = 5
+    await fetchDay('1001', day)
+    expect(h.days.get(`1001|${day}`)?.final).toBe(false)
+    // This time the read stops after its first sample.
+    h.failDays = new Set([day])
+    const res = await loadInsightsRange('1001', day, nextDayStart(day) - 1)
+    expect(res.partial).toBe(true)
+    expect(res.points).toHaveLength(5)
+  })
+
   it('a request that throws is a failed day, not a crash', async () => {
     const { fetchWindow } = await import('../hooks/useHistoryFetcher')
     vi.mocked(fetchWindow).mockRejectedValueOnce(new Error('Network down'))

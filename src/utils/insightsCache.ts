@@ -200,10 +200,18 @@ export async function loadInsightsRange(
   if (!cache.covered) {
     try { base = await readDeviceHistory(deviceId, from, to) } catch { base = [] }
   }
-  const replaced = [...results.entries()].filter(([, r]) => r.points.length > 0).map(([d]) => d)
+  // A day that came back whole replaces the cache for it. One that failed part-way
+  // only adds what it did get (v4.23.2): it used to replace a whole cached day with
+  // its first pages, so a complete day was drawn short.
+  const inRange = (p: HistoryPoint) => p.timestamp >= from && p.timestamp <= to
+  const replaced = [...results.entries()].filter(([, r]) => r.ok).map(([d]) => d)
   const inReplaced = (t: number) => replaced.some(d => t >= d && t < nextDayStart(d))
   const points = base.filter(p => !inReplaced(p.timestamp))
-  for (const d of replaced) points.push(...results.get(d)!.points.filter(p => p.timestamp >= from && p.timestamp <= to))
+  for (const d of replaced) points.push(...results.get(d)!.points.filter(inRange))
+  const have = new Set(points.map(p => p.timestamp))
+  for (const r of results.values()) {
+    if (!r.ok) points.push(...r.points.filter(p => inRange(p) && !have.has(p.timestamp)))
+  }
   points.sort((a, b) => a.timestamp - b.timestamp)
 
   const anyFailed = [...results.values()].some(r => !r.ok)

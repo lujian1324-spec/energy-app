@@ -374,6 +374,7 @@ lives on independently and is still referenced elsewhere.)
     keeps the chart); only days that are not final reach the server.
   - Page and background share one request per device-day (`fetchDay` in-flight map; a thrown request is a
     failed day). A `FIRMWARE_UPDATING` reply never switches the session from keys/history/v1 to record/list.
+    A re-read that fails part-way only adds its points to the cached day; only a whole read replaces it (v4.23.2).
     `resetInsightsCache()` (from `deviceStore.exitDemoMode`, sign-in/out) drops requests in flight so none
     writes into the next account's cache; `clearDeviceHistory()` clears `history_days` too.
 
@@ -458,6 +459,11 @@ backend/firmware handoff: **`docs/DEVICE_PROGRAM.md`**.
   is off / always / inside the window (crosses midnight when `to <= from`; `days` = start days) and is a **cap** —
   a power picked at or under it stays after the window; 0x0085 = 0 while paused, so changing the power never starts
   a charge. Two enabled tasks of one kind at the same time on a shared day are refused (`findClash`).
+  **A save never changes what already happened (v4.23.2):** `chargeBaseline` (set by `stampChanges` = charging under the
+  replaced program at save time) is the charging state until a charge task of the new program fires after `savedAt`;
+  AC events before `savedAt` are not owed. Editing a Stop task, or a save from a phone in another zone, used to resume
+  a paused charge at once, and a save replayed an AC event from the last 30 min. A program without `chargeBaseline`
+  (saved before v4.23.2) keeps the old rule.
 - **Saving** (`saveProgram`, `src/api/programApi.ts`; screens via `useDeviceProgram`, each saving only its own part
   merged onto the latest saved copy): stamp changes (`stampChanges`) → validate → relay `POST /program` (a refusal
   is a failed save; nothing written) → local copy `sierro-program-{id}` → disarm the old `sierro-sleep-{id}` window →
@@ -475,7 +481,14 @@ backend/firmware handoff: **`docs/DEVICE_PROGRAM.md`**.
   legacy `/schedule` window), `server/programExecutor.js` run inside the minute tick (`sleepExecutor.tick`, also
   in-process when `SLEEP_SCHEDULER_EXTERNAL` ≠ true): compares `chargeTarget`/`acTarget` keys with what it last
   applied, and only on a difference opens the session, checks owned + online + not upgrading, writes 0x0080 / 0x0085.
-  **Needs a relay redeploy**; an old relay answers 404 and the app reports the save as failed.
+  **Needs a relay redeploy**; an old relay answers 404 and the app reports the save as failed. A device whose write
+  failed waits 2 → 4 → … → 30 min before the next try (per device, in memory; a new save retries at once — v4.23.2).
+  A relay with no record of the user (no background session ever sent) accepts an untimed program without keeping it
+  and says `stored: false`; the app then relies on its own copy (`loadProgram` falls back to it when the relay has
+  none). **Known gap:** the relay's own session is minted by `provisionPollerSession` (password sign-in, and email-code
+  sign-in for accounts this app registered, via `defaultPasswordForAccount`); an account created elsewhere or with a
+  changed password has none, so its timed programs are refused with `POLLER_SESSION_REQUIRED`. Never hand the relay
+  the app's own token pair — refresh tokens are single-use. See `docs/DEVICE_PROGRAM.md` §6.
 - **Charge & Discharge Limits are hidden** (`CHARGE_LIMITS_ENABLED`: dev, QA, `VITE_ENABLE_CHARGE_LIMITS=true` — the E2E
   build): no firmware register exists yet; values are saved and uploaded but not applied.
 - **Sizes as drawn (v4.23.0):** task/Silent switches are `ToggleSwitch size="lg"` (56×32); Smart Schedule tabs 40 tall,

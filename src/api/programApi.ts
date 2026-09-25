@@ -104,7 +104,10 @@ export async function loadProgram(deviceId: string, model: string): Promise<Load
     saveLocalProgram(deviceId, relay)
     return { program: adaptProgram(relay, model), source: 'relay' }
   }
-  const local = relay === undefined ? loadLocalProgram(deviceId) : null
+  // The relay has none (or could not be asked): this phone's copy, for this account.
+  // A relay with no session for the account accepts an untimed save without
+  // keeping it (v4.23.2), so "none" there does not mean this phone's copy is stale.
+  const local = loadLocalProgram(deviceId)
   if (local) return { program: adaptProgram(local, model), source: 'local' }
   return { program: initialProgram(model, loadSchedule(deviceId)), source: 'new' }
 }
@@ -162,7 +165,8 @@ export async function saveProgram(
 
   let background = false
   let merged = false
-  if (isRelayConfigured()) {
+  const relay = isRelayConfigured()
+  if (relay) {
     let up = await uploadProgram(deviceId, program, base === undefined ? undefined : (base?.savedAt ?? null))
     if (up.conflict && base) {
       // Another phone saved in between: keep its changes, re-apply ours, send once more.
@@ -181,7 +185,7 @@ export async function saveProgram(
       }
     }
     if (!up.ok) return { ok: false, background: false, applied: null, current: up.conflict, detail: up.detail }
-    background = true
+    background = up.stored !== false
   }
 
   saveLocalProgram(deviceId, program)
@@ -203,8 +207,14 @@ export async function saveProgram(
     program,
     background,
     applied,
-    detail: !background
+    detail: !relay
       ? 'Saved on this phone. Schedules run only while the app is open in this build.'
+      : !background
+        // The relay took the save without keeping it (no background session for
+        // this account): only what was written to the device just now took effect.
+        ? applied === true
+          ? undefined
+          : "Saved on this phone only. The device didn't take the change; save again when it is online."
       : applied === false
         ? 'Saved. The device did not take the change yet; it will be sent again shortly.'
         : applied === null
@@ -219,7 +229,7 @@ async function uploadProgram(
   deviceId: string,
   program: DeviceProgram,
   baseSavedAt?: number | null,
-): Promise<{ ok: boolean; detail?: string; conflict?: DeviceProgram }> {
+): Promise<{ ok: boolean; detail?: string; conflict?: DeviceProgram; stored?: boolean }> {
   const uid = userId()
   if (!uid) return { ok: false, detail: 'Sign in again before saving a schedule.' }
   let boot: { accessToken?: string; refreshToken?: string; accessExpiresAt?: number } = {}
@@ -246,7 +256,7 @@ async function uploadProgram(
     if (ok && rawBoot && userId() === uid && localStorage.getItem(POLLER_REFRESH_PENDING_KEY) === rawBoot) {
       localStorage.removeItem(POLLER_REFRESH_PENDING_KEY)
     }
-    if (ok) return { ok: true }
+    if (ok) return { ok: true, stored: body?.data?.stored !== false }
     if (res.status === 409 && body?.reason === 'PROGRAM_CHANGED') {
       let conflict: DeviceProgram | undefined
       try { conflict = validateProgram(body?.data?.program) } catch { conflict = undefined }

@@ -18,7 +18,7 @@ function routesFixture(overrides = {}) {
   const store = {
     requireUserId: id => { if (!id) throw new Error('userId required'); return String(id) },
     setUserAuth: () => events.push('auth'),
-    setUserProgram: (_u, d, p, { needsSession }) => { events.push(`save:${needsSession}`); saved[d] = p; return overrides.saveOk ?? true },
+    setUserProgram: (_u, d, p, { needsSession }) => { events.push(`save:${needsSession}`); saved[d] = p; return overrides.saveOk === undefined ? true : overrides.saveOk },
     getUserProgram: (_u, d) => saved[d] ?? null,
   }
   installProgramRoutes({ post: (p, h) => { routes[`POST ${p}`] = h }, get: (p, h) => { routes[`GET ${p}`] = h } }, {
@@ -58,7 +58,11 @@ test('a timed program needs the background session; an untimed one is stored wit
   const f = routesFixture()
   assert.equal((await f.post({ program: program({ tasks: [stopAt7] }) })).statusCode, 200)
   assert.equal((await f.post({ program: program() })).statusCode, 200)
-  assert.deepEqual(f.events, ['lock', 'save:true', 'lock', 'save:false'])
+  assert.deepEqual(f.events.slice(0, 4), ['lock', 'save:true', 'lock', 'save:false'])
+  assert.equal((await f.post({ program: program() })).body.data.stored, true)
+  // An untimed program for a user the relay has no record of: accepted, not stored.
+  const unknown = routesFixture({ saveOk: null })
+  assert.equal((await unknown.post({ program: program() })).body.data.stored, false)
   const refused = routesFixture({ saveOk: false })
   const res = await refused.post({ program: program({ tasks: [stopAt7] }) })
   assert.equal(res.statusCode, 409)
@@ -167,6 +171,31 @@ test('an offline device is retried until it is back, then written', async () => 
   f.setTime('2026-09-24T15:30:00Z')
   assert.equal((await f.executor.tick()).applied, 1)
   assert.deepEqual(f.writes, [{ reg: 0x85, value: 0 }])
+})
+
+test('a failing device waits longer after each failure, and a new save is tried at once (v4.23.2)', async () => {
+  const p = program({ tasks: [stopAt7] })
+  const f = tickFixture(p, {
+    session: async () => ({ token: 't', devices: [{ id: 'device', ownerUserId: 'user', isOnline: false }] }),
+  })
+  f.setTime('2026-09-24T14:05:00Z')
+  assert.equal((await f.executor.tick()).failed, 1)
+  // Inside the first pause (2 min): not tried, no session opened.
+  f.setTime('2026-09-24T14:06:00Z')
+  const waiting = await f.executor.tick()
+  assert.equal(waiting.failed, 0)
+  assert.equal(waiting.retryWait, 1)
+  // After it: tried again, fails, and the next pause is 4 min.
+  f.setTime('2026-09-24T14:07:30Z')
+  assert.equal((await f.executor.tick()).failed, 1)
+  f.setTime('2026-09-24T14:10:00Z')
+  assert.equal((await f.executor.tick()).retryWait, 1)
+  f.setTime('2026-09-24T14:12:00Z')
+  assert.equal((await f.executor.tick()).failed, 1)
+  // A new save of the program is tried on the next tick.
+  p.savedAt = 2
+  f.setTime('2026-09-24T14:13:00Z')
+  assert.equal((await f.executor.tick()).failed, 1)
 })
 
 test('a device mid firmware update gets no program writes', async () => {

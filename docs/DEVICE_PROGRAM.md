@@ -116,3 +116,24 @@ so a change shows at once; offline, it leaves that to the relay.
   "device restarted" signal, or non-volatile equivalents, would let it re-assert at once.
 - **On-device schedules** — the relay needs the cloud and the home network. If the firmware
   can hold the task list itself, the same data model (§1) can be sent to it.
+
+## 6. Known gap: accounts the relay has no background session for (v4.23.2 review)
+
+The relay can only act with the app closed if it holds its own session for the account
+(a second, independent sign-in — refresh tokens are single-use, so sharing the app's pair
+would sign the app out at the relay's first refresh; `AWS_RELAY_AND_PUSH.md` §4).
+`provisionPollerSession()` (`src/api/authApi.ts`) mints it by signing in again with the
+password:
+
+- the hidden account + password sign-in: with the password typed;
+- an email-code sign-in (`loginByEmail`): with the password this app gives the accounts it
+  registers (`defaultPasswordForAccount`: account + `1234`).
+
+So the gap is an account **created outside this app, or whose password was changed**. For
+those, a program with an enabled task or a scheduled Silent Mode is refused with
+`409 POLLER_SESSION_REQUIRED`, and an untimed one is written to the device and kept on the
+phone (`stored: false`). A way to close it without sharing the app's tokens: ask for the
+account password once when that refusal comes back, and mint the relay's session with it.
+
+Rules changed in v4.23.2: `chargeBaseline` + the `savedAt` cutoff (see CLAUDE.md), the
+relay's per-device retry pause, and `stored` in the `POST /program` reply.

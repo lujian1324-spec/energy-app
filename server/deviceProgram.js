@@ -27,6 +27,13 @@
 //  - AC charge power written to register 0x0085: 0 while charging is paused;
 //    otherwise the saved power, capped at the Silent Mode limit while Silent Mode is
 //    on. Changing the power never resumes a paused charge.
+//  - A save never changes what already happened (v4.23.2). `chargeBaseline` is
+//    whether the device was charging under the program being replaced, at the
+//    moment of the save; until a charge task of the new program fires after
+//    `savedAt`, that is the charging state. Editing a Stop task, or a save from a
+//    phone in another time zone, used to recompute past events and resume a
+//    paused charge on the spot. AC output events before `savedAt` are not owed
+//    either, so a save never replays one the user has since overridden.
 
 export const PROGRAM_VERSION = 1
 export const MAX_TASKS = 20
@@ -71,6 +78,7 @@ export function defaultProgram(model, tz) {
     tasks: [],
     limits: { chargeMax: 100, dischargeMin: 0 },
     savedAt: 0,
+    chargeBaseline: true,
   }
 }
 
@@ -138,6 +146,8 @@ export function validateProgram(value) {
   return {
     version: PROGRAM_VERSION, model: value.model, tz: value.tz, chargePowerW: value.chargePowerW,
     silent, tasks, limits, savedAt: cleanStamp(value.savedAt),
+    // Absent on a program saved before v4.23.2: charging then follows the old rule.
+    ...(typeof value.chargeBaseline === 'boolean' ? { chargeBaseline: value.chargeBaseline } : {}),
   }
 }
 
@@ -276,12 +286,12 @@ export function nextSilentChange(program, now) {
 }
 
 /** The latest occurrence <= now, after the task was saved, of each enabled task of `kind`. */
-function latestTaskEvent(program, kind, now) {
+function latestTaskEvent(program, kind, now, since = 0) {
   let best = null
   for (const t of program.tasks) {
     if (!t.enabled || t.kind !== kind) continue
     const at = lastOccurrence(t.time, t.days, program.tz, now)
-    if (at == null || at < (t.updatedAt || 0)) continue
+    if (at == null || at < (t.updatedAt || 0) || at <= since) continue
     if (!best || at > best.at) best = { task: t, at }
   }
   return best
@@ -289,8 +299,9 @@ function latestTaskEvent(program, kind, now) {
 
 /** Charging at `now`: { charging, at, taskId } — paused only by a Stop Charging event in effect. */
 export function chargeState(program, now) {
-  const e = latestTaskEvent(program, 'charge', now)
-  if (!e) return { charging: true, at: 0, taskId: null }
+  const hasBaseline = typeof program.chargeBaseline === 'boolean'
+  const e = latestTaskEvent(program, 'charge', now, hasBaseline ? program.savedAt || 0 : 0)
+  if (!e) return hasBaseline ? { charging: program.chargeBaseline, at: 0, taskId: null } : { charging: true, at: 0, taskId: null }
   return { charging: e.task.action === 'start', at: e.at, taskId: e.task.id }
 }
 
@@ -317,7 +328,7 @@ export function chargeTarget(program, now) {
  * occurrence (after its save) no older than AC_EVENT_GRACE_MS, or null.
  */
 export function acTarget(program, now, graceMs = AC_EVENT_GRACE_MS) {
-  const e = latestTaskEvent(program, 'ac', now)
+  const e = latestTaskEvent(program, 'ac', now, program.savedAt || 0)
   if (!e || now - e.at > graceMs) return null
   return { on: e.task.action === 'on', at: e.at, key: `${e.task.id}@${e.at}` }
 }

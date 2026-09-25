@@ -42,6 +42,12 @@ export interface DeviceProgram {
   tasks: ScheduleTask[]
   limits: ChargeLimits
   savedAt: number
+  /**
+   * Charging under the program this one replaced, at `savedAt` (v4.23.2): the
+   * charging state until one of this program's charge tasks fires after the save.
+   * Absent on a program saved before v4.23.2.
+   */
+  chargeBaseline?: boolean
 }
 
 export const PROGRAM_VERSION: number

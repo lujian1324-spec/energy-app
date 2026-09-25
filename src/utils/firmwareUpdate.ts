@@ -55,21 +55,31 @@ const FAILURE = /fail|error|timeout|timed out|abort|cancel|失败|超时|取消/
  */
 export function upgradeProgress(
   details: Record<string, unknown> | null,
-  device: { isUpgrading?: boolean; softwareVersion?: string | null } | null,
+  device: { isUpgrading?: boolean | number | string | null; softwareVersion?: string | null } | null,
   fromVersion?: string,
 ): UpgradeProgress {
   const status = details ? [details.status, details.statusDict, details.state, details.stateDict, details.upgradeStatus, details.result]
     .filter(v => v != null).map(String).join(' ') : ''
   let percent: number | undefined
   const p = Number(details?.progress ?? details?.percent ?? details?.rate ?? details?.upgradeProgress)
-  if (Number.isFinite(p)) percent = Math.max(0, Math.min(100, p <= 1 && p > 0 ? p * 100 : p))
+  // A fraction only when it has one: 0.4 is 40 %, but 1 on a 0–100 scale is 1 %.
+  if (Number.isFinite(p)) percent = Math.max(0, Math.min(100, p > 0 && p < 1 ? p * 100 : p))
   if (FAILURE.test(status)) return { phase: 'failed', percent }
   if (SUCCESS.test(status)) return { phase: 'success', percent: 100 }
-  if (device && device.isUpgrading === false && fromVersion != null
+  if (device && isExplicitlyNotUpgrading(device.isUpgrading) && fromVersion != null
     && normalizeVersion(device.softwareVersion) !== '' && normalizeVersion(device.softwareVersion) !== normalizeVersion(fromVersion)) {
     return { phase: 'success', percent: 100 }
   }
   return { phase: 'running', percent }
+}
+
+/**
+ * The device record says the update is over: false, 0, 'false' or '0' — the forms
+ * the platform sends (the relay reads true / 1 / 'true' the same way). Absent is
+ * not an answer.
+ */
+function isExplicitlyNotUpgrading(v: unknown): boolean {
+  return v === false || v === 0 || v === 'false' || v === '0'
 }
 
 const INSTALLED_KEY = (deviceId: string) => `sierro-firmware-installed-${deviceId}`

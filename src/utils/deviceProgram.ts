@@ -10,7 +10,7 @@
 export * from '../../server/deviceProgram.js'
 export type { DeviceProgram, ScheduleTask, SilentSettings, ChargeLimits } from '../../server/deviceProgram.js'
 import {
-  EVERY_DAY, chargePowerOptions, crossesMidnight, defaultProgram, nextOccurrence,
+  EVERY_DAY, chargePowerOptions, chargeState, crossesMidnight, defaultProgram, nextOccurrence,
   type DeviceProgram, type ScheduleTask,
 } from '../../server/deviceProgram.js'
 
@@ -107,6 +107,11 @@ export function nextRun(program: DeviceProgram, task: ScheduleTask, now = Date.n
   return nextOccurrence(task.time, task.days, program.tz, now)
 }
 
+/** The same task apart from its stamp: what counts as "edited" when saving or merging. */
+export const sameTask = (a: ScheduleTask, b: ScheduleTask) =>
+  a.kind === b.kind && a.action === b.action && a.time === b.time && a.enabled === b.enabled
+  && a.days.length === b.days.length && a.days.every((d, i) => d === b.days[i])
+
 /**
  * Stamp what changed since the last saved program: a new or edited task gets
  * `updatedAt = now` (so it acts from its next occurrence, never retroactively),
@@ -114,12 +119,9 @@ export function nextRun(program: DeviceProgram, task: ScheduleTask, now = Date.n
  */
 export function stampChanges(prev: DeviceProgram | null, next: DeviceProgram, now: number): DeviceProgram {
   const before = new Map((prev?.tasks ?? []).map(t => [t.id, t]))
-  const same = (a: ScheduleTask, b: ScheduleTask) =>
-    a.kind === b.kind && a.action === b.action && a.time === b.time && a.enabled === b.enabled
-    && a.days.length === b.days.length && a.days.every((d, i) => d === b.days[i])
   const tasks = next.tasks.map(t => {
     const old = before.get(t.id)
-    return old && same(old, t) ? { ...t, updatedAt: old.updatedAt } : { ...t, updatedAt: now }
+    return old && sameTask(old, t) ? { ...t, updatedAt: old.updatedAt } : { ...t, updatedAt: now }
   })
   const ps = prev?.silent
   const s = next.silent
@@ -130,12 +132,12 @@ export function stampChanges(prev: DeviceProgram | null, next: DeviceProgram, no
     tasks,
     silent: { ...s, updatedAt: silentChanged ? now : ps!.updatedAt },
     savedAt: now,
+    // Charging as the replaced program had it now: the state until a charge task of
+    // this one fires (v4.23.2) — a save never resumes or pauses a charge by itself.
+    chargeBaseline: prev ? chargeState(prev, now).charging : true,
   }
 }
 
-const sameTask = (a: ScheduleTask, b: ScheduleTask) =>
-  a.kind === b.kind && a.action === b.action && a.time === b.time && a.enabled === b.enabled
-  && a.days.length === b.days.length && a.days.every((d, i) => d === b.days[i])
 const sameValue = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
 
 /**

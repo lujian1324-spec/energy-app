@@ -13,7 +13,7 @@ export function SaveButton({ dirty, saving, onSave }: { dirty: boolean; saving: 
       type="button"
       onClick={onSave}
       disabled={!dirty || saving}
-      className={`h-10 px-1 text-body-lg font-semibold transition-colors ${dirty && !saving ? 'text-primary' : 'text-primary/30 cursor-not-allowed'}`}
+      className={`h-12 px-1 text-body-lg font-semibold transition-colors ${dirty && !saving ? 'text-primary' : 'text-primary/30 cursor-not-allowed'}`}
     >
       {saving ? 'Saving…' : 'Save'}
     </button>
