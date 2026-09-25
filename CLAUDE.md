@@ -485,9 +485,10 @@ backend/firmware handoff: **`docs/DEVICE_PROGRAM.md`**.
   failed waits 2 → 4 → … → 30 min before the next try (per device, in memory; a new save retries at once — v4.23.2).
   A relay with no record of the user (no background session ever sent) accepts an untimed program without keeping it
   and says `stored: false`; the app then relies on its own copy (`loadProgram` falls back to it when the relay has
-  none). **Known gap:** the background session is minted only by the hidden password sign-in
-  (`provisionPollerSession`); an email-code account has none, so timed programs are refused with
-  `POLLER_SESSION_REQUIRED` — see `docs/DEVICE_PROGRAM.md` §6.
+  none). **Known gap:** the relay's own session is minted by `provisionPollerSession` (password sign-in, and email-code
+  sign-in for accounts this app registered, via `defaultPasswordForAccount`); an account created elsewhere or with a
+  changed password has none, so its timed programs are refused with `POLLER_SESSION_REQUIRED`. Never hand the relay
+  the app's own token pair — refresh tokens are single-use. See `docs/DEVICE_PROGRAM.md` §6.
 - **Charge & Discharge Limits are hidden** (`CHARGE_LIMITS_ENABLED`: dev, QA, `VITE_ENABLE_CHARGE_LIMITS=true` — the E2E
   build): no firmware register exists yet; values are saved and uploaded but not applied.
 - **Sizes as drawn (v4.23.0):** task/Silent switches are `ToggleSwitch size="lg"` (56×32); Smart Schedule tabs 40 tall,
