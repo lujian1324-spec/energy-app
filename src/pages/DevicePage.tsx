@@ -35,6 +35,7 @@ import { parseDeviceStateTime } from '../utils/deviceStateTime'
 import { batteryTimeLabel } from '../utils/batteryTime'
 import { hapticMedium } from '../utils/haptics'
 import { loadRatedParams } from '../db/powerflowDB'
+import { ratedCapacityWh } from '../data/deviceModels'
 import type { DeviceListItem, DeviceStateField } from '../api/deviceApi'
 import { getDemoDeviceState } from '../data/demoData'
 import { useBleLiveStatusStore, lookupBleLiveStatus } from '../stores/bleLiveStatusStore'
@@ -416,9 +417,10 @@ export default function DevicePage() {
     const lid = lowBatteryDevice ? String(lowBatteryDevice.id) : null
     if (!lid) { setLowBatteryCapacityWh(undefined); return }
     loadRatedParams(lid)
-      .then(p => setLowBatteryCapacityWh(p ? p.acInvOutputPower * 2 : undefined))
+      // Capacity comes from the model (deviceModels.ratedCapacityWh), not 0x000A.
+      .then(p => setLowBatteryCapacityWh(ratedCapacityWh(p?.model ?? lowBatteryDevice?.model)))
       .catch(() => setLowBatteryCapacityWh(undefined))
-  }, [lowBatteryDevice?.id])
+  }, [lowBatteryDevice?.id, lowBatteryDevice?.model])
   const lowBatteryTimeStr = lowBatteryDevice
     ? batteryTimeLabel({
         acPower: getDeviceNum(lowBatteryDevice.id, 'acPower') ?? 0,

@@ -43,3 +43,13 @@ describe('Sleep Mode power sliders (v4.18.0)', () => {
     expect(sleepPowers('Sierro 2000', { sleepW: 100, wakeW: 250 })).toEqual({ inWindowW: 100, outWindowW: 250, restoreW: 800 })
   })
 })
+
+describe('rated capacity comes from the model, not 0x000A (v4.19.0)', () => {
+  it('1 kWh for a Sierro 1000 (and an unknown model), 2 kWh for a Sierro 2000', async () => {
+    const { ratedCapacityWh } = await import('../data/deviceModels')
+    expect(ratedCapacityWh('Sierro 1000')).toBe(1000)
+    expect(ratedCapacityWh('Sierro 2000')).toBe(2000)
+    expect(ratedCapacityWh(undefined)).toBe(1000)
+    expect(ratedCapacityWh('')).toBe(1000)
+  })
+})

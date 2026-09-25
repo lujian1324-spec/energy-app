@@ -13,6 +13,7 @@ import { useHistoryFetcher } from '../hooks/useHistoryFetcher'
 import { batteryTimeLabel } from '../utils/batteryTime'
 import { parseWorkMode } from '../utils/batteryPriority'
 import { loadRatedParams } from '../db/powerflowDB'
+import { ratedCapacityWh } from '../data/deviceModels'
 
 // ─── 参数分组描述 ─────────────────────────────────────────────────────────────
 
@@ -122,14 +123,14 @@ export default function DebugParamsPage() {
   const selectedDeviceState = stateForDevice(storeDeviceState, id)
   const device = devices.find(d => String(d.id) === id)
 
-  // 额定容量（Wh）= acInvOutputPower × 2，与 batteryTime.ts / Device Info 页同源
+  // 额定容量（Wh）按型号取（ratedCapacityWh），与 batteryTime.ts / Device Info 页同源
   const [batteryCapacityWh, setBatteryCapacityWh] = useState<number | undefined>(undefined)
   useEffect(() => {
     if (!id) { setBatteryCapacityWh(undefined); return }
     loadRatedParams(id)
-      .then(p => setBatteryCapacityWh(p ? p.acInvOutputPower * 2 : undefined))
+      .then(p => setBatteryCapacityWh(ratedCapacityWh(p?.model ?? device?.model)))
       .catch(() => setBatteryCapacityWh(undefined))
-  }, [id])
+  }, [id, device?.model])
 
   // ─── 6月25日历史数据（分页拉取，本地缓存） ──────────────────────────────────
   const [showRawHistory, setShowRawHistory] = useState(false)
@@ -201,7 +202,7 @@ export default function DebugParamsPage() {
     const netChargeW = acP + solarP - outP
     const isCharging = battP > 0
 
-    // 统一口径：容量(Wh) = acInvOutputPower × 2，缺省 1000（见 utils/batteryTime.ts）
+    // 统一口径：容量(Wh) 按型号取，缺省 1000（见 data/deviceModels.ratedCapacityWh）
     const capacityWh = batteryCapacityWh && batteryCapacityWh > 0 ? batteryCapacityWh : 1000
     const remainingWh = (soc / 100) * capacityWh
     const neededWh = ((100 - soc) / 100) * capacityWh
@@ -215,7 +216,7 @@ export default function DebugParamsPage() {
     return [
       { label: 'Net Charge Power (netChargeW = AC+PV−Output)', value: `${netChargeW} W` },
       { label: 'Charging (isCharging = batteryPower>0)', value: isCharging ? 'Yes' : 'No' },
-      { label: 'Rated Capacity (capacityWh = acInvOutputPower×2)', value: `${capacityWh} Wh${batteryCapacityWh ? '' : ' (default)'}` },
+      { label: 'Rated Capacity (capacityWh = model rated capacity)', value: `${capacityWh} Wh${batteryCapacityWh ? '' : ' (default)'}` },
       { label: 'Remaining Charge (remainingWh = SOC×Capacity)', value: `${Math.round(remainingWh)} Wh` },
       { label: 'Energy to Full (neededWh = (1−SOC)×Capacity)', value: `${Math.round(neededWh)} Wh` },
       { label: 'Battery Time (batteryTimeLabel — unified)', value: unifiedTime },

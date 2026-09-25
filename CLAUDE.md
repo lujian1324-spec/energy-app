@@ -139,6 +139,15 @@ Also present but not routed standalone: `ProvisioningPage` (inside DevicePage ad
   reading → the default stays. `deviceStore.fetchAndCacheRatedParams` applies the same rule on list loads
   (`withDetectedModel`, `src/utils/ratedModel.ts`), never over a model the user picked in Device Info
   (`modelSource: 'user'`).
+- **Android in-app updates (v4.19.0).** `startAppUpdates()` (`src/utils/appUpdate.ts`, started in
+  `App.tsx`, signed in or not) asks Google Play (`@capawesome/capacitor-app-update`, the Play In-App
+  Updates API) at launch and on each return to the foreground, at most every 6 h. A newer build →
+  **flexible** update (Play asks once, downloads in the background); a finished download is installed
+  when the app goes to the background (Play installs silently then) or straight away at the next launch.
+  Priority ≥ 4 (release input `update_priority` / repo variable `PLAY_IN_APP_UPDATE_PRIORITY` in
+  `android-release.yml`) or 14+ days ignored → **immediate** (full-screen) update; one the user left
+  half-way is resumed. A declined prompt waits 3 days. The decision is `decideUpdateAction()`. Android
+  native only; iOS, web and sideloaded builds do nothing, and every failure is swallowed.
 - **BLE drop after Wi-Fi (v4.16.3, 0923-001).** Once `handleConfig` gets RC=0 the device leaves
   Bluetooth for Wi-Fi. `useProvisionScan`'s `onDisconnected` returns early when
   `wifiConfiguredRef` is set (marks `bleGoneRef` only): no reconnect loop, no
@@ -242,7 +251,7 @@ lives on independently and is still referenced elsewhere.)
 
 **DeviceDetailPage** (`/device/:id/settings` — Device Info)
 - *Name edit*, *icon picker*.
-- *Device Info*: model, **no Serial Number row** (removed v4.18.0; `deviceSerialNumber()` stays in `src/utils/deviceSerial.ts`), **Bluetooth ID** (its own row: `dtuDtuid`, else `RatedParams.bleId` saved at add time, else `--`; `deviceBluetoothId()`, both in `src/utils/deviceSerial.ts` — Marc: the module id is not the product SN and must not be labelled as one), **Rated Capacity** (`acInvOutputPower×2`, Wh→kWh), **Rated Output Power** W (`ratedPower`), **Rated Voltage** 120V (fixed), **Cycles** (`numberOfBatteryUsageCycles`), **Temperature** °F (`batteryTemp`), Wi-Fi (`isOnline`), firmware (`softwareVersion`).
+- *Device Info*: model, **no Serial Number row** (removed v4.18.0; `deviceSerialNumber()` stays in `src/utils/deviceSerial.ts`), **Bluetooth ID** (its own row: `dtuDtuid`, else `RatedParams.bleId` saved at add time, else `--`; `deviceBluetoothId()`, both in `src/utils/deviceSerial.ts` — Marc: the module id is not the product SN and must not be labelled as one), **Rated Capacity** (the model's: 1 kWh Sierro 1000 / 2 kWh Sierro 2000, `ratedCapacityWh()` in `src/data/deviceModels.ts` — v4.19.0; it was `acInvOutputPower×2`, but 0x000A is the inverter output power, so a unit reading 300 W showed 0.6 kWh and every battery-time estimate was off; the ring, the low-battery banner and DebugParams use the same helper), **Rated Output Power** W (`ratedPower`), **Rated Voltage** 120V (fixed), **Cycles** (`numberOfBatteryUsageCycles`), **Temperature** °F (`batteryTemp`), Wi-Fi (`isOnline`), firmware (`softwareVersion`).
 - *Sleep Mode editor* (`sleepFrom`/`sleepTo` + scheduler), *Battery Priority sheet* (Backup 100% / Savings 60%), *delete dialog*.
   Saving Sleep Mode claims the device for `sleep` (SW-12 — see Smart Schedule below), which disarms
   Smart Schedule's window, and reports a relay that refused the upload instead of dropping it.

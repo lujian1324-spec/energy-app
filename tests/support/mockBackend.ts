@@ -311,6 +311,13 @@ export async function mockBackend(
         return ok({ list, total: all.length, page: body.page, count: body.count })
       }
 
+      case '/device/update': {
+        // Keep a rename, as the platform does, so the next list read returns it.
+        const d = byId(body?.id)
+        if (d && typeof body?.name === 'string') d.name = body.name
+        return ok(null)
+      }
+
       default:
         // Alarms history, stations, profile writes, push registration…
         return ok({ list: [], total: 0 })

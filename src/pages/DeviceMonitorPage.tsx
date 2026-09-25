@@ -12,7 +12,7 @@ import { useActiveAlarmCount } from '../hooks/useActiveAlarmCount'
 import { mapFieldsToRealtime } from '../api/deviceApi'
 import { batteryTimeLabel } from '../utils/batteryTime'
 import { loadRatedParams } from '../db/powerflowDB'
-import { SIERRO_MODELS, type SierroModel } from '../data/deviceModels'
+import { SIERRO_MODELS, ratedCapacityWh, type SierroModel } from '../data/deviceModels'
 import { useBleLiveStatusStore, lookupBleLiveStatus } from '../stores/bleLiveStatusStore'
 import { useLivePassthroughStore, lookupLivePassthrough, resolveLiveValues } from '../stores/livePassthroughStore'
 import { useLivePassthrough, LIVE_PASSTHROUGH_FAST_INTERVAL_MS } from '../hooks/useLivePassthrough'
@@ -162,7 +162,7 @@ export default function DeviceMonitorPage() {
    */
   const noTelemetry = !isOnline || !rt || rt.remainingBatteryCapacity == null
 
-  // 额定容量（Wh）= acInvOutputPower × 2，与 Device Info 页 Rated Capacity 同源
+  // 额定容量（Wh）按型号取（ratedCapacityWh），与 Device Info 页 Rated Capacity 同源
   const [batteryCapacityWh, setBatteryCapacityWh] = useState<number | undefined>(undefined)
   // The chart's watt axis is the device's rated power, so the model has to be
   // resolved the same way Device Info resolves it — saved rated params first,
@@ -172,11 +172,12 @@ export default function DeviceMonitorPage() {
     if (!id) { setBatteryCapacityWh(undefined); setRatedModel(null); return }
     loadRatedParams(id)
       .then(p => {
-        setBatteryCapacityWh(p ? p.acInvOutputPower * 2 : undefined)
+        // Capacity comes from the model (deviceModels.ratedCapacityWh), not 0x000A.
+        setBatteryCapacityWh(ratedCapacityWh(p?.model ?? device?.model))
         setRatedModel(p?.model ?? null)
       })
       .catch(() => { setBatteryCapacityWh(undefined); setRatedModel(null) })
-  }, [id])
+  }, [id, device?.model])
 
   const powerAxisMax = useMemo(() => {
     const model = ratedModel ?? device?.model ?? 'Sierro 1000'

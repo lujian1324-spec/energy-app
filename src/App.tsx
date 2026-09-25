@@ -25,6 +25,7 @@ import { usePowerStationStore } from './stores/powerStationStore'
 import { syncWebPushSubscription, refreshNotificationPermission } from './utils/pushNotification'
 import { PUSH_ENABLED } from './config/webPush'
 import { initNativePush } from './utils/nativePush'
+import { startAppUpdates } from './utils/appUpdate'
 import { Capacitor } from '@capacitor/core'
 import { ToastContainer, useToast } from './components/Toast'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -87,6 +88,15 @@ function AppInner() {
     restoreSession()
     refreshNotificationPermission()
   }, [restoreSession])
+
+  // Android: keep the app on the newest Play build (utils/appUpdate.ts). Runs
+  // signed in or not — an old build should not wait for a sign-in to update.
+  useEffect(() => {
+    let stop = () => {}
+    let cancelled = false
+    void startAppUpdates().then(fn => { if (cancelled) fn(); else stop = fn })
+    return () => { cancelled = true; stop() }
+  }, [])
 
   // 登录后幂等同步 Web Push 订阅（覆盖订阅过期 / 换设备登录；已开启推送才执行）
   useEffect(() => {
