@@ -196,6 +196,27 @@ test.describe('Real-Time Power history', () => {
     expect(tail[0].body.fromTime).toBe('2026-09-24T14:45:00-07:00')
   })
 
+  test('a day that came back short is read whole again while the screen is open (v4.23.1)', async ({ page }) => {
+    // record/list, page 2 failing: the first read stops after 80 of 144 samples.
+    devices[0].refuseKeysV1 = true
+    devices[0].failHistoryPages = [2]
+    const api = await mockBackend(page, devices)
+    await page.goto('/#/device/1001')
+    await expect.poll(() => fallbackCalls(api, '1001').map(c => c.body.page)).toEqual([1, 2])
+    await expect.poll(async () => (await readChart(page)).points).toBeGreaterThan(0)
+    const short = (await readChart(page)).points
+
+    // The platform recovers; the next minute's refresh reads the whole day, not the tail.
+    devices[0].failHistoryPages = []
+    const before = fallbackCalls(api, '1001').length
+    await page.clock.fastForward('01:05')
+    await expect.poll(() => fallbackCalls(api, '1001').length).toBeGreaterThan(before + 1)
+    const again = fallbackCalls(api, '1001').slice(before)
+    expect(again[0].body.fromTime).toBe('2026-09-24T00:00:00-07:00')
+    // The rest of the day is on the chart now.
+    await expect.poll(async () => (await readChart(page)).points).toBeGreaterThan(short)
+  })
+
   test('rolls over to the new day at midnight', async ({ page }) => {
     await page.clock.setSystemTime(new Date('2026-09-24T23:59:30-07:00'))
     const api = await mockBackend(page, devices)

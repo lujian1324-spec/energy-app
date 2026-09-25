@@ -9,11 +9,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useDeviceStore } from '../stores/deviceStore'
 import { loadRatedParams } from '../db/powerflowDB'
-import { loadProgram, peekProgram, saveProgram, type ProgramSaveResult } from '../api/programApi'
+import { loadProgram, peekProgram, saveProgram, sessionPrograms, type ProgramSaveResult } from '../api/programApi'
 import { adaptProgram, type DeviceProgram } from '../utils/deviceProgram'
 
 /** The last program each device was seen with in this session (screens share it). */
-const latest = new Map<string, DeviceProgram>()
+const latest = sessionPrograms
 
 export function useDeviceProgram(deviceId: string) {
   const device = useDeviceStore(s => s.devices.find(d => String(d.id) === deviceId))
@@ -50,10 +50,11 @@ export function useDeviceProgram(deviceId: string) {
     setSaving(true)
     try {
       const base = latest.get(deviceId) ?? program
-      const result = await saveProgram(deviceId, { ...base, ...patch, model }, { deviceOnline: online })
-      if (result.ok && result.program) {
-        latest.set(deviceId, result.program)
-        setProgram(result.program)
+      const result = await saveProgram(deviceId, { ...base, ...patch, model }, { deviceOnline: online, base })
+      const shown = result.ok ? result.program : result.current && adaptProgram(result.current, model)
+      if (shown) {
+        latest.set(deviceId, shown)
+        setProgram(shown)
       }
       return result
     } finally {

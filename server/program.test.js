@@ -74,6 +74,25 @@ test('the stored program is read back only by its owner', async () => {
   assert.equal((await other.get()).statusCode, 403)
 })
 
+test('a save based on an older program is refused with the stored one (v4.23.1)', async () => {
+  const f = routesFixture()
+  // First save: nothing stored yet, based on none.
+  assert.equal((await f.post({ program: program({ savedAt: 10 }), baseSavedAt: null })).statusCode, 200)
+  // Another phone saves on top of it.
+  assert.equal((await f.post({ program: program({ savedAt: 20, chargePowerW: 200 }), baseSavedAt: 10 })).statusCode, 200)
+  // This phone still edits from savedAt 10: refused, told what is stored, nothing written.
+  const events = f.events.length
+  const stale = await f.post({ program: program({ savedAt: 30, chargePowerW: 300 }), baseSavedAt: 10 })
+  assert.equal(stale.statusCode, 409)
+  assert.equal(stale.body.reason, 'PROGRAM_CHANGED')
+  assert.equal(stale.body.data.program.chargePowerW, 200)
+  assert.equal(f.saved.device.savedAt, 20)
+  assert.deepEqual(f.events.slice(events), ['lock'])
+  // Re-based on 20 it goes through; an app without baseSavedAt is not checked.
+  assert.equal((await f.post({ program: program({ savedAt: 30 }), baseSavedAt: 20 })).statusCode, 200)
+  assert.equal((await f.post({ program: program({ savedAt: 40 }) })).statusCode, 200)
+})
+
 // ── Tick ──────────────────────────────────────────────────────────────────────
 
 function tickFixture(p, overrides = {}) {

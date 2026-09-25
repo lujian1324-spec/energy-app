@@ -189,6 +189,36 @@ test.describe('Device program', () => {
     expect(chargeWrites(api, '1001')).toEqual([0])
   })
 
+  test('Device Settings rows read the relay\'s program on a phone that has no copy of it (v4.23.1)', async ({ page }) => {
+    const api = await mockBackend(page, garage())
+    const acOff = { id: 'acoff', kind: 'ac', action: 'off', time: '22:00', days: [0, 1, 2, 3, 4, 5, 6], enabled: true, updatedAt: 1 }
+    api.relayPrograms['1001'] = { ...defaultProgram('Sierro 1000', E2E_TZ), chargePowerW: 200, tasks: [acOff], savedAt: 1 }
+    await page.goto('/#/device/1001/settings')
+    await expect(page.getByText('Smart Schedule', { exact: true }).locator('..')).toContainText('On')
+    await expect(page.getByText('Charging Settings', { exact: true }).locator('..')).toContainText('200 W')
+  })
+
+  test('another phone saved meanwhile: this phone\'s change is added to it, not over it (v4.23.1)', async ({ page }) => {
+    const api = await mockBackend(page, garage())
+    const loaded = page.waitForResponse(r => new URL(r.url()).pathname === '/program' && r.request().method() === 'GET')
+    await page.goto('/#/device/1001/charging/silent')
+    await loaded
+    await expect(page.getByTestId('silent-sub')).toHaveText('Turn on to limit AC charging power to 150 W or less.')
+    // While this screen is open, another phone saves an AC Output schedule and 300 W.
+    const acOff = { id: 'acoff', kind: 'ac', action: 'off', time: '22:00', days: [0, 1, 2, 3, 4, 5, 6], enabled: true, updatedAt: 1 }
+    api.relayPrograms['1001'] = { ...defaultProgram('Sierro 1000', E2E_TZ), chargePowerW: 300, tasks: [acOff], savedAt: 5 }
+    await page.getByRole('switch', { name: 'Silent Mode', exact: true }).click()
+    await page.getByRole('button', { name: 'Save', exact: true }).click()
+    await expect(page.getByText('Saved together with changes made on another phone.')).toBeVisible()
+    expect(api.relayProgramPosts.map(p => p.baseSavedAt)).toEqual([0, 5])
+    const saved = lastProgram(api)
+    expect(saved.silent).toMatchObject({ enabled: true, scheduled: false })
+    expect(saved.tasks.map((t: { id: string }) => t.id)).toEqual(['acoff'])
+    expect(saved.chargePowerW).toBe(300)
+    // Silent Mode always on: 300 W is capped at 150 W.
+    expect(chargeWrites(api, '1001')).toEqual([150])
+  })
+
   test('a refused save says so, sends nothing to the device and stays unsaved', async ({ page }) => {
     const api = await mockBackend(page, garage())
     api.relayProgramRefusal.status = 409

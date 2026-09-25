@@ -88,6 +88,23 @@ test.describe('Insights history cache', () => {
     expect([...new Set(after)]).toEqual(['2026-09-24'])
   })
 
+  test('an open Insights page keeps today coming in, quietly (v4.23.1)', async ({ page }) => {
+    const api = await mockBackend(page, fleet())
+    await page.goto('/#/devices')
+    await expect.poll(() => historyDays(api).length, { timeout: 45_000 }).toBe(DAYS_CACHED)
+    await page.goto('/#/insights')
+    await expect(page.getByRole('img', { name: 'Input and output energy' })).toBeVisible()
+    await page.waitForTimeout(1000)
+
+    // Five minutes on the page: today is read again, nothing else, and the chart stays up.
+    const before = api.callsTo(HISTORY).length
+    await page.clock.fastForward('05:05')
+    await expect.poll(() => api.callsTo(HISTORY).length - before, { timeout: 10_000 }).toBeGreaterThan(0)
+    const again = api.callsTo(HISTORY).slice(before).map(c => String(c.body.fromTime).slice(0, 10))
+    expect([...new Set(again)]).toEqual(['2026-09-24'])
+    await expect(page.getByRole('img', { name: 'Input and output energy' })).toBeVisible()
+  })
+
   test('the next app open reads only what is not final yet', async ({ page }) => {
     const api = await mockBackend(page, fleet())
     await page.goto('/#/devices')

@@ -261,11 +261,14 @@ lives on independently and is still referenced elsewhere.)
   (`payload.timeSeries` + one aligned array per key, `null` = absent) → `columnarToPoints()`; a frame with
   none of the four keys is dropped; pages end on a short page or `page >= total`. If page 1 is refused
   (not a success, or no columnar payload) the session falls back to `POST /deviceState/attribute/record/list`
-  (Siseli app `doGetDeviceHistory`, `count: 80`) — never a blank chart over it.
+  (Siseli app `doGetDeviceHistory`, `count: 80`) — never a blank chart over it. v4.23.1: one refusal only falls back for
+  that read; `KEYS_V1_STRIKES` (2) in a row pause keys/history/v1 for `KEYS_V1_RETRY_MS` (10 min), then it is tried
+  again (a busy server used to switch the whole session to record/list).
   Tabs → fields: Battery `remainingBatteryCapacity`, AC (input) `exchangeChargingPower`, Solar
   `generationPower`, Output (AC output) `outputPower`. A missing field is `null` and a silence longer
   than `maxGapMs()` (3× cadence, 15–60 min) breaks the line — never 0 W, never a bridge. The tail is
-  re-read every 60 s while visible; the day rolls over at midnight. The old formatter dropped the `-`
+  re-read every 60 s while visible — until the whole day has come back once (a page failed, the read threw) that
+  minute read covers the whole day, so a gap in the middle fills in (v4.23.1) — and the day rolls over at midnight. The old formatter dropped the `-`
   west of UTC (`…T00:00:0007:00`), so every US user got 20101 and an empty chart.
   **Cache:** IndexedDB `device_history` (DB v5; v6 adds `history_days`), keyed `[deviceId, timestamp]`, paints first only —
   the full day is re-read from the server on every visit and replaces it. It used to end the fetch
@@ -281,7 +284,8 @@ lives on independently and is still referenced elsewhere.)
   (`{power} W`), **Charge & Discharge Limits** (only when `CHARGE_LIMITS_ENABLED`), Delete Device. **Sleep Mode is
   replaced by Silent Mode** (`LEGACY_SLEEP_MODE_ENABLED = false`, `src/config/sleepMode.ts`): its row, editor and
   client scheduler stay in the code but do not render or run; its E2E specs are skipped until the flag flips. The
-  row values come from this phone's program copy (`peekProgram`). See **Device program** below.
+  row values come from `useDeviceProgram` — this phone's copy first, then the relay's (v4.23.1; `peekProgram` alone
+  showed defaults on a second phone) — and Charging Settings shows the Silent-capped power. See **Device program** below.
 - *Sleep Mode editor* (legacy, hidden) (`sleepFrom`/`sleepTo` + scheduler), *Battery Priority sheet* (Backup 100% / Savings 60%), *delete dialog*.
   Saving Sleep Mode claims the device for `sleep` (SW-12 — see Smart Schedule below), which disarms
   Smart Schedule's window, and reports a relay that refused the upload instead of dropping it.
@@ -365,7 +369,9 @@ lives on independently and is still referenced elsewhere.)
     today) has a `history_days` row, then re-reads only the days that are not final (3 at a time) and
     replaces the chart; an uncached period is read the same way, with the skeleton. A day that did not come
     back whole still shows the "Some history … couldn't be loaded" note; nothing at all → the error state.
-    StatsPage stays mounted behind the other tabs, so it **reads only while `/insights` is on screen**.
+    StatsPage stays mounted behind the other tabs, so it **reads only while `/insights` is on screen**. While it is,
+    the period is re-read quietly every 5 min and on each return to the foreground (v4.23.1: no skeleton, a failure
+    keeps the chart); only days that are not final reach the server.
   - Page and background share one request per device-day (`fetchDay` in-flight map; a thrown request is a
     failed day). A `FIRMWARE_UPDATING` reply never switches the session from keys/history/v1 to record/list.
     `resetInsightsCache()` (from `deviceStore.exitDemoMode`, sign-in/out) drops requests in flight so none
@@ -458,6 +464,13 @@ backend/firmware handoff: **`docs/DEVICE_PROGRAM.md`**.
   write the current 0x0085 value when the device is online (offline: the relay does it when it is back). Loading:
   relay `GET /program`, else local copy, else `initialProgram()` which turns a saved Sleep Mode window into the Silent
   schedule. The Header Save stays dim until something changed.
+- **Two phones (v4.23.1).** The upload carries `baseSavedAt` (the `savedAt` of the program the edit started from).
+  The relay refuses a save whose base is not the stored program with **409 `PROGRAM_CHANGED`** + the stored program;
+  `saveProgram` then re-applies only this phone's changes on top of it (`rebaseProgram`: tasks by id — added, deleted,
+  edited here win; power / Silent / limits only where changed here) and sends once more ("Saved together with changes
+  made on another phone."). A second refusal is a failed save that shows the stored program. An app without
+  `baseSavedAt` is not checked. The local copy carries `owner` (userId) and is ignored for another account (an unowned
+  pre-v4.23.1 copy is still read); the session memo `sessionPrograms` is cleared by `deviceStore.exitDemoMode`.
 - **Relay:** `server/programRoutes.js` (auth + device ownership on every call; saving a program deletes that device's
   legacy `/schedule` window), `server/programExecutor.js` run inside the minute tick (`sleepExecutor.tick`, also
   in-process when `SLEEP_SCHEDULER_EXTERNAL` ≠ true): compares `chargeTarget`/`acTarget` keys with what it last

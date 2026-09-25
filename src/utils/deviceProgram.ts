@@ -132,3 +132,41 @@ export function stampChanges(prev: DeviceProgram | null, next: DeviceProgram, no
     savedAt: now,
   }
 }
+
+const sameTask = (a: ScheduleTask, b: ScheduleTask) =>
+  a.kind === b.kind && a.action === b.action && a.time === b.time && a.enabled === b.enabled
+  && a.days.length === b.days.length && a.days.every((d, i) => d === b.days[i])
+const sameValue = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
+
+/**
+ * Another phone saved this device's program while this one was editing (v4.23.1):
+ * re-apply this phone's own changes — `mine` compared with the `base` it was edited
+ * from — on top of the program now stored (`current`). What this phone did not
+ * touch keeps the other phone's value.
+ *  - Tasks, by id: added here → added; deleted here → deleted; edited here → this
+ *    phone's version (added back if the other phone had deleted it).
+ *  - Charging power, Silent Mode, limits: this phone's value where it changed it.
+ */
+export function rebaseProgram(base: DeviceProgram, mine: DeviceProgram, current: DeviceProgram): DeviceProgram {
+  const before = new Map(base.tasks.map(t => [t.id, t]))
+  const edited = new Map(mine.tasks.map(t => [t.id, t]))
+  const tasks = current.tasks.filter(t => !(before.has(t.id) && !edited.has(t.id)))
+  for (const t of mine.tasks) {
+    const was = before.get(t.id)
+    if (was && sameTask(was, t)) continue
+    const i = tasks.findIndex(x => x.id === t.id)
+    if (i >= 0) tasks[i] = t
+    else tasks.push(t)
+  }
+  const pick = <K extends 'chargePowerW' | 'silent' | 'limits'>(k: K): DeviceProgram[K] =>
+    sameValue(mine[k], base[k]) ? current[k] : mine[k]
+  return {
+    ...current,
+    model: mine.model,
+    tz: mine.tz,
+    chargePowerW: pick('chargePowerW'),
+    silent: pick('silent'),
+    limits: pick('limits'),
+    tasks,
+  }
+}

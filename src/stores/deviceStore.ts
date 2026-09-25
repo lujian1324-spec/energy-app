@@ -61,6 +61,7 @@ import { clearFiringAlarms, recordFiringAlarms } from './firingAlarmsStore'
 import { FRAMES, extractPassthroughRegisters } from '../protocols/modbusProtocol'
 import { saveRatedParams, loadRatedParams, clearDeviceHistory } from '../db/powerflowDB'
 import { resetInsightsCache } from '../utils/insightsCache'
+import { resetSessionPrograms } from '../api/programApi'
 import { withDetectedModel } from '../utils/ratedModel'
 import { sanitizeUiCopy, toUserFacingError } from '../utils/uiCopy'
 
@@ -715,6 +716,7 @@ export const useDeviceStore = create<DeviceStoreState>()(
         // the next account opens on the server's history, never on this one's.
         // Insights' cached days go with it, and no request still in flight may write into it.
         resetInsightsCache()
+        resetSessionPrograms()
         void clearDeviceHistory().catch(e => console.warn('[deviceStore] history cache clear failed:', e))
         set({
           isDemoMode: false,

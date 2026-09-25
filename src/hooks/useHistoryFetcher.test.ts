@@ -12,7 +12,7 @@ vi.mock('../api/deviceApi', () => ({ fetchDeviceRecordHistory: h.records, fetchK
 vi.mock('../utils/apiClient', () => ({ isApiSuccess: (c: unknown) => c === 0 || c === '0' }))
 vi.mock('../db/powerflowDB', () => ({ readDeviceHistory: vi.fn(), replaceDeviceHistory: vi.fn() }))
 
-import { fetchWindow, resetHistorySource, KEYS_V1_PAGE_SIZE } from './useHistoryFetcher'
+import { fetchWindow, resetHistorySource, KEYS_V1_PAGE_SIZE, KEYS_V1_RETRY_MS } from './useHistoryFetcher'
 
 const DAY = new Date(2026, 8, 24).getTime()
 const END = DAY + 86_399_999
@@ -97,7 +97,7 @@ describe('fetchWindow — keys/history/v1', () => {
 })
 
 describe('fetchWindow — fallback to record/list', () => {
-  it('uses record/list when the platform refuses keys/history/v1, and keeps using it', async () => {
+  it('uses record/list when the platform refuses keys/history/v1; two refusals in a row pause it', async () => {
     h.keysV1.mockResolvedValue({ code: 20101, message: 'illegal argument' })
     h.records.mockResolvedValue(records(3, 0))
     const first = await fetchWindow('9001', DAY, END, () => false)
@@ -107,8 +107,35 @@ describe('fetchWindow — fallback to record/list', () => {
       deviceId: '9001', fromTime: '2026-09-24T00:00:00-07:00', toTime: '2026-09-24T23:59:59-07:00',
       page: 1, count: 80, orderByTimeAsc: true,
     })
+    // One refusal does not decide the session: the next read asks again.
     await fetchWindow('9001', DAY, END, () => false)
-    expect(h.keysV1).toHaveBeenCalledTimes(1)
+    expect(h.keysV1).toHaveBeenCalledTimes(2)
+    // Two in a row: record/list only, for KEYS_V1_RETRY_MS.
+    await fetchWindow('9001', DAY, END, () => false)
+    expect(h.keysV1).toHaveBeenCalledTimes(2)
+  })
+
+  it('a busy server once does not switch the session; the call is tried again after the pause (v4.23.1)', async () => {
+    vi.useFakeTimers({ now: DAY + 12 * 3_600_000 })
+    try {
+      h.records.mockResolvedValue(records(1, 0))
+      h.keysV1.mockResolvedValueOnce({ code: 500, message: 'system busy' }).mockResolvedValueOnce(columnar(5, 0))
+      await fetchWindow('9001', DAY, END, () => false)
+      const res = await fetchWindow('9001', DAY, END, () => false)
+      expect(res.points).toHaveLength(5)
+      expect(h.records).toHaveBeenCalledTimes(1)
+
+      h.keysV1.mockReset().mockResolvedValue({ code: 500, message: 'system busy' })
+      await fetchWindow('9001', DAY, END, () => false)
+      await fetchWindow('9001', DAY, END, () => false)
+      await fetchWindow('9001', DAY, END, () => false)
+      expect(h.keysV1).toHaveBeenCalledTimes(2)
+      vi.advanceTimersByTime(KEYS_V1_RETRY_MS)
+      h.keysV1.mockResolvedValue(columnar(4, 0))
+      expect((await fetchWindow('9001', DAY, END, () => false)).points).toHaveLength(4)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('a success without a columnar payload counts as refused too', async () => {

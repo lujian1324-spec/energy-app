@@ -68,8 +68,13 @@ device is bound to that account (`/device/list`), then read or write.
 
 | Call | Body / query | Reply |
 |---|---|---|
-| `POST /program` | `{ userId, deviceId, program, accessToken?, refreshToken?, accessExpiresAt? }` | `{ code: 0 }`; `400` invalid program (message says why); `401` no token; `403` other account / device; `409 POLLER_SESSION_REQUIRED` a timed program with no background session; `503` retry |
+| `POST /program` | `{ userId, deviceId, program, baseSavedAt?, accessToken?, refreshToken?, accessExpiresAt? }` | `{ code: 0 }`; `400` invalid program (message says why); `401` no token; `403` other account / device; `409 PROGRAM_CHANGED` + `data.program` when `baseSavedAt` is not the stored program's `savedAt` (another phone saved in between, v4.23.1); `409 POLLER_SESSION_REQUIRED` a timed program with no background session; `503` retry |
 | `GET /program` | `?userId=&deviceId=` | `{ code: 0, data: { program \| null } }` |
+
+`baseSavedAt` (v4.23.1) is the `savedAt` of the program the app's edit started from (`null`
+or `0` for none). On `PROGRAM_CHANGED` the app re-applies only its own changes on top of the
+returned program (`rebaseProgram`) and sends once more; a request without `baseSavedAt` (an
+app before v4.23.1) is not checked.
 
 The optional token pair is the same one-time background-session bootstrap `/schedule`
 takes. Saving a program **removes that device's legacy Sleep / Smart Schedule window**

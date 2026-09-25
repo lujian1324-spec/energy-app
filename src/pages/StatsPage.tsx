@@ -16,6 +16,8 @@ import { toUserFacingError } from '../utils/uiCopy'
 import { axisLabelIndexes, bucketAtX, buildInsightsFrame, formatWh, weekStart } from '../utils/insightsFrame'
 
 const periods = ['Day', 'Week', 'Month', 'Range'] as const
+/** How often an open Insights page re-reads the days that are not final (v4.23.1). */
+const INSIGHTS_REFRESH_MS = 5 * 60_000
 type Period = typeof periods[number]
 
 // ─── Helpers ───
@@ -350,7 +352,8 @@ export default function StatsPage() {
     }
   }, [period, selectedDate, rangeStart, rangeEnd])
 
-  const loadHistory = useCallback(async () => {
+  const loadHistory = useCallback(async ({ quiet = false }: { quiet?: boolean } = {}) => {
+    if (quiet && (!deviceId || (period === 'Range' && (!rangeStart || !rangeEnd)))) return
     if (!deviceId) { loadSeq.current++; setRecords([]); return }
     if (period === 'Range' && (!rangeStart || !rangeEnd)) { loadSeq.current++; setRecords([]); return }
 
@@ -384,22 +387,25 @@ export default function StatsPage() {
      * (APP-20260923-009) instead of showing short totals silently.
      */
     const seq = ++loadSeq.current
-    setLoading(true); setError(null)
-    let painted = false
+    // A quiet refresh (v4.23.1) runs under the chart already on screen: no skeleton,
+    // no cache repaint, and a failure leaves that chart as it is.
+    if (!quiet) { setLoading(true); setError(null) }
+    let painted = quiet
     try {
       const res = await loadInsightsRange(deviceId, from.getTime(), to.getTime(), cached => {
-        if (seq !== loadSeq.current) return
+        if (seq !== loadSeq.current || quiet) return
         painted = true
         setRecords(pointsToRecords(cached))
         setHistoryPartial(false)
         setLoading(false)
       })
       if (seq !== loadSeq.current) return
+      if (quiet && (res.failed || res.partial)) return
       if (res.failed && !painted) throw new Error('Failed to load history')
       if (!res.failed) setRecords(pointsToRecords(res.points))
       setHistoryPartial(res.partial || res.failed)
     } catch (e: unknown) {
-      if (seq !== loadSeq.current) return
+      if (seq !== loadSeq.current || quiet) return
       console.error('[StatsPage] stats load failed:', e)
       // Already drawn from the cache: keep it, and say it may be short.
       if (painted) { setHistoryPartial(true); return }
@@ -415,6 +421,16 @@ export default function StatsPage() {
   // background cache (utils/insightsPrefetch.ts) has the month ready by then.
   const insightsVisible = useLocation().pathname === '/insights'
   useEffect(() => { if (insightsVisible) loadHistory() }, [loadHistory, insightsVisible])
+  // Staying on the page (v4.23.1): today keeps coming in, so the period is re-read
+  // quietly every few minutes and on each return to the foreground. Only days that
+  // are not final go to the server (loadInsightsRange); a past period reads the cache.
+  useEffect(() => {
+    if (!insightsVisible) return
+    const refresh = () => { if (document.visibilityState === 'visible') void loadHistory({ quiet: true }) }
+    const timer = setInterval(refresh, INSIGHTS_REFRESH_MS)
+    document.addEventListener('visibilitychange', refresh)
+    return () => { clearInterval(timer); document.removeEventListener('visibilitychange', refresh) }
+  }, [loadHistory, insightsVisible])
 
   const chartFrame = useMemo(
     () => buildInsightsFrame(records ?? [], period, selectedDate, rangeStart, rangeEnd),

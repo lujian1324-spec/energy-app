@@ -4,7 +4,8 @@ import TextField from '../components/TextField'
 import { InlineTimePicker } from '../components/TimeWheel'
 import { LEGACY_SLEEP_MODE_ENABLED } from '../config/sleepMode'
 import { CHARGE_LIMITS_ENABLED } from '../config/chargeLimits'
-import { peekProgram } from '../api/programApi'
+import { useDeviceProgram } from '../hooks/useDeviceProgram'
+import { silentCapW, silentState } from '../utils/deviceProgram'
 import BottomSheet from '../components/BottomSheet'
 import { useSleepModeScheduler, loadSchedule, saveSchedule } from '../hooks/useSleepModeScheduler'
 import {
@@ -352,9 +353,14 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     return () => { unsubscribe(); window.removeEventListener('storage', refresh) }
   }, [deviceIdForScheduler])
   const model = ratedParams?.model ?? realDevice?.model ?? powerStation.model ?? 'Sierro 1000'
-  // This phone's copy of the device program, for the row values (v4.22.0). Read
-  // again on every render so a save made on those screens shows on return.
-  const deviceProgram = peekProgram(deviceIdForScheduler, model)
+  // The device program for the row values: this phone's copy first, then the
+  // relay's (v4.23.1) — on another phone or after a reinstall the rows used to
+  // show the defaults until one of those screens had been opened.
+  const { program: deviceProgram } = useDeviceProgram(deviceIdForScheduler)
+  // What AC charging is limited to now: Silent Mode caps the saved power.
+  const chargeRowW = silentState(deviceProgram, Date.now()).on
+    ? Math.min(deviceProgram.chargePowerW, silentCapW(model))
+    : deviceProgram.chargePowerW
   /* B_1.2.3 never shows a blank row: until a model has been picked and its rated
      params saved, Device Info reads off the spec for `model`, which is the
      Sierro 1000 by default. */
@@ -912,7 +918,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
         />
         <SettingsRow
           label="Charging Settings"
-          value={`${deviceProgram.chargePowerW} W`}
+          value={`${chargeRowW} W`}
           onPress={() => navigate(`/device/${deviceIdForScheduler}/charging`)}
         />
         {CHARGE_LIMITS_ENABLED && (

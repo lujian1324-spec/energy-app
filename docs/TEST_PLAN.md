@@ -247,6 +247,11 @@ v4.4.3 修复 Android 扫不到设备(客户端过滤)与 PWA Open Settings 跳�
     - `device-settings.e2e.spec.ts`(7,v4.18.0/v4.19.0):Sleep Mode 两个滑杆 50W 一档(Sierro 1000 为 0–400W、Sierro 2000 为 0–800W),
       保存时对设备写 0x0085(窗口内为睡眠功率)并把窗口+两个功率上传中继,重启后滑杆保持;设备离线也能保存,只上传中继并提示上线后生效;
       Battery Priority 不显示、Device Info 无 Serial Number;0x000A=1000W 识别为 Sierro 2000、500W 为 Sierro 1000。
+    - v4.23.1:`device-program.e2e.spec.ts` +2:设备设置页的行读中继里的排程(本机没有副本时也显示 On / 200 W);
+      另一台手机在本页打开期间保存了排程,本机保存 Silent Mode 后两边的改动都保留(先 409 再合并重发)。
+      `realtime-history.e2e.spec.ts` +1:当天只读回一部分时,页面打开期间下一分钟整天重读补齐;`insights-cache.e2e.spec.ts` +1:
+      停留在 Insights 5 分钟后安静地重读今天。单测:`programApi.test.ts` +4(合并规则、409 后合并重发、连续两次冲突失败、本机副本按账号)、
+      `useHistoryFetcher.test.ts`(一次失败不降级、连续两次暂停 10 分钟后再试)、中继 `program.test.js` +1(版本不符 409)。
     - v4.23.0:`app-update-reset.e2e.spec.ts`(2)新版本首次启动清空历史缓存、Insights 日表、实时读数、设备列表缓存,
       保留登录、排程、图标、用户选的型号和 Bluetooth ID;同版本重启不清。单测 `src/utils/appVersionReset.test.ts`(5)。
     - v4.22.0:`device-program.e2e.spec.ts`(11)设备设置出现 Smart Schedule / Charging Settings、没有 Sleep Mode;
