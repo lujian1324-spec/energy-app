@@ -29,28 +29,46 @@ import { isApiSuccess, tokenStore } from '../utils/apiClient'
 import { isFirmwareUpdateLocked } from '../utils/firmwareLock'
 import { loadSchedule, saveSchedule } from '../hooks/useSleepModeScheduler'
 import {
-  adaptProgram, effectiveChargeW, initialProgram, phoneTimeZone, stampChanges, validateProgram,
+  adaptProgram, effectiveChargeW, initialProgram, phoneTimeZone, rebaseProgram, stampChanges, validateProgram,
   type DeviceProgram,
 } from '../utils/deviceProgram'
 
 const localKey = (deviceId: string) => `sierro-program-${deviceId}`
+
+/** The last program each device was seen with in this session; the screens share it (useDeviceProgram). */
+export const sessionPrograms = new Map<string, DeviceProgram>()
+
+/** Sign-in / sign-out (deviceStore.exitDemoMode): the next account starts from its own copies. */
+export function resetSessionPrograms(): void {
+  sessionPrograms.clear()
+}
 
 function userId(): string | null {
   const id = localStorage.getItem('iot_user_id')?.trim()
   return id && !['anon', 'null', 'undefined'].includes(id) ? id : null
 }
 
+/**
+ * This phone's copy, for the signed-in account only (v4.23.1): a copy saved by
+ * another account — a device that changed hands, a shared phone — is not shown.
+ * A copy from before v4.23.1 carries no owner and is still read.
+ */
 export function loadLocalProgram(deviceId: string): DeviceProgram | null {
   try {
     const raw = localStorage.getItem(localKey(deviceId))
-    return raw ? validateProgram(JSON.parse(raw)) : null
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (parsed?.owner && parsed.owner !== userId()) return null
+    return validateProgram(parsed)
   } catch {
     return null
   }
 }
 
 function saveLocalProgram(deviceId: string, program: DeviceProgram): void {
-  try { localStorage.setItem(localKey(deviceId), JSON.stringify(program)) } catch { /* storage full: the relay copy still counts */ }
+  try {
+    localStorage.setItem(localKey(deviceId), JSON.stringify({ ...program, owner: userId() ?? undefined }))
+  } catch { /* storage full: the relay copy still counts */ }
 }
 
 /** The relay's copy: a program, null (none stored), or undefined (could not ask). */
@@ -101,6 +119,11 @@ export interface ProgramSaveResult {
   ok: boolean
   /** What was saved (with stamps), when ok. */
   program?: DeviceProgram
+  /**
+   * A save that could not go through because another phone had changed the
+   * program: what the relay holds now (the screens show it).
+   */
+  current?: DeviceProgram
   /** The relay took it (false in a build without a relay). */
   background: boolean
   /** The charge power was written to the device just now; null = not attempted (offline). */
@@ -109,26 +132,55 @@ export interface ProgramSaveResult {
   detail?: string
 }
 
+export interface SaveProgramOptions {
+  deviceOnline?: boolean
+  /**
+   * The program `draft` was edited from (v4.23.1). Its `savedAt` goes to the relay,
+   * which refuses the save when another phone has stored a different program since;
+   * this phone's changes are then re-applied on top of that one and sent once more.
+   */
+  base?: DeviceProgram | null
+}
+
 export async function saveProgram(
   deviceId: string,
   draft: DeviceProgram,
-  { deviceOnline = true }: { deviceOnline?: boolean } = {},
+  { deviceOnline = true, base }: SaveProgramOptions = {},
 ): Promise<ProgramSaveResult> {
   if (isFirmwareUpdateLocked()) {
     return { ok: false, background: false, applied: null, detail: 'Paused while a firmware update is in progress. Try again when it finishes.' }
   }
   const now = Date.now()
+  const invalid = (e: unknown, current?: DeviceProgram): ProgramSaveResult =>
+    ({ ok: false, background: false, applied: null, current, detail: e instanceof Error ? e.message : 'Check the settings and try again.' })
   let program: DeviceProgram
   try {
-    program = validateProgram(stampChanges(loadLocalProgram(deviceId), { ...draft, tz: phoneTimeZone() }, now))
+    program = validateProgram(stampChanges(base ?? loadLocalProgram(deviceId), { ...draft, tz: phoneTimeZone() }, now))
   } catch (e) {
-    return { ok: false, background: false, applied: null, detail: e instanceof Error ? e.message : 'Check the settings and try again.' }
+    return invalid(e)
   }
 
   let background = false
+  let merged = false
   if (isRelayConfigured()) {
-    const up = await uploadProgram(deviceId, program)
-    if (!up.ok) return { ok: false, background: false, applied: null, detail: up.detail }
+    let up = await uploadProgram(deviceId, program, base === undefined ? undefined : (base?.savedAt ?? null))
+    if (up.conflict && base) {
+      // Another phone saved in between: keep its changes, re-apply ours, send once more.
+      const current = up.conflict
+      saveLocalProgram(deviceId, current)
+      try {
+        program = validateProgram(stampChanges(current, { ...rebaseProgram(base, program, current), tz: phoneTimeZone() }, now))
+      } catch (e) {
+        return invalid(e, current)
+      }
+      up = await uploadProgram(deviceId, program, current.savedAt ?? null)
+      merged = true
+      if (up.conflict) {
+        saveLocalProgram(deviceId, up.conflict)
+        return { ok: false, background: false, applied: null, current: up.conflict, detail: 'This device was changed on another phone at the same time. Check the settings and Save again.' }
+      }
+    }
+    if (!up.ok) return { ok: false, background: false, applied: null, current: up.conflict, detail: up.detail }
     background = true
   }
 
@@ -157,11 +209,17 @@ export async function saveProgram(
         ? 'Saved. The device did not take the change yet; it will be sent again shortly.'
         : applied === null
           ? 'Saved. The device is offline; it will switch when it is back online.'
-          : undefined,
+          : merged
+            ? 'Saved together with changes made on another phone.'
+            : undefined,
   }
 }
 
-async function uploadProgram(deviceId: string, program: DeviceProgram): Promise<{ ok: boolean; detail?: string }> {
+async function uploadProgram(
+  deviceId: string,
+  program: DeviceProgram,
+  baseSavedAt?: number | null,
+): Promise<{ ok: boolean; detail?: string; conflict?: DeviceProgram }> {
   const uid = userId()
   if (!uid) return { ok: false, detail: 'Sign in again before saving a schedule.' }
   let boot: { accessToken?: string; refreshToken?: string; accessExpiresAt?: number } = {}
@@ -177,6 +235,7 @@ async function uploadProgram(deviceId: string, program: DeviceProgram): Promise<
         userId: uid,
         deviceId: String(deviceId),
         program,
+        ...(baseSavedAt !== undefined ? { baseSavedAt } : {}),
         refreshToken: boot.refreshToken ?? undefined,
         accessToken: boot.accessToken ?? undefined,
         accessExpiresAt: boot.accessExpiresAt ?? undefined,
@@ -188,6 +247,13 @@ async function uploadProgram(deviceId: string, program: DeviceProgram): Promise<
       localStorage.removeItem(POLLER_REFRESH_PENDING_KEY)
     }
     if (ok) return { ok: true }
+    if (res.status === 409 && body?.reason === 'PROGRAM_CHANGED') {
+      let conflict: DeviceProgram | undefined
+      try { conflict = validateProgram(body?.data?.program) } catch { conflict = undefined }
+      return conflict
+        ? { ok: false, conflict, detail: 'This device was changed on another phone.' }
+        : { ok: false, detail: 'This device was changed on another phone. Reopen the page and Save again.' }
+    }
     if (res.status === 409) return { ok: false, detail: 'Background session is missing. Sign in again and retry Save.' }
     if (res.status === 400 && typeof body?.message === 'string') return { ok: false, detail: body.message }
     return { ok: false, detail: `The schedule server did not confirm the save (HTTP ${res.status}). Retry Save.` }

@@ -187,6 +187,11 @@ export async function mockBackend(
         if (relayProgramRefusal.status) {
           return route.fulfill({ status: relayProgramRefusal.status, json: { code: 1, reason: 'POLLER_SESSION_REQUIRED' } })
         }
+        // v4.23.1: a save based on a program other than the stored one is refused.
+        const stored = relayPrograms[body.deviceId]
+        if ('baseSavedAt' in body && stored && (stored.savedAt ?? null) !== (body.baseSavedAt ?? null)) {
+          return route.fulfill({ status: 409, json: { code: 1, reason: 'PROGRAM_CHANGED', data: { program: stored } } })
+        }
         try { relayPrograms[body.deviceId] = validateProgram(body.program) } catch (e) {
           return route.fulfill({ status: 400, json: { code: 1, message: (e as Error).message } })
         }

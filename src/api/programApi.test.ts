@@ -4,6 +4,8 @@ const h = vi.hoisted(() => ({
   relay: true,
   fetches: [] as { url: string; init?: RequestInit }[],
   relayReply: { status: 200, body: { code: 0 } } as { status: number; body: unknown },
+  /** Replies for the next POSTs, in order, before `relayReply`. */
+  relayQueue: [] as { status: number; body: unknown }[],
   relayProgram: null as unknown,
   passthrough: [] as string[],
   passthroughOk: true,
@@ -34,12 +36,13 @@ vi.mock('../utils/firmwareLock', () => ({ isFirmwareUpdateLocked: () => h.locked
   if (!init || init.method !== 'POST') {
     return { ok: true, status: 200, json: async () => ({ code: 0, data: { program: h.relayProgram } }) }
   }
-  return { ok: h.relayReply.status < 400, status: h.relayReply.status, json: async () => h.relayReply.body }
+  const reply = h.relayQueue.shift() ?? h.relayReply
+  return { ok: reply.status < 400, status: reply.status, json: async () => reply.body }
 })
 
-import { loadProgram, saveProgram } from './programApi'
+import { loadLocalProgram, loadProgram, saveProgram } from './programApi'
 import {
-  EVERY_DAY, defaultProgram, initialProgram, newTask, repeatLabel, snapChargePower, stampChanges,
+  EVERY_DAY, defaultProgram, initialProgram, newTask, rebaseProgram, repeatLabel, snapChargePower, stampChanges,
   taskTitle, time12, type DeviceProgram,
 } from '../utils/deviceProgram'
 
@@ -52,6 +55,7 @@ beforeEach(() => {
   store.set('iot_access_token', 'ACCESS')
   h.relay = true; h.fetches = []; h.passthrough = []; h.passthroughOk = true; h.locked = false
   h.relayReply = { status: 200, body: { code: 0 } }
+  h.relayQueue = []
   h.relayProgram = null
 })
 
@@ -171,5 +175,62 @@ describe('loading a program', () => {
     const { program } = await loadProgram('1001', 'Sierro 1000')
     expect(program.chargePowerW).toBe(400)
     expect(program.model).toBe('Sierro 1000')
+  })
+})
+
+describe('another phone saved in between (v4.23.1)', () => {
+  const task = (id: string, time: string, over: Record<string, unknown> = {}) =>
+    ({ id, kind: 'charge' as const, action: 'stop' as const, time, days: [...EVERY_DAY], enabled: true, updatedAt: 5, ...over })
+
+  it('re-applies only this phone\'s changes on top of the stored program', () => {
+    const base = prog({ savedAt: 10, tasks: [task('a', '07:00'), task('b', '08:00')] })
+    // This phone: deleted b, edited a, added c, changed the power.
+    const mine = { ...base, chargePowerW: 200, tasks: [task('a', '07:30'), task('c', '09:00')] }
+    // The other phone: added d, turned Silent Mode on, kept b.
+    const current = prog({ savedAt: 20, silent: { ...base.silent, enabled: true }, tasks: [task('a', '07:00'), task('b', '08:00'), task('d', '10:00')] })
+    const merged = rebaseProgram(base, mine, current)
+    expect(merged.tasks.map(t => `${t.id}@${t.time}`)).toEqual(['a@07:30', 'd@10:00', 'c@09:00'])
+    expect(merged.chargePowerW).toBe(200)
+    expect(merged.silent.enabled).toBe(true)
+  })
+
+  it('a refused save is merged and sent again based on the stored program', async () => {
+    const base = prog({ savedAt: 10 })
+    const stored = prog({ savedAt: 20, tasks: [task('d', '10:00', { kind: 'ac', action: 'off' })] })
+    h.relayQueue = [{ status: 409, body: { code: 1, reason: 'PROGRAM_CHANGED', data: { program: stored } } }]
+    const r = await saveProgram('1001', { ...base, chargePowerW: 200 }, { base })
+    expect(r).toMatchObject({ ok: true, background: true })
+    expect(r.detail).toMatch(/another phone/)
+    const posts = h.fetches.filter(f => f.init?.method === 'POST').map(f => JSON.parse(String(f.init!.body)))
+    expect(posts.map(p => p.baseSavedAt)).toEqual([10, 20])
+    expect(posts[1].program.chargePowerW).toBe(200)
+    expect(posts[1].program.tasks.map((t: { id: string }) => t.id)).toEqual(['d'])
+    expect(r.program!.tasks.map(t => t.id)).toEqual(['d'])
+    expect(loadLocalProgram('1001')!.tasks.map(t => t.id)).toEqual(['d'])
+    expect(h.passthrough.map(frameWatts)).toEqual([200])
+  })
+
+  it('a second refusal in a row is a failed save that shows the stored program', async () => {
+    const base = prog({ savedAt: 10 })
+    const stored = prog({ savedAt: 30, chargePowerW: 100 })
+    const refuse = { status: 409, body: { code: 1, reason: 'PROGRAM_CHANGED', data: { program: stored } } }
+    h.relayQueue = [refuse, refuse]
+    const r = await saveProgram('1001', { ...base, chargePowerW: 200 }, { base })
+    expect(r.ok).toBe(false)
+    expect(r.current?.chargePowerW).toBe(100)
+    expect(r.detail).toMatch(/another phone/)
+    expect(h.passthrough).toEqual([])
+  })
+})
+
+describe('this phone\'s copy belongs to the account that saved it (v4.23.1)', () => {
+  it('another account signed in on this phone does not see it', async () => {
+    await saveProgram('1001', prog({ chargePowerW: 200 }))
+    expect(loadLocalProgram('1001')?.chargePowerW).toBe(200)
+    store.set('iot_user_id', '555')
+    expect(loadLocalProgram('1001')).toBeNull()
+    // A copy from before v4.23.1 carries no owner and is still read.
+    store.set('sierro-program-1001', JSON.stringify(prog({ chargePowerW: 300 })))
+    expect(loadLocalProgram('1001')?.chargePowerW).toBe(300)
   })
 })

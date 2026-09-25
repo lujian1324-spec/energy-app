@@ -1,8 +1,15 @@
 // Device program endpoints (v4.22.0): Smart Schedule tasks, Charging Settings
 // (AC charge power, Silent Mode) and the Charge & Discharge Limits, per device.
 //
-//   POST /program   { userId, deviceId, program, accessToken?, refreshToken?, accessExpiresAt? }
+//   POST /program   { userId, deviceId, program, baseSavedAt?, accessToken?, refreshToken?, accessExpiresAt? }
 //   GET  /program?userId=&deviceId=
+//
+// `baseSavedAt` (v4.23.1) is the `savedAt` of the stored program the app's edit
+// started from (null: it started from none). When the stored program is a
+// different one — another phone saved in between — the save is refused with
+// 409 PROGRAM_CHANGED and the stored program, so the app can re-apply its own
+// change on top of it instead of silently replacing the other phone's. An app
+// that sends no `baseSavedAt` (before v4.23.1) is not checked.
 //
 // Both authenticate the caller's own IOT-Token on every call, check that the
 // device is bound to that account, and only then read or write. The background
@@ -44,6 +51,13 @@ export function installProgramRoutes(app, dependencies = {}) {
       const id = await authorize(req, res, userId, deviceId)
       if (!id) return
       await lock(id, async () => {
+        if (req.body && 'baseSavedAt' in req.body) {
+          const current = store.getUserProgram(id, deviceId)
+          if (current && (current.savedAt ?? null) !== (req.body.baseSavedAt ?? null)) {
+            res.status(409).json({ code: 1, reason: 'PROGRAM_CHANGED', message: 'Changed on another phone.', data: { program: current } })
+            return
+          }
+        }
         if (accessToken || refreshToken) {
           if (!accessToken || !refreshToken || await identity(accessToken) !== id) throw new Error('Invalid background session')
           store.setUserAuth(id, { accessToken, refreshToken, accessExpiresAt })

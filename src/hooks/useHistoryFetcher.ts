@@ -59,10 +59,18 @@ const LIVE_OVERLAP_MS = 10 * 60_000
 
 type PageResult = { points: HistoryPoint[]; complete: boolean; error: string | null; pages: number }
 
-/** Set once the platform refuses keys/history/v1; the session then uses record/list. */
-let keysV1Refused = false
+/**
+ * keys/history/v1 refusals in a row (v4.23.1). One refusal — a busy server — used to
+ * switch the whole session to the slower record/list until the app restarted; now
+ * that read alone falls back, and only `KEYS_V1_STRIKES` in a row pause the call for
+ * `KEYS_V1_RETRY_MS`, after which it is tried again.
+ */
+let keysV1Strikes = 0
+let keysV1PausedUntil = 0
+export const KEYS_V1_STRIKES = 2
+export const KEYS_V1_RETRY_MS = 10 * 60_000
 /** For tests. */
-export function resetHistorySource(): void { keysV1Refused = false }
+export function resetHistorySource(): void { keysV1Strikes = 0; keysV1PausedUntil = 0 }
 
 /**
  * Every page of [from, to]. A failed page stops the run: what came before it
@@ -75,11 +83,16 @@ export async function fetchWindow(
   isCancelled: () => boolean,
   onPage?: (sofar: HistoryPoint[], page: number) => void,
 ): Promise<PageResult> {
-  if (!keysV1Refused) {
+  if (Date.now() >= keysV1PausedUntil) {
     const res = await fetchWindowKeysV1(deviceId, from, to, isCancelled, onPage)
-    if (res !== 'refused') return res
-    keysV1Refused = true
-    console.warn('[history] keys/history/v1 refused; using record/list for this session')
+    if (res !== 'refused') {
+      keysV1Strikes = 0
+      return res
+    }
+    if (++keysV1Strikes >= KEYS_V1_STRIKES) {
+      keysV1PausedUntil = Date.now() + KEYS_V1_RETRY_MS
+      console.warn(`[history] keys/history/v1 refused ${keysV1Strikes}× in a row; record/list for ${KEYS_V1_RETRY_MS / 60_000} min`)
+    }
   }
   return fetchWindowRecordList(deviceId, from, to, isCancelled, onPage)
 }
@@ -200,22 +213,38 @@ export function useHistoryFetcher(
 
     let tailInFlight = false
     let fullDone = false
+    // The whole window has come back once. Until it has (a page failed, the read
+    // threw), each tick re-reads all of it rather than the tail, so a gap left in
+    // the middle is filled while the screen is open (v4.23.1) — the tail read
+    // alone never reached it.
+    let wholeRead = false
+    const markWholeDay = (startedAt: number) => {
+      if (!cancelled && isWholeLocalDay(fromTime, toTime)) {
+        return markHistoryDay(deviceId, fromTime, startedAt, isFinalFetch(fromTime, startedAt))
+      }
+    }
     const refreshTail = async () => {
       if (cancelled || tailInFlight || !fullDone) return
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return
       tailInFlight = true
       try {
         const newest = pointsRef.current[pointsRef.current.length - 1]?.timestamp
-        const from = Math.max(fromTime, (newest ?? fromTime) - LIVE_OVERLAP_MS)
-        const to = Math.min(toTime, Date.now())
+        const from = wholeRead ? Math.max(fromTime, (newest ?? fromTime) - LIVE_OVERLAP_MS) : fromTime
+        const to = wholeRead ? Math.min(toTime, Date.now()) : toTime
         if (to <= from) return
+        const startedAt = Date.now()
         const res = await fetchWindow(deviceId, from, to, isCancelled)
         if (cancelled || !res.complete) return
         // The server's answer for [from, to] replaces ours for that span.
         const kept = pointsRef.current.filter(p => p.timestamp < from || p.timestamp > to)
         show(mergePoints(kept, res.points))
         setError(null)
+        const first = !wholeRead
+        wholeRead = true
+        if (first) setFromCache(false)
         void store(from, to, res.points)
+          .then(() => (first ? markWholeDay(startedAt) : undefined))
+          .catch(e => console.warn('[history] day mark failed:', e))
       } catch (e) {
         console.warn('[history] live refresh failed:', e)
       } finally {
@@ -251,16 +280,18 @@ export function useHistoryFetcher(
         })
         if (cancelled) return
         if (res.complete) {
+          wholeRead = true
           show(res.points)
           setFromCache(false)
           // A whole local day just read counts as cached for Insights too, so the
           // background cache does not read it again (utils/insightsCache.ts).
-          void store(fromTime, toTime, res.points).then(() => {
-            if (!cancelled && isWholeLocalDay(fromTime, toTime)) {
-              return markHistoryDay(deviceId, fromTime, startedAt, isFinalFetch(fromTime, startedAt))
-            }
-          }).catch(e => console.warn('[history] day mark failed:', e))
+          void store(fromTime, toTime, res.points)
+            .then(() => markWholeDay(startedAt))
+            .catch(e => console.warn('[history] day mark failed:', e))
         } else {
+          // Stopped at the page cap rather than on a failure: reading it all again
+          // every minute would not get further.
+          if (!res.error) wholeRead = true
           show(mergePoints(cached, res.points))
           if (res.error) setError(res.error)
         }
