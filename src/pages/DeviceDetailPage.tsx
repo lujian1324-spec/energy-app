@@ -1,6 +1,10 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { guessDeviceIconName } from './device/DeviceListCard'
 import TextField from '../components/TextField'
+import { InlineTimePicker } from '../components/TimeWheel'
+import { LEGACY_SLEEP_MODE_ENABLED } from '../config/sleepMode'
+import { CHARGE_LIMITS_ENABLED } from '../config/chargeLimits'
+import { peekProgram } from '../api/programApi'
 import BottomSheet from '../components/BottomSheet'
 import { useSleepModeScheduler, loadSchedule, saveSchedule } from '../hooks/useSleepModeScheduler'
 import {
@@ -102,115 +106,6 @@ function TimeChip({ label, value, active, onToggle }: {
   )
 }
 
-const WHEEL_ITEM = 36 // px — one row in the wheel column
-
-/**
- * One scroll-snap wheel column (hours or minutes). Two spacers half the visible
- * height tall let the first and last value snap to the centred highlight band.
- * A short debounce after scrolling settles on the nearest row and reports it.
- */
-function WheelColumn({ values, selected, onSelect, ariaLabel, format }: {
-  values: number[]
-  selected: number
-  onSelect: (v: number) => void
-  ariaLabel: string
-  format?: (v: number) => string
-}) {
-  const ref = useRef<HTMLDivElement>(null)
-  const settle = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-
-  // Line the column up with the current value on open and on external changes.
-  useEffect(() => {
-    const el = ref.current
-    if (!el) return
-    const idx = values.indexOf(selected)
-    if (idx >= 0) el.scrollTop = idx * WHEEL_ITEM
-  }, [selected, values])
-
-  const onScroll = () => {
-    const el = ref.current
-    if (!el) return
-    if (settle.current) clearTimeout(settle.current)
-    settle.current = setTimeout(() => {
-      const idx = Math.max(0, Math.min(values.length - 1, Math.round(el.scrollTop / WHEEL_ITEM)))
-      el.scrollTo({ top: idx * WHEEL_ITEM, behavior: 'smooth' })
-      const v = values[idx]
-      if (v !== selected) onSelect(v)
-    }, 110)
-  }
-
-  return (
-    <div className="relative flex-1" style={{ height: WHEEL_ITEM * 5 }}>
-      <div
-        ref={ref}
-        role="listbox"
-        aria-label={ariaLabel}
-        onScroll={onScroll}
-        className="h-full overflow-y-scroll scrollbar-hide snap-y snap-mandatory"
-      >
-        <div style={{ height: WHEEL_ITEM * 2 }} />
-        {values.map((v) => (
-          <button
-            key={v}
-            type="button"
-            onClick={() => onSelect(v)}
-            className={`w-full snap-center flex items-center justify-center tnum text-title-md transition-colors ${
-              v === selected ? 'text-white font-semibold' : 'text-ink-6'
-            }`}
-            style={{ height: WHEEL_ITEM }}
-          >
-            {format ? format(v) : String(v).padStart(2, '0')}
-          </button>
-        ))}
-        <div style={{ height: WHEEL_ITEM * 2 }} />
-      </div>
-      {/* Centred highlight band over the selected row. */}
-      <div
-        className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 rounded-m border-y border-ink-8"
-        style={{ height: WHEEL_ITEM }}
-      />
-    </div>
-  )
-}
-
-/** Inline hour + minute wheel picker for a "HH:MM" (24h) value. */
-function InlineTimePicker({ value, onChange, onDone }: {
-  value: string
-  onChange: (v: string) => void
-  onDone: () => void
-}) {
-  const [h, m] = value.split(':').map(Number)
-  const hours = useMemo(() => Array.from({ length: 24 }, (_, i) => i), [])
-  const minutes = useMemo(() => Array.from({ length: 60 }, (_, i) => i), [])
-  const hourLabel = (v: number) => `${v % 12 === 0 ? 12 : v % 12} ${v < 12 ? 'AM' : 'PM'}`
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return (
-    <div className="rounded-l bg-ink-10 px-4 py-3">
-      <div className="flex items-stretch gap-3">
-        <WheelColumn
-          values={hours}
-          selected={Number.isNaN(h) ? 0 : h}
-          onSelect={(nh) => onChange(`${pad(nh)}:${pad(Number.isNaN(m) ? 0 : m)}`)}
-          ariaLabel="Hour"
-          format={hourLabel}
-        />
-        <WheelColumn
-          values={minutes}
-          selected={Number.isNaN(m) ? 0 : m}
-          onSelect={(nm) => onChange(`${pad(Number.isNaN(h) ? 0 : h)}:${pad(nm)}`)}
-          ariaLabel="Minute"
-        />
-      </div>
-      <button
-        type="button"
-        onClick={onDone}
-        className="mt-2 w-full h-10 rounded-m bg-primary text-primary-darker font-semibold text-body-md active:scale-[0.98] transition-transform"
-      >
-        Done
-      </button>
-    </div>
-  )
-}
 
 /**
  * One Sleep Mode charge-power slider: 0…max W in 50W steps (v4.18.0) — max is
@@ -457,6 +352,9 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
     return () => { unsubscribe(); window.removeEventListener('storage', refresh) }
   }, [deviceIdForScheduler])
   const model = ratedParams?.model ?? realDevice?.model ?? powerStation.model ?? 'Sierro 1000'
+  // This phone's copy of the device program, for the row values (v4.22.0). Read
+  // again on every render so a save made on those screens shows on return.
+  const deviceProgram = peekProgram(deviceIdForScheduler, model)
   /* B_1.2.3 never shows a blank row: until a model has been picked and its rated
      params saved, Device Info reads off the spec for `model`, which is the
      Sierro 1000 by default. */
@@ -489,7 +387,8 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
   // Keeps sending the schedule; the new Sleep Mode frame shows only the toggle and
   // the two times, so none of what it reports back is rendered any more.
   useSleepModeScheduler({
-    enabled: sleepApplied.enabled,
+    // v4.22.0: the relay runs Silent Mode now; the old client scheduler stays off.
+    enabled: LEGACY_SLEEP_MODE_ENABLED && sleepApplied.enabled,
     sleepFrom: sleepApplied.sleepFrom,
     sleepTo: sleepApplied.sleepTo,
     deviceId: sleepApplied.deviceId === deviceIdForScheduler ? deviceIdForScheduler : '',
@@ -997,11 +896,32 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
           label="Device Info"
           onPress={() => setScreen('deviceInfo')}
         />
+        {/* v4.22.0: Sleep Mode is replaced by Silent Mode in Charging Settings
+            (config/sleepMode.ts); the old editor stays in the code, unreachable. */}
+        {LEGACY_SLEEP_MODE_ENABLED && (
+          <SettingsRow
+            label="Sleep Mode"
+            value={sleepMode}
+            onPress={() => setScreen('sleepMode')}
+          />
+        )}
         <SettingsRow
-          label="Sleep Mode"
-          value={sleepMode}
-          onPress={() => setScreen('sleepMode')}
+          label="Smart Schedule"
+          value={deviceProgram.tasks.some(t => t.enabled) ? 'On' : 'Off'}
+          onPress={() => navigate(`/device/${deviceIdForScheduler}/schedule`)}
         />
+        <SettingsRow
+          label="Charging Settings"
+          value={`${deviceProgram.chargePowerW} W`}
+          onPress={() => navigate(`/device/${deviceIdForScheduler}/charging`)}
+        />
+        {CHARGE_LIMITS_ENABLED && (
+          <SettingsRow
+            label="Charge & Discharge Limits"
+            value={`${deviceProgram.limits.chargeMax}% / ${deviceProgram.limits.dischargeMin}%`}
+            onPress={() => navigate(`/device/${deviceIdForScheduler}/limits`)}
+          />
+        )}
         {/* Hidden (v4.18.0) — config/batteryPriority.ts; the control path stays wired. */}
         {BATTERY_PRIORITY_ENABLED && (
           <SettingsRow

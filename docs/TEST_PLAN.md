@@ -247,6 +247,14 @@ v4.4.3 修复 Android 扫不到设备(客户端过滤)与 PWA Open Settings 跳�
     - `device-settings.e2e.spec.ts`(7,v4.18.0/v4.19.0):Sleep Mode 两个滑杆 50W 一档(Sierro 1000 为 0–400W、Sierro 2000 为 0–800W),
       保存时对设备写 0x0085(窗口内为睡眠功率)并把窗口+两个功率上传中继,重启后滑杆保持;设备离线也能保存,只上传中继并提示上线后生效;
       Battery Priority 不显示、Device Info 无 Serial Number;0x000A=1000W 识别为 Sierro 2000、500W 为 Sierro 1000。
+    - v4.22.0:`device-program.e2e.spec.ts`(11)设备设置出现 Smart Schedule / Charging Settings、没有 Sleep Mode;
+      Smart Schedule 新增/编辑/关闭/删除任务并上传中继(时区、重复日),重开后从中继读回;同一时间同类任务冲突时不上传;
+      Charging Settings 的 Sierro 1000/2000 档位、保存后上传并写 0x0085;Silent Mode 开关+定时(20:00–09:00 跨日)保存后
+      窗口内立即写 150W、Charging Settings 中高于上限的档位不可选;停充期间改功率只写 0;中继拒绝时报错不写设备;
+      设备离线只存中继;旧 Sleep Mode 时段迁移为 Silent 定时;Charge & Discharge Limits(隐藏)保存。
+      旧 Sleep Mode 的 `device-settings`(3)与 `schedule-save`(2)用例随 `LEGACY_SLEEP_MODE_ENABLED` 跳过。
+      中继:`server/deviceProgram.test.js`(14,时区/夏令时/重复日/跨日窗口/停充/冲突/校验)、`server/program.test.js`
+      (9,接口鉴权与会话、到点停充复充只写一次、AC 事件超时不补、Silent 限流恢复、离线重试、升级中不写)、store 2 个。
     - v4.21.1:`device-freshness.e2e.spec.ts`(3)透传读失败 2 分钟后显示更新的云端读数、较旧的云端数据不覆盖新的实时读数、
       最新读数超过 10 分钟时标题显示 "Last update 2:15pm";`insights.e2e.spec.ts` 新增:点选的点、虚线和横坐标标签对齐,
       页面与图表文字不可长按选中;`realtime-history.e2e.spec.ts` 选中点显示到秒的时间和 "Battery 60%" 名称+数值。

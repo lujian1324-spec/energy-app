@@ -9,6 +9,7 @@
  * Only runs against a local build (E2E_LOCAL=1): the live site talks to the
  * real backend and cannot be signed in without credentials.
  */
+import { validateProgram } from '../../server/deviceProgram.js'
 import type { Page, Route } from '@playwright/test'
 import { createHash } from 'node:crypto'
 
@@ -81,6 +82,11 @@ export interface MockBackend {
   calls: ApiCall[]
   /** POST /schedule bodies the app sent to the relay (the AWS schedule server). */
   relaySchedules: any[]
+  /** POST /program bodies (v4.22.0), and the relay's stored program per device. */
+  relayProgramPosts: any[]
+  relayPrograms: Record<string, any>
+  /** Set to an HTTP status to make the relay refuse the next /program saves. */
+  relayProgramRefusal: { status: number | null }
   /** Calls to one path, optionally for one device. */
   callsTo(path: string, deviceId?: string): ApiCall[]
 }
@@ -150,6 +156,9 @@ export async function mockBackend(
 ): Promise<MockBackend> {
   const calls: ApiCall[] = []
   const relaySchedules: any[] = []
+  const relayProgramPosts: any[] = []
+  const relayPrograms: Record<string, any> = {}
+  const relayProgramRefusal: { status: number | null } = { status: null }
   const upgrades = new Map<string, { deviceId: string; firmwareId: string; polls: number }>()
   let signedInEmail = 'e2e@example.com'
   const byId = (id: unknown) => devices.find(d => d.id === String(id))
@@ -166,6 +175,23 @@ export async function mockBackend(
     if (u.hostname === RELAY_HOST && u.pathname === '/schedule' && req.method() === 'POST') {
       relaySchedules.push(req.postDataJSON())
       return route.fulfill({ json: { code: 0, message: 'success' } })
+    }
+    // The relay's program endpoints (v4.22.0), validated with the relay's own rules.
+    if (u.hostname === RELAY_HOST && u.pathname === '/program') {
+      if (req.method() === 'GET') {
+        return route.fulfill({ json: { code: 0, data: { program: relayPrograms[u.searchParams.get('deviceId') ?? ''] ?? null } } })
+      }
+      if (req.method() === 'POST') {
+        const body = req.postDataJSON()
+        relayProgramPosts.push(body)
+        if (relayProgramRefusal.status) {
+          return route.fulfill({ status: relayProgramRefusal.status, json: { code: 1, reason: 'POLLER_SESSION_REQUIRED' } })
+        }
+        try { relayPrograms[body.deviceId] = validateProgram(body.program) } catch (e) {
+          return route.fulfill({ status: 400, json: { code: 1, message: (e as Error).message } })
+        }
+        return route.fulfill({ json: { code: 0, data: { executor: 'aws-scheduler' } } })
+      }
     }
     return route.fulfill({ status: 200, body: '', contentType: 'text/plain' })
   })
@@ -394,6 +420,9 @@ export async function mockBackend(
     devices,
     calls,
     relaySchedules,
+    relayProgramPosts,
+    relayPrograms,
+    relayProgramRefusal,
     callsTo: (path, deviceId) => calls.filter(c => c.path === path &&
       (deviceId === undefined || String(c.query.deviceId ?? c.body?.deviceId) === deviceId)),
   }

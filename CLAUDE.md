@@ -102,7 +102,11 @@ Test-only / CI-only changes that don't alter the shipped bundle do NOT bump.
 | `/device/:id/settings` | `DeviceDetailPage` | no | Device Info (live) |
 | `/device/:id/passthrough` | `PassthroughPage` | no | Modbus passthrough |
 | `/device/:id/debug-params` | `DebugParamsPage` | no | Developer debug view (raw register names — exempt from label canon) |
-| `/smart-schedule` | `SmartSchedulePage` | no | Peak-shaving UI |
+| `/device/:id/schedule` | `DeviceSchedulePage` (`pages/program/`) | no | Smart Schedule (v4.22.0): AC Output / Charging tasks |
+| `/device/:id/charging` | `ChargingSettingsPage` | no | AC charging power + Silent Mode row (v4.22.0) |
+| `/device/:id/charging/silent` | `SilentModePage` | no | Silent Mode switch + schedule — replaces Sleep Mode (v4.22.0) |
+| `/device/:id/limits` | `ChargeLimitsPage` | no | Only when `CHARGE_LIMITS_ENABLED` (no firmware register yet) |
+| `/smart-schedule` | `SmartSchedulePage` | no | Old peak-shaving UI — paused (SW-14), no entry point |
 | `/notifications` | `NotificationsPage` | no | Alarm center |
 | `/onboarding` `/ble-debug` `/data-export` | `OnboardingPage` `BleDebugPage` `DataExportPage` | no | |
 | `/firmware-update` | `FirmwareUpdatePage` | no | Only when `FIRMWARE_UPDATE_ENABLED` (not in consumer builds yet) |
@@ -265,7 +269,12 @@ lives on independently and is still referenced elsewhere.)
 **DeviceDetailPage** (`/device/:id/settings` — Device Info)
 - *Name edit*, *icon picker*.
 - *Device Info*: model, **no Serial Number row** (removed v4.18.0; `deviceSerialNumber()` stays in `src/utils/deviceSerial.ts`), **Bluetooth ID** (its own row: `dtuDtuid`, else `RatedParams.bleId` saved at add time, else `--`; `deviceBluetoothId()`, both in `src/utils/deviceSerial.ts` — Marc: the module id is not the product SN and must not be labelled as one), **Rated Capacity** (the model's: 1 kWh Sierro 1000 / 2 kWh Sierro 2000, `ratedCapacityWh()` in `src/data/deviceModels.ts` — v4.19.0; it was `acInvOutputPower×2`, but 0x000A is the inverter output power, so a unit reading 300 W showed 0.6 kWh and every battery-time estimate was off; the ring, the low-battery banner and DebugParams use the same helper), **Rated Output Power** W (`ratedPower`), **Rated Voltage** 120V (fixed), **Cycles** (`numberOfBatteryUsageCycles`), **Temperature** °F (`batteryTemp`), Wi-Fi (`isOnline`). **No firmware version row** yet (`softwareVersion` is typed but not rendered — see `docs/siseli-firmware-api.md`).
-- *Sleep Mode editor* (`sleepFrom`/`sleepTo` + scheduler), *Battery Priority sheet* (Backup 100% / Savings 60%), *delete dialog*.
+- **Rows (v4.22.0):** Device Name, Display Icon, Device Info, **Smart Schedule** (On/Off), **Charging Settings**
+  (`{power} W`), **Charge & Discharge Limits** (only when `CHARGE_LIMITS_ENABLED`), Delete Device. **Sleep Mode is
+  replaced by Silent Mode** (`LEGACY_SLEEP_MODE_ENABLED = false`, `src/config/sleepMode.ts`): its row, editor and
+  client scheduler stay in the code but do not render or run; its E2E specs are skipped until the flag flips. The
+  row values come from this phone's program copy (`peekProgram`). See **Device program** below.
+- *Sleep Mode editor* (legacy, hidden) (`sleepFrom`/`sleepTo` + scheduler), *Battery Priority sheet* (Backup 100% / Savings 60%), *delete dialog*.
   Saving Sleep Mode claims the device for `sleep` (SW-12 — see Smart Schedule below), which disarms
   Smart Schedule's window, and reports a relay that refused the upload instead of dropping it.
 - **Sleep Mode powers + offline set (v4.18.0).** Two sliders — *During sleep* / *Outside sleep* — set the
@@ -421,7 +430,37 @@ lives on independently and is still referenced elsewhere.)
   that answers the question, so an endpoint later replaces only that function.
 - *Device step* (A_2.2.2): add the first device, or skip.
 
-**SmartSchedulePage** (`/smart-schedule`)
+**Device program (v4.22.0)** — Smart Schedule (`/device/:id/schedule`), Charging Settings (`/device/:id/charging`),
+Silent Mode (`/device/:id/charging/silent`), Charge & Discharge Limits (`/device/:id/limits`, hidden). Full spec and
+backend/firmware handoff: **`docs/DEVICE_PROGRAM.md`**.
+- **One rulebook for app and relay:** `server/deviceProgram.js` (typed by `server/deviceProgram.d.ts`, re-exported with
+  UI helpers from `src/utils/deviceProgram.ts`). Program per device: `model`, `tz` (phone's IANA zone at save),
+  `chargePowerW`, `silent {enabled, scheduled, from, to, days, updatedAt}`, `tasks[] {id, kind 'ac'|'charge',
+  action on/off|start/stop, time HH:MM, days 0–6, enabled, updatedAt}` (≤ 20), `limits {chargeMax 100|80|60,
+  dischargeMin 0|10|20}`. Power choices: Sierro 1000 50/100/150/200/300/400 W, Sierro 2000 100/200/300/400/600/800 W;
+  Silent limit 150 / 300 W.
+- **Rules:** tasks are point events, acting only at occurrences after their `updatedAt` (never retroactively); charging
+  follows the latest charge event (none → charging); an AC event missed by more than 30 min is dropped; Silent Mode
+  is off / always / inside the window (crosses midnight when `to <= from`; `days` = start days) and is a **cap** —
+  a power picked at or under it stays after the window; 0x0085 = 0 while paused, so changing the power never starts
+  a charge. Two enabled tasks of one kind at the same time on a shared day are refused (`findClash`).
+- **Saving** (`saveProgram`, `src/api/programApi.ts`; screens via `useDeviceProgram`, each saving only its own part
+  merged onto the latest saved copy): stamp changes (`stampChanges`) → validate → relay `POST /program` (a refusal
+  is a failed save; nothing written) → local copy `sierro-program-{id}` → disarm the old `sierro-sleep-{id}` window →
+  write the current 0x0085 value when the device is online (offline: the relay does it when it is back). Loading:
+  relay `GET /program`, else local copy, else `initialProgram()` which turns a saved Sleep Mode window into the Silent
+  schedule. The Header Save stays dim until something changed.
+- **Relay:** `server/programRoutes.js` (auth + device ownership on every call; saving a program deletes that device's
+  legacy `/schedule` window), `server/programExecutor.js` run inside the minute tick (`sleepExecutor.tick`, also
+  in-process when `SLEEP_SCHEDULER_EXTERNAL` ≠ true): compares `chargeTarget`/`acTarget` keys with what it last
+  applied, and only on a difference opens the session, checks owned + online + not upgrading, writes 0x0080 / 0x0085.
+  **Needs a relay redeploy**; an old relay answers 404 and the app reports the save as failed.
+- **Charge & Discharge Limits are hidden** (`CHARGE_LIMITS_ENABLED`: dev, QA, `VITE_ENABLE_CHARGE_LIMITS=true` — the E2E
+  build): no firmware register exists yet; values are saved and uploaded but not applied.
+- The wheel time picker is shared (`src/components/TimeWheel.tsx`); since v4.22.0 its own scrolls (line-up, a tap) and a
+  settle timer outliving the picker no longer change the value.
+
+**SmartSchedulePage** (`/smart-schedule`) — old peak-shaving page, paused since SW-14 (no entry point)
 - *Enable toggle*, *24h clock donut* (charge/discharge/idle arcs).
 - *Peak/Off-peak cards*, *periods list* (`startTime–endTime`,`type`).
 - *Prices*: peak/off-peak/part-peak $/kWh. *Params*: max charge/discharge W, min/max SOC %. *Estimated savings* daily/monthly/yearly.
@@ -588,6 +627,7 @@ don't let it happen again):
 | `docs/RELEASE_PLAN.md` | P0–P4 issue tracker: what's fixed (✅ + version tag), what's still debt/pending. Update in place, don't leave stale "still TODO" claims once something ships. |
 | `docs/siseli-api.md` | Captured Solar of Things console call for a device's attribute history (`keys/history/v1`, columnar reply) — what Real-Time Power reads. |
 | `docs/siseli-firmware-api.md` | Captured firmware / upgrade endpoints (firmware list & details, upgrade tasks, logs, batch upgrades, permission, the console's upgrade wizard) and what is still needed before the app's Firmware Update (v4.20.0, flag-gated) can be released. |
+| `docs/DEVICE_PROGRAM.md` | Smart Schedule / Charging Settings / Silent Mode / Limits (v4.22.0): data model, rules, relay API and tick, and what still needs the firmware team. |
 | `docs/TEST_PLAN.md` | The one canonical manual+automated test matrix (supersedes the deleted `TEST_CHECKLIST.md`). |
 | `API_REFERENCE.md` | Full backend API surface (all 41 groups/227 endpoints Sierro's own backend exposes), not just what this app calls — a superset reference. |
 | `docs/NATIVE_SETUP.md` | Capacitor native plugin/permission setup for Android/iOS builds. |

@@ -22,16 +22,19 @@ import cors from 'cors'
 import webpush from 'web-push'
 import {
   addWebPush, removeWebPush, addNative, removeNative, getWebPush, getNative,
-  setUserAuth, getUser, requireUserId, getSchedulePhase,
+  setUserAuth, getUser, requireUserId, getSchedulePhase, getProgramState,
 } from './store.js'
 import { startPoller } from './poller.js'
 import { installScheduleRoutes } from './scheduleRoutes.js'
+import { installProgramRoutes } from './programRoutes.js'
+import { chargeTarget } from './deviceProgram.js'
 import { withUserLock } from './userLock.js'
 
 const app = express()
 app.use(cors())
 app.use(express.json({ limit: '32kb', verify: (req, _res, bytes) => { req.rawBody = bytes.toString('utf8') } }))
 const sleepExecutor = installScheduleRoutes(app)
+installProgramRoutes(app)
 
 const ok = (res, data = {}) => res.json({ code: 0, message: 'ok', data })
 
@@ -252,6 +255,14 @@ app.get('/debug/user/:userId', (req, res) => {
       sleepW: s?.sleepW, wakeW: s?.wakeW, mode: s?.mode,
       lastAppliedPhase: getSchedulePhase(userId, deviceId) ?? null,
     }])),
+    // v4.22.0 programs: tasks, power, Silent Mode, the watts the program implies
+    // right now, and what the tick last applied ({ chargeKey, acKey }).
+    programs: Object.fromEntries(Object.entries(u?.programs || {}).map(([deviceId, p]) => [deviceId, {
+      model: p?.model, tz: p?.tz, chargePowerW: p?.chargePowerW, silent: p?.silent, tasks: p?.tasks,
+      limits: p?.limits, savedAt: p?.savedAt,
+      wattsNow: p ? chargeTarget(p, Date.now()).watts : null,
+      lastApplied: getProgramState(userId, deviceId),
+    }])),
   })
 })
 
@@ -261,4 +272,14 @@ app.listen(PORT, () => {
   // Start the in-process poller (closed-app delivery). Off unless POLLER_ENABLED=true.
   if (process.env.POLLER_ENABLED === 'true') startPoller(sendToUser)
   else console.log('[poller] disabled (set POLLER_ENABLED=true to enable)')
+  // Device programs (v4.22.0) run on the signed external tick when it is set up
+  // (SLEEP_SCHEDULER_EXTERNAL=true); otherwise this process ticks them itself,
+  // once a minute. Legacy windows stay with the poller in that mode.
+  if (process.env.SLEEP_SCHEDULER_EXTERNAL !== 'true') {
+    setInterval(() => {
+      sleepExecutor.tick({ legacy: false })
+        .then(r => { if (r.applied || r.failed) console.log('[program-tick]', JSON.stringify(r)) })
+        .catch(() => { /* a tick still running; the next minute retries */ })
+    }, 60_000).unref()
+  }
 })

@@ -17,5 +17,8 @@ export const RELAY_BASE_URL: string = (import.meta.env.VITE_RELAY_URL ?? '').rep
 /** relay 上的 Sleep 排程端点。 */
 export const SCHEDULE_PATH = '/schedule'
 
+/** relay 上的设备 program 端点（v4.22.0：Smart Schedule / Charging Settings / Limits）。 */
+export const PROGRAM_PATH = '/program'
+
 /** 是否已配置 relay（有基址才上报排程）。 */
 export const isRelayConfigured = (): boolean => RELAY_BASE_URL.length > 0

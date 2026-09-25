@@ -6,13 +6,16 @@ import { deviceBoundToUser } from './deviceBind.js'
 import { acChargePowerBase64 } from './modbus.js'
 import { validateSchedule, scheduleTarget } from './scheduleValidation.js'
 import { isPausedSmartSchedule } from './smartSchedulePause.js'
+import { runUserPrograms } from './programExecutor.js'
 
 export function createSleepExecutor({ db = store, lock = withUserLock, session = scheduleSession,
   write = writePassthrough, clock = Date.now } = {}) {
   let running = false
   let lastTickAt = null
   let lastResult = null
-  async function tick({ dryRun = false } = {}) {
+  // `legacy: false` runs device programs only (the in-process tick, where the
+  // poller already enforces legacy windows itself).
+  async function tick({ dryRun = false, legacy = true } = {}) {
     if (running) throw new Error('TICK_IN_PROGRESS')
     running = true
     const deadline = clock() + 30000
@@ -22,7 +25,8 @@ export function createSleepExecutor({ db = store, lock = withUserLock, session =
       result.failureReasons[reason] = (result.failureReasons[reason] || 0) + 1
     }
     try {
-      const users = db.getAllUsers().filter(u => Object.values(u.schedules).some(s => s?.enabled))
+      const users = db.getAllUsers().filter(u => (legacy && Object.values(u.schedules || {}).some(s => s?.enabled))
+        || Object.keys(u.programs || {}).length > 0)
       let cursor = 0
       const workers = Array.from({ length: Math.min(5, users.length) }, async () => {
         while (cursor < users.length) {
@@ -30,7 +34,8 @@ export function createSleepExecutor({ db = store, lock = withUserLock, session =
           if (clock() >= deadline) { result.deferred++; continue }
           await lock(userId, async () => {
             // Re-read after the lock: queued saves/cancellations always win.
-            const schedules = db.getUser(userId)?.schedules || {}
+            const fresh = db.getUser(userId)
+            const schedules = legacy ? fresh?.schedules || {} : {}
             let auth
             for (const [deviceId, raw] of Object.entries(schedules)) {
               if (!raw?.enabled) continue
@@ -76,6 +81,12 @@ export function createSleepExecutor({ db = store, lock = withUserLock, session =
                 }
                 failure(stage)
               }
+            }
+            // v4.22.0: device programs (Smart Schedule, Charging Settings), same
+            // lock, same deadline, same session rules. A device with a program has
+            // no legacy window left (store.setUserProgram removes it).
+            if (db.getProgramState) {
+              await runUserPrograms({ userId, programs: fresh?.programs, db, session, write, clock, deadline, dryRun, result, failure })
             }
           }, { deadline: deadline + 9000 }).catch(() => { failure('lockDeadline') })
         }

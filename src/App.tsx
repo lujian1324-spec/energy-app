@@ -17,6 +17,11 @@ import PassthroughPage from './pages/PassthroughPage'
 import DebugParamsPage from './pages/DebugParamsPage'
 import DataExportPage from './pages/DataExportPage'
 import FirmwareUpdatePage from './pages/FirmwareUpdatePage'
+import DeviceSchedulePage from './pages/program/DeviceSchedulePage'
+import ChargingSettingsPage from './pages/program/ChargingSettingsPage'
+import SilentModePage from './pages/program/SilentModePage'
+import ChargeLimitsPage from './pages/program/ChargeLimitsPage'
+import { CHARGE_LIMITS_ENABLED } from './config/chargeLimits'
 import { FIRMWARE_UPDATE_ENABLED } from './config/firmwareUpdate'
 import { useFirmwareUpdateStore } from './stores/firmwareUpdateStore'
 import { useRealtimeSimulator } from './hooks/useRealtimeSimulator'
@@ -201,6 +206,13 @@ function AppInner() {
                 {/* 二级页面（无底部导航） */}
                 <Route path="/device/:id" element={<RequireAuth><DeviceMonitorPage /></RequireAuth>} />
                 <Route path="/device/:id/settings" element={<RequireAuth><DeviceDetailPage /></RequireAuth>} />
+                {/* v4.22.0 device program: Smart Schedule, Charging Settings (+ Silent Mode), limits */}
+                <Route path="/device/:id/schedule" element={<RequireAuth><DeviceSchedulePage /></RequireAuth>} />
+                <Route path="/device/:id/charging" element={<RequireAuth><ChargingSettingsPage /></RequireAuth>} />
+                <Route path="/device/:id/charging/silent" element={<RequireAuth><SilentModePage /></RequireAuth>} />
+                {CHARGE_LIMITS_ENABLED && (
+                  <Route path="/device/:id/limits" element={<RequireAuth><ChargeLimitsPage /></RequireAuth>} />
+                )}
                 {DEV_TOOLS_ENABLED && (
                   <Route path="/device/:id/passthrough" element={<RequireAuth><PassthroughPage /></RequireAuth>} />
                 )}

@@ -2,6 +2,9 @@ import { test, expect } from '@playwright/test'
 
 test.describe('schedule save acknowledgement', () => {
   test.skip(!process.env.E2E_LOCAL, 'Uses an isolated local build and mocked device/relay APIs')
+  // v4.22.0: the Sleep Mode editor these drive is replaced by Silent Mode
+  // (LEGACY_SLEEP_MODE_ENABLED = false); device-program.e2e.spec.ts covers the new saves.
+  test.skip(true, 'Sleep Mode replaced by Silent Mode (LEGACY_SLEEP_MODE_ENABLED = false)')
 
   test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
