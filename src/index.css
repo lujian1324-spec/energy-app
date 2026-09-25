@@ -93,10 +93,19 @@ button, a, [role="button"], input, select, label {
   touch-action: manipulation;
 }
 
-/* 控制类元素长按不弹出选字（正文/输入框不受影响） */
-button, [role="button"], nav {
+/* 长按不选字、不弹系统菜单（v4.21.1）：原生 App 里页面文字、数值和图表文字都不该被
+   长按选中——以前只拦了按钮和导航，Device / Insights 的数字、图表标签一按就被选中。
+   输入框和可编辑区域照常可选（改名、验证码、反馈都要光标和粘贴）；
+   个别确实需要复制的文字加 `select-text`。 */
+body {
   -webkit-user-select: none;
   user-select: none;
+  -webkit-touch-callout: none;
+}
+input, textarea, [contenteditable="true"], .select-text, .select-text * {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
 }
 
 /* ============================================================

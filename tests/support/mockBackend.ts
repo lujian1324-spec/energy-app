@@ -52,6 +52,12 @@ export interface MockDevice {
   acInvOutputW?: number
   /** When true `/remote/device/state/latest` fails for this device. */
   failState?: boolean
+  /** Battery % the cloud state reports, when it should differ from the device's own (`soc`). */
+  cloudSoc?: number
+  /** The cloud state's sample time, epoch ms (default: now on the test runner's clock). */
+  stateAt?: number
+  /** When true the passthrough live read (READ_ALL_STATUS) fails. */
+  failLiveReads?: boolean
   /** Firmware: the version the device reports, and the files published for it. */
   softwareVersion?: string
   firmware?: Array<{ id: string; name: string; version?: string; description?: string; createdAt?: string; fileSize?: number }>
@@ -265,9 +271,9 @@ export async function mockBackend(
         const v = (n: number | boolean) => ({ value: typeof n === 'boolean' ? (n ? '1' : '0') : String(n) })
         return ok({
           deviceId: d.id,
-          time: String(Math.floor(Date.now() / 1000)),
+          time: String(Math.floor((d.stateAt ?? Date.now()) / 1000)),
           fields: {
-            remainingBatteryCapacity: v(d.soc ?? 80),
+            remainingBatteryCapacity: v(d.cloudSoc ?? d.soc ?? 80),
             exchangeChargingPower: v(100), generationPower: v(50), outputPower: v(120),
             acOutputs: v(!!d.acOn),
             ...(d.workMode !== undefined ? { workMode: v(d.workMode) } : {}),
@@ -296,7 +302,10 @@ export async function mockBackend(
           }
           return ok({ base64Output: Buffer.from(frame).toString('base64') })
         }
-        if (fn === 0x03 && reg === 0x0100) return ok({ base64Output: readReply(statusRegisters(d)) })
+        if (fn === 0x03 && reg === 0x0100) {
+          if (d.failLiveReads) return route.fulfill({ json: { code: 500, message: 'device timeout' } })
+          return ok({ base64Output: readReply(statusRegisters(d)) })
+        }
         if (fn === 0x03 && reg === 0x0000) {
           const regs = new Array((frame[4] << 8) | frame[5]).fill(0)
           if (regs.length > 0x0a) regs[0x0a] = d.acInvOutputW ?? 0

@@ -7,7 +7,7 @@ process.env.TZ = 'America/Los_Angeles'
 
 import { describe, it, expect } from 'vitest'
 import type { DeviceAttributeRecord } from '../api/deviceApi'
-import { clockLabel, columnarToPoints, maxGapMs, mergePoints, readingAt, recordToPoint, seriesSegments, toIsoTz, type HistoryPoint } from './historyPoints'
+import { clockLabel, clockLabelSeconds, scrubValueLabel, columnarToPoints, maxGapMs, mergePoints, readingAt, recordToPoint, seriesSegments, toIsoTz, type HistoryPoint } from './historyPoints'
 
 const rec = (time: string, fields: Record<string, unknown>): DeviceAttributeRecord => ({
   time,
@@ -136,5 +136,13 @@ describe('readingAt / clockLabel — the Real-Time Power scrub (v4.18.0)', () =>
     expect(clockLabel(at(15, 45))).toBe('3:45pm')
     expect(clockLabel(at(0, 5))).toBe('12:05am')
     expect(clockLabel(at(12, 0))).toBe('12:00pm')
+  })
+
+  it('the scrub shows the sample\'s exact time and value (v4.21.1)', () => {
+    expect(clockLabelSeconds(new Date(2026, 8, 24, 15, 47, 23).getTime())).toBe('3:47:23pm')
+    expect(clockLabelSeconds(new Date(2026, 8, 24, 0, 5, 9).getTime())).toBe('12:05:09am')
+    expect(scrubValueLabel(119.6, 'W')).toBe('120W')
+    expect(scrubValueLabel(72.4, '%')).toBe('72.4%')
+    expect(scrubValueLabel(60, '%')).toBe('60%')
   })
 })

@@ -233,11 +233,13 @@ test.describe('Real-Time Power history', () => {
 
     // Battery at about 10:00 — a reading on the line.
     await page.mouse.click(xAt(10), box.y + 60)
-    await expect(time).toHaveText(/^(9:55|10:00|10:05)am$/)
+    await expect(time).toHaveText(/^(9:55|10:00|10:05):00am$/)
     await expect(value).toHaveText('60%')
+    await expect(page.getByTestId('rtp-scrub-name')).toHaveText('Battery')
     // The reading stays after release; another tab reads the same moment.
     await openTab(page, 'Output')
     await expect(value).toHaveText('120W')
+    await expect(page.getByTestId('rtp-scrub-name')).toHaveText('Output')
     await openTab(page, 'AC')
     await expect(value).toHaveText('100W')
 
@@ -245,11 +247,11 @@ test.describe('Real-Time Power history', () => {
     await page.mouse.move(xAt(13), box.y + 60)
     await page.mouse.down()
     await page.mouse.move(xAt(3, 30), box.y + 60, { steps: 5 })
-    await expect(time).toHaveText(/^3:\d\dam$/)
+    await expect(time).toHaveText(/^3:\d\d:\d\dam$/)
     await expect(value).toHaveText('No data')
     await page.mouse.move(xAt(1), box.y + 60, { steps: 5 })
     await page.mouse.up()
-    await expect(time).toHaveText(/^(12:55|1:00|1:05)am$/)
+    await expect(time).toHaveText(/^(12:55|1:00|1:05):00am$/)
     await expect(value).toHaveText('100W')
   })
 })

@@ -17,6 +17,7 @@ import { useBleLiveStatusStore, lookupBleLiveStatus } from '../stores/bleLiveSta
 import { useLivePassthroughStore, lookupLivePassthrough, resolveLiveValues } from '../stores/livePassthroughStore'
 import { useLivePassthrough, LIVE_PASSTHROUGH_FAST_INTERVAL_MS } from '../hooks/useLivePassthrough'
 import { parseDeviceStateTime } from '../utils/deviceStateTime'
+import { connectedLabel } from '../utils/dataFreshness'
 import { useOnline } from '../hooks/useOnline'
 import OfflineBanner from '../components/OfflineBanner'
 import FirmwareLockBanner from '../components/FirmwareLockBanner'
@@ -68,10 +69,17 @@ export default function DeviceMonitorPage() {
   }, [id])
 
   // 每 30 秒轮询设备实时状态（与 Overview 一致）
+  // Back from the background the cloud state is read at once (v4.21.1): timers
+  // are held while the app is hidden, so it could be most of a poll out of date.
   useEffect(() => {
     if (!id) return
     const timer = setInterval(() => loadDeviceState(id), 30000)
-    return () => clearInterval(timer)
+    const onVisible = () => { if (document.visibilityState === 'visible') void loadDeviceState(id) }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      clearInterval(timer)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [id, loadDeviceState])
 
   /*
@@ -111,7 +119,8 @@ export default function DeviceMonitorPage() {
   const passthroughEpoch = useLivePassthroughStore(s => s.epoch)
   const rt = useMemo(() => {
     void bleEpoch; void passthroughEpoch
-    const ble = lookupBleLiveStatus({ deviceId: id })?.live
+    const bleEntry = lookupBleLiveStatus({ deviceId: id })
+    const ble = bleEntry?.live
     // Keyed by this device, so a sample left over from the one viewed before
     // cannot paint here — the same guard the cloud state gets.
     const pass = lookupLivePassthrough(id)
@@ -120,8 +129,29 @@ export default function DeviceMonitorPage() {
       ? null
       : mapFieldsToRealtime(selectedDeviceState.fields)
     if (!cloud && !ble && !pass) return null
-    return resolveLiveValues(cloud ?? {}, ble, pass)
+    // v4.21.1: the newest sample wins — a passthrough read that stopped coming
+    // back no longer hides the cloud samples arriving underneath it.
+    return resolveLiveValues(cloud ?? {}, ble, pass, {
+      cloudAt: cloud ? parseDeviceStateTime(selectedDeviceState?.time) : null,
+      bleAt: bleEntry?.updatedAt ?? null,
+    })
   }, [selectedDeviceState, id, bleEpoch, passthroughEpoch])
+
+  /**
+   * When the newest figure on screen was measured: the cloud sample's time or
+   * the last good passthrough read, whichever is later. "Connected" said nothing
+   * about data that had stopped coming; past STALE_DATA_MS the header says when
+   * the last reading was taken instead (v4.21.1).
+   */
+  const lastSampleAt = useMemo(() => {
+    void passthroughEpoch
+    const wrongDevice = !!(id && selectedDeviceState?.deviceId && String(selectedDeviceState.deviceId) !== id)
+    const cloudAt = wrongDevice ? undefined : parseDeviceStateTime(selectedDeviceState?.time)
+    const pass = lookupLivePassthrough(id)
+    const passAt = pass?.live ? pass.updatedAt : undefined
+    const best = Math.max(cloudAt ?? 0, passAt ?? 0)
+    return best > 0 ? best : null
+  }, [selectedDeviceState, id, passthroughEpoch])
 
   /*
    * True only while the FIRST live read for this device is still outstanding.
@@ -236,7 +266,7 @@ export default function DeviceMonitorPage() {
               )}
             </div>
             <span className="text-tiny text-ink-5">
-              {!online && !isDemoMode ? 'No internet' : isOnline ? 'Connected' : 'Disconnected'}
+              {!online && !isDemoMode ? 'No internet' : isOnline ? connectedLabel(lastSampleAt) : 'Disconnected'}
             </span>
           </button>
           {showDeviceDropdown && devices.length > 1 && (

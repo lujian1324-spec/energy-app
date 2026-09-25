@@ -13,7 +13,7 @@ import type { DeviceAttributeRecord } from '../api/deviceApi'
 import { insightsDeviceId, loadInsightsRange, pointsToRecords } from '../utils/insightsCache'
 import { useCountUp } from '../hooks/useCountUp'
 import { toUserFacingError } from '../utils/uiCopy'
-import { buildInsightsFrame, formatWh, weekStart } from '../utils/insightsFrame'
+import { axisLabelIndexes, bucketAtX, buildInsightsFrame, formatWh, weekStart } from '../utils/insightsFrame'
 
 const periods = ['Day', 'Week', 'Month', 'Range'] as const
 type Period = typeof periods[number]
@@ -286,6 +286,20 @@ export default function StatsPage() {
   }, [period])
 
   const chartSvgRef = useRef<SVGSVGElement>(null)
+  // The chart box's real width (0 while this tab is hidden — then the last width stays).
+  const [chartW, setChartW] = useState(340)
+  const chartBoxObserver = useRef<ResizeObserver | null>(null)
+  const chartBoxRef = useCallback((el: HTMLDivElement | null) => {
+    chartBoxObserver.current?.disconnect()
+    chartBoxObserver.current = null
+    if (!el) return
+    const update = () => { const w = Math.round(el.clientWidth); if (w > 0) setChartW(w) }
+    update()
+    if (typeof ResizeObserver !== 'undefined') {
+      chartBoxObserver.current = new ResizeObserver(update)
+      chartBoxObserver.current.observe(el)
+    }
+  }, [])
   const [scrubIndex, setScrubIndex] = useState<number | null>(null)
 
   const { devices, loadDevices } = useDeviceStore()
@@ -412,7 +426,16 @@ export default function StatsPage() {
    * against its own maximum, so the two lines could not be compared — and gaps
    * left as gaps: a null bucket ends a segment instead of dropping to 0.
    */
-  const CHART_W = 340, CHART_H = 160, CHART_PAD = 4
+  /*
+   * v4.21.1: the chart is drawn at its real width. It used a fixed 340-wide
+   * viewBox in a full-width SVG, so on any screen that was not 340 px the drawing
+   * sat letterboxed in the middle while a tap was read against the whole width,
+   * and the axis labels were spread with justify-between rather than placed under
+   * their points — the selected point and its time on the axis could be a bucket
+   * or more apart. Now one pixel is one unit, the tap is read in the same units
+   * the points are drawn in, and every axis label sits under its own point.
+   */
+  const CHART_W = chartW, CHART_H = 160, CHART_PAD = 4
   const chartMax = Math.max(1, ...chartFrame.inputWh.map(v => v ?? 0), ...chartFrame.outputWh.map(v => v ?? 0))
   const pointAt = (i: number, v: number) => ({
     x: CHART_PAD + (chartFrame.labels.length > 1 ? i / (chartFrame.labels.length - 1) : 0.5) * (CHART_W - CHART_PAD * 2),
@@ -436,8 +459,8 @@ export default function StatsPage() {
     const svg = chartSvgRef.current
     if (!svg || !chartFrame) return
     const rect = svg.getBoundingClientRect()
-    const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
-    setScrubIndex(Math.round(ratio * (chartFrame.labels.length - 1)))
+    if (rect.width <= 0) return
+    setScrubIndex(bucketAtX((clientX - rect.left) * (CHART_W / rect.width), CHART_W, CHART_PAD, chartFrame.labels.length))
   }
 
   // A reading belongs to the frame it was taken on.
@@ -701,7 +724,7 @@ export default function StatsPage() {
                   {/* APP-20260923-006: Week is a line with selectable points like the
                       other periods (it was bars with no values). Tap or drag to read a
                       bucket; the reading stays until another point is chosen. */}
-                  <div>
+                  <div ref={chartBoxRef}>
                     <svg ref={chartSvgRef} viewBox={`0 0 ${CHART_W} ${CHART_H}`} className="w-full h-[160px] touch-none select-none"
                       role="img" aria-label="Input and output energy"
                       onPointerDown={e => { e.currentTarget.setPointerCapture(e.pointerId); updateScrubFromClientX(e.clientX) }}
@@ -759,10 +782,20 @@ export default function StatsPage() {
                         )
                       })()}
                     </svg>
-                    <div className="flex justify-between px-1 mt-1">
-                      {chartFrame.labels.filter((_, i) => i % Math.max(1, Math.floor(chartFrame.labels.length / 6)) === 0).map((label) => (
-                        <span key={label} className="text-tiny text-ink-6">{label}</span>
-                      ))}
+                    {/* Each label under its own point (same x as the line), the edge ones
+                        kept inside the card; the selected bucket's label is lit. */}
+                    <div className="relative h-4 mt-1" data-testid="insights-axis">
+                      {axisLabelIndexes(chartFrame.labels.length).map(i => {
+                        const x = pointAt(i, 0).x
+                        const shift = x < 16 ? '0%' : x > CHART_W - 16 ? '-100%' : '-50%'
+                        return (
+                          <span key={i} data-index={i}
+                            className={`absolute top-0 text-tiny whitespace-nowrap ${scrubIndex === i ? 'text-white font-semibold' : 'text-ink-6'}`}
+                            style={{ left: x, transform: `translateX(${shift})` }}>
+                            {chartFrame.labels[i]}
+                          </span>
+                        )
+                      })}
                     </div>
                   </div>
 

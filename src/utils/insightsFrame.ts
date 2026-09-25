@@ -205,3 +205,23 @@ export function buildInsightsFrame(
 export function formatWh(wh: number): string {
   return `${Math.round(wh).toLocaleString('en-US')} Wh`
 }
+
+/**
+ * The bucket a tap at `x` (chart units, 0..width) picks: the nearest point, with
+ * points spread from `pad` to `width - pad` as the chart draws them (v4.21.1).
+ */
+export function bucketAtX(x: number, width: number, pad: number, count: number): number {
+  if (count <= 1) return 0
+  const inner = width - pad * 2
+  if (inner <= 0) return 0
+  const i = Math.round(((x - pad) / inner) * (count - 1))
+  return Math.max(0, Math.min(count - 1, i))
+}
+
+/** Which buckets get an axis label: about six, evenly stepped, first one included. */
+export function axisLabelIndexes(count: number): number[] {
+  const step = Math.max(1, Math.floor(count / 6))
+  const out: number[] = []
+  for (let i = 0; i < count; i += step) out.push(i)
+  return out
+}

@@ -70,6 +70,8 @@ Dark-first, iOS-native feel, rounded-card layout, teal accent on dark bg.
 
 ## Conventions
 - Dark theme only (light mode is future work).
+- No long-press text selection (v4.21.1): `body` is `user-select: none` + `-webkit-touch-callout: none`
+  (`index.css`); inputs, textareas, `contenteditable` and `.select-text` stay selectable.
 - All primary interactive elements ≥ 48×48dp; focus ring `#01D6BE` (WCAG).
 - Toggle/button micro-interaction: scale 0.95 → 1. Ring color transition 1s ease-in-out.
 - Reference the PRD (Sierro Energy App PRD v1.1) for per-page behavior.
@@ -223,9 +225,18 @@ lives on independently and is still referenced elsewhere.)
   Driven by `RealTimePowerChart`'s `batteryAsSoc`/`batterySoc` props (the shared chart still defaults
   to the power view for the Battery tab).
   **Scrub (v4.18.0):** one finger (or a held mouse) on the plot shows a guide line, the point and a label
-  with the time (`clockLabel`, "3:45pm") and the tab's value; the reading stays after release and follows
+  with the sample's own time **to the second** (`clockLabelSeconds`, "3:47:23pm" — v4.21.1) and the tab's
+  name + value (`scrubValueLabel`: whole W, SOC to 0.1 %, e.g. "Solar 180W"); the reading stays after release and follows
   tab switches. `readingAt()` takes the nearest sample within half a gap, so over a gap it says "No data".
   Two fingers pinch-zoom and pan (one-finger pan was dropped for the scrub); the wheel still zooms.
+- **Newest sample wins (v4.21.1).** `resolveLiveValues(cloud, ble, pass, { cloudAt, bleAt })`
+  (`livePassthroughStore`): a passthrough sample older than `LIVE_SAMPLE_FRESH_MS` (2 min — its reads have
+  been failing) gives way to a cloud sample (`/state/latest` `time`, `parseDeviceStateTime`) taken after
+  it; before, it sat on top for up to 15 min and the screen froze under "Connected". A BLE sample older
+  than `LIVE_SAMPLE_MAX_AGE_MS` is ignored. DevicePage passes the same times. The monitor also re-reads
+  the cloud state on a return to the foreground, and its header says `Last update 2:15pm` instead of
+  "Connected" once the newest reading on screen is over `STALE_DATA_MS` (10 min) old
+  (`connectedLabel`, `src/utils/dataFreshness.ts`).
 - *Header* (v4.18.0): the device name is centred with `max-w-[calc(100%-232px)]` and truncates with an
   ellipsis; the switcher chevron never shrinks, so a long name cannot push it under the settings button.
   `index.css` sets `.truncate { text-wrap: nowrap }` after the titles' `text-wrap: balance`, which had
@@ -306,7 +317,10 @@ lives on independently and is still referenced elsewhere.)
 - *Period selector* (Day/Week/Month/Range) + *date navigator*.
 - *CO₂ card*: CO₂ reduced Kg + eco insight + formula.
 - *Input vs. Output chart* (v4.16.0): one line chart for every period (Week was bars), shared scale for both
-  series, tap/drag to read a bucket (the reading stays). Built by `buildInsightsFrame()`
+  series, tap/drag to read a bucket (the reading stays). **v4.21.1:** drawn 1:1 at the box's measured width
+  (ResizeObserver, `chartW`) instead of a fixed 340-wide letterboxed viewBox; a tap picks the nearest
+  drawn point (`bucketAtX`), and the axis labels (`axisLabelIndexes`, about six) sit under their own
+  points (the selected one lit) — they were spread with `justify-between`, a bucket or more off. Built by `buildInsightsFrame()`
   (`src/utils/insightsFrame.ts`): per-bucket **energy in Wh**, integrating each sample's power until the next
   (held at most `sampleHoldCapMs` = 3× the device's typical gap, 15–60 min, so silence is not credited);
   **input = Solar (`generationPower`) + AC (`exchangeChargingPower`)** — AC used to be ignored — and the

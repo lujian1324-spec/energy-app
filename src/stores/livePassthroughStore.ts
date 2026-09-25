@@ -47,6 +47,26 @@ import { mergeCloudWithBle, type CloudLiveSlice } from './bleLiveStatusStore'
  */
 export const LIVE_SAMPLE_MAX_AGE_MS = 15 * 60_000
 
+/**
+ * How long a passthrough sample stays on top of a NEWER cloud sample (v4.21.1).
+ *
+ * Passthrough is read every 5 s on the monitor (every minute on the list), so a
+ * sample this old means the reads have been failing for a while. Keeping it on
+ * top of a cloud sample that is newer froze the screen: "Connected", while every
+ * figure stayed where the last good read left it for up to LIVE_SAMPLE_MAX_AGE_MS
+ * and the 30 s cloud poll landed underneath, unseen.
+ */
+export const LIVE_SAMPLE_FRESH_MS = 2 * 60_000
+
+/** When each source's sample was taken, so the newest one is shown. */
+export interface LiveSampleTimes {
+  /** The cloud sample's own time (`/state/latest` `time`). */
+  cloudAt?: number | null
+  /** When the BLE sample was read. */
+  bleAt?: number | null
+  now?: number
+}
+
 /** ready = a real sample; pending = first read outstanding; failed = it settled with nothing. */
 export type LiveStatusPhase = 'pending' | 'ready' | 'failed'
 
@@ -207,12 +227,23 @@ export function resolveLiveValues<T extends CloudLiveSlice>(
   cloud: T | null | undefined,
   ble: LiveStatus | null | undefined,
   layer: LivePassthroughEntry | null | undefined,
+  times: LiveSampleTimes = {},
 ): CloudLiveSlice & Partial<T> {
-  const withBle = mergeCloudWithBle(cloud, ble)
-  if (layer?.live) return mergeWithPassthrough(withBle, layer.live) as unknown as CloudLiveSlice & Partial<T>
+  const now = times.now ?? Date.now()
+  // A BLE reading is a one-off (taken while adding the device): past the carry-over
+  // age it is no longer what the device is doing.
+  const bleLive = ble && !(times.bleAt != null && now - times.bleAt > LIVE_SAMPLE_MAX_AGE_MS) ? ble : null
+  const withBle = mergeCloudWithBle(cloud, bleLive)
+  if (layer?.live) {
+    // The newest sample wins once the passthrough one has gone stale (v4.21.1).
+    const stale = now - layer.updatedAt > LIVE_SAMPLE_FRESH_MS
+    const cloudNewer = times.cloudAt != null && Number.isFinite(times.cloudAt) && times.cloudAt > layer.updatedAt
+    if (!(stale && cloudNewer)) return mergeWithPassthrough(withBle, layer.live) as unknown as CloudLiveSlice & Partial<T>
+    return withBle as CloudLiveSlice & Partial<T>
+  }
   // Nothing from the device yet. BLE is a direct read and stands in happily;
   // the cloud sample does not, until we know passthrough has nothing coming.
-  if (layer?.phase === 'pending' && !ble) {
+  if (layer?.phase === 'pending' && !bleLive) {
     return withoutLiveFields(withBle) as unknown as CloudLiveSlice & Partial<T>
   }
   return withBle as CloudLiveSlice & Partial<T>

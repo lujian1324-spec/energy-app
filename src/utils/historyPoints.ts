@@ -199,6 +199,25 @@ export function readingAt(
   return best && Math.abs(best.timestamp - t) <= gapMs / 2 ? best : null
 }
 
+/**
+ * "3:47:23pm" — the exact moment a sample was taken, for the Real-Time Power
+ * scrub (v4.21.1: it showed only minutes, so two readings a few seconds apart
+ * read as the same time).
+ */
+export function clockLabelSeconds(ms: number): string {
+  const d = new Date(ms)
+  const h = d.getHours()
+  const m = String(d.getMinutes()).padStart(2, '0')
+  const sec = String(d.getSeconds()).padStart(2, '0')
+  return `${h % 12 === 0 ? 12 : h % 12}:${m}:${sec}${h < 12 ? 'am' : 'pm'}`
+}
+
+/** A scrub reading as the device reported it: whole watts, SOC to a tenth when it has one. */
+export function scrubValueLabel(value: number, unit: string): string {
+  if (unit === '%') return `${Math.round(value * 10) / 10}%`
+  return `${Math.round(value)}${unit}`
+}
+
 /** "3:45pm" / "12:05am" — the chart's own axis style ("12am", "4pm"), with minutes. */
 export function clockLabel(ms: number): string {
   const d = new Date(ms)

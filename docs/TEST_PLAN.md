@@ -247,6 +247,9 @@ v4.4.3 修复 Android 扫不到设备(客户端过滤)与 PWA Open Settings 跳�
     - `device-settings.e2e.spec.ts`(7,v4.18.0/v4.19.0):Sleep Mode 两个滑杆 50W 一档(Sierro 1000 为 0–400W、Sierro 2000 为 0–800W),
       保存时对设备写 0x0085(窗口内为睡眠功率)并把窗口+两个功率上传中继,重启后滑杆保持;设备离线也能保存,只上传中继并提示上线后生效;
       Battery Priority 不显示、Device Info 无 Serial Number;0x000A=1000W 识别为 Sierro 2000、500W 为 Sierro 1000。
+    - v4.21.1:`device-freshness.e2e.spec.ts`(3)透传读失败 2 分钟后显示更新的云端读数、较旧的云端数据不覆盖新的实时读数、
+      最新读数超过 10 分钟时标题显示 "Last update 2:15pm";`insights.e2e.spec.ts` 新增:点选的点、虚线和横坐标标签对齐,
+      页面与图表文字不可长按选中;`realtime-history.e2e.spec.ts` 选中点显示到秒的时间和 "Battery 60%" 名称+数值。
     - `insights-cache.e2e.spec.ts`(4,v4.21.0):打开 APP 后台逐天缓存最近一个月(31 天,最新的一天先拉,每次一天,只拉 Insights 那台设备),
       过程中切换 Devices/Insights 标签照常响应、主线程无 ≥250ms 长任务;之后打开 Insights 月视图直接用缓存画图,只重新拉今天;
       几分钟后再次打开 APP 只重拉今天(已结算的天不再拉);Real-Time Power 刚读过的今天后台不重复拉。

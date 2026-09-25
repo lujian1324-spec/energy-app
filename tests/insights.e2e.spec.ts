@@ -81,4 +81,47 @@ test.describe('Insights', () => {
     await expect.poll(() => readHour(page, 10)).toContain('Out 120 Wh')
     await expect(page.getByText(PARTIAL_COPY)).toHaveCount(0)
   })
+
+  test('the tapped point, its guide line and its axis label line up (v4.21.1)', async ({ page }) => {
+    await mockBackend(page, [
+      { id: '1001', name: 'Garage', history: reportsBetween(0, 24, { generationPower: 100, outputPower: 120 }) },
+    ])
+    await openYesterday(page)
+    const chart = page.getByRole('img', { name: 'Input and output energy' })
+    await expect.poll(() => readHour(page, 10)).toContain('Out 120 Wh')
+    const axis = page.getByTestId('insights-axis')
+    for (const i of [0, 4, 8, 12, 16, 20]) {
+      const label = axis.locator(`[data-index="${i}"]`)
+      const text = (await label.textContent())!
+      const lb = (await label.boundingBox())!
+      const cb = (await chart.boundingBox())!
+      // Tap straight above the label's centre (the edge label is left-aligned: tap its left edge).
+      const tapX = i === 0 ? lb.x : lb.x + lb.width / 2
+      await chart.click({ position: { x: tapX - cb.x, y: cb.height / 2 } })
+      await expect(chart.locator('text').first()).toHaveText(text)
+      // The guide line is drawn at the point's x — the same x the label is centred on.
+      const guideX = Number(await chart.locator('line[stroke-dasharray="3,3"]').getAttribute('x1'))
+      expect(Math.abs(cb.x + guideX - tapX)).toBeLessThan(2)
+      await expect(label).toHaveClass(/text-white/)
+    }
+  })
+
+  test('page and chart text cannot be selected by a long press (v4.21.1)', async ({ page }) => {
+    await mockBackend(page, [
+      { id: '1001', name: 'Garage', history: reportsBetween(8, 12, { generationPower: 100, outputPower: 120 }) },
+    ])
+    await openYesterday(page)
+    await readHour(page, 9)
+    const style = (sel: string) => page.locator(sel).first().evaluate(el => {
+      const cs = getComputedStyle(el)
+      return { select: cs.userSelect || cs.webkitUserSelect, callout: (cs as unknown as Record<string, string>).webkitTouchCallout }
+    })
+    expect((await style('body')).select).toBe('none')
+    expect((await style('[role="img"] text')).select).toBe('none')
+    expect((await style('text=Input vs. Output')).select).toBe('none')
+    // Something to try: select everything; nothing on the page may come out.
+    await page.evaluate(() => { const r = document.createRange(); r.selectNodeContents(document.body); getSelection()!.removeAllRanges(); getSelection()!.addRange(r) })
+    expect(await page.evaluate(() => getSelection()!.toString().trim())).toBe('')
+  })
 })
+
