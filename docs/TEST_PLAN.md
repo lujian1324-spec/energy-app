@@ -247,6 +247,12 @@ v4.4.3 修复 Android 扫不到设备(客户端过滤)与 PWA Open Settings 跳�
     - `device-settings.e2e.spec.ts`(7,v4.18.0/v4.19.0):Sleep Mode 两个滑杆 50W 一档(Sierro 1000 为 0–400W、Sierro 2000 为 0–800W),
       保存时对设备写 0x0085(窗口内为睡眠功率)并把窗口+两个功率上传中继,重启后滑杆保持;设备离线也能保存,只上传中继并提示上线后生效;
       Battery Priority 不显示、Device Info 无 Serial Number;0x000A=1000W 识别为 Sierro 2000、500W 为 Sierro 1000。
+    - `insights-cache.e2e.spec.ts`(4,v4.21.0):打开 APP 后台逐天缓存最近一个月(31 天,最新的一天先拉,每次一天,只拉 Insights 那台设备),
+      过程中切换 Devices/Insights 标签照常响应、主线程无 ≥250ms 长任务;之后打开 Insights 月视图直接用缓存画图,只重新拉今天;
+      几分钟后再次打开 APP 只重拉今天(已结算的天不再拉);Real-Time Power 刚读过的今天后台不重复拉。
+      `insights.e2e.spec.ts` 同步改为按天请求(keys/history/v1),分页失败用例走 record/list 回退。
+      单测 `src/utils/insightsCache.test.ts`(16):按天/夏令时、窗口、结算判定、跳过已结算和刚读过的天、失败两天即停、切换账号不写入、请求抛错只算这一天失败、
+      页面先缓存后补拉、部分失败提示、页面与后台同一天只发一次请求、缓存点换算的 Wh 与原记录一致。
     - `provisioning.e2e.spec.ts`(3):模拟 Android + `navigator.bluetooth`——打开即搜索、列出广播的设备、无扫码入口;
       失败后返回再进入不残留失败画面;系统弹窗关闭、搜索中切后台都不重启搜索、不清空列表。
 - **真实后端冒烟**(`scripts/api-smoke.mjs`,`E2E_USER=x E2E_PASS=y npm run test:api:live`):

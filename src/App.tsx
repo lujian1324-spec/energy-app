@@ -29,6 +29,7 @@ import { syncWebPushSubscription, refreshNotificationPermission } from './utils/
 import { PUSH_ENABLED } from './config/webPush'
 import { initNativePush } from './utils/nativePush'
 import { startAppUpdates } from './utils/appUpdate'
+import { startInsightsPrefetch } from './utils/insightsPrefetch'
 import { Capacitor } from '@capacitor/core'
 import { ToastContainer, useToast } from './components/Toast'
 import { ErrorBoundary } from './components/ErrorBoundary'
@@ -106,6 +107,10 @@ function AppInner() {
     void startAppUpdates().then(fn => { if (cancelled) fn(); else stop = fn })
     return () => { cancelled = true; stop() }
   }, [])
+
+  // Every app open caches the last month of Insights history in the background,
+  // in idle time, so Insights opens without waiting (utils/insightsPrefetch.ts).
+  useEffect(() => startInsightsPrefetch(), [])
 
   // 登录后幂等同步 Web Push 订阅（覆盖订阅过期 / 换设备登录；已开启推送才执行）
   useEffect(() => {

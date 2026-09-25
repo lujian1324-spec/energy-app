@@ -244,11 +244,12 @@ lives on independently and is still referenced elsewhere.)
   than `maxGapMs()` (3× cadence, 15–60 min) breaks the line — never 0 W, never a bridge. The tail is
   re-read every 60 s while visible; the day rolls over at midnight. The old formatter dropped the `-`
   west of UTC (`…T00:00:0007:00`), so every US user got 20101 and an empty chart.
-  **Cache:** IndexedDB `device_history` (DB v5), keyed `[deviceId, timestamp]`, paints first only —
+  **Cache:** IndexedDB `device_history` (DB v5; v6 adds `history_days`), keyed `[deviceId, timestamp]`, paints first only —
   the full day is re-read from the server on every visit and replaces it. It used to end the fetch
   (curve frozen at the first visit) and to read guest-simulator rows with no `deviceId` as every
   device's; v5 clears that legacy `power_history`. `deviceStore.exitDemoMode` (sign-in and
-  sign-out) clears the cache.
+  sign-out) clears the cache. A complete read of the whole day also records that day in `history_days`
+  (`markHistoryDay`), so the Insights background cache does not read it again (v4.21.0).
 
 **DeviceDetailPage** (`/device/:id/settings` — Device Info)
 - *Name edit*, *icon picker*.
@@ -314,6 +315,30 @@ lives on independently and is still referenced elsewhere.)
   week/month: {date}". History is paged until a short page (cap 200 × 300); a failed later page or the cap
   shows "Some history … couldn't be loaded" instead of silently short totals (APP-20260923-006/007/008/009).
 - (Battery Health card removed.)
+- **History cache (v4.21.0).** Insights reads its device's history from the phone
+  (`src/utils/insightsCache.ts`), one **local day** at a time: `fetchDay()` reads a day with the Real-Time
+  Power call (`fetchWindow`: keys/history/v1, falling back to record/list), and only a day that came back
+  whole is stored — `saveHistoryDay()` replaces that day's `device_history` rows and writes its
+  `history_days` row (`[deviceId, dayStart]`, powerflowDB **v6**) in one transaction. A day read ≥ 2 h
+  (`SETTLE_MS`) after it ended is **final** and never read again; today is never final.
+  - *Every app open* (`startInsightsPrefetch()`, `src/utils/insightsPrefetch.ts`, started in `App.tsx`):
+    3 s after the device list is in, and again on a return to the foreground ≥ 30 min after the last
+    finished run, `prefetchInsightsHistory()` caches the Insights device (oldest, `insightsDeviceId`) from
+    30 days back (or the 1st of the month if earlier) to today, **newest day first, one request at a time**,
+    waiting for `requestIdleCallback` + 300 ms before each day. It skips final days and a day read in the last
+    2 min (`FRESH_MS` — the chart just read today), touches no React state, and stops when the app is hidden,
+    offline, signed out, a guest/demo, or under the firmware lock (`isActive`), or after two failed days; the
+    next open resumes. Days older than 62 days are pruned at the end. `MAX_DEVICE_HISTORY` is 150,000 rows; a
+    trim also drops the `history_days` rows of days it cut into.
+  - *The page*: `loadInsightsRange()` paints straight from the cache when every day of the period (up to
+    today) has a `history_days` row, then re-reads only the days that are not final (3 at a time) and
+    replaces the chart; an uncached period is read the same way, with the skeleton. A day that did not come
+    back whole still shows the "Some history … couldn't be loaded" note; nothing at all → the error state.
+    StatsPage stays mounted behind the other tabs, so it **reads only while `/insights` is on screen**.
+  - Page and background share one request per device-day (`fetchDay` in-flight map; a thrown request is a
+    failed day). A `FIRMWARE_UPDATING` reply never switches the session from keys/history/v1 to record/list.
+    `resetInsightsCache()` (from `deviceStore.exitDemoMode`, sign-in/out) drops requests in flight so none
+    writes into the next account's cache; `clearDeviceHistory()` clears `history_days` too.
 
 **SettingPage** (`/setting`)
 - *Profile card*: avatar, name, account action, Founding Member tag. The tag and the matching

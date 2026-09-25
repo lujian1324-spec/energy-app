@@ -10,6 +10,7 @@
  * - commands 命令审计 (自增 id)
  * - user_profile 用户资料 (key: 'account:<account>')
  * - device_history 云端历史缓存 (key: [deviceId, timestamp], v5)
+ * - history_days   哪些天已缓存、是否完整 (key: [deviceId, dayStart], v6 — Insights 预缓存)
  */
 
 import { openDB, type IDBPDatabase } from 'idb'
@@ -26,7 +27,7 @@ import type { PeakShavingSettings } from '../types'
 import type { HistoryPoint } from '../utils/historyPoints'
 
 const DB_NAME = 'powerflow-db'
-const DB_VERSION = 5   // v5: device_history (per-device cloud history cache)
+const DB_VERSION = 6   // v5: device_history (per-device cloud history cache); v6: history_days
 
 export interface RatedParams {
   deviceId: string
@@ -53,8 +54,21 @@ export interface DeviceHistoryRow extends HistoryPoint {
   deviceId: string
 }
 
+/**
+ * One local day of one device's history in `device_history` (v6, Insights cache).
+ * `final`: read after the day was over and settled, so it is never read again.
+ * A day without a row has not been cached (or was trimmed) and must be fetched.
+ */
+export interface HistoryDayRow {
+  deviceId: string
+  dayStart: number
+  fetchedAt: number
+  final: boolean
+}
+
 /** 最大保留条数（避免无限增长） */
-const MAX_DEVICE_HISTORY = 20_000
+/** ~a month at a one-minute cadence for three devices (v4.21.0 Insights cache). */
+const MAX_DEVICE_HISTORY = 150_000
 const MAX_POWER_HISTORY = 8640 // ~24h @ 10s interval
 const MAX_ALERTS = 500
 const MAX_COMMANDS = 200
@@ -96,6 +110,10 @@ type PowerFlowDB = IDBPDatabase<{
     key: [string, number]
     value: DeviceHistoryRow
     indexes: { timestamp: number }
+  }
+  history_days: {
+    key: [string, number]
+    value: HistoryDayRow
   }
 }>
 
@@ -141,6 +159,10 @@ async function getDB(): Promise<PowerFlowDB> {
       key: [string, number]
       value: DeviceHistoryRow
       indexes: { timestamp: number }
+    }
+    history_days: {
+      key: [string, number]
+      value: HistoryDayRow
     }
   }>(DB_NAME, DB_VERSION, {
     upgrade(db, oldVersion, _newVersion, transaction) {
@@ -200,6 +222,10 @@ async function getDB(): Promise<PowerFlowDB> {
       if (!db.objectStoreNames.contains('device_history')) {
         const store = db.createObjectStore('device_history', { keyPath: ['deviceId', 'timestamp'] })
         store.createIndex('timestamp', 'timestamp')
+      }
+      // ---- history_days (added in v6) ----
+      if (!db.objectStoreNames.contains('history_days')) {
+        db.createObjectStore('history_days', { keyPath: ['deviceId', 'dayStart'] })
       }
       // The Real-Time Power chart used to cache into power_history, where rows
       // without a deviceId (guest-mode simulator) were read as every device's
@@ -474,16 +500,88 @@ export async function replaceDeviceHistory(
   await trimDeviceHistory()
 }
 
-/** Keep the newest MAX_DEVICE_HISTORY samples across all devices. */
+/**
+ * Keep the newest MAX_DEVICE_HISTORY samples across all devices. A day that
+ * loses rows here loses its `history_days` row too, so it is fetched again
+ * instead of being shown short.
+ */
 async function trimDeviceHistory(): Promise<void> {
   const db = await getDB()
   const excess = (await db.count('device_history')) - MAX_DEVICE_HISTORY
   if (excess <= 0) return
-  const tx = db.transaction('device_history', 'readwrite')
-  let cursor = await tx.store.index('timestamp').openCursor()
+  const tx = db.transaction(['device_history', 'history_days'], 'readwrite')
+  const rows = tx.objectStore('device_history')
+  let cursor = await rows.index('timestamp').openCursor()
+  let newestDropped = -Infinity
   for (let n = 0; cursor && n < excess; n++) {
+    newestDropped = Math.max(newestDropped, cursor.value.timestamp)
     await cursor.delete()
     cursor = await cursor.continue()
+  }
+  const days = tx.objectStore('history_days')
+  let day = await days.openCursor()
+  while (day) {
+    // A day starting before the newest dropped sample may have lost rows.
+    if (day.value.dayStart <= newestDropped) await day.delete()
+    day = await day.continue()
+  }
+  await tx.done
+}
+
+/** The cached-day rows of one device whose day starts in [fromDay, toDay]. */
+export async function readHistoryDays(deviceId: string, fromDay: number, toDay: number): Promise<HistoryDayRow[]> {
+  const db = await getDB()
+  return db.getAll('history_days', IDBKeyRange.bound([deviceId, fromDay], [deviceId, toDay]))
+}
+
+/**
+ * One whole local day as the server returned it: its samples replace what the
+ * cache held for [dayStart, dayEnd] and the day is recorded as cached, in one
+ * transaction — a day is never marked cached without its rows.
+ */
+export async function saveHistoryDay(
+  deviceId: string,
+  dayStart: number,
+  dayEnd: number,
+  points: HistoryPoint[],
+  final: boolean,
+  fetchedAt = Date.now(),
+): Promise<void> {
+  const db = await getDB()
+  const tx = db.transaction(['device_history', 'history_days'], 'readwrite')
+  const rows = tx.objectStore('device_history')
+  await rows.delete(IDBKeyRange.bound([deviceId, dayStart], [deviceId, dayEnd]))
+  for (const p of points) {
+    if (p.timestamp >= dayStart && p.timestamp <= dayEnd) await rows.put({ ...p, deviceId })
+  }
+  await tx.objectStore('history_days').put({ deviceId, dayStart, fetchedAt, final })
+  await tx.done
+  await trimDeviceHistory()
+}
+
+/**
+ * Record a day whose rows were just written by `replaceDeviceHistory` over that
+ * whole day (the Real-Time Power chart reading today), so the Insights cache
+ * knows it holds that day.
+ */
+export async function markHistoryDay(deviceId: string, dayStart: number, fetchedAt: number, final: boolean): Promise<void> {
+  const db = await getDB()
+  await db.put('history_days', { deviceId, dayStart, fetchedAt, final })
+}
+
+/** Drop every cached sample and day older than `cutoff` (all devices). */
+export async function pruneDeviceHistoryBefore(cutoff: number): Promise<void> {
+  const db = await getDB()
+  const tx = db.transaction(['device_history', 'history_days'], 'readwrite')
+  let cursor = await tx.objectStore('device_history').index('timestamp').openCursor(IDBKeyRange.upperBound(cutoff, true))
+  while (cursor) {
+    await cursor.delete()
+    cursor = await cursor.continue()
+  }
+  let day = await tx.objectStore('history_days').openCursor()
+  while (day) {
+    if (day.value.dayStart < cutoff) await day.delete()
+    day = await day.continue()
   }
   await tx.done
 }
@@ -492,6 +590,7 @@ async function trimDeviceHistory(): Promise<void> {
 export async function clearDeviceHistory(): Promise<void> {
   const db = await getDB()
   await db.clear('device_history')
+  await db.clear('history_days')
   await db.clear('power_history')
 }
 

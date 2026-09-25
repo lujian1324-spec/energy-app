@@ -17,8 +17,11 @@ const NOW = new Date('2026-09-24T15:00:00-07:00')
 const KEYS_V1 = '/deviceState/simple/attribute/keys/history/v1'
 /** The Siseli app's call it falls back to (count 80); Insights reads it too, with 300. */
 const RECORD_LIST = '/deviceState/attribute/record/list'
-const chartCalls = (api: MockBackend, id: string) => api.callsTo(KEYS_V1, id)
-const fallbackCalls = (api: MockBackend, id: string) => api.callsTo(RECORD_LIST, id).filter(c => c.body.count === 80)
+// Since v4.21.0 the app also caches past days for Insights in the background;
+// the chart only ever reads today (2026-09-24 here, or the day after midnight).
+const isChartDay = (c: { body: { fromTime?: unknown } }) => String(c.body.fromTime) >= '2026-09-24T00:00:00'
+const chartCalls = (api: MockBackend, id: string) => api.callsTo(KEYS_V1, id).filter(isChartDay)
+const fallbackCalls = (api: MockBackend, id: string) => api.callsTo(RECORD_LIST, id).filter(c => c.body.count === 80).filter(isChartDay)
 
 // Garage: Battery 60 %, AC 100 W, Solar 50 W, Output 120 W, silent 02:00–05:00.
 // Cabin: Battery 30 %, no AC reading at all, Solar 200 W, Output 400 W.
