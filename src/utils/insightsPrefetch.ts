@@ -29,6 +29,18 @@ const DAY_GAP_MS = 300
 
 let running = false
 let lastRunAt = 0
+/** Another run was asked for while one was going (the Insights device changed). */
+let rerun = false
+/** Set while started: asks for a run soon (see kickInsightsPrefetch). */
+let kick: (() => void) | null = null
+
+/**
+ * The Insights device changed (v4.26.0): cache the new one's month now rather than
+ * at the next app open. A run for the old device stops before its next day.
+ */
+export function kickInsightsPrefetch(): void {
+  kick?.()
+}
 
 function canRun(): boolean {
   const auth = useAuthStore.getState()
@@ -51,7 +63,8 @@ function pause(): Promise<void> {
 }
 
 async function run(): Promise<void> {
-  if (running || !canRun()) return
+  if (running) { rerun = true; return }
+  if (!canRun()) return
   const deviceId = insightsDeviceId(useDeviceStore.getState().devices)
   if (!deviceId) return
   running = true
@@ -60,7 +73,8 @@ async function run(): Promise<void> {
     const res = await prefetchInsightsHistory({
       deviceId,
       pause,
-      isActive: () => canRun() && localStorage.getItem('iot_user_id') === userId,
+      isActive: () => canRun() && localStorage.getItem('iot_user_id') === userId
+        && insightsDeviceId(useDeviceStore.getState().devices) === deviceId,
     })
     // A run cut short (hidden, offline…) resumes on the next return to the foreground.
     if (!res.stopped) lastRunAt = Date.now()
@@ -69,6 +83,7 @@ async function run(): Promise<void> {
     console.warn('[insights] background cache stopped:', e)
   } finally {
     running = false
+    if (rerun) { rerun = false; void run() }
   }
 }
 
@@ -106,8 +121,10 @@ export function startInsightsPrefetch(): () => void {
     if (launchDone) schedule(FIRST_RUN_DELAY_MS)
   }
   document.addEventListener('visibilitychange', onVisible)
+  kick = () => { if (launchDone) schedule(FIRST_RUN_DELAY_MS) }
 
   return () => {
+    kick = null
     if (timer) clearTimeout(timer)
     offDevices()
     offAuth()
@@ -118,5 +135,6 @@ export function startInsightsPrefetch(): () => void {
 /** For tests. */
 export function __resetInsightsPrefetch(): void {
   running = false
+  rerun = false
   lastRunAt = 0
 }

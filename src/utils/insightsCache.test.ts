@@ -88,6 +88,14 @@ describe('local days', () => {
     expect(isWholeLocalDay(d + 60_000, nextDayStart(d) - 1)).toBe(false)
   })
 
+  it('the device picked on Insights wins while it is still on the account (v4.26.0)', () => {
+    const devices = [{ id: 'b', createdAt: '2026-02-01T00:00:00Z' }, { id: 'a', createdAt: '2026-01-01T00:00:00Z' }]
+    expect(insightsDeviceId(devices, 'b')).toBe('b')
+    expect(insightsDeviceId(devices, 'gone')).toBe('a')
+    expect(insightsDeviceId(devices, null)).toBe('a')
+    expect(insightsDeviceId([], 'b')).toBeNull()
+  })
+
   it('picks the oldest device, as Insights does', () => {
     expect(insightsDeviceId([{ id: 2, createdAt: '2026-02-01' }, { id: '1', createdAt: '2026-01-01' }])).toBe('1')
     expect(insightsDeviceId([])).toBeNull()

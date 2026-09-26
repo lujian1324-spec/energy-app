@@ -1,8 +1,9 @@
 {
-  "version": "4.25.0",
-  "build": 2945,
+  "version": "4.26.0",
+  "build": 2946,
   "date": "2026-09-25",
   "changelog": [
+    "Insights now works with every device on your account: with two or more, a switcher under \"Reliable backup power since …\" picks which device the page shows. Your pick is remembered, and that device's last month is saved on your phone in the background.",
     "Charging Settings: AC Charging Power is now Max AC Charging Power, and there is no Save button. The power you slide to goes to your device straight away. With Scheduled Silent Mode on, Sierro's server lowers charging to the Silent Mode limit when the window starts and returns it to your Max AC Charging Power when it ends, even with the app closed.",
     "Fix: Device Info showed Rated Output Power as 0.5W on some devices; it now shows 500W (1000W on a Sierro 2000).",
     "AC Charging Power is now a slider: 50 to 400 W in five steps (50, 100, 200, 300, 400 W) on a Sierro 1000, and 100 to 800 W in 100 W steps on a Sierro 2000. A power saved before moves to the nearest step.",

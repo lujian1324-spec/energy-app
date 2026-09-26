@@ -247,6 +247,8 @@ v4.4.3 修复 Android 扫不到设备(客户端过滤)与 PWA Open Settings 跳�
     - `device-settings.e2e.spec.ts`(7,v4.18.0/v4.19.0):Sleep Mode 两个滑杆 50W 一档(Sierro 1000 为 0–400W、Sierro 2000 为 0–800W),
       保存时对设备写 0x0085(窗口内为睡眠功率)并把窗口+两个功率上传中继,重启后滑杆保持;设备离线也能保存,只上传中继并提示上线后生效;
       Battery Priority 不显示、Device Info 无 Serial Number;0x000A=1000W 识别为 Sierro 2000、500W 为 Sierro 1000。
+    - v4.26.0:`insights-cache.e2e.spec.ts` +2:两台设备时 Insights 有切换按钮,选 Cabin 后标题年月、图表与后台一个月缓存都换成 Cabin,
+      重开仍是 Cabin;一台设备时无切换按钮。单测 `insightsCache.test.ts` +1(选中设备优先、已移除则回退最早)。
     - v4.25.0:`device-program.e2e.spec.ts` Max AC Charging Power 无 Save、滑块停下即经透传写设备、中继拒绝时设备仍生效并提示、
       停充时写 0、离线只存中继;`programApi.test.ts` +4(先设备后中继的顺序等);中继 `program.test.js` +1(Max 400W、21:00–09:00:
       21:00 写 150W、09:00 写 400W)。

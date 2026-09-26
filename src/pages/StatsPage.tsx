@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Loader2, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Loader2, Plus, ChevronLeft, ChevronRight, Check } from 'lucide-react'
 import Icon from '../components/Icon'
 import EmptyState from '../components/EmptyState'
 import { PageHeaderShell } from '../components/PageHeader'
@@ -9,8 +9,9 @@ import html2canvas from 'html2canvas'
 import { toast } from '../components/Toast'
 import BottomSheet from '../components/BottomSheet'
 import { useDeviceStore } from '../stores/deviceStore'
-import type { DeviceAttributeRecord } from '../api/deviceApi'
-import { insightsDeviceId, loadInsightsRange, pointsToRecords } from '../utils/insightsCache'
+import type { DeviceAttributeRecord, DeviceListItem } from '../api/deviceApi'
+import { insightsDeviceId, loadInsightsChoice, loadInsightsRange, pointsToRecords, saveInsightsChoice } from '../utils/insightsCache'
+import { kickInsightsPrefetch } from '../utils/insightsPrefetch'
 import { useCountUp } from '../hooks/useCountUp'
 import { toUserFacingError } from '../utils/uiCopy'
 import { axisLabelIndexes, bucketAtX, buildInsightsFrame, formatWh, weekStart } from '../utils/insightsFrame'
@@ -228,10 +229,68 @@ function Co2InfoSheet({
   )
 }
 
-function DaysSkeleton() {
+/**
+ * Which device Insights shows (v4.26.0), under "Reliable backup power since …":
+ * a pill with the device's name and online dot that opens the account's devices —
+ * the same list the device screen's switcher shows. Only drawn with two or more.
+ */
+function InsightsDeviceSwitcher({ devices, selectedId, onSelect }: {
+  devices: DeviceListItem[]
+  selectedId: string
+  onSelect: (id: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const selected = devices.find(d => String(d.id) === selectedId)
+  const dot = (d?: DeviceListItem) => (d?.isOnline ? 'bg-success' : 'bg-ink-7')
+  return (
+    <div className="relative mt-3 flex justify-center">
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={`Device: ${selected?.name ?? 'Device'}`}
+        className="relative h-8 max-w-[240px] pl-3.5 pr-3 rounded-pill bg-ink-9 flex items-center gap-1.5 active:scale-95 transition-transform before:absolute before:content-[''] before:-inset-y-2 before:inset-x-0"
+      >
+        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dot(selected)}`} />
+        <span className="min-w-0 truncate text-body-md font-semibold text-ink-1">{selected?.name ?? 'Device'}</span>
+        <Icon name="chevron-down" size={16} className={`flex-shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <>
+          <button type="button" aria-label="Close" className="fixed inset-0 z-40 cursor-default" onClick={() => setOpen(false)} />
+          <div role="listbox" aria-label="Devices"
+            className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-50 w-52 rounded-l bg-ink-10 border border-white/10 shadow-xl overflow-hidden text-left">
+            {devices.map(d => {
+              const isSelected = String(d.id) === selectedId
+              return (
+                <button
+                  key={d.id}
+                  type="button"
+                  role="option"
+                  aria-selected={isSelected}
+                  onClick={() => { setOpen(false); if (!isSelected) onSelect(String(d.id)) }}
+                  className="w-full min-h-[48px] px-4 flex items-center justify-between gap-2 border-b border-white/5 last:border-0 active:bg-white/5"
+                >
+                  <span className="min-w-0 flex items-center gap-2">
+                    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dot(d)}`} />
+                    <span className={`truncate text-body-md ${isSelected ? 'text-primary font-semibold' : 'text-white'}`}>{d.name}</span>
+                  </span>
+                  {isSelected && <Check size={15} className="text-primary flex-shrink-0" />}
+                </button>
+              )
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+function DaysSkeleton({ tall = false }: { tall?: boolean }) {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-      className="-mx-4 h-[110px] flex flex-col items-center justify-center bg-ink-10">
+      className={`-mx-4 ${tall ? 'h-[150px]' : 'h-[110px]'} flex flex-col items-center justify-center bg-ink-10`}>
       <div className="h-12 w-44 bg-ink-9 rounded-m animate-pulse mb-3" />
       <div className="h-3 w-52 bg-ink-9 rounded-s animate-pulse" />
     </motion.div>
@@ -313,7 +372,15 @@ export default function StatsPage() {
   const [error, setError] = useState<string | null>(null)
   const [showCo2Info, setShowCo2Info] = useState(false)
 
-  const deviceId = useMemo(() => insightsDeviceId(devices), [devices])
+  /** The device picked with the switcher (per account, remembered); else the oldest. */
+  const [choice, setChoice] = useState<string | null>(loadInsightsChoice)
+  const deviceId = useMemo(() => insightsDeviceId(devices, choice), [devices, choice])
+  const selectDevice = useCallback((id: string) => {
+    saveInsightsChoice(id)
+    setChoice(id)
+    // Cache the new device's month in the background now, not at the next app open.
+    kickInsightsPrefetch()
+  }, [])
   /** Only the newest load may set the page (a quick period switch would otherwise flash an older one). */
   const loadSeq = useRef(0)
 
@@ -603,11 +670,11 @@ export default function StatsPage() {
 
         {hasDevice && (
           <>
-            {loading && records === null ? <DaysSkeleton /> : (
+            {loading && records === null ? <DaysSkeleton tall={devices.length > 1} /> : (
               /* C_1.1: the days block is not a card — it continues the header's ink-10
                  band edge to edge, so the fill runs 0..244 in the export. */
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                className="-mx-4 h-[110px] flex flex-col items-center justify-center text-center bg-ink-10">
+                className={`-mx-4 ${devices.length > 1 ? 'h-[150px]' : 'h-[110px]'} flex flex-col items-center justify-center text-center bg-ink-10`}>
                 <div className="flex items-baseline justify-center gap-2">
                   {/* C_1.1 draws the handoff's solid bolt, not an outlined one. Its ink
                       is 11x20 in a 24 box, so 33 lands it on the frame’s 14.5x26.5. */}
@@ -618,6 +685,9 @@ export default function StatsPage() {
                 <p className="text-caption text-ink-7 mt-3">
                   {installedYearLabel ? `Reliable backup power since ${installedYearLabel}` : 'Reliable backup power'}
                 </p>
+                {devices.length > 1 && deviceId && (
+                  <InsightsDeviceSwitcher devices={devices} selectedId={deviceId} onSelect={selectDevice} />
+                )}
               </motion.div>
             )}
 

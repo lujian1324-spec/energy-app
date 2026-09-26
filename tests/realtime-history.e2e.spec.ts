@@ -173,7 +173,7 @@ test.describe('Real-Time Power history', () => {
     await page.goto('/#/devices')
     // Wait out the monitor's exit transition, then open the device from its card.
     await expect(page.getByText('Real-Time Power', { exact: true })).toHaveCount(0)
-    await page.getByText('Garage', { exact: true }).click()
+    await page.getByRole('heading', { name: 'Garage' }).click()
     await expect(page).toHaveURL(/#\/device\/1001/)
     await expect.poll(async () => (await readChart(page)).heights).toEqual(['10.5'])
     expect(chartCalls(api, '1001').filter(c => c.body.page === 1 && c.body.fromTime.endsWith('T00:00:00-07:00')).length).toBe(2)

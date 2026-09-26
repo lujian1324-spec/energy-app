@@ -334,7 +334,13 @@ lives on independently and is still referenced elsewhere.)
   app set for the device (`localStorage['sierro-fan-speed-{deviceId}']`). Disabled while offline.
 
 **StatsPage** (`/insights`)
-- *Header*: days-in-service (from `installedAt`).
+- *Header*: days-in-service (from the shown device's `installedAt`).
+- **Device switcher (v4.26.0).** With two or more devices a pill under "Reliable backup power since …" (name + online
+  dot + chevron; `InsightsDeviceSwitcher`) opens the account's devices; the band grows from 110 to 150 px. The pick is
+  kept per account (`sierro-insights-device-{userId}`, `loadInsightsChoice`/`saveInsightsChoice`) and
+  `insightsDeviceId(devices, choice)` answers it while the device is still on the account, else the oldest — the
+  background cache follows the same answer, and a switch calls `kickInsightsPrefetch()` (a run for the old device stops
+  before its next day). One device: no switcher.
 - *Period selector* (Day/Week/Month/Range) + *date navigator*.
 - *CO₂ card*: CO₂ reduced Kg + eco insight + formula.
 - *Input vs. Output chart* (v4.16.0): one line chart for every period (Week was bars), shared scale for both
@@ -358,7 +364,7 @@ lives on independently and is still referenced elsewhere.)
   (`SETTLE_MS`) after it ended is **final** and never read again; today is never final.
   - *Every app open* (`startInsightsPrefetch()`, `src/utils/insightsPrefetch.ts`, started in `App.tsx`):
     3 s after the device list is in, and again on a return to the foreground ≥ 30 min after the last
-    finished run, `prefetchInsightsHistory()` caches the Insights device (oldest, `insightsDeviceId`) from
+    finished run, `prefetchInsightsHistory()` caches the Insights device (the one picked there, else the oldest — `insightsDeviceId`) from
     30 days back (or the 1st of the month if earlier) to today, **newest day first, one request at a time**,
     waiting for `requestIdleCallback` + 300 ms before each day. It skips final days and a day read in the last
     2 min (`FRESH_MS` — the chart just read today), touches no React state, and stops when the app is hidden,

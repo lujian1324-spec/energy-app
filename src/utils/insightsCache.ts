@@ -65,9 +65,38 @@ export function prefetchFrom(now: number): number {
   return Math.min(back.getTime(), monthStart)
 }
 
-/** The device Insights shows: the account's oldest (StatsPage). */
-export function insightsDeviceId(devices: { id: string | number; createdAt?: string | null }[]): string | null {
+// ── Which device Insights shows (v4.26.0) ──
+
+/** The device picked on Insights, per account: `sierro-insights-device-{userId}`. */
+function choiceKey(): string | null {
+  try {
+    const uid = localStorage.getItem('iot_user_id')
+    return uid ? `sierro-insights-device-${uid}` : null
+  } catch { return null }
+}
+
+export function loadInsightsChoice(): string | null {
+  const key = choiceKey()
+  if (!key) return null
+  try { return localStorage.getItem(key) } catch { return null }
+}
+
+export function saveInsightsChoice(deviceId: string): void {
+  const key = choiceKey()
+  if (!key) return
+  try { localStorage.setItem(key, deviceId) } catch { /* the pick just is not remembered */ }
+}
+
+/**
+ * The device Insights shows: the one picked there (while it is still on the
+ * account), else the account's oldest. The background cache follows the same answer.
+ */
+export function insightsDeviceId(
+  devices: { id: string | number; createdAt?: string | null }[],
+  chosen: string | null = loadInsightsChoice(),
+): string | null {
   if (devices.length === 0) return null
+  if (chosen && devices.some(d => String(d.id) === chosen)) return chosen
   const sorted = [...devices].sort((a, b) => {
     if (a.createdAt && b.createdAt) return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     return 0

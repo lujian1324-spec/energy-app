@@ -105,6 +105,33 @@ test.describe('Insights history cache', () => {
     await expect(page.getByRole('img', { name: 'Input and output energy' })).toBeVisible()
   })
 
+  test('with two devices Insights has a switcher; the pick is kept and the background cache follows it (v4.26.0)', async ({ page }) => {
+    const api = await mockBackend(page, fleet())
+    await page.goto('/#/insights')
+    const pill = page.getByRole('button', { name: /^Device: / })
+    await expect(pill).toHaveAccessibleName('Device: Garage')
+    await expect(page.getByText('Reliable backup power since Dec 2025')).toBeVisible()
+
+    await pill.click()
+    await expect(page.getByRole('option')).toHaveText(['Garage', 'Cabin'])
+    await page.getByRole('option', { name: 'Cabin' }).click()
+    await expect(pill).toHaveAccessibleName('Device: Cabin')
+    await expect(page.getByText('Reliable backup power since Jan 2026')).toBeVisible()
+    // Cabin's history is read for the chart, and its month is cached in the background.
+    await expect.poll(() => historyDays(api, '2002').length, { timeout: 45_000 }).toBe(DAYS_CACHED)
+
+    // Kept across a reopen.
+    await page.reload()
+    await expect(page.getByRole('button', { name: /^Device: / })).toHaveAccessibleName('Device: Cabin')
+  })
+
+  test('with one device there is no switcher', async ({ page }) => {
+    await mockBackend(page, fleet().slice(0, 1))
+    await page.goto('/#/insights')
+    await expect(page.getByText(/Reliable backup power/)).toBeVisible()
+    await expect(page.getByRole('button', { name: /^Device: / })).toHaveCount(0)
+  })
+
   test('the next app open reads only what is not final yet', async ({ page }) => {
     const api = await mockBackend(page, fleet())
     await page.goto('/#/devices')
