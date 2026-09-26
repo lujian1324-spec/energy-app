@@ -59,6 +59,7 @@ export const DISCHARGE_LIMIT_OPTIONS: number[]
 
 export function isSierro2000(model: string | null | undefined): boolean
 export function chargePowerOptions(model: string | null | undefined): number[]
+export function nearestChargePower(model: string | null | undefined, watts: number): number
 export function silentCapW(model: string | null | undefined): number
 export function defaultChargePowerW(model: string | null | undefined): number
 export function defaultProgram(model: string | null | undefined, tz: string | null | undefined): DeviceProgram

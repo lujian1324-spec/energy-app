@@ -141,3 +141,58 @@ export function saveToast(result: { ok: boolean; detail?: string }, what: string
   if (result.detail) return { kind: 'warning', title: `${what} saved`, body: result.detail }
   return { kind: 'success', title: `${what} saved` }
 }
+
+/**
+ * AC Charging Power slider (v4.24.0): runs in watts from the lowest stop to the
+ * highest and settles on the nearest stop, so uneven stops (50, 100, 200 …) sit
+ * where their watts are. `maxAllowed` (Silent Mode's limit) keeps the thumb at or
+ * under it; the value shown may sit between stops (150 W, the Silent limit).
+ */
+export function PowerSlider({ stops, value, onChange, maxAllowed, labelledBy }: {
+  stops: number[]
+  value: number
+  onChange: (watts: number) => void
+  maxAllowed?: number
+  labelledBy?: string
+}) {
+  const min = stops[0]
+  const max = stops[stops.length - 1]
+  const step = stops.slice(1).reduce((s, v, i) => Math.min(s, v - stops[i]), Infinity)
+  const pct = (v: number) => (max > min ? ((Math.min(max, Math.max(min, v)) - min) / (max - min)) * 100 : 0)
+  const allowed = stops.filter(s => maxAllowed == null || s <= maxAllowed)
+  const settle = (raw: number) => {
+    const pool = allowed.length ? allowed : [min]
+    return pool.reduce((best, s) => (Math.abs(s - raw) < Math.abs(best - raw) ? s : best), pool[0])
+  }
+  const fill = pct(value)
+  return (
+    <div className="pt-2">
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={Number.isFinite(step) ? step : 1}
+        value={value}
+        aria-labelledby={labelledBy}
+        aria-valuetext={`${value} W`}
+        onChange={e => {
+          const next = settle(Number(e.target.value))
+          if (next !== value) onChange(next)
+        }}
+        className="w-full h-1.5 rounded-pill appearance-none cursor-pointer accent-primary"
+        style={{ background: `linear-gradient(to right, #01D6BE 0%, #01D6BE ${fill}%, #454545 ${fill}%, #454545 100%)` }}
+      />
+      <div className="relative h-5 mt-2" aria-hidden="true" data-testid="power-stops">
+        {stops.map((s, i) => (
+          <span
+            key={s}
+            className={`absolute top-0 text-label tnum ${s === value ? 'text-primary font-semibold' : maxAllowed != null && s > maxAllowed ? 'text-ink-8' : 'text-ink-6'}`}
+            style={{ left: `${pct(s)}%`, transform: i === 0 ? 'none' : i === stops.length - 1 ? 'translateX(-100%)' : 'translateX(-50%)' }}
+          >
+            {s}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}

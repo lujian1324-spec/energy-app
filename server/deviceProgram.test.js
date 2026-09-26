@@ -12,8 +12,8 @@ const prog = (over = {}) => ({ ...defaultProgram('Sierro 1000', LA), savedAt: 1,
 const task = (over) => ({ id: 't1', kind: 'charge', action: 'stop', time: '07:00', days: [...EVERY_DAY], enabled: true, updatedAt: 0, ...over })
 
 test('per-model power choices and Silent Mode limit (Sierro 2000 doubles)', () => {
-  assert.deepEqual(chargePowerOptions('Sierro 1000'), [50, 100, 150, 200, 300, 400])
-  assert.deepEqual(chargePowerOptions('Sierro 2000'), [100, 200, 300, 400, 600, 800])
+  assert.deepEqual(chargePowerOptions('Sierro 1000'), [50, 100, 200, 300, 400])
+  assert.deepEqual(chargePowerOptions('Sierro 2000'), [100, 200, 300, 400, 500, 600, 700, 800])
   assert.equal(silentCapW('Sierro 1000'), 150)
   assert.equal(silentCapW('Sierro 2000'), 300)
   assert.equal(defaultProgram('Sierro 2000', LA).chargePowerW, 800)
@@ -119,8 +119,13 @@ test('validation keeps only a well-formed program', () => {
   const good = prog({ tasks: [task({ id: 'a' }), task({ id: 'b', action: 'start', time: '23:00', days: [1, 2, 1] })] })
   const clean = validateProgram(good)
   assert.deepEqual(clean.tasks[1].days, [1, 2])
-  assert.throws(() => validateProgram({ ...good, chargePowerW: 250 }), /one of/)
-  assert.throws(() => validateProgram({ ...good, chargePowerW: 800 }), /one of/)
+  assert.throws(() => validateProgram({ ...good, chargePowerW: 'x' }), /number of watts/)
+  // A power from before the v4.24.0 stops moves to the nearest one (lower on a tie).
+  assert.equal(validateProgram({ ...good, chargePowerW: 150 }).chargePowerW, 100)
+  assert.equal(validateProgram({ ...good, chargePowerW: 250 }).chargePowerW, 200)
+  assert.equal(validateProgram({ ...good, chargePowerW: 380 }).chargePowerW, 400)
+  // 800 W is a Sierro 2000 stop; on a Sierro 1000 it becomes that model's top stop.
+  assert.equal(validateProgram({ ...good, chargePowerW: 800 }).chargePowerW, 400)
   assert.doesNotThrow(() => validateProgram({ ...good, model: 'Sierro 2000', chargePowerW: 800 }))
   assert.throws(() => validateProgram({ ...good, tz: 'Not/AZone' }))
   assert.throws(() => validateProgram({ ...good, tasks: [task({ time: '7:00' })] }), /HH:MM/)

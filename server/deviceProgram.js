@@ -48,9 +48,20 @@ export function isSierro2000(model) {
   return String(model || '').includes('2000')
 }
 
-/** AC Charging Power choices (W). Sierro 2000 doubles the Sierro 1000 range. */
+/**
+ * AC Charging Power stops (W) on the slider (v4.24.0): Sierro 1000 50–400 W in five
+ * stops; Sierro 2000 100–800 W every 100 W.
+ */
 export function chargePowerOptions(model) {
-  return isSierro2000(model) ? [100, 200, 300, 400, 600, 800] : [50, 100, 150, 200, 300, 400]
+  return isSierro2000(model) ? [100, 200, 300, 400, 500, 600, 700, 800] : [50, 100, 200, 300, 400]
+}
+
+/** The stop nearest to `watts` (the lower one on a tie). */
+export function nearestChargePower(model, watts) {
+  const opts = chargePowerOptions(model)
+  let best = opts[0]
+  for (const o of opts) if (Math.abs(o - watts) < Math.abs(best - watts)) best = o
+  return best
 }
 
 /** Silent Mode's AC charging limit (W). */
@@ -105,8 +116,12 @@ export function validateProgram(value) {
   if (typeof value.model !== 'string' || !value.model || value.model.length > 80) throw new Error('Device model required')
   if (typeof value.tz !== 'string' || !value.tz) throw new Error('IANA timezone required')
   new Intl.DateTimeFormat('en', { timeZone: value.tz }).format()
-  const options = chargePowerOptions(value.model)
-  if (!options.includes(value.chargePowerW)) throw new Error(`Charge power must be one of ${options.join(', ')} W`)
+  if (typeof value.chargePowerW !== 'number' || !Number.isFinite(value.chargePowerW) || value.chargePowerW < 0) {
+    throw new Error('Charge power must be a number of watts')
+  }
+  // A power saved before the stops changed (v4.24.0: 150 W, 600 W…) moves to the
+  // nearest stop rather than making the whole program — tasks and all — invalid.
+  const chargePowerW = nearestChargePower(value.model, value.chargePowerW)
 
   const s = value.silent || {}
   if (typeof s.enabled !== 'boolean' || typeof s.scheduled !== 'boolean') throw new Error('Silent Mode: enabled and scheduled must be booleans')
@@ -144,7 +159,7 @@ export function validateProgram(value) {
     dischargeMin: DISCHARGE_LIMIT_OPTIONS.includes(l.dischargeMin) ? l.dischargeMin : 0,
   }
   return {
-    version: PROGRAM_VERSION, model: value.model, tz: value.tz, chargePowerW: value.chargePowerW,
+    version: PROGRAM_VERSION, model: value.model, tz: value.tz, chargePowerW,
     silent, tasks, limits, savedAt: cleanStamp(value.savedAt),
     // Absent on a program saved before v4.23.2: charging then follows the old rule.
     ...(typeof value.chargeBaseline === 'boolean' ? { chargeBaseline: value.chargeBaseline } : {}),

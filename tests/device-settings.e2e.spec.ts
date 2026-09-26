@@ -157,7 +157,7 @@ test.describe('Device Settings rows', () => {
 
       // The model's AC charging power choices (v4.22.0 Charging Settings).
       await page.goto('/#/device/1001/charging')
-      await expect(page.getByRole('radio').last()).toHaveText(model === 'Sierro 2000' ? '800 W' : '400 W')
+      await expect(page.getByTestId('power-stops').locator('span').last()).toHaveText(model === 'Sierro 2000' ? '800' : '400')
     })
   }
 

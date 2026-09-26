@@ -21,7 +21,7 @@
  *     relay when it is back. Changing the power while a Stop Charging schedule is
  *     in effect writes 0 again: adjusting the power never starts a charge.
  */
-import { POLLER_REFRESH_PENDING_KEY } from './authApi'
+import { POLLER_REFRESH_PENDING_KEY, remintRelaySession } from './authApi'
 import { passthroughDevice } from './deviceApi'
 import { chargePowerFrame } from './smartScheduleControl'
 import { RELAY_BASE_URL, PROGRAM_PATH, isRelayConfigured } from '../config/scheduling'
@@ -167,7 +167,7 @@ export async function saveProgram(
   let merged = false
   const relay = isRelayConfigured()
   if (relay) {
-    let up = await uploadProgram(deviceId, program, base === undefined ? undefined : (base?.savedAt ?? null))
+    let up = await sendProgram(deviceId, program, base === undefined ? undefined : (base?.savedAt ?? null))
     if (up.conflict && base) {
       // Another phone saved in between: keep its changes, re-apply ours, send once more.
       const current = up.conflict
@@ -177,7 +177,7 @@ export async function saveProgram(
       } catch (e) {
         return invalid(e, current)
       }
-      up = await uploadProgram(deviceId, program, current.savedAt ?? null)
+      up = await sendProgram(deviceId, program, current.savedAt ?? null)
       merged = true
       if (up.conflict) {
         saveLocalProgram(deviceId, up.conflict)
@@ -225,11 +225,21 @@ export async function saveProgram(
   }
 }
 
+/**
+ * Upload; when the relay has no background session for the account, mint one in the
+ * background (remintRelaySession — at most once a day) and send once more (v4.23.3).
+ */
+async function sendProgram(deviceId: string, program: DeviceProgram, baseSavedAt?: number | null) {
+  const up = await uploadProgram(deviceId, program, baseSavedAt)
+  if (!up.needsSession || !(await remintRelaySession())) return up
+  return uploadProgram(deviceId, program, baseSavedAt)
+}
+
 async function uploadProgram(
   deviceId: string,
   program: DeviceProgram,
   baseSavedAt?: number | null,
-): Promise<{ ok: boolean; detail?: string; conflict?: DeviceProgram; stored?: boolean }> {
+): Promise<{ ok: boolean; detail?: string; conflict?: DeviceProgram; stored?: boolean; needsSession?: boolean }> {
   const uid = userId()
   if (!uid) return { ok: false, detail: 'Sign in again before saving a schedule.' }
   let boot: { accessToken?: string; refreshToken?: string; accessExpiresAt?: number } = {}
@@ -264,7 +274,13 @@ async function uploadProgram(
         ? { ok: false, conflict, detail: 'This device was changed on another phone.' }
         : { ok: false, detail: 'This device was changed on another phone. Reopen the page and Save again.' }
     }
-    if (res.status === 409) return { ok: false, detail: 'Background session is missing. Sign in again and retry Save.' }
+    if (res.status === 409) {
+      return {
+        ok: false,
+        needsSession: true,
+        detail: "Schedules can't run in the background for this account yet, so this one wasn't saved. Please contact Sierro support.",
+      }
+    }
     if (res.status === 400 && typeof body?.message === 'string') return { ok: false, detail: body.message }
     return { ok: false, detail: `The schedule server did not confirm the save (HTTP ${res.status}). Retry Save.` }
   } catch (e) {
