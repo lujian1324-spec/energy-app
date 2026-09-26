@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- White-font SIERRO logo (black bg) — matches the PWA manifest icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/energy-app/icon-192x192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/energy-app/icon-512x512.png" />
+    <!-- iOS home-screen icon must be PNG (SVG apple-touch-icon is ignored) -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/energy-app/apple-touch-icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b0b0b" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Sierro" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- Sierro Design System fonts: Anton (display/page-title) + Inter (content) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!--
+      Non-blocking on purpose (APP-002). As a plain rel="stylesheet" this held back
+      the FIRST PAINT until Google answered: with fonts.googleapis.com slow or
+      unreachable the WebView drew nothing at all — measured: no paint within 8 s,
+      against 140 ms when it answers — which is the multi-second black screen on
+      opening or returning to the app. Text renders at once in the fallback faces
+      (tailwind fontFamily) and swaps to Anton/Inter when they arrive.
+    -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap" /></noscript>
+    <title>Sierro</title>
+    <script type="module" crossorigin src="/energy-app/assets/index-_mzwMWqk.js"></script>
+    <link rel="modulepreload" crossorigin href="/energy-app/assets/vendor-Cj4yCfgM.js">
+    <link rel="modulepreload" crossorigin href="/energy-app/assets/ui-Bv73Xa7s.js">
+    <link rel="modulepreload" crossorigin href="/energy-app/assets/state-BNcpVZnw.js">
+    <link rel="stylesheet" crossorigin href="/energy-app/assets/index-BSv2aYUm.css">
+  <link rel="manifest" href="/energy-app/manifest.webmanifest"></head>
+  <body style="margin:0;background:#141414">
+    <!-- Painted by the HTML alone, before the JS bundle has loaded: the same
+         wordmark the session-restore screen shows, so the first frame is the
+         app, not a black window. React replaces it on mount. -->
+    <div id="root"><div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#141414"><span style="font:600 32px/1 -apple-system,'Helvetica Neue',Arial,sans-serif;letter-spacing:.22em;padding-left:.22em;color:#fff">SIERRO</span></div></div>
+
+  </body>
+</html>
