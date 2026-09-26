@@ -161,6 +161,29 @@ test.describe('Device Settings rows', () => {
     })
   }
 
+  test('Rated Output Power reads the record\'s kW as watts: 500W, never 0.5W (v4.24.1)', async ({ page }) => {
+    await signIn(page)
+    // The platform keeps ratedPower in kW; this phone's rated params carry none of their own.
+    await mockBackend(page, [{ id: '1001', name: 'Garage', model: 'Sierro 1000', ratedPower: 0.5 }])
+    await page.addInitScript(() => {
+      const open = indexedDB.open('powerflow-db')
+      open.onsuccess = () => {
+        const db = open.result
+        if (!db.objectStoreNames.contains('rated_params')) { db.close(); return }
+        const tx = db.transaction('rated_params', 'readwrite')
+        tx.objectStore('rated_params').put({ deviceId: '1001', acInvOutputPower: 300, fetchedAt: Date.now(), model: 'Sierro 1000', modelSource: 'user' }, '1001')
+        tx.oncomplete = () => db.close()
+      }
+    })
+    await page.goto('/#/devices')
+    await expect(page.getByText('Garage', { exact: true }).first()).toBeVisible()
+    await page.goto('/#/device/1001/settings')
+    await page.getByText('Device Info', { exact: true }).click()
+    const row = page.locator('div').filter({ has: page.getByText('Rated Output Power', { exact: true }) }).last()
+    await expect(row).toContainText('500W')
+    await expect(page.getByText('0.5W')).toHaveCount(0)
+  })
+
   test('Device Info reads Rated Capacity / Output Power / Voltage from the model, not 0x000A (v4.19.0)', async ({ page }) => {
     await signIn(page)
     // A Sierro 1000 whose 0x000A reads 300 W: 300 × 2 used to show 0.6 kWh.

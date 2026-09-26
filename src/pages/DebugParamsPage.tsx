@@ -8,7 +8,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { RefreshCw, Loader2, History } from 'lucide-react'
 import Icon from '../components/Icon'
 import { useDeviceStore, stateForDevice } from '../stores/deviceStore'
-import { mapFieldsToRealtime } from '../api/deviceApi'
+import { mapFieldsToRealtime, ratedPowerWatts } from '../api/deviceApi'
 import { useHistoryFetcher } from '../hooks/useHistoryFetcher'
 import { batteryTimeLabel } from '../utils/batteryTime'
 import { parseWorkMode } from '../utils/batteryPriority'
@@ -257,7 +257,7 @@ export default function DebugParamsPage() {
               { label: 'Name (name)', value: device?.name ?? '--' },
               { label: 'Model (model)', value: device?.model ?? device?.gatherProtocolNameDisplay ?? '--' },
               { label: 'Serial Number (serialNumber)', value: device?.serialNumber ?? '--' },
-              { label: 'Rated Power (ratedPower)', value: device?.ratedPower != null ? `${device.ratedPower * 1000} W (${device.ratedPower} kW)` : '--' },
+              { label: 'Rated Power (ratedPower)', value: device?.ratedPower != null ? `${ratedPowerWatts(device.ratedPower) ?? '--'} W (raw ${device.ratedPower})` : '--' },
               { label: 'Online Status (isOnline)', value: device?.isOnline ? 'Online' : 'Offline' },
               { label: 'Last Updated', value: updatedAt },
             ].map(row => (

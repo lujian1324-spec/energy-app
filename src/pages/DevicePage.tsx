@@ -28,7 +28,7 @@ import { useAuthStore } from '../stores/authStore'
 import { useAlarmDismissStore } from '../stores/alarmDismissStore'
 import { useFiringAlarmsStore, recordFiringAlarms, recordFiringAlarmsFailed, unreadAlarmCount } from '../stores/firingAlarmsStore'
 import { usePowerStationStore } from '../stores/powerStationStore'
-import { mapFieldsToRealtime, fetchDeviceState } from '../api/deviceApi'
+import { mapFieldsToRealtime, fetchDeviceState, ratedPowerWatts } from '../api/deviceApi'
 import { setAcOutput } from '../api/acOutputControl'
 import { resolveAcOutput, commandSuperseded, type AcCommand, type AcSample } from '../utils/acOutputState'
 import { parseDeviceStateTime } from '../utils/deviceStateTime'
@@ -333,7 +333,8 @@ export default function DevicePage() {
   const getDeviceModel = (device: DeviceListItem): string => {
     if (device.model) return device.model
     if (device.gatherProtocolNameDisplay) return device.gatherProtocolNameDisplay
-    if (device.ratedPower) return device.ratedPower >= 750 ? 'Sierro 2000' : 'Sierro 1000'
+    const ratedW = ratedPowerWatts(device.ratedPower)
+    if (ratedW) return ratedW >= 750 ? 'Sierro 2000' : 'Sierro 1000'
     return 'Sierro'
   }
 

@@ -65,6 +65,8 @@ export interface MockDevice {
   /** Upgrade task polls before the mock reports success (default 2); `'fail'` reports failure. */
   upgradeOutcome?: number | 'fail'
   isUpgrading?: boolean
+  /** The record's `ratedPower` — kW on the platform (0.5 = 500 W). Absent by default. */
+  ratedPower?: number
 }
 
 export interface ApiCall {
@@ -247,6 +249,7 @@ export async function mockBackend(
             createdAt: d.createdAt ?? '2026-01-01T00:00:00Z', installedAt: d.createdAt ?? '2026-01-01T00:00:00Z',
             serialNumber: d.serialNumber ?? `SN${d.id}`, isVirtualSerialNumber: d.isVirtualSerialNumber ?? false,
             dtuDtuid: d.dtuDtuid ?? '',
+            ...(d.ratedPower !== undefined ? { ratedPower: d.ratedPower } : {}),
           })),
           total: devices.length, page: 1, count: 20,
         })
@@ -257,6 +260,7 @@ export async function mockBackend(
           id: d.id, name: d.name, model: d.model ?? 'Sierro 2000', isOnline: d.isOnline ?? true,
           softwareVersion: d.softwareVersion ?? 'V1.0.0', isFirmwareUpgradeEnabled: true,
           isUpgrading: !!d.isUpgrading, dtuDtuid: d.dtuDtuid ?? '',
+          ...(d.ratedPower !== undefined ? { ratedPower: d.ratedPower } : {}),
         } : null)
       }
 

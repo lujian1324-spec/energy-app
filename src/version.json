@@ -1,8 +1,9 @@
 {
-  "version": "4.24.0",
-  "build": 2943,
+  "version": "4.24.1",
+  "build": 2944,
   "date": "2026-09-25",
   "changelog": [
+    "Fix: Device Info showed Rated Output Power as 0.5W on some devices; it now shows 500W (1000W on a Sierro 2000).",
     "AC Charging Power is now a slider: 50 to 400 W in five steps (50, 100, 200, 300, 400 W) on a Sierro 1000, and 100 to 800 W in 100 W steps on a Sierro 2000. A power saved before moves to the nearest step.",
     "Schedules that run while the app is closed now set themselves up again on their own when Sierro's server has lost their connection to your account, so saving a schedule no longer asks you to sign in again.",
     "Fixes: editing a Charging schedule, or saving from a phone in another time zone, no longer starts or stops charging by itself; the change takes effect at the schedule's next time. Saving a setting no longer repeats an AC Output schedule that already ran. Charging Settings and Silent Mode keep what you saved on this phone when your account has no background schedule service yet. On Insights, a day that loads only partly no longer hides the readings already saved for it.",

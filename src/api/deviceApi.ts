@@ -276,6 +276,17 @@ export function ratedPowerKw(watts: number): number {
 }
 
 /**
+ * A device or station record's `ratedPower` in watts (v4.24.1). The platform keeps
+ * it in kW (0.5 = 500 W), but devices bound before `ratedPowerKw` were sent the
+ * watts (500), so a value of 50 or more is already watts. Device Info printed the
+ * kW number with a "W" after it — "0.5W" for a Sierro 1000.
+ */
+export function ratedPowerWatts(value: number | null | undefined): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return null
+  return value >= 50 ? Math.round(value) : Math.round(value * 1000)
+}
+
+/**
  * Adding a device AND its station carries no stationId — there is no station yet
  * — and the station's own fields go in a nested `station` object rather than
  * flattened alongside the device's. Sending `stationId: 0` and a flat

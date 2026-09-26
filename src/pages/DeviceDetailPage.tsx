@@ -18,7 +18,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { usePowerStationStore } from '../stores/powerStationStore'
 import { useDeviceStore, stateForDevice } from '../stores/deviceStore'
 import { deviceBluetoothId } from '../utils/deviceSerial'
-import { mapFieldsToRealtime } from '../api/deviceApi'
+import { mapFieldsToRealtime, ratedPowerWatts } from '../api/deviceApi'
 import { applySleepSchedule } from '../api/smartScheduleControl'
 import {
   applyBatteryPriority,
@@ -609,7 +609,7 @@ export default function DeviceDetailPage({ onBack }: DeviceDetailPageProps) {
             />
             <InfoRow
               label="Rated Output Power"
-              value={`${ratedParams?.ratedPower ?? realDevice?.ratedPower ?? modelSpec.ratedPower}W`}
+              value={`${ratedParams?.ratedPower ?? ratedPowerWatts(realDevice?.ratedPower) ?? modelSpec.ratedPower}W`}
             />
             <InfoRow label="Rated Voltage" value="120V" />
             <InfoRow label="Frequency" value="60Hz" />
