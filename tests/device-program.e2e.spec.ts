@@ -28,8 +28,8 @@ function chargeWrites(api: MockBackend, id: string): number[] {
 const garage = (over: Partial<MockDevice> = {}): MockDevice[] => [{ id: '1001', name: 'Garage', model: 'Sierro 1000', ...over }]
 const lastProgram = (api: MockBackend) => api.relayProgramPosts[api.relayProgramPosts.length - 1]?.program
 
-/** The AC Charging Power slider, and setting it to a number of watts (v4.24.0). */
-const powerSlider = (page: Page) => page.getByRole('slider', { name: 'AC Charging Power' })
+/** The Max AC Charging Power slider, and setting it to a number of watts (v4.24.0; label v4.25.0). */
+const powerSlider = (page: Page) => page.getByRole('slider', { name: 'Max AC Charging Power' })
 const powerStops = (page: Page) => page.getByTestId('power-stops').locator('span')
 async function setPower(page: Page, watts: number) {
   await powerSlider(page).fill(String(watts))
@@ -122,7 +122,7 @@ test.describe('Device program', () => {
     expect(api.relayProgramPosts).toHaveLength(0)
   })
 
-  test('Charging Settings: Sierro 1000 slider 50–400 W in five stops; Save stores the power and sends it to the device', async ({ page }) => {
+  test('Charging Settings: Sierro 1000 slider 50–400 W in five stops; the power goes to the device as soon as the slider rests', async ({ page }) => {
     const api = await mockBackend(page, garage())
     await page.goto('/#/device/1001/charging')
     await expect(powerStops(page)).toHaveText(['50', '100', '200', '300', '400'])
@@ -134,10 +134,11 @@ test.describe('Device program', () => {
     await expect(page.getByTestId('ac-power-value')).toHaveText('100 W')
     await setPower(page, 200)
     await expect(page.getByTestId('ac-power-value')).toHaveText('200 W')
-    await page.getByRole('button', { name: 'Save', exact: true }).click()
-    await expect(page.getByText('Charging Settings saved')).toBeVisible()
-    expect(lastProgram(api).chargePowerW).toBe(200)
+    // No Save (v4.25.0): only the value the slider rested on is sent, device first.
+    await expect(page.getByRole('button', { name: 'Save', exact: true })).toHaveCount(0)
+    await expect(page.getByText('Max AC Charging Power set to 200 W')).toBeVisible()
     expect(chargeWrites(api, '1001')).toEqual([200])
+    expect(lastProgram(api).chargePowerW).toBe(200)
   })
 
   test('Sierro 2000 doubles the choices and the Silent Mode limit', async ({ page }) => {
@@ -197,8 +198,8 @@ test.describe('Device program', () => {
     await page.goto('/#/device/1001/charging')
     await expect(page.getByTestId('charging-paused-note')).toContainText('Charging is paused by Smart Schedule')
     await setPower(page, 300)
-    await page.getByRole('button', { name: 'Save', exact: true }).click()
-    await expect(page.getByText('Charging Settings saved')).toBeVisible()
+    await expect(page.getByText('Max AC Charging Power set to 300 W')).toBeVisible()
+    await expect(page.getByText('The new power applies when charging starts.').last()).toBeVisible()
     expect(lastProgram(api).chargePowerW).toBe(300)
     expect(chargeWrites(api, '1001')).toEqual([0])
   })
@@ -233,13 +234,23 @@ test.describe('Device program', () => {
     expect(chargeWrites(api, '1001')).toEqual([150])
   })
 
-  test('a refused save says so, sends nothing to the device and stays unsaved', async ({ page }) => {
+  test('the schedule server refusing does not hold the device back: it is set, and the page says the schedules did not get it', async ({ page }) => {
     const api = await mockBackend(page, garage())
     api.relayProgramRefusal.status = 409
     await page.goto('/#/device/1001/charging')
     await setPower(page, 100)
+    await expect(page.getByText('Set on the device')).toBeVisible()
+    await expect(page.getByText(/Not saved for your schedules/)).toBeVisible()
+    expect(chargeWrites(api, '1001')).toEqual([100])
+  })
+
+  test('a refused Silent Mode save says so and sends nothing to the device', async ({ page }) => {
+    const api = await mockBackend(page, garage())
+    api.relayProgramRefusal.status = 409
+    await page.goto('/#/device/1001/charging/silent')
+    await page.getByRole('switch', { name: 'Silent Mode', exact: true }).click()
     await page.getByRole('button', { name: 'Save', exact: true }).click()
-    await expect(page.getByText("Couldn't save Charging Settings")).toBeVisible()
+    await expect(page.getByText("Couldn't save Silent Mode")).toBeVisible()
     await expect(page.getByText(/Schedules can't run in the background for this account yet/)).toBeVisible()
     expect(chargeWrites(api, '1001')).toEqual([])
     await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeEnabled()
@@ -249,7 +260,6 @@ test.describe('Device program', () => {
     const api = await mockBackend(page, garage({ isOnline: false }))
     await page.goto('/#/device/1001/charging')
     await setPower(page, 300)
-    await page.getByRole('button', { name: 'Save', exact: true }).click()
     await expect(page.getByText(/The device is offline; it will switch when it is back online/)).toBeVisible()
     expect(lastProgram(api).chargePowerW).toBe(300)
     expect(chargeWrites(api, '1001')).toEqual([])

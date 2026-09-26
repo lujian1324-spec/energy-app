@@ -111,7 +111,7 @@ Test-only / CI-only changes that don't alter the shipped bundle do NOT bump.
 | `/device/:id/passthrough` | `PassthroughPage` | no | Modbus passthrough |
 | `/device/:id/debug-params` | `DebugParamsPage` | no | Developer debug view (raw register names — exempt from label canon) |
 | `/device/:id/schedule` | `DeviceSchedulePage` (`pages/program/`) | no | Smart Schedule (v4.22.0): AC Output / Charging tasks |
-| `/device/:id/charging` | `ChargingSettingsPage` | no | AC charging power + Silent Mode row (v4.22.0) |
+| `/device/:id/charging` | `ChargingSettingsPage` | no | Max AC Charging Power slider (applies at once, v4.25.0) + Silent Mode row |
 | `/device/:id/charging/silent` | `SilentModePage` | no | Silent Mode switch + schedule — replaces Sleep Mode (v4.22.0) |
 | `/device/:id/limits` | `ChargeLimitsPage` | no | Only when `CHARGE_LIMITS_ENABLED` (no firmware register yet) |
 | `/smart-schedule` | `SmartSchedulePage` | no | Old peak-shaving UI — paused (SW-14), no entry point |
@@ -466,6 +466,15 @@ backend/firmware handoff: **`docs/DEVICE_PROGRAM.md`**.
   AC events before `savedAt` are not owed. Editing a Stop task, or a save from a phone in another zone, used to resume
   a paused charge at once, and a save replayed an AC event from the last 30 min. A program without `chargeBaseline`
   (saved before v4.23.2) keeps the old rule.
+- **Max AC Charging Power (v4.25.0)** — the Charging Settings slider has no Save: 400 ms after it rests,
+  `setChargePower` → `applyChargePower()` writes 0x0085 to the device **first**, straight through the platform's
+  `/remote/device/passthrough` (the value the program implies now: capped while Silent limits, 0 while a Stop Charging
+  schedule holds), then keeps the power with the program (relay + phone) because Silent Mode's window restores it when
+  it ends. A relay refusal does not undo the device write ("Set on the device" + "Not saved for your schedules");
+  offline → relay only ("…will switch when it is back online"). Values picked mid-send are queued, newest wins.
+  **Scheduled Silent Mode on AWS:** the relay's minute tick (`programExecutor`) writes the limit (150 / 300 W, or the
+  Max if lower) through the same passthrough when the window starts and the Max when it ends, in the program's zone
+  (`server/program.test.js`: Max 400 W, 21:00–09:00 → 150 W at 21:00, 400 W at 09:00).
 - **Saving** (`saveProgram`, `src/api/programApi.ts`; screens via `useDeviceProgram`, each saving only its own part
   merged onto the latest saved copy): stamp changes (`stampChanges`) → validate → relay `POST /program` (a refusal
   is a failed save; nothing written) → local copy `sierro-program-{id}` → disarm the old `sierro-sleep-{id}` window →

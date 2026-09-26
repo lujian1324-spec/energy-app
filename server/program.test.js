@@ -158,6 +158,20 @@ test('Silent Mode caps the power inside its window and restores it after', async
   assert.deepEqual(f.writes.map(w => w.value), [150, 300])
 })
 
+test('Scheduled Silent Mode 9 PM–9 AM with Max 400 W: 150 W at 9 PM, 400 W at 9 AM, local time (v4.25.0)', async () => {
+  const silent = { enabled: true, scheduled: true, from: '21:00', to: '09:00', days: [...EVERY_DAY], updatedAt: 0 }
+  const f = tickFixture(program({ silent, chargePowerW: 400 }))
+  f.setTime('2026-09-25T03:59:00Z') // 20:59 Los Angeles
+  await f.executor.tick()
+  f.setTime('2026-09-25T04:00:00Z') // 21:00
+  await f.executor.tick()
+  f.setTime('2026-09-25T10:00:00Z') // 03:00: nothing to change
+  await f.executor.tick()
+  f.setTime('2026-09-25T16:00:00Z') // 09:00
+  await f.executor.tick()
+  assert.deepEqual(f.writes, [{ reg: 0x85, value: 400 }, { reg: 0x85, value: 150 }, { reg: 0x85, value: 400 }])
+})
+
 test('an offline device is retried until it is back, then written', async () => {
   let online = false
   const f = tickFixture(program({ tasks: [stopAt7] }), {

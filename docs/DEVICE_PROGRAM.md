@@ -39,6 +39,11 @@ disagree about what the device should be doing.
 }
 ```
 
+**Max AC Charging Power (v4.25.0)** is applied as soon as the slider rests: the app writes it to
+the device through the platform passthrough first, then saves it with the program — the relay
+needs it to restore the power when a Silent Mode window ends. Example: Max 400 W, Scheduled
+Silent Mode 9 PM–9 AM → at 9 PM local the relay writes 150 W, at 9 AM it writes 400 W.
+
 AC Charging Power stops (v4.24.0, a slider): Sierro 1000 **50, 100, 200, 300, 400 W**;
 Sierro 2000 **100–800 W every 100 W**. A stored power that is not a stop (150 W, 600 W from
 before) is moved to the nearest stop, the lower one on a tie (`nearestChargePower`) — never a

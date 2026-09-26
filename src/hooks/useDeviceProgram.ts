@@ -9,7 +9,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useDeviceStore } from '../stores/deviceStore'
 import { loadRatedParams } from '../db/powerflowDB'
-import { loadProgram, peekProgram, saveProgram, sessionPrograms, type ProgramSaveResult } from '../api/programApi'
+import { applyChargePower, loadProgram, peekProgram, saveProgram, sessionPrograms, type ChargePowerResult, type ProgramSaveResult } from '../api/programApi'
 import { adaptProgram, type DeviceProgram } from '../utils/deviceProgram'
 
 /** The last program each device was seen with in this session (screens share it). */
@@ -63,5 +63,38 @@ export function useDeviceProgram(deviceId: string) {
     }
   }, [deviceId, program, model, online])
 
-  return { program, model, loading, saving, online, save, deviceName: device?.name ?? 'Device' }
+  /**
+   * Max AC Charging Power straight to the device (applyChargePower, v4.25.0). A value
+   * picked while one is still being sent is queued, and only the newest queued one is
+   * sent next; those calls resolve null (the running one reports).
+   */
+  const queuedPower = useRef<number | null>(null)
+  const setChargePower = useCallback(async (watts: number): Promise<ChargePowerResult | null> => {
+    if (savingRef.current) { queuedPower.current = watts; return null }
+    savingRef.current = true
+    setSaving(true)
+    try {
+      let w = watts
+      let result: ChargePowerResult
+      for (;;) {
+        const base = latest.get(deviceId) ?? program
+        result = await applyChargePower(deviceId, { ...base, model }, w, { deviceOnline: online })
+        const shown = result.program ?? (result.current && adaptProgram(result.current, model))
+        if (shown) {
+          latest.set(deviceId, shown)
+          setProgram(shown)
+        }
+        const next = queuedPower.current
+        queuedPower.current = null
+        if (next == null || next === w) break
+        w = next
+      }
+      return result
+    } finally {
+      savingRef.current = false
+      setSaving(false)
+    }
+  }, [deviceId, program, model, online])
+
+  return { program, model, loading, saving, online, save, setChargePower, deviceName: device?.name ?? 'Device' }
 }

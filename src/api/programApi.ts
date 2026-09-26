@@ -292,3 +292,82 @@ async function uploadProgram(
     }
   }
 }
+
+export interface ChargePowerResult {
+  /** The change took: on the device now, or (device offline) kept for when it is back. */
+  ok: boolean
+  /** What was saved, when the schedule server (or this phone) kept it. */
+  program?: DeviceProgram
+  /** The relay's program after a refused save (another phone changed it). */
+  current?: DeviceProgram
+  /** The power was written to the device just now; null = not attempted (offline). */
+  applied: boolean | null
+  /** The watts written (0 while a Stop Charging schedule has charging paused). */
+  wroteW: number | null
+  kind: 'success' | 'warning' | 'error'
+  title: string
+  detail?: string
+}
+
+/**
+ * Max AC Charging Power, set from the slider (v4.25.0). The device gets it first,
+ * straight through the platform's passthrough (0x0085) — nothing waits on the relay.
+ * Then the power is kept with the rest of the program (relay + this phone), because
+ * that is what Silent Mode's schedule restores when its window ends. The value
+ * written is what the program implies now: capped while Silent Mode limits, and 0
+ * while a Stop Charging schedule has charging paused (a new power never starts a
+ * charge).
+ */
+export async function applyChargePower(
+  deviceId: string,
+  base: DeviceProgram,
+  watts: number,
+  { deviceOnline = true }: { deviceOnline?: boolean } = {},
+): Promise<ChargePowerResult> {
+  const title = `Max AC Charging Power set to ${watts} W`
+  if (isFirmwareUpdateLocked()) {
+    return { ok: false, applied: null, wroteW: null, kind: 'error', title: "Couldn't change the charging power", detail: 'Paused while a firmware update is in progress. Try again when it finishes.' }
+  }
+  const draft: DeviceProgram = { ...base, chargePowerW: watts }
+  const write = async (w: number): Promise<boolean> => {
+    try { return isApiSuccess((await passthroughDevice(deviceId, { data: chargePowerFrame(w) })).code) } catch { return false }
+  }
+
+  // 1. The device, straight away.
+  let wroteW: number | null = null
+  let applied: boolean | null = null
+  if (deviceOnline) {
+    wroteW = effectiveChargeW(draft, Date.now())
+    applied = await write(wroteW)
+  }
+
+  // 2. Kept for the schedules. No second device write here: that was step 1.
+  const saved = await saveProgram(deviceId, draft, { deviceOnline: false, base })
+  // Merged with another phone's change (e.g. it switched Silent Mode on): the device
+  // gets what the merged program implies.
+  if (saved.ok && saved.program && applied) {
+    const now = effectiveChargeW(saved.program, Date.now())
+    if (now !== wroteW) { wroteW = now; applied = await write(now) }
+  }
+  const kept = saved.ok && saved.background
+  const paused = wroteW === 0 && watts > 0
+
+  if (applied === true) {
+    if (!saved.ok) {
+      return { ok: true, applied, wroteW, current: saved.current, kind: 'warning', title: 'Set on the device',
+        detail: `Not saved for your schedules: ${saved.detail ?? 'the schedule server did not confirm it.'} Silent Mode may restore the previous power.` }
+    }
+    return { ok: true, applied, wroteW, program: saved.program, kind: paused ? 'warning' : 'success', title,
+      detail: paused ? 'Charging is paused by Smart Schedule. The new power applies when charging starts.'
+        : saved.detail && saved.detail.includes('another phone') ? saved.detail : undefined }
+  }
+  if (applied === false) {
+    return kept
+      ? { ok: true, applied, wroteW, program: saved.program, kind: 'warning', title: 'Saved', detail: "The device didn't take the change yet; it will be sent again shortly." }
+      : { ok: false, applied, wroteW, current: saved.current, kind: 'error', title: "Couldn't change the charging power", detail: "The device didn't take the change. Check it is online and try again." }
+  }
+  // The device is offline: the schedule server switches it when it is back.
+  return kept
+    ? { ok: true, applied, wroteW, program: saved.program, kind: 'warning', title: 'Saved', detail: 'The device is offline; it will switch when it is back online.' }
+    : { ok: false, applied, wroteW, current: saved.current, kind: 'error', title: "Couldn't change the charging power", detail: saved.ok ? 'The device is offline. Try again when it is back online.' : saved.detail }
+}

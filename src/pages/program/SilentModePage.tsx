@@ -4,7 +4,7 @@
  * The switch limits AC charging to 150 W (Sierro 2000: 300 W) for a quieter
  * unit. With "Scheduled Silent Mode" on, the limit applies only inside the
  * From–To window on the chosen days (a window may end the next day); outside it
- * the saved AC Charging Power is restored. The relay switches it with the app
+ * the saved Max AC Charging Power is restored. The relay switches it with the app
  * closed.
  */
 import { useEffect, useState } from 'react'
@@ -91,8 +91,8 @@ export default function SilentModePage() {
             <p className="text-label text-ink-6 mt-3 px-1" data-testid="silent-status">
               {draft.scheduled
                 ? on
-                  ? `Limiting now${change?.at ? ` · ends ${clock(change.at)}` : ''}. Outside the schedule your AC Charging Power is restored.`
-                  : `Starts ${change?.at ? clock(change.at) : 'on the next scheduled day'}. Outside the schedule your AC Charging Power is used.`
+                  ? `Limiting now${change?.at ? ` · ends ${clock(change.at)}` : ''}. Outside the schedule your Max AC Charging Power is restored.`
+                  : `Starts ${change?.at ? clock(change.at) : 'on the next scheduled day'}. Outside the schedule your Max AC Charging Power is used.`
                 : 'Limiting all the time. Turn on Scheduled Silent Mode to limit only at set times.'}
             </p>
           </div>

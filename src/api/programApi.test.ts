@@ -12,6 +12,7 @@ const h = vi.hoisted(() => ({
   locked: false,
   remint: false,
   remints: 0,
+  order: [] as string[],
 }))
 
 const store = new Map<string, string>()
@@ -28,6 +29,7 @@ vi.mock('../config/scheduling', () => ({
 vi.mock('./deviceApi', () => ({
   passthroughDevice: vi.fn(async (_id: string, p: { data: string }) => {
     h.passthrough.push(p.data)
+    h.order.push('device')
     return { code: h.passthroughOk ? 0 : 500 }
   }),
 }))
@@ -43,6 +45,7 @@ vi.mock('./authApi', () => ({
 
 ;(globalThis as any).fetch = vi.fn(async (url: string, init?: RequestInit) => {
   h.fetches.push({ url, init })
+  if (init?.method === 'POST') h.order.push('relay')
   if (!init || init.method !== 'POST') {
     return { ok: true, status: 200, json: async () => ({ code: 0, data: { program: h.relayProgram } }) }
   }
@@ -50,7 +53,7 @@ vi.mock('./authApi', () => ({
   return { ok: reply.status < 400, status: reply.status, json: async () => reply.body }
 })
 
-import { loadLocalProgram, loadProgram, saveProgram } from './programApi'
+import { applyChargePower, loadLocalProgram, loadProgram, saveProgram } from './programApi'
 import {
   EVERY_DAY, defaultProgram, initialProgram, newTask, rebaseProgram, repeatLabel, snapChargePower, stampChanges,
   taskTitle, time12, type DeviceProgram,
@@ -67,7 +70,7 @@ beforeEach(() => {
   h.relayReply = { status: 200, body: { code: 0 } }
   h.relayQueue = []
   h.relayProgram = null
-  h.remint = false; h.remints = 0
+  h.remint = false; h.remints = 0; h.order = []
 })
 
 describe('labels', () => {
@@ -279,5 +282,40 @@ describe('no background session on the relay (v4.23.3)', () => {
     expect(posts[1]).toMatchObject({ accessToken: 'RA', refreshToken: 'RR' })
     // Handed over: the one-time copy is gone from the phone.
     expect(store.get('iot_poller_refresh_pending')).toBeUndefined()
+  })
+})
+
+describe('Max AC Charging Power from the slider (v4.25.0)', () => {
+  it('goes to the device first, straight through passthrough, then is kept for the schedules', async () => {
+    const r = await applyChargePower('1001', prog(), 200)
+    expect(r).toMatchObject({ ok: true, applied: true, wroteW: 200, kind: 'success', title: 'Max AC Charging Power set to 200 W' })
+    expect(h.order).toEqual(['device', 'relay'])
+    expect(h.passthrough.map(frameWatts)).toEqual([200])
+    const body = JSON.parse(String(h.fetches.find(f => f.init?.method === 'POST')!.init!.body))
+    expect(body.program.chargePowerW).toBe(200)
+    expect(loadLocalProgram('1001')?.chargePowerW).toBe(200)
+  })
+
+  it('while a Stop Charging schedule holds, 0 is written: a new power never starts a charge', async () => {
+    const stop = { id: 's', kind: 'charge' as const, action: 'stop' as const, time: '00:00', days: [...EVERY_DAY], enabled: true, updatedAt: 0 }
+    const r = await applyChargePower('1001', prog({ tasks: [stop], savedAt: 1 }), 300)
+    expect(r).toMatchObject({ ok: true, wroteW: 0, kind: 'warning' })
+    expect(h.passthrough.map(frameWatts)).toEqual([0])
+  })
+
+  it('the device keeps it even when the schedule server refuses, and says so', async () => {
+    h.relayReply = { status: 503, body: { code: 1 } }
+    const r = await applyChargePower('1001', prog(), 100)
+    expect(r).toMatchObject({ ok: true, applied: true, kind: 'warning', title: 'Set on the device' })
+    expect(r.detail).toMatch(/Not saved for your schedules/)
+    expect(h.passthrough.map(frameWatts)).toEqual([100])
+  })
+
+  it('an offline device: nothing is written now, the schedule server switches it later', async () => {
+    const r = await applyChargePower('1001', prog(), 300, { deviceOnline: false })
+    expect(r).toMatchObject({ ok: true, applied: null, kind: 'warning' })
+    expect(r.detail).toMatch(/offline/)
+    expect(h.passthrough).toEqual([])
+    expect(h.order).toEqual(['relay'])
   })
 })
